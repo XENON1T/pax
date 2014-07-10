@@ -21,3 +21,9 @@ Features
 --------
 
 * TODO
+
+
+Plugins
+-------
+
+We do it in an ETL way.  But input, transform, load.

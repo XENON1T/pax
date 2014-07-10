@@ -33,8 +33,7 @@ setup(
     packages=[
         'pax',
     ],
-    package_dir={'pax':
-                 'pax'},
+    package_dir={'pax': 'pax'},
     include_package_data=True,
     install_requires=requirements,
     license="BSD",
