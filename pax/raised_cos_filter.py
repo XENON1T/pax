@@ -101,7 +101,7 @@ z = filter(y)
 
 import matplotlib.pyplot as plt
 plt.plot(y)
-plt.plot(z)
+plt.plot(z) 
 plt.show() 
 
 
