@@ -2,14 +2,18 @@ __author__ = 'tunnell'
 
 import logging
 
+
 class BasePlugin():
+
     def __init__(self):
         self.log = logging.getLogger(self.__class__.__name__)
 
     def ProcessEvent(self):
         raise NotImplementedError()
 
+
 class InputPlugin(BasePlugin):
+
     def __init__(self):
         BasePlugin.__init__(self)
         self.i = 0
@@ -24,14 +28,18 @@ class InputPlugin(BasePlugin):
     def ProcessEvent(self, event=None):
         return self.GetNextEvent()
 
+
 class TransformPlugin(BasePlugin):
+
     def TransformEvent(self, event):
         raise NotImplementedError
 
     def ProcessEvent(self, event):
         return self.TransformEvent(event)
 
+
 class OutputPlugin(BasePlugin):
+
     def WriteEvent(self, event):
         raise NotImplementedError
 
