@@ -5,8 +5,12 @@ import logging
 
 class BasePlugin():
 
-    def __init__(self):
+    def __init__(self, config_values):
         self.log = logging.getLogger(self.__class__.__name__)
+
+        # Please do all config variable fetching in constructor to make
+        # changing config easier.
+        self.config = config_values
 
     def ProcessEvent(self):
         raise NotImplementedError()
@@ -14,8 +18,8 @@ class BasePlugin():
 
 class InputPlugin(BasePlugin):
 
-    def __init__(self):
-        BasePlugin.__init__(self)
+    def __init__(self, config_values):
+        BasePlugin.__init__(self, config_values)
         self.i = 0
 
     def GetNextEvent(self):
