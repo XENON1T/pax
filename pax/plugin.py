@@ -3,7 +3,7 @@ __author__ = 'tunnell'
 import logging
 
 
-class BasePlugin():
+class BasePlugin(object):
 
     def __init__(self, config_values):
         self.log = logging.getLogger(self.__class__.__name__)
@@ -22,7 +22,7 @@ class InputPlugin(BasePlugin):
         BasePlugin.__init__(self, config_values)
         self.i = 0
 
-    def GetNextEvent(self):
+    def GetEvents(self):
         """Get next event from the data source
 
         Raise a StopIteration when done
@@ -30,7 +30,7 @@ class InputPlugin(BasePlugin):
         raise NotImplementedError()
 
     def ProcessEvent(self, event=None):
-        return self.GetNextEvent()
+        raise RuntimeError('Input plugins cannot process data.')
 
 
 class TransformPlugin(BasePlugin):

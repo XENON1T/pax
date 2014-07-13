@@ -4,6 +4,7 @@ from pax import pax
 if __name__ == '__main__':
     pax.Processor(input='MongoDB.MongoDBInput',
                   transform=['DSP.ComputeSumWaveform',
-                             'DSP.FilterWaveforms'],
+                             'DSP.FilterWaveforms',
+                             'DSP.PeakFinder'],
                   output='PlottingWaveform.PlottingWaveform')
 

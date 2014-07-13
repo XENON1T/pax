@@ -18,8 +18,9 @@ class TestPax(unittest.TestCase):
     def setUp(self):
         pass
 
-    def test_something(self):
-        pass
+    def test_processor_type(self):
+        with self.assertRaises(AssertionError):
+            pax.Processor(4, 4, 4)
 
     def tearDown(self):
         pass
