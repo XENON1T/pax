@@ -2,10 +2,19 @@
 import numpy as np
 
 from pax import plugin
-
+from pax import units
 
 __author__ = 'tunnell'
 
+def interval_until_treshold(signal, start, treshold):
+    return (
+        PeakFinder.find_first_below(signal, start, treshold, 'left'),
+        PeakFinder.find_first_below(signal, start, treshold, 'right'),
+    )
+
+def extent_until_treshold(signal, start, treshold):
+    a = interval_until_treshold(signal, start, treshold)
+    return a[1]-a[0]
 
 class ComputeSumWaveform(plugin.TransformPlugin):
 
@@ -19,15 +28,14 @@ class ComputeSumWaveform(plugin.TransformPlugin):
                                'summed': config['top'] + config['bottom']}
 
     def TransformEvent(self, event):
-        channel_waveforms = event['channel_waveforms']
         sum_waveforms = {}
         # Compute summed waveforms
         for group, members in self.channel_groups.items():
-            sum_waveforms[group] = sum(
-                [wave for name, wave in channel_waveforms.items() if name in members])
+            sum_waveforms[group] = sum([wave for name, wave in event['channel_waveforms'].items() if name in members])
             if type(sum_waveforms[group]) != type(np.array([])):
-                sum_waveforms.pop(
-                    group)  # None of the group members have a waveform in this event, delete this group's waveform
+                # None of the group members have a waveform in this event,
+                # delete this group's waveform
+                sum_waveforms.pop(group)
                 continue
 
         event['sum_waveforms'] = sum_waveforms
@@ -86,7 +94,7 @@ class FilterWaveforms(plugin.TransformPlugin):
         return time_idx, h_rc
 
     def filter(self, y, N=31, alpha=0.2, Ts=1, Fs=10):
-        """
+        """Perform filtering with raised cosine filter.
 
         1. Calls the function to generate a raised cosine impulse response (ie signal)
         2. Performs a convolution to use the filter to smoothen the signal
@@ -123,6 +131,8 @@ class FilterWaveforms(plugin.TransformPlugin):
 
     def TransformEvent(self, event):
         event['filtered_waveforms'] = {}
+
+        # Key would be 'top', 'bottom', etc
         for key, value in event['sum_waveforms'].items():
             event['filtered_waveforms'][key] = self.filter(value)
         return event
@@ -130,12 +140,7 @@ class FilterWaveforms(plugin.TransformPlugin):
 
 class PeakFinder(plugin.TransformPlugin):
 
-    @staticmethod
-    def interval_until_treshold(signal, start, treshold):
-        return (
-            PeakFinder.find_first_below(signal, start, treshold, 'left'),
-            PeakFinder.find_first_below(signal, start, treshold, 'right'),
-        )
+
 
     @staticmethod
     def find_first_below(signal, start, below, direction):
@@ -218,7 +223,7 @@ class PeakFinder(plugin.TransformPlugin):
             # TODO: stop find_first_below search if we reach boundary of an
             # earlier peak? hmmzz need to pass more args to this. Or not
             # needed?
-            (p['left'], p['right']) = self.interval_until_treshold(signal,
+            (p['left'], p['right']) = interval_until_treshold(signal,
                                                                    start=p[
                                                                        'index_of_max_in_waveform'],
                                                                    treshold=boundary_to_height_ratio * p['height'])
@@ -232,4 +237,34 @@ class PeakFinder(plugin.TransformPlugin):
         event['peaks'] = {}  # Add substructure for many peak finders?
         for key, value in event['filtered_waveforms'].items():
             event['peaks'][key] = self.X100_style(value, **self.config)
+        return event
+
+
+class ComputeQuantities(plugin.TransformPlugin):
+
+    def TransformEvent(self, event):
+        """For every filtered waveform, find peaks
+        """
+
+        #Compute relevant peak quantities for each pmt's peak: height, FWHM, FWTM, area, ..
+        #Todo: maybe clean up this data structure? This way it was good for csv..
+        peaks = event['peaks']['summed']
+        for i, p in enumerate(peaks):
+            for channel, data in event['sum_waveforms'].items():
+                #Todo: use python's handy arcane naming/assignment convention to beautify this code
+                peak_wave = data[p['left']:p['right']+1]    #Remember silly python indexing
+                peaks[i][channel] = {}
+                maxpos = peaks[i][channel]['position_of_max_in_peak']= np.argmax(peak_wave)
+                max = peaks[i][channel]['height']                    = peak_wave[maxpos]
+                peaks[i][channel]['position_of_max_in_waveform']     = p['left'] + maxpos
+                peaks[i][channel]['area']                            = np.sum(peak_wave)
+                if channel == 'summed':
+                    #Expensive stuff, only do for summed waveform, maybe later for top&bottom as well?
+                    samples_to_ns = self.config['digitizer_t_resolution']/units.ns
+                    peaks[i][channel]['fwhm'] = extent_until_treshold(peak_wave, start=maxpos, treshold=max/2)  *samples_to_ns
+                    peaks[i][channel]['fwqm'] = extent_until_treshold(peak_wave, start=maxpos, treshold=max/4)  *samples_to_ns
+                    peaks[i][channel]['fwtm'] = extent_until_treshold(peak_wave, start=maxpos, treshold=max/10) *samples_to_ns
+            if 'top' in peaks[i] and 'bottom' in peaks[i]:
+                peaks[i]['asymmetry'] = (peaks[i]['top']['area']-peaks[i]['bottom']['area'])/(peaks[i]['top']['area']+peaks[i]['bottom']['area'])
+
         return event

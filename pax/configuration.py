@@ -12,6 +12,13 @@ class PaxSchema(Section):
     TODO: structure this a bit more as it gets more complicated with
     subsections.
     """
+    # General
+    loglevel = Value(String(), default="INFO",
+                            argparse_names=['--loglevel'],
+                            argparse_help='Log level to use (e.g., DEBUG)')
+    picklefile = Value(String(), default="data.pklz",
+                            argparse_names=['--picklefile'],
+                            argparse_help='Filename for pickle outputer')
 
     # Sum waveform
     gain = Value(Float(), default=2 * 10 ** 6)
@@ -19,21 +26,21 @@ class PaxSchema(Section):
     digitizer_amplification = Value(Float(), default=10)
 
     # Digitizer info
-    digitzer_bits = 14
+    bits = 14
     dt = 10 * units.ns
-    digitizer_baseline = Value(Float(), default=(2 ** digitzer_bits - 1))
-    digitizer_V_resolution = Value(
-        Float(), default=(2.25 * units.V / 2 ** (digitzer_bits)))
+    digitizer_baseline = Value(Float(), default=(2 ** bits - 1))
+    digitizer_V_resolution = Value(Float(),
+                                   default=(2.25 * units.V / 2 ** (bits)))
     digitizer_t_resolution = Value(Float(), default=(dt))
 
     # PMTs
     excluded = List(Integer(), default=BAD_PMTS)
-    top = List(
-        Integer(), default=[x for x in range(1, 98) if x not in BAD_PMTS])
-    bottom = List(
-        Integer(), default=[x for x in range(99, 178) if x not in BAD_PMTS])
-    veto = List(
-        Integer(), default=[x for x in range(179, 242) if x not in BAD_PMTS])
+    top = List(Integer(),
+               default=[x for x in range(1, 98) if x not in BAD_PMTS])
+    bottom = List(Integer(),
+                  default=[x for x in range(99, 178) if x not in BAD_PMTS])
+    veto = List(Integer(),
+                default=[x for x in range(179, 242) if x not in BAD_PMTS])
 
     # Peak finding
     threshold = Value(Float(), default=62.415)

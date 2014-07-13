@@ -28,7 +28,7 @@ def sampletime_fmt(num):
 class PlottingWaveform(plugin.OutputPlugin):
 
     def WriteEvent(self, event):
-        print(event.keys())
+        self.log.debug("Received event %s" % str(event.keys()))
         plt.figure()
 
         for name, wf in event['sum_waveforms'].items():
@@ -40,15 +40,28 @@ class PlottingWaveform(plugin.OutputPlugin):
         plt.ylabel("ADC counts on 14-bit digitizer")
         plt.legend()
 
-        plt.figure()
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
 
+        side = 1
         # Plot all peaks
         for peak in event['peaks']['summed']:
-            plt.hlines(1000, peak['left'], peak['right'])
+            x = peak['summed']['position_of_max_in_waveform']
+            y = event['sum_waveforms']['summed'][x]
 
-        plt.plot(event['sum_waveforms']['summed'], label=name)
+            plt.hlines(y, peak['left'], peak['right'])
+            ax.annotate('%0.2f' % peak['summed']['area'],
+                        xy=(x,y),
+                        xytext=(peak['summed']['position_of_max_in_waveform'] + 30000 * side, event['sum_waveforms']['summed'][peak['summed']['position_of_max_in_waveform']] * 1.3),
+                        arrowprops=dict(arrowstyle="fancy",
+                                fc="0.6", ec="none",
+                                connectionstyle="angle3,angleA=0,angleB=-90"))
+            side *= -1
+
+
+        plt.plot(event['sum_waveforms']['summed'], label='summed')
         plt.plot(event['filtered_waveforms']['summed'],
-                 '--', label='filtered %s' % name)
+                 '--', label='filtered %s' % 'summed')
 
         plt.legend()
         plt.xlabel('Time in event [us]')

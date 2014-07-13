@@ -1,5 +1,7 @@
 import logging
 import argparse
+import inspect
+import os
 
 from pluginbase import PluginBase
 from confiture import Confiture
@@ -49,14 +51,23 @@ def Processor(input, transform, output, config_string=""):
         config_values = pconfig.to_dict()
 
     # Setup logging
-    FORMAT = '%(asctime)-15s %(message)s'
-    logging.basicConfig(format=FORMAT)
+    numeric_level = getattr(logging, config_values['loglevel'].upper(), None)
+    if not isinstance(numeric_level, int):
+        raise ValueError('Invalid log level: %s' % config_values['loglevel'])
+    FORMAT = '%(asctime)-15s %(name)s L%(lineno)s - %(levelname)s %(message)s'
+    logging.basicConfig(level=numeric_level, format=FORMAT)
     log = logging.getLogger('Processor')
 
-    # Setup plugins
+    # Setup plugins (which involves finding the plugin directory.
     plugin_base = PluginBase(package='pax.plugins')
-    plugin_source = plugin_base.make_plugin_source(
-        searchpath=['./plugins'] + config_values['plugin_paths'])
+    searchpath = ['./plugins'] + config_values['plugin_paths']
+
+    # Find the absolute path, then director, then find plugin directory
+    absolute_path = os.path.abspath(inspect.getfile(inspect.currentframe()))
+    dir = os.path.dirname(absolute_path)
+    searchpath += [os.path.join(dir, '..', 'plugins')]
+    log.debug("Search path for plugins is %s" % str(searchpath))
+    plugin_source = plugin_base.make_plugin_source(searchpath=searchpath)
 
     # Instantiate requested plugins
     input = Instantiate(input, plugin_source, config_values)
@@ -66,5 +77,5 @@ def Processor(input, transform, output, config_string=""):
     # This is the *actual* event loop
     for event in input.GetEvents():
         for i, block in enumerate(list_of_actions):
-            log.warning("Step %d with %s", i, block.__class__.__name__)
+            log.info("Step %d with %s", i, block.__class__.__name__)
             event = block.ProcessEvent(event)
