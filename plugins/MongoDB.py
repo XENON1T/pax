@@ -8,7 +8,7 @@ class MongoDBInput(plugin.InputPlugin):
     def __init__(self, config):
         plugin.InputPlugin.__init__(self, config)
 
-        self.client = MongoClient(config['mongodb_address'])
+        self.client = MongoClient(config['address'])
         self.database = self.client[config['database']]
         self.collection = self.database[config['collection']]
 

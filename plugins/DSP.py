@@ -20,11 +20,11 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
     def __init__(self, config):
         plugin.TransformPlugin.__init__(self, config)
         #Maybe we should get dt and dV from input format if possible?
-        self.conversion_factor = config[
-            'digitizer_V_resolution'] * config['digitizer_t_resolution']
-        self.conversion_factor /= config['gain']
-        self.conversion_factor /= config['digitizer_resistor']
-        self.conversion_factor /= config['digitizer_amplification']
+        self.conversion_factor = float(config['digitizer_V_resolution'])
+        self.conversion_factor *= float(config['digitizer_t_resolution'])
+        self.conversion_factor /= float(config['gain'])
+        self.conversion_factor /= float(config['digitizer_resistor'])
+        self.conversion_factor /= float(config['digitizer_amplification'])
         self.conversion_factor /= units.electron_charge
         
     def TransformEvent(self, event):
@@ -55,10 +55,10 @@ class ComputeSumWaveform(plugin.TransformPlugin):
         plugin.TransformPlugin.__init__(self, config)
 
         # TODO (tunnell): These keys should come from configuration?
-        self.channel_groups = {'top': config['top'],
-                               'bottom': config['bottom'],
-                               'veto': config['veto'],
-                               'summed': config['top'] + config['bottom']}
+        self.channel_groups = {'top': [int(x) for x in config['pmts_top'].split()],
+                               'bottom': [int(x) for x in config['pmts_bottom'].split()],
+                               'veto': [int(x) for x in config['pmts_veto'].split()],
+                               'summed': ([int(x) for x in config['pmts_top'].split()] + [int(x) for x in config['pmts_bottom'].split()])}
 
     def TransformEvent(self, event):
         sum_waveforms = {}
@@ -108,7 +108,7 @@ class FilterWaveforms(plugin.TransformPlugin):
         
     def __init__(self, config):
         plugin.TransformPlugin.__init__(self, config)
-        self.filter_ir = self.rcosfilter(31, 0.2, 3*units.MHz*config['digitizer_t_resolution'])
+        self.filter_ir = self.rcosfilter(31, 0.2, 3*units.MHz*float(config['digitizer_t_resolution']))
 
     def TransformEvent(self, event):
         event['filtered_waveforms'] = {}
