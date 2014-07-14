@@ -1,12 +1,13 @@
 from confiture.schema.containers import Section, Value, List
 from confiture.schema.types import String, Float, Integer
+
 from pax import units
+
 
 BAD_PMTS = [1, 2, 145, 148, 157, 171, 177]
 
 
 class PaxSchema(Section):
-
     """Schema for PAX
 
     TODO: structure this a bit more as it gets more complicated with
@@ -14,11 +15,11 @@ class PaxSchema(Section):
     """
     # General
     loglevel = Value(String(), default="INFO",
-                            argparse_names=['--loglevel'],
-                            argparse_help='Log level to use (e.g., DEBUG)')
+                     argparse_names=['--loglevel'],
+                     argparse_help='Log level to use (e.g., DEBUG)')
     picklefile = Value(String(), default="data.pklz",
-                            argparse_names=['--picklefile'],
-                            argparse_help='Filename for pickle outputer')
+                       argparse_names=['--picklefile'],
+                       argparse_help='Filename for pickle outputer')
 
     # Sum waveform
     gain = Value(Float(), default=2 * 10 ** 6)
@@ -53,7 +54,7 @@ class PaxSchema(Section):
 
     # Mongo
     # TODO (tunnell): Trouble with ipaddr module in Py3? Can't use IPAddress
-    #                 type.
+    # type.
     # TODO (tunnell): Subsection this!
 
     database = Value(String(), default="output")
