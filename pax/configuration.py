@@ -20,6 +20,9 @@ class PaxSchema(Section):
     picklefile = Value(String(), default="data.pklz",
                        argparse_names=['--picklefile'],
                        argparse_help='Filename for pickle outputer')
+                       
+    tpc_name = Value(String(), default="TPC Who Shall Not Be Named")
+    
 
     # Sum waveform
     gain = Value(Float(), default=2 * 10 ** 6)

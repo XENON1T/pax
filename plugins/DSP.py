@@ -1,8 +1,7 @@
 """Digital signal processing"""
 import numpy as np
 
-from pax import plugin
-from pax import units
+from pax import plugin, units, dsputils
 
 __author__ = 'tunnell'
 
@@ -15,6 +14,40 @@ def interval_until_treshold(signal, start, treshold):
 def extent_until_treshold(signal, start, treshold):
     a = interval_until_treshold(signal, start, treshold)
     return a[1]-a[0]
+    
+class JoinAndConvertWaveforms(plugin.TransformPlugin):
+
+    def __init__(self, config):
+        plugin.TransformPlugin.__init__(self, config)
+        #Maybe we should get dt and dV from input format if possible?
+        self.conversion_factor = config[
+            'digitizer_V_resolution'] * config['digitizer_t_resolution']
+        self.conversion_factor /= config['gain']
+        self.conversion_factor /= config['digitizer_resistor']
+        self.conversion_factor /= config['digitizer_amplification']
+        self.conversion_factor /= units.electron_charge
+        
+    def TransformEvent(self, event):
+        if 'channel_waveforms' in event:
+            #Data is not ZLE, we only need to baseline correct & convert
+            for channel, wave in event['channel_waveforms'].items():
+                baseline, _ = dsputils.baseline_mean_stdev(wave) 
+                event['channel_waveforms'][channel] -= baseline
+                event['channel_waveforms'][channel] *= -1 * self.conversion_factor
+        elif 'channel_chunks' in event:
+            #Data is ZLE, we need to build the waves from chunks
+            event['channel_waveforms'] = {}
+            for channel, waveform_chunks in event['channel_chunks'].items():
+                #Determine an average baseline for this channel, using all the chunks
+                baseline    = np.mean([dsputils.baseline_mean_stdev(wave_chunk)[0] 
+                                       for _, wave_chunk in waveform_chunks])
+                wave = np.ones(event['length']) * baseline
+                #Put wave chunks in the right positions
+                for starting_position, wave_chunk in waveform_chunks:
+                    wave[starting_position:starting_position+len(wave_chunk)] = wave_chunk
+                event['channel_waveforms'][channel] = -1 * (wave - baseline) * self.conversion_factor
+            del event['channel_chunks']
+        return event
 
 class ComputeSumWaveform(plugin.TransformPlugin):
 
