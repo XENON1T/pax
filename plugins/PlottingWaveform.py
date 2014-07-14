@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 
 from pax import plugin
 
-
 __author__ = 'tunnell'
 
 
@@ -56,4 +55,8 @@ class PlottingWaveform(plugin.OutputPlugin):
         plt.legend()
         plt.xlabel('Time in event [10 ns]')
         plt.ylabel("pe / ns")
-        plt.show()
+
+        plt.show(block=False)
+
+        self.log.info("Hit enter to continue...")
+        input()
