@@ -19,7 +19,6 @@ def extent_until_treshold(signal, start, treshold):
 
 
 class JoinAndConvertWaveforms(plugin.TransformPlugin):
-
     def __init__(self, config):
         plugin.TransformPlugin.__init__(self, config)
         # Maybe we should get dt and dV from input format if possible?
@@ -54,7 +53,6 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
 
 
 class ComputeSumWaveform(plugin.TransformPlugin):
-
     def __init__(self, config):
         plugin.TransformPlugin.__init__(self, config)
 
@@ -62,7 +60,8 @@ class ComputeSumWaveform(plugin.TransformPlugin):
         self.channel_groups = {'top': [int(x) for x in config['pmts_top'].split()],
                                'bottom': [int(x) for x in config['pmts_bottom'].split()],
                                'veto': [int(x) for x in config['pmts_veto'].split()],
-                               'summed': ([int(x) for x in config['pmts_top'].split()] + [int(x) for x in config['pmts_bottom'].split()])}
+                               'summed': ([int(x) for x in config['pmts_top'].split()] + [int(x) for x in config[
+                                   'pmts_bottom'].split()])}
 
     def TransformEvent(self, event):
         sum_waveforms = {}
@@ -80,7 +79,6 @@ class ComputeSumWaveform(plugin.TransformPlugin):
 
 
 class FilterWaveforms(plugin.TransformPlugin):
-
     def rcosfilter(self, filter_length, rolloff, cutoff_freq, sampling_freq=1):
         """
         Returns a nd(float)-array describing a raised cosine (RC) filter (FIR) impulse response. Arguments:
@@ -100,7 +98,8 @@ class FilterWaveforms(plugin.TransformPlugin):
             elif rolloff != 0 and abs(t) == Ts / (2 * rolloff):
                 h_rc[x] = (np.pi / 4) * (np.sin(phase) / phase)
             else:
-                h_rc[x] = (np.sin(phase) / phase) * (np.cos(phase * rolloff) / (1 - (((2 * rolloff * t) / Ts) * ((2 * rolloff * t) / Ts))))
+                h_rc[x] = (np.sin(phase) / phase) * (
+                np.cos(phase * rolloff) / (1 - (((2 * rolloff * t) / Ts) * ((2 * rolloff * t) / Ts))))
 
         return h_rc / h_rc.sum()
 
@@ -119,12 +118,12 @@ class FilterWaveforms(plugin.TransformPlugin):
         # Todo: iterate over filters
         # for filter in config['filters']
         # Key would be 'top', 'bottom', etc
-        event['filtered_waveforms']['filtered_for_large_s2'] = self.apply_filter_by_convolution(event['sum_waveforms']['summed'], self.filter_ir)
+        event['filtered_waveforms']['filtered_for_large_s2'] = self.apply_filter_by_convolution(
+            event['sum_waveforms']['summed'], self.filter_ir)
         return event
 
 
 class PeakFinder(plugin.TransformPlugin):
-
     @staticmethod
     def find_first_below(signal, start, below, direction):
         # TODO: test for off-by-one errors
@@ -185,16 +184,16 @@ class PeakFinder(plugin.TransformPlugin):
             if not min_length <= b['prepeak_right'] - b['prepeak_left'] <= max_length:
                 continue
             b['index_of_max_in_prepeak'] = np.argmax(signal[b['prepeak_left']: b[
-                'prepeak_right'] + 1])  # Remember python indexing... Though probably right boundary isn't ever the max!
+                                                                                   'prepeak_right'] + 1])  # Remember python indexing... Though probably right boundary isn't ever the max!
             b['index_of_max_in_waveform'] = b[
-                'index_of_max_in_prepeak'] + b['prepeak_left']
+                                                'index_of_max_in_prepeak'] + b['prepeak_left']
             b['height'] = signal[b['index_of_max_in_waveform']]
             b['before_mean'] = np.mean(
                 signal[max(0, b['prepeak_left'] - test_before): b['prepeak_left']])
             b['after_mean'] = np.mean(
                 signal[b['prepeak_right']: min(len(signal), b['prepeak_right'] + test_after)])
             if b['before_mean'] > before_to_height_ratio_max * b['height'] or b[
-                    'after_mean'] > after_to_height_ratio_max * b['height']:
+                'after_mean'] > after_to_height_ratio_max * b['height']:
                 continue
             valid_prepeaks.append(b)
 
@@ -224,7 +223,6 @@ class PeakFinder(plugin.TransformPlugin):
 
 
 class ComputeQuantities(plugin.TransformPlugin):
-
     def TransformEvent(self, event):
         """For every filtered waveform, find peaks
         """
@@ -244,10 +242,14 @@ class ComputeQuantities(plugin.TransformPlugin):
                 if channel == 'summed':
                     # Expensive stuff, only do for summed waveform, maybe later for top&bottom as well?
                     samples_to_ns = self.config['digitizer_t_resolution'] / units.ns
-                    peaks[i][channel]['fwhm'] = extent_until_treshold(peak_wave, start=maxpos, treshold=max / 2) * samples_to_ns
-                    peaks[i][channel]['fwqm'] = extent_until_treshold(peak_wave, start=maxpos, treshold=max / 4) * samples_to_ns
-                    peaks[i][channel]['fwtm'] = extent_until_treshold(peak_wave, start=maxpos, treshold=max / 10) * samples_to_ns
+                    peaks[i][channel]['fwhm'] = extent_until_treshold(peak_wave, start=maxpos,
+                                                                      treshold=max / 2) * samples_to_ns
+                    peaks[i][channel]['fwqm'] = extent_until_treshold(peak_wave, start=maxpos,
+                                                                      treshold=max / 4) * samples_to_ns
+                    peaks[i][channel]['fwtm'] = extent_until_treshold(peak_wave, start=maxpos,
+                                                                      treshold=max / 10) * samples_to_ns
             if 'top' in peaks[i] and 'bottom' in peaks[i]:
-                peaks[i]['asymmetry'] = (peaks[i]['top']['area'] - peaks[i]['bottom']['area']) / (peaks[i]['top']['area'] + peaks[i]['bottom']['area'])
+                peaks[i]['asymmetry'] = (peaks[i]['top']['area'] - peaks[i]['bottom']['area']) / (
+                peaks[i]['top']['area'] + peaks[i]['bottom']['area'])
 
         return event

@@ -13,7 +13,6 @@ from pax import units
 
 
 class TestPaxUnits(unittest.TestCase):
-
     def setUp(self):
         pass
 
@@ -22,6 +21,7 @@ class TestPaxUnits(unittest.TestCase):
 
     def tearDown(self):
         pass
+
 
 if __name__ == '__main__':
     unittest.main()

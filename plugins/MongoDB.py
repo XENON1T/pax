@@ -1,11 +1,11 @@
-import numpy as np
 from pymongo import MongoClient
 
-from pax import plugin, units
+import numpy as np
+
+from pax import plugin
 
 
 class MongoDBInput(plugin.InputPlugin):
-
     def __init__(self, config):
         plugin.InputPlugin.__init__(self, config)
 
@@ -33,8 +33,8 @@ class MongoDBInput(plugin.InputPlugin):
             # This involves parsing MongoDB documents using WAX output format
             (event_start, event_end) = doc_event['range']
             event = {
-                'length':   event_end - event_start,
-                'channel_occurences':   {},
+                'length': event_end - event_start,
+                'channel_occurences': {},
             }
             for doc_occurence in doc_event['docs']:
                 channel = doc_occurence['channel']

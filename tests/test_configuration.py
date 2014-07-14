@@ -11,11 +11,11 @@ Tests for `pax.configuration` module.
 import unittest
 
 from confiture import Confiture
+
 from pax.configuration import PaxSchema
 
 
 class TestPaxConfiguration(unittest.TestCase):
-
     def setUp(self):
         pass
 
@@ -27,6 +27,7 @@ class TestPaxConfiguration(unittest.TestCase):
 
     def tearDown(self):
         pass
+
 
 if __name__ == '__main__':
     unittest.main()

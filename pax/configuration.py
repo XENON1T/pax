@@ -15,7 +15,6 @@ class FilterSettings(Section):
 
 
 class PaxSchema(Section):
-
     """Schema for PAX
 
     TODO: structure this a bit more as it gets more complicated with

@@ -25,7 +25,6 @@ def sampletime_fmt(num):
 
 
 class PlottingWaveform(plugin.OutputPlugin):
-
     def WriteEvent(self, event):
         self.log.debug("Received event %s" % str(event.keys()))
 
@@ -41,7 +40,8 @@ class PlottingWaveform(plugin.OutputPlugin):
             plt.hlines(y, peak['left'], peak['right'])
             ax.annotate('%0.2f' % peak['summed']['area'],
                         xy=(x, y),
-                        xytext=(peak['summed']['position_of_max_in_waveform'] + 20000 * side, event['sum_waveforms']['summed'][peak['summed']['position_of_max_in_waveform']] * 0.7),
+                        xytext=(peak['summed']['position_of_max_in_waveform'] + 20000 * side,
+                                event['sum_waveforms']['summed'][peak['summed']['position_of_max_in_waveform']] * 0.7),
                         arrowprops=dict(arrowstyle="fancy",
                                         fc="0.6", ec="none",
                                         connectionstyle="angle3,angleA=0,angleB=-90"))

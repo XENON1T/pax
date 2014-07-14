@@ -18,13 +18,13 @@ import math
 electron_charge_SI = 1.60217657 * 10 ** (-19)
 boltzmannConstant_SI = 1.3806488 * 10 ** (-23)
 base_units = {
-    'm':       10 ** 2,  # distances in cm
-    's':       10 ** 9,  # times in ns
-    'eV':       1,  # energies in eV
+    'm': 10 ** 2,  # distances in cm
+    's': 10 ** 9,  # times in ns
+    'eV': 1,  # energies in eV
     # charge in number of electrons (so voltage will be in Volts)
-    'C':       1 / electron_charge_SI,
-    'g':       1,  # masses in grams... please see comment above!
-    'K':       1,  # Temperature in Kelvins
+    'C': 1 / electron_charge_SI,
+    'g': 1,  # masses in grams... please see comment above!
+    'K': 1,  # Temperature in Kelvins
 }
 base_units['Hz'] = 1 / base_units['s']
 base_units['J'] = base_units['eV'] / electron_charge_SI

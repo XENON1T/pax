@@ -9,7 +9,7 @@ def baseline_mean_stdev(waveform, sample_size=46):
     baseline_sample = waveform[:sample_size]
     return (
         np.mean(sorted(baseline_sample)[
-            int(0.4 * len(baseline_sample)):int(0.6 * len(baseline_sample))
+                int(0.4 * len(baseline_sample)):int(0.6 * len(baseline_sample))
         ]),  # Ensures peaks in baseline sample don't skew computed baseline
         np.std(baseline_sample)  # ... but do count towards baseline_stdev!
     )
@@ -50,7 +50,7 @@ def find_first_below(signal, start, treshold, direction, min_length_below=1):
             elif direction == 'left':
                 i -= 1
             else:
-                raise(Exception, "You nuts? %s isn't a direction!" % direction)
+                raise (Exception, "You nuts? %s isn't a direction!" % direction)
 
 
 def all_same_length(items):

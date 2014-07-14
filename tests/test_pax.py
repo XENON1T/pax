@@ -14,7 +14,6 @@ from pax import pax
 
 
 class TestPax(unittest.TestCase):
-
     def setUp(self):
         pass
 
@@ -24,6 +23,7 @@ class TestPax(unittest.TestCase):
 
     def tearDown(self):
         pass
+
 
 if __name__ == '__main__':
     unittest.main()

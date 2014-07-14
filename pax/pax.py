@@ -1,10 +1,10 @@
 import logging
 import inspect
 import pprint
-import os
-
-from pluginbase import PluginBase
 import configparser
+
+import os
+from pluginbase import PluginBase
 
 
 def Instantiate(name, plugin_source, config_values):
