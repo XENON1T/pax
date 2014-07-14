@@ -17,7 +17,10 @@ class BasePlugin(object):
 
 
 class InputPlugin(BasePlugin):
+    """Base class for data inputs
 
+    This class cannot be parallelized since events are read in a specific order
+    """
     def __init__(self, config_values):
         BasePlugin.__init__(self, config_values)
         self.i = 0
