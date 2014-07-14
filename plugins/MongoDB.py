@@ -58,11 +58,9 @@ class MongoDBInput(plugin.InputPlugin):
                 channel = doc_occurence['channel']
                 wave_start = doc_occurence['time'] - event_start
                 if channel not in current_event_channels:
-                    current_event_channels[
-                        channel] = self.baseline * np.ones(event_length, dtype=np.int16)
+                    current_event_channels[channel] = self.baseline * np.ones(event_length, dtype=np.int16)
                 waveform = np.fromstring(doc_occurence['data'], dtype=np.int16)
-                current_event_channels[channel][
-                    wave_start:wave_start + len(waveform)] = waveform
+                current_event_channels[channel][wave_start:wave_start + len(waveform)] = waveform
 
             # 'event' is what we will return
             event = {}
@@ -73,7 +71,6 @@ class MongoDBInput(plugin.InputPlugin):
 
                 baseline, _ = self.baseline_mean_stdev(data)
 
-                event['channel_waveforms'][channel] = -1 * \
-                    (data - baseline) * self.conversion_factor
+                event['channel_waveforms'][channel] = -1 * (data - baseline) * self.conversion_factor
 
             yield event
