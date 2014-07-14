@@ -3,7 +3,8 @@ from pax import pax
 
 if __name__ == '__main__':
     pax.Processor(input='MongoDB.MongoDBInput',
-                  transform=['DSP.ComputeSumWaveform',
+                  transform=['DSP.JoinAndConvertWaveforms',
+                             'DSP.ComputeSumWaveform',
                              'DSP.FilterWaveforms',
                              'DSP.PeakFinder',
                              'DSP.ComputeQuantities'],

@@ -34,14 +34,14 @@ class PlottingWaveform(plugin.OutputPlugin):
 
         side = 1
         # Plot all peaks
-        for peak in event['peaks']['summed']:
+        for peak in event['peaks']:
             x = peak['summed']['position_of_max_in_waveform']
             y = event['sum_waveforms']['summed'][x]
 
             plt.hlines(y, peak['left'], peak['right'])
             ax.annotate('%0.2f' % peak['summed']['area'],
                         xy=(x,y),
-                        xytext=(peak['summed']['position_of_max_in_waveform'] + 30000 * side, event['sum_waveforms']['summed'][peak['summed']['position_of_max_in_waveform']] * 1.3),
+                        xytext=(peak['summed']['position_of_max_in_waveform'] + 20000 * side, event['sum_waveforms']['summed'][peak['summed']['position_of_max_in_waveform']] * 0.7),
                         arrowprops=dict(arrowstyle="fancy",
                                 fc="0.6", ec="none",
                                 connectionstyle="angle3,angleA=0,angleB=-90"))
@@ -49,12 +49,12 @@ class PlottingWaveform(plugin.OutputPlugin):
 
 
         plt.plot(event['sum_waveforms']['summed'], label='summed')
-        plt.plot(event['filtered_waveforms']['summed'],
-                 '--', label='filtered %s' % 'summed')
+        plt.plot(event['filtered_waveforms']['filtered_for_large_s2'],
+                 '--', label='filtered_for_large_s2')
 
         plt.legend()
         plt.xlabel('Time in event [10 ns]')
-        plt.ylabel("pe / ns")
+        plt.ylabel("pe / bin")
 
         plt.show(block=False)
 

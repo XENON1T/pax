@@ -1,3 +1,4 @@
+from confiture.schema.containers import many
 from confiture.schema.containers import Section, Value, List
 from confiture.schema.types import String, Float, Integer
 
@@ -7,6 +8,12 @@ from pax import units
 BAD_PMTS = [1, 2, 145, 148, 157, 171, 177]
 
 
+class FilterSettings(Section):
+    input_name = Value(String())
+    output_name = Value(String())
+    _meta = {'repeat': many, 'unique': False}
+
+
 class PaxSchema(Section):
     """Schema for PAX
 
@@ -14,12 +21,19 @@ class PaxSchema(Section):
     subsections.
     """
     # General
+    config = Value(String(), default="",
+                   argparse_names=['--config', '-c'],
+                   argparse_help='Configuration for PAX')
+
     loglevel = Value(String(), default="INFO",
                      argparse_names=['--loglevel'],
                      argparse_help='Log level to use (e.g., DEBUG)')
     picklefile = Value(String(), default="data.pklz",
                        argparse_names=['--picklefile'],
                        argparse_help='Filename for pickle outputer')
+
+    tpc_name = Value(String(), default="TPC Who Shall Not Be Named")
+
 
     # Sum waveform
     gain = Value(Float(), default=2 * 10 ** 6)
@@ -44,7 +58,7 @@ class PaxSchema(Section):
                 default=[x for x in range(179, 242) if x not in BAD_PMTS])
 
     # Peak finding
-    threshold = Value(Float(), default=62.415)
+    threshold = Value(Float(), default=0.62415)
     boundary_to_height_ratio = Value(Float(), default=0.005)
     min_length = Value(Integer(), default=int(0.6 * units.us / dt))
     test_before = Value(Integer(), default=int(0.21 * units.us / dt))
@@ -71,3 +85,5 @@ class PaxSchema(Section):
     plugin_paths = List(String(), argparse_names=['--pluginpaths'],
                         argparse_help='Extra paths to search for plugins.',
                         default=[])
+
+    filter = FilterSettings()

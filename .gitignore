@@ -1,5 +1,8 @@
 *.py[cod]
+
+# Data
 *.pklz
+*.xed
 
 # C extensions
 *.so

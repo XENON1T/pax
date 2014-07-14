@@ -1,8 +1,7 @@
 """Digital signal processing"""
 import numpy as np
 
-from pax import plugin
-from pax import units
+from pax import plugin, units, dsputils
 
 __author__ = 'tunnell'
 
@@ -15,6 +14,40 @@ def interval_until_treshold(signal, start, treshold):
 def extent_until_treshold(signal, start, treshold):
     a = interval_until_treshold(signal, start, treshold)
     return a[1]-a[0]
+    
+class JoinAndConvertWaveforms(plugin.TransformPlugin):
+
+    def __init__(self, config):
+        plugin.TransformPlugin.__init__(self, config)
+        #Maybe we should get dt and dV from input format if possible?
+        self.conversion_factor = config[
+            'digitizer_V_resolution'] * config['digitizer_t_resolution']
+        self.conversion_factor /= config['gain']
+        self.conversion_factor /= config['digitizer_resistor']
+        self.conversion_factor /= config['digitizer_amplification']
+        self.conversion_factor /= units.electron_charge
+        
+    def TransformEvent(self, event):
+        if 'channel_waveforms' in event:
+            #Data is not ZLE, we only need to baseline correct & convert
+            for channel, wave in event['channel_waveforms'].items():
+                baseline, _ = dsputils.baseline_mean_stdev(wave) 
+                event['channel_waveforms'][channel] -= baseline
+                event['channel_waveforms'][channel] *= -1 * self.conversion_factor
+        elif 'channel_occurences' in event:
+            #Data is ZLE, we need to build the waves from occurences
+            event['channel_waveforms'] = {}
+            for channel, waveform_occurences in event['channel_occurences'].items():
+                #Determine an average baseline for this channel, using all the occurences
+                baseline    = np.mean([dsputils.baseline_mean_stdev(wave_occurence)[0] 
+                                       for _, wave_occurence in waveform_occurences])
+                wave = np.ones(event['length']) * baseline
+                #Put wave occurences in the right positions
+                for starting_position, wave_occurence in waveform_occurences:
+                    wave[starting_position:starting_position+len(wave_occurence)] = wave_occurence
+                event['channel_waveforms'][channel] = -1 * (wave - baseline) * self.conversion_factor
+            del event['channel_occurences']
+        return event
 
 class ComputeSumWaveform(plugin.TransformPlugin):
 
@@ -44,103 +77,49 @@ class ComputeSumWaveform(plugin.TransformPlugin):
 
 class FilterWaveforms(plugin.TransformPlugin):
 
-    @staticmethod
-    def rcosfilter(N, alpha, Ts, Fs):
-        """Generates a raised cosine (RC) filter (FIR) impulse response.
-        Parameters
-        ----------
-        N : int
-        Length of the filter in samples.
-
-        alpha: float
-        Roll off factor (Valid values are [0, 1]).
-
-        Ts : float
-        Symbol period in seconds.
-
-        Fs : float
-        Sampling Rate in Hz.
-
-        Returns
-        -------
-
-        h_rc : 1-D ndarray (float)
-        Impulse response of the raised cosine filter.
-
-        time_idx : 1-D ndarray (float)
-        Array containing the time indices, in seconds, for the impulse response.
+    def rcosfilter(self, filter_length, rolloff, cutoff_freq, sampling_freq=1):
         """
-
-        T_delta = 1 / float(Fs)
-        time_idx = ((np.arange(N) - N / 2)) * T_delta
-        sample_num = np.arange(N)
-        h_rc = np.zeros(N, dtype=float)
-
-        for x in sample_num:
-            t = (x - N / 2) * T_delta
+        Returns a nd(float)-array describing a raised cosine (RC) filter (FIR) impulse response. Arguments:
+            - filter_length:    filter length in samples
+            - rolloff:          roll-off factor
+            - cutoff_freq:      cutoff frequency = 1/(2*symbol period)
+            - sampling_freq:    sampling rate (in same units as cutoff_freq)
+        """
+        Ts = 1/(2*cutoff_freq)
+        h_rc = np.zeros(filter_length, dtype=float)
+            
+        for x in np.arange(filter_length):
+            t = (x-filter_length/2)/float(sampling_freq)
+            phase = np.pi*t/Ts
             if t == 0.0:
                 h_rc[x] = 1.0
-            elif alpha != 0 and t == Ts / (2 * alpha):
-                h_rc[x] = (np.pi / 4) * \
-                    (np.sin(np.pi * t / Ts) / (np.pi * t / Ts))
-            elif alpha != 0 and t == -Ts / (2 * alpha):
-                h_rc[x] = (np.pi / 4) * \
-                    (np.sin(np.pi * t / Ts) / (np.pi * t / Ts))
+            elif rolloff != 0 and abs(t) == Ts/(2*rolloff):
+                h_rc[x] = (np.pi/4)*(np.sin(phase)/phase)
             else:
-                h_rc[x] = (np.sin(np.pi * t / Ts) / (np.pi * t / Ts)) * \
-                          (np.cos(np.pi * alpha * t / Ts) /
-                           (1 - (((2 * alpha * t) / Ts) * ((2 * alpha * t) / Ts))))
-
-        return time_idx, h_rc
-
-    def filter(self, y, N=31, alpha=0.2, Ts=1, Fs=10):
-        """Perform filtering with raised cosine filter.
-
-        1. Calls the function to generate a raised cosine impulse response (ie signal)
-        2. Performs a convolution to use the filter to smoothen the signal
-
-        Parameters
-        ----------
-        N : int
-        Length of the filter in samples.
-
-        alpha: float
-        Roll off factor (Valid values are [0, 1]).
-
-        Ts : float
-        Symbol period in seconds.
-
-        Fs : float
-        Sampling Rate in Hz.
-
-        y : float (list)
-        An array with the signal that will be filtered.
-
-        Returns
-        -------
-
-        filtered: float
-        An array containing the smoothened the signal.
-
+                h_rc[x] = (np.sin(phase)/phase)* (np.cos(phase*rolloff)/(1-(((2*rolloff*t)/Ts)*((2*rolloff*t)/Ts))))
+        
+        return h_rc/h_rc.sum()
+        
+    def apply_filter_by_convolution(self, signal, normalized_impulse_response):
         """
-        rcos_t, rcos_i = self.rcosfilter(N, alpha, Ts, Fs)
-        filtered = np.convolve(y, rcos_i / rcos_i.sum(),
-                               'same')  # see numpy.convolve manual page for other modes than 'same'
-
-        return filtered
+        Filters signal using specified impulse-response, using convolution
+        """
+        return np.convolve(signal, normalized_impulse_response, 'same')
+        
+    def __init__(self, config):
+        plugin.TransformPlugin.__init__(self, config)
+        self.filter_ir = self.rcosfilter(31, 0.2, 3*units.MHz*config['digitizer_t_resolution'])
 
     def TransformEvent(self, event):
         event['filtered_waveforms'] = {}
-
+        #Todo: iterate over filters
+        #for filter in config['filters']
         # Key would be 'top', 'bottom', etc
-        for key, value in event['sum_waveforms'].items():
-            event['filtered_waveforms'][key] = self.filter(value)
+        event['filtered_waveforms']['filtered_for_large_s2'] = self.apply_filter_by_convolution(event['sum_waveforms']['summed'], self.filter_ir)
         return event
 
 
 class PeakFinder(plugin.TransformPlugin):
-
-
 
     @staticmethod
     def find_first_below(signal, start, below, direction):
@@ -234,9 +213,9 @@ class PeakFinder(plugin.TransformPlugin):
     def TransformEvent(self, event):
         """For every filtered waveform, find peaks
         """
-        event['peaks'] = {}  # Add substructure for many peak finders?
-        for key, value in event['filtered_waveforms'].items():
-            event['peaks'][key] = self.X100_style(value, **self.config)
+        # Add substructure for many peak finders?
+        event['peaks'] = self.X100_style(event['filtered_waveforms']['filtered_for_large_s2'], **self.config)
+        #merge peaks from different peakfinders
         return event
 
 
@@ -248,7 +227,7 @@ class ComputeQuantities(plugin.TransformPlugin):
 
         #Compute relevant peak quantities for each pmt's peak: height, FWHM, FWTM, area, ..
         #Todo: maybe clean up this data structure? This way it was good for csv..
-        peaks = event['peaks']['summed']
+        peaks = event['peaks']
         for i, p in enumerate(peaks):
             for channel, data in event['sum_waveforms'].items():
                 #Todo: use python's handy arcane naming/assignment convention to beautify this code
