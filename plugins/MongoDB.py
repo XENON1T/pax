@@ -3,6 +3,7 @@ from pymongo import MongoClient
 
 from pax import plugin, units
 
+
 class MongoDBInput(plugin.InputPlugin):
 
     def __init__(self, config):
@@ -22,7 +23,6 @@ class MongoDBInput(plugin.InputPlugin):
             raise RuntimeError(
                 "No events found... did you run the event builder?")
 
-
     def GetEvents(self):
         """Generator of events from Mongo
 
@@ -33,15 +33,15 @@ class MongoDBInput(plugin.InputPlugin):
             # This involves parsing MongoDB documents using WAX output format
             (event_start, event_end) = doc_event['range']
             event = {
-                'length'          :   event_end - event_start,
-                'channel_occurences'  :   {},
+                'length':   event_end - event_start,
+                'channel_occurences':   {},
             }
             for doc_occurence in doc_event['docs']:
                 channel = doc_occurence['channel']
                 if channel not in event['channel_occurences']:
                     event['channel_occurences'][channel] = []
                 event['channel_occurences'][channel].append((
-                    doc_occurence['time'] - event_start,                    #Start sample index
-                    np.fromstring(doc_occurence['data'], dtype=np.int16)    #Waveform occurence data
+                    doc_occurence['time'] - event_start,  # Start sample index
+                    np.fromstring(doc_occurence['data'], dtype=np.int16)  # Waveform occurence data
                 ))
             yield event

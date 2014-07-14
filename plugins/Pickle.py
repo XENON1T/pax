@@ -1,12 +1,14 @@
 from pax import plugin
 try:
-   import cPickle as pickle
+    import cPickle as pickle
 except:
-   import pickle
+    import pickle
 
 __author__ = 'tunnell'
 
+
 class WriteToPickleFile(plugin.OutputPlugin):
+
     def __init__(self, config):
         plugin.OutputPlugin.__init__(self, config)
 
@@ -17,7 +19,6 @@ class WriteToPickleFile(plugin.OutputPlugin):
     def __del__(self):
         self.log.debug("Closing %s" % self.config['picklefile'])
         self.file.close()
-
 
     def WriteEvent(self, event):
         self.log.debug('Pickling event')

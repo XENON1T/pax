@@ -11,11 +11,12 @@ def timeit(method):
         self = args[0]
         ts = time.time()
         result = method(*args, **kw)
-        dt = (time.time()-ts)*100
+        dt = (time.time() - ts) * 100
         self.log.debug('Event took %2.2f ms' % dt)
         return result
 
     return timed
+
 
 class BasePlugin(object):
 
@@ -32,10 +33,12 @@ class BasePlugin(object):
 
 
 class InputPlugin(BasePlugin):
+
     """Base class for data inputs
 
     This class cannot be parallelized since events are read in a specific order
     """
+
     def __init__(self, config_values):
         BasePlugin.__init__(self, config_values)
         self.i = 0
@@ -60,7 +63,6 @@ class TransformPlugin(BasePlugin):
     @timeit
     def ProcessEvent(self, event):
         return self.TransformEvent(event)
-
 
 
 class OutputPlugin(BasePlugin):

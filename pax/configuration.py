@@ -15,6 +15,7 @@ class FilterSettings(Section):
 
 
 class PaxSchema(Section):
+
     """Schema for PAX
 
     TODO: structure this a bit more as it gets more complicated with
@@ -33,7 +34,6 @@ class PaxSchema(Section):
                        argparse_help='Filename for pickle outputer')
 
     tpc_name = Value(String(), default="TPC Who Shall Not Be Named")
-
 
     # Sum waveform
     gain = Value(Float(), default=2 * 10 ** 6)

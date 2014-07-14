@@ -7,7 +7,6 @@ from pluginbase import PluginBase
 import configparser
 
 
-
 def Instantiate(name, plugin_source, config_values):
     """take class name and build class from it"""
     name_module, name_class = name.split('.')
@@ -43,8 +42,8 @@ def Processor(input, transform, output):
     dir = os.path.dirname(absolute_path)
 
     config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation(),
-                                              inline_comment_prefixes='#',
-                                              strict=True)
+                                       inline_comment_prefixes='#',
+                                       strict=True)
     config.read(os.path.join(dir, 'default.ini'))
 
     # Setup logging
@@ -58,7 +57,6 @@ def Processor(input, transform, output):
 
     # Print settings to log
     log.debug(pprint.pformat(config, compact=True))
-
 
     # Setup plugins (which involves finding the plugin directory.
     plugin_base = PluginBase(package='pax.plugins')

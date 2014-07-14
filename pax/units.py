@@ -44,8 +44,6 @@ for (name, value) in list(base_units.items()):
         vars()[p_name + name] = float(10 ** (p_factor) * value)
 
 
-
-
 def unit_name(unit, base_unit):
     """
     Hack to get unit name back
