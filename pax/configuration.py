@@ -52,7 +52,7 @@ class PaxSchema(Section):
                 default=[x for x in range(179, 242) if x not in BAD_PMTS])
 
     # Peak finding
-    threshold = Value(Float(), default=62.415)
+    threshold = Value(Float(), default=0.62415)
     boundary_to_height_ratio = Value(Float(), default=0.005)
     min_length = Value(Integer(), default=int(0.6 * units.us / dt))
     test_before = Value(Integer(), default=int(0.21 * units.us / dt))
