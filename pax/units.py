@@ -26,6 +26,7 @@ base_units = {
     'g':       1,  # masses in grams... please see comment above!
     'K':       1,  # Temperature in Kelvins
 }
+base_units['Hz'] = 1 / base_units['s']
 base_units['J'] = base_units['eV'] / electron_charge_SI
 base_units['V'] = base_units['J'] / base_units['C']
 # Current will be in electrons/ns!
