@@ -5,7 +5,8 @@ import time
 
 
 def timeit(method):
-
+    """Decorator for measuring class method speeds
+    """
     def timed(*args, **kw):
         self = args[0]
         ts = time.time()

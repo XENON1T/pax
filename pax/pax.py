@@ -1,6 +1,7 @@
 import logging
 import argparse
 import inspect
+import pprint
 import os
 
 from pluginbase import PluginBase
@@ -34,6 +35,10 @@ def Processor(input, transform, output):
     # What we do on data...
     list_of_actions = transform + output
 
+    # Find location of this file
+    absolute_path = os.path.abspath(inspect.getfile(inspect.currentframe()))
+    dir = os.path.dirname(absolute_path)
+
     # Populate command-line argument parser and fetch values into configuration
     argument_parser = argparse.ArgumentParser()
     schema = PaxSchema()
@@ -42,28 +47,28 @@ def Processor(input, transform, output):
 
     # We have to do two passes on the configuration: the first pass searches
     # to see if a configuration file (i.e., .ini) was specified.
-    config = Confiture("",
+    default_ini = os.path.join(dir, 'default.ini')
+    config_string = open(default_ini, 'r').read()
+    config = Confiture(config_string,
                        schema=schema)
     pconfig = config.parse()
     config_values = pconfig.to_dict()
 
-    if config_values['config']: pass
+    if config_values['config']:
+        #  If we are told to load a .ini file, load it...
+        print("Loading config from %s" % config_values['config'])
+        f = open(config_values['config'])
+        config = Confiture(f.read(), schema=schema)
 
-    print('cv', config_values['config'])
-
-    config = Confiture("", schema=schema)
-    pconfig = config.parse()
-    config_values = pconfig.to_dict()
-
-    # try:
-    #     pconfig = config.parse()
-    # except (ValidationError, ParsingError) as err:
-    #     if err.position is not None:
-    #         print(str(err.position))
-    #     print(err)
-    #     raise
-    # else:
-    #     config_values = pconfig.to_dict()
+        try:
+            pconfig = config.parse()
+        except (ValidationError, ParsingError) as err:
+            if err.position is not None:
+                print(str(err.position))
+            print(err)
+            raise
+        else:
+            config_values = pconfig.to_dict()
 
     # Setup logging
     numeric_level = getattr(logging, config_values['loglevel'].upper(), None)
@@ -73,13 +78,15 @@ def Processor(input, transform, output):
     logging.basicConfig(level=numeric_level, format=FORMAT)
     log = logging.getLogger('Processor')
 
+    # Print settings to log
+    log.debug(pprint.pformat(config_values, compact=True))
+
+
     # Setup plugins (which involves finding the plugin directory.
     plugin_base = PluginBase(package='pax.plugins')
     searchpath = ['./plugins'] + config_values['plugin_paths']
 
     # Find the absolute path, then director, then find plugin directory
-    absolute_path = os.path.abspath(inspect.getfile(inspect.currentframe()))
-    dir = os.path.dirname(absolute_path)
     searchpath += [os.path.join(dir, '..', 'plugins')]
     log.debug("Search path for plugins is %s" % str(searchpath))
     plugin_source = plugin_base.make_plugin_source(searchpath=searchpath)
