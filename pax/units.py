@@ -13,7 +13,7 @@ WARNING
     If you do mechanics this is a SERIOUSLY BAD IDEA
     We, however, only ever need mass for density
 """
-
+import math
 
 electron_charge_SI = 1.60217657 * 10 ** (-19)
 boltzmannConstant_SI = 1.3806488 * 10 ** (-23)
@@ -42,7 +42,7 @@ for (name, value) in list(base_units.items()):
         # from __future__ import division -- not tested though
         vars()[p_name + name] = float(10 ** (p_factor) * value)
 
-import math
+
 
 
 def unit_name(unit, base_unit):

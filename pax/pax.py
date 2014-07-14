@@ -71,8 +71,7 @@ def Processor(input, transform, output, config_string=""):
 
     # Instantiate requested plugins
     input = Instantiate(input, plugin_source, config_values)
-    list_of_actions = [
-        Instantiate(x, plugin_source, config_values) for x in list_of_actions]
+    list_of_actions = [Instantiate(x, plugin_source, config_values) for x in list_of_actions]
 
     # This is the *actual* event loop
     for event in input.GetEvents():
