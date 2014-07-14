@@ -8,6 +8,6 @@ if __name__ == '__main__':
                              'DSP.FilterWaveforms',
                              'DSP.PeakFinder',
                              'DSP.ComputeQuantities'],
-                  output=[#'PlottingWaveform.PlottingWaveform',
+                  output=['PlottingWaveform.PlottingWaveform',
                           'Pickle.WriteToPickleFile'])
 

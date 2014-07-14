@@ -4,6 +4,18 @@ import logging
 import time
 
 
+def timeit(method):
+
+    def timed(*args, **kw):
+        self = args[0]
+        ts = time.time()
+        result = method(*args, **kw)
+        dt = (time.time()-ts)*100
+        self.log.debug('Event took %2.2f ms' % dt)
+        return result
+
+    return timed
+
 class BasePlugin(object):
 
     def __init__(self, config_values):
@@ -27,6 +39,7 @@ class InputPlugin(BasePlugin):
         BasePlugin.__init__(self, config_values)
         self.i = 0
 
+    @timeit
     def GetEvents(self):
         """Get next event from the data source
 
@@ -43,12 +56,10 @@ class TransformPlugin(BasePlugin):
     def TransformEvent(self, event):
         raise NotImplementedError
 
+    @timeit
     def ProcessEvent(self, event):
-        t0 = time.time()
-        event = self.TransformEvent(event)
-        dt = (time.time() - t0)*10**3  # milliseconds
-        self.log.debug('Class %s took %0.1f milliseconds' % (self.name, dt))
-        return event
+        return self.TransformEvent(event)
+
 
 
 class OutputPlugin(BasePlugin):
@@ -56,6 +67,7 @@ class OutputPlugin(BasePlugin):
     def WriteEvent(self, event):
         raise NotImplementedError
 
+    @timeit
     def ProcessEvent(self, event):
         self.WriteEvent(event)
         return event
