@@ -1,6 +1,9 @@
 import numpy as np
 
 from pax import plugin, units
+import math,sys,bz2
+import io
+
 
 class Xed(plugin.InputPlugin):
 
@@ -38,21 +41,22 @@ class Xed(plugin.InputPlugin):
         self.event_positions = np.fromfile(self.input, dtype=np.dtype("<u4"), count=file_metadata['event_index_size'])
         
     #This spends a lot of time growing the numpy array. Maybe faster if we first allocate 40000 zeroes.
-    def get_next_event(self):
+    def GetEvents(self):
         input = self.input
         for event_position in self.event_positions:
-            event = {
-                'channel_chunks'    :   {}
-            }
             self.current_event_channels = {}
             if not input.tell() == event_position:
-                raise Exception, "Reading error: this event should be at %s, but we are at %s!" % (event_position, input.tell())
+                raise ValueError("Reading error: this event should be at %s, but we are at %s!" % (event_position, input.tell()))
             self.event_metadata = np.fromfile(input, dtype=Xed.event_header, count=1)[0]
             #print "Reading event %s, consisting of %s chunks" % (self.event_metadata['event_number'], self.event_metadata['chunks'])
             if self.event_metadata['chunks'] != 1:
-                raise Exception, "The day has come: event with %s chunks found!" % event_metadata['chunks']
+                raise NotImplementedError("The day has come: event with %s chunks found!" % event_metadata['chunks'])
             #print "Event type %s, size %s, samples %s, channels %s" % (self.event_metadata['type'], self.event_metadata['size'], self.event_metadata['samples_in_chunk'], event_metadata['channels'],)
-            if self.event_metadata['type'] == 'zle0':
+            if self.event_metadata['type'] == b'zle0':
+                event = {
+                    'channel_occurences'    :   {},
+                    'length'            :   self.event_metadata['samples_in_event']
+                }
                 """
                 Read the arcane mask
                 Hope this is ok with endianness and so on... no idea... what happens if it is wrong??
@@ -63,19 +67,19 @@ class Xed(plugin.InputPlugin):
                     np.fromfile(input, dtype=np.dtype('<S%s'% mask_bytes), count=1)[0]
                 )   #Last bytes are on front or something? Maybe whole mask is a single little-endian field??
                 channels_included = [i for i,m in enumerate(reversed(mask)) if m == 1]
-                chunk_fake_file = StringIO.StringIO(bz2.decompress(input.read(self.event_metadata['size']-28-mask_bytes)))  #28 is the chunk header size. TODO: only decompress if needed
+                chunk_fake_file = io.BytesIO(bz2.decompress(input.read(self.event_metadata['size']-28-mask_bytes)))  #28 is the chunk header size. TODO: only decompress if needed
                 for channel_id in channels_included:
-                    event['channel_chunks'][channel_id] = []
+                    event['channel_occurences'][channel_id] = []
                     channel_waveform = np.array([],dtype="<i2")
                     #Read channel size (in 4bit words), subtract header size, convert from 4-byte words to bytes
-                    channel_data_size =  4*(np.fromstring(chunk_fake_file.read(4), dtype='<u4')[0] - 1)
+                    channel_data_size =  int(4*(np.fromstring(chunk_fake_file.read(4), dtype='<u4')[0] - 1))
                     #print "Data size for channel %s is %s bytes" % (channel_id, channel_data_size)
-                    channel_fake_file = StringIO.StringIO(chunk_fake_file.read(channel_data_size))
+                    channel_fake_file = io.BytesIO(chunk_fake_file.read(channel_data_size))
                     sample_position = 0
                     while 1:
                         control_word_string = channel_fake_file.read(4)
                         if not control_word_string: break
-                        control_word = np.fromstring(control_word_string, dtype='<u4')[0]
+                        control_word = int(np.fromstring(control_word_string, dtype='<u4')[0])
                         if control_word<2**31:
                             #print "Next %s samples are 0" % (2*control_word)
                             sample_position += 2*control_word
@@ -84,12 +88,12 @@ class Xed(plugin.InputPlugin):
                         else:
                             data_samples = 2*(control_word-(2**31))
                             #print "Now reading %s data samples" % data_samples
-                            samples_chunk = np.fromstring(channel_fake_file.read(2*data_samples), dtype="<i2")
-                            event['channel_chunks'][channel_id].append((
+                            samples_occurence = np.fromstring(channel_fake_file.read(2*data_samples), dtype="<i2")
+                            event['channel_occurences'][channel_id].append((
                                 sample_position,
-                                samples_chunk
+                                samples_occurence
                             ))
-                            sample_position += samples_chunk
+                            sample_position += len(samples_occurence)
                             """
                             According to Guillaume's thesis, and the FADC manual, samples come in pairs, with later sample first!
                             This would mean we have to ungarble them (split into pairs, reverse the pairs, join again): 
@@ -97,22 +101,18 @@ class Xed(plugin.InputPlugin):
                             However, this makes the peak come out two-headed... Maybe they were already un-garbled by some previous program??
                             We won't do any ungarbling for now:
                             """
-                    if len(channel_waveform) != 40000:  #TODO: don't hardcode...
-                        raise Exception, "Channel %s waveform is %s samples long, expected %s!" % (channel_id, event_metadata['samples_in_event'])
-                    self.current_event_channels[channel_id] = channel_waveform
             else:
-                raise Exception, "Still have to code grokking for sample type %s..." % event_metadata['type']
-            #Ok... reading is done, time to yield 
-            self.dV = units.V * self.event_metadata['voltage_range']/2**14
-            self.dt = units.s * 1/self.event_metadata['sampling_frequency']
+                raise NotImplementedError("Still have to code grokking for sample type %s..." % self.event_metadata['type'])
+            yield event
             
         #If we get here, all events have been read
         self.input.close()
             
-    def bytestobits(self,bytes_string):
+    def bytestobits(self,bytes):
         bits = []
-        bytes = (ord(bs) for bs in bytes_string)
+        if sys.version_info < (3, 0):
+            bytes = (ord(bs) for bs in bytes_string)
         for b in bytes:
-            for i in xrange(8):
+            for i in range(8):
                 bits.append( (b >> i) & 1 )
         return bits

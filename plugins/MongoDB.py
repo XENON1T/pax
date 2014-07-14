@@ -26,22 +26,22 @@ class MongoDBInput(plugin.InputPlugin):
     def GetEvents(self):
         """Generator of events from Mongo
 
-        What is returned is all the channel's chunks
+        What is returned is all the channel's occurences
         """
         for doc_event in self.collection.find():
-            # Store channel waveform-chunks by iterating over all occurences.
+            # Store channel waveform-occurences by iterating over all occurences.
             # This involves parsing MongoDB documents using WAX output format
             (event_start, event_end) = doc_event['range']
             event = {
                 'length'          :   event_end - event_start,
-                'channel_chunks'  :   {},
+                'channel_occurences'  :   {},
             }
             for doc_occurence in doc_event['docs']:
                 channel = doc_occurence['channel']
-                if channel not in event['channel_chunks']:
-                    event['channel_chunks'][channel] = []
-                event['channel_chunks'][channel].append((
+                if channel not in event['channel_occurences']:
+                    event['channel_occurences'][channel] = []
+                event['channel_occurences'][channel].append((
                     doc_occurence['time'] - event_start,                    #Start sample index
-                    np.fromstring(doc_occurence['data'], dtype=np.int16)    #Waveform chunk data
+                    np.fromstring(doc_occurence['data'], dtype=np.int16)    #Waveform occurence data
                 ))
             yield event

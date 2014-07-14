@@ -34,7 +34,7 @@ class PlottingWaveform(plugin.OutputPlugin):
 
         side = 1
         # Plot all peaks
-        for peak in event['peaks']['summed']:
+        for peak in event['peaks']:
             x = peak['summed']['position_of_max_in_waveform']
             y = event['sum_waveforms']['summed'][x]
 
@@ -49,8 +49,8 @@ class PlottingWaveform(plugin.OutputPlugin):
 
 
         plt.plot(event['sum_waveforms']['summed'], label='summed')
-        plt.plot(event['filtered_waveforms']['summed'],
-                 '--', label='filtered %s' % 'summed')
+        plt.plot(event['filtered_waveforms']['filtered_for_large_s2'],
+                 '--', label='filtered_for_large_s2')
 
         plt.legend()
         plt.xlabel('Time in event [10 ns]')
