@@ -29,16 +29,6 @@ class PlottingWaveform(plugin.OutputPlugin):
 
     def WriteEvent(self, event):
         self.log.debug("Received event %s" % str(event.keys()))
-        plt.figure()
-
-        for name, wf in event['sum_waveforms'].items():
-            plt.plot(wf, label=name)
-            plt.plot(
-                event['filtered_waveforms'][name], '--', label='filtered %s' % name)
-
-        plt.xlabel('Time in event [us]')
-        plt.ylabel("ADC counts on 14-bit digitizer")
-        plt.legend()
 
         fig = plt.figure()
         ax = fig.add_subplot(111)
@@ -64,6 +54,6 @@ class PlottingWaveform(plugin.OutputPlugin):
                  '--', label='filtered %s' % 'summed')
 
         plt.legend()
-        plt.xlabel('Time in event [us]')
-        plt.ylabel("ADC counts on 14-bit digitizer")
+        plt.xlabel('Time in event [10 ns]')
+        plt.ylabel("pe / ns")
         plt.show()
