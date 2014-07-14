@@ -1,7 +1,7 @@
 """Digital signal processing"""
 import numpy as np
 
-from pax import plugin, units, dsputils
+from pax import plugin, units
 
 __author__ = 'tunnell'
 
@@ -110,7 +110,7 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
             event['channel_waveforms'] = {}
             for channel, waveform_occurences in event['channel_occurences'].items():
                 #Determine an average baseline for this channel, using all the occurences
-                baseline    = np.mean([dsputils.baseline_mean_stdev(wave_occurence)[0] 
+                baseline    = np.mean([baseline_mean_stdev(wave_occurence)[0] 
                                        for _, wave_occurence in waveform_occurences])
                 wave = np.ones(event['length']) * baseline
                 #Put wave occurences in the right positions
