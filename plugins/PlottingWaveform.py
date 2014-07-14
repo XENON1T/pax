@@ -54,7 +54,7 @@ class PlottingWaveform(plugin.OutputPlugin):
 
         plt.legend()
         plt.xlabel('Time in event [10 ns]')
-        plt.ylabel("pe / ns")
+        plt.ylabel("pe / bin")
 
         plt.show(block=False)
 
