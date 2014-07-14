@@ -14,6 +14,11 @@ class PaxSchema(Section):
     subsections.
     """
     # General
+    config = Value(String(), default="",
+                       argparse_names=['--config', '-c'],
+                       argparse_help='Configuration for PAX')
+
+
     loglevel = Value(String(), default="INFO",
                      argparse_names=['--loglevel'],
                      argparse_help='Log level to use (e.g., DEBUG)')

@@ -1,12 +1,14 @@
 __author__ = 'tunnell'
 
 import logging
+import time
 
 
 class BasePlugin(object):
 
     def __init__(self, config_values):
-        self.log = logging.getLogger(self.__class__.__name__)
+        self.name = self.__class__.__name__
+        self.log = logging.getLogger(self.name)
 
         # Please do all config variable fetching in constructor to make
         # changing config easier.
@@ -42,7 +44,11 @@ class TransformPlugin(BasePlugin):
         raise NotImplementedError
 
     def ProcessEvent(self, event):
-        return self.TransformEvent(event)
+        t0 = time.time()
+        event = self.TransformEvent(event)
+        dt = (time.time() - t0)*10**3  # milliseconds
+        self.log.debug('Class %s took %0.1f milliseconds' % (self.name, dt))
+        return event
 
 
 class OutputPlugin(BasePlugin):
