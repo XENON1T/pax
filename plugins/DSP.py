@@ -1,22 +1,103 @@
 """Digital signal processing"""
 import numpy as np
 
-from pax import plugin, units, dsputils
+from pax import plugin, units
 
 __author__ = 'tunnell'
 
+<<<<<<< HEAD
 
 def interval_until_treshold(signal, start, treshold):
+=======
+##
+## Utils
+##
+    
+def baseline_mean_stdev(waveform, sample_size=46):
+    """ returns (baseline, baseline_stdev), calculated on the first sample_size samples of waveform """
+    baseline_sample = waveform[:sample_size]
+>>>>>>> ec03dfad5e80d2a945ec1398bfabd6ef99b1358d
     return (
-        PeakFinder.find_first_below(signal, start, treshold, 'left'),
-        PeakFinder.find_first_below(signal, start, treshold, 'right'),
+        np.mean(sorted(baseline_sample)[
+            int(0.4*len(baseline_sample)):int(0.6*len(baseline_sample))
+        ]),  #Ensures peaks in baseline sample don't skew computed baseline
+        np.std(baseline_sample)                     #... but do count towards baseline_stdev!
     )
+    #Don't want to just take the median as V-resolution is finite
+    #Don't want the mean either: this is not robust against large fluctuations (eg peaks in sample)
 
 
 def extent_until_treshold(signal, start, treshold):
     a = interval_until_treshold(signal, start, treshold)
+<<<<<<< HEAD
     return a[1] - a[0]
 
+=======
+    return a[1]-a[0]
+
+def interval_until_treshold(signal, start, treshold):
+    return (
+        find_first_below(signal, start, treshold, 'left'),
+        find_first_below(signal, start, treshold, 'right'),
+    )
+    
+def find_first_below(signal, start, treshold, direction, min_length_below=1):
+    #TODO: test for off-by-one errors
+    counter = 0
+    if direction=='right':
+        for i,x in enumerate(signal[start:]):
+            if x<treshold: return start+i
+    elif direction=='left':
+        i = start
+        while 1:
+            if signal[i]<treshold:
+                counter += 1
+                if counter == min_length_below:
+                    return i    #or i-min_length_below ??? #TODO
+            else:
+                counter = 0
+            if direction=='right':
+                i += 1
+            elif direction=='left':
+                i -= 1
+            else:
+                raise(Exception, "You nuts? %s isn't a direction!" % direction)
+                
+def all_same_length(items): return all(len(x) == len(items[0]) for x in items) 
+    
+def rcosfilter(filter_length, rolloff, cutoff_freq, sampling_freq=1):
+    """
+    Returns a nd(float)-array describing a raised cosine (RC) filter (FIR) impulse response. Arguments:
+        - filter_length:    filter length in samples
+        - rolloff:          roll-off factor
+        - cutoff_freq:      cutoff frequency = 1/(2*symbol period)
+        - sampling_freq:    sampling rate (in same units as cutoff_freq)
+    """
+    Ts = 1/(2*cutoff_freq)
+    h_rc = np.zeros(filter_length, dtype=float)
+        
+    for x in np.arange(filter_length):
+        t = (x-filter_length/2)/float(sampling_freq)
+        phase = np.pi*t/Ts
+        if t == 0.0:
+            h_rc[x] = 1.0
+        elif rolloff != 0 and abs(t) == Ts/(2*rolloff):
+            h_rc[x] = (np.pi/4)*(np.sin(phase)/phase)
+        else:
+            h_rc[x] = (np.sin(phase)/phase)* (np.cos(phase*rolloff)/(1-(((2*rolloff*t)/Ts)*((2*rolloff*t)/Ts))))
+    
+    return h_rc/h_rc.sum()
+    
+    
+##
+##  Classes
+##
+    
+    
+    
+    
+class JoinAndConvertWaveforms(plugin.TransformPlugin):
+>>>>>>> ec03dfad5e80d2a945ec1398bfabd6ef99b1358d
 
 class JoinAndConvertWaveforms(plugin.TransformPlugin):
     def __init__(self, config):
@@ -40,9 +121,15 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
             # Data is ZLE, we need to build the waves from occurences
             event['channel_waveforms'] = {}
             for channel, waveform_occurences in event['channel_occurences'].items():
+<<<<<<< HEAD
                 # Determine an average baseline for this channel, using all the occurences
                 baseline = np.mean([dsputils.baseline_mean_stdev(wave_occurence)[0]
                                     for _, wave_occurence in waveform_occurences])
+=======
+                #Determine an average baseline for this channel, using all the occurences
+                baseline    = np.mean([baseline_mean_stdev(wave_occurence)[0] 
+                                       for _, wave_occurence in waveform_occurences])
+>>>>>>> ec03dfad5e80d2a945ec1398bfabd6ef99b1358d
                 wave = np.ones(event['length']) * baseline
                 # Put wave occurences in the right positions
                 for starting_position, wave_occurence in waveform_occurences:
@@ -78,6 +165,7 @@ class ComputeSumWaveform(plugin.TransformPlugin):
         return event
 
 
+<<<<<<< HEAD
 class FilterWaveforms(plugin.TransformPlugin):
     def rcosfilter(self, filter_length, rolloff, cutoff_freq, sampling_freq=1):
         """
@@ -103,6 +191,10 @@ class FilterWaveforms(plugin.TransformPlugin):
 
         return h_rc / h_rc.sum()
 
+=======
+class GenericFilter(plugin.TransformPlugin):
+        
+>>>>>>> ec03dfad5e80d2a945ec1398bfabd6ef99b1358d
     def apply_filter_by_convolution(self, signal, normalized_impulse_response):
         """
         Filters signal using specified impulse-response, using convolution
@@ -111,6 +203,7 @@ class FilterWaveforms(plugin.TransformPlugin):
 
     def __init__(self, config):
         plugin.TransformPlugin.__init__(self, config)
+<<<<<<< HEAD
         self.filter_ir = self.rcosfilter(31, 0.2, 3 * units.MHz * float(config['digitizer_t_resolution']))
 
     def TransformEvent(self, event):
@@ -120,9 +213,37 @@ class FilterWaveforms(plugin.TransformPlugin):
         # Key would be 'top', 'bottom', etc
         event['filtered_waveforms']['filtered_for_large_s2'] = self.apply_filter_by_convolution(
             event['sum_waveforms']['summed'], self.filter_ir)
+=======
+
+    def TransformEvent(self, event):
+        if 'filtered_waveforms' not in event:
+            event['filtered_waveforms'] = {}
+        event['filtered_waveforms'][self.output_name] = self.apply_filter_by_convolution(event['sum_waveforms'][self.input_name], self.filter_ir)
+>>>>>>> ec03dfad5e80d2a945ec1398bfabd6ef99b1358d
         return event
 
+class LargeS2Filter(GenericFilter):
+    def __init__(self, config):
+        GenericFilter.__init__(self, config)
+        self.filter_ir = rcosfilter(31, 0.2, 3*units.MHz*config['digitizer_t_resolution'])
+        self.output_name = 'filtered_for_large_s2'
+        self.input_name = 'summed'
+        
+class SmallS2Filter(GenericFilter):
+    def __init__(self, config):
+        GenericFilter.__init__(self, config)
+        self.filter_ir = [0, 0.103, 0.371, 0.691, 0.933, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.933, 0.691, 0.371, 0.103, 0]
+        self.output_name = 'filtered_for_small_s2'
+        self.input_name = 'summed'
 
+        
+
+class PeakFinder_X100style(plugin.TransformPlugin):
+
+    def __init__(self, config):
+        plugin.TransformPlugin.__init__(self, config)
+
+<<<<<<< HEAD
 class PeakFinder(plugin.TransformPlugin):
     @staticmethod
     def find_first_below(signal, start, below, direction):
@@ -143,6 +264,8 @@ class PeakFinder(plugin.TransformPlugin):
                 else:
                     raise ValueError(
                         "You nuts? %s isn't a direction!" % direction)
+=======
+>>>>>>> ec03dfad5e80d2a945ec1398bfabd6ef99b1358d
 
     def X100_style(self,
                    signal,
@@ -173,8 +296,7 @@ class PeakFinder(plugin.TransformPlugin):
             elif x < treshold and previous > treshold:
                 new['prepeak_right'] = i
                 prepeaks.append(new)
-                new = {
-                    'prepeak_left': i}  # can't new={}, in case this is start of new peak already... wait, that can't happen right?
+                new = {'prepeak_left': i}  # can't new={}, in case this is start of new peak already... wait, that can't happen right?
             previous = x
         # TODO: Now at end of waveform: any unfinished peaks left
 
@@ -206,20 +328,94 @@ class PeakFinder(plugin.TransformPlugin):
             # earlier peak? hmmzz need to pass more args to this. Or not
             # needed?
             (p['left'], p['right']) = interval_until_treshold(signal,
+<<<<<<< HEAD
                                                               start=p[
                                                                   'index_of_max_in_waveform'],
                                                               treshold=boundary_to_height_ratio * p['height'])
+=======
+                                                                   start=p[
+                                                                       'index_of_max_in_waveform'],
+                                                                   treshold=boundary_to_height_ratio * p['height'])
+            p['peak_type'] = self.output_peak_type
+>>>>>>> ec03dfad5e80d2a945ec1398bfabd6ef99b1358d
             peaks.append(p)
 
         return peaks
 
     def TransformEvent(self, event):
+<<<<<<< HEAD
         """For every filtered waveform, find peaks
         """
         # Add substructure for many peak finders?
         event['peaks'] = self.X100_style(event['filtered_waveforms']['filtered_for_large_s2'], **self.config)
         # merge peaks from different peakfinders
+=======
+        if 'peaks' not in event:
+            event['peaks'] = []
+        event['peaks'] += self.X100_style(self.get_input_waveform(event), **self.peakfinder_settings)
+>>>>>>> ec03dfad5e80d2a945ec1398bfabd6ef99b1358d
         return event
+        
+class LargeS2Peakfinder(PeakFinder_X100style):
+    def __init__(self, config):
+        PeakFinder_X100style.__init__(self, config)
+        dt = self.config['digitizer_t_resolution']
+        self.get_input_waveform = lambda event : event['filtered_waveforms']['filtered_for_large_s2']
+        self.output_peak_type = 'large_s2'
+        self.peakfinder_settings = {
+            'treshold'    : 0.62451,
+            'left_boundary_to_height_ratio' : 0.005,
+            'right_boundary_to_height_ratio': 0.002,
+            'min_length'  : int(0.6 *units.us/dt),
+            'test_before' : int(0.21*units.us/dt),
+            'test_after'  : int(0.21*units.us/dt),
+            #Different settings for top level interval and intermediate interval
+            #Take this into account for peak splitter!
+            'before_to_height_ratio_max'  : 0.05,
+            'after_to_height_ratio_max'   : 0.05
+        }
+        
+class SmallS2Peakfinder(PeakFinder_X100style):
+    def __init__(self, config):
+        PeakFinder_X100style.__init__(self, config)
+        dt = self.config['digitizer_t_resolution']
+        self.get_input_waveform = lambda event : event['filtered_waveforms']['filtered_for_small_s2']
+        self.output_peak_type = 'large_s2'
+        self.peakfinder_settings = {
+            'treshold'    : 0.062451,
+            'left_boundary_to_height_ratio' : 0.01,
+            'right_boundary_to_height_ratio': 0.01,
+            'min_length'  : int(0.4 *units.us/dt),
+            'test_before' : int(0.1*units.us/dt),
+            'test_after'  : int(0.1*units.us/dt),
+            'before_to_height_ratio_max'  : 0.05,
+            'after_to_height_ratio_max'   : 0.05
+        }
+        
+class S1Peakfinder(PeakFinder_X100style):
+    def __init__(self, config):
+        PeakFinder_X100style.__init__(self, config)
+        dt = self.config['digitizer_t_resolution']
+        self.get_input_waveform = lambda event : event['sum_waveforms']['summed']
+        self.output_peak_type = 's1'
+        self.peakfinder_settings = {
+            'treshold'    : 0.1872453,
+            'left_boundary_to_height_ratio'  : 0.005,
+            'right_boundary_to_height_ratio' : 0.005,
+            'min_samples_below_boundary'     : 3,
+            'max_length'  : int(0.6 *units.us/dt),
+            'test_before' : int(0.5*units.us/dt),
+            'test_after'  : int(0.1*units.us/dt),
+            'before_to_height_ratio_max'  : 0.01,
+            'after_to_height_ratio_max'   : 0.04
+        }
+        
+class VetoS1Peakfinder(S1Peakfinder):
+    def __init__(self, config):
+        S1Peakfinder.__init__(self, config)
+        self.get_input_waveform = lambda event : event['sum_waveforms']['veto']
+        self.output_peak_type = 'veto_s1'
+    
 
 
 class ComputeQuantities(plugin.TransformPlugin):
