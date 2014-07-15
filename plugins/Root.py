@@ -32,6 +32,6 @@ class WriteToROOTFile(p.OutputPlugin):
             self.S2s.push_back(p['summed']['area'])
             self.t1.Fill()
 
-        #for s2 in event['peaks']['summed']:
-        #    self.S2s.push_back(s2['area'])
-        #self.t1.Fill()
+            # for s2 in event['peaks']['summed']:
+            #    self.S2s.push_back(s2['area'])
+            #self.t1.Fill()

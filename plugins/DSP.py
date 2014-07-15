@@ -6,7 +6,7 @@ from pax import plugin, units
 __author__ = 'tunnell'
 
 # #
-## Utils
+# # Utils
 ##
 
 def baseline_mean_stdev(waveform, sample_size=46):
@@ -81,7 +81,7 @@ def rcosfilter(filter_length, rolloff, cutoff_freq, sampling_freq=1):
             h_rc[x] = (np.pi / 4) * (np.sin(phase) / phase)
         else:
             h_rc[x] = (np.sin(phase) / phase) * (
-            np.cos(phase * rolloff) / (1 - (((2 * rolloff * t) / Ts) * ((2 * rolloff * t) / Ts))))
+                np.cos(phase * rolloff) / (1 - (((2 * rolloff * t) / Ts) * ((2 * rolloff * t) / Ts))))
 
     return h_rc / h_rc.sum()
 
@@ -133,7 +133,7 @@ class ComputeSumWaveform(plugin.TransformPlugin):
                                'bottom': config['pmts_bottom'],
                                'veto': config['pmts_veto']}
 
-        self.channel_groups['top_and_bottom'] =  self.channel_groups['top'] | self.channel_groups['bottom']
+        self.channel_groups['top_and_bottom'] = self.channel_groups['top'] | self.channel_groups['bottom']
 
     def transform_event(self, event):
         sum_waveforms = {}
@@ -179,9 +179,10 @@ class LargeS2Filter(GenericFilter):
 class SmallS2Filter(GenericFilter):
     def __init__(self, config):
         GenericFilter.__init__(self, config)
-        self.filter_ir = np.array([0, 0.103, 0.371, 0.691, 0.933, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.933, 0.691,
-                          0.371, 0.103, 0])
-        self.filter_ir = self.filter_ir/sum(self.filter_ir) #Normalization
+        self.filter_ir = np.array(
+            [0, 0.103, 0.371, 0.691, 0.933, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.933, 0.691,
+             0.371, 0.103, 0])
+        self.filter_ir = self.filter_ir / sum(self.filter_ir)  #Normalization
         self.output_name = 'filtered_for_small_s2'
         self.input_name = 'top_and_bottom'
 
@@ -221,7 +222,7 @@ class PeakFinderXenonStyle(plugin.TransformPlugin):
                 new['prepeak_right'] = i
                 prepeaks.append(new)
                 new = {
-                'prepeak_left': i}  # can't new={}, in case this is start of new peak already... wait, that can't happen right?
+                    'prepeak_left': i}  # can't new={}, in case this is start of new peak already... wait, that can't happen right?
             previous = x
         # TODO: Now at end of waveform: any unfinished peaks left
 
@@ -360,50 +361,50 @@ class ComputeQuantities(plugin.TransformPlugin):
                                                                       treshold=max / 10) * samples_to_ns
             if 'top' in peaks[i] and 'bottom' in peaks[i]:
                 peaks[i]['asymmetry'] = (peaks[i]['top']['area'] - peaks[i]['bottom']['area']) / (
-                peaks[i]['top']['area'] + peaks[i]['bottom']['area'])
+                    peaks[i]['top']['area'] + peaks[i]['bottom']['area'])
 
         return event
 
 
-        
-        
-        
 import csv
 
-class PeakwiseCSVOutput(plugin.OutputPlugin):
 
-    def __init__(self,config):
-        plugin.OutputPlugin.__init__(self,config)
+class PeakwiseCSVOutput(plugin.OutputPlugin):
+    def __init__(self, config):
+        plugin.OutputPlugin.__init__(self, config)
         self.counter = 0
 
-    def write_event(self,event):
+    def write_event(self, event):
         peaks_flattened = [self.flatten_to_csvline(p) for p in event['peaks']]
-        sorted(peaks_flattened, key= lambda x: x['left'])
+        sorted(peaks_flattened, key=lambda x: x['left'])
         for p in peaks_flattened:
             data = {
-                'event' :   self.counter,    #TODO: get from mongo/xed/whatever
-                'left'  :   p['left'],
-                'right' :   p['right'],
-                'area'  :   p['summed|area'],
-                'type'  :   p['peak_type'],
+                'event': self.counter,  #TODO: get from mongo/xed/whatever
+                'left': p['left'],
+                'right': p['right'],
+                'area': p['summed|area'],
+                'type': p['peak_type'],
             }
             if not hasattr(self, 'csv'):
                 self.output = open('output.csv', 'w')
-                self.headers = ['event', 'type', 'left', 'right', 'area'] #Grmpfh, needed for order
+                self.headers = ['event', 'type', 'left', 'right', 'area']  #Grmpfh, needed for order
                 self.csv = csv.DictWriter(self.output, self.headers, lineterminator='\n')
                 self.csv.writeheader()
             self.csv.writerow(data)
         self.counter += 1
-            
+
     def flatten_to_csvline(self, datastructure, prefix=''):
         "Changes a nested dictionary / array / tuple  thing into a single csv line. Returns results as dictionary {header: value, header:value, ... }"
         results = {}
-        if type(datastructure) in (type({}),type([]),type((0,0))):
-            if prefix != '': prefix += '|'
+        if type(datastructure) in (type({}), type([]), type((0, 0))):
+            if prefix != '':
+                prefix += '|'
             if type(datastructure) == type({}):
-                temp = [self.flatten_to_csvline(value, prefix=prefix+str(key)) for key, value in datastructure.items()] 
+                temp = [self.flatten_to_csvline(value, prefix=prefix + str(key)) for key, value in
+                        datastructure.items()]
             else:
-                temp = [self.flatten_to_csvline(value, prefix=prefix+str(key)) for key, value in enumerate(datastructure)]
+                temp = [self.flatten_to_csvline(value, prefix=prefix + str(key)) for key, value in
+                        enumerate(datastructure)]
             #Merge results into one dict
             for subdict in temp:
                 results.update(subdict)
