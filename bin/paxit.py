@@ -13,5 +13,5 @@ if __name__ == '__main__':
                              # 'DSP.VetoS1Peakfinder',
                              'DSP.ComputeQuantities'],
                   output=['PlottingWaveform.PlottingWaveform',
-                          'Pickle.WriteToPickleFile',
-                          'CSV.WriteCSVPeakwise'])
+                          'Pickle.WriteToPickleFile'])
+                          

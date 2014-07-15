@@ -97,10 +97,6 @@ def processor(input, transform, output):
     # Load configuration
     config = get_configuration()
 
-    # Grab defaults section (where evaluate does any arithmetic within the ini
-    # file.  For example, 2 + 5 turns into 7.
-    default_config = evaluate_configuration(config['DEFAULT'])
-
     # Deal with command line arguments for the logging level
     parser = argparse.ArgumentParser(description="Process XENON1T data")
     parser.add_argument('--log', default='INFO', help="Set log level")
