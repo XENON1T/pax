@@ -6,6 +6,11 @@ import configparser
 import os
 from pluginbase import PluginBase
 
+def EvaluateConfiguration(config):
+    evaled_config = {}
+    for key, value in config.items():
+        evaled_config[key] = eval(value)
+    return evaled_config
 
 def Instantiate(name, plugin_source, config_values):
     """take class name and build class from it"""
@@ -16,6 +21,8 @@ def Instantiate(name, plugin_source, config_values):
         this_config = config_values[name]
     else:
         this_config = config_values['DEFAULT']
+
+    this_config = EvaluateConfiguration(this_config)
 
     return getattr(plugin_module, name_class)(this_config)
 
@@ -35,19 +42,26 @@ def Processor(input, transform, output):
         output = [output]
 
     # What we do on data...
-    list_of_actions = transform + output
+    actions = transform + output
 
     # Find location of this file
     absolute_path = os.path.abspath(inspect.getfile(inspect.currentframe()))
     dir = os.path.dirname(absolute_path)
 
-    config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation(),
+    interpolation = configparser.ExtendedInterpolation()
+    config = configparser.ConfigParser(interpolation=interpolation,
                                        inline_comment_prefixes='#',
                                        strict=True)
+    # Allow for case-sensitive configuration keys
+    config.optionxform = str
+
+    # Load the default configuration
     config.read(os.path.join(dir, 'default.ini'))
 
+    default_config = EvaluateConfiguration(config['DEFAULT'])
+
     # Setup logging
-    string_level = config['DEFAULT']['loglevel']
+    string_level = default_config['loglevel']
     numeric_level = getattr(logging, string_level.upper(), None)
     if not isinstance(numeric_level, int):
         raise ValueError('Invalid log level: %s' % string_level)
@@ -69,11 +83,11 @@ def Processor(input, transform, output):
 
     # Instantiate requested plugins
     input = Instantiate(input, plugin_source, config)
-    list_of_actions = [Instantiate(x, plugin_source, config) for x in list_of_actions]
+    actions = [Instantiate(x, plugin_source, config) for x in actions]
 
     # This is the *actual* event loop
     for i, event in enumerate(input.GetEvents()):
         log.info("Event %d" % i)
-        for j, block in enumerate(list_of_actions):
+        for j, block in enumerate(actions):
             log.debug("Step %d with %s", j, block.__class__.__name__)
             event = block.ProcessEvent(event)
