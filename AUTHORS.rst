@@ -6,9 +6,10 @@ Development Lead
 ----------------
 
 * Jelle Aalbers <jaalbers@nikhef.nl
+* Daniel Coderre <daniel.coderre@lhep.unibe.ch>
 * Christopher Tunnell <ctunnell@nikhef.nl>
 
 Contributors
 ------------
 
-None yet. Why not be the first?
+* Alper Topçuoğlu <alper.topcuoglu@student.uva.nl>
