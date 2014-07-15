@@ -45,3 +45,4 @@ class WriteCSVPeakwise(plugin.OutputPlugin):
         else:
             results[prefix] = str(datastructure)
         return results
+

@@ -41,7 +41,8 @@ class PlottingWaveform(plugin.OutputPlugin):
             ax.annotate('%0.2f' % peak['top_and_bottom']['area'],
                         xy=(x, y),
                         xytext=(peak['top_and_bottom']['position_of_max_in_waveform'] + 20000 * side,
-                                event['sum_waveforms']['top_and_bottom'][peak['top_and_bottom']['position_of_max_in_waveform']] * 0.7),
+                                event['sum_waveforms']['top_and_bottom'][
+                                    peak['top_and_bottom']['position_of_max_in_waveform']] * 0.7),
                         arrowprops=dict(arrowstyle="fancy",
                                         fc="0.6", ec="none",
                                         connectionstyle="angle3,angleA=0,angleB=-90"))

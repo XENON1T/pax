@@ -1,24 +1,25 @@
 import logging
 import inspect
 import pprint
+import argparse
 import configparser
-
-from pax import units
 
 import os
 from pluginbase import PluginBase
 
 from pax import units
 
+
 def evaluate_configuration(config):
     evaled_config = {}
     for key, value in config.items():
-        #Eval value with globals = everything from 'units' module...
+        # Eval value with globals = everything from 'units' module...
         evaled_config[key] = eval(value, {
-            name : getattr(units, name)
+            name: getattr(units, name)
             for name in dir(units)
         })
     return evaled_config
+
 
 def instantiate(name, plugin_source, config_values, log=logging):
     """take class name and build class from it"""
@@ -39,8 +40,32 @@ def instantiate(name, plugin_source, config_values, log=logging):
 
     return getattr(plugin_module, name_class)(this_config)
 
-def get_configuration():
-    pass
+
+def get_configuration(my_dir):
+    config = configparser.ConfigParser(inline_comment_prefixes='#',
+                                       strict=True)
+
+    # Allow for case-sensitive configuration keys
+    config.optionxform = str
+
+    # Load the default configuration
+    config.read(os.path.join(my_dir, 'default.ini'))
+    return config
+
+
+def get_plugin_source(config, log, my_dir):
+    # Setup plugins (which involves finding the plugin directory.
+    plugin_base = PluginBase(package='pax.plugins')
+    searchpath = ['./plugins'] + config['DEFAULT']['plugin_paths'].split()
+    # Find the absolute path, then director, then find plugin directory
+    searchpath += [os.path.join(my_dir, '..', 'plugins')]
+    log.debug("Search path for plugins is %s" % str(searchpath))
+    plugin_source = plugin_base.make_plugin_source(searchpath=searchpath)
+    log.info("Found the following plugins:")
+    for plugin_name in plugin_source.list_plugins():
+        log.info("\tFound %s" % plugin_name)
+
+    return plugin_source
 
 def processor(input, transform, output):
     # Check input types
@@ -59,49 +84,38 @@ def processor(input, transform, output):
     # What we do on data...
     actions = transform + output
 
-    # Find location of this file
+    # Find location of this file, then my_dir is its directory
     absolute_path = os.path.abspath(inspect.getfile(inspect.currentframe()))
-    dir = os.path.dirname(absolute_path)
+    my_dir = os.path.dirname(absolute_path)
 
-    interpolation = configparser.ExtendedInterpolation()
-    config = configparser.ConfigParser(interpolation=interpolation,
-                                       inline_comment_prefixes='#',
-                                       strict=True)
-    # Allow for case-sensitive configuration keys
-    config.optionxform = str
+    # Load configuration
+    config = get_configuration(my_dir)
 
-    # Load the default configuration
-    config.read(os.path.join(dir, 'default.ini'))
-
+    # Grab defaults section (where evaluate does any arithmetic within the ini
+    # file.  For example, 2 + 5 turns into 7.
     default_config = evaluate_configuration(config['DEFAULT'])
 
+    # Deal with command line arguments for the logging level
+    parser = argparse.ArgumentParser(description="Process XENON1T data")
+    parser.add_argument('--log', default='INFO', help="Set log level")
+    args = parser.parse_args()
+
     # Setup logging
-    string_level = default_config['loglevel']
-    numeric_level = getattr(logging, string_level.upper(), None)
+    numeric_level = getattr(logging, args.log.upper(), None)
     if not isinstance(numeric_level, int):
-        raise ValueError('Invalid log level: %s' % string_level)
+        raise ValueError('Invalid log level: %s' % args.log.upper())
 
     logging.basicConfig(level=numeric_level,
                         format='%(name)s L%(lineno)s - %(levelname)s %(message)s')
     log = logging.getLogger('processor')
 
     # Print settings to log
-    log.debug(pprint.pformat(config, compact=True))
+    logging.debug(pprint.pformat(config,
+                             compact=True))
 
-    # Setup plugins (which involves finding the plugin directory.
-    plugin_base = PluginBase(package='pax.plugins')
-    searchpath = ['./plugins'] + config['DEFAULT']['plugin_paths'].split()
+    # Gather information about plugins
+    plugin_source = get_plugin_source(config, log, my_dir)
 
-
-    # Find the absolute path, then director, then find plugin directory
-    searchpath += [os.path.join(dir, '..', 'plugins')]
-    log.debug("Search path for plugins is %s" % str(searchpath))
-    plugin_source = plugin_base.make_plugin_source(searchpath=searchpath)
-    log.info("Found the following plugins:")
-    for plugin_name in plugin_source.list_plugins():
-        log.info("\tFound %s" % plugin_name)
-
-    # instantiate requested plugins
     input = instantiate(input, plugin_source, config, log)
     actions = [instantiate(x, plugin_source, config, log) for x in actions]
 

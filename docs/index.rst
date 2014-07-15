@@ -1,7 +1,7 @@
 .. complexity documentation master file, created by
-   sphinx-quickstart on Tue Jul  9 22:26:36 2013.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+sphinx-quickstart on Tue Jul  9 22:26:36 2013.
+You can adapt this file completely to your liking, but it should at least
+contain the root `toctree` directive.
 
 Welcome to processor for Analyzing XENON1T's documentation!
 ======================================
@@ -9,15 +9,15 @@ Welcome to processor for Analyzing XENON1T's documentation!
 Contents:
 
 .. toctree::
-   :maxdepth: 2
+:maxdepth: 2
 
-   readme
-   installation
-   usage
-   plugin
-   contributing
-   authors
-   history
+       readme
+       installation
+       usage
+       plugin
+       contributing
+       authors
+       history
 
 Indices and tables
 ==================
