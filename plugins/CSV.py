@@ -10,18 +10,21 @@ class WriteCSVPeakwise(plugin.OutputPlugin):
 
     def write_event(self,event):
         peaks_flattened = [self.flatten_to_csvline(p) for p in event['peaks']]
-        sorted(peaks_flattened, key= lambda x: x['left'])
+        peaks_flattened = sorted(peaks_flattened, key= lambda x: x['left'])
         for p in peaks_flattened:
             data = {
-                'event' :   self.counter,    #TODO: get from mongo/xed/whatever
-                'left'  :   p['left'],
-                'right' :   p['right'],
-                'area'  :   p['summed|area'],
-                'type'  :   p['peak_type'],
+                'event' :       self.counter,    #TODO: get from mongo/xed/whatever
+                'left'  :       p['left'],
+                'right' :       p['right'],
+                'area'  :       p['top_and_bottom|area'],
+                'type'  :       p['peak_type'],
+                'rejected'  :   p['rejected'],
+                'rejected_by'  :   p['rejected_by'],
+                'rejection_reason'  :   p['rejection_reason'],
             }
             if not hasattr(self, 'csv'):
                 self.output = open('output.csv', 'w')
-                self.headers = ['event', 'type', 'left', 'right', 'area'] #Grmpfh, needed for order
+                self.headers = ['event', 'type', 'left', 'right', 'area', 'rejected', 'rejected_by', 'rejection_reason'] #Grmpfh, needed for order
                 self.csv = csv.DictWriter(self.output, self.headers, lineterminator='\n')
                 self.csv.writeheader()
             self.csv.writerow(data)

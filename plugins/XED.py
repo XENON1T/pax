@@ -37,7 +37,7 @@ class ReadXed(plugin.InputPlugin):
 
     def __init__(self, config):
         self.input = open('test.xed', 'rb')
-        file_metadata = np.fromfile(self.input, dtype=Xed.file_header, count=1)[0]
+        file_metadata = np.fromfile(self.input, dtype=ReadXed.file_header, count=1)[0]
         # print "File data: " + str(file_metadata)
         assert file_metadata['events_in_file'] == file_metadata['event_index_size']
         self.event_positions = np.fromfile(self.input, dtype=np.dtype("<u4"), count=file_metadata['event_index_size'])
@@ -50,7 +50,7 @@ class ReadXed(plugin.InputPlugin):
             if not input.tell() == event_position:
                 raise ValueError(
                     "Reading error: this event should be at %s, but we are at %s!" % (event_position, input.tell()))
-            self.event_metadata = np.fromfile(input, dtype=Xed.event_header, count=1)[0]
+            self.event_metadata = np.fromfile(input, dtype=ReadXed.event_header, count=1)[0]
             # print "Reading event %s, consisting of %s chunks" % (self.event_metadata['event_number'], self.event_metadata['chunks'])
             if self.event_metadata['chunks'] != 1:
                 raise NotImplementedError("The day has come: event with %s chunks found!" % event_metadata['chunks'])
