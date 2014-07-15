@@ -35,13 +35,14 @@ def Processor(input, transform, output):
         output = [output]
 
     # What we do on data...
-    list_of_actions = transform + output
+    actions = transform + output
 
     # Find location of this file
     absolute_path = os.path.abspath(inspect.getfile(inspect.currentframe()))
     dir = os.path.dirname(absolute_path)
 
-    config = configparser.ConfigParser(interpolation=configparser.ExtendedInterpolation(),
+    interpolation = configparser.ExtendedInterpolation()
+    config = configparser.ConfigParser(interpolation=interpolation,
                                        inline_comment_prefixes='#',
                                        strict=True)
     config.read(os.path.join(dir, 'default.ini'))
@@ -69,11 +70,11 @@ def Processor(input, transform, output):
 
     # Instantiate requested plugins
     input = Instantiate(input, plugin_source, config)
-    list_of_actions = [Instantiate(x, plugin_source, config) for x in list_of_actions]
+    actions = [Instantiate(x, plugin_source, config) for x in actions]
 
     # This is the *actual* event loop
     for i, event in enumerate(input.GetEvents()):
         log.info("Event %d" % i)
-        for j, block in enumerate(list_of_actions):
+        for j, block in enumerate(actions):
             log.debug("Step %d with %s", j, block.__class__.__name__)
             event = block.ProcessEvent(event)

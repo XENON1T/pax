@@ -10,7 +10,7 @@ if __name__ == '__main__':
                              'DSP.LargeS2Peakfinder',
                              'DSP.SmallS2Peakfinder',
                              'DSP.S1Peakfinder',
-                             #'DSP.VetoS1Peakfinder',
+                             # 'DSP.VetoS1Peakfinder',
                              'DSP.ComputeQuantities'],
                   output=['PlottingWaveform.PlottingWaveform',
                           'Pickle.WriteToPickleFile'])
