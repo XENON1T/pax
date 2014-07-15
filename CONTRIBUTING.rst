@@ -36,8 +36,8 @@ is open to whoever wants to implement it.
 Write Documentation
 ~~~~~~~~~~~~~~~~~~~
 
-Processor for Analyzing XENON1T could always use more documentation, whether as part of the
-official Processor for Analyzing XENON1T docs, in docstrings, or even on the web in blog posts,
+processor for Analyzing XENON1T could always use more documentation, whether as part of the
+official processor for Analyzing XENON1T docs, in docstrings, or even on the web in blog posts,
 articles, and such.
 
 Submit Feedback

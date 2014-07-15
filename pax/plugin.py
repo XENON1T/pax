@@ -28,7 +28,7 @@ class BasePlugin(object):
         # changing config easier.
         self.config = config_values
 
-    def ProcessEvent(self):
+    def process_event(self):
         raise NotImplementedError()
 
 
@@ -43,31 +43,31 @@ class InputPlugin(BasePlugin):
         self.i = 0
 
     @timeit
-    def GetEvents(self):
+    def get_events(self):
         """Get next event from the data source
 
         Raise a StopIteration when done
         """
         raise NotImplementedError()
 
-    def ProcessEvent(self, event=None):
+    def process_event(self, event=None):
         raise RuntimeError('Input plugins cannot process data.')
 
 
 class TransformPlugin(BasePlugin):
-    def TransformEvent(self, event):
+    def transform_event(self, event):
         raise NotImplementedError
 
     @timeit
-    def ProcessEvent(self, event):
-        return self.TransformEvent(event)
+    def process_event(self, event):
+        return self.transform_event(event)
 
 
 class OutputPlugin(BasePlugin):
-    def WriteEvent(self, event):
+    def write_event(self, event):
         raise NotImplementedError
 
     @timeit
-    def ProcessEvent(self, event):
-        self.WriteEvent(event)
+    def process_event(self, event):
+        self.write_event(event)
         return event

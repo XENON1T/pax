@@ -1,5 +1,5 @@
 from pax import plugin
 
 class WriteCSVPeakwise(plugin.OutputPlugin):
-    def WriteEvent(self,event):
+    def write_event(self,event):
         print(event)

@@ -24,7 +24,7 @@ class WriteToROOTFile(p.OutputPlugin):
         self.tfile.Write()
         self.tfile.Close()
 
-    def WriteEvent(self, event):
+    def write_event(self, event):
         self.log.debug('Writing event to ROOT file')
         self.S2s.clear()
         # print(event['peaks']['summed'])

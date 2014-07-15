@@ -1,5 +1,5 @@
 ===============================
-Processor for Analyzing XENON1T
+processor for Analyzing XENON1T
 ===============================
 
 PAX is used for doing digital signal processing and other data processing on the XENON1T raw data

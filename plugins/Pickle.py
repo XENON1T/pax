@@ -20,6 +20,6 @@ class WriteToPickleFile(plugin.OutputPlugin):
         self.log.debug("Closing %s" % self.config['picklefile'])
         self.file.close()
 
-    def WriteEvent(self, event):
+    def write_event(self, event):
         self.log.debug('Pickling event')
         pickle.dump(event, self.file)

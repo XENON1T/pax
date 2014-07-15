@@ -3,7 +3,7 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Processor for Analyzing XENON1T's documentation!
+Welcome to processor for Analyzing XENON1T's documentation!
 ======================================
 
 Contents:

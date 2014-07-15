@@ -24,7 +24,7 @@ class MongoDBInput(plugin.InputPlugin):
             raise RuntimeError(
                 "No events found... did you run the event builder?")
 
-    def GetEvents(self):
+    def get_events(self):
         """Generator of events from Mongo
 
         What is returned is all the channel's occurences

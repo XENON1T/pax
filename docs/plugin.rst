@@ -24,7 +24,7 @@ Transform Plugins
 
 Most user-defined plugins are probably transform plugins. These are used to perform processing steps on the data. Every transform plugin should override the ::
 
-  TransformEvent(self,event):
+  transform_event(self,event):
 
 function. All modification steps should be included in this function and it should return the modified event object.
 
@@ -33,7 +33,7 @@ Input Plugins
 
 Input plugins are used to define input sources, which can include files or databases. These plugins must override the ::
   
-  GetEvents(self):
+  get_events(self):
 
 Function. This function should yield an event object. The constructor and destructor should be used to open and close the input object.
 
@@ -42,7 +42,7 @@ Output Plugins
 
 Output plugins are for writing data to file, database, or other output format. These plugins must override the ::
 
-  WriteEvent(self,event):
+  write_event(self,event):
 
 function. The functionality for saving the event should be contained within. It is advisable to use the constructor to define the output source and the destructor to close it.
 
