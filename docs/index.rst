@@ -14,6 +14,7 @@ Contents:
        readme
        installation
        usage
+       plugin
        contributing
        authors
        history
