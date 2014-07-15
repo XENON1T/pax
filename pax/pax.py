@@ -13,6 +13,7 @@ from pax import units
 def EvaluateConfiguration(config):
     evaled_config = {}
     for key, value in config.items():
+        #Eval value with globals = everything from units...
         evaled_config[key] = eval(value, {
             name : getattr(units, name)
             for name in dir(units)
