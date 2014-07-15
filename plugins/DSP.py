@@ -179,8 +179,9 @@ class LargeS2Filter(GenericFilter):
 class SmallS2Filter(GenericFilter):
     def __init__(self, config):
         GenericFilter.__init__(self, config)
-        self.filter_ir = [0, 0.103, 0.371, 0.691, 0.933, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.933, 0.691,
-                          0.371, 0.103, 0]
+        self.filter_ir = np.array([0, 0.103, 0.371, 0.691, 0.933, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.933, 0.691,
+                          0.371, 0.103, 0])
+        self.filter_ir = self.filter_ir/sum(self.filter_ir) #Normalization
         self.output_name = 'filtered_for_small_s2'
         self.input_name = 'top_and_bottom'
 
@@ -292,7 +293,7 @@ class SmallS2Peakfinder(PeakFinderXenonStyle):
         PeakFinderXenonStyle.__init__(self, config)
         dt = self.config['digitizer_t_resolution']
         self.get_input_waveform = lambda event: event['filtered_waveforms']['filtered_for_small_s2']
-        self.output_peak_type = 'large_s2'
+        self.output_peak_type = 'small_s2'
         self.peakfinder_settings = {
             'treshold': 0.062451,
             'left_boundary_to_height_ratio': 0.01,
@@ -363,3 +364,49 @@ class ComputeQuantities(plugin.TransformPlugin):
 
         return event
 
+
+        
+        
+        
+import csv
+
+class PeakwiseCSVOutput(plugin.OutputPlugin):
+
+    def __init__(self,config):
+        plugin.OutputPlugin.__init__(self,config)
+        self.counter = 0
+
+    def WriteEvent(self,event):
+        peaks_flattened = [self.flatten_to_csvline(p) for p in event['peaks']]
+        sorted(peaks_flattened, key= lambda x: x['left'])
+        for p in peaks_flattened:
+            data = {
+                'event' :   self.counter,    #TODO: get from mongo/xed/whatever
+                'left'  :   p['left'],
+                'right' :   p['right'],
+                'area'  :   p['summed|area'],
+                'type'  :   p['peak_type'],
+            }
+            if not hasattr(self, 'csv'):
+                self.output = open('output.csv', 'w')
+                self.headers = ['event', 'type', 'left', 'right', 'area'] #Grmpfh, needed for order
+                self.csv = csv.DictWriter(self.output, self.headers, lineterminator='\n')
+                self.csv.writeheader()
+            self.csv.writerow(data)
+        self.counter += 1
+            
+    def flatten_to_csvline(self, datastructure, prefix=''):
+        "Changes a nested dictionary / array / tuple  thing into a single csv line. Returns results as dictionary {header: value, header:value, ... }"
+        results = {}
+        if type(datastructure) in (type({}),type([]),type((0,0))):
+            if prefix != '': prefix += '|'
+            if type(datastructure) == type({}):
+                temp = [self.flatten_to_csvline(value, prefix=prefix+str(key)) for key, value in datastructure.items()] 
+            else:
+                temp = [self.flatten_to_csvline(value, prefix=prefix+str(key)) for key, value in enumerate(datastructure)]
+            #Merge results into one dict
+            for subdict in temp:
+                results.update(subdict)
+        else:
+            results[prefix] = str(datastructure)
+        return results
