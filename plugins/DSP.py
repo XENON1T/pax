@@ -44,7 +44,7 @@ def find_first_below(signal, start, treshold, direction, min_length_below=1):
                 return start + i
     elif direction == 'left':
         i = start
-        while 1:
+        while 0 <= i < len(signal):
             if signal[i] < treshold:
                 counter += 1
                 if counter == min_length_below:
@@ -57,6 +57,8 @@ def find_first_below(signal, start, treshold, direction, min_length_below=1):
                 i -= 1
             else:
                 raise (Exception, "You nuts? %s isn't a direction!" % direction)
+        #If we're here, we've reached a boundary of the waveform!
+        return i
 
 
 def all_same_length(items):

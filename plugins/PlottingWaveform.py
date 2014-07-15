@@ -58,6 +58,8 @@ class PlottingWaveform(plugin.OutputPlugin):
         plt.plot(event['sum_waveforms']['top_and_bottom'], label='top_and_bottom')
         plt.plot(event['filtered_waveforms']['filtered_for_large_s2'],
                  '--', label='filtered_for_large_s2')
+        plt.plot(event['filtered_waveforms']['filtered_for_large_s2'],
+                 '--', label='filtered_for_small_s2')
 
         plt.legend()
         plt.xlabel('Time in event [10 ns]')
