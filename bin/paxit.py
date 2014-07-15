@@ -2,7 +2,7 @@
 from pax import pax
 
 if __name__ == '__main__':
-    pax.Processor(input='MongoDB.MongoDBInput',
+    pax.processor(input='MongoDB.MongoDBInput',
                   transform=['DSP.JoinAndConvertWaveforms',
                              'DSP.ComputeSumWaveform',
                              'DSP.LargeS2Filter',
@@ -13,5 +13,5 @@ if __name__ == '__main__':
                              # 'DSP.VetoS1Peakfinder',
                              'DSP.ComputeQuantities'],
                   output=['PlottingWaveform.PlottingWaveform',
-                          'Pickle.WriteToPickleFile'])
-
+                          'Pickle.WriteToPickleFile',
+                          'CSV.WriteCSVPeakwise'])

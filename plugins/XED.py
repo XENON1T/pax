@@ -8,7 +8,7 @@ import io
 from pax import plugin
 
 
-class Xed(plugin.InputPlugin):
+class ReadXed(plugin.InputPlugin):
     file_header = np.dtype([
         ("dataset_name", "S64"),
         ("creation_time", "<u4"),
@@ -37,20 +37,20 @@ class Xed(plugin.InputPlugin):
 
     def __init__(self, config):
         self.input = open('test.xed', 'rb')
-        file_metadata = np.fromfile(self.input, dtype=Xed.file_header, count=1)[0]
+        file_metadata = np.fromfile(self.input, dtype=ReadXed.file_header, count=1)[0]
         # print "File data: " + str(file_metadata)
         assert file_metadata['events_in_file'] == file_metadata['event_index_size']
         self.event_positions = np.fromfile(self.input, dtype=np.dtype("<u4"), count=file_metadata['event_index_size'])
 
     # This spends a lot of time growing the numpy array. Maybe faster if we first allocate 40000 zeroes.
-    def GetEvents(self):
+    def get_events(self):
         input = self.input
         for event_position in self.event_positions:
             self.current_event_channels = {}
             if not input.tell() == event_position:
                 raise ValueError(
                     "Reading error: this event should be at %s, but we are at %s!" % (event_position, input.tell()))
-            self.event_metadata = np.fromfile(input, dtype=Xed.event_header, count=1)[0]
+            self.event_metadata = np.fromfile(input, dtype=ReadXed.event_header, count=1)[0]
             # print "Reading event %s, consisting of %s chunks" % (self.event_metadata['event_number'], self.event_metadata['chunks'])
             if self.event_metadata['chunks'] != 1:
                 raise NotImplementedError("The day has come: event with %s chunks found!" % event_metadata['chunks'])

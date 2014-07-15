@@ -24,7 +24,7 @@ class WriteToROOTFile(p.OutputPlugin):
         self.tfile.Write()
         self.tfile.Close()
 
-    def WriteEvent(self, event):
+    def write_event(self, event):
         self.log.debug('Writing event to ROOT file')
         self.S2s.clear()
         # print(event['peaks']['summed'])
@@ -32,6 +32,6 @@ class WriteToROOTFile(p.OutputPlugin):
             self.S2s.push_back(p['summed']['area'])
             self.t1.Fill()
 
-        #for s2 in event['peaks']['summed']:
-        #    self.S2s.push_back(s2['area'])
-        #self.t1.Fill()
+            # for s2 in event['peaks']['summed']:
+            #    self.S2s.push_back(s2['area'])
+            #self.t1.Fill()

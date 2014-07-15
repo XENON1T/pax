@@ -6,7 +6,7 @@ from pax import plugin, units
 __author__ = 'tunnell'
 
 # #
-## Utils
+# # Utils
 ##
 
 def baseline_mean_stdev(waveform, sample_size=46):
@@ -81,7 +81,7 @@ def rcosfilter(filter_length, rolloff, cutoff_freq, sampling_freq=1):
             h_rc[x] = (np.pi / 4) * (np.sin(phase) / phase)
         else:
             h_rc[x] = (np.sin(phase) / phase) * (
-            np.cos(phase * rolloff) / (1 - (((2 * rolloff * t) / Ts) * ((2 * rolloff * t) / Ts))))
+                np.cos(phase * rolloff) / (1 - (((2 * rolloff * t) / Ts) * ((2 * rolloff * t) / Ts))))
 
     return h_rc / h_rc.sum()
 
@@ -102,11 +102,11 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
         self.conversion_factor /= config['digitizer_amplification']
         self.conversion_factor /= units.electron_charge
 
-    def TransformEvent(self, event):
+    def transform_event(self, event):
         if 'channel_waveforms' in event:
             #Data is not ZLE, we only need to baseline correct & convert
             for channel, wave in event['channel_waveforms'].items():
-                baseline, _ = dsputils.baseline_mean_stdev(wave)
+                baseline, _ = baseline_mean_stdev(wave)
                 event['channel_waveforms'][channel] -= baseline
                 event['channel_waveforms'][channel] *= -1 * self.conversion_factor
         elif 'channel_occurences' in event:
@@ -133,9 +133,9 @@ class ComputeSumWaveform(plugin.TransformPlugin):
                                'bottom': config['pmts_bottom'],
                                'veto': config['pmts_veto']}
 
-        self.channel_groups['top_and_bottom'] =  self.channel_groups['top'] | self.channel_groups['bottom']
+        self.channel_groups['top_and_bottom'] = self.channel_groups['top'] | self.channel_groups['bottom']
 
-    def TransformEvent(self, event):
+    def transform_event(self, event):
         sum_waveforms = {}
         # Compute summed waveforms
         for group, members in self.channel_groups.items():
@@ -160,7 +160,7 @@ class GenericFilter(plugin.TransformPlugin):
     def __init__(self, config):
         plugin.TransformPlugin.__init__(self, config)
 
-    def TransformEvent(self, event):
+    def transform_event(self, event):
         if 'filtered_waveforms' not in event:
             event['filtered_waveforms'] = {}
         event['filtered_waveforms'][self.output_name] = self.apply_filter_by_convolution(
@@ -179,8 +179,10 @@ class LargeS2Filter(GenericFilter):
 class SmallS2Filter(GenericFilter):
     def __init__(self, config):
         GenericFilter.__init__(self, config)
-        self.filter_ir = [0, 0.103, 0.371, 0.691, 0.933, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.933, 0.691,
-                          0.371, 0.103, 0]
+        self.filter_ir = np.array(
+            [0, 0.103, 0.371, 0.691, 0.933, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.933, 0.691,
+             0.371, 0.103, 0])
+        self.filter_ir = self.filter_ir / sum(self.filter_ir)  #Normalization
         self.output_name = 'filtered_for_small_s2'
         self.input_name = 'top_and_bottom'
 
@@ -220,7 +222,7 @@ class PeakFinderXenonStyle(plugin.TransformPlugin):
                 new['prepeak_right'] = i
                 prepeaks.append(new)
                 new = {
-                'prepeak_left': i}  # can't new={}, in case this is start of new peak already... wait, that can't happen right?
+                    'prepeak_left': i}  # can't new={}, in case this is start of new peak already... wait, that can't happen right?
             previous = x
         # TODO: Now at end of waveform: any unfinished peaks left
 
@@ -260,7 +262,7 @@ class PeakFinderXenonStyle(plugin.TransformPlugin):
 
         return peaks
 
-    def TransformEvent(self, event):
+    def transform_event(self, event):
         if 'peaks' not in event:
             event['peaks'] = []
         event['peaks'] += self.X100_style(self.get_input_waveform(event), **self.peakfinder_settings)
@@ -292,7 +294,7 @@ class SmallS2Peakfinder(PeakFinderXenonStyle):
         PeakFinderXenonStyle.__init__(self, config)
         dt = self.config['digitizer_t_resolution']
         self.get_input_waveform = lambda event: event['filtered_waveforms']['filtered_for_small_s2']
-        self.output_peak_type = 'large_s2'
+        self.output_peak_type = 'small_s2'
         self.peakfinder_settings = {
             'treshold': 0.062451,
             'left_boundary_to_height_ratio': 0.01,
@@ -332,7 +334,7 @@ class VetoS1Peakfinder(S1Peakfinder):
 
 
 class ComputeQuantities(plugin.TransformPlugin):
-    def TransformEvent(self, event):
+    def transform_event(self, event):
         """For every filtered waveform, find peaks
         """
 
@@ -359,7 +361,8 @@ class ComputeQuantities(plugin.TransformPlugin):
                                                                       treshold=max / 10) * samples_to_ns
             if 'top' in peaks[i] and 'bottom' in peaks[i]:
                 peaks[i]['asymmetry'] = (peaks[i]['top']['area'] - peaks[i]['bottom']['area']) / (
-                peaks[i]['top']['area'] + peaks[i]['bottom']['area'])
+                    peaks[i]['top']['area'] + peaks[i]['bottom']['area'])
+
 
         return event
 

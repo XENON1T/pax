@@ -3,6 +3,7 @@
 # Data
 *.pklz
 *.xed
+*.csv
 
 # C extensions
 *.so
