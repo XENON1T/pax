@@ -3,13 +3,18 @@ import inspect
 import pprint
 import configparser
 
+from pax import units
+
 import os
 from pluginbase import PluginBase
 
 def EvaluateConfiguration(config):
     evaled_config = {}
     for key, value in config.items():
-        evaled_config[key] = eval(value)
+        evaled_config[key] = eval(value, {
+            name : getattr(units, name)
+            for name in dir(units)
+        })
     return evaled_config
 
 def Instantiate(name, plugin_source, config_values):
