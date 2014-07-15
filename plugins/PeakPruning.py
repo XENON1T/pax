@@ -39,6 +39,35 @@ class PruneWideS1s(PeakPruner):
             return 'S1 FWQM is %s us, higher than maximum %s us.' % (fwqm/units.us, treshold/units.us)
         return
         
+class PruneWideShallowS2s(PeakPruner):
+    def __init__(self, config):
+        PeakPruner.__init__(self, config)
+        
+    def decide_peak(self, peak, event, peak_index):
+        if peak['peak_type'] != 'small_s2': return
+        treshold = 0.1 *units.mV/units.ns #S2 amplitude after which no more s1s are looked for
+        
+        if peak['left'] > self.earliestboundary:
+            return 'S1 starts at %s, which is beyond %s, the starting position of a "large" S2.' % (peak['left'], self.earliestboundary)
+        return
+        
+class PruneS1sWithNearbyNegativeExcursions(PeakPruner):
+    def __init__(self, config):
+        PeakPruner.__init__(self, config)
+        
+    def decide_peak(self, p, event, peak_index):
+        if p['peak_type'] != 's1': return
+        data = event['sum_waveforms']['top_and_bottom']
+        negex = p['lowest_nearby_value'] = min(data[
+            max(0,p['left']-500) :
+            min(len(data),p['right'] + 101)
+        ])  #Window used by s1 filter: todo: don't hardcode    
+        maxval =  p['top_and_bottom']['height']
+        factor = 3
+        if negex<0 and factor * abs(negex) >  maxval:
+            return 'Nearby negative excursion of %s, height (%s) not at least %s x as large.' % (negex, maxval, factor)
+        return
+        
 class PruneS1sInS2Tails(PeakPruner):
     def __init__(self, config):
         PeakPruner.__init__(self, config)
@@ -53,5 +82,5 @@ class PruneS1sInS2Tails(PeakPruner):
             else:
                 self.earliestboundary = min(s2boundaries)
         if peak['left'] > self.earliestboundary:
-            return 'S1 starts at %s, which is beyond %s, the starting position of a large S2.' % (peak['left'], self.earliestboundary)
+            return 'S1 starts at %s, which is beyond %s, the starting position of a "large" S2.' % (peak['left'], self.earliestboundary)
         return

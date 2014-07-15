@@ -300,6 +300,7 @@ class SmallS2Peakfinder(PeakFinderXenonStyle):
             'left_boundary_to_height_ratio': 0.01,
             'right_boundary_to_height_ratio': 0.01,
             'min_length': int(0.4 * units.us / dt),
+            'max_length': int(2 * units.us / dt),
             'test_before': int(0.1 * units.us / dt),
             'test_after': int(0.1 * units.us / dt),
             'before_to_height_ratio_max': 0.05,
