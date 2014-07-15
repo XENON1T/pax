@@ -34,20 +34,20 @@ class PlottingWaveform(plugin.OutputPlugin):
         side = 1
         # Plot all peaks
         for peak in event['peaks']:
-            x = peak['summed']['position_of_max_in_waveform']
-            y = event['sum_waveforms']['summed'][x]
+            x = peak['top_and_bottom']['position_of_max_in_waveform']
+            y = event['sum_waveforms']['top_and_bottom'][x]
 
             plt.hlines(y, peak['left'], peak['right'])
-            ax.annotate('%0.2f' % peak['summed']['area'],
+            ax.annotate('%0.2f' % peak['top_and_bottom']['area'],
                         xy=(x, y),
-                        xytext=(peak['summed']['position_of_max_in_waveform'] + 20000 * side,
-                                event['sum_waveforms']['summed'][peak['summed']['position_of_max_in_waveform']] * 0.7),
+                        xytext=(peak['top_and_bottom']['position_of_max_in_waveform'] + 20000 * side,
+                                event['sum_waveforms']['top_and_bottom'][peak['top_and_bottom']['position_of_max_in_waveform']] * 0.7),
                         arrowprops=dict(arrowstyle="fancy",
                                         fc="0.6", ec="none",
                                         connectionstyle="angle3,angleA=0,angleB=-90"))
             side *= -1
 
-        plt.plot(event['sum_waveforms']['summed'], label='summed')
+        plt.plot(event['sum_waveforms']['top_and_bottom'], label='top_and_bottom')
         plt.plot(event['filtered_waveforms']['filtered_for_large_s2'],
                  '--', label='filtered_for_large_s2')
 
