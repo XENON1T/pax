@@ -20,6 +20,7 @@ def timeit(method):
 
 
 class BasePlugin(object):
+
     def __init__(self, config_values):
         self.name = self.__class__.__name__
         self.log = logging.getLogger(self.name)
@@ -33,6 +34,7 @@ class BasePlugin(object):
 
 
 class InputPlugin(BasePlugin):
+
     """Base class for data inputs
 
     This class cannot be parallelized since events are read in a specific order
@@ -55,6 +57,7 @@ class InputPlugin(BasePlugin):
 
 
 class TransformPlugin(BasePlugin):
+
     def transform_event(self, event):
         raise NotImplementedError
 
@@ -64,6 +67,7 @@ class TransformPlugin(BasePlugin):
 
 
 class OutputPlugin(BasePlugin):
+
     def write_event(self, event):
         raise NotImplementedError
 

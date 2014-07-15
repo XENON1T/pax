@@ -40,11 +40,13 @@ def instantiate(name, plugin_source, config_values, log=logging):
 
     return getattr(plugin_module, name_class)(this_config)
 
+
 def get_my_dir():
     """Find location of this file, then my_dir is its directory"""
     absolute_path = os.path.abspath(inspect.getfile(inspect.currentframe()))
     my_dir = os.path.dirname(absolute_path)
     return my_dir
+
 
 def get_configuration():
     my_dir = get_my_dir()
@@ -60,8 +62,6 @@ def get_configuration():
     return config
 
 
-
-
 def get_plugin_source(config, log=logging):
     # Setup plugins (which involves finding the plugin directory.
     plugin_base = PluginBase(package='pax.plugins')
@@ -75,8 +75,6 @@ def get_plugin_source(config, log=logging):
         log.info("\tFound %s" % plugin_name)
 
     return plugin_source
-
-
 
 
 def processor(input, transform, output):
@@ -99,10 +97,6 @@ def processor(input, transform, output):
     # Load configuration
     config = get_configuration()
 
-    # Grab defaults section (where evaluate does any arithmetic within the ini
-    # file.  For example, 2 + 5 turns into 7.
-    default_config = evaluate_configuration(config['DEFAULT'])
-
     # Deal with command line arguments for the logging level
     parser = argparse.ArgumentParser(description="Process XENON1T data")
     parser.add_argument('--log', default='INFO', help="Set log level")
@@ -119,7 +113,7 @@ def processor(input, transform, output):
 
     # Print settings to log
     logging.debug(pprint.pformat(config,
-                             compact=True))
+                                 compact=True))
 
     # Gather information about plugins
     plugin_source = get_plugin_source(config, log)

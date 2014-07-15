@@ -6,6 +6,7 @@ from pax import plugin
 
 
 class MongoDBInput(plugin.InputPlugin):
+
     def __init__(self, config):
         plugin.InputPlugin.__init__(self, config)
 

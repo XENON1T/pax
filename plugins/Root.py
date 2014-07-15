@@ -10,6 +10,7 @@ __author__ = 'coderre'
 
 
 class WriteToROOTFile(p.OutputPlugin):
+
     def __init__(self, config):
         p.OutputPlugin.__init__(self, config)
 
@@ -34,4 +35,4 @@ class WriteToROOTFile(p.OutputPlugin):
 
             # for s2 in event['peaks']['summed']:
             #    self.S2s.push_back(s2['area'])
-            #self.t1.Fill()
+            # self.t1.Fill()

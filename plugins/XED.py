@@ -71,7 +71,7 @@ class ReadXed(plugin.InputPlugin):
                 )  # Last bytes are on front or something? Maybe whole mask is a single little-endian field??
                 channels_included = [i for i, m in enumerate(reversed(mask)) if m == 1]
                 chunk_fake_file = io.BytesIO(bz2.decompress(input.read(self.event_metadata[
-                                                                           'size'] - 28 - mask_bytes)))  # 28 is the chunk header size. TODO: only decompress if needed
+                    'size'] - 28 - mask_bytes)))  # 28 is the chunk header size. TODO: only decompress if needed
                 for channel_id in channels_included:
                     event['channel_occurences'][channel_id] = []
                     channel_waveform = np.array([], dtype="<i2")
