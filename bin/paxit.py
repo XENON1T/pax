@@ -11,7 +11,12 @@ if __name__ == '__main__':
                              'DSP.SmallS2Peakfinder',
                              'DSP.S1Peakfinder',
                              # 'DSP.VetoS1Peakfinder',
-                             'DSP.ComputeQuantities'],
+                             'DSP.ComputeQuantities',
+                             'PeakPruning.PruneWideShallowS2s',
+                             'PeakPruning.PruneWideS1s',
+                             'PeakPruning.PruneS1sWithNearbyNegativeExcursions',
+                             'PeakPruning.PruneS1sInS2Tails',
+                             ],
                   output=['PlottingWaveform.PlottingWaveform',
                           'Pickle.WriteToPickleFile'])
                           

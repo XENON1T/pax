@@ -1,6 +1,7 @@
 import matplotlib.pyplot as plt
 
 from pax import plugin
+import random
 
 __author__ = 'tunnell'
 
@@ -39,15 +40,16 @@ class PlottingWaveform(plugin.OutputPlugin):
         side = 1
         # Plot all peaks
         for peak in event['peaks']:
+            if peak['rejected']:continue
             x = peak['top_and_bottom']['position_of_max_in_waveform']
             y = event['sum_waveforms']['top_and_bottom'][x]
 
             plt.hlines(y, peak['left'], peak['right'])
-            ax.annotate('%0.2f' % peak['top_and_bottom']['area'],
+            ax.annotate('%s:%s' % (peak['peak_type'], int(peak['top_and_bottom']['area'])),
                         xy=(x, y),
-                        xytext=(peak['top_and_bottom']['position_of_max_in_waveform'] + 20000 * side,
+                        xytext=(peak['top_and_bottom']['position_of_max_in_waveform'],
                                 event['sum_waveforms']['top_and_bottom'][
-                                    peak['top_and_bottom']['position_of_max_in_waveform']] * 0.7),
+                                    peak['top_and_bottom']['position_of_max_in_waveform']] + 100+random.random()*100),
                         arrowprops=dict(arrowstyle="fancy",
                                         fc="0.6", ec="none",
                                         connectionstyle="angle3,angleA=0,angleB=-90"))

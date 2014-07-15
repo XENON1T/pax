@@ -51,11 +51,12 @@ class PruneWideShallowS2s(PeakPruner):
         PeakPruner.__init__(self, config)
         
     def decide_peak(self, peak, event, peak_index):
-        if peak['peak_type'] != 'small_s2': return
-        treshold = 0.1 *units.mV/units.ns #S2 amplitude after which no more s1s are looked for
-        
-        if peak['left'] > self.earliestboundary:
-            return 'S1 starts at %s, which is beyond %s, the starting position of a "large" S2.' % (peak['left'], self.earliestboundary)
+        if str(peak['peak_type']) != 'small_s2': return
+        treshold = 0.062451 #1 mV/bin = 0.1 mV/ns
+        peakwidth = (peak['right'] - peak['left'])/units.ns
+        ratio = peak['top_and_bottom']['height'] / peakwidth
+        if ratio > treshold:
+            return 'Max/width ratio %s is higher than %s' % (ratio, treshold)
         return
         
 class PruneS1sWithNearbyNegativeExcursions(PeakPruner):
