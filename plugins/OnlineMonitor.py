@@ -5,6 +5,7 @@ from pax import plugin
 
 
 class OnlineMonitor(plugin.OutputPlugin):
+
     def __init__(self, config):
         plugin.OutputPlugin.__init__(self, config)
 
@@ -16,8 +17,8 @@ class OnlineMonitor(plugin.OutputPlugin):
         except:
             print("Error connecting to monitoring database")
 
-    def write_event(self,event):
-        if len(event['peaks']) >0 :
-            data = {"S2_0":event['peaks'][0]['top_and_bottom']['area'],
-                    "timestamp": datetime.datetime.utcnow()}        
+    def write_event(self, event):
+        if len(event['peaks']) > 0:
+            data = {"S2_0": event['peaks'][0]['top_and_bottom']['area'],
+                    "timestamp": datetime.datetime.utcnow()}
             self.collection.save(data)

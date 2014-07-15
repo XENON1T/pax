@@ -1,13 +1,15 @@
 from pax import plugin
 
-#try:
+# try:
 #    import cPickle as pickle
-#except:
+# except:
 import pickle
 
 __author__ = 'tunnell'
 
+
 class WriteToPickleFile(plugin.OutputPlugin):
+
     def __init__(self, config):
         plugin.OutputPlugin.__init__(self, config)
 

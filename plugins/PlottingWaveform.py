@@ -25,6 +25,7 @@ def sampletime_fmt(num):
 
 
 class PlottingWaveform(plugin.OutputPlugin):
+
     def write_event(self, event):
         """Plot an event
 
