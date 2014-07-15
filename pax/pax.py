@@ -13,16 +13,19 @@ from pax import units
 def EvaluateConfiguration(config):
     evaled_config = {}
     for key, value in config.items():
-        evaled_config[key] = eval(value, {
-            name : getattr(units, name)
-            for name in dir(units)
-        })
+        evaled_config[key] = eval(value,
+                                  { name : getattr(units, name) for name in dir(units)})
     return evaled_config
 
-def Instantiate(name, plugin_source, config_values):
+def Instantiate(name, plugin_source, config_values, log=logging):
     """take class name and build class from it"""
     name_module, name_class = name.split('.')
-    plugin_module = plugin_source.load_plugin(name_module)
+    try:
+        plugin_module = plugin_source.load_plugin(name_module)
+    except ImportError as e:
+        log.fatal("Failed to load plugin %s" % name_module)
+        log.exception(e)
+        raise
 
     if config_values.has_section(name):
         this_config = config_values[name]
@@ -83,14 +86,18 @@ def Processor(input, transform, output):
     plugin_base = PluginBase(package='pax.plugins')
     searchpath = ['./plugins'] + config['DEFAULT']['plugin_paths'].split()
 
+
     # Find the absolute path, then director, then find plugin directory
     searchpath += [os.path.join(dir, '..', 'plugins')]
     log.debug("Search path for plugins is %s" % str(searchpath))
     plugin_source = plugin_base.make_plugin_source(searchpath=searchpath)
+    log.info("Found the following plugins:")
+    for plugin_name in plugin_source.list_plugins():
+        log.info("\tFound %s" % plugin_name)
 
     # Instantiate requested plugins
-    input = Instantiate(input, plugin_source, config)
-    actions = [Instantiate(x, plugin_source, config) for x in actions]
+    input = Instantiate(input, plugin_source, config, log)
+    actions = [Instantiate(x, plugin_source, config, log) for x in actions]
 
     # This is the *actual* event loop
     for i, event in enumerate(input.GetEvents()):
