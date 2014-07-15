@@ -2,8 +2,7 @@
 from pax import pax
 
 if __name__ == '__main__':
-    pax.Processor(#input='MongoDB.MongoDBInput',
-                  input='XED.Xed',
+    pax.processor(input='MongoDB.MongoDBInput',
                   transform=['DSP.JoinAndConvertWaveforms',
                              'DSP.ComputeSumWaveform',
                              'DSP.LargeS2Filter',

@@ -14,7 +14,7 @@ class OnlineMonitor(plugin.OutputPlugin):
         except:
             print("Error connecting to monitoring database")
 
-    def WriteEvent(self,event):
+    def write_event(self,event):
         if len(event['peaks']) >0 :
             data = {"S2_0":event['peaks'][0]['summed']['area'],
                     "timestamp": datetime.datetime.utcnow()}        

@@ -10,7 +10,7 @@ from pluginbase import PluginBase
 
 from pax import units
 
-def EvaluateConfiguration(config):
+def evaluate_configuration(config):
     evaled_config = {}
     for key, value in config.items():
         #Eval value with globals = everything from 'units' module...
@@ -20,7 +20,7 @@ def EvaluateConfiguration(config):
         })
     return evaled_config
 
-def Instantiate(name, plugin_source, config_values, log=logging):
+def instantiate(name, plugin_source, config_values, log=logging):
     """take class name and build class from it"""
     name_module, name_class = name.split('.')
     try:
@@ -35,12 +35,14 @@ def Instantiate(name, plugin_source, config_values, log=logging):
     else:
         this_config = config_values['DEFAULT']
 
-    this_config = EvaluateConfiguration(this_config)
+    this_config = evaluate_configuration(this_config)
 
     return getattr(plugin_module, name_class)(this_config)
 
+def get_configuration():
+    pass
 
-def Processor(input, transform, output):
+def processor(input, transform, output):
     # Check input types
     # TODO (tunnell): Don't use asserts, but raise ValueError() with
     # informative error
@@ -71,16 +73,17 @@ def Processor(input, transform, output):
     # Load the default configuration
     config.read(os.path.join(dir, 'default.ini'))
 
-    default_config = EvaluateConfiguration(config['DEFAULT'])
+    default_config = evaluate_configuration(config['DEFAULT'])
 
     # Setup logging
     string_level = default_config['loglevel']
     numeric_level = getattr(logging, string_level.upper(), None)
     if not isinstance(numeric_level, int):
         raise ValueError('Invalid log level: %s' % string_level)
-    FORMAT = '%(asctime)-15s %(name)s L%(lineno)s - %(levelname)s %(message)s'
-    logging.basicConfig(level=numeric_level, format=FORMAT)
-    log = logging.getLogger('Processor')
+
+    logging.basicConfig(level=numeric_level,
+                        format='%(name)s L%(lineno)s - %(levelname)s %(message)s')
+    log = logging.getLogger('processor')
 
     # Print settings to log
     log.debug(pprint.pformat(config, compact=True))
@@ -98,13 +101,13 @@ def Processor(input, transform, output):
     for plugin_name in plugin_source.list_plugins():
         log.info("\tFound %s" % plugin_name)
 
-    # Instantiate requested plugins
-    input = Instantiate(input, plugin_source, config, log)
-    actions = [Instantiate(x, plugin_source, config, log) for x in actions]
+    # instantiate requested plugins
+    input = instantiate(input, plugin_source, config, log)
+    actions = [instantiate(x, plugin_source, config, log) for x in actions]
 
     # This is the *actual* event loop
-    for i, event in enumerate(input.GetEvents()):
+    for i, event in enumerate(input.get_events()):
         log.info("Event %d" % i)
         for j, block in enumerate(actions):
             log.debug("Step %d with %s", j, block.__class__.__name__)
-            event = block.ProcessEvent(event)
+            event = block.process_event(event)

@@ -8,7 +8,7 @@ import io
 from pax import plugin
 
 
-class Xed(plugin.InputPlugin):
+class ReadXed(plugin.InputPlugin):
     file_header = np.dtype([
         ("dataset_name", "S64"),
         ("creation_time", "<u4"),
@@ -43,7 +43,7 @@ class Xed(plugin.InputPlugin):
         self.event_positions = np.fromfile(self.input, dtype=np.dtype("<u4"), count=file_metadata['event_index_size'])
 
     # This spends a lot of time growing the numpy array. Maybe faster if we first allocate 40000 zeroes.
-    def GetEvents(self):
+    def get_events(self):
         input = self.input
         for event_position in self.event_positions:
             self.current_event_channels = {}

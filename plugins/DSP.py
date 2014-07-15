@@ -102,7 +102,7 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
         self.conversion_factor /= config['digitizer_amplification']
         self.conversion_factor /= units.electron_charge
 
-    def TransformEvent(self, event):
+    def transform_event(self, event):
         if 'channel_waveforms' in event:
             #Data is not ZLE, we only need to baseline correct & convert
             for channel, wave in event['channel_waveforms'].items():
@@ -135,7 +135,7 @@ class ComputeSumWaveform(plugin.TransformPlugin):
 
         self.channel_groups['top_and_bottom'] =  self.channel_groups['top'] | self.channel_groups['bottom']
 
-    def TransformEvent(self, event):
+    def transform_event(self, event):
         sum_waveforms = {}
         # Compute summed waveforms
         for group, members in self.channel_groups.items():
@@ -160,7 +160,7 @@ class GenericFilter(plugin.TransformPlugin):
     def __init__(self, config):
         plugin.TransformPlugin.__init__(self, config)
 
-    def TransformEvent(self, event):
+    def transform_event(self, event):
         if 'filtered_waveforms' not in event:
             event['filtered_waveforms'] = {}
         event['filtered_waveforms'][self.output_name] = self.apply_filter_by_convolution(
@@ -261,7 +261,7 @@ class PeakFinderXenonStyle(plugin.TransformPlugin):
 
         return peaks
 
-    def TransformEvent(self, event):
+    def transform_event(self, event):
         if 'peaks' not in event:
             event['peaks'] = []
         event['peaks'] += self.X100_style(self.get_input_waveform(event), **self.peakfinder_settings)
@@ -333,7 +333,7 @@ class VetoS1Peakfinder(S1Peakfinder):
 
 
 class ComputeQuantities(plugin.TransformPlugin):
-    def TransformEvent(self, event):
+    def transform_event(self, event):
         """For every filtered waveform, find peaks
         """
 
