@@ -26,6 +26,10 @@ def sampletime_fmt(num):
 
 class PlottingWaveform(plugin.OutputPlugin):
     def write_event(self, event):
+        """Plot an event
+
+        Will make a fancy plot with lots of arrows etc of a summed waveform
+        """
         self.log.debug("Received event %s" % str(event.keys()))
 
         fig = plt.figure()
