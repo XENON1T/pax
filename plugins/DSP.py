@@ -38,27 +38,22 @@ def interval_until_treshold(signal, start, treshold):
 def find_first_below(signal, start, treshold, direction, min_length_below=1):
     # TODO: test for off-by-one errors
     counter = 0
-    if direction == 'right':
-        for i, x in enumerate(signal[start:]):
-            if x < treshold:
-                return start + i
-    elif direction == 'left':
-        i = start
-        while 0 <= i < len(signal):
-            if signal[i] < treshold:
-                counter += 1
-                if counter == min_length_below:
-                    return i  # or i-min_length_below ??? #TODO
-            else:
-                counter = 0
-            if direction == 'right':
-                i += 1
-            elif direction == 'left':
-                i -= 1
-            else:
-                raise (Exception, "You nuts? %s isn't a direction!" % direction)
-        #If we're here, we've reached a boundary of the waveform!
-        return i
+    i = start
+    while 0 < i < len(signal)-1:
+        if signal[i] < treshold:
+            counter += 1
+            if counter == min_length_below:
+                return i  # or i-min_length_below ??? #TODO
+        else:
+            counter = 0
+        if direction == 'right':
+            i += 1
+        elif direction == 'left':
+            i -= 1
+        else:
+            raise (Exception, "You nuts? %s isn't a direction!" % direction)
+    #If we're here, we've reached a boundary of the waveform!
+    return i
 
 
 def all_same_length(items):
