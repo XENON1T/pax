@@ -21,10 +21,11 @@ class WriteCSVPeakwise(plugin.OutputPlugin):
                 'rejected'  :   p['rejected'],
                 'rejected_by'  :   p['rejected_by'],
                 'rejection_reason'  :   p['rejection_reason'],
+                'fwqm'  :   p['top_and_bottom|fwqm'],
             }
             if not hasattr(self, 'csv'):
                 self.output = open('output.csv', 'w')
-                self.headers = ['event', 'type', 'left', 'right', 'area', 'rejected', 'rejected_by', 'rejection_reason'] #Grmpfh, needed for order
+                self.headers = ['event', 'type', 'left', 'right', 'area', 'rejected', 'rejected_by', 'rejection_reason', 'fwqm'] #Grmpfh, needed for order
                 self.csv = csv.DictWriter(self.output, self.headers, lineterminator='\n')
                 self.csv.writeheader()
             self.csv.writerow(data)

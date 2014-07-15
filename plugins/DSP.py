@@ -106,7 +106,7 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
         if 'channel_waveforms' in event:
             #Data is not ZLE, we only need to baseline correct & convert
             for channel, wave in event['channel_waveforms'].items():
-                baseline, _ = dsputils.baseline_mean_stdev(wave)
+                baseline, _ = baseline_mean_stdev(wave)
                 event['channel_waveforms'][channel] -= baseline
                 event['channel_waveforms'][channel] *= -1 * self.conversion_factor
         elif 'channel_occurences' in event:
