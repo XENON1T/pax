@@ -94,9 +94,9 @@ def rcosfilter(filter_length, rolloff, cutoff_freq, sampling_freq=1):
 class JoinAndConvertWaveforms(plugin.TransformPlugin):
     def __init__(self, config):
         plugin.TransformPlugin.__init__(self, config)
+
         #Maybe we should get dt and dV from input format if possible?
-        self.conversion_factor = config[
-                                     'digitizer_V_resolution'] * config['digitizer_t_resolution']
+        self.conversion_factor = config['digitizer_V_resolution'] * config['digitizer_t_resolution']
         self.conversion_factor /= config['gain']
         self.conversion_factor /= config['digitizer_resistor']
         self.conversion_factor /= config['digitizer_amplification']
@@ -129,11 +129,11 @@ class ComputeSumWaveform(plugin.TransformPlugin):
     def __init__(self, config):
         plugin.TransformPlugin.__init__(self, config)
 
-        # TODO (tunnell): These keys should come from configuration?
-        self.channel_groups = {'top': config['top'],
-                               'bottom': config['bottom'],
-                               'veto': config['veto'],
-                               'summed': config['top'] + config['bottom']}
+        self.channel_groups = {'top': config['pmts_top'] - config['pmts_bad'],
+                               'bottom': config['pmts_bottom'],
+                               'veto': config['pmts_veto']}
+
+        self.channel_groups['summed'] =  self.channel_groups['top'] | self.channel_groups['bottom']
 
     def TransformEvent(self, event):
         sum_waveforms = {}

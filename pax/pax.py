@@ -9,8 +9,8 @@ from pluginbase import PluginBase
 def EvaluateConfiguration(config):
     evaled_config = {}
     for key, value in config.items():
-        print(key, value, eval(value))
-
+        evaled_config[key] = eval(value)
+    return evaled_config
 
 def Instantiate(name, plugin_source, config_values):
     """take class name and build class from it"""
@@ -22,7 +22,7 @@ def Instantiate(name, plugin_source, config_values):
     else:
         this_config = config_values['DEFAULT']
 
-    EvaluateConfiguration(this_config)
+    this_config = EvaluateConfiguration(this_config)
 
     return getattr(plugin_module, name_class)(this_config)
 
@@ -52,10 +52,16 @@ def Processor(input, transform, output):
     config = configparser.ConfigParser(interpolation=interpolation,
                                        inline_comment_prefixes='#',
                                        strict=True)
+    # Allow for case-sensitive configuration keys
+    config.optionxform = str
+
+    # Load the default configuration
     config.read(os.path.join(dir, 'default.ini'))
 
+    default_config = EvaluateConfiguration(config['DEFAULT'])
+
     # Setup logging
-    string_level = config['DEFAULT']['loglevel']
+    string_level = default_config['loglevel']
     numeric_level = getattr(logging, string_level.upper(), None)
     if not isinstance(numeric_level, int):
         raise ValueError('Invalid log level: %s' % string_level)
