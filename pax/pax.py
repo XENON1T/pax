@@ -122,7 +122,7 @@ def processor(input, transform, output):
                              compact=True))
 
     # Gather information about plugins
-    plugin_source = get_plugin_source(config, log, my_dir)
+    plugin_source = get_plugin_source(config, log)
 
     input = instantiate(input, plugin_source, config, log)
     actions = [instantiate(x, plugin_source, config, log) for x in actions]
