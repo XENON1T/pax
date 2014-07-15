@@ -133,7 +133,7 @@ class ComputeSumWaveform(plugin.TransformPlugin):
                                'bottom': config['pmts_bottom'],
                                'veto': config['pmts_veto']}
 
-        self.channel_groups['summed'] =  self.channel_groups['top'] | self.channel_groups['bottom']
+        self.channel_groups['top_and_bottom'] =  self.channel_groups['top'] | self.channel_groups['bottom']
 
     def TransformEvent(self, event):
         sum_waveforms = {}
@@ -173,7 +173,7 @@ class LargeS2Filter(GenericFilter):
         GenericFilter.__init__(self, config)
         self.filter_ir = rcosfilter(31, 0.2, 3 * units.MHz * config['digitizer_t_resolution'])
         self.output_name = 'filtered_for_large_s2'
-        self.input_name = 'summed'
+        self.input_name = 'top_and_bottom'
 
 
 class SmallS2Filter(GenericFilter):
@@ -182,7 +182,7 @@ class SmallS2Filter(GenericFilter):
         self.filter_ir = [0, 0.103, 0.371, 0.691, 0.933, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.933, 0.691,
                           0.371, 0.103, 0]
         self.output_name = 'filtered_for_small_s2'
-        self.input_name = 'summed'
+        self.input_name = 'top_and_bottom'
 
 
 class PeakFinderXenonStyle(plugin.TransformPlugin):
@@ -309,7 +309,7 @@ class S1Peakfinder(PeakFinderXenonStyle):
     def __init__(self, config):
         PeakFinderXenonStyle.__init__(self, config)
         dt = self.config['digitizer_t_resolution']
-        self.get_input_waveform = lambda event: event['sum_waveforms']['summed']
+        self.get_input_waveform = lambda event: event['sum_waveforms']['top_and_bottom']
         self.output_peak_type = 's1'
         self.peakfinder_settings = {
             'treshold': 0.1872453,
@@ -348,7 +348,7 @@ class ComputeQuantities(plugin.TransformPlugin):
                 max = peaks[i][channel]['height'] = peak_wave[maxpos]
                 peaks[i][channel]['position_of_max_in_waveform'] = p['left'] + maxpos
                 peaks[i][channel]['area'] = np.sum(peak_wave)
-                if channel == 'summed':
+                if channel == 'top_and_bottom':
                     #Expensive stuff, only do for summed waveform, maybe later for top&bottom as well?
                     samples_to_ns = self.config['digitizer_t_resolution'] / units.ns
                     peaks[i][channel]['fwhm'] = extent_until_treshold(peak_wave, start=maxpos,

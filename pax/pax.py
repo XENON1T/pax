@@ -6,6 +6,8 @@ import configparser
 import os
 from pluginbase import PluginBase
 
+from pax import units
+
 def EvaluateConfiguration(config):
     evaled_config = {}
     for key, value in config.items():
