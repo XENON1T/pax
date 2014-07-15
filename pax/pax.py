@@ -13,8 +13,11 @@ from pax import units
 def EvaluateConfiguration(config):
     evaled_config = {}
     for key, value in config.items():
-        evaled_config[key] = eval(value,
-                                  { name : getattr(units, name) for name in dir(units)})
+        #Eval value with globals = everything from 'units' module...
+        evaled_config[key] = eval(value, {
+            name : getattr(units, name)
+            for name in dir(units)
+        })
     return evaled_config
 
 def Instantiate(name, plugin_source, config_values, log=logging):
