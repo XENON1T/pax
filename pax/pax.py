@@ -40,8 +40,15 @@ def instantiate(name, plugin_source, config_values, log=logging):
 
     return getattr(plugin_module, name_class)(this_config)
 
+def get_my_dir():
+    """Find location of this file, then my_dir is its directory"""
+    absolute_path = os.path.abspath(inspect.getfile(inspect.currentframe()))
+    my_dir = os.path.dirname(absolute_path)
+    return my_dir
 
-def get_configuration(my_dir):
+def get_configuration():
+    my_dir = get_my_dir()
+
     config = configparser.ConfigParser(inline_comment_prefixes='#',
                                        strict=True)
 
@@ -53,12 +60,14 @@ def get_configuration(my_dir):
     return config
 
 
-def get_plugin_source(config, log, my_dir):
+
+
+def get_plugin_source(config, log=logging):
     # Setup plugins (which involves finding the plugin directory.
     plugin_base = PluginBase(package='pax.plugins')
     searchpath = ['./plugins'] + config['DEFAULT']['plugin_paths'].split()
     # Find the absolute path, then director, then find plugin directory
-    searchpath += [os.path.join(my_dir, '..', 'plugins')]
+    searchpath += [os.path.join(get_my_dir(), '..', 'plugins')]
     log.debug("Search path for plugins is %s" % str(searchpath))
     plugin_source = plugin_base.make_plugin_source(searchpath=searchpath)
     log.info("Found the following plugins:")
@@ -66,6 +75,9 @@ def get_plugin_source(config, log, my_dir):
         log.info("\tFound %s" % plugin_name)
 
     return plugin_source
+
+
+
 
 def processor(input, transform, output):
     # Check input types
@@ -84,12 +96,8 @@ def processor(input, transform, output):
     # What we do on data...
     actions = transform + output
 
-    # Find location of this file, then my_dir is its directory
-    absolute_path = os.path.abspath(inspect.getfile(inspect.currentframe()))
-    my_dir = os.path.dirname(absolute_path)
-
     # Load configuration
-    config = get_configuration(my_dir)
+    config = get_configuration()
 
     # Grab defaults section (where evaluate does any arithmetic within the ini
     # file.  For example, 2 + 5 turns into 7.

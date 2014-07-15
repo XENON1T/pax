@@ -2,18 +2,20 @@ __author__ = 'tunnell'
 
 import unittest
 
+from pax import pax
 from pluginbase import PluginBase
 
 
 class MyTestCase(unittest.TestCase):
     def setUp(self):
-        plugin_base = PluginBase(package='pax.plugins')
-        searchpath = ['./plugins']
-        plugin_source = plugin_base.make_plugin_source(searchpath=searchpath)
+        conf = pax.get_configuration()
+        plugin_source = pax.get_plugin_source(conf)
+        self.obj = pax.instantiate('Pickle.WriteToPickleFile',
+                                   plugin_source,
+                                   conf)
 
-
-def test_something(self):
-    self.assertEqual(True, False)
+    def test_something(self):
+        self.obj.write_event({})
 
 
 if __name__ == '__main__':
