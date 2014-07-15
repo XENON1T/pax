@@ -6,6 +6,11 @@ import configparser
 import os
 from pluginbase import PluginBase
 
+def EvaluateConfiguration(config):
+    evaled_config = {}
+    for key, value in config.items():
+        print(key, value, eval(value))
+
 
 def Instantiate(name, plugin_source, config_values):
     """take class name and build class from it"""
@@ -16,6 +21,8 @@ def Instantiate(name, plugin_source, config_values):
         this_config = config_values[name]
     else:
         this_config = config_values['DEFAULT']
+
+    EvaluateConfiguration(this_config)
 
     return getattr(plugin_module, name_class)(this_config)
 
