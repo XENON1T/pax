@@ -16,6 +16,6 @@ class OnlineMonitor(plugin.OutputPlugin):
 
     def WriteEvent(self,event):
         if len(event['peaks']) >0 :
-            data = {"S2_0":event['peaks'][0]['summed']['area'],
+            data = {"S2_0":event['peaks'][0]['top_and_bottom']['area'],
                     "timestamp": datetime.datetime.utcnow()}        
             self.collection.save(data)
