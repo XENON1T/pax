@@ -16,4 +16,4 @@ class CreateGraphOfEventStructure(plugin.OutputPlugin):
 
     def write_event(self, event):
         objgraph.show_refs(event,
-                           filename='sample-graph.png', max_depth=3)
+                           filename='sample-graph.png')
