@@ -97,6 +97,7 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
     def __init__(self, config):
         plugin.TransformPlugin.__init__(self, config)
         # Maybe we should get dt and dV from input format if possible?
+        self.config = config
         self.gains = config['gains']
         self.conversion_factor = config['digitizer_V_resolution'] * config['digitizer_t_resolution']
         self.conversion_factor /= config['digitizer_resistor']
@@ -112,8 +113,13 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
                 print('Gain for channel %s is not specified! Skipping channel.' % channel)
                 continue
             if self.gains[channel] == 0:
-                print('Gain for channel %s is 0! Skipping channel.' % channel)
-                continue
+                if channel in event['channel_occurences']:
+                    #raise ValueError('Gain for channel %s is 0, BUT IT IS IN THE WAVEFORM!!!' % channel)
+                    print('Gain for channel %s is 0, BUT IT IS IN THE WAVEFORM!!!' % channel)
+                    continue
+                else:
+                    #Just a dead channel, no biggie
+                    continue
             # Determine an average baseline for this channel, using all the occurences
             baseline = np.mean([baseline_mean_stdev(wave_occurence)[0]
                                 for _, wave_occurence in waveform_occurences])
