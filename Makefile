@@ -25,7 +25,7 @@ clean-pyc:
 	find . -name '*~' -exec rm -f {} +
 
 lint:
-	flake8 pax tests
+	flake8 --max-line-length=100 pax tests
 
 test:
 	python setup.py test
