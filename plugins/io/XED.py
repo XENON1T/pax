@@ -66,9 +66,10 @@ class ReadXed(plugin.InputPlugin):
                 TODO: Check with the actual bits in a hex editor..
                 """
                 mask_bytes = 4 * int(math.ceil(self.event_metadata['channels'] / 32))
-                mask = self.bytestobits(
-                    np.fromfile(input, dtype=np.dtype('<S%s' % mask_bytes), count=1)[0]
-                )  # Last bytes are on front or something? Maybe whole mask is a single little-endian field??
+                #mask = self.bytestobits(
+                #    np.fromfile(input, dtype=np.dtype('<S%s' % mask_bytes), count=1)[0]
+                #)  # Last bytes are on front or something? Maybe whole mask is a single little-endian field??
+                mask = np.unpackbits(np.array(list(np.fromfile(input, dtype=np.dtype('<S%s' % mask_bytes), count=1)[0]), dtype='uint8'))
                 channels_included = [i for i, m in enumerate(reversed(mask)) if m == 1]
                 chunk_fake_file = io.BytesIO(bz2.decompress(input.read(self.event_metadata[
                     'size'] - 28 - mask_bytes)))  # 28 is the chunk header size. TODO: only decompress if needed
