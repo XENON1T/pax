@@ -94,4 +94,23 @@ class PruneS1sInS2Tails(PeakPruner):
         if peak['left'] > self.earliestboundary:
             return 'S1 starts at %s, which is beyond %s, the starting position of a "large" S2.' % (peak['left'], self.earliestboundary)
         return
+        
+class PruneS2sInS2Tails(PeakPruner):
+
+    def __init__(self, config):
+        PeakPruner.__init__(self, config)
+
+    def decide_peak(self, peak, event, peak_index):
+        if peak['peak_type'] != 'small_s2':
+            return
+        treshold = 624.151  # S2 amplitude after which no more s2s are looked for
+        if not hasattr(self, 'earliestboundary'):
+            s2boundaries = [p['left'] for p in event['peaks'] if is_s2(p) and p['top_and_bottom']['height'] > treshold]
+            if s2boundaries == []:
+                self.earliestboundary = float('inf')
+            else:
+                self.earliestboundary = min(s2boundaries)
+        if peak['left'] > self.earliestboundary:
+            return 'Small S2 starts at %s, which is beyond %s, the starting position of a "large" S2.' % (peak['left'], self.earliestboundary)
+        return
 

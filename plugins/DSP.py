@@ -175,6 +175,7 @@ class LargeS2Filter(GenericFilter):
     def __init__(self, config):
         GenericFilter.__init__(self, config)
         self.filter_ir = rcosfilter(31, 0.2, 3 * units.MHz * config['digitizer_t_resolution'])
+        print(','.join(map(str,list(self.filter_ir))))
         self.output_name = 'filtered_for_large_s2'
         self.input_name = 'top_and_bottom'
 
