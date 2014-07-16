@@ -13,6 +13,9 @@ __author__ = 'tunnell'
 def baseline_mean_stdev(waveform, sample_size=46):
     """ returns (baseline, baseline_stdev), calculated on the first sample_size samples of waveform """
     baseline_sample = waveform[:sample_size]
+    ##TEMP for xerawdp matching
+    return (np.mean(baseline_sample), np.std(baseline_sample))
+    #This is better:
     return (
         np.mean(sorted(baseline_sample)[
                 int(0.4 * len(baseline_sample)):int(0.6 * len(baseline_sample))
@@ -129,12 +132,14 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
                 wave[starting_position:starting_position + len(wave_occurence)] = wave_occurence
             event['channel_waveforms'][channel] = -1 * (wave - baseline) * self.conversion_factor/self.gains[channel]
         ##TEMP: for Xerawdp Matching
-        # if not 'processed_waveforms' in event:
-            # event['processed_waveforms'] = {} 
-        # event['processed_waveforms']['ungaindifferencescorrected_sum_waveform_for_xerawdp_matching'] = sum([
-            # event['channel_waveforms'][channel]*self.gains[channel]/2e6 for channel in list(set(range(1,177))-set([1, 2, 145, 148, 157, 171, 177]))
-        # ])
-        # Delete the channel_occurences from the event structure, we don't need it anymore
+        if not 'processed_waveforms' in event:
+            event['processed_waveforms'] = {} 
+        event['processed_waveforms']['sum_waveform_for_xerawdp_matching_that_has_been_gain_corrected_using_a_single_number'] = sum([
+            event['channel_waveforms'][channel] * self.gains[channel]/(2*10**(6))
+            for channel in event['channel_waveforms'].keys()
+            if channel <178 and channel not in [1, 2, 145, 148, 157, 171, 177] and self.gains[channel] != 0
+        ])
+        #Delete the channel_occurences from the event structure, we don't need it anymore
         del event['channel_occurences']
         return event
         

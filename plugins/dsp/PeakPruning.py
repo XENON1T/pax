@@ -30,7 +30,7 @@ class PeakPruner(plugin.TransformPlugin):
             if decision != None:
                 p['rejected'] = True
                 p['rejection_reason'] = decision
-                p['rejected_by'] = str(self)
+                p['rejected_by'] = str(self.__class__.__name__)
         return event
 
     def decide_peak(self, peak, event, peak_index):
@@ -69,7 +69,7 @@ class PruneNonIsolatedPeaks(PeakPruner):
             return '%s samples before peak contain stuff (mean %s, which is more than %s (%s x peak height))' % (settings['test_before'], peak['before_mean'], settings['before_to_height_ratio_max'] * peak['height'], settings['before_to_height_ratio_max'])
         if peak['after_mean'] > settings['after_to_height_ratio_max'] * peak['height']:
             return '%s samples after peak contain stuff (mean %s, which is more than %s (%s x peak height))' % (settings['test_after'], peak['after_mean'], settings['after_to_height_ratio_max'] * peak['height'], settings['after_to_height_ratio_max'])
-        return
+        return None
                    
     
         
@@ -80,12 +80,12 @@ class PruneWideS1s(PeakPruner):
 
     def decide_peak(self, peak, event, peak_index):
         if peak['peak_type'] != 's1':
-            return
+            return None
         fwqm = peak['top_and_bottom']['fwqm']
         treshold = 0.5 * units.us
         if fwqm > treshold:
             return 'S1 FWQM is %s us, higher than maximum %s us.' % (fwqm / units.us, treshold / units.us)
-        return
+        return None
 
         
 class PruneWideShallowS2s(PeakPruner):
@@ -93,20 +93,20 @@ class PruneWideShallowS2s(PeakPruner):
         PeakPruner.__init__(self, config)
         
     def decide_peak(self, peak, event, peak_index):
-        if str(peak['peak_type']) != 'small_s2': return
+        if str(peak['peak_type']) != 'small_s2': return None
         treshold = 0.062451 #1 mV/bin = 0.1 mV/ns
         peakwidth = (peak['right'] - peak['left'])/units.ns
         ratio = peak['top_and_bottom']['height'] / peakwidth
         if ratio > treshold:
             return 'Max/width ratio %s is higher than %s' % (ratio, treshold)
-        return
+        return None
         
 class PruneS1sWithNearbyNegativeExcursions(PeakPruner):
     def __init__(self, config):
         PeakPruner.__init__(self, config)
         
     def decide_peak(self, p, event, peak_index):
-        if p['peak_type'] != 's1': return
+        if p['peak_type'] != 's1': return None
         data = event['processed_waveforms']['top_and_bottom']
         negex = p['lowest_nearby_value'] = min(data[
             max(0,p['left']-500) :
@@ -116,7 +116,7 @@ class PruneS1sWithNearbyNegativeExcursions(PeakPruner):
         factor = 3
         if negex<0 and factor * abs(negex) >  maxval:
             return 'Nearby negative excursion of %s, height (%s) not at least %s x as large.' % (negex, maxval, factor)
-        return
+        return None
         
 class PruneS1sInS2Tails(PeakPruner):
 
@@ -125,7 +125,7 @@ class PruneS1sInS2Tails(PeakPruner):
 
     def decide_peak(self, peak, event, peak_index):
         if peak['peak_type'] != 's1':
-            return
+            return None
         treshold = 3.12255  # S2 amplitude after which no more s1s are looked for
         if not hasattr(self, 'earliestboundary'):
             s2boundaries = [p['left'] for p in event['peaks'] if is_s2(p) and p['top_and_bottom']['height'] > treshold]
@@ -135,7 +135,7 @@ class PruneS1sInS2Tails(PeakPruner):
                 self.earliestboundary = min(s2boundaries)
         if peak['left'] > self.earliestboundary:
             return 'S1 starts at %s, which is beyond %s, the starting position of a "large" S2.' % (peak['left'], self.earliestboundary)
-        return
+        return None
         
 class PruneS2sInS2Tails(PeakPruner):
 
@@ -144,7 +144,7 @@ class PruneS2sInS2Tails(PeakPruner):
 
     def decide_peak(self, peak, event, peak_index):
         if peak['peak_type'] != 'small_s2':
-            return
+            return None
         treshold = 624.151  # S2 amplitude after which no more s2s are looked for
         if not hasattr(self, 'earliestboundary'):
             s2boundaries = [p['left'] for p in event['peaks'] if is_s2(p) and p['top_and_bottom']['height'] > treshold]
@@ -154,5 +154,5 @@ class PruneS2sInS2Tails(PeakPruner):
                 self.earliestboundary = min(s2boundaries)
         if peak['left'] > self.earliestboundary:
             return 'Small S2 starts at %s, which is beyond %s, the starting position of a "large" S2.' % (peak['left'], self.earliestboundary)
-        return
+        return None
 
