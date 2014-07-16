@@ -1,5 +1,6 @@
 import logging
 import inspect
+from io import StringIO
 import pprint
 import argparse
 import configparser
@@ -112,8 +113,11 @@ def processor(input, transform, output):
     log = logging.getLogger('processor')
 
     # Print settings to log
-    logging.debug(pprint.pformat(config,
-                                 compact=True))
+    string_file = StringIO()
+    config.write(string_file)
+    log.debug("Dumping INI file")
+    for line in string_file.getvalue().split('\n'):
+        log.debug(line)
 
     # Gather information about plugins
     plugin_source = get_plugin_source(config, log)

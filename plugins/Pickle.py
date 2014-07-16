@@ -14,13 +14,14 @@ class WriteToPickleFile(plugin.OutputPlugin):
         plugin.OutputPlugin.__init__(self, config)
 
         self.log.debug("Writing pickled data to %s" % config['picklefile'])
-        self.file = open(config['picklefile'],
+        self.myfile = open(config['picklefile'],
                          'wb')
 
     def __del__(self):
         self.log.debug("Closing %s" % self.config['picklefile'])
-        self.file.close()
+        self.myfile.close()
 
     def write_event(self, event):
+        print(event)
         self.log.debug('Pickling event')
-        pickle.dump(event, self.file)
+        pickle.dump(event, self.myfile)

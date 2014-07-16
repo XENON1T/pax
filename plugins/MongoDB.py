@@ -15,8 +15,6 @@ class MongoDBInput(plugin.InputPlugin):
         self.database = self.client[config['database']]
         self.collection = self.database[config['collection']]
 
-        self.baseline = config['digitizer_baseline']
-
         # TODO (tunnell): Sort by event number
         self.cursor = self.collection.find()
         self.number_of_events = self.cursor.count()
