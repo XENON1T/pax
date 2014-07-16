@@ -1,5 +1,4 @@
 from pax import plugin, units
-import numpy as np
 
 # decision: none: accept, string: reject, string specifies reason
 
@@ -15,18 +14,13 @@ class PeakPruner(plugin.TransformPlugin):
 
     def transform_event(self, event):
         for peak_index, p in enumerate(event['peaks']):
-            #If this is the first peak pruner, we have to set up some values
             if not 'rejected' in p:
                 p['rejected'] = False
                 p['rejection_reason'] = None
                 p['rejected_by'] = None
-            #If peak has been rejected earlier, we don't have to test it
-            #In the future we may want to disable this to test how the prunings depend on each other
             if p['rejected']:
                 continue
-            #Child class has to define decide_peak
             decision = self.decide_peak(p, event, peak_index)
-            #None means accept the peak. Anything else is a rejection reason.
             if decision != None:
                 p['rejected'] = True
                 p['rejection_reason'] = decision
@@ -34,46 +28,9 @@ class PeakPruner(plugin.TransformPlugin):
         return event
 
     def decide_peak(self, peak, event, peak_index):
-        raise NotImplementedError("This peak pruner forgot to implement decide_peak...")
+        raise NotImplementedError("This peak decider forgot to implement decide_peak...")
 
 
-class PruneNonIsolatedPeaks(PeakPruner):
-    #mean of test_before samples before interval must be less than before_to_height_ratio_max times the maximum value in the interval
-    #Same for test_after
-    #NB: tests the PREPEAK, not the actual peak!!! (XeRawDP behaviour)
-
-    def __init__(self, config):
-        PeakPruner.__init__(self, config)
-        #These should be in configuration...
-        self.settings = {
-            'test_before' : {'s1': 50, 'large_s2': 21, 'small_s2': 10},
-            'test_after'  : {'s1': 10, 'large_s2': 21, 'small_s2': 10},
-            'before_to_height_ratio_max' : {'s1': 0.01, 'large_s2': 0.05, 'small_s2': 0.05},
-            'before_to_height_ratio_max' : {'s1': 0.01, 'large_s2': 0.05, 'small_s2': 0.05},
-            'after_to_height_ratio_max'  : {'s1': 0.04, 'large_s2': 0.05, 'small_s2': 0.05}
-        }
-        
-    def decide_peak(self, peak, event, peak_index):
-        #Find which settings to use for this type of peak
-        settings = {}
-        for settingname, settingvalue in self.settings.items():
-            settings[settingname] = self.settings[settingname][peak['peak_type']]
-        signal = event['sum_waveforms']['top_and_bottom']
-        #Calculate before_mean and after_mean
-        assert not 'before_mean' in peak    #Fails if you run the plugin twice!
-        peak['before_mean'] = np.mean(
-            signal[max(0, peak['prepeak_left'] - settings['test_before']): peak['prepeak_left']])
-        peak['after_mean'] = np.mean(
-            signal[peak['prepeak_right']: min(len(signal), peak['prepeak_right'] + settings['test_after'])])
-        #Do the testing
-        if peak['before_mean'] > settings['before_to_height_ratio_max'] * peak['height']:
-            return '%s samples before peak contain stuff (mean %s, which is more than %s (%s x peak height))' % (settings['test_before'], peak['before_mean'], settings['before_to_height_ratio_max'] * peak['height'], settings['before_to_height_ratio_max'])
-        if peak['after_mean'] > settings['after_to_height_ratio_max'] * peak['height']:
-            return '%s samples after peak contain stuff (mean %s, which is more than %s (%s x peak height))' % (settings['test_after'], peak['after_mean'], settings['after_to_height_ratio_max'] * peak['height'], settings['after_to_height_ratio_max'])
-        return
-                   
-    
-        
 class PruneWideS1s(PeakPruner):
 
     def __init__(self, config):

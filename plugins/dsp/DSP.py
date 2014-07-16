@@ -28,12 +28,10 @@ def extent_until_treshold(signal, start, treshold):
     return a[1] - a[0]
 
 
-def interval_until_treshold(signal, start, left_treshold, right_treshold=None):
-    if right_treshold == None:
-        right_treshold = left_treshold
+def interval_until_treshold(signal, start, treshold):
     return (
-        find_first_below(signal, start, left_treshold,  'left'),
-        find_first_below(signal, start, right_treshold, 'right'),
+        find_first_below(signal, start, treshold, 'left'),
+        find_first_below(signal, start, treshold, 'right'),
     )
 
 
@@ -177,6 +175,7 @@ class LargeS2Filter(GenericFilter):
     def __init__(self, config):
         GenericFilter.__init__(self, config)
         self.filter_ir = rcosfilter(31, 0.2, 3 * units.MHz * config['digitizer_t_resolution'])
+        print(','.join(map(str,list(self.filter_ir))))
         self.output_name = 'filtered_for_large_s2'
         self.input_name = 'top_and_bottom'
 
@@ -191,117 +190,159 @@ class SmallS2Filter(GenericFilter):
         self.filter_ir = self.filter_ir / sum(self.filter_ir)  # Normalization
         self.output_name = 'filtered_for_small_s2'
         self.input_name = 'top_and_bottom'
-      
-                   
-# TODO: Veto S1s!!
-class PrepeakFinder(plugin.TransformPlugin):
-    """
-    Finds intervals 'above treshold' for which min_length <= length <= max_length.
-    'above treshold': dropping below treshold for shorter than max_samples_below_treshold is acceptable
-    """
+
+
+class PeakFinderXenonStyle(plugin.TransformPlugin):
 
     def __init__(self, config):
         plugin.TransformPlugin.__init__(self, config)
-        self.settings = {
-            'treshold'          :   {'s1': 0.1872453, 'large_s2': 0.62451,      'small_s2': 0.062451}, 
-            'min_length'        :   {'s1': 0,         'large_s2': 60,           'small_s2': 40}, 
-            'max_length'        :   {'s1': 60,        'large_s2': float('inf'), 'small_s2': 200}, 
-            'max_samples_below_treshold' :  {'s1': 2, 'large_s2': 0,            'small_s2': 0}, 
-            'input_waveform_grabber' : {
-                's1'      : lambda event: event['filtered_waveforms']['filtered_for_large_s2'],
-                'large_s2': lambda event: event['filtered_waveforms']['filtered_for_small_s2'],
-                'small_s2': lambda event: event['sum_waveforms']['top_and_bottom']
-            }
-        }
 
-    def transform_event(self, event):
-        event['prepeaks'] = []
-        #Which peak types do we need to search for?
-        peak_types = self.settings['treshold'].keys()
-        for peak_type in peak_types:
-            # Find which settings to use for this type of peak
-            settings = {}
-            for settingname, settingvalue in self.settings.items():
-                settings[settingname] = self.settings[settingname][peak_type]
-            # Get the signal out
-            signal = settings['input_waveform_grabber'](event)
-            # Find any prepeaks
-            prepeaks = []
-            blank_prepeak = {
-                'prepeak_left': 0,
-                'input_waveform_grabber' : settings['input_waveform_grabber'],
-                'peak_type' : peak_type
-            } 
-            thisnewpeak = blank_prepeak.copy()
-            previous = float("-inf")
-            below_treshold_counter = 0
-            for i, x in enumerate(signal):
-                if x > settings['treshold'] and previous < settings['treshold']:
-                    #We have come above treshold
-                    below_treshold_counter = 0
-                    thisnewpeak['prepeak_left'] = i
-                elif x < settings['treshold'] and previous > settings['treshold'] or below_treshold_counter != 0:
-                    #We have dropped below treshold
-                    below_treshold_counter += 1
-                    if below_treshold_counter > settings['max_samples_below_treshold']:
-                        #The peak has ended! Append it and start a new one
-                        thisnewpeak['prepeak_right'] = i
-                        prepeaks.append(thisnewpeak)
-                        thisnewpeak = blank_prepeak.copy()
-                        thisnewpeak['prepeak_left'] = i #in case this is start of new peak already... wait, that can't happen right?
-                        below_treshold_counter = 0
-                previous = x
-            # TODO: Now at end of waveform: any unfinished peaks left??
+    def X100_style(self,
+                   signal,
+                   treshold=10,
+                   boundary_to_height_ratio=0.1,
+                   min_length=1,
+                   max_length=float('inf'),
+                   test_before=1,
+                   before_to_height_ratio_max=float('inf'),
+                   test_after=1,
+                   after_to_height_ratio_max=float('inf'),
+                   **kwargs):
+        """
+        First finds pre-peaks: intervals above treshold for which
+            * min_length <= length <= max_length
+            * mean of test_before samples before interval must be less than before_to_height_ratio_max times the maximum value in the interval
+            * vice versa for after
+        Then looks for peaks in the pre-peaks: boundary whenever it first drops below boundary_to_max_ratio*height
+        """
 
-            # Filter out prepeaks that don't meet conditions, compute some quantities
-            valid_prepeaks = []
-            for b in prepeaks:
-                if not settings['min_length'] <= b['prepeak_right'] - b['prepeak_left'] <= settings['max_length']:
-                    continue
-                b['index_of_max_in_prepeak'] = np.argmax(signal[b['prepeak_left']: b[
-                    'prepeak_right'] + 1])  # Remember python indexing... Though probably right boundary isn't ever the max!
-                b['index_of_max_in_waveform'] = b['index_of_max_in_prepeak'] + b['prepeak_left']
-                b['height'] = signal[b['index_of_max_in_waveform']]
-                valid_prepeaks.append(b)
-            #Store the valid prepeaks found
-            event['prepeaks'] += valid_prepeaks
-    
-        return event
+        # Find any prepeaks
+        prepeaks = []
+        new = {'prepeak_left': 0}
+        previous = float("-inf")
+        for i, x in enumerate(signal):
+            if x > treshold and previous < treshold:
+                new['prepeak_left'] = i
+            elif x < treshold and previous > treshold:
+                new['prepeak_right'] = i
+                prepeaks.append(new)
+                new = {
+                    'prepeak_left': i}  # can't new={}, in case this is start of new peak already... wait, that can't happen right?
+            previous = x
+        # TODO: Now at end of waveform: any unfinished peaks left
 
+        # Filter out prepeaks that don't meet conditions
+        valid_prepeaks = []
+        for b in prepeaks:
+            if not min_length <= b['prepeak_right'] - b['prepeak_left'] <= max_length:
+                continue
+            b['index_of_max_in_prepeak'] = np.argmax(signal[b['prepeak_left']: b[
+                'prepeak_right'] + 1])  # Remember python indexing... Though probably right boundary isn't ever the max!
+            b['index_of_max_in_waveform'] = b[
+                'index_of_max_in_prepeak'] + b['prepeak_left']
+            b['height'] = signal[b['index_of_max_in_waveform']]
+            b['before_mean'] = np.mean(
+                signal[max(0, b['prepeak_left'] - test_before): b['prepeak_left']])
+            b['after_mean'] = np.mean(
+                signal[b['prepeak_right']: min(len(signal), b['prepeak_right'] + test_after)])
+            if b['before_mean'] > before_to_height_ratio_max * b['height'] or b[
+                    'after_mean'] > after_to_height_ratio_max * b['height']:
+                continue
+            valid_prepeaks.append(b)
 
-class FindPeaksInPrepeaks(plugin.TransformPlugin):
-    #Looks for peaks in the pre-peaks: starts from max, walks down, stops whenever signal drops below boundary_to_max_ratio*height
-    def __init__(self, config):
-        plugin.TransformPlugin.__init__(self, config)
-        self.settings = {
-            'left_boundary_to_height_ratio'  :   {'s1': 0.005,'large_s2': 0.005, 'small_s2': 0.01}, 
-            'right_boundary_to_height_ratio' :   {'s1': 0.005,'large_s2': 0.002, 'small_s2': 0.01}, 
-        }
-        
-    def transform_event(self, event):
-        event['peaks'] = []
         # Find peaks in the prepeaks
         # TODO: handle presence of multiple peaks in base, that's why I make a
         # new array already now
-        for p in event['prepeaks']:
-            #Find which settings to use for this type of peak
-            settings = {}
-            for settingname, settingvalue in self.settings.items():
-                settings[settingname] = self.settings[settingname][p['peak_type']]
-            signal = p['input_waveform_grabber'](event)
+        peaks = []
+        for p in valid_prepeaks:
             # TODO: stop find_first_below search if we reach boundary of an
             # earlier peak? hmmzz need to pass more args to this. Or not
             # needed?
-            #Deal with copying once we go into peak splitting
-            (p['left'], p['right']) = interval_until_treshold(
-                signal,
-                start = p['index_of_max_in_waveform'],
-                left_treshold  = settings['left_boundary_to_height_ratio']  * p['height'],
-                right_treshold = settings['right_boundary_to_height_ratio'] * p['height'],
-            )
-            event['peaks'].append(p)
+            (p['left'], p['right']) = interval_until_treshold(signal,
+                                                              start=p[
+                                                                  'index_of_max_in_waveform'],
+                                                              treshold=boundary_to_height_ratio * p['height'])
+            p['peak_type'] = self.output_peak_type
+            peaks.append(p)
+
+        return peaks
+
+    def transform_event(self, event):
+        if 'peaks' not in event:
+            event['peaks'] = []
+        event['peaks'] += self.X100_style(self.get_input_waveform(event), **self.peakfinder_settings)
         return event
-        
+
+
+class LargeS2Peakfinder(PeakFinderXenonStyle):
+
+    def __init__(self, config):
+        PeakFinderXenonStyle.__init__(self, config)
+        dt = self.config['digitizer_t_resolution']
+        self.get_input_waveform = lambda event: event['filtered_waveforms']['filtered_for_large_s2']
+        self.output_peak_type = 'large_s2'
+        self.peakfinder_settings = {
+            'treshold': 0.62451,
+            'left_boundary_to_height_ratio': 0.005,
+            'right_boundary_to_height_ratio': 0.002,
+            'min_length': int(0.6 * units.us / dt),
+            'test_before': int(0.21 * units.us / dt),
+            'test_after': int(0.21 * units.us / dt),
+            # Different settings for top level interval and intermediate interval
+            # Take this into account for peak splitter!
+            'before_to_height_ratio_max': 0.05,
+            'after_to_height_ratio_max': 0.05
+        }
+
+
+class SmallS2Peakfinder(PeakFinderXenonStyle):
+
+    def __init__(self, config):
+        PeakFinderXenonStyle.__init__(self, config)
+        dt = self.config['digitizer_t_resolution']
+        self.get_input_waveform = lambda event: event['filtered_waveforms']['filtered_for_small_s2']
+        self.output_peak_type = 'small_s2'
+        self.peakfinder_settings = {
+            'treshold': 0.062451,
+            'left_boundary_to_height_ratio': 0.01,
+            'right_boundary_to_height_ratio': 0.01,
+            'min_length': int(0.4 * units.us / dt),
+            'max_length': int(2 * units.us / dt),
+            'test_before': int(0.1 * units.us / dt),
+            'test_after': int(0.1 * units.us / dt),
+            'before_to_height_ratio_max': 0.05,
+            'after_to_height_ratio_max': 0.05
+        }
+
+
+class S1Peakfinder(PeakFinderXenonStyle):
+
+    def __init__(self, config):
+        PeakFinderXenonStyle.__init__(self, config)
+        dt = self.config['digitizer_t_resolution']
+        self.get_input_waveform = lambda event: event['sum_waveforms']['top_and_bottom']
+        self.output_peak_type = 's1'
+        self.peakfinder_settings = {
+            'treshold': 0.1872453,
+            'left_boundary_to_height_ratio': 0.005,
+            'right_boundary_to_height_ratio': 0.005,
+            'min_samples_below_boundary': 3,
+            'max_length': int(0.6 * units.us / dt),
+            'test_before': int(0.5 * units.us / dt),
+            'test_after': int(0.1 * units.us / dt),
+            'before_to_height_ratio_max': 0.01,
+            'after_to_height_ratio_max': 0.04
+        }
+
+
+class VetoS1Peakfinder(S1Peakfinder):
+
+    def __init__(self, config):
+        S1Peakfinder.__init__(self, config)
+        self.get_input_waveform = lambda event: event['sum_waveforms']['veto']
+        self.output_peak_type = 'veto_s1'
+
+
 class ComputeQuantities(plugin.TransformPlugin):
 
     def transform_event(self, event):

@@ -6,6 +6,7 @@ import argparse
 import configparser
 
 import os
+import glob
 from pluginbase import PluginBase
 
 from pax import units
@@ -69,6 +70,12 @@ def get_plugin_source(config, log=logging):
     searchpath = ['./plugins'] + config['DEFAULT']['plugin_paths'].split()
     # Find the absolute path, then director, then find plugin directory
     searchpath += [os.path.join(get_my_dir(), '..', 'plugins')]
+    # Want to look in all subdirectories of plugin directories
+    subdirs = []
+    for entry in searchpath:
+        searchpath.extend(glob.glob(os.path.join(entry, '*/')))
+    searchpath.extend(subdirs)
+
     log.debug("Search path for plugins is %s" % str(searchpath))
     plugin_source = plugin_base.make_plugin_source(searchpath=searchpath)
     log.info("Found the following plugins:")
