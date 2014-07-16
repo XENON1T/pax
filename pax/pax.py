@@ -1,7 +1,6 @@
 import logging
 import inspect
 from io import StringIO
-import pprint
 import argparse
 import configparser
 
@@ -108,6 +107,9 @@ def processor(input, transform, output):
     # Deal with command line arguments for the logging level
     parser = argparse.ArgumentParser(description="Process XENON1T data")
     parser.add_argument('--log', default='INFO', help="Set log level")
+    parser.add_argument('-n',
+                        type=int,
+                        help="Process fixed number of events")
     args = parser.parse_args()
 
     # Setup logging
@@ -134,6 +136,10 @@ def processor(input, transform, output):
 
     # This is the *actual* event loop
     for i, event in enumerate(input.get_events()):
+        if args.n:
+            if i >= args.n:
+                break
+                
         log.info("Event %d" % i)
         for j, block in enumerate(actions):
             log.debug("Step %d with %s", j, block.__class__.__name__)
