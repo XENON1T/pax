@@ -13,8 +13,6 @@ import numpy as np
 
 from pax import plugin, units
 
-__author__ = 'tunnell'
-
 # #
 # Utils: these are helper functions for the plugins
 # TODO: Can we put these functions in the transform base class?

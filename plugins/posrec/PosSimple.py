@@ -1,8 +1,6 @@
 """Very simple position reconstruction for s2"""
 from pax import plugin
 
-__author__ = 'coderre'
-
 class PosRecWeightedSum(plugin.TransformPlugin):
     """Class to reconstruct s2 x,y positions using the weighted sum of PMTs in the top array. Positions stored in peak['rec']['PosSimple']"""
 

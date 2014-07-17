@@ -3,9 +3,6 @@ import matplotlib.pyplot as plt
 from pax import plugin
 import random
 
-__author__ = 'tunnell'
-
-
 def sizeof_fmt(num):
     """input is bytes"""
     for x in ['B', 'KB', 'MB', 'GB']:
