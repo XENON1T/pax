@@ -1,3 +1,13 @@
+"""Definition of base classes for plugins
+
+Here we define every one of the plugins/modules for pax.  This describes what
+the interfaces are.  To add an input or a transform, you define one function
+that does something with an event.  An input spits out event objects.  A
+transform would modify the event object.
+
+See format for more information on the event object.
+"""
+
 __author__ = 'tunnell'
 
 import logging
@@ -34,7 +44,6 @@ class BasePlugin(object):
 
 
 class InputPlugin(BasePlugin):
-
     """Base class for data inputs
 
     This class cannot be parallelized since events are read in a specific order

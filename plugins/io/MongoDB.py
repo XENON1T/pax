@@ -20,8 +20,7 @@ class MongoDBInput(plugin.InputPlugin):
         self.number_of_events = self.cursor.count()
 
         if self.number_of_events == 0:
-            raise RuntimeError(
-                "No events found... did you run the event builder?")
+            raise RuntimeError("No events found... did you run the event builder?")
 
     def get_events(self):
         """Generator of events from Mongo

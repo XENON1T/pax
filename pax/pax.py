@@ -85,6 +85,7 @@ def get_plugin_source(config, log=logging):
 
 
 def processor(input, transform, output):
+    # TODO (tunnell): add DSP?
     # Check input types
     # TODO (tunnell): Don't use asserts, but raise ValueError() with
     # informative error
@@ -139,7 +140,7 @@ def processor(input, transform, output):
         if args.n:
             if i >= args.n:
                 break
-                
+
         log.info("Event %d" % i)
         for j, block in enumerate(actions):
             log.debug("Step %d with %s", j, block.__class__.__name__)
