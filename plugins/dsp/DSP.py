@@ -194,7 +194,7 @@ class LargeS2Filter(GenericFilter):
         GenericFilter.__init__(self, config)
         self.filter_ir = rcosfilter(31, 0.2, 3 * units.MHz * config['digitizer_t_resolution'])
         self.output_name = 'filtered_for_large_s2'
-        self.input_name = 'top_and_bottom'
+        self.input_name = 'sum_waveform_for_xerawdp_matching_that_has_been_gain_corrected_using_a_single_number'
 
 
 class SmallS2Filter(GenericFilter):
@@ -206,7 +206,7 @@ class SmallS2Filter(GenericFilter):
              0.371, 0.103, 0])
         self.filter_ir = self.filter_ir / sum(self.filter_ir)  # Normalization
         self.output_name = 'filtered_for_small_s2'
-        self.input_name = 'top_and_bottom'
+        self.input_name = 'sum_waveform_for_xerawdp_matching_that_has_been_gain_corrected_using_a_single_number'
       
                    
 # TODO: Veto S1s!!
@@ -224,7 +224,7 @@ class PrepeakFinder(plugin.TransformPlugin):
             'max_length'        :   {'s1': 60,        'large_s2': float('inf'), 'small_s2': 200}, 
             'max_samples_below_treshold' :  {'s1': 2, 'large_s2': 0,            'small_s2': 0}, 
             'input' : {
-                's1'      : 'top_and_bottom',
+                's1'      : 'sum_waveform_for_xerawdp_matching_that_has_been_gain_corrected_using_a_single_number',
                 'large_s2': 'filtered_for_large_s2',
                 'small_s2': 'filtered_for_small_s2'
             }
