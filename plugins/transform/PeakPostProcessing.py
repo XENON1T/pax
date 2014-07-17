@@ -1,7 +1,12 @@
+"""Post processing for peaks. Should include any plugins run directly after peak finding to prep information needed for more complex transforms"""
 from pax import plugin
 import numpy
 
+__author__ = 'coderre'
+
 class MakeHitList(plugin.TransformPlugin):
+    """ Class to make a hit list for each s1 and s2 peak as well as the multiplicity. Hit list stored in list with length equal to number of PMTs"""
+
     def __init__(self,config):
         plugin.TransformPlugin.__init__(self,config)
         print(config)
