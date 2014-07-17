@@ -5,7 +5,7 @@ Plugins
 Intro
 #####
 
-This is a step by step guide to creating a plugin. All source code for a plugin should go in the plugins directory.
+This is a step by step guide to creating a plugin. All source code for a plugin should go in the plugins directory (subdirectories of this directory are searched automatically). You can also define custom plugin search paths in the .ini file.
 
 Creating the Class
 ##################
@@ -17,7 +17,13 @@ Every plugin has two required functions: ::
   __init__(self,config):
   __del__(self):
 
-Which are the constructor and destructor, repectively. The constructor should be used to initialize any member variables while the destructor can be used to close them cleanly. The different plugin types also have different required functions in addition.
+Which are the constructor and destructor, repectively. The constructor should be used to initialize any member variables while the destructor can be used to close them cleanly. The different plugin types also have different required functions in addition which are described in the following sections.
+
+In order to run with a plugin it should be added to the bin/paxit.py script (or your custom copy). In this script the plugins are defined as lists in the pax.processor function. Currently this function takes three arguments: ::
+  
+  pax.processor(input=[], transform=[], output=[])
+
+Your plugin should be added to the proper list. The lists are processed in order so if your plugin depends on data fields that are added to the event by other plugins please make sure your plugin is positioned after.
 
 Transform Plugins
 -----------------
@@ -26,7 +32,7 @@ Most user-defined plugins are probably transform plugins. These are used to perf
 
   transform_event(self,event):
 
-function. All modification steps should be included in this function and it should return the modified event object.
+function. All modification steps should be included in this function and it must return the modified event object.
 
 Input Plugins
 --------------
