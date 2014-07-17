@@ -22,44 +22,42 @@ __author__ = 'tunnell'
 
 
 def baseline_mean_stdev(waveform, sample_size=46):
-    """ returns (baseline, baseline_stdev), calculated on the first sample_size samples of waveform """
+    """ Returns (baseline, baseline_stdev) calculated on the first sample_size samples of waveform """
     baseline_sample = waveform[:sample_size]
-    ##TEMP for xerawdp matching
-    return (np.mean(baseline_sample), np.std(baseline_sample))
-    #This is better:
-    return (
-        np.mean(sorted(baseline_sample)[
-                int(0.4 * len(baseline_sample)):int(0.6 * len(baseline_sample))
-                ]),  # Ensures peaks in baseline sample don't skew computed baseline
-        np.std(baseline_sample)  # ... but do count towards baseline_stdev!
-    )
+    return np.mean(baseline_sample), np.std(baseline_sample)
+    #That's how XerawDP does it... but this may be better:
+    # return (
+    #     np.mean(sorted(baseline_sample)[
+    #             int(0.4 * len(baseline_sample)):int(0.6 * len(baseline_sample))
+    #             ]),  # Ensures peaks in baseline sample don't skew computed baseline
+    #     np.std(baseline_sample)  # ... but do count towards baseline_stdev!
+    # )
     # Don't want to just take the median as V-resolution is finite
     # Don't want the mean either: this is not robust against large fluctuations (eg peaks in sample)
 
 
-def extent_until_treshold(signal, start, treshold):
-    a = interval_until_treshold(signal, start, treshold)
+def extent_until_threshold(signal, start, threshold):
+    a = interval_until_threshold(signal, start, threshold)
     return a[1] - a[0]
 
 
-def interval_until_treshold(signal, start, left_treshold, right_treshold=None):
-    if right_treshold == None:
-        right_treshold = left_treshold
+def interval_until_threshold(signal, start, left_threshold, right_threshold=None):
+    if right_threshold is None:
+        right_threshold = left_threshold
     return (
-        find_first_below(signal, start, left_treshold,  'left'),
-        find_first_below(signal, start, right_treshold, 'right'),
+        find_first_below(signal, start, left_threshold,  'left'),
+        find_first_below(signal, start, right_threshold, 'right'),
     )
 
-
-def find_first_below(signal, start, treshold, direction, min_length_below=1):
+def find_first_below(signal, start, threshold, direction, min_length_below=1):
     # TODO: test for off-by-one errors
     counter = 0
     i = start
     while 0 < i < len(signal)-1:
-        if signal[i] < treshold:
+        if signal[i] < threshold:
             counter += 1
             if counter == min_length_below:
-                return i  # or i-min_length_below ??? #TODO
+                return i # or i-min_length_below ??? #TODO
         else:
             counter = 0
         if direction == 'right':
@@ -70,6 +68,47 @@ def find_first_below(signal, start, treshold, direction, min_length_below=1):
             raise (Exception, "You nuts? %s isn't a direction!" % direction)
     #If we're here, we've reached a boundary of the waveform!
     return i
+
+"""
+For next release:
+def find_next_crossing(signal, threshold, start=0, direction='right', min_length=0, stop_at=None):
+    ""Returns first index in signal crossing threshold, searching from start in direction
+    Arguments:
+    signal            --  List of signal samples to search in
+    threshold         --  Threshold to look for
+    start             --  Index to start from: defaults to 0
+    direction         --  Direction to search in: 'right' (default) or 'left'
+    min_length        --  Crossing only counts if stays above/below threshold for min_length
+                          Default: 1, i.e, a single sample on other side of threshold counts as a crossing
+    stop_at           --  Stops search when this index is reached, THEN RETURNS THIS INDEX!!!
+    ""
+    # TODO: test for off-by-one errors
+    if direction not in ('left','right'):
+        raise (ValueError, "You nuts? %s isn't a direction!" % direction)
+    if stop_at is None:
+        stop_at = 0 if direction == 'left' else len(signal)-1
+    after_crossing_timer = 0
+    start_sample = signal[start]
+    previous_sample = threshold #So we're sure it doesn't count as a crossing
+    while 1:
+        if (direction == 'left'and i < stop_at) or (direction == 'right'and i > stop_at):
+            #stop_at reached, have to result something
+            return stop_at
+        this_sample = signal[i]
+        if start_sample < threshold < this_sample or start_sample > threshold > this_sample:
+            #We're on the other side of the threshold that at the start!
+            after_crossing_timer += 1
+            if after_crossing_timer == min_length:
+                original_crossing = i
+                original_crossing += min_length-1 if direction=='left' else 1-min_length
+                return i -min_length+1  #
+        else:
+            #We're back to the old side of threshold again
+            after_crossing_timer = 0
+        i += -1 if direction == 'left' else 1
+    #If we're here, we've reached a boundary of the waveform!
+    return i
+"""
 
 
 def all_same_length(items):
@@ -84,19 +123,22 @@ def rcosfilter(filter_length, rolloff, cutoff_freq, sampling_freq=1):
         - cutoff_freq:      cutoff frequency = 1/(2*symbol period)
         - sampling_freq:    sampling rate (in same units as cutoff_freq)
     """
-    Ts = 1 / (2 * cutoff_freq)
+    symbol_period = 1 / (2 * cutoff_freq)
     h_rc = np.zeros(filter_length, dtype=float)
 
     for x in np.arange(filter_length):
         t = (x - filter_length / 2) / float(sampling_freq)
-        phase = np.pi * t / Ts
+        phase = np.pi * t / symbol_period
         if t == 0.0:
             h_rc[x] = 1.0
-        elif rolloff != 0 and abs(t) == Ts / (2 * rolloff):
+        elif rolloff != 0 and abs(t) == symbol_period / (2 * rolloff):
             h_rc[x] = (np.pi / 4) * (np.sin(phase) / phase)
         else:
             h_rc[x] = (np.sin(phase) / phase) * (
-                np.cos(phase * rolloff) / (1 - (((2 * rolloff * t) / Ts) * ((2 * rolloff * t) / Ts))))
+                np.cos(phase * rolloff) / (
+                    1 - (((2 * rolloff * t) / symbol_period) * ((2 * rolloff * t) / symbol_period))
+                )
+            )
 
     return h_rc / h_rc.sum()
 
@@ -163,7 +205,7 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
         ##TEMP: for Xerawdp Matching
         if not 'processed_waveforms' in event:
             event['processed_waveforms'] = {} 
-        event['processed_waveforms']['sum_waveform_for_xerawdp_matching_that_has_been_gain_corrected_using_a_single_number'] = sum([
+        event['processed_waveforms']['uncorrected_sum_waveform_for_xerawdp_matching'] = sum([
             event['channel_waveforms'][channel] * self.gains[channel]/(2*10**(6))
             for channel in event['channel_waveforms'].keys()
             if channel <178 and channel not in [1, 2, 145, 148, 157, 171, 177] and self.gains[channel] != 0
@@ -224,6 +266,7 @@ class GenericFilter(plugin.TransformPlugin):
 
         # THis should be normalized cooeffients
         # TODO: check if noramlzied cooefccieint?
+
         self.filter_ir = None  # TODO: do same for input and output name
 
     def apply_filter_by_convolution(self, signal, normalized_impulse_response):
@@ -231,10 +274,12 @@ class GenericFilter(plugin.TransformPlugin):
         """
         return np.convolve(signal, normalized_impulse_response, 'same')
 
-
     def transform_event(self, event):
-        event['processed_waveforms'][self.output_name] = self.apply_filter_by_convolution(
-            event['processed_waveforms'][self.input_name], self.filter_ir)
+        event['processed_waveforms'][self.output_name] = np.convolve(
+            event['processed_waveforms'][self.input_name],
+            self.filter_ir,
+            'same'
+        )
         return event
 
 
@@ -247,7 +292,7 @@ class LargeS2Filter(GenericFilter):
         GenericFilter.__init__(self, config)
         self.filter_ir = rcosfilter(31, 0.2, 3 * units.MHz * config['digitizer_t_resolution'])
         self.output_name = 'filtered_for_large_s2'
-        self.input_name = 'sum_waveform_for_xerawdp_matching_that_has_been_gain_corrected_using_a_single_number'
+        self.input_name = 'uncorrected_sum_waveform_for_xerawdp_matching'
 
 
 class SmallS2Filter(GenericFilter):
@@ -264,7 +309,7 @@ class SmallS2Filter(GenericFilter):
                                   0.371, 0.103, 0])
         self.filter_ir = self.filter_ir / sum(self.filter_ir)  # Normalization
         self.output_name = 'filtered_for_small_s2'
-        self.input_name = 'sum_waveform_for_xerawdp_matching_that_has_been_gain_corrected_using_a_single_number'
+        self.input_name = 'uncorrected_sum_waveform_for_xerawdp_matching'
       
 
 
@@ -273,8 +318,8 @@ class SmallS2Filter(GenericFilter):
 class PrepeakFinder(plugin.TransformPlugin):
     """todo Write short string.
 
-    Finds intervals 'above treshold' for which min_length <= length <= max_length.
-    'above treshold': dropping below treshold for shorter than max_samples_below_treshold is acceptable
+    Finds intervals 'above threshold' for which min_length <= length <= max_length.
+    'above threshold': dropping below threshold for shorter than max_samples_below_threshold is acceptable
 
     This needs a lot more explaination.  Few paragrahs?
 
@@ -286,12 +331,12 @@ class PrepeakFinder(plugin.TransformPlugin):
         plugin.TransformPlugin.__init__(self, config)
 
         self.settings = {  # TODO put in ini
-            'treshold'          :   {'s1': 0.1872453, 'large_s2': 0.62451,      'small_s2': 0.062451}, 
+            'threshold'          :   {'s1': 0.1872453, 'large_s2': 0.62451,      'small_s2': 0.062451}, 
             'min_length'        :   {'s1': 0,         'large_s2': 60,           'small_s2': 40}, 
             'max_length'        :   {'s1': 60,        'large_s2': float('inf'), 'small_s2': 200}, 
-            'max_samples_below_treshold' :  {'s1': 2, 'large_s2': 0,            'small_s2': 0}, 
+            'max_samples_below_threshold' :  {'s1': 2, 'large_s2': 0,            'small_s2': 0}, 
             'input' : {
-                's1'      : 'sum_waveform_for_xerawdp_matching_that_has_been_gain_corrected_using_a_single_number',
+                's1'      : 'uncorrected_sum_waveform_for_xerawdp_matching',
                 'large_s2': 'filtered_for_large_s2',
                 'small_s2': 'filtered_for_small_s2'
             }
@@ -301,7 +346,7 @@ class PrepeakFinder(plugin.TransformPlugin):
         event['prepeaks'] = []
 
         #Which peak types do we need to search for?
-        peak_types = self.settings['treshold'].keys()
+        peak_types = self.settings['threshold'].keys()
         for peak_type in peak_types:
             # Find which settings to use for this type of peak
             settings = {}
@@ -316,22 +361,22 @@ class PrepeakFinder(plugin.TransformPlugin):
             blank_prepeak = {'prepeak_left': 0, 'input' : settings['input'], 'peak_type' : peak_type}  # TODO: don't make lines longer than 80 characters please
             thisnewpeak = blank_prepeak.copy()
             previous = float("-inf")
-            below_treshold_counter = 0
+            below_threshold_counter = 0
             for i, x in enumerate(signal):
-                if x > settings['treshold'] and previous < settings['treshold']:
-                    #We have come above treshold
-                    below_treshold_counter = 0
+                if x > settings['threshold'] and previous < settings['threshold']:
+                    #We have come above threshold
+                    below_threshold_counter = 0
                     thisnewpeak['prepeak_left'] = i
-                elif x < settings['treshold'] and previous > settings['treshold'] or below_treshold_counter != 0:
-                    #We have dropped below treshold
-                    below_treshold_counter += 1
-                    if below_treshold_counter > settings['max_samples_below_treshold']:
+                elif x < settings['threshold'] and previous > settings['threshold'] or below_threshold_counter != 0:
+                    #We have dropped below threshold
+                    below_threshold_counter += 1
+                    if below_threshold_counter > settings['max_samples_below_threshold']:
                         #The peak has ended! Append it and start a new one
                         thisnewpeak['prepeak_right'] = i
                         prepeaks.append(thisnewpeak)
                         thisnewpeak = blank_prepeak.copy()
                         thisnewpeak['prepeak_left'] = i #in case this is start of new peak already... wait, that can't happen right?
-                        below_treshold_counter = 0
+                        below_threshold_counter = 0
                 previous = x
             # TODO: Now at end of waveform: any unfinished peaks left??
 
@@ -379,11 +424,11 @@ class FindPeaksInPrepeaks(plugin.TransformPlugin):
             # earlier peak? hmmzz need to pass more args to this. Or not
             # needed?
             #Deal with copying once we go into peak splitting
-            (p['left'], p['right']) = interval_until_treshold(
+            (p['left'], p['right']) = interval_until_threshold(
                 signal,
                 start = p['index_of_max_in_waveform'],
-                left_treshold  = settings['left_boundary_to_height_ratio']  * p['height'],
-                right_treshold = settings['right_boundary_to_height_ratio'] * p['height'],
+                left_threshold  = settings['left_boundary_to_height_ratio']  * p['height'],
+                right_threshold = settings['right_boundary_to_height_ratio'] * p['height'],
             )
             event['peaks'].append(p)
         return event
@@ -413,12 +458,12 @@ class ComputeQuantities(plugin.TransformPlugin):
                 if channel == 'top_and_bottom':
                     # Expensive stuff, only do for summed waveform, maybe later for top&bottom as well?
                     samples_to_ns = self.config['digitizer_t_resolution'] / units.ns
-                    peaks[i][channel]['fwhm'] = extent_until_treshold(peak_wave, start=maxpos,
-                                                                      treshold=max / 2) * samples_to_ns
-                    peaks[i][channel]['fwqm'] = extent_until_treshold(peak_wave, start=maxpos,
-                                                                      treshold=max / 4) * samples_to_ns
-                    peaks[i][channel]['fwtm'] = extent_until_treshold(peak_wave, start=maxpos,
-                                                                      treshold=max / 10) * samples_to_ns
+                    peaks[i][channel]['fwhm'] = extent_until_threshold(peak_wave, start=maxpos,
+                                                                      threshold=max / 2) * samples_to_ns
+                    peaks[i][channel]['fwqm'] = extent_until_threshold(peak_wave, start=maxpos,
+                                                                      threshold=max / 4) * samples_to_ns
+                    peaks[i][channel]['fwtm'] = extent_until_threshold(peak_wave, start=maxpos,
+                                                                      threshold=max / 10) * samples_to_ns
             # if 'top' in peaks[i] and 'bottom' in peaks[i]:
                 # peaks[i]['asymmetry'] = (peaks[i]['top']['area'] - peaks[i]['bottom']['area']) / (
                     # peaks[i]['top']['area'] + peaks[i]['bottom']['area'])

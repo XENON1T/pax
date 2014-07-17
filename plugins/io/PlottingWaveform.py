@@ -55,7 +55,7 @@ class PlottingWaveform(plugin.OutputPlugin):
                                         connectionstyle="angle3,angleA=0,angleB=-90"))
             side *= -1
 
-        plt.plot(event['processed_waveforms']['sum_waveform_for_xerawdp_matching_that_has_been_gain_corrected_using_a_single_number'], label='uncorrected')
+        plt.plot(event['processed_waveforms']['uncorrected_sum_waveform_for_xerawdp_matching'], label='uncorrected')
         plt.plot(event['processed_waveforms']['top_and_bottom'], label='top_and_bottom')
         plt.plot(event['processed_waveforms']['filtered_for_large_s2'],
                  '--', label='filtered_for_large_s2')
