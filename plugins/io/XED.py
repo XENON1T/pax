@@ -58,7 +58,7 @@ class ReadXed(plugin.InputPlugin):
             # print "Event type %s, size %s, samples %s, channels %s" % (event_layer_metadata['type'], event_layer_metadata['size'], event_layer_metadata['samples_in_chunk'], event_metadata['channels'],)
             if event_layer_metadata['type'] == b'zle0':
                 event = {
-                    'channel_occurences': {},
+                    'channel_occurrences': {},
                     'length': event_layer_metadata['samples_in_event']
                 }
                 """
@@ -75,7 +75,7 @@ class ReadXed(plugin.InputPlugin):
                 chunk_fake_file = io.BytesIO(bz2.decompress(input.read(event_layer_metadata[
                     'size'] - 28 - mask_bytes)))  # 28 is the chunk header size. TODO: only decompress if needed
                 for channel_id in channels_included:
-                    event['channel_occurences'][channel_id] = []
+                    event['channel_occurrences'][channel_id] = []
                     channel_waveform = np.array([], dtype="<i2")
                     # Read channel size (in 4bit words), subtract header size, convert from 4-byte words to bytes
                     # Checked (for one event...) agrees with channels from LibXDIO->Moxie->Mongo->MongoDB plugin
@@ -96,12 +96,12 @@ class ReadXed(plugin.InputPlugin):
                         else:
                             data_samples = 2 * (control_word - (2 ** 31))
                             # print "Now reading %s data samples" % data_samples
-                            samples_occurence = np.fromstring(channel_fake_file.read(2 * data_samples), dtype="<i2")
-                            event['channel_occurences'][channel_id].append((
+                            samples_occurrence = np.fromstring(channel_fake_file.read(2 * data_samples), dtype="<i2")
+                            event['channel_occurrences'][channel_id].append((
                                 sample_position,
-                                samples_occurence
+                                samples_occurrence
                             ))
-                            sample_position += len(samples_occurence)
+                            sample_position += len(samples_occurrence)
                             """
                             According to Guillaume's thesis, and the FADC manual, samples come in pairs, with later sample first!
                             This would mean we have to ungarble them (split into pairs, reverse the pairs, join again).
