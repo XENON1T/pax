@@ -12,11 +12,14 @@ history = open('HISTORY.rst').read().replace('.. :changelog:', '')
 
 requirements = open('requirements.txt').read().splitlines()
 
-test_requirements = requirements + ['flake8', 'tox', 'coverage']
+test_requirements = requirements + ['flake8',
+                                    'tox',
+                                    'coverage',
+                                    'bumpversion']
 
 setup(
     name='pax',
-    version='0.1.0',
+    version='0.0.0',
     description='PAX is used for doing digital signal processing and other data processing on the XENON1T raw data',
     long_description=readme + '\n\n' + history,
     author='Christopher Tunnell',
