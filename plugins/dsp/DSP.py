@@ -3,11 +3,6 @@
 This starts from the raw channel occurences and spits out (after running the
  many plugins) a list of peaks.
 
- TODO: general comment, use line breaks!
- TODO: My main major comment is make the code look like code in other parts of the project
-       otherwise it is very hard to read.  COnsult the google style guide on comments, line length
-       doc strings, and other things. and white space
-       And list comprehensions!
 """
 import numpy as np
 
@@ -23,15 +18,18 @@ def baseline_mean_stdev(waveform, sample_size=46):
     """ Returns (baseline, baseline_stdev) calculated on the first sample_size samples of waveform """
     baseline_sample = waveform[:sample_size]
     return np.mean(baseline_sample), np.std(baseline_sample)
-    #That's how XerawDP does it... but this may be better:
-    # return (
-    #     np.mean(sorted(baseline_sample)[
-    #             int(0.4 * len(baseline_sample)):int(0.6 * len(baseline_sample))
-    #             ]),  # Ensures peaks in baseline sample don't skew computed baseline
-    #     np.std(baseline_sample)  # ... but do count towards baseline_stdev!
-    # )
-    # Don't want to just take the median as V-resolution is finite
-    # Don't want the mean either: this is not robust against large fluctuations (eg peaks in sample)
+    """
+    That's how XerawDP does it... but this may be better:
+    return (
+        np.mean(sorted(baseline_sample)[
+                int(0.4 * len(baseline_sample)):int(0.6 * len(baseline_sample))
+                ]),  # Ensures peaks in baseline sample don't skew computed baseline
+        np.std(baseline_sample)  # ... but do count towards baseline_stdev!
+    )
+    Don't want to just take the median as V-resolution is finite
+    Don't want the mean either: this is not robust against large fluctuations (eg peaks in sample)
+    See also comment in JoinAndConvertWaveforms
+    """
 
 
 def extent_until_threshold(signal, start, threshold):
@@ -76,7 +74,9 @@ def find_next_crossing(signal, threshold, start=0, direction='right', min_length
                 start, stop, direction
         ))
     if not 1 <= min_length <= abs(start-stop):
-        raise ValueError("Minimum crossing length %s will never happen in a region %s samples in size!" % (
+        #This is probably ok, can happen, remove warning later on
+        #Can't raise a warning from here, as I don't have self.log...
+        print("Minimum crossing length %s will never happen in a region %s samples in size!" % (
                 min_length, abs(start-stop)
         ))
 
@@ -84,7 +84,6 @@ def find_next_crossing(signal, threshold, start=0, direction='right', min_length
     i = start
     after_crossing_timer = 0
     start_sample = signal[start]
-    previous_sample = threshold #So we're sure it doesn't count as a crossing
     while 1:
         if i == stop:
             #stop_at reached, have to result something
@@ -144,35 +143,46 @@ def rcosfilter(filter_length, rolloff, cutoff_freq, sampling_freq=1):
 
 
 class JoinAndConvertWaveforms(plugin.TransformPlugin):
-    """Take separate occurences and make it into a big channel waveforms.
+    """Take channel_occurences, builds channel_waveforms
 
-    This will add zeros between pulses.  We mainly do this do deal with zero
-    length encoding by padding zeros.  We also do the conversion to
-    photoelectrons.  Baselines are computed here.
+    Between occurence waveforms (i.e. pulses...), zeroes are added.
+    The waveforms returned will be converted to pe/ns and baseline-corrected.
+    If a channel is absent from channel_occurences, it wil be absent from channel_waveforms.
 
-    TODO: this is a bad class name... is there a clearer one?
     """
     def __init__(self, config):
         plugin.TransformPlugin.__init__(self, config)
-        # Maybe we should get dt and dV from input format if possible?
         self.config = config
+
         self.gains = config['gains']
-        self.conversion_factor = config['digitizer_V_resolution'] * config['digitizer_t_resolution']
-        self.conversion_factor /= config['digitizer_resistor']
-        self.conversion_factor /= config['digitizer_amplification']
-        self.conversion_factor /= units.electron_charge
+        #Conversion factor from converting from ADC counts -> pe/bin
+        self.conversion_factor = config['digitizer_t_resolution'] * config['digitizer_voltage_range'] / (
+            2**(config['digitizer_bits']) * config['pmt_circuit_load_resistor'] *
+            config['external_amplification'] * units.electron_charge
+        )
 
     def transform_event(self, event):
-        # TODO: Check dead channel map at this stage?
-        # TODO: use median for baseline?
-        # TODO: Warn if baseline fluctates within event?  Compute running mean?
-        # TODO: Use first samples only.  How much baseline will we have in 1T?
-        #       only a few samples?
-        assert 'channel_occurences' in event  # TODO: Raise ValueError or RuntimeError instead...
+
+        # Check if voltage range same as reported by input plugin
+        # TODO: do the same for dt
+        if 'metadata' in event and 'voltage_range' in event['metadata']:
+            if event['metadata']['voltage_range'] != self.config['digitizer_voltage_range']:
+                raise RuntimeError(
+                    'Voltage range from event metadata (%s) is different from ini file setting (%s)!'
+                    % (event['metadata']['voltage_range'], self.config['digitizer_voltage_range'])
+                )
+
+        # Check for input plugin misbehaviour / running this plugin at the wrong time
+        if not ('channel_occurences' in event and 'length' in event):
+            raise RuntimeError(
+                "Event contains %s, should contain at least channel_occurences and length !"
+                % str(event.keys())
+            )
 
         #Build the channel waveforms from occurences
         event['channel_waveforms'] = {}
         for channel, waveform_occurences in event['channel_occurences'].items():
+
             # Check that gain known
             if channel not in self.gains:
                 self.log.warning('Gain for channel %s is not specified! Skipping channel.' % channel)
@@ -187,24 +197,35 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
                     #Just a dead channel, no biggie
                     continue
 
-            # Determine an average baseline for this channel, using all the occurences
-            baseline = np.mean([baseline_mean_stdev(wave_occurence)[0]
-                                for _, wave_occurence in waveform_occurences])
-            wave = np.ones(event['length']) * baseline
+            # Assemble the waveform pulse by pulse, starting from an all-zeroes waveform
+            wave = np.zeros(event['length'])
+            for starting_position, wave_occurrence in waveform_occurences:
+                # Determine an average baseline for this occurence
+                """
+                This is NOT THE WAY TO DO IT - we should at least average over all occurrences
+                Better yet, take a mean of median 10% or so
+                Better yet, do this for several events, keep a running mean
+                However, this is how Xerawdp does it... (see Rawdata.cpp, getPulses)
+                # TODO: Check for baseline fluctuations in event, warn if too much
+                # How much baseline will we have in 1T? Only few samples?
+                See also comment in baseline_mean_stdev
+                """
+                baseline, _ = baseline_mean_stdev(wave_occurrence)
+                # Put wave occurences in the correct positions
+                wave[starting_position:starting_position + len(wave_occurrence)] = wave_occurrence - baseline
 
-            # Put wave occurences in the correct positions
-            for starting_position, wave_occurence in waveform_occurences:
-                wave[starting_position:starting_position + len(wave_occurence)] = wave_occurence
+            #Flip the waveform up, convert it to pe/ns, and store it in the event data structure
+            event['channel_waveforms'][channel] = -1 * wave * self.conversion_factor/self.gains[channel]
 
-            event['channel_waveforms'][channel] = -1 * (wave - baseline) * self.conversion_factor/self.gains[channel]
         ##TEMP: for Xerawdp Matching
         if not 'processed_waveforms' in event:
             event['processed_waveforms'] = {} 
         event['processed_waveforms']['uncorrected_sum_waveform_for_xerawdp_matching'] = sum([
             event['channel_waveforms'][channel] * self.gains[channel]/(2*10**(6))
             for channel in event['channel_waveforms'].keys()
-            if channel <178 and channel not in [1, 2, 145, 148, 157, 171, 177] and self.gains[channel] != 0
+            if channel <=178 and channel not in [1, 2, 145, 148, 157, 171, 177] and self.gains[channel] != 0
         ])
+        ##TEMP end
 
         #Delete the channel_occurences from the event structure, we don't need it anymore
         del event['channel_occurences']
@@ -213,20 +234,23 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
         
 
 class ComputeSumWaveform(plugin.TransformPlugin):
-    """Build the sum waveforms for, e.g., top PMTs
+    """Build the sum waveforms for, top, bottom, top_and_bottom, veto
 
-    We don't have to worry about gain corrections so we can just add the
-    waveforms from the JoinAndConvertWaveforms step.
+    Since channel waveforms are already gain corrected, we can just add the appropriate channel waveforms.
+    If none of the channels in a group contribute, the summed waveform will be all zeroes.
+    This guarantees that e.g. event['processed_waveforms']['top_and_bottom'] exists.
 
     """
     def __init__(self, config):
         plugin.TransformPlugin.__init__(self, config)
 
-        self.channel_groups = {'top': config['pmts_top'] - config['pmts_bad'],
-                               'bottom': config['pmts_bottom'],
-                               'veto': config['pmts_veto']}
+        self.channel_groups = {'top'    : config['pmts_top'],
+                               'bottom' : config['pmts_bottom'],
+                               'veto'   : config['pmts_veto']}
 
+        #The groups are lists, so we add them using |, not +...
         self.channel_groups['top_and_bottom'] = self.channel_groups['top'] | self.channel_groups['bottom']
+        #TEMP for XerawDP matching: Don't have to compute peak finding waveform yet, done in JoinAndConvertWaveforms
 
     def transform_event(self, event):
         if not 'processed_waveforms' in event:
@@ -234,45 +258,41 @@ class ComputeSumWaveform(plugin.TransformPlugin):
 
         # Compute summed waveforms
         for group, members in self.channel_groups.items():
-            event['processed_waveforms'][group] = sum([
-                    wave for name, wave in event['channel_waveforms'].items()
-                    if name in members
-            ])  # TODO: break this up into steps, list comprehensions is evil like this.
-
-            # None of the group members have a waveform in this event,
-            # delete this group's waveform, it will probably be [] or some other nasty thing that can cause crashes
-            # TODO: use isinstance() ndarray
-            if type(event['processed_waveforms'][group]) != type(np.array([])):
-                event['processed_waveforms'].pop(group)
-                continue
+            event['processed_waveforms'][group] = np.zeros(event['length'])
+            for channel in members:
+                if channel in event['channel_waveforms']:
+                    event['processed_waveforms'][group] += event['channel_waveforms'][channel]
 
         return event
 
 
 class GenericFilter(plugin.TransformPlugin):
-    """Generic filter base class for all later filters
+    """Generic filter base class
 
-    Do not instantiate.
+    Do not instantiate. Instead, subclass: subclass has to set
+        self.filter_ir  --  filter impulse response (normalized, i.e. sum to 1)
+        self.input_name      --  label of waveform in processed_waveforms to filter
+        self.output_name     --  label where filtered waveform is stored in processed_waveforms
 
     TODO: Add some check the name of the class and throw exception if base class
           is instantiated.  use self.name.
+    TODO: check if ir normalization;
     """
     #Always takes input from a wave in processed_waveforms
 
     def __init__(self, config):
         plugin.TransformPlugin.__init__(self, config)
-
-        # THis should be normalized cooeffients
-        # TODO: check if noramlzied cooefccieint?
-
-        self.filter_ir = None  # TODO: do same for input and output name
-
-    def apply_filter_by_convolution(self, signal, normalized_impulse_response):
-        """Filters signal using specified impulse-response, using convolution
-        """
-        return np.convolve(signal, normalized_impulse_response, 'same')
+        self.filter_ir = None
+        self.output_name = None
+        self.input_name = None
 
     def transform_event(self, event):
+        #Check if we have all necessary information
+        if self.filter_ir == None or self.output_name == None or self.input_name == None:
+            raise RuntimeError('Filter subclass did not provide required parameters')
+        if round(sum(self.filter_ir),4)!= 1.:
+            raise RuntimeError('Impulse response sums to %s, should be 1!' % sum(self.filter_ir))
+
         event['processed_waveforms'][self.output_name] = np.convolve(
             event['processed_waveforms'][self.input_name],
             self.filter_ir,
@@ -312,17 +332,26 @@ class SmallS2Filter(GenericFilter):
 
 
 # TODO: add a self cleaning option to the ini file for tossing out middle steps?
-# TODO: Veto S1s!!
+# TODO: Veto S1 peakfinding
 class PrepeakFinder(plugin.TransformPlugin):
-    """todo Write short string.
+    """Finds intervals 'above threshold' for which min_length <= length <= max_length.
 
-    Finds intervals 'above threshold' for which min_length <= length <= max_length.
     'above threshold': dropping below threshold for shorter than max_samples_below_threshold is acceptable
 
     This needs a lot more explaination.  Few paragrahs?
 
     Toss out super big or small peaks without warning.  Compute left, right, height.
     TODO: Call it peak candidates
+    """
+
+    #Doc for future version:
+    """Adds candidate peak intervals to peak_candidate_intervals
+
+    A peak candidate is an interval above threshold for which min_length <= length <= max_length.
+    Dropping below threshold for shorter than max_samples_below_threshold does not count as ending the interval.
+    If an interval is above treshold, but does not meet the length conditions set, it is not reported!
+    peak_candidate_intervals will be a list of dicts with left, right, height.
+
     """
 
     def __init__(self, config):
@@ -420,9 +449,9 @@ class FindPeaksInPrepeaks(plugin.TransformPlugin):
             #Deal with copying once we go into peak splitting
             (p['left'], p['right']) = interval_until_threshold(
                 signal,
-                start = p['index_of_max_in_waveform'],
-                left_threshold  = settings['left_boundary_to_height_ratio']  * p['height'],
-                right_threshold = settings['right_boundary_to_height_ratio'] * p['height'],
+                start=p['index_of_max_in_waveform'],
+                left_threshold=settings['left_boundary_to_height_ratio']  * p['height'],
+                right_threshold=settings['right_boundary_to_height_ratio'] * p['height'],
             )
             event['peaks'].append(p)
         return event
@@ -456,11 +485,11 @@ class ComputeQuantities(plugin.TransformPlugin):
                     #Fix by computing baseline for inividual peak, or limiting search region... how does XerawDP do this.
                     samples_to_ns = self.config['digitizer_t_resolution'] / units.ns
                     peaks[i][channel]['fwhm'] = extent_until_threshold(wave_data, start=p['index_of_max_in_waveform'],
-                                                                      threshold=max / 2) * samples_to_ns
+                                                                       threshold=max / 2) * samples_to_ns
                     peaks[i][channel]['fwqm'] = extent_until_threshold(wave_data, start=p['index_of_max_in_waveform'],
-                                                                      threshold=max / 4) * samples_to_ns
+                                                                       threshold=max / 4) * samples_to_ns
                     peaks[i][channel]['fwtm'] = extent_until_threshold(wave_data, start=p['index_of_max_in_waveform'],
-                                                                      threshold=max / 10) * samples_to_ns
+                                                                       threshold=max / 10) * samples_to_ns
             # if 'top' in peaks[i] and 'bottom' in peaks[i]:
                 # peaks[i]['asymmetry'] = (peaks[i]['top']['area'] - peaks[i]['bottom']['area']) / (
                     # peaks[i]['top']['area'] + peaks[i]['bottom']['area'])

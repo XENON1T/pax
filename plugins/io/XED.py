@@ -5,7 +5,7 @@ import bz2
 import numpy as np
 import io
 
-from pax import plugin
+from pax import plugin, units
 
 
 class ReadXed(plugin.InputPlugin):
@@ -36,11 +36,12 @@ class ReadXed(plugin.InputPlugin):
     ])
 
     def __init__(self, config):
-        self.input = open('test.xed', 'rb')
-        file_metadata = np.fromfile(self.input, dtype=ReadXed.file_header, count=1)[0]
+        plugin.InputPlugin.__init__(self, config)
+        self.input = open('xe100_120402_2000_000000.xed', 'rb')
+        self.file_metadata = np.fromfile(self.input, dtype=ReadXed.file_header, count=1)[0]
         # print "File data: " + str(file_metadata)
-        assert file_metadata['events_in_file'] == file_metadata['event_index_size']
-        self.event_positions = np.fromfile(self.input, dtype=np.dtype("<u4"), count=file_metadata['event_index_size'])
+        assert self.file_metadata['events_in_file'] == self.file_metadata['event_index_size']
+        self.event_positions = np.fromfile(self.input, dtype=np.dtype("<u4"), count=self.file_metadata['event_index_size'])
 
     # This spends a lot of time growing the numpy array. Maybe faster if we first allocate 40000 zeroes.
     def get_events(self):
@@ -50,33 +51,34 @@ class ReadXed(plugin.InputPlugin):
             if not input.tell() == event_position:
                 raise ValueError(
                     "Reading error: this event should be at %s, but we are at %s!" % (event_position, input.tell()))
-            self.event_metadata = np.fromfile(input, dtype=ReadXed.event_header, count=1)[0]
-            # print "Reading event %s, consisting of %s chunks" % (self.event_metadata['event_number'], self.event_metadata['chunks'])
-            if self.event_metadata['chunks'] != 1:
-                raise NotImplementedError("The day has come: event with %s chunks found!" % event_metadata['chunks'])
-            # print "Event type %s, size %s, samples %s, channels %s" % (self.event_metadata['type'], self.event_metadata['size'], self.event_metadata['samples_in_chunk'], event_metadata['channels'],)
-            if self.event_metadata['type'] == b'zle0':
+            event_layer_metadata = np.fromfile(input, dtype=ReadXed.event_header, count=1)[0]
+            # print "Reading event %s, consisting of %s chunks" % (event_layer_metadata['event_number'], event_layer_metadata['chunks'])
+            if event_layer_metadata['chunks'] != 1:
+                raise NotImplementedError("The day has come: event with %s chunks found!" % event_layer_metadata['chunks'])
+            # print "Event type %s, size %s, samples %s, channels %s" % (event_layer_metadata['type'], event_layer_metadata['size'], event_layer_metadata['samples_in_chunk'], event_metadata['channels'],)
+            if event_layer_metadata['type'] == b'zle0':
                 event = {
                     'channel_occurences': {},
-                    'length': self.event_metadata['samples_in_event']
+                    'length': event_layer_metadata['samples_in_event']
                 }
                 """
                 Read the arcane mask
                 Hope this is ok with endianness and so on... no idea... what happens if it is wrong??
                 TODO: Check with the actual bits in a hex editor..
                 """
-                mask_bytes = 4 * int(math.ceil(self.event_metadata['channels'] / 32))
+                mask_bytes = 4 * int(math.ceil(event_layer_metadata['channels'] / 32))
                 #mask = self.bytestobits(
                 #    np.fromfile(input, dtype=np.dtype('<S%s' % mask_bytes), count=1)[0]
                 #)  # Last bytes are on front or something? Maybe whole mask is a single little-endian field??
                 mask = np.unpackbits(np.array(list(np.fromfile(input, dtype=np.dtype('<S%s' % mask_bytes), count=1)[0]), dtype='uint8'))
                 channels_included = [i for i, m in enumerate(reversed(mask)) if m == 1]
-                chunk_fake_file = io.BytesIO(bz2.decompress(input.read(self.event_metadata[
+                chunk_fake_file = io.BytesIO(bz2.decompress(input.read(event_layer_metadata[
                     'size'] - 28 - mask_bytes)))  # 28 is the chunk header size. TODO: only decompress if needed
                 for channel_id in channels_included:
                     event['channel_occurences'][channel_id] = []
                     channel_waveform = np.array([], dtype="<i2")
                     # Read channel size (in 4bit words), subtract header size, convert from 4-byte words to bytes
+                    # Checked (for one event...) agrees with channels from LibXDIO->Moxie->Mongo->MongoDB plugin
                     channel_data_size = int(4 * (np.fromstring(chunk_fake_file.read(4), dtype='<u4')[0] - 1))
                     # print "Data size for channel %s is %s bytes" % (channel_id, channel_data_size)
                     channel_fake_file = io.BytesIO(chunk_fake_file.read(channel_data_size))
@@ -102,24 +104,25 @@ class ReadXed(plugin.InputPlugin):
                             sample_position += len(samples_occurence)
                             """
                             According to Guillaume's thesis, and the FADC manual, samples come in pairs, with later sample first!
-                            This would mean we have to ungarble them (split into pairs, reverse the pairs, join again): 
-                                channel_waveform = np.append(channel_waveform, ungarble_samplepairs(samples_fromfile-baseline))
-                            However, this makes the peak come out two-headed... Maybe they were already un-garbled by some previous program??
-                            We won't do any ungarbling for now:
+                            This would mean we have to ungarble them (split into pairs, reverse the pairs, join again).
+                            However, if I try thisthis makes the peak come out two-headed...
+                            Maybe they were already un-garbled by some previous program??
+                            We won't do any ungarbling for now.
                             """
             else:
                 raise NotImplementedError(
-                    "Still have to code grokking for sample type %s..." % self.event_metadata['type'])
+                    "Still have to code grokking for sample type %s..." % event_layer_metadata['type'])
+
+            event['metadata'] = {
+                'dataset_name'          :   self.file_metadata['dataset_name'],
+                'dataset_creation_time' :   self.file_metadata['creation_time'],
+                'utc_time'              :   event_layer_metadata['utc_time'],
+                'utc_time_usec'         :   event_layer_metadata['utc_time_usec'],
+                'event_number'          :   event_layer_metadata['event_number'],
+                'voltage_range'         :   event_layer_metadata['voltage_range'] / units.V,
+                'channels_from_input'   :   event_layer_metadata['channels'],
+            }
             yield event
 
         # If we get here, all events have been read
         self.input.close()
-
-    def bytestobits(self, bytes):
-        bits = []
-        if sys.version_info < (3, 0):
-            bytes = (ord(bs) for bs in bytes_string)
-        for b in bytes:
-            for i in range(8):
-                bits.append((b >> i) & 1)
-        return bits
