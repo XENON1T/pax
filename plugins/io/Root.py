@@ -1,13 +1,6 @@
 from pax import plugin as p
 
-try:
-    import ROOT
-except:
-    print("ROOT not found.")
-    exit()
-
-__author__ = 'coderre'
-
+import ROOT
 
 class WriteToROOTFile(p.OutputPlugin):
 

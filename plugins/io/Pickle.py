@@ -5,9 +5,6 @@ from pax import plugin
 # except:
 import pickle
 
-__author__ = 'tunnell'
-
-
 class WriteToPickleFile(plugin.OutputPlugin):
 
     def __init__(self, config):

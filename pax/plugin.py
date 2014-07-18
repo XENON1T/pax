@@ -7,9 +7,6 @@ transform would modify the event object.
 
 See format for more information on the event object.
 """
-
-__author__ = 'tunnell'
-
 import logging
 import time
 
