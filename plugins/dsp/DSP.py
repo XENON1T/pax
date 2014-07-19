@@ -84,6 +84,7 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
             event['channel_waveforms'][channel] = -1 * wave * self.conversion_factor / self.gains[channel]
 
         ##TEMP: for Xerawdp Matching
+        #TODO: add in stuff from gain=0 waveforms!
         if not 'processed_waveforms' in event:
             event['processed_waveforms'] = {}
         event['processed_waveforms']['uncorrected_sum_waveform_for_xerawdp_matching'] = sum([

@@ -2,7 +2,7 @@
 from pax import pax
 
 if __name__ == '__main__':
-    pax.processor(input='XED.ReadXed',
+    pax.processor(input='XED.XedInput',
                   transform=['DSP.JoinAndConvertWaveforms',
                              'DSP.ComputeSumWaveform',
                              'DSP.LargeS2Filter',
