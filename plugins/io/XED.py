@@ -1,14 +1,14 @@
 """
 This plug-in reads raw waveform data from a Xenon100 XED file.
-The file format is documented in Guillaume Plante's PhD thesis.
-This code does not use his libxdio C-library though.
+The XED file format is documented in Guillaume Plante's PhD thesis.
+This is code does not use the libxdio C-library though.
 
-At the moment it only supports:
+At the moment this plugin only supports:
     - sequential reading, not searching for a particular event;
     - reading a single XED file, not an entire dataset;
-    - one 'chunk' per event: throws an exception if it sees more than one chunk;
+    - one 'chunk' per event, it raises an exception if it sees more than one chunk;
     - zle0 sample encoding, not raw;
-    - bzip 2 chunk data compression, not gzip, uncompressed data, or whatever else.
+    - bzip2 chunk data compression, not gzip, uncompressed data, or whatever else.
 
 None of these would be very difficult to fix, if we ever intend to do any large-scale
 reprocessing of the XED-files we have.
@@ -17,7 +17,9 @@ Some metadata from the XED file is stored in event['metadata'], see the end of t
 code for details.
 """
 
-import math, bz2, io
+import math
+import bz2
+import io
 import numpy as np
 
 from pax import plugin, units
@@ -56,22 +58,26 @@ class XedInput(plugin.InputPlugin):
         # Read metadata and event positions from the XED file
         self.file_metadata = np.fromfile(self.input, dtype=XedInput.file_header, count=1)[0]
         assert self.file_metadata['events_in_file'] == self.file_metadata['event_index_size']
-        self.event_positions = np.fromfile(self.input, dtype=np.dtype("<u4"), count=self.file_metadata['event_index_size'])
+        self.event_positions = np.fromfile(self.input, dtype=np.dtype("<u4"),
+                                           count=self.file_metadata['event_index_size'])
 
     def get_events(self):
 
         for event_position in self.event_positions:
-            self.current_event_channels = {}
 
             # Are we still at the right position in the file?
             if not self.input.tell() == event_position:
                 raise ValueError(
-                    "Reading error: this event should be at %s, but we are at %s!" % (event_position, self.input.tell()))
+                    "Reading error: this event should be at %s, but we are at %s!" % (
+                        event_position, self.input.tell()
+                    )
+                )
 
             # Read event metadata, check if we can read this.
             event_layer_metadata = np.fromfile(self.input, dtype=XedInput.event_header, count=1)[0]
             if event_layer_metadata['chunks'] != 1:
-                raise NotImplementedError("The day has come: event with %s chunks found!" % event_layer_metadata['chunks'])
+                raise NotImplementedError(
+                    "The day has come: event with %s chunks found!" % event_layer_metadata['chunks'])
             if event_layer_metadata['type'] != b'zle0':
                 raise NotImplementedError(
                     "Still have to code grokking for sample type %s..." % event_layer_metadata['type'])
@@ -85,7 +91,7 @@ class XedInput(plugin.InputPlugin):
             # Checked (for one event...) agrees with channels from LibXDIO->Moxie->MongoDB->MongoDBInput plugin
             mask_bytes = 4 * int(math.ceil(event_layer_metadata['channels'] / 32))
             mask = np.unpackbits(np.array(list(
-                    np.fromfile(self.input, dtype=np.dtype('<S%s' % mask_bytes), count=1)[0]
+                np.fromfile(self.input, dtype=np.dtype('<S%s' % mask_bytes), count=1)[0]
             ), dtype='uint8'))
             channels_included = [i for i, m in enumerate(reversed(mask)) if m == 1]
 
@@ -94,10 +100,9 @@ class XedInput(plugin.InputPlugin):
                 event_layer_metadata['size'] - 28 - mask_bytes)
             ))  # 28 is the chunk header size. TODO: only decompress if needed
 
-            #loop over all channels in the event
+            # Loop over all channels in the event
             for channel_id in channels_included:
                 event['channel_occurrences'][channel_id] = []
-                channel_waveform = np.array([], dtype="<i2")
 
                 # Read channel size (in 4bit words), subtract header size, convert from 4-byte words to bytes
                 channel_data_size = int(4 * (np.fromstring(chunk_fake_file.read(4), dtype='<u4')[0] - 1))
@@ -123,7 +128,7 @@ class XedInput(plugin.InputPlugin):
 
                     # Control words starting with one indicate a number of sample PAIRS follow
                     else:
-                        data_samples = 2 * (control_word - (2 ** 31)) #Subtract the control word flag
+                        data_samples = 2 * (control_word - (2 ** 31))  # Subtract the control word flag
                         samples_occurrence = np.fromstring(channel_fake_file.read(2 * data_samples), dtype="<i2")
                         event['channel_occurrences'][channel_id].append((
                             sample_position,
@@ -141,13 +146,13 @@ class XedInput(plugin.InputPlugin):
 
             # Finally, we make some of the Meta data provided in the XED-file available in the event structure
             event['metadata'] = {
-                'dataset_name'          :   self.file_metadata['dataset_name'],
-                'dataset_creation_time' :   self.file_metadata['creation_time'],
-                'utc_time'              :   event_layer_metadata['utc_time'],
-                'utc_time_usec'         :   event_layer_metadata['utc_time_usec'],
-                'event_number'          :   event_layer_metadata['event_number'],
-                'voltage_range'         :   event_layer_metadata['voltage_range'] / units.V,
-                'channels_from_input'   :   event_layer_metadata['channels'],
+                'dataset_name':          self.file_metadata['dataset_name'],
+                'dataset_creation_time': self.file_metadata['creation_time'],
+                'utc_time':              event_layer_metadata['utc_time'],
+                'utc_time_usec':         event_layer_metadata['utc_time_usec'],
+                'event_number':          event_layer_metadata['event_number'],
+                'voltage_range':         event_layer_metadata['voltage_range'] / units.V,
+                'channels_from_input':   event_layer_metadata['channels'],
             }
             yield event
 

@@ -422,40 +422,65 @@ def baseline_mean_stdev(waveform, sample_size=46):
 
 def find_next_crossing(signal, threshold, start=0, direction='right', min_length=1, stop=None):
     """Returns first index in signal crossing threshold, searching from start in direction
+    A 'crossing' is defined as a point where:
+        start_sample < threshold < this_sample OR start_sample > threshold > this_sample
+
     Arguments:
     signal            --  List of signal samples to search in
-    threshold         --  Threshold to look for
-    start             --  Index to start from: defaults to 0
+    threshold         --  Threshold defining crossings
+    start             --  Index to start search from: defaults to 0
     direction         --  Direction to search in: 'right' (default) or 'left'
     min_length        --  Crossing only counts if stays above/below threshold for min_length
                           Default: 1, i.e, a single sample on other side of threshold counts as a crossing
+                          The first index where a crossing happens is still returned.
     stop_at           --  Stops search when this index is reached, THEN RETURNS THIS INDEX!!!
-    TODO: test for off-by-one errors
+
+    This is a pretty crucial function for several DSP routines; as such, it does extensive checking for
+    pathological cases. Please be very careful in making changes to this function, their effects could
+    be felt in unexpected ways in many places.
+
+    TODO: add lots of tests!!!
+    TODO: Allow specification of where start_sample should be (below or above treshold),
+          only use to throw error if it is not true? Or see start as starting crossing?
+           -> If latter, can outsource to new function: find_next_crossing_above & below
+              (can be two lines or so, just check start)
+    TODO: Allow user to specify that finding a crossing is mandatory / return None when none found?
+        
     """
 
-    # Set stop to relevant length of array
+    # Set stop to last index along given direction in signal
     if stop is None:
         stop = 0 if direction == 'left' else len(signal) - 1
 
     # Check for errors in arguments
     if not 0 <= stop <= len(signal) - 1:
-        raise ValueError("Invalid crossing search limit: %s (signal has %s samples)" % (stop, len(signal)))
+        raise ValueError("Invalid crossing search stop point: %s (signal has %s samples)" % (stop, len(signal)))
     if not 0 <= start <= len(signal) - 1:
-        raise ValueError("Invalid crossing search start: %s (signal has %s samples)" % (start, len(signal)))
+        raise ValueError("Invalid crossing search start point: %s (signal has %s samples)" % (start, len(signal)))
     if direction not in ('left', 'right'):
         raise ValueError("Direction %s is not left or right" % direction)
     if (direction == 'left' and start < stop) or (direction == 'right' and stop < start):
-        raise ValueError("Search region (start: %s, end: %s, direction: %s) has negative length!" % (
+        raise ValueError("Search region (start: %s, stop: %s, direction: %s) has negative length!" % (
             start, stop, direction
         ))
+
+    # Check for pathological cases not serious enough to throw an exception
+    # Can't raise a warning from here, as I don't have self.log...
+    if stop == start:
+        return stop
+    if signal[start] == threshold:
+        print("Threshold %s equals value in start position %s: crossing will never happen!" % (
+            threshold, start
+        ))
+        return stop
     if not 1 <= min_length <= abs(start - stop):
         #This is probably ok, can happen, remove warning later on
-        #Can't raise a warning from here, as I don't have self.log...
         print("Minimum crossing length %s will never happen in a region %s samples in size!" % (
             min_length, abs(start - stop)
         ))
+        return stop
 
-    #Do the search
+    # Do the search
     i = start
     after_crossing_timer = 0
     start_sample = signal[start]
@@ -473,8 +498,6 @@ def find_next_crossing(signal, threshold, start=0, direction='right', min_length
             #We're back to the old side of threshold again
             after_crossing_timer = 0
         i += -1 if direction == 'left' else 1
-    #If we're here, we've reached a boundary of the waveform!
-    return i
 
 
 def interval_until_threshold(signal, start, left_threshold, right_threshold=None):
