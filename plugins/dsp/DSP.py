@@ -8,7 +8,9 @@ import numpy as np
 
 from pax import plugin, units
 
+
 class JoinAndConvertWaveforms(plugin.TransformPlugin):
+
     """Take channel_occurrences, builds channel_waveforms
 
     Between occurrence waveforms (i.e. pulses...), zeroes are added.
@@ -17,16 +19,19 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
 
     """
 
-    def __init__(self, config):
-        plugin.TransformPlugin.__init__(self, config)
-        self.config = config
+    def startup(self):
+        # Short hand
+        c = self.config
 
-        self.gains = config['gains']
-        #Conversion factor from converting from ADC counts -> pe/bin
-        self.conversion_factor = config['digitizer_t_resolution'] * config['digitizer_voltage_range'] / (
-            2 ** (config['digitizer_bits']) * config['pmt_circuit_load_resistor'] *
-            config['external_amplification'] * units.electron_charge
-        )
+        self.gains = c['gains']
+
+        # Conversion factor from converting from ADC counts -> pe/bin
+        self.conversion_factor = c['digitizer_t_resolution']
+        self.conversion_factor *= c['digitizer_voltage_range']
+        self.conversion_factor /= (2 ** (c['digitizer_bits']))
+        self.conversion_factor /= c['pmt_circuit_load_resistor']
+        self.conversion_factor /= c['external_amplification']
+        self.conversion_factor /= units.electron_charge
 
     def transform_event(self, event):
         # Check if voltage range same as reported by input plugin
@@ -45,7 +50,7 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
                 % str(event.keys())
             )
 
-        #Build the channel waveforms from occurrences
+        # Build the channel waveforms from occurrences
         event['channel_waveforms'] = {}
         for channel, waveform_occurrences in event['channel_occurrences'].items():
 
@@ -60,7 +65,7 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
                     self.log.warning('Gain for channel %s is 0, but is in waveform.' % channel)
                     continue
                 else:
-                    #Just a dead channel, no biggie
+                    # Just a dead channel, no biggie
                     continue
 
             # Assemble the waveform pulse by pulse, starting from an all-zeroes waveform
@@ -80,11 +85,11 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
                 # Put wave occurrences in the correct positions
                 wave[starting_position:starting_position + len(wave_occurrence)] = wave_occurrence - baseline
 
-            #Flip the waveform up, convert it to pe/ns, and store it in the event data structure
+            # Flip the waveform up, convert it to pe/ns, and store it in the event data structure
             event['channel_waveforms'][channel] = -1 * wave * self.conversion_factor / self.gains[channel]
 
-        ##TEMP: for Xerawdp Matching
-        #TODO: add in stuff from gain=0 waveforms!
+        # TEMP: for Xerawdp Matching
+        # TODO: add in stuff from gain=0 waveforms!
         if not 'processed_waveforms' in event:
             event['processed_waveforms'] = {}
         event['processed_waveforms']['uncorrected_sum_waveform_for_xerawdp_matching'] = sum([
@@ -92,15 +97,16 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
             for channel in event['channel_waveforms'].keys()
             if channel <= 178 and channel not in [1, 2, 145, 148, 157, 171, 177] and self.gains[channel] != 0
         ])
-        ##TEMP end
+        # TEMP end
 
-        #Delete the channel_occurrences from the event structure, we don't need it anymore
+        # Delete the channel_occurrences from the event structure, we don't need it anymore
         del event['channel_occurrences']
 
         return event
 
 
 class ComputeSumWaveform(plugin.TransformPlugin):
+
     """Build the sum waveforms for, top, bottom, top_and_bottom, veto
 
     Since channel waveforms are already gain corrected, we can just add the appropriate channel waveforms.
@@ -109,16 +115,14 @@ class ComputeSumWaveform(plugin.TransformPlugin):
 
     """
 
-    def __init__(self, config):
-        plugin.TransformPlugin.__init__(self, config)
+    def startup(self):
+        self.channel_groups = {'top': self.config['pmts_top'],
+                               'bottom': self.config['pmts_bottom'],
+                               'veto': self.config['pmts_veto']}
 
-        self.channel_groups = {'top': config['pmts_top'],
-                               'bottom': config['pmts_bottom'],
-                               'veto': config['pmts_veto']}
-
-        #The groups are lists, so we add them using |, not +...
+        # The groups are lists, so we add them using |, not +...
         self.channel_groups['top_and_bottom'] = self.channel_groups['top'] | self.channel_groups['bottom']
-        #TEMP for XerawDP matching: Don't have to compute peak finding waveform yet, done in JoinAndConvertWaveforms
+        # TEMP for XerawDP matching: Don't have to compute peak finding waveform yet, done in JoinAndConvertWaveforms
 
     def transform_event(self, event):
         if not 'processed_waveforms' in event:
@@ -135,6 +139,7 @@ class ComputeSumWaveform(plugin.TransformPlugin):
 
 
 class GenericFilter(plugin.TransformPlugin):
+
     """Generic filter base class
 
     Do not instantiate. Instead, subclass: subclass has to set
@@ -146,16 +151,15 @@ class GenericFilter(plugin.TransformPlugin):
           is instantiated.  use self.name.
     TODO: check if ir normalization;
     """
-    #Always takes input from a wave in processed_waveforms
+    # Always takes input from a wave in processed_waveforms
 
-    def __init__(self, config):
-        plugin.TransformPlugin.__init__(self, config)
+    def startup(self):
         self.filter_ir = None
         self.output_name = None
         self.input_name = None
 
     def transform_event(self, event):
-        #Check if we have all necessary information
+        # Check if we have all necessary information
         if self.filter_ir is None or self.output_name is None or self.input_name is None:
             raise RuntimeError('Filter subclass did not provide required parameters')
         if round(sum(self.filter_ir), 4) != 1.:
@@ -170,14 +174,16 @@ class GenericFilter(plugin.TransformPlugin):
 
 
 class LargeS2Filter(GenericFilter):
+
     """Docstring  Low-pass filter using raised cosine filter
 
     TODO: put constants into ini?
     """
 
-    def __init__(self, config):
-        GenericFilter.__init__(self, config)
-        self.filter_ir = self.rcosfilter(31, 0.2, 3 * units.MHz * config['digitizer_t_resolution'])
+    def startup(self):
+        GenericFilter.startup(self)
+
+        self.filter_ir = self.rcosfilter(31, 0.2, 3 * units.MHz * self.config['digitizer_t_resolution'])
         self.output_name = 'filtered_for_large_s2'
         self.input_name = 'uncorrected_sum_waveform_for_xerawdp_matching'
 
@@ -211,14 +217,16 @@ class LargeS2Filter(GenericFilter):
 
 
 class SmallS2Filter(GenericFilter):
+
     """
 
     TODO: take this opportunity to explain why there is a small s2 filter... even if it stupid.
     TODO: put constants into ini?
     """
 
-    def __init__(self, config):
-        GenericFilter.__init__(self, config)
+    def startup(self):
+        GenericFilter.startup(self)
+
         self.filter_ir = np.array([0, 0.103, 0.371, 0.691, 0.933, 1, 1, 1, 1, 1,
                                    1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.933, 0.691,
                                    0.371, 0.103, 0])
@@ -230,6 +238,7 @@ class SmallS2Filter(GenericFilter):
 # TODO: add a self cleaning option to the ini file for tossing out middle steps?
 # TODO: Veto S1 peakfinding
 class PrepeakFinder(plugin.TransformPlugin):
+
     """Finds intervals 'above threshold' for which min_length <= length <= max_length.
 
     'above threshold': dropping below threshold for shorter than max_samples_below_threshold is acceptable
@@ -240,7 +249,7 @@ class PrepeakFinder(plugin.TransformPlugin):
     TODO: Call it peak candidates
     """
 
-    #Doc for future version:
+    # Doc for future version:
     """Adds candidate peak intervals to peak_candidate_intervals
 
     A peak candidate is an interval above threshold for which min_length <= length <= max_length.
@@ -250,9 +259,7 @@ class PrepeakFinder(plugin.TransformPlugin):
 
     """
 
-    def __init__(self, config):
-        plugin.TransformPlugin.__init__(self, config)
-
+    def startup(self):
         self.settings = {  # TODO put in ini
                            'threshold': {'s1': 0.1872453, 'large_s2': 0.62451, 'small_s2': 0.062451},
                            'min_length': {'s1': 0, 'large_s2': 60, 'small_s2': 40},
@@ -268,7 +275,7 @@ class PrepeakFinder(plugin.TransformPlugin):
     def transform_event(self, event):
         event['prepeaks'] = []
 
-        #Which peak types do we need to search for?
+        # Which peak types do we need to search for?
         peak_types = self.settings['threshold'].keys()
         for peak_type in peak_types:
             prepeaks = []
@@ -280,11 +287,11 @@ class PrepeakFinder(plugin.TransformPlugin):
             # Get the signal out
             signal = event['processed_waveforms'][settings['input']]
 
-            #Find the prepeaks
+            # Find the prepeaks
             end = 0
             while 1:
                 start = find_next_crossing(signal, threshold=settings['threshold'], start=end)
-                #If we get the last index, that means it could not find another crossing
+                # If we get the last index, that means it could not find another crossing
                 if start == len(signal) - 1:
                     break
                 end = find_next_crossing(signal, threshold=settings['threshold'],
@@ -308,21 +315,21 @@ class PrepeakFinder(plugin.TransformPlugin):
                 b['index_of_max_in_waveform'] = b['index_of_max_in_prepeak'] + b['prepeak_left']
                 b['height'] = signal[b['index_of_max_in_waveform']]
                 valid_prepeaks.append(b)
-            #Store the valid prepeaks found
+            # Store the valid prepeaks found
             event['prepeaks'] += valid_prepeaks
 
         return event
 
 
 class FindPeaksInPrepeaks(plugin.TransformPlugin):
+
     """Put condition on height
 
     Looks for peaks in the pre-peaks:
     starts from max, walks down, stops whenever signal drops below boundary_to_max_ratio*height
     """
 
-    def __init__(self, config):
-        plugin.TransformPlugin.__init__(self, config)
+    def startup(self):
         self.settings = {  # TOOD: put in ini
                            'left_boundary_to_height_ratio': {'s1': 0.005, 'large_s2': 0.005, 'small_s2': 0.01},
                            'right_boundary_to_height_ratio': {'s1': 0.005, 'large_s2': 0.002, 'small_s2': 0.01},
@@ -334,7 +341,7 @@ class FindPeaksInPrepeaks(plugin.TransformPlugin):
         # TODO: handle presence of multiple peaks in base, that's why I make a
         # new array already now
         for p in event['prepeaks']:
-            #Find which settings to use for this type of peak
+            # Find which settings to use for this type of peak
             settings = {}
             for settingname, settingvalue in self.settings.items():
                 settings[settingname] = self.settings[settingname][p['peak_type']]
@@ -343,7 +350,7 @@ class FindPeaksInPrepeaks(plugin.TransformPlugin):
             # TODO: stop find_first_below search if we reach boundary of an
             # earlier peak? hmmzz need to pass more args to this. Or not
             # needed?
-            #Deal with copying once we go into peak splitting
+            # Deal with copying once we go into peak splitting
             (p['left'], p['right']) = interval_until_threshold(
                 signal,
                 start=p['index_of_max_in_waveform'],
@@ -355,6 +362,7 @@ class FindPeaksInPrepeaks(plugin.TransformPlugin):
 
 
 class ComputeQuantities(plugin.TransformPlugin):
+
     """Compute various derived quantities of each peak (full width half maximum, etc.)
 
 
@@ -398,7 +406,7 @@ class ComputeQuantities(plugin.TransformPlugin):
 
 # #
 # Utils: these are helper functions for the plugins
-# TODO: Can we put these functions in the transform base class?
+# TODO: Can we put these functions in the transform base class? (Tunnell: yes, or do multiple inheritance)
 # #
 
 def baseline_mean_stdev(waveform, sample_size=46):
@@ -445,7 +453,7 @@ def find_next_crossing(signal, threshold, start=0, direction='right', min_length
            -> If latter, can outsource to new function: find_next_crossing_above & below
               (can be two lines or so, just check start)
     TODO: Allow user to specify that finding a crossing is mandatory / return None when none found?
-        
+
     """
 
     # Set stop to last index along given direction in signal
@@ -474,7 +482,7 @@ def find_next_crossing(signal, threshold, start=0, direction='right', min_length
         ))
         return stop
     if not 1 <= min_length <= abs(start - stop):
-        #This is probably ok, can happen, remove warning later on
+        # This is probably ok, can happen, remove warning later on
         print("Minimum crossing length %s will never happen in a region %s samples in size!" % (
             min_length, abs(start - stop)
         ))
@@ -486,16 +494,16 @@ def find_next_crossing(signal, threshold, start=0, direction='right', min_length
     start_sample = signal[start]
     while 1:
         if i == stop:
-            #stop_at reached, have to result something
+            # stop_at reached, have to result something
             return stop
         this_sample = signal[i]
         if start_sample < threshold < this_sample or start_sample > threshold > this_sample:
-            #We're on the other side of the threshold that at the start!
+            # We're on the other side of the threshold that at the start!
             after_crossing_timer += 1
             if after_crossing_timer == min_length:
                 return i + (min_length - 1 if direction == 'left' else 1 - min_length)  #
         else:
-            #We're back to the old side of threshold again
+            # We're back to the old side of threshold again
             after_crossing_timer = 0
         i += -1 if direction == 'left' else 1
 

@@ -21,7 +21,8 @@ if __name__ == '__main__':
                              'PeakPruning.PruneS1sWithNearbyNegativeExcursions',
                              'PeakPruning.PruneS1sInS2Tails',
                              'PeakPruning.PruneS2sInS2Tails'
+                             #'PosSimple'
                              ],
-                  output=['PlottingWaveform.PlottingWaveform',
+                  output=['Plotting.PlottingWaveform',
                           'Pickle.WriteToPickleFile'])
                           

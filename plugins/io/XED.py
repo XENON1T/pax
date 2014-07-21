@@ -52,9 +52,9 @@ class XedInput(plugin.InputPlugin):
         ("channels", "<u4"),
     ])
 
-    def __init__(self, config):
-        plugin.InputPlugin.__init__(self, config)
-        self.input = open(config['filename'], 'rb')
+    def startup(self):
+        self.input = open(self.config['filename'], 'rb')
+
         # Read metadata and event positions from the XED file
         self.file_metadata = np.fromfile(self.input, dtype=XedInput.file_header, count=1)[0]
         assert self.file_metadata['events_in_file'] == self.file_metadata['event_index_size']
