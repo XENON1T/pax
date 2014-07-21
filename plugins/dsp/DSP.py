@@ -256,7 +256,7 @@ class FindS1_XeRawDPStyle(plugin.TransformPlugin):
 
     def transform_event(self, event):
         signal = event['processed_waveforms']['uncorrected_sum_waveform_for_xerawdp_matching']
-        s1_alert_treshold = 0.1872453  # "3 mV"
+        s1_alert_treshold = 0.1872452894  # "3 mV"
         # TODO: set start&end positions based on regions where S2s are found, loop over intervals
         left_region_limit = 0
         seeker_position = copy(left_region_limit)
@@ -277,7 +277,7 @@ class FindS1_XeRawDPStyle(plugin.TransformPlugin):
             # Set a revised peak window based on the max position
             # Should we also check for previous S1s? or prune overlap later? (Xerawdp doesn't do either?)
             peak_window = (
-                max(max_idx - 8, left_region_limit),
+                max(max_idx - 12, left_region_limit),
                 min(max_idx + 60, right_region_limit)
             )
 
