@@ -1,26 +1,22 @@
 from pax import plugin
 
-# try:
-#    import cPickle as pickle
-# except:
-import pickle
-
-__author__ = 'tunnell'
+try:
+    import cPickle as pickle
+except:
+    import pickle
 
 
 class WriteToPickleFile(plugin.OutputPlugin):
 
-    def __init__(self, config):
-        plugin.OutputPlugin.__init__(self, config)
-
-        self.log.debug("Writing pickled data to %s" % config['picklefile'])
-        self.file = open(config['picklefile'],
+    def startup(self):
+        self.log.debug("Writing pickled data to %s" % self.config['picklefile'])
+        self.file = open(self.config['picklefile'],
                          'wb')
-
-    def __del__(self):
-        self.log.debug("Closing %s" % self.config['picklefile'])
-        self.file.close()
 
     def write_event(self, event):
         self.log.debug('Pickling event')
         pickle.dump(event, self.file)
+
+    def shutdown(self):
+        self.log.debug("Closing %s" % self.config['picklefile'])
+        self.file.close()

@@ -12,7 +12,10 @@ history = open('HISTORY.rst').read().replace('.. :changelog:', '')
 
 requirements = open('requirements.txt').read().splitlines()
 
-test_requirements = requirements + ['flake8', 'tox', 'coverage']
+test_requirements = requirements + ['flake8',
+                                    'tox',
+                                    'coverage',
+                                    'bumpversion']
 
 setup(
     name='pax',

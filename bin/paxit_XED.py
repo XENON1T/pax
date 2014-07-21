@@ -2,7 +2,7 @@
 from pax import pax
 
 if __name__ == '__main__':
-    pax.processor(input='XED.ReadXed',
+    pax.processor(input='XED.XedInput',
                   transform=['DSP.JoinAndConvertWaveforms',
                              'DSP.ComputeSumWaveform',
                              'DSP.LargeS2Filter',
@@ -17,7 +17,7 @@ if __name__ == '__main__':
                              'PeakPruning.PruneS1sInS2Tails',
                              'PeakPruning.PruneS2sInS2Tails'
                              ],
-                  output=['PlottingWaveform.PlottingWaveform',
+                  output=[#'PlottingWaveform.PlottingWaveform',
                           #'Pickle.WriteToPickleFile',
                           'CSV.WriteCSVPeakwise'
                           ])

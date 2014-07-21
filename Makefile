@@ -8,8 +8,9 @@ help:
 	@echo "test-all - run tests on every Python version with tox"
 	@echo "coverage - check code coverage quickly with the default Python"
 	@echo "docs - generate Sphinx HTML documentation, including API docs"
-	@echo "release - package and upload a release"
-	@echo "dist - package"
+	@echo "major - tag, push, package and upload a major release"
+	@echo "minor - tag, push, package and upload a minor release"
+	@echo "patch - tag, push, package and upload a patch release"
 
 clean: clean-build clean-pyc
 	rm -fr htmlcov/
@@ -47,11 +48,24 @@ docs:
 	$(MAKE) -C docs html
 	open docs/_build/html/index.html
 
-release: clean
-	python setup.py sdist upload
-	python setup.py bdist_wheel upload
+major: clean docs
+	bumpversion major
+	emacs HISTORY.rst
+	git commit -m "Update HISTORY for the release" HISTORY.rst
+	git push
+	git push --tags
 
-dist: clean
-	python setup.py sdist
-	python setup.py bdist_wheel
-	ls -l dist
+
+minor: clean docs
+	bumpversion minor
+	emacs HISTORY.rst
+	git commit -m "Update HISTORY for the release" HISTORY.rst
+	git push
+	git push --tags
+
+patch: clean docs
+	bumpversion patch
+	emacs HISTORY.rst
+	git commit -m "Update HISTORY for the release" HISTORY.rst
+	git push
+	git push --tags

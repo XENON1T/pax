@@ -1,22 +1,14 @@
-__author__ = 'tunnell'
+"""Definition of base classes for plugins
 
+Here we define every one of the plugins/modules for pax.  This describes what
+the interfaces are.  To add an input or a transform, you define one function
+that does something with an event.  An input spits out event objects.  A
+transform would modify the event object.
+
+See format for more information on the event object.
+"""
 import logging
 import time
-
-
-def timeit(method):
-    """Decorator for measuring class method speeds
-    """
-
-    def timed(*args, **kw):
-        self = args[0]
-        ts = time.time()
-        result = method(*args, **kw)
-        dt = (time.time() - ts) * 100
-        self.log.debug('Event took %2.2f ms' % dt)
-        return result
-
-    return timed
 
 
 class BasePlugin(object):
@@ -27,10 +19,37 @@ class BasePlugin(object):
 
         # Please do all config variable fetching in constructor to make
         # changing config easier.
+        self.log.debug(config_values)
         self.config = config_values
+
+        self.startup()
+
+    def __del__(self):
+        self.shutdown()
+
+    @staticmethod
+    def _timeit(method):
+        """Decorator for measuring class method speeds
+        """
+
+        def timed(*args, **kw):
+            self = args[0]
+            ts = time.time()
+            result = method(*args, **kw)
+            dt = (time.time() - ts) * 100
+            self.log.debug('Event took %2.2f ms' % dt)
+            return result
+
+        return timed
+
+    def startup(self):
+        pass
 
     def process_event(self):
         raise NotImplementedError()
+
+    def shutdown(self):
+        pass
 
 
 class InputPlugin(BasePlugin):
@@ -44,7 +63,7 @@ class InputPlugin(BasePlugin):
         BasePlugin.__init__(self, config_values)
         self.i = 0
 
-    @timeit
+    @BasePlugin._timeit
     def get_events(self):
         """Get next event from the data source
 
@@ -61,7 +80,7 @@ class TransformPlugin(BasePlugin):
     def transform_event(self, event):
         raise NotImplementedError
 
-    @timeit
+    @BasePlugin._timeit
     def process_event(self, event):
         return self.transform_event(event)
 
@@ -71,7 +90,7 @@ class OutputPlugin(BasePlugin):
     def write_event(self, event):
         raise NotImplementedError
 
-    @timeit
+    @BasePlugin._timeit
     def process_event(self, event):
         self.write_event(event)
         return event

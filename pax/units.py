@@ -29,9 +29,13 @@ base_units = {
 base_units['Hz'] = 1 / base_units['s']
 base_units['J'] = base_units['eV'] / electron_charge_SI
 base_units['V'] = base_units['J'] / base_units['C']
+
 # Current will be in electrons/ns!
 base_units['A'] = base_units['C'] / base_units['s']
-base_units['Ohm'] = base_units['V'] / base_units['A']  # Resistance in eV/ns
+
+# Resistance in eV/ns
+base_units['Ohm'] = base_units['V'] / base_units['A']
+
 electron_charge = electron_charge_SI * base_units['C']
 boltzmannConstant = boltzmannConstant_SI * base_units['J'] / base_units['K']
 
