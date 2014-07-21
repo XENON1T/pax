@@ -81,10 +81,11 @@ class PruneNonIsolatedPeaks(PeakPruner):
             signal[right_to_use: min(len(signal), right_to_use + settings['test_after'])])
 
         #Do the testing
-        if peak['before_mean'] > settings['before_to_height_ratio_max'] * peak['height']:
-            return '%s samples before peak contain stuff (mean %s, which is more than %s (%s x peak height))' % (settings['test_before'], peak['before_mean'], settings['before_to_height_ratio_max'] * peak['height'], settings['before_to_height_ratio_max'])
-        if peak['after_mean'] > settings['after_to_height_ratio_max'] * peak['height']:
-            return '%s samples after peak contain stuff (mean %s, which is more than %s (%s x peak height))' % (settings['test_after'], peak['after_mean'], settings['after_to_height_ratio_max'] * peak['height'], settings['after_to_height_ratio_max'])
+        if peak['before_mean'] > settings['before_to_height_ratio_max'] * peak['height'] \
+            and peak['after_mean'] > settings['after_to_height_ratio_max'] * peak['height']:
+            return 'peak is not isolated enough' #Todo: add stuff
+            #return '%s samples before peak contain stuff (mean %s, which is more than %s (%s x peak height))' % (settings['test_before'], peak['before_mean'], settings['before_to_height_ratio_max'] * peak['height'], settings['before_to_height_ratio_max'])
+            #return '%s samples after peak contain stuff (mean %s, which is more than %s (%s x peak height))' % (settings['test_after'], peak['after_mean'], settings['after_to_height_ratio_max'] * peak['height'], settings['after_to_height_ratio_max'])
         return None
 
 

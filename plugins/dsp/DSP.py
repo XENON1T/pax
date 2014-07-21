@@ -12,8 +12,8 @@ from pax.dsputils import baseline_mean_stdev, find_next_crossing, extent_until_t
 
 
 class BuildUncorrectedSumWaveformForXerawdpMatching(plugin.TransformPlugin):
-    def __init__(self, config):
-        plugin.TransformPlugin.__init__(self, config)
+    def startup(self):
+        config = self.config
 
         # Conversion factor from converting from ADC counts -> pe/bin
         self.conversion_factor = config['digitizer_t_resolution'] * config['digitizer_voltage_range'] / (
@@ -56,7 +56,8 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
 
         # Conversion factor from converting from ADC counts -> pe/bin
         self.conversion_factor = c['digitizer_t_resolution'] * c['digitizer_voltage_range'] / (
-            2 ** (c['digitizer_bits']) * c['pmt_circuit_load_resistor'] * units.electron_charge
+            2 ** (c['digitizer_bits']) * c['pmt_circuit_load_resistor']
+            * c['external_amplification'] * units.electron_charge
         )
 
     def transform_event(self, event):
