@@ -49,7 +49,7 @@ def get_my_dir():
     return my_dir
 
 
-def get_configuration():
+def get_configuration(config_overload=""):
     my_dir = get_my_dir()
 
     config = configparser.ConfigParser(inline_comment_prefixes='#',
@@ -60,6 +60,7 @@ def get_configuration():
 
     # Load the default configuration
     config.read(os.path.join(my_dir, 'default.ini'))
+    config.read_string(config_overload)
     return config
 
 
@@ -84,7 +85,7 @@ def get_plugin_source(config, log=logging):
     return plugin_source
 
 
-def processor(input, transform, output):
+def processor(input, transform, output, config_overload=""):
     # TODO (tunnell): add DSP?
     # Check input types
     # TODO (tunnell): Don't use asserts, but raise ValueError() with
@@ -103,7 +104,7 @@ def processor(input, transform, output):
     actions = transform + output
 
     # Load configuration
-    config = get_configuration()
+    config = get_configuration(config_overload)
 
     # Deal with command line arguments for the logging level
     parser = argparse.ArgumentParser(description="Process XENON1T data")
@@ -145,3 +146,5 @@ def processor(input, transform, output):
         for j, block in enumerate(actions):
             log.debug("Step %d with %s", j, block.__class__.__name__)
             event = block.process_event(event)
+    else:
+        log.info("Finished event loop.")

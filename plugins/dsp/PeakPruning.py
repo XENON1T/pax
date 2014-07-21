@@ -16,9 +16,6 @@ def is_s2(peak):  # put in plugin base class?
 
 class PeakPruner(plugin.TransformPlugin):
 
-    def __init__(self, config):
-        plugin.TransformPlugin.__init__(self, config)
-
     def transform_event(self, event):
         for peak_index, p in enumerate(event['peaks']):
             # If this is the first peak pruner, we have to set up some values
@@ -46,26 +43,26 @@ class PeakPruner(plugin.TransformPlugin):
 
 
 class PruneNonIsolatedPeaks(PeakPruner):
-    #mean of test_before samples before interval must be less than before_to_height_ratio_max times the maximum value in the interval
-    #Same for test_after
-    #NB: tests the PREPEAK, not the actual peak!!! (XeRawDP behaviour)
+    # mean of test_before samples before interval must be less than before_to_height_ratio_max times the maximum value in the interval
+    # Same for test_after
+    # NB: tests the PREPEAK, not the actual peak!!! (XeRawDP behaviour)
 
-    def __init__(self, config):
-        PeakPruner.__init__(self, config)
+    def startup(self):
         # TODO: These should be in configuration...
         self.settings = {
-            'test_before' : {'s1': 50, 'large_s2': 21, 'small_s2': 10},
-            'test_after'  : {'s1': 10, 'large_s2': 21, 'small_s2': 10},
-            'before_to_height_ratio_max' : {'s1': 0.01, 'large_s2': 0.05, 'small_s2': 0.05},
-            'after_to_height_ratio_max'  : {'s1': 0.04, 'large_s2': 0.05, 'small_s2': 0.05}
+            'test_before': {'s1': 50, 'large_s2': 21, 'small_s2': 10},
+            'test_after': {'s1': 10, 'large_s2': 21, 'small_s2': 10},
+            'before_to_height_ratio_max': {'s1': 0.01, 'large_s2': 0.05, 'small_s2': 0.05},
+            'after_to_height_ratio_max': {'s1': 0.04, 'large_s2': 0.05, 'small_s2': 0.05}
         }
-        
+
     def decide_peak(self, peak, event, peak_index):
-        #Find which settings to use for this type of peak
+        # Find which settings to use for this type of peak
         settings = {}
 
         for settingname, settingvalue in self.settings.items():
             settings[settingname] = self.settings[settingname][peak['peak_type']]
+
 
         signal = event['processed_waveforms'][peak['input']]
 
@@ -76,9 +73,11 @@ class PruneNonIsolatedPeaks(PeakPruner):
         right_to_use = max(peak['right'], peak['prepeak_right']) if peak['peak_type'] == 'large_s2' else peak['right']
         #left_to_use  = peak['prepeak_left']  if peak['peak_type'] == 'large_s2' else peak['left']
         #right_to_use =  peak['prepeak_right'] if peak['peak_type'] == 'large_s2' else peak['right']
+
         peak['before_mean'] = np.mean(
             signal[max(0, left_to_use - settings['test_before']): left_to_use])
         peak['after_mean'] = np.mean(
+
             signal[right_to_use: min(len(signal), right_to_use + settings['test_after'])])
 
         #Do the testing
@@ -87,13 +86,9 @@ class PruneNonIsolatedPeaks(PeakPruner):
         if peak['after_mean'] > settings['after_to_height_ratio_max'] * peak['height']:
             return '%s samples after peak contain stuff (mean %s, which is more than %s (%s x peak height))' % (settings['test_after'], peak['after_mean'], settings['after_to_height_ratio_max'] * peak['height'], settings['after_to_height_ratio_max'])
         return None
-                   
-    
-        
-class PruneWideS1s(PeakPruner):
 
-    def __init__(self, config):
-        PeakPruner.__init__(self, config)
+
+class PruneWideS1s(PeakPruner):
 
     def decide_peak(self, peak, event, peak_index):
         if peak['peak_type'] != 's1':
@@ -107,26 +102,25 @@ class PruneWideS1s(PeakPruner):
             return 'S1 FWQM in filtered_wv is %s samples, higher than 50.' % filtered_width
         return None
 
-        
+
 class PruneWideShallowS2s(PeakPruner):
-    def __init__(self, config):
-        PeakPruner.__init__(self, config)
-        
+
     def decide_peak(self, peak, event, peak_index):
-        if str(peak['peak_type']) != 'small_s2': return None
-        treshold = 0.062451 #1 mV/bin = 0.1 mV/ns
-        peakwidth = (peak['right'] - peak['left'])/units.ns
+        if str(peak['peak_type']) != 'small_s2':
+            return None
+        treshold = 0.062451  # 1 mV/bin = 0.1 mV/ns
+        peakwidth = (peak['right'] - peak['left']) / units.ns
         ratio = peak['top_and_bottom']['height'] / peakwidth
         if ratio > treshold:
             return 'Max/width ratio %s is higher than %s' % (ratio, treshold)
         return None
-        
+
+
 class PruneS1sWithNearbyNegativeExcursions(PeakPruner):
-    def __init__(self, config):
-        PeakPruner.__init__(self, config)
-        
+
     def decide_peak(self, p, event, peak_index):
-        if p['peak_type'] != 's1': return None
+        if p['peak_type'] != 's1':
+            return None
         data = event['processed_waveforms']['top_and_bottom']
         negex = p['lowest_nearby_value'] = min(data[
             max(0,p['index_of_max_in_waveform']-500) :
@@ -134,32 +128,30 @@ class PruneS1sWithNearbyNegativeExcursions(PeakPruner):
         ])  #Window used by s1 filter: todo: don't hardcode    
         maxval =  p['top_and_bottom']['height']
         factor = 3
-        if negex<0 and factor * abs(negex) >  maxval:
+        if negex < 0 and factor * abs(negex) > maxval:
             return 'Nearby negative excursion of %s, height (%s) not at least %s x as large.' % (negex, maxval, factor)
         return None
-        
-class PruneS1sInS2Tails(PeakPruner):
 
-    def __init__(self, config):
-        PeakPruner.__init__(self, config)
+
+class PruneS1sInS2Tails(PeakPruner):
 
     def decide_peak(self, peak, event, peak_index):
         if peak['peak_type'] != 's1':
             return None
         if not 'stop_looking_for_s1s_after' in event:
-            #Determine where to stop looking for S1s
-            #Certainly stop looking after the largest S2 (XerawDP behaviour)
+            # Determine where to stop looking for S1s
+            # Certainly stop looking after the largest S2 (XerawDP behaviour)
             s2areas = [p['top_and_bottom']['area'] for p in event['peaks'] if is_s2(p)]
             if s2areas == []:
-                #No S2s in this waveform - S1 always ok
+                # No S2s in this waveform - S1 always ok
                 event['stop_looking_for_s1s_after'] = float('inf')
                 return None
-            #DANGER ugly code ahead...
+            # DANGER ugly code ahead...
             s2maxarea = max(s2areas)
-            for i,p in enumerate(event['peaks']):
+            for i, p in enumerate(event['peaks']):
                 if p['top_and_bottom']['area'] == s2maxarea:
                     event['stop_looking_for_s1s_after'] = p['left']
-            #Stop earlier if there is an earlier S2 whose amplitude exceeds a treshold
+            # Stop earlier if there is an earlier S2 whose amplitude exceeds a treshold
             treshold = 3.12255  # S2 amplitude after which no more s1s are looked for
             larges2boundaries = [p['left'] for p in event['peaks'] if is_s2(p) and p['top_and_bottom']['height'] > treshold]
             if larges2boundaries != []:
@@ -167,33 +159,29 @@ class PruneS1sInS2Tails(PeakPruner):
         if peak['left'] > event['stop_looking_for_s1s_after']:
             return 'S1 starts at %s, which is beyond %s, the starting position of a "large" S2.' % (peak['left'], event['stop_looking_for_s1s_after'])
         return None
-        
-class PruneS2sInS2Tails(PeakPruner):
 
-    def __init__(self, config):
-        PeakPruner.__init__(self, config)
+
+class PruneS2sInS2Tails(PeakPruner):
 
     def decide_peak(self, peak, event, peak_index):
         if peak['peak_type'] != 'small_s2':
             return None
         if not 'stop_looking_for_s2s_after' in event:
-            #Determine where to stop looking for S2s
-            #Stop if there is an earlier S2 whose amplitude exceeds a treshold
-            treshold =624.151  # S2 amplitude after which no more s2s are looked for
+            # Determine where to stop looking for S2s
+            # Stop if there is an earlier S2 whose amplitude exceeds a treshold
+            treshold = 624.151  # S2 amplitude after which no more s2s are looked for
             larges2boundaries = [p['left'] for p in event['peaks'] if is_s2(p) and p['top_and_bottom']['height'] > treshold]
             if larges2boundaries == []:
-                #No large S2s in this waveform - S2 always ok
+                # No large S2s in this waveform - S2 always ok
                 event['stop_looking_for_s2s_after'] = float('inf')
                 return None
             event['stop_looking_for_s2s_after'] = min(larges2boundaries)
         if peak['left'] > event['stop_looking_for_s2s_after']:
             return 'S2 starts at %s, which is beyond %s, the starting position of a "large" S2.' % (peak['left'], event['stop_looking_for_s2s_after'])
         return None
-        
-class PruneS2sInS2Tails(PeakPruner):
 
-    def __init__(self, config):
-        PeakPruner.__init__(self, config)
+
+class PruneS2sInS2Tails(PeakPruner):
 
     def decide_peak(self, peak, event, peak_index):
         if peak['peak_type'] != 'small_s2':
@@ -208,4 +196,3 @@ class PruneS2sInS2Tails(PeakPruner):
         if peak['left'] > self.earliestboundary:
             return 'Small S2 starts at %s, which is beyond %s, the starting position of a "large" S2.' % (peak['left'], self.earliestboundary)
         return None
-

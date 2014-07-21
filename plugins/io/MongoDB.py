@@ -1,4 +1,4 @@
-from pymongo import MongoClient
+import pymongo
 
 import numpy as np
 
@@ -7,13 +7,16 @@ from pax import plugin
 
 class MongoDBInput(plugin.InputPlugin):
 
-    def __init__(self, config):
-        plugin.InputPlugin.__init__(self, config)
-
-        self.log.debug("Connecting to %s" % config['address'])
-        self.client = MongoClient(config['address'])
-        self.database = self.client[config['database']]
-        self.collection = self.database[config['collection']]
+    def startup(self):
+        self.log.debug("Connecting to %s" % self.config['address'])
+        try:
+            self.client = pymongo.MongoClient(self.config['address'])
+            self.database = self.client[self.config['database']]
+            self.collection = self.database[self.config['collection']]
+        except pymongo.errors.ConnectionFailure as e:
+            self.log.fatal("Cannot connect to database")
+            self.log.exception(e)
+            raise
 
         # TODO (tunnell): Sort by event number
         self.cursor = self.collection.find()

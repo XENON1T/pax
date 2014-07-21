@@ -19,7 +19,7 @@ if __name__ == '__main__':
                              'PeakPruning.PruneS1sInS2Tails',
                              'PeakPruning.PruneS2sInS2Tails'
                              ],
-                  output=['PlottingWaveform.PlottingWaveform',
+                  output=['Plotting.PlottingWaveform',
                           #'Pickle.WriteToPickleFile',
                           #'CSV.WriteCSVPeakwise'
                           ])
