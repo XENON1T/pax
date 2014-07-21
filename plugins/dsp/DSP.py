@@ -5,8 +5,38 @@ This starts from the raw channel occurrences and spits out (after running the
 
 """
 import numpy as np
+from copy import copy
 
 from pax import plugin, units
+from pax.dsputils import baseline_mean_stdev, find_next_crossing, extent_until_threshold, interval_until_threshold
+
+
+class BuildUncorrectedSumWaveformForXerawdpMatching(plugin.TransformPlugin):
+    def __init__(self, config):
+        plugin.TransformPlugin.__init__(self, config)
+
+        # Conversion factor from converting from ADC counts -> pe/bin
+        self.conversion_factor = config['digitizer_t_resolution'] * config['digitizer_voltage_range'] / (
+            2 ** (config['digitizer_bits']) * config['pmt_circuit_load_resistor'] *
+            config['external_amplification'] * units.electron_charge
+        )
+
+    def transform_event(self, event):
+        wave = np.zeros(event['length'])
+        for channel, waveform_occurrences in event['channel_occurrences'].items():
+            if channel >178 or channel in [1, 2, 145, 148, 157, 171, 177]:
+                continue
+            for starting_position, wave_occurrence in waveform_occurrences:
+                baseline, _ = baseline_mean_stdev(wave_occurrence)
+                wave[starting_position:starting_position + len(wave_occurrence)] = \
+                     np.add(-1 * (wave_occurrence - baseline) * self.conversion_factor / (2*10**6),
+                            wave[starting_position:starting_position + len(wave_occurrence)]
+                     )
+        if not 'processed_waveforms' in event:
+            event['processed_waveforms'] = {}
+        event['processed_waveforms']['uncorrected_sum_waveform_for_xerawdp_matching'] = wave
+        return event
+
 
 class JoinAndConvertWaveforms(plugin.TransformPlugin):
     """Take channel_occurrences, builds channel_waveforms
@@ -22,7 +52,7 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
         self.config = config
 
         self.gains = config['gains']
-        #Conversion factor from converting from ADC counts -> pe/bin
+        # Conversion factor from converting from ADC counts -> pe/bin
         self.conversion_factor = config['digitizer_t_resolution'] * config['digitizer_voltage_range'] / (
             2 ** (config['digitizer_bits']) * config['pmt_circuit_load_resistor'] *
             config['external_amplification'] * units.electron_charge
@@ -45,7 +75,7 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
                 % str(event.keys())
             )
 
-        #Build the channel waveforms from occurrences
+        # Build the channel waveforms from occurrences
         event['channel_waveforms'] = {}
         for channel, waveform_occurrences in event['channel_occurrences'].items():
 
@@ -83,16 +113,6 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
             #Flip the waveform up, convert it to pe/ns, and store it in the event data structure
             event['channel_waveforms'][channel] = -1 * wave * self.conversion_factor / self.gains[channel]
 
-        ##TEMP: for Xerawdp Matching
-        #TODO: add in stuff from gain=0 waveforms!
-        if not 'processed_waveforms' in event:
-            event['processed_waveforms'] = {}
-        event['processed_waveforms']['uncorrected_sum_waveform_for_xerawdp_matching'] = sum([
-            event['channel_waveforms'][channel] * self.gains[channel] / (2 * 10 ** (6))
-            for channel in event['channel_waveforms'].keys()
-            if channel <= 178 and channel not in [1, 2, 145, 148, 157, 171, 177] and self.gains[channel] != 0
-        ])
-        ##TEMP end
 
         #Delete the channel_occurrences from the event structure, we don't need it anymore
         del event['channel_occurrences']
@@ -116,9 +136,9 @@ class ComputeSumWaveform(plugin.TransformPlugin):
                                'bottom': config['pmts_bottom'],
                                'veto': config['pmts_veto']}
 
-        #The groups are lists, so we add them using |, not +...
+        # The groups are lists, so we add them using |, not +...
         self.channel_groups['top_and_bottom'] = self.channel_groups['top'] | self.channel_groups['bottom']
-        #TEMP for XerawDP matching: Don't have to compute peak finding waveform yet, done in JoinAndConvertWaveforms
+        #TEMP for XerawDP matching: Don't have to compute peak finding waveform yet, we use a temp waveform...
 
     def transform_event(self, event):
         if not 'processed_waveforms' in event:
@@ -146,7 +166,7 @@ class GenericFilter(plugin.TransformPlugin):
           is instantiated.  use self.name.
     TODO: check if ir normalization;
     """
-    #Always takes input from a wave in processed_waveforms
+    # Always takes input from a wave in processed_waveforms
 
     def __init__(self, config):
         plugin.TransformPlugin.__init__(self, config)
@@ -227,6 +247,64 @@ class SmallS2Filter(GenericFilter):
         self.input_name = 'uncorrected_sum_waveform_for_xerawdp_matching'
 
 
+class FindS1_XeRawDPStyle(plugin.TransformPlugin):
+    def __init__(self, config):
+        plugin.TransformPlugin.__init__(self, config)
+
+    def transform_event(self, event):
+        signal = event['processed_waveforms']['uncorrected_sum_waveform_for_xerawdp_matching']
+        s1_alert_treshold = 0.1872453  # "3 mV"
+        # TODO: set start&end positions based on regions where S2s are found, loop over intervals
+        left_region_limit = 0
+        seeker_position = copy(left_region_limit)
+        right_region_limit = len(signal) - 1
+        while 1:
+            # Seek until we go above s1_alert_treshold
+            potential_s1_start = find_next_crossing(signal, s1_alert_treshold,
+                                                    start=seeker_position, stop=right_region_limit)
+            if potential_s1_start == right_region_limit:
+                # Search has reached the end of the waveform
+                break
+
+            # Determine the maximum in the 'preliminary peak window' (next 60 samples) that follows
+            max_pos = np.argmax(signal[potential_s1_start:min(potential_s1_start + 60, right_region_limit)])
+            max_idx = potential_s1_start + max_pos
+            height = signal[max_idx]
+
+            # Set a revised peak window based on the max position
+            # Should we also check for previous S1s? or prune overlap later? (Xerawdp doesn't do either?)
+            peak_window = (
+                max(max_idx - 8, left_region_limit),
+                min(max_idx + 60, right_region_limit)
+            )
+
+            # Find the peak boundaries
+            peak_bounds = interval_until_threshold(signal, start=max_idx,
+                                                   left_threshold=0.005*height, #r-trh automatically =
+                                                   left_limit=peak_window[0], right_limit=peak_window[1],
+                                                   min_crossing_length=3, stop_if_start_exceeded=True)
+
+            # Don't have to test for s1 > 60: can't happen due to limits on peak window
+
+            #Add the s1 we found
+            event['peaks'].append({
+                'peak_type':                's1',
+                'left':                     peak_bounds[0],
+                'right':                    peak_bounds[1],
+                's1_peakfinding_window':    peak_window,
+                's1_peakfinder_original_alert': seeker_position,
+                'index_of_max_in_waveform': max_idx,
+                'height':                   height,
+                'input':                    'top_and_bottom',
+            })
+
+            #Continue searching after the peak
+            seeker_position = copy(peak_bounds[1])
+
+
+        return event
+
+
 # TODO: add a self cleaning option to the ini file for tossing out middle steps?
 # TODO: Veto S1 peakfinding
 class PrepeakFinder(plugin.TransformPlugin):
@@ -240,7 +318,7 @@ class PrepeakFinder(plugin.TransformPlugin):
     TODO: Call it peak candidates
     """
 
-    #Doc for future version:
+    # Doc for future version:
     """Adds candidate peak intervals to peak_candidate_intervals
 
     A peak candidate is an interval above threshold for which min_length <= length <= max_length.
@@ -254,12 +332,10 @@ class PrepeakFinder(plugin.TransformPlugin):
         plugin.TransformPlugin.__init__(self, config)
 
         self.settings = {  # TODO put in ini
-                           'threshold': {'s1': 0.1872453, 'large_s2': 0.62451, 'small_s2': 0.062451},
-                           'min_length': {'s1': 0, 'large_s2': 60, 'small_s2': 40},
-                           'max_length': {'s1': 60, 'large_s2': float('inf'), 'small_s2': 200},
-                           'max_samples_below_threshold': {'s1': 2, 'large_s2': 0, 'small_s2': 0},
+                           'threshold': {'large_s2': 0.62451, 'small_s2': 0.062451},
+                           'min_length': {'large_s2': 60, 'small_s2': 40},
+                           'max_length': {'large_s2': float('inf'), 'small_s2': 200},
                            'input': {
-                               's1': 'uncorrected_sum_waveform_for_xerawdp_matching',
                                'large_s2': 'filtered_for_large_s2',
                                'small_s2': 'filtered_for_small_s2'
                            }
@@ -288,15 +364,16 @@ class PrepeakFinder(plugin.TransformPlugin):
                 if start == len(signal) - 1:
                     break
                 end = find_next_crossing(signal, threshold=settings['threshold'],
-                                         start=start, min_length=settings['max_samples_below_threshold'] + 1)
-                if end == len(signal) - 1:
-                    print("Peak starting at %s didn't end!" % start)
+                                         start=start)
                 prepeaks.append({
                     'prepeak_left': start,
                     'prepeak_right': end,
                     'peak_type': peak_type,
                     'input': settings['input']
                 })
+                if end == len(signal) - 1:
+                    print("Peak starting at %s didn't end!" % start)
+                    break
 
             # Filter out prepeaks that don't meet width conditions, compute some quantities
             valid_prepeaks = []
@@ -324,8 +401,8 @@ class FindPeaksInPrepeaks(plugin.TransformPlugin):
     def __init__(self, config):
         plugin.TransformPlugin.__init__(self, config)
         self.settings = {  # TOOD: put in ini
-                           'left_boundary_to_height_ratio': {'s1': 0.005, 'large_s2': 0.005, 'small_s2': 0.01},
-                           'right_boundary_to_height_ratio': {'s1': 0.005, 'large_s2': 0.002, 'small_s2': 0.01},
+                           'left_boundary_to_height_ratio': {'large_s2': 0.005, 'small_s2': 0.01},
+                           'right_boundary_to_height_ratio': {'large_s2': 0.002, 'small_s2': 0.01},
         }
 
     def transform_event(self, event):
@@ -333,26 +410,40 @@ class FindPeaksInPrepeaks(plugin.TransformPlugin):
         # Find peaks in the prepeaks
         # TODO: handle presence of multiple peaks in base, that's why I make a
         # new array already now
-        for p in event['prepeaks']:
-            #Find which settings to use for this type of peak
+        for peak in event['prepeaks']:
+            # Find which settings to use for this type of peak
             settings = {}
             for settingname, settingvalue in self.settings.items():
-                settings[settingname] = self.settings[settingname][p['peak_type']]
-            signal = event['processed_waveforms'][p['input']]
+                settings[settingname] = self.settings[settingname][peak['peak_type']]
+            signal = event['processed_waveforms'][peak['input']]
+            max_idx = peak['index_of_max_in_waveform']
 
-            # TODO: stop find_first_below search if we reach boundary of an
-            # earlier peak? hmmzz need to pass more args to this. Or not
-            # needed?
+            # Determine overlap-free region
+            # TODO: right now peaks which will be rejected also block this.
+            # Need to move the pruning logic back in here... may as well merge prepeak & peak finding into s2 finding
+            free_region = [0, len(signal)-1]
+            for p in event['peaks']:
+                if p['left'] <= max_idx <= p['right']:
+                    free_region = None
+                    break
+                if free_region[0] < p['right'] < max_idx:
+                    free_region[0] = p['right']
+                if max_idx < p['left'] < free_region[1]:
+                    free_region[1] = p['left']
+            if free_region == None:
+                continue
+
             #Deal with copying once we go into peak splitting
-            (p['left'], p['right']) = interval_until_threshold(
+            (peak['left'], peak['right']) = interval_until_threshold(
                 signal,
-                start=p['index_of_max_in_waveform'],
-                left_threshold=settings['left_boundary_to_height_ratio'] * p['height'],
-                right_threshold=settings['right_boundary_to_height_ratio'] * p['height'],
+                start=max_idx,
+                left_threshold=settings['left_boundary_to_height_ratio'] * peak['height'],
+                right_threshold=settings['right_boundary_to_height_ratio'] * peak['height'],
+                left_limit=free_region[0],
+                right_limit=free_region[1],
             )
-            event['peaks'].append(p)
+            event['peaks'].append(peak)
         return event
-
 
 class ComputeQuantities(plugin.TransformPlugin):
     """Compute various derived quantities of each peak (full width half maximum, etc.)
@@ -377,7 +468,7 @@ class ComputeQuantities(plugin.TransformPlugin):
                 peaks[i][channel]['position_of_max_in_waveform'] = p['left'] + maxpos
                 peaks[i][channel]['area'] = np.sum(peak_wave)
                 if channel == 'top_and_bottom':
-                    # Expensive stuff, only do for summed waveform, maybe later for top&bottom as well?
+                    # Expensive stuff...
                     # Have to search the actual whole waveform, not peak_wave:
                     # TODO: Searches for a VERY VERY LONG TIME for weird peaks in afterpulse tail..
                     # Fix by computing baseline for inividual peak, or limiting search region...
@@ -385,8 +476,6 @@ class ComputeQuantities(plugin.TransformPlugin):
                     samples_to_ns = self.config['digitizer_t_resolution'] / units.ns
                     peaks[i][channel]['fwhm'] = extent_until_threshold(wave_data, start=p['index_of_max_in_waveform'],
                                                                        threshold=maxval / 2) * samples_to_ns
-                    peaks[i][channel]['fwqm'] = extent_until_threshold(wave_data, start=p['index_of_max_in_waveform'],
-                                                                       threshold=maxval / 4) * samples_to_ns
                     peaks[i][channel]['fwtm'] = extent_until_threshold(wave_data, start=p['index_of_max_in_waveform'],
                                                                        threshold=maxval / 10) * samples_to_ns
                     # if 'top' in peaks[i] and 'bottom' in peaks[i]:
@@ -400,115 +489,3 @@ class ComputeQuantities(plugin.TransformPlugin):
 # Utils: these are helper functions for the plugins
 # TODO: Can we put these functions in the transform base class?
 # #
-
-def baseline_mean_stdev(waveform, sample_size=46):
-    """ Returns (baseline, baseline_stdev) calculated on the first sample_size samples of waveform """
-    """
-    This is how XerawDP does it... but this may be better:
-    return (
-        np.mean(sorted(baseline_sample)[
-                int(0.4 * len(baseline_sample)):int(0.6 * len(baseline_sample))
-                ]),  # Ensures peaks in baseline sample don't skew computed baseline
-        np.std(baseline_sample)  # ... but do count towards baseline_stdev!
-    )
-    Don't want to just take the median as V-resolution is finite
-    Don't want the mean either: this is not robust against large fluctuations (eg peaks in sample)
-    See also comment in JoinAndConvertWaveforms
-    """
-
-    baseline_sample = waveform[:sample_size]
-    return np.mean(baseline_sample), np.std(baseline_sample)
-
-
-def find_next_crossing(signal, threshold, start=0, direction='right', min_length=1, stop=None):
-    """Returns first index in signal crossing threshold, searching from start in direction
-    A 'crossing' is defined as a point where:
-        start_sample < threshold < this_sample OR start_sample > threshold > this_sample
-
-    Arguments:
-    signal            --  List of signal samples to search in
-    threshold         --  Threshold defining crossings
-    start             --  Index to start search from: defaults to 0
-    direction         --  Direction to search in: 'right' (default) or 'left'
-    min_length        --  Crossing only counts if stays above/below threshold for min_length
-                          Default: 1, i.e, a single sample on other side of threshold counts as a crossing
-                          The first index where a crossing happens is still returned.
-    stop_at           --  Stops search when this index is reached, THEN RETURNS THIS INDEX!!!
-
-    This is a pretty crucial function for several DSP routines; as such, it does extensive checking for
-    pathological cases. Please be very careful in making changes to this function, their effects could
-    be felt in unexpected ways in many places.
-
-    TODO: add lots of tests!!!
-    TODO: Allow specification of where start_sample should be (below or above treshold),
-          only use to throw error if it is not true? Or see start as starting crossing?
-           -> If latter, can outsource to new function: find_next_crossing_above & below
-              (can be two lines or so, just check start)
-    TODO: Allow user to specify that finding a crossing is mandatory / return None when none found?
-        
-    """
-
-    # Set stop to last index along given direction in signal
-    if stop is None:
-        stop = 0 if direction == 'left' else len(signal) - 1
-
-    # Check for errors in arguments
-    if not 0 <= stop <= len(signal) - 1:
-        raise ValueError("Invalid crossing search stop point: %s (signal has %s samples)" % (stop, len(signal)))
-    if not 0 <= start <= len(signal) - 1:
-        raise ValueError("Invalid crossing search start point: %s (signal has %s samples)" % (start, len(signal)))
-    if direction not in ('left', 'right'):
-        raise ValueError("Direction %s is not left or right" % direction)
-    if (direction == 'left' and start < stop) or (direction == 'right' and stop < start):
-        raise ValueError("Search region (start: %s, stop: %s, direction: %s) has negative length!" % (
-            start, stop, direction
-        ))
-
-    # Check for pathological cases not serious enough to throw an exception
-    # Can't raise a warning from here, as I don't have self.log...
-    if stop == start:
-        return stop
-    if signal[start] == threshold:
-        print("Threshold %s equals value in start position %s: crossing will never happen!" % (
-            threshold, start
-        ))
-        return stop
-    if not 1 <= min_length <= abs(start - stop):
-        #This is probably ok, can happen, remove warning later on
-        print("Minimum crossing length %s will never happen in a region %s samples in size!" % (
-            min_length, abs(start - stop)
-        ))
-        return stop
-
-    # Do the search
-    i = start
-    after_crossing_timer = 0
-    start_sample = signal[start]
-    while 1:
-        if i == stop:
-            #stop_at reached, have to result something
-            return stop
-        this_sample = signal[i]
-        if start_sample < threshold < this_sample or start_sample > threshold > this_sample:
-            #We're on the other side of the threshold that at the start!
-            after_crossing_timer += 1
-            if after_crossing_timer == min_length:
-                return i + (min_length - 1 if direction == 'left' else 1 - min_length)  #
-        else:
-            #We're back to the old side of threshold again
-            after_crossing_timer = 0
-        i += -1 if direction == 'left' else 1
-
-
-def interval_until_threshold(signal, start, left_threshold, right_threshold=None):
-    if right_threshold is None:
-        right_threshold = left_threshold
-    return (
-        find_next_crossing(signal, left_threshold, start=start, direction='left'),
-        find_next_crossing(signal, right_threshold, start=start, direction='right'),
-    )
-
-
-def extent_until_threshold(signal, start, threshold):
-    a = interval_until_threshold(signal, start, threshold)
-    return a[1] - a[0]

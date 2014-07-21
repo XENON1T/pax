@@ -8,14 +8,16 @@ from pax import pax
 
 if __name__ == '__main__':
     pax.processor(input='MongoDB.MongoDBInput',
-                  transform=['DSP.JoinAndConvertWaveforms',  # Explain what 'convert' means here
+                  transform=['DSP.BuildUncorrectedSumWaveformForXerawdpMatching',
+                             'DSP.JoinAndConvertWaveforms',  # Explain what 'convert' means here
                              'DSP.ComputeSumWaveform',
                              'DSP.LargeS2Filter',
                              'DSP.SmallS2Filter',
                              'DSP.PrepeakFinder',  # combine these two?
                              'DSP.FindPeaksInPrepeaks',  # with here?
-                             'DSP.ComputeQuantities',
+                             'DSP.FindS1_XeRawDPStyle',
                              'PeakPruning.PruneNonIsolatedPeaks',
+                             'DSP.ComputeQuantities',
                              'PeakPruning.PruneWideShallowS2s',
                              'PeakPruning.PruneWideS1s',
                              'PeakPruning.PruneS1sWithNearbyNegativeExcursions',
