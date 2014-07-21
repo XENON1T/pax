@@ -25,7 +25,7 @@ class OnlineMonitor(plugin.OutputPlugin):
         nowtime = datetime.datetime.utcnow()
         if (nowtime-self.lastWaveformTime).seconds > 5:
             self.lastWaveformTime = nowtime
-            insert = {"waveform": numpy.ndarray.tostring(event['sum_waveforms']['top_and_bottom']),
+            insert = {"waveform": numpy.ndarray.tostring(event['processed_waveforms']['top_and_bottom']),
                       "timestamp": datetime.datetime.utcnow(),}
             self.waveformCollection.save(insert)
         if len(event['peaks']) > 0:
