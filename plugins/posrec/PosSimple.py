@@ -8,9 +8,7 @@ class PosRecWeightedSum(plugin.TransformPlugin):
 
     def startup(self):
         self.topArrayMap = self.config['topArrayMap']
-
     def transform_event(self, event):
-        print(event)
         for peak in event['peaks']:
             if 'rec' not in peak.keys():
                 peak['rec'] = {}
@@ -19,10 +17,9 @@ class PosRecWeightedSum(plugin.TransformPlugin):
                 peak['rec']['PosSimple'] = {}
                 peak_x = peak_y = peak_E = 0.
                 for i, pmt in enumerate(self.topArrayMap):
-                    print(peak.keys())
                     if peak['hit_list'][i] != 0:
-                        peak_x += peak['hit_list'][i] * pmt['x']
-                        peak_y += peak['hit_list'][i] * pmt['y']
+                        peak_x += peak['hit_list'][i] * self.topArrayMap[i]['x']
+                        peak_y += peak['hit_list'][i] * self.topArrayMap[i]['y']
                         peak_E += peak['hit_list'][i]
                 if peak_E != 0:
                     peak_x /= peak_E
