@@ -1,0 +1,30 @@
+<html>                                                                         
+  <head>
+    <script src="/static/js/jquery.min.js"></script>
+    <script src="/static/js/d3.v3.min.js"></script>
+  </head>                                                                
+  <body>                             
+    <svg width="300" height="300">
+    </svg>
+    <a href="/">Home</a>                                                      
+  </body> 
+
+  <script>
+    $.getJSON('/get_pmtpattern', function(data){
+    var circles = [];
+    var svg_container = d3.select("body").append("svg")
+                                         .attr("width",500)
+                                         .attr("height",500);
+    for(i = 0; i < data['geometry'].length; i++ ){
+        var circle = svg_container.append("circle")
+                                 .attr("cx",data['geometry'][i]['x_axis']+180)
+		                 .attr("cy",data['geometry'][i]['y_axis']+180)
+		                 .attr("r",data['geometry'][i]['radius'])
+		                 .attr("style","fill:"+data['geometry'][i]['color']);
+        circles.push(circle);        
+    }
+
+    });
+  </script>
+  
+</html>
