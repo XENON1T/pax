@@ -1,7 +1,5 @@
 from pax import plugin, units
 import numpy as np
-from pax.dsputils import extent_until_threshold
-
 
 # TODO: this part is not obvious, you need a paragraph on what pruning is
 # TODO: does order of prunning matter?
@@ -50,13 +48,15 @@ class PruneNonIsolatedPeaks(PeakPruner):
     def startup(self):
         # TODO: These should be in configuration...
         self.settings = {
-            'test_before': {'s1': 50, 'large_s2': 21, 'small_s2': 10},
-            'test_after': {'s1': 10, 'large_s2': 21, 'small_s2': 10},
-            'before_to_height_ratio_max': {'s1': 0.01, 'large_s2': 0.05, 'small_s2': 0.05},
-            'after_to_height_ratio_max': {'s1': 0.04, 'large_s2': 0.05, 'small_s2': 0.05}
+            'test_before': {'large_s2': 21, 'small_s2': 10},
+            'test_after': {'large_s2': 21, 'small_s2': 10},
+            'before_to_height_ratio_max': {'large_s2': 0.05, 'small_s2': 0.05},
+            'after_to_height_ratio_max': {'large_s2': 0.05, 'small_s2': 0.05}
         }
 
     def decide_peak(self, peak, event, peak_index):
+        if peak['peak_type'] == 's1': return None
+
         # Find which settings to use for this type of peak
         settings = {}
 
@@ -82,26 +82,26 @@ class PruneNonIsolatedPeaks(PeakPruner):
 
         #Do the testing
         if peak['before_mean'] > settings['before_to_height_ratio_max'] * peak['height'] \
-            and peak['after_mean'] > settings['after_to_height_ratio_max'] * peak['height']:
+            or peak['after_mean'] > settings['after_to_height_ratio_max'] * peak['height']:
             return 'peak is not isolated enough' #Todo: add stuff
             #return '%s samples before peak contain stuff (mean %s, which is more than %s (%s x peak height))' % (settings['test_before'], peak['before_mean'], settings['before_to_height_ratio_max'] * peak['height'], settings['before_to_height_ratio_max'])
             #return '%s samples after peak contain stuff (mean %s, which is more than %s (%s x peak height))' % (settings['test_after'], peak['after_mean'], settings['after_to_height_ratio_max'] * peak['height'], settings['after_to_height_ratio_max'])
         return None
 
 
-class PruneWideS1s(PeakPruner):
-
-    def decide_peak(self, peak, event, peak_index):
-        if peak['peak_type'] != 's1':
-            return None
-        filtered_wave = event['processed_waveforms']['filtered_for_large_s2']
-        max_in_filtered = peak['filtered_for_large_s2']['position_of_max_in_waveform']
-        filtered_width = extent_until_threshold(filtered_wave,
-                                                start=max_in_filtered,
-                                                threshold=0.25*filtered_wave[max_in_filtered])
-        if filtered_width > 50:
-            return 'S1 FWQM in filtered_wv is %s samples, higher than 50.' % filtered_width
-        return None
+# class PruneWideS1s(PeakPruner):
+#
+#     def decide_peak(self, peak, event, peak_index):
+#         if peak['peak_type'] != 's1':
+#             return None
+#         filtered_wave = event['processed_waveforms']['filtered_for_large_s2']
+#         max_in_filtered = peak['filtered_for_large_s2']['position_of_max_in_waveform']
+#         filtered_width = extent_until_threshold(filtered_wave,
+#                                                 start=max_in_filtered,
+#                                                 threshold=0.25*filtered_wave[max_in_filtered])
+#         if filtered_width > 50:
+#             return 'S1 FWQM in filtered_wv is %s samples, higher than 50.' % filtered_width
+#         return None
 
 
 class PruneWideShallowS2s(PeakPruner):
@@ -109,29 +109,29 @@ class PruneWideShallowS2s(PeakPruner):
     def decide_peak(self, peak, event, peak_index):
         if str(peak['peak_type']) != 'small_s2':
             return None
-        treshold = 0.062451  # 1 mV/bin = 0.1 mV/ns
+        threshold = 0.062451  # 1 mV/bin = 0.1 mV/ns
         peakwidth = (peak['right'] - peak['left']) / units.ns
         ratio = peak['top_and_bottom']['height'] / peakwidth
-        if ratio > treshold:
-            return 'Max/width ratio %s is higher than %s' % (ratio, treshold)
+        if ratio > threshold:
+            return 'Max/width ratio %s is higher than %s' % (ratio, threshold)
         return None
 
 
-class PruneS1sWithNearbyNegativeExcursions(PeakPruner):
-
-    def decide_peak(self, p, event, peak_index):
-        if p['peak_type'] != 's1':
-            return None
-        data = event['processed_waveforms']['top_and_bottom']
-        negex = p['lowest_nearby_value'] = min(data[
-            max(0,p['index_of_max_in_waveform']-500) :
-            min(len(data)-1,p['index_of_max_in_waveform'] + 101)
-        ])  #Window used by s1 filter: todo: don't hardcode    
-        maxval =  p['top_and_bottom']['height']
-        factor = 3
-        if negex < 0 and factor * abs(negex) > maxval:
-            return 'Nearby negative excursion of %s, height (%s) not at least %s x as large.' % (negex, maxval, factor)
-        return None
+# class PruneS1sWithNearbyNegativeExcursions(PeakPruner):
+#
+#     def decide_peak(self, p, event, peak_index):
+#         if p['peak_type'] != 's1':
+#             return None
+#         data = event['processed_waveforms']['top_and_bottom']
+#         negex = p['lowest_nearby_value'] = min(data[
+#             max(0,p['index_of_max_in_waveform']-500) :
+#             min(len(data)-1,p['index_of_max_in_waveform'] + 101)
+#         ])  #Window used by s1 filter: todo: don't hardcode
+#         maxval =  p['uncorrected_sum_waveform_for_xerawdp_matching']['height']
+#         factor = 3
+#         if not maxval > factor * abs(negex):
+#             return 'Nearby negative excursion of %s, height (%s) not at least %s x as large.' % (negex, maxval, factor)
+#         return None
 
 
 class PruneS1sInS2Tails(PeakPruner):

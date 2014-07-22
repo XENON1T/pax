@@ -8,36 +8,6 @@ import numpy as np
 from copy import copy
 
 from pax import plugin, units
-from pax.dsputils import baseline_mean_stdev, find_next_crossing, extent_until_threshold, interval_until_threshold
-
-
-class BuildUncorrectedSumWaveformForXerawdpMatching(plugin.TransformPlugin):
-    def startup(self):
-        config = self.config
-
-        # Conversion factor from converting from ADC counts -> pe/bin
-        self.conversion_factor = config['digitizer_t_resolution'] * config['digitizer_voltage_range'] / (
-            2 ** (config['digitizer_bits']) * config['pmt_circuit_load_resistor'] *
-            config['external_amplification'] * units.electron_charge
-        )
-
-    def transform_event(self, event):
-        wave = np.zeros(event['length'])
-        for channel, waveform_occurrences in event['channel_occurrences'].items():
-            if channel >178 or channel in [1, 2, 145, 148, 157, 171, 177]:
-                continue
-            for starting_position, wave_occurrence in waveform_occurrences:
-                baseline, _ = baseline_mean_stdev(wave_occurrence)
-                wave[starting_position:starting_position + len(wave_occurrence)] = \
-                     np.add(-1 * (wave_occurrence - baseline) * self.conversion_factor / (2*10**6),
-                            wave[starting_position:starting_position + len(wave_occurrence)]
-                     )
-        if not 'processed_waveforms' in event:
-            event['processed_waveforms'] = {}
-        event['processed_waveforms']['uncorrected_sum_waveform_for_xerawdp_matching'] = wave
-        return event
-
-
 
 class JoinAndConvertWaveforms(plugin.TransformPlugin):
 
@@ -78,43 +48,78 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
             )
 
         # Build the channel waveforms from occurrences
-        event['channel_waveforms'] = {}
+        event['processed_waveforms'] = {}
+        uncorrected_sum_wave = np.zeros(event['length'])
+        event['channel_waveforms']   = {}
+        baseline_sample_size         = 46 #TODO: put in config
         for channel, waveform_occurrences in event['channel_occurrences'].items():
+            skip_channel = False  # Temp for Xerawdp matching, refactor to continue's later
 
             # Check that gain known
             if channel not in self.gains:
                 self.log.warning('Gain for channel %s is not specified! Skipping channel.' % channel)
-                continue
+                skip_channel = True
 
             # Deal with unknown gains
             if self.gains[channel] == 0:
                 if channel in event['channel_occurrences']:
                     self.log.warning('Gain for channel %s is 0, but is in waveform.' % channel)
-                    continue
-                else:
-                    # Just a dead channel, no biggie
-                    continue
+                skip_channel = True
 
             # Assemble the waveform pulse by pulse, starting from an all-zeroes waveform
             wave = np.zeros(event['length'])
-            for starting_position, wave_occurrence in waveform_occurrences:
-                # Determine an average baseline for this occurrence
-                """
-                This is NOT THE WAY TO DO IT - we should at least average over all occurrences
-                Better yet, take a mean of median 10% or so
-                Better yet, do this for several events, keep a running mean
-                However, this is how Xerawdp does it... (see Rawdata.cpp, getPulses)
-                # TODO: Check for baseline fluctuations in event, warn if too much
-                # How much baseline will we have in 1T? Only few samples?
-                See also comment in baseline_mean_stdev
-                """
-                baseline, _ = baseline_mean_stdev(wave_occurrence)
+            for i, (starting_position, wave_occurrence) in enumerate(waveform_occurrences):
+
+                # Check for pulses starting right after previous ones: Xerawdp doesn't recompute baselines
+                if i !=0 and starting_position == waveform_occurrences[i-1][0]+len(waveform_occurrences[i-1][1]):
+                    pass #baseline will still have the right value
+                else:
+                    # We need to compute the baseline.
+                    # First pulse is allowed be short (?), then Xerawdp computes baseline from last samples instead.
+                    if False and len(wave_occurrence)<2*baseline_sample_size: # Xerawdp bug, this code is never reached???
+                        if not i==0:
+                            raise RuntimeError("Occurrence %s in channel %s has length %s, should be at least 2*%s!"
+                                               % (i, channel, len(wave_occurrence), baseline_sample_size)
+                            )
+                        print("Short first pulse, computing baseline from latest samples")
+                        baseline_sample = wave_occurrence[len(wave_occurrence)-baseline_sample_size:]
+                    else:
+                        baseline_sample = wave_occurrence[:baseline_sample_size]
+                    baseline = np.mean(baseline_sample)
+                    """
+                    This is NOT THE WAY TO DO IT - we should at least average over all occurrences
+                    Better yet, take a mean of median 20% or so:
+                        return (
+                            np.mean(sorted(baseline_sample)[
+                                    int(0.4 * len(baseline_sample)):int(0.6 * len(baseline_sample))
+                                    ]),  # Ensures peaks in baseline sample don't skew computed baseline
+                            np.std(baseline_sample)  # ... but do count towards baseline_stdev!
+                        )
+                    Don't want to just take the median as V-resolution is finite
+                    Don't want the mean either: this is not robust against large fluctuations (eg peaks in sample)
+                    Better yet, do this for several events, keep a running mean
+                    However, this is how Xerawdp does it... (see Rawdata.cpp, getPulses)
+                    # TODO: Check for baseline fluctuations in event, warn if too much
+                    # How much baseline will we have in 1T? Only few samples?
+                    """
+
+                # Temp for Xerawdp matching: add pulse to the uncorrected sum waveform if they are not excluded
+                if not (channel > 178 or channel in [1, 2, 145, 148, 157, 171, 177]):
+                    uncorrected_sum_wave[starting_position:starting_position + len(wave_occurrence)] = \
+                        np.add(-1 * (wave_occurrence - baseline) * self.conversion_factor / (2*10**6),
+                            uncorrected_sum_wave[starting_position:starting_position + len(wave_occurrence)]
+                        )
+
                 # Put wave occurrences in the correct positions
+                if skip_channel: continue
                 wave[starting_position:starting_position + len(wave_occurrence)] = wave_occurrence - baseline
 
+            if skip_channel: continue
             # Flip the waveform up, convert it to pe/ns, and store it in the event data structure
             event['channel_waveforms'][channel] = -1 * wave * self.conversion_factor / self.gains[channel]
 
+        # Temp for Xerawdp matching: store uncorrected sum waveform
+        event['processed_waveforms']['uncorrected_sum_waveform_for_xerawdp_matching'] = uncorrected_sum_wave
 
         # Delete the channel_occurrences from the event structure, we don't need it anymore
         del event['channel_occurrences']
@@ -277,7 +282,7 @@ class FindS1_XeRawDPStyle(plugin.TransformPlugin):
             # Set a revised peak window based on the max position
             # Should we also check for previous S1s? or prune overlap later? (Xerawdp doesn't do either?)
             peak_window = (
-                max(max_idx - 12, left_region_limit),
+                max(max_idx - 10 -2, left_region_limit),
                 min(max_idx + 60, right_region_limit)
             )
 
@@ -287,7 +292,40 @@ class FindS1_XeRawDPStyle(plugin.TransformPlugin):
                                                    left_limit=peak_window[0], right_limit=peak_window[1],
                                                    min_crossing_length=3, stop_if_start_exceeded=True)
 
+            # Next search should start after this peak - do this before testing the peak or the arcane +2
+            seeker_position = copy(peak_bounds[1])
+
+            # Test for non-isolated peaks
+            # Possible off-by-one error here (and elsewhere..) due to Xerawdp's arcane average syntax
+            if    np.mean(signal[max(0, peak_bounds[0] - 50 -1): peak_bounds[0]]) > 0.01 * height \
+               or np.mean(signal[peak_bounds[1]+1: min(len(signal), peak_bounds[1] + 10+1)]) > 0.04 * height:
+                #'peak is not isolated enough'
+                continue
+
+            # Test for nearby negative excursions #Xerawdp bug: no check if is actually negative..
+            negex = min(signal[
+                max(0,max_idx-50 +1) :              #Need +1 for python indexing, Xerawdp doesn't do 1-correction here
+                min(len(signal)-1,max_idx + 10 +1)
+            ])
+            if not height > 3 * abs(negex):
+                #'Nearby negative excursion of %s, height (%s) not at least %s x as large.' % (negex, maxval, factor)
+                continue
+
+            #Test for too wide s1s
+            filtered_wave = event['processed_waveforms']['filtered_for_large_s2']   #I know, but that's how Xerawdp...
+            max_in_filtered = peak_bounds[0] + np.argmax(filtered_wave[peak_bounds[0]:peak_bounds[1]])
+            filtered_width = extent_until_threshold(filtered_wave,
+                                                    start=max_in_filtered,
+                                                    threshold=0.25*filtered_wave[max_in_filtered])
+            if filtered_width > 50:
+                #'S1 FWQM in filtered_wv is %s samples, higher than 50.' % filtered_width
+                continue
+
+            # Xerawdp weirdness
+            peak_bounds = (peak_bounds[0]-2,peak_bounds[1]+2)
+
             # Don't have to test for s1 > 60: can't happen due to limits on peak window
+            # That's nonsense btw!
 
             #Add the s1 we found
             event['peaks'].append({
@@ -295,14 +333,12 @@ class FindS1_XeRawDPStyle(plugin.TransformPlugin):
                 'left':                     peak_bounds[0],
                 'right':                    peak_bounds[1],
                 's1_peakfinding_window':    peak_window,
-                's1_peakfinder_original_alert': seeker_position,
                 'index_of_max_in_waveform': max_idx,
                 'height':                   height,
-                'input':                    'top_and_bottom',
+                'input':                    'uncorrected_sum_waveform_for_xerawdp_matching',
             })
 
-            #Continue searching after the peak
-            seeker_position = copy(peak_bounds[1])
+
 
 
         return event
@@ -492,3 +528,121 @@ class ComputeQuantities(plugin.TransformPlugin):
 # Utils: these are helper functions for the plugins
 # TODO: Can we put these functions in the transform base class? (Tunnell: yes, or do multiple inheritance)
 # #
+
+def find_next_crossing(signal, threshold,
+                       start=0, direction='right', min_length=1,
+                       stop=None, stop_if_start_exceeded=False):
+    """Returns first index in signal crossing threshold, searching from start in direction
+    A 'crossing' is defined as a point where:
+        start_sample < threshold < this_sample OR start_sample > threshold > this_sample
+
+    Arguments:
+    signal            --  List of signal samples to search in
+    threshold         --  Threshold defining crossings
+    start             --  Index to start search from: defaults to 0
+    direction         --  Direction to search in: 'right' (default) or 'left'
+    min_length        --  Crossing only counts if stays above/below threshold for min_length
+                          Default: 1, i.e, a single sample on other side of threshold counts as a crossing
+                          The first index where a crossing happens is still returned.
+    stop_at           --  Stops search when this index is reached, THEN RETURNS THIS INDEX!!!
+    #Hack for Xerawdp matching:
+    stop_if_start_exceeded -- If true and a value HIGHER than start is encountered, stop immediately
+
+    This is a pretty crucial function for several DSP routines; as such, it does extensive checking for
+    pathological cases. Please be very careful in making changes to this function, their effects could
+    be felt in unexpected ways in many places.
+
+    TODO: add lots of tests!!!
+    TODO: Allow specification of where start_sample should be (below or above treshold),
+          only use to throw error if it is not true? Or see start as starting crossing?
+           -> If latter, can outsource to new function: find_next_crossing_above & below
+              (can be two lines or so, just check start)
+    TODO: Allow user to specify that finding a crossing is mandatory / return None when none found?
+
+    """
+
+    # Set stop to last index along given direction in signal
+    if stop is None:
+        stop = 0 if direction == 'left' else len(signal) - 1
+
+    # Check for errors in arguments
+    if not 0 <= stop <= len(signal) - 1:
+        raise ValueError("Invalid crossing search stop point: %s (signal has %s samples)" % (stop, len(signal)))
+    if not 0 <= start <= len(signal) - 1:
+        raise ValueError("Invalid crossing search start point: %s (signal has %s samples)" % (start, len(signal)))
+    if direction not in ('left', 'right'):
+        raise ValueError("Direction %s is not left or right" % direction)
+    if (direction == 'left' and start < stop) or (direction == 'right' and stop < start):
+        raise ValueError("Search region (start: %s, stop: %s, direction: %s) has negative length!" % (
+            start, stop, direction
+        ))
+    if not 1 <= min_length:
+       raise ValueError("min_length must be at least 1, %s specified." %  min_length)
+
+    # Check for pathological cases not serious enough to throw an exception
+    # Can't raise a warning from here, as I don't have self.log...
+    if stop == start:
+        return stop
+    if signal[start] == threshold:
+        print("Threshold %s equals value in start position %s: crossing will never happen!" % (
+            threshold, start
+        ))
+        return stop
+    if not min_length <= abs(start - stop):
+        # This is probably ok, can happen, remove warning later on
+        print("Minimum crossing length %s will never happen in a region %s samples in size!" % (
+            min_length, abs(start - stop)
+        ))
+        return stop
+
+    # Do the search
+    i = start
+    after_crossing_timer = 0
+    start_sample = signal[start]
+    while 1:
+        if i == stop:
+            # stop_at reached, have to return something right now
+            # Xerawdp keeps going, but always increments after_crossing_timer, so we know what it'll give
+            return stop + after_crossing_timer if direction == 'left' else stop - after_crossing_timer
+        this_sample = signal[i]
+        if stop_if_start_exceeded and this_sample > start_sample:
+            print("Emergency stop of search at %s: start value exceeded" % i)
+            return i
+        if start_sample < threshold < this_sample or start_sample > threshold > this_sample:
+            # We're on the other side of the threshold that at the start!
+            after_crossing_timer += 1
+            if after_crossing_timer == min_length:
+                return i + (min_length - 1 if direction == 'left' else 1 - min_length)  #
+        else:
+            # We're back to the old side of threshold again
+            after_crossing_timer = 0
+        i += -1 if direction == 'left' else 1
+
+
+def interval_until_threshold(signal, start,
+                             left_threshold, right_threshold=None, left_limit=0, right_limit=None,
+                             min_crossing_length=1, stop_if_start_exceeded=False
+):
+    """Returns (l,r) indices of largest interval including start on same side of threshold
+    ... .bla... bla
+    """
+    if right_threshold is None:
+        right_threshold = left_threshold
+    if right_limit is None:
+        right_limit = len(signal) - 1
+    l_cross = find_next_crossing(signal, left_threshold,  start=start, stop=left_limit,
+                           direction='left',  min_length=min_crossing_length,
+                           stop_if_start_exceeded=stop_if_start_exceeded)
+    r_cross = find_next_crossing(signal, right_threshold, start=start, stop=right_limit,
+                           direction='right', min_length=min_crossing_length,
+                           stop_if_start_exceeded=stop_if_start_exceeded)
+    if l_cross != left_limit:
+        l_cross += 1    #We want the last index still on ok-side!
+    if r_cross != right_limit:
+        r_cross -= 1    #We want the last index still on ok-side!
+    return (l_cross, r_cross)
+
+
+def extent_until_threshold(signal, start, threshold):
+    a = interval_until_threshold(signal, start, threshold)
+    return a[1] - a[0]
