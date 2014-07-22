@@ -4,9 +4,9 @@
     <script src="/static/js/jquery.min.js"></script>
   </head>                                                                      
   <body>                                                                       
-    <h4>Pax event display</h4>                                              
-    <!--<h4>This event has %(numpeaks)s peaks</h4>    -->
-    <div id="plot" style="width:98%%"></div>                                
+    <h2>Pax event display</h2>
+    <h5>Click and drag to zoom, double click to reset view</h5>
+    <div id="plot" style="width:98%%;height:85%%"></div>                                
     <a href="/pmtpattern">PMT Hit Pattern</a>                               
     <a href="/getnext">Next Event</a>                                       
   </body>             
@@ -23,8 +23,8 @@
     showRoller: true,                                                   
     rollPeriod: 10,    
     labels: ["bin (10ns)", "sum_waveform"],
-//    yLabel: "p.e.",                                                     
-//    xLabel: "bin (10ns)",                                               
+    ylabel: "p.e.",                                                     
+    xlabel: "bin (10ns)",                                               
     });                                                                      
    
     var annotations = [];
@@ -36,7 +36,7 @@
 	annotations.push( {
 	    series: "sum_waveform",
 	    x: data['peaks'][i][2],
-	    shortText: data['peaks'][i][0]+data['peaks'][i][1],
+	    shortText: data['peaks'][i][0]+'_'+data['peaks'][i][1],
             cssClass: thiscss,
             tickHeight: 30,
             width: 50,
