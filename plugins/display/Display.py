@@ -5,8 +5,10 @@ import numpy as np
 import threading
 import cherrypy
 import os, os.path 
-import csv
+import webbrowser
 import inspect
+import json
+from operator import itemgetter
 
 class DisplayPage(object):
     """ Cherrypy website for displaying event data. """
@@ -22,50 +24,17 @@ class DisplayPage(object):
     @cherrypy.expose
     def getnext(self):
         self.rdy=True
+        #wait until next event received, then reload waveform page
         while self.rdy == True:
             time.sleep(100/1000000.0)
         raise cherrypy.HTTPRedirect("/")
-
+        
     @cherrypy.expose
     def index(self):
         if self.event == None:
             return """<html><head></head><body><h4>No event</h4></body></html>"""  
-        
         direc = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-        path = os.path.join(direc,'public','waveform.csv') 
-        print(path)
-        print("HERE!")
-        
-        tempfile = open(path,'w')
-        for i in range(0, len(self.event['processed_waveforms']['top_and_bottom'])):
-            line = str(i) + ',' + str(self.event['processed_waveforms']['top_and_bottom'][i]) + '\n'
-            tempfile.write(line)
-            
-        tempfile.close()
-
-        return """<html>
-        <head>
-        <script src="/static/js/dygraph-combined.js"></script>
-        </head>
-        <body>
-             <h4>Pax event display</h4>
-             <h4>This event has %(numpeaks)s peaks</h4>
-             <div id="plot" style="width:98%%"></div>
-             <a href="/pmtpattern">PMT Hit Pattern</a>
-             <a href="/getnext">Next Event</a>
-        </body>
-        <script>
-            new Dygraph(plot, "/static/waveform.csv",{
-                 legend: 'always',
-                 title: 'waveform',
-                 showRoller: true,
-                 rollPeriod: 10,
-                 yLabel: "p.e.",
-                 xLabel: "bin (10ns)",
-            });
-        </script>
-        </html>""" %{ "numpeaks": len(self.event['peaks']),
-                       }
+        return open(os.path.join(direc,'public','html','index.html'))
     
     @cherrypy.expose
     def pmtpattern(self):
@@ -75,6 +44,32 @@ class DisplayPage(object):
            <a href="/">Home</a>
         </body>
         </html>"""
+    
+    @cherrypy.expose
+    def get_waveform(self):
+        points = []
+        for i in range(0, len(self.event['processed_waveforms']['top_and_bottom'])):
+            points.append([ i, self.event['processed_waveforms']['top_and_bottom'][i]])
+        #now get peaks
+        s1Rank = s2Rank = 0
+        peaks = []
+        for peak in sorted(self.event['peaks'], key=lambda x: x['top_and_bottom']['area']):
+            if peak['rejected']:
+                continue
+            x = peak['top_and_bottom']['position_of_max_in_waveform']
+            ptype = 's1'
+            rank  = s1Rank
+            if peak['peak_type'] == 'large_s2' or peak ['peak_type'] == 'small_s2':
+                ptype = 's2'
+                rank = s2Rank
+                s2Rank+=1
+                
+            else:
+                s1Rank+=1
+            peaks.append( [ptype, rank, str(x), '%2f' % peak['top_and_bottom']['area'], '%2f' % peak['left'], '%2f' % peak['right']])
+                
+        ret = {'waveform': points, 'peaks': peaks}
+        return json.dumps(ret)
 
 
 class CherryThread(threading.Thread):
@@ -110,13 +105,16 @@ class DisplayServer(plugin.OutputPlugin):
         self.page = DisplayPage(self.config)
         self.thread = CherryThread(self.page)
         self.thread.start()
-#        cherrypy.quickstart(self.page)
+        self.opened = False
 
     def write_event(self, event):                
+        if self.opened == False:
+            url = "http://127.0.0.1:8080/"
+            webbrowser.open(url, new=1, autoraise=True)
+            self.opened = True
         self.page.SetEvent(event)
         while self.page.rdy == False:
             time.sleep(100/1000000.0)
-#        self.page.ClearNextEvent
 
     def shutdown(self):
         self.thread.stop()

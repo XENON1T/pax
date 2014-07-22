@@ -3,3 +3,4 @@ numpy
 pluginbase
 pymongo
 scikit-learn
+cherrypy

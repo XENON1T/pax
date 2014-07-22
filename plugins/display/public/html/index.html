@@ -1,0 +1,48 @@
+<html>                                                             
+  <head>                                                                       
+    <script src="/static/js/dygraph-combined.js"></script>                       
+    <script src="/static/js/jquery.min.js"></script>
+  </head>                                                                      
+  <body>                                                                       
+    <h4>Pax event display</h4>                                              
+    <!--<h4>This event has %(numpeaks)s peaks</h4>    -->
+    <div id="plot" style="width:98%%"></div>                                
+    <a href="/pmtpattern">PMT Hit Pattern</a>                               
+    <a href="/getnext">Next Event</a>                                       
+  </body>             
+ <style type="text/css">
+     .annos1 { color:red !important;}
+     .annos2 { color:blue !important;}
+     </style>
+  <script>                                                                     
+    $.getJSON('/get_waveform', function(data){
+    
+    var graph = new Dygraph(plot, data['waveform'],{
+    legend: 'always',                                                   
+    title: 'waveform',                                                  
+    showRoller: true,                                                   
+    rollPeriod: 10,    
+    labels: ["bin (10ns)", "sum_waveform"],
+//    yLabel: "p.e.",                                                     
+//    xLabel: "bin (10ns)",                                               
+    });                                                                      
+   
+    var annotations = [];
+ console.log(data['peaks'][0][2]);
+    for (i = 0; i < data['peaks'].length; i++){
+        thiscss = "annos1";
+        if(data['peaks'][i][0] == "s2")
+            thiscss = "annos2";
+	annotations.push( {
+	    series: "sum_waveform",
+	    x: data['peaks'][i][2],
+	    shortText: data['peaks'][i][0]+data['peaks'][i][1],
+            cssClass: thiscss,
+            tickHeight: 30,
+            width: 50,
+	});
+    }
+    graph.setAnnotations(annotations);
+    });
+        
+  </script>
