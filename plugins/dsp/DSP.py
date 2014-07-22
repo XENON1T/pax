@@ -77,15 +77,15 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
                 else:
                     # We need to compute the baseline.
                     # First pulse is allowed be short (?), then Xerawdp computes baseline from last samples instead.
-                    if len(wave_occurrence)<2*baseline_sample_size: # Xerawdp bug, this code is never reached???
-                        if not i==0:
-                            raise RuntimeError("Occurrence %s in channel %s has length %s, should be at least 2*%s!"
-                                               % (i, channel, len(wave_occurrence), baseline_sample_size)
-                            )
-                        print("Short first pulse, computing baseline from latest samples")
-                        baseline_sample = wave_occurrence[len(wave_occurrence)-baseline_sample_size:]
-                    else:
-                        baseline_sample = wave_occurrence[:baseline_sample_size]
+                    # if len(wave_occurrence)<2*baseline_sample_size: # Xerawdp bug, this code is never reached???
+                    #     if not i==0:
+                    #         raise RuntimeError("Occurrence %s in channel %s has length %s, should be at least 2*%s!"
+                    #                            % (i, channel, len(wave_occurrence), baseline_sample_size)
+                    #         )
+                    #     print("Short first pulse, computing baseline from latest samples")
+                    #     baseline_sample = wave_occurrence[len(wave_occurrence)-baseline_sample_size:]
+                    # else:
+                    baseline_sample = wave_occurrence[:baseline_sample_size]
                     baseline = np.mean(baseline_sample)
                     """
                     This is NOT THE WAY TO DO IT - we should at least average over all occurrences
