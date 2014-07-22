@@ -8,23 +8,23 @@ from pax import pax
 
 if __name__ == '__main__':
     pax.processor(input='MongoDB.MongoDBInput',
-                  transform=['DSP.BuildUncorrectedSumWaveformForXerawdpMatching',
-                             'DSP.JoinAndConvertWaveforms',  # Explain what 'convert' means here
+                  transform=['DSP.JoinAndConvertWaveforms',
                              'DSP.ComputeSumWaveform',
                              'DSP.LargeS2Filter',
                              'DSP.SmallS2Filter',
-                             'DSP.PrepeakFinder',  # combine these two?
-                             'DSP.FindPeaksInPrepeaks',  # with here?
+                             'DSP.PrepeakFinder',
+                             'DSP.FindPeaksInPrepeaks',
                              'DSP.FindS1_XeRawDPStyle',
                              'PeakPruning.PruneNonIsolatedPeaks',
                              'DSP.ComputeQuantities',
                              'PeakPruning.PruneWideShallowS2s',
-                             'PeakPruning.PruneWideS1s',
-                             'PeakPruning.PruneS1sWithNearbyNegativeExcursions',
+                             # 'PeakPruning.PruneWideS1s',
+                             # 'PeakPruning.PruneS1sWithNearbyNegativeExcursions',
                              'PeakPruning.PruneS1sInS2Tails',
                              'PeakPruning.PruneS2sInS2Tails'
                              #'PosSimple'
                              ],
                   output=['Plotting.PlottingWaveform',
-                          'Pickle.WriteToPickleFile'])
+                          #'Pickle.WriteToPickleFile'
+                          ])
                           

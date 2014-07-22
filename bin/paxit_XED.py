@@ -3,8 +3,7 @@ from pax import pax
 
 if __name__ == '__main__':
     pax.processor(input='XED.XedInput',
-                  transform=['DSP.BuildUncorrectedSumWaveformForXerawdpMatching',
-                             'DSP.JoinAndConvertWaveforms',
+                  transform=['DSP.JoinAndConvertWaveforms',
                              'DSP.ComputeSumWaveform',
                              'DSP.LargeS2Filter',
                              'DSP.SmallS2Filter',
@@ -14,8 +13,8 @@ if __name__ == '__main__':
                              'PeakPruning.PruneNonIsolatedPeaks',
                              'DSP.ComputeQuantities',
                              'PeakPruning.PruneWideShallowS2s',
-                             'PeakPruning.PruneWideS1s',
-                             'PeakPruning.PruneS1sWithNearbyNegativeExcursions',
+                             # 'PeakPruning.PruneWideS1s',
+                             # 'PeakPruning.PruneS1sWithNearbyNegativeExcursions',
                              'PeakPruning.PruneS1sInS2Tails',
                              'PeakPruning.PruneS2sInS2Tails'
                              ],

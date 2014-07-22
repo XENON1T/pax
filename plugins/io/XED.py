@@ -24,6 +24,9 @@ import numpy as np
 
 from pax import plugin, units
 
+def flatten(l): return [item for sublist in l for item in sublist]
+def ungarble_samplepairs(samples):
+        return flatten([(a,b) for (b,a) in zip(*2*[iter(samples)])])
 
 class XedInput(plugin.InputPlugin):
     file_header = np.dtype([
@@ -130,9 +133,11 @@ class XedInput(plugin.InputPlugin):
                     else:
                         data_samples = 2 * (control_word - (2 ** 31))  # Subtract the control word flag
                         samples_occurrence = np.fromstring(channel_fake_file.read(2 * data_samples), dtype="<i2")
+
                         event['channel_occurrences'][channel_id].append((
                             sample_position,
                             samples_occurrence
+                            #ungarble_samplepairs(samples_occurrence)
                         ))
                         sample_position += len(samples_occurrence)
                         """
@@ -158,3 +163,5 @@ class XedInput(plugin.InputPlugin):
 
         # If we get here, all events have been read
         self.input.close()
+
+
