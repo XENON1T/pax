@@ -9,6 +9,7 @@ import numpy as np
 
 
 def is_s2(peak):  # put in plugin base class?
+    if 'rejected' in peak and peak['rejected']: return False
     return peak['peak_type'] in ('large_s2', 'small_s2')
 
 
@@ -55,7 +56,7 @@ class PruneNonIsolatedPeaks(PeakPruner):
         }
 
     def decide_peak(self, peak, event, peak_index):
-        if peak['peak_type'] == 's1': return None
+        if peak['peak_type'] == 's1': return None               #TEMP REFACTOR TODO
 
         # Find which settings to use for this type of peak
         settings = {}
@@ -89,21 +90,6 @@ class PruneNonIsolatedPeaks(PeakPruner):
         return None
 
 
-# class PruneWideS1s(PeakPruner):
-#
-#     def decide_peak(self, peak, event, peak_index):
-#         if peak['peak_type'] != 's1':
-#             return None
-#         filtered_wave = event['processed_waveforms']['filtered_for_large_s2']
-#         max_in_filtered = peak['filtered_for_large_s2']['position_of_max_in_waveform']
-#         filtered_width = extent_until_threshold(filtered_wave,
-#                                                 start=max_in_filtered,
-#                                                 threshold=0.25*filtered_wave[max_in_filtered])
-#         if filtered_width > 50:
-#             return 'S1 FWQM in filtered_wv is %s samples, higher than 50.' % filtered_width
-#         return None
-
-
 class PruneWideShallowS2s(PeakPruner):
 
     def decide_peak(self, peak, event, peak_index):
@@ -115,23 +101,6 @@ class PruneWideShallowS2s(PeakPruner):
         if ratio > threshold:
             return 'Max/width ratio %s is higher than %s' % (ratio, threshold)
         return None
-
-
-# class PruneS1sWithNearbyNegativeExcursions(PeakPruner):
-#
-#     def decide_peak(self, p, event, peak_index):
-#         if p['peak_type'] != 's1':
-#             return None
-#         data = event['processed_waveforms']['top_and_bottom']
-#         negex = p['lowest_nearby_value'] = min(data[
-#             max(0,p['index_of_max_in_waveform']-500) :
-#             min(len(data)-1,p['index_of_max_in_waveform'] + 101)
-#         ])  #Window used by s1 filter: todo: don't hardcode
-#         maxval =  p['uncorrected_sum_waveform_for_xerawdp_matching']['height']
-#         factor = 3
-#         if not maxval > factor * abs(negex):
-#             return 'Nearby negative excursion of %s, height (%s) not at least %s x as large.' % (negex, maxval, factor)
-#         return None
 
 
 class PruneS1sInS2Tails(PeakPruner):
@@ -179,21 +148,4 @@ class PruneS2sInS2Tails(PeakPruner):
             event['stop_looking_for_s2s_after'] = min(larges2boundaries)
         if peak['left'] > event['stop_looking_for_s2s_after']:
             return 'S2 starts at %s, which is beyond %s, the starting position of a "large" S2.' % (peak['left'], event['stop_looking_for_s2s_after'])
-        return None
-
-
-class PruneS2sInS2Tails(PeakPruner):
-
-    def decide_peak(self, peak, event, peak_index):
-        if peak['peak_type'] != 'small_s2':
-            return None
-        treshold = 624.151  # S2 amplitude after which no more s2s are looked for
-        if not hasattr(self, 'earliestboundary'):
-            s2boundaries = [p['left'] for p in event['peaks'] if is_s2(p) and p['top_and_bottom']['height'] > treshold]
-            if s2boundaries == []:
-                self.earliestboundary = float('inf')
-            else:
-                self.earliestboundary = min(s2boundaries)
-        if peak['left'] > self.earliestboundary:
-            return 'Small S2 starts at %s, which is beyond %s, the starting position of a "large" S2.' % (peak['left'], self.earliestboundary)
         return None

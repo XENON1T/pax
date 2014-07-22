@@ -49,7 +49,8 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
 
         # Build the channel waveforms from occurrences
         event['processed_waveforms'] = {}
-        uncorrected_sum_wave = np.zeros(event['length'])
+        uncorrected_sum_wave_for_s1 = np.zeros(event['length'])
+        uncorrected_sum_wave_for_s2 = np.zeros(event['length'])
         event['channel_waveforms']   = {}
         baseline_sample_size         = 46 #TODO: put in config
         for channel, waveform_occurrences in event['channel_occurrences'].items():
@@ -76,7 +77,7 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
                 else:
                     # We need to compute the baseline.
                     # First pulse is allowed be short (?), then Xerawdp computes baseline from last samples instead.
-                    if False and len(wave_occurrence)<2*baseline_sample_size: # Xerawdp bug, this code is never reached???
+                    if len(wave_occurrence)<2*baseline_sample_size: # Xerawdp bug, this code is never reached???
                         if not i==0:
                             raise RuntimeError("Occurrence %s in channel %s has length %s, should be at least 2*%s!"
                                                % (i, channel, len(wave_occurrence), baseline_sample_size)
@@ -105,9 +106,14 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
 
                 # Temp for Xerawdp matching: add pulse to the uncorrected sum waveform if they are not excluded
                 if not (channel > 178 or channel in [1, 2, 145, 148, 157, 171, 177]):
-                    uncorrected_sum_wave[starting_position:starting_position + len(wave_occurrence)] = \
+                    uncorrected_sum_wave_for_s1[starting_position:starting_position + len(wave_occurrence)] = \
                         np.add(-1 * (wave_occurrence - baseline) * self.conversion_factor / (2*10**6),
-                            uncorrected_sum_wave[starting_position:starting_position + len(wave_occurrence)]
+                            uncorrected_sum_wave_for_s1[starting_position:starting_position + len(wave_occurrence)]
+                        )
+                if not channel > 178:
+                    uncorrected_sum_wave_for_s2[starting_position:starting_position + len(wave_occurrence)] = \
+                        np.add(-1 * (wave_occurrence - baseline) * self.conversion_factor / (2*10**6),
+                            uncorrected_sum_wave_for_s2[starting_position:starting_position + len(wave_occurrence)]
                         )
 
                 # Put wave occurrences in the correct positions
@@ -119,7 +125,8 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
             event['channel_waveforms'][channel] = -1 * wave * self.conversion_factor / self.gains[channel]
 
         # Temp for Xerawdp matching: store uncorrected sum waveform
-        event['processed_waveforms']['uncorrected_sum_waveform_for_xerawdp_matching'] = uncorrected_sum_wave
+        event['processed_waveforms']['uncorrected_sum_waveform_for_s1'] = uncorrected_sum_wave_for_s1
+        event['processed_waveforms']['uncorrected_sum_waveform_for_s2'] = uncorrected_sum_wave_for_s2
 
         # Delete the channel_occurrences from the event structure, we don't need it anymore
         del event['channel_occurrences']
@@ -207,7 +214,7 @@ class LargeS2Filter(GenericFilter):
 
         self.filter_ir = self.rcosfilter(31, 0.2, 3 * units.MHz * self.config['digitizer_t_resolution'])
         self.output_name = 'filtered_for_large_s2'
-        self.input_name = 'uncorrected_sum_waveform_for_xerawdp_matching'
+        self.input_name = 'uncorrected_sum_waveform_for_s2'
 
     @staticmethod
     def rcosfilter(filter_length, rolloff, cutoff_freq, sampling_freq=1):
@@ -254,13 +261,13 @@ class SmallS2Filter(GenericFilter):
                                    0.371, 0.103, 0])
         self.filter_ir = self.filter_ir / sum(self.filter_ir)  # Normalization
         self.output_name = 'filtered_for_small_s2'
-        self.input_name = 'uncorrected_sum_waveform_for_xerawdp_matching'
+        self.input_name = 'uncorrected_sum_waveform_for_s2'
 
 
 class FindS1_XeRawDPStyle(plugin.TransformPlugin):
 
     def transform_event(self, event):
-        signal = event['processed_waveforms']['uncorrected_sum_waveform_for_xerawdp_matching']
+        signal = event['processed_waveforms']['uncorrected_sum_waveform_for_s1']
         s1_alert_treshold = 0.1872452894  # "3 mV"
         # TODO: set start&end positions based on regions where S2s are found, loop over intervals
         left_region_limit = 0
@@ -286,6 +293,7 @@ class FindS1_XeRawDPStyle(plugin.TransformPlugin):
                 min(max_idx + 60, right_region_limit)
             )
 
+
             # Find the peak boundaries
             peak_bounds = interval_until_threshold(signal, start=max_idx,
                                                    left_threshold=0.005*height, #r-trh automatically =
@@ -299,7 +307,7 @@ class FindS1_XeRawDPStyle(plugin.TransformPlugin):
             # Possible off-by-one error here (and elsewhere..) due to Xerawdp's arcane average syntax
             if    np.mean(signal[max(0, peak_bounds[0] - 50 -1): peak_bounds[0]]) > 0.01 * height \
                or np.mean(signal[peak_bounds[1]+1: min(len(signal), peak_bounds[1] + 10+1)]) > 0.04 * height:
-                #'peak is not isolated enough'
+                #if print_everything: print('peak is not isolated enough!')
                 continue
 
             # Test for nearby negative excursions #Xerawdp bug: no check if is actually negative..
@@ -308,7 +316,7 @@ class FindS1_XeRawDPStyle(plugin.TransformPlugin):
                 min(len(signal)-1,max_idx + 10 +1)
             ])
             if not height > 3 * abs(negex):
-                #'Nearby negative excursion of %s, height (%s) not at least %s x as large.' % (negex, maxval, factor)
+                #if print_everything: print('Nearby negative excursion of %s, height (%s) not at least %s x as large.' % (negex, maxval, factor))
                 continue
 
             #Test for too wide s1s
@@ -318,8 +326,9 @@ class FindS1_XeRawDPStyle(plugin.TransformPlugin):
                                                     start=max_in_filtered,
                                                     threshold=0.25*filtered_wave[max_in_filtered])
             if filtered_width > 50:
-                #'S1 FWQM in filtered_wv is %s samples, higher than 50.' % filtered_width
+                #if print_everything: print('S1 FWQM in filtered_wv is %s samples, higher than 50.' % filtered_width)
                 continue
+
 
             # Xerawdp weirdness
             peak_bounds = (peak_bounds[0]-2,peak_bounds[1]+2)
@@ -335,7 +344,7 @@ class FindS1_XeRawDPStyle(plugin.TransformPlugin):
                 's1_peakfinding_window':    peak_window,
                 'index_of_max_in_waveform': max_idx,
                 'height':                   height,
-                'input':                    'uncorrected_sum_waveform_for_xerawdp_matching',
+                'input':                    'uncorrected_sum_waveform_for_s1',
             })
 
 
@@ -606,7 +615,7 @@ def find_next_crossing(signal, threshold,
             return stop + after_crossing_timer if direction == 'left' else stop - after_crossing_timer
         this_sample = signal[i]
         if stop_if_start_exceeded and this_sample > start_sample:
-            print("Emergency stop of search at %s: start value exceeded" % i)
+            #print("Emergency stop of search at %s: start value exceeded" % i)
             return i
         if start_sample < threshold < this_sample or start_sample > threshold > this_sample:
             # We're on the other side of the threshold that at the start!
