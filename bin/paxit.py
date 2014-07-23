@@ -6,6 +6,12 @@ from pax import pax
 # Add issues about dependencies
 # Explain what pruning is
 
+config_overload = """
+[MongoDB.MongoDBInput]
+collection = "dataset"
+address = "127.0.0.1:27017"
+"""
+
 if __name__ == '__main__':
     pax.processor(input='MongoDB.MongoDBInput',
                   transform=['DSP.JoinAndConvertWaveforms',
@@ -24,7 +30,9 @@ if __name__ == '__main__':
                              'PeakPruning.PruneS2sInS2Tails'
                              #'PosSimple'
                              ],
-                  output=['Plotting.PlottingWaveform',
-                          #'Pickle.WriteToPickleFile'
-                          ])
-                          
+                  output=['Plotting.PlottingWaveform', # Make plot using matplotlib
+                          #'Pickle.WriteToPickleFile',  # Write to Pythonistic file
+                          #'Display.DisplayServer',     # Start web server for plots
+                          ],
+                  config_overload=config_overload)
+

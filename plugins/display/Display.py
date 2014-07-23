@@ -1,6 +1,5 @@
-import webbrowser
 import time
-from pax import plugin, pax
+from pax import plugin
 import numpy as np
 import threading
 import cherrypy
@@ -8,7 +7,6 @@ import os, os.path
 import webbrowser
 import inspect
 import json
-from operator import itemgetter
 
 class DisplayPage(object):
     """ Cherrypy website for displaying event data. """
