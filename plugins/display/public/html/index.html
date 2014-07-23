@@ -1,35 +1,36 @@
-<html>
-<head>
-    <script src="/static/js/dygraph-combined.js"></script>
+<html>                                                             
+  <head>                                                                       
+    <script src="/static/js/dygraph-combined.js"></script>                         <script src="static/js/dygraph-extra.js"></script>  
     <script src="/static/js/jquery.min.js"></script>
-</head>
-<body>
-<h2>Pax event display</h2>
-<h5>Click and drag to zoom, double click to reset view</h5>
-
-<div id="plot" style="width:98%%;height:85%%"></div>
-<a href="/pmtpattern">PMT Hit Pattern</a>
-<a href="/getnext">Next Event</a>
-</body>
-<style type="text/css">
-    .annos1 { color:red !important;}
-    .annos2 { color:blue !important;}
-</style>
-<script>
+  </head>                                                                      
+  <body>                                                                       
+    <h2>Pax event display</h2>
+    <h5>Click and drag to zoom, double click to reset view</h5>
+    <div id="plot" style="width:98%%;height:85%%"></div>                                
+    <a href="/pmtpattern">PMT Hit Pattern</a>                               
+    <a href="/getnext">Next Event</a>                                       
+    <button id="merge">Save as png</button>
+  </body>             
+ <style type="text/css">
+     .annos1 { color:red !important;}
+     .annos2 { color:blue !important;}
+     </style>
+  <script>                                                                     
+    var graph = null;
     $.getJSON('/get_waveform', function(data){
     
-    var graph = new Dygraph(plot, data['waveform'],{
+    graph = new Dygraph(plot, data['waveform'],{
     legend: 'always',                                                   
     title: 'waveform',                                                  
     showRoller: true,                                                   
     rollPeriod: 10,    
     labels: ["bin (10ns)", "sum_waveform"],
     ylabel: "p.e.",                                                     
-    xlabel: "bin (10ns)",                                               
+    xlabel: "bin (10ns)",                     
+
     });                                                                      
    
     var annotations = [];
- console.log(data['peaks'][0][2]);
     for (i = 0; i < data['peaks'].length; i++){
         thiscss = "annos1";
         if(data['peaks'][i][0] == "s2")
@@ -38,13 +39,23 @@
 	    series: "sum_waveform",
 	    x: data['peaks'][i][2],
 	    shortText: data['peaks'][i][0]+'_'+data['peaks'][i][1],
+            text: 'area: '+data['peaks'][i][3] + '  left: ' + data['peaks'][i][4] + '  right: ' + data['peaks'][i][5],
             cssClass: thiscss,
             tickHeight: 30,
             width: 50,
+            clickHandler: function(canvas,area) {
+
+            },
 	});
     }
     graph.setAnnotations(annotations);
+  });
+    $("#merge").click(function() {
+      var imgExport = document.createElement('imgExport');
+      Dygraph.Export.asPNG(graph,imgExport);      
+      window.location.href = imgExport.src.replace('image/png','image/octet-stream');
     });
+    
         
 
 </script>
