@@ -57,7 +57,7 @@ class Event(object):
 		for peak in self._raw['peaks']:
 			# 'input' refers to which filtered or summed waveform the peak was
 			# computed on.
-			if peak['input'] in inputs:
+			if peak['source_waveform'] in inputs:
 				if 'rejected' in peaks and peaks['rejected'] is True:
 					continue
 
