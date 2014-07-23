@@ -15,7 +15,6 @@ class PlottingWaveform(plugin.OutputPlugin):
         fig = plt.figure()
         ax = fig.add_subplot(111)
 
-
         # Plot all peaks
         for peak in event.S2s() + event.S1s():
 
@@ -23,25 +22,24 @@ class PlottingWaveform(plugin.OutputPlugin):
             y = event.summed_waveform()[x]
 
             plt.hlines(y, *peak.bounds())
-            ax.annotate('%s:%s' % (peak.type, int(peak.area())),
+            ax.annotate('%s:%s' % (peak.type(), int(peak.area())),
                         xy=(x, y),
                         xytext=(x, y + 100 + random.random() * 100),
                         arrowprops=dict(arrowstyle="fancy",
                                         fc="0.6", ec="none",
                                         connectionstyle="angle3,angleA=0,angleB=-90"))
-            side *= -1
 
-        plt.plot(event.summed_waveform('uncorrected_sum_waveform_for_xerawdp_matching'),
-                 label='uncorrected') # Deprecation warning
         plt.plot(event.summed_waveform(), label='summed')
         plt.plot(event.filtered_waveform(), '--', label='filtered')
-        plt.plot(event.filtered_waveform('filtered_for_small_s2'), '--',
-                 'filtered_for_small_s2') # Pending deprecation
-
 
         plt.legend()
         plt.xlabel('Time in event [10 ns]')
         plt.ylabel("pe / bin")
+
+        plt.show(block=False)
+        self.log.info("Hit enter to continue...")
+        input()
+        plt.close()
 
 
 class PlottingHitPattern(plugin.OutputPlugin):

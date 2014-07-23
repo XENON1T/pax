@@ -41,7 +41,7 @@ class Event(object):
 
         peaks = {}
 
-        for peak in self.raw['peaks']:
+        for peak in self._raw['peaks']:
             # 'input' refers to which filtered or summed waveform the peak was
             # computed on. 
             if peak['input'] in inputs:
@@ -50,8 +50,6 @@ class Event(object):
 
                 # Flatten the peak so we can use our sort key
                 peak_key = flatten(peak)[sort_key]
-
-                pprint(flatten(peak))
 
                 # Save save into dictionary
                 peaks[peak_key] = S2(peak)
@@ -71,40 +69,41 @@ class Event(object):
 
     def pmt_waveform(self, pmt):
         """The individual waveform for a specific PMT"""
-        return self.raw.channel_waveforms[pmt]
+        return self._raw.channel_waveforms[pmt]
 
     def summed_waveform(self, name='top_and_bottom'):
         """Waveform summed over many PMTs"""
         if 'filtered' in name:
             raise ValueError('Do not get filtered waveforms with summed waveform; use filtered_waveform: %s' % name)
-        elif name not in self.raw['processed_waveform']:
-            raise ValueError("Summed waveform %s does not exist")
+        elif name not in self._raw['processed_waveforms']:
+            self.log.debug(self._raw['processed_waveforms'].keys())
+            raise ValueError("Summed waveform %s does not exist." % name)
         elif name == 'uncorrected_sum_waveform_for_xerawdp_matching':
-            raise PendingDeprecationWarning
+            raise ValueError()
 
-        return self.raw['processed_waveform'][name]
-
-    def filtered_waveform(self, filter_name = None):
-        """Filtered waveform summed over many PMTs"""
-        if filter_name != None:
-            raise PendingDeprecationWarning()
-            return self.raw['processed_waveform'][filter_name]
-        return self.raw['processed_waveform']['filtered_for_large_s2']
+        return self._raw['processed_waveforms'][name]
 
     def filtered_waveform(self, filter_name = None):
         """Filtered waveform summed over many PMTs"""
         if filter_name != None:
             raise PendingDeprecationWarning()
-            return self.raw['processed_waveform'][filter_name]
-        return self.raw['processed_waveform']['filtered_for_large_s2']
+            return self._raw['processed_waveform'][filter_name]
+        return self._raw['processed_waveforms']['filtered_for_large_s2']
+
+    def filtered_waveform(self, filter_name = None):
+        """Filtered waveform summed over many PMTs"""
+        if filter_name != None:
+            raise PendingDeprecationWarning()
+            return self._raw['processed_waveforms'][filter_name]
+        return self._raw['processed_waveforms']['filtered_for_large_s2']
 
     def dump(self):
-        pprint.pprint(self.raw)
+        pprint.pprint(self._raw)
 
 
 class Peak(object):
     def __init__(self, peak_dict):
-        self.peak_dict = {}
+        self.peak_dict = peak_dict
 
     def type(self):
         return self.__class__.__name__
@@ -113,6 +112,7 @@ class Peak(object):
         key = '%s.%s' % (pmts, key)
         flattened_peak = flatten(self.peak_dict)
         if key not in flattened_peak:
+            pprint(self.peak_dict)
             raise ValueError('%s does not exist in peak' % key)
         
         return flattened_peak[key]

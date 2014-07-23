@@ -71,10 +71,10 @@ def get_plugin_source(config, log=logging):
     # Find the absolute path, then director, then find plugin directory
     searchpath += [os.path.join(get_my_dir(), '..', 'plugins')]
     # Want to look in all subdirectories of plugin directories
-    subdirs = []
     for entry in searchpath:
         searchpath.extend(glob.glob(os.path.join(entry, '*/')))
-    searchpath.extend(subdirs)
+
+    searchpath = [path for path in searchpath if '__pycache__' not in path]
 
     log.debug("Search path for plugins is %s" % str(searchpath))
     plugin_source = plugin_base.make_plugin_source(searchpath=searchpath)
@@ -85,26 +85,36 @@ def get_plugin_source(config, log=logging):
     return plugin_source
 
 
-def processor(input, transform, output, config_overload=""):
-    # TODO (tunnell): add DSP?
-    # Check input types
-    # TODO (tunnell): Don't use asserts, but raise ValueError() with
-    # informative error
-    assert isinstance(input, str)
-    assert isinstance(transform, (str, list))
-    assert isinstance(output, (str, list))
+def get_actions(config, input, list_of_names):
+    config = evaluate_configuration(config['pax'])
 
-    # If 'transform' or 'output' aren't lists, turn them into lists
-    if not isinstance(transform, list):
-        transform = [transform]
-    if not isinstance(output, list):
-        output = [output]
+    input = config[input]
+    if not isinstance(input, str):
+        raise ValueError("Input class name must be string")
 
-    # What we do on data...
-    actions = transform + output
+    actions = []
 
+    for name in list_of_names:
+        value = config[name]
+
+        if not isinstance(value, (str, list)):
+            raise ValueError("Misformatted ini file on key %s" % name)
+
+        if not isinstance(value, list):
+            value = [value]
+
+        actions += value
+
+    return input, actions
+
+
+def processor(config_overload=""):
     # Load configuration
     config = get_configuration(config_overload)
+
+    input, actions = get_actions(config,
+                                 'input',
+                                 ['dsp', 'transform', 'my_postprocessing', 'output'])
 
     # Deal with command line arguments for the logging level
     parser = argparse.ArgumentParser(description="Process XENON1T data")
