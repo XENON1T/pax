@@ -30,8 +30,8 @@ if __name__ == '__main__':
                              'PeakPruning.PruneS2sInS2Tails',
                              'DatastructureConverter.ConvertToEventClass'
                              ],
-                  output=[#'Plotting.PlottingWaveform', # Make plot using matplotlib
-                          #'Pickle.WriteToPickleFile',  # Write to Pythonistic file
+                  output=['Plotting.PlottingWaveform', # Make plot using matplotlib
+                          'Pickle.WriteToPickleFile',  # Write to Pythonistic file
                           #'Display.DisplayServer',     # Start web server for plots
                           ],
                   config_overload=config_overload,

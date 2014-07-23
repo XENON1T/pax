@@ -44,7 +44,10 @@ class Event(object):
         for peak in self.raw['peaks']:
             # 'input' refers to which filtered or summed waveform the peak was
             # computed on. 
-            if peak['input'] in inputs and peaks['rejected'] == False:
+            if peak['input'] in inputs:
+                if 'rejected' in peaks and peaks['rejected'] == True:
+                    continue
+
                 # Flatten the peak so we can use our sort key
                 peak_key = flatten(peak)[sort_key]
 
@@ -62,7 +65,7 @@ class Event(object):
                                'filtered_for_small_s2'),
                                sort)
 
-    def S1s(self, sort=('area', True)):
+    def S1s(self, sort=('top_and_bottom.area', True)):
         """List of S1 (scintillation) signals as Peak objects"""
         return self._get_peaks(('uncorrected_sum_waveform_for_s1'), sort)
 
@@ -76,11 +79,23 @@ class Event(object):
             raise ValueError('Do not get filtered waveforms with summed waveform; use filtered_waveform: %s' % name)
         elif name not in self.raw['processed_waveform']:
             raise ValueError("Summed waveform %s does not exist")
+        elif name == 'uncorrected_sum_waveform_for_xerawdp_matching':
+            raise PendingDeprecationWarning
 
         return self.raw['processed_waveform'][name]
 
-    def filtered_waveform(self):
+    def filtered_waveform(self, filter_name = None):
         """Filtered waveform summed over many PMTs"""
+        if filter_name != None:
+            raise PendingDeprecationWarning()
+            return self.raw['processed_waveform'][filter_name]
+        return self.raw['processed_waveform']['filtered_for_large_s2']
+
+    def filtered_waveform(self, filter_name = None):
+        """Filtered waveform summed over many PMTs"""
+        if filter_name != None:
+            raise PendingDeprecationWarning()
+            return self.raw['processed_waveform'][filter_name]
         return self.raw['processed_waveform']['filtered_for_large_s2']
 
     def dump(self):
@@ -91,7 +106,10 @@ class Peak(object):
     def __init__(self, peak_dict):
         self.peak_dict = {}
 
-    def _get_var(pmts, key):
+    def type(self):
+        return self.__class__.__name__
+
+    def _get_var(self, pmts, key):
         key = '%s.%s' % (pmts, key)
         flattened_peak = flatten(self.peak_dict)
         if key not in flattened_peak:
@@ -99,20 +117,27 @@ class Peak(object):
         
         return flattened_peak[key]
 
-    def area(key='top_and_bottom'):
+    def area(self, key='top_and_bottom'):
         return self._get_var(key, 'area')
 
-    def width_fwhm(key='top_and_bottom'):
+    def width_fwhm(self, key='top_and_bottom'):
         return self._get_var(key, 'fwhm')
 
-    def height(key='top_and_bottom'):
+    def height(self, key='top_and_bottom'):
         return self._get_var(key, 'height')
 
-    def time_in_waveform(key='top_and_bottom'):
+    def time_in_waveform(self, key='top_and_bottom'):
         return self._get_var(key, 'position_of_max_in_waveform')
+
+    def bounds(self):
+        """Where the peak starts and ends in the sum waveform
+        """
+        return (self.peak_dict['left'],
+                self.peak_dict['right'])
 
 class S1(Peak):
     pass
+
 
 class S2(Peak):
     pass
