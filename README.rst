@@ -21,5 +21,5 @@ Features
  * Pickle
  * Plots
 * Position reconstruction of events
-  * Demo reconstruction algorithm of charge-weighted sum
+ * Demo reconstruction algorithm of charge-weighted sum
 
