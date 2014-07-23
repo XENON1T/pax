@@ -41,12 +41,23 @@ coverage:
 	open htmlcov/index.html
 
 docs:
+
+	# For this to work, you have to first:
+	#  cd ..
+	#  git clone  git@github.com:XENON1T/pax.git paxdocs
+	#  cd paxdocs
+	#  git checkout --orphan gh-pages
+
 	rm -f docs/pax.rst
 	rm -f docs/modules.rst
 	sphinx-apidoc -o docs/ pax
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
-	open docs/_build/html/index.html
+
+	cp -r docs/_build/html/* ../paxdocs/
+	bash -c "cd ../paxdocs;git add -A;git commit -m \"Generated gh-pages\";git push origin gh-pages;cd ../pax"
+
+	echo open docs/_build/html/index.html
 
 major: clean docs
 	bumpversion major
