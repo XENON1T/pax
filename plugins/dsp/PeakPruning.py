@@ -41,68 +41,6 @@ class PeakPruner(plugin.TransformPlugin):
         raise NotImplementedError("This peak pruner forgot to implement decide_peak...")
 
 
-class PruneNonIsolatedPeaks(PeakPruner):
-    # mean of test_before samples before interval must be less than before_to_height_ratio_max times the maximum value in the interval
-    # Same for test_after
-    # NB: tests the PREPEAK, not the actual peak!!! (XeRawDP behaviour)
-
-    def startup(self):
-        # TODO: These should be in configuration...
-        self.settings = {
-            'test_before': {'large_s2': 21, 'small_s2': 10},
-            'test_after': {'large_s2': 21, 'small_s2': 10},
-            'before_to_height_ratio_max': {'large_s2': 0.05, 'small_s2': 0.05},
-            'after_to_height_ratio_max': {'large_s2': 0.05, 'small_s2': 0.05}
-        }
-
-    def decide_peak(self, peak, event, peak_index):
-        if peak['peak_type'] == 's1': return None               #TEMP REFACTOR TODO
-
-        # Find which settings to use for this type of peak
-        settings = {}
-
-        for settingname, settingvalue in self.settings.items():
-            settings[settingname] = self.settings[settingname][peak['peak_type']]
-
-
-        signal = event['processed_waveforms'][peak['input']]
-
-        #Calculate before_mean and after_mean
-        assert not 'before_mean' in peak    #Fails if you run the plugin twice!
-        # This seems more Xerawdp-like, but then we get messy overlapping peaks... have to test for those first...
-        left_to_use  = min(peak['left'],  peak['prepeak_left'])  if peak['peak_type'] == 'large_s2' else peak['left']
-        right_to_use = max(peak['right'], peak['prepeak_right']) if peak['peak_type'] == 'large_s2' else peak['right']
-        #left_to_use  = peak['prepeak_left']  if peak['peak_type'] == 'large_s2' else peak['left']
-        #right_to_use =  peak['prepeak_right'] if peak['peak_type'] == 'large_s2' else peak['right']
-
-        peak['before_mean'] = np.mean(
-            signal[max(0, left_to_use - settings['test_before']): left_to_use])
-        peak['after_mean'] = np.mean(
-
-            signal[right_to_use: min(len(signal), right_to_use + settings['test_after'])])
-
-        #Do the testing
-        if peak['before_mean'] > settings['before_to_height_ratio_max'] * peak['height'] \
-            or peak['after_mean'] > settings['after_to_height_ratio_max'] * peak['height']:
-            return 'peak is not isolated enough' #Todo: add stuff
-            #return '%s samples before peak contain stuff (mean %s, which is more than %s (%s x peak height))' % (settings['test_before'], peak['before_mean'], settings['before_to_height_ratio_max'] * peak['height'], settings['before_to_height_ratio_max'])
-            #return '%s samples after peak contain stuff (mean %s, which is more than %s (%s x peak height))' % (settings['test_after'], peak['after_mean'], settings['after_to_height_ratio_max'] * peak['height'], settings['after_to_height_ratio_max'])
-        return None
-
-
-class PruneWideShallowS2s(PeakPruner):
-
-    def decide_peak(self, peak, event, peak_index):
-        if str(peak['peak_type']) != 'small_s2':
-            return None
-        threshold = 0.062451  # 1 mV/bin = 0.1 mV/ns
-        peakwidth = (peak['right'] - peak['left']) / units.ns
-        ratio = peak['top_and_bottom']['height'] / peakwidth
-        if ratio > threshold:
-            return 'Max/width ratio %s is higher than %s' % (ratio, threshold)
-        return None
-
-
 class PruneS1sInS2Tails(PeakPruner):
 
     def decide_peak(self, peak, event, peak_index):

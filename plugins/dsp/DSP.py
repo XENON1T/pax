@@ -293,7 +293,6 @@ class FindS1_XeRawDPStyle(plugin.TransformPlugin):
                 min(max_idx + 60, right_region_limit)
             )
 
-
             # Find the peak boundaries
             peak_bounds = interval_until_threshold(signal, start=max_idx,
                                                    left_threshold=0.005*height, #r-trh automatically =
@@ -304,10 +303,14 @@ class FindS1_XeRawDPStyle(plugin.TransformPlugin):
             seeker_position = copy(peak_bounds[1])
 
             # Test for non-isolated peaks
-            # Possible off-by-one error here (and elsewhere..) due to Xerawdp's arcane average syntax
-            if    np.mean(signal[max(0, peak_bounds[0] - 50 -1): peak_bounds[0]]) > 0.01 * height \
-               or np.mean(signal[peak_bounds[1]+1: min(len(signal), peak_bounds[1] + 10+1)]) > 0.04 * height:
-                #if print_everything: print('peak is not isolated enough!')
+            #TODO: dynamic window size if several s1s close together
+            if not isolation_test(signal, max_idx,
+                                  right_edge_of_left_test_region=peak_bounds[0]-1,
+                                  test_length_left=50,
+                                  left_edge_of_right_test_region=peak_bounds[1]+1,
+                                  test_length_right=10,
+                                  before_avg_max_ratio=0.01,
+                                  after_avg_max_ratio=0.04):
                 continue
 
             # Test for nearby negative excursions #Xerawdp bug: no check if is actually negative..
@@ -316,7 +319,6 @@ class FindS1_XeRawDPStyle(plugin.TransformPlugin):
                 min(len(signal)-1,max_idx + 10 +1)
             ])
             if not height > 3 * abs(negex):
-                #if print_everything: print('Nearby negative excursion of %s, height (%s) not at least %s x as large.' % (negex, maxval, factor))
                 continue
 
             #Test for too wide s1s
@@ -326,15 +328,13 @@ class FindS1_XeRawDPStyle(plugin.TransformPlugin):
                                                     start=max_in_filtered,
                                                     threshold=0.25*filtered_wave[max_in_filtered])
             if filtered_width > 50:
-                #if print_everything: print('S1 FWQM in filtered_wv is %s samples, higher than 50.' % filtered_width)
                 continue
-
 
             # Xerawdp weirdness
             peak_bounds = (peak_bounds[0]-2,peak_bounds[1]+2)
 
             # Don't have to test for s1 > 60: can't happen due to limits on peak window
-            # That's nonsense btw!
+            # That's nonsense btw! TODO?
 
             #Add the s1 we found
             event['peaks'].append({
@@ -344,153 +344,184 @@ class FindS1_XeRawDPStyle(plugin.TransformPlugin):
                 's1_peakfinding_window':    peak_window,
                 'index_of_max_in_waveform': max_idx,
                 'height':                   height,
-                'input':                    'uncorrected_sum_waveform_for_s1',
+                'source_waveform':          'uncorrected_sum_waveform_for_s1',
             })
 
-
-
-
         return event
 
 
-# TODO: add a self cleaning option to the ini file for tossing out middle steps?
-# TODO: Veto S1 peakfinding
-class PrepeakFinder(plugin.TransformPlugin):
-
-    """Finds intervals 'above threshold' for which min_length <= length <= max_length.
-
-    'above threshold': dropping below threshold for shorter than max_samples_below_threshold is acceptable
-
-    This needs a lot more explaination.  Few paragrahs?
-
-    Toss out super big or small peaks without warning.  Compute left, right, height.
-    TODO: Call it peak candidates
-    """
-
-    # Doc for future version:
-    """Adds candidate peak intervals to peak_candidate_intervals
-
-    A peak candidate is an interval above threshold for which min_length <= length <= max_length.
-    Dropping below threshold for shorter than max_samples_below_threshold does not count as ending the interval.
-    If an interval is above treshold, but does not meet the length conditions set, it is not reported!
-    peak_candidate_intervals will be a list of dicts with left, right, height.
-
-    """
+class FindS2_XeRawDPStyle(plugin.TransformPlugin):
 
     def startup(self):
-        self.settings = {  # TODO put in ini
-                           'threshold': {'large_s2': 0.62451, 'small_s2': 0.062451},
-                           'min_length': {'large_s2': 60, 'small_s2': 40},
-                           'max_length': {'large_s2': float('inf'), 'small_s2': 200},
-                           'input': {
-                               'large_s2': 'filtered_for_large_s2',
-                               'small_s2': 'filtered_for_small_s2'
-                           }
-        }
-
-    def transform_event(self, event):
-        event['prepeaks'] = []
-
-        # Which peak types do we need to search for?
-        peak_types = self.settings['threshold'].keys()
-        for peak_type in peak_types:
-            prepeaks = []
-            # Find which settings to use for this type of peak
-            settings = {}
-            for settingname, settingvalue in self.settings.items():
-                settings[settingname] = self.settings[settingname][peak_type]
-
-            # Get the signal out
-            signal = event['processed_waveforms'][settings['input']]
-
-            # Find the prepeaks
-            end = 0
-            while 1:
-                start = find_next_crossing(signal, threshold=settings['threshold'], start=end)
-                # If we get the last index, that means it could not find another crossing
-                if start == len(signal) - 1:
-                    break
-                end = find_next_crossing(signal, threshold=settings['threshold'],
-                                         start=start)
-                prepeaks.append({
-                    'prepeak_left': start,
-                    'prepeak_right': end,
-                    'peak_type': peak_type,
-                    'input': settings['input']
-                })
-                if end == len(signal) - 1:
-                    print("Peak starting at %s didn't end!" % start)
-                    break
-
-            # Filter out prepeaks that don't meet width conditions, compute some quantities
-            valid_prepeaks = []
-            for b in prepeaks:
-                if not settings['min_length'] <= b['prepeak_right'] - b['prepeak_left'] <= settings['max_length']:
-                    continue
-                # Remember python indexing... Though probably right boundary isn't ever the max!
-                b['index_of_max_in_prepeak'] = np.argmax(signal[b['prepeak_left']: b['prepeak_right'] + 1])
-                b['index_of_max_in_waveform'] = b['index_of_max_in_prepeak'] + b['prepeak_left']
-                b['height'] = signal[b['index_of_max_in_waveform']]
-                valid_prepeaks.append(b)
-            # Store the valid prepeaks found
-            event['prepeaks'] += valid_prepeaks
-
-        return event
-
-
-class FindPeaksInPrepeaks(plugin.TransformPlugin):
-
-    """Put condition on height
-
-    Looks for peaks in the pre-peaks:
-    starts from max, walks down, stops whenever signal drops below boundary_to_max_ratio*height
-    """
-
-    def startup(self):
-        self.settings = {  # TOOD: put in ini
-                           'left_boundary_to_height_ratio': {'large_s2': 0.005, 'small_s2': 0.01},
-                           'right_boundary_to_height_ratio': {'large_s2': 0.002, 'small_s2': 0.01},
-        }
+        self.settings_for_peaks = [ #We need large_s2 first, so can't use a dict
+            ('large_s2', {
+                'threshold':        0.624509647,
+                'left_boundary_to_height_ratio':    0.005,
+                'right_boundary_to_height_ratio':   0.002,
+                'min_length':       60,
+                'max_length':       float('inf'),
+                'source_waveform':  'filtered_for_large_s2',
+                'around_to_height_ratio_max': 0.05,
+                'test_around': 21,
+            }),
+            ('small_s2', {
+                'threshold':        0.0624509647,
+                'left_boundary_to_height_ratio':    0.01,
+                'right_boundary_to_height_ratio':   0.01,
+                'min_length':       40,
+                'max_length':       200,
+                'source_waveform':  'filtered_for_small_s2',
+                'around_to_height_ratio_max': 0.05,
+                'test_around': 10,
+            })
+        ]
 
     def transform_event(self, event):
         event['peaks'] = []
-        # Find peaks in the prepeaks
-        # TODO: handle presence of multiple peaks in base, that's why I make a
-        # new array already now
-        for peak in event['prepeaks']:
-            # Find which settings to use for this type of peak
-            settings = {}
-            for settingname, settingvalue in self.settings.items():
-                settings[settingname] = self.settings[settingname][peak['peak_type']]
-            signal = event['processed_waveforms'][peak['input']]
-            max_idx = peak['index_of_max_in_waveform']
+        # Do everything first for large s2s, then for small s2s
+        for (peak_type, settings) in self.settings_for_peaks:
+            # Get the signal out
+            signal = event['processed_waveforms'][settings['source_waveform']]
 
-            # Determine overlap-free region
-            # TODO: right now peaks which will be rejected also block this.
-            # Need to move the pruning logic back in here... may as well merge prepeak & peak finding into s2 finding
-            free_region = [0, len(signal)-1]
-            for p in event['peaks']:
-                if p['left'] <= max_idx <= p['right']:
-                    free_region = None
-                    break
-                if free_region[0] < p['right'] < max_idx:
-                    free_region[0] = p['right']
-                if max_idx < p['left'] < free_region[1]:
-                    free_region[1] = p['left']
-            if free_region == None:
-                continue
+            # Find peaks in all the free regions
+            free_regions = get_free_regions(event) # Can't put this in loop, peaks get added!
+            for region_left, region_right in free_regions:
+                left_boundary_for_small_peak_isolation_test = region_left
+                seeker_position = region_left
+                while 1:
+                    # Find the next threshold crossing, if it exists
+                    left_boundary= find_next_crossing(signal, threshold=settings['threshold'],
+                                                      start=seeker_position, stop=region_right)
+                    if left_boundary == region_right:
+                        break # There wasn't another crossing
 
-            #Deal with copying once we go into peak splitting
-            (peak['left'], peak['right']) = interval_until_threshold(
-                signal,
-                start=max_idx,
-                left_threshold=settings['left_boundary_to_height_ratio'] * peak['height'],
-                right_threshold=settings['right_boundary_to_height_ratio'] * peak['height'],
-                left_limit=free_region[0],
-                right_limit=free_region[1],
-            )
-            event['peaks'].append(peak)
+                    # There was a crossing, so we're starting a maybe-peak, find where this peak ends
+                    right_boundary = find_next_crossing(signal, threshold=settings['threshold'],
+                                                        start=left_boundary, stop=region_right)
+                    seeker_position = right_boundary
+
+                    # Did the peak actually end? (in the tail of a big S2 it often doesn't)
+                    if right_boundary == region_right:
+                        break   # Dont search this interval: Xerawdp behaviour
+                    right_boundary -= 1 # Peak end is just before crossing
+
+                    # If we are searching for large s2, hand over to a function
+                    # neefed because Xerawdp recurses
+                    if peak_type == 'large_s2':
+                        s2s_found = self.find_large_s2s_in(event, signal, settings, left_boundary, right_boundary, toplevel=True)
+                        if s2s_found is not None:
+                            event['peaks'] += s2s_found
+                        continue
+
+                    # We only get here if we are searching for small s2s
+
+                    # For small s2s, the INTERVAL width is tested
+                    if not settings['min_length'] <= right_boundary - left_boundary <= settings['max_length']:
+                        continue
+
+                    # Find the maximum and the peak extent
+                    max_idx = left_boundary + np.argmax(signal[left_boundary:right_boundary+1])    # Remember silly python indexing
+                    height = signal[max_idx]
+
+                    # Find the peak extent
+                    (left, right) = interval_until_threshold(
+                        signal,
+                        start=max_idx,
+                        left_threshold=settings['left_boundary_to_height_ratio'] * height,
+                        right_threshold=settings['right_boundary_to_height_ratio'] * height,
+                        left_limit=left_boundary,
+                        right_limit=right_boundary,
+                    )
+                    #Xerawdp bug: S2 sizes are reported 1 too large on both sides. Simulating this bug:
+                    left -=1
+                    right += 1
+
+                    the_thing = False
+                    if peak_type=='small_s2' and max_idx == 23099:
+                        the_thing = True
+                        print("Found our test peak! L: %s, R: %s" % (left, right))
+
+                    # For small s2's the isolation test is slightly different
+                    if not isolation_test(signal, max_idx,
+                                          right_edge_of_left_test_region=left-1,
+                                          left_edge_of_right_test_region=right+1,
+                                          # This is insane, and probably a bug, but I swear it's in Xerawdp
+                                          test_length_left=min(settings['test_around'],right_boundary-left_boundary_for_small_peak_isolation_test),
+                                          test_length_right=min(settings['test_around'],region_right-right_boundary),
+                                          before_avg_max_ratio=settings['around_to_height_ratio_max'],
+                                          after_avg_max_ratio=settings['around_to_height_ratio_max']):
+                        continue
+
+                    # Test for aspect ratio
+                    aspect_ratio_threshold = 0.062451  # 1 mV/bin = 0.1 mV/ns
+                    peak_width = (right - left) / units.ns
+                    aspect_ratio = height / peak_width
+                    if aspect_ratio > aspect_ratio_threshold:
+                        print('For peak at %s, Max/width ratio %s is higher than %s' % (max_idx, aspect_ratio, aspect_ratio_threshold))
+                        continue
+                    if the_thing: print("It passed the aspect ratio test.")
+
+                    #Append the peak we've found (copy paste again...)
+                    event['peaks'].append({
+                        'left':         left,
+                        'right':        right,
+                        'peak_type':    'small_s2',
+                        'height':       height,
+                        'index_of_max_in_waveform': max_idx,
+                        'source_waveform': settings['source_waveform'],
+                    })
+                    left_boundary_for_small_peak_isolation_test = right
+
         return event
+
+    #TODO: Probably want to make a find_small_s2s_in and find_large_s2s_in, gets rid of all the ifs
+    @staticmethod
+    def find_large_s2s_in(event, signal, settings, left_boundary, right_boundary, toplevel=False):
+
+        # Copy-Paste from small s2
+        max_idx = left_boundary + np.argmax(signal[left_boundary:right_boundary+1])    # Remember silly python indexing
+        height = signal[max_idx]
+
+        # Todo: for large s2's, also check for slope changes!
+        (left, right) = interval_until_threshold(
+            signal,
+            start=max_idx,
+            left_threshold=settings['left_boundary_to_height_ratio'] * height,
+            right_threshold=settings['right_boundary_to_height_ratio'] * height,
+            left_limit=left_boundary,
+            right_limit=right_boundary,
+        )
+        #Xerawdp bug: S2 sizes are reported 1 too large on both sides. Simulating this bug:
+        left -=1
+        right += 1
+
+        # For large S2 from top-level interval: do the isolation check
+        if toplevel:
+            if not isolation_test(signal, max_idx,
+                                  right_edge_of_left_test_region=min(left_boundary, left)-1,
+                                  test_length_left=settings['test_around'],
+                                  left_edge_of_right_test_region=max(right_boundary, right)+1,
+                                  test_length_right=settings['test_around'],
+                                  before_avg_max_ratio=settings['around_to_height_ratio_max'],
+                                  after_avg_max_ratio=settings['around_to_height_ratio_max']):
+                return
+
+        # For large s2, the PEAK width is tested
+        if not settings['min_length'] <= right - left <= settings['max_length']:
+            return
+
+        # Todo: for large_s2s, recurse on remaining intervals left & right, build list
+        return [{
+            'left':         left,
+            'right':        right,
+            'peak_type':    'large_s2',
+            'height':       height,
+            'index_of_max_in_waveform': max_idx,
+            'source_waveform':          settings['source_waveform'],
+        }]
+
+
+# TODO: Veto S1 peakfinding
 
 class ComputeQuantities(plugin.TransformPlugin):
 
@@ -537,6 +568,37 @@ class ComputeQuantities(plugin.TransformPlugin):
 # Utils: these are helper functions for the plugins
 # TODO: Can we put these functions in the transform base class? (Tunnell: yes, or do multiple inheritance)
 # #
+
+def isolation_test(
+        signal, max_idx,
+        right_edge_of_left_test_region, test_length_left,
+        left_edge_of_right_test_region, test_length_right,
+        before_avg_max_ratio,
+        after_avg_max_ratio,
+    ):
+    """
+    Does XerawDP's arcane isolation test. Returns if test is passed or not.
+    TODO: Regions seem to come out empty sometimes... when? warn?
+    """
+    # +1s are to compensate for python's indexing conventions...
+    pre_avg = np.mean(signal[
+         right_edge_of_left_test_region - (test_length_left-1):
+         right_edge_of_left_test_region +1
+    ])
+    post_avg = np.mean(signal[
+         left_edge_of_right_test_region:
+         left_edge_of_right_test_region + test_length_right
+    ])
+    height = signal[max_idx]
+    if max_idx == 23099:
+        print("Pre avg %s (threshold %s), Post avg %s (threshold %s)" %(
+            pre_avg, height * before_avg_max_ratio,
+            post_avg, height * after_avg_max_ratio
+        ))
+    if pre_avg > height * before_avg_max_ratio or post_avg > height * after_avg_max_ratio:
+        return False
+    else:
+        return True
 
 def find_next_crossing(signal, threshold,
                        start=0, direction='right', min_length=1,
@@ -655,3 +717,9 @@ def interval_until_threshold(signal, start,
 def extent_until_threshold(signal, start, threshold):
     a = interval_until_threshold(signal, start, threshold)
     return a[1] - a[0]
+
+# TODO: Move this to event class?
+def get_free_regions(event):
+    lefts = sorted([0] + [p['left'] for p in event['peaks']])
+    rights = sorted([p['right'] for p in event['peaks']] + [event['length']-1])
+    return [(lefts[i], rights[i]) for i in range(len(lefts))]    # There's probably a zip hack for this
