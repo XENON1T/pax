@@ -1,7 +1,18 @@
+"""Data structure for pax
+
+This is meant to be a fixed data structure that people can use to access
+physically meaningful variables.  For example, S2.
+
+NOTE: This class is stable within major releases.  Do not change any variable
+names of functionality between major releases.  You may add variables in minor
+releases.  Patch releases cannot modify this.
+"""
+
 import logging
 import inspect
 import collections
 from pprint import pprint
+
 
 def flatten(d, parent_key='', sep='.'):
     items = []
@@ -13,13 +24,15 @@ def flatten(d, parent_key='', sep='.'):
             items.append((new_key, v))
     return dict(items)
 
+
 class Event(object):
+
     def __init__(self, raw={}):
         self.log = logging.getLogger('Event')
         self._raw = raw
 
     @property
-    def raw(self, i_know_what_i_am_doing = False):
+    def raw(self, i_know_what_i_am_doing=False):
         """Do not use: raw internals."""
         if not i_know_what_i_am_doing:
             self.log.warning("Using RAW event data.")
@@ -43,9 +56,9 @@ class Event(object):
 
         for peak in self._raw['peaks']:
             # 'input' refers to which filtered or summed waveform the peak was
-            # computed on. 
+            # computed on.
             if peak['input'] in inputs:
-                if 'rejected' in peaks and peaks['rejected'] == True:
+                if 'rejected' in peaks and peaks['rejected'] is True:
                     continue
 
                 # Flatten the peak so we can use our sort key
@@ -60,7 +73,7 @@ class Event(object):
     def S2s(self, sort=('top_and_bottom.area', True)):
         """List of S2 (ionization) signals as Peak objects"""
         return self._get_peaks(('filtered_for_large_s2',
-                               'filtered_for_small_s2'),
+                                'filtered_for_small_s2'),
                                sort)
 
     def S1s(self, sort=('top_and_bottom.area', True)):
@@ -74,7 +87,7 @@ class Event(object):
     def summed_waveform(self, name='top_and_bottom'):
         """Waveform summed over many PMTs"""
         if 'filtered' in name:
-            raise ValueError('Do not get filtered waveforms with summed waveform; use filtered_waveform: %s' % name)
+            raise ValueError('Use filtered_waveform, not this function: %s' % name)
         elif name not in self._raw['processed_waveforms']:
             self.log.debug(self._raw['processed_waveforms'].keys())
             raise ValueError("Summed waveform %s does not exist." % name)
@@ -83,16 +96,9 @@ class Event(object):
 
         return self._raw['processed_waveforms'][name]
 
-    def filtered_waveform(self, filter_name = None):
+    def filtered_waveform(self, filter_name=None):
         """Filtered waveform summed over many PMTs"""
-        if filter_name != None:
-            raise PendingDeprecationWarning()
-            return self._raw['processed_waveform'][filter_name]
-        return self._raw['processed_waveforms']['filtered_for_large_s2']
-
-    def filtered_waveform(self, filter_name = None):
-        """Filtered waveform summed over many PMTs"""
-        if filter_name != None:
+        if filter_name is not None:
             raise PendingDeprecationWarning()
             return self._raw['processed_waveforms'][filter_name]
         return self._raw['processed_waveforms']['filtered_for_large_s2']
@@ -102,6 +108,7 @@ class Event(object):
 
 
 class Peak(object):
+
     def __init__(self, peak_dict):
         self.peak_dict = peak_dict
 
@@ -114,7 +121,7 @@ class Peak(object):
         if key not in flattened_peak:
             pprint(self.peak_dict)
             raise ValueError('%s does not exist in peak' % key)
-        
+
         return flattened_peak[key]
 
     def area(self, key='top_and_bottom'):
@@ -135,12 +142,14 @@ class Peak(object):
         return (self.peak_dict['left'],
                 self.peak_dict['right'])
 
+
 class S1(Peak):
     pass
 
 
 class S2(Peak):
     pass
+
 
 def explain(class_name):
     x = inspect.getmembers(class_name,
@@ -154,5 +163,3 @@ def explain(class_name):
 if __name__ == '__main__':
     explain(Peak)
     explain(Event)
-
-

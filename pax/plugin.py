@@ -9,7 +9,6 @@ See format for more information on the event object.
 """
 import logging
 import time
-import abc
 
 
 class BasePlugin(object):
