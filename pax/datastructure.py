@@ -1,6 +1,17 @@
 import logging
 import inspect
-__author__ = 'tunnell'
+import collections
+from pprint import pprint
+
+def flatten(d, parent_key='', sep='.'):
+    items = []
+    for k, v in d.items():
+        new_key = parent_key + sep + k if parent_key else k
+        if isinstance(v, collections.MutableMapping):
+            items.extend(flatten(v, new_key).items())
+        else:
+            items.append((new_key, v))
+    return dict(items)
 
 class Event(object):
     def __init__(self, raw={}):
@@ -14,7 +25,6 @@ class Event(object):
             self.log.warning("Using RAW event data.")
         return self._raw
 
-    @property
     def event_window(self):
         """The real-world time of the start and end of event
 
@@ -22,36 +32,44 @@ class Event(object):
         """
         return (0.0, 0.0)
 
-    @property
-    def get_position(self, recon_algo='nn'):
-        """3-vector position in mm
+    def _get_peaks(self, inputs, sort):
+        """Fetch S1 or S2 peaks from our data structure
         """
-        x, y, _ = self.S2s(sort='area')[0].position
-        _, _, z = self.S1s(sort='coincidence')[0].position
-        return (0.0, 0.0, 0.0)
+        # Sort key is used on the flattened peak
+        # Sort order is whether or not Python sort is 'reversed'
+        sort_key, sort_order = sort
 
-    @property
-    def S2s(self, sort=(1, 'area')):
-        """List of S2 (ionization) signals as Peak objects"""
-        peaks = []
-        # Check sorting
-        peak = S2({})
+        peaks = {}
+
         for peak in self.raw['peaks']:
-            if peak['input'] == 'filtered_for_large_s2' or peak['input'] == 'filtered_for_small_s2':
-                print(peak)
-        peaks.append(peak)
-        return peaks
+            # 'input' refers to which filtered or summed waveform the peak was
+            # computed on. 
+            if peak['input'] in inputs and peaks['rejected'] == False:
+                # Flatten the peak so we can use our sort key
+                peak_key = flatten(peak)[sort_key]
 
-    @property
-    def S1s(self, sort=(1, 'area')):
+                pprint(flatten(peak))
+
+                # Save save into dictionary
+                peaks[peak_key] = S2(peak)
+
+        # Return just a list, but sorted according to our sort key and order
+        return [peaks[i] for i in sorted(peaks, reverse=sort_order)]
+
+    def S2s(self, sort=('top_and_bottom.area', True)):
+        """List of S2 (ionization) signals as Peak objects"""
+        return self._get_peaks(('filtered_for_large_s2',
+                               'filtered_for_small_s2'),
+                               sort)
+
+    def S1s(self, sort=('area', True)):
         """List of S1 (scintillation) signals as Peak objects"""
-        return None
+        return self._get_peaks(('uncorrected_sum_waveform_for_s1'), sort)
 
     def pmt_waveform(self, pmt):
         """The individual waveform for a specific PMT"""
         return self.raw.channel_waveforms[pmt]
 
-    @property
     def summed_waveform(self, name='top_and_bottom'):
         """Waveform summed over many PMTs"""
         if 'filtered' in name:
@@ -61,48 +79,37 @@ class Event(object):
 
         return self.raw['processed_waveform'][name]
 
-    @property
     def filtered_waveform(self):
         """Filtered waveform summed over many PMTs"""
         return self.raw['processed_waveform']['filtered_for_large_s2']
 
-    @property
-    def event_attributes(self):
-        """Python only extra event attributes"""
-        PendingDeprecationWarning()
-        return None
-
-    def explain(self):
-        x = inspect.getmembers(self.__class__,
-                               predicate=inspect.isdatadescriptor)
-
-        for a, b in x:
-            if a.startswith('_'):
-                continue
-            print(a, b.__doc__)
-
     def dump(self):
-        import json
-        import pprint
-        import numpy as np
-
-        class NumpyAwareJSONEncoder(json.JSONEncoder):
-            def default(self, obj):
-                if isinstance(obj, np.ndarray) and obj.ndim == 1:
-                    return obj.tolist()
-                return json.JSONEncoder.default(self, obj)
-
         pprint.pprint(self.raw)
-        json.dumps(self.raw, cls=NumpyAwareJSONEncoder)
 
 
 class Peak(object):
     def __init__(self, peak_dict):
         self.peak_dict = {}
 
-    def position(self, recon='name'):
-        if recon in self.recon.keys():
-            return self.recon[recon]
+    def _get_var(pmts, key):
+        key = '%s.%s' % (pmts, key)
+        flattened_peak = flatten(self.peak_dict)
+        if key not in flattened_peak:
+            raise ValueError('%s does not exist in peak' % key)
+        
+        return flattened_peak[key]
+
+    def area(key='top_and_bottom'):
+        return self._get_var(key, 'area')
+
+    def width_fwhm(key='top_and_bottom'):
+        return self._get_var(key, 'fwhm')
+
+    def height(key='top_and_bottom'):
+        return self._get_var(key, 'height')
+
+    def time_in_waveform(key='top_and_bottom'):
+        return self._get_var(key, 'position_of_max_in_waveform')
 
 class S1(Peak):
     pass
