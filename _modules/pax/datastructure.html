@@ -1,0 +1,257 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pax.datastructure &mdash; processor for Analyzing XENON1T 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="processor for Analyzing XENON1T 0.1.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">processor for Analyzing XENON1T 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pax.datastructure</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Data structure for pax</span>
+
+<span class="sd">This is meant to be a fixed data structure that people can use to access</span>
+<span class="sd">physically meaningful variables.  For example, S2.</span>
+
+<span class="sd">NOTE: This class is stable within major releases.  Do not change any variable</span>
+<span class="sd">names of functionality between major releases.  You may add variables in minor</span>
+<span class="sd">releases.  Patch releases cannot modify this.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
+
+<span class="kn">import</span> <span class="nn">collections</span>
+
+
+<div class="viewcode-block" id="flatten"><a class="viewcode-back" href="../../pax.html#pax.datastructure.flatten">[docs]</a><span class="k">def</span> <span class="nf">flatten</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">parent_key</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s">&#39;.&#39;</span><span class="p">):</span>
+	<span class="n">items</span> <span class="o">=</span> <span class="p">[]</span>
+	<span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+		<span class="n">new_key</span> <span class="o">=</span> <span class="n">parent_key</span> <span class="o">+</span> <span class="n">sep</span> <span class="o">+</span> <span class="n">k</span> <span class="k">if</span> <span class="n">parent_key</span> <span class="k">else</span> <span class="n">k</span>
+		<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">MutableMapping</span><span class="p">):</span>
+			<span class="n">items</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">flatten</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">new_key</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">new_key</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
+	<span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="Event"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event">[docs]</a><span class="k">class</span> <span class="nc">Event</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw</span><span class="o">=</span><span class="p">{}):</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;Event&#39;</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_raw</span> <span class="o">=</span> <span class="n">raw</span>
+
+	<span class="nd">@property</span>
+<div class="viewcode-block" id="Event.raw"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.raw">[docs]</a>	<span class="k">def</span> <span class="nf">raw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i_know_what_i_am_doing</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Do not use: raw internals.&quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="n">i_know_what_i_am_doing</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Using RAW event data.&quot;</span><span class="p">)</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span>
+</div>
+<div class="viewcode-block" id="Event.event_window"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.event_window">[docs]</a>	<span class="k">def</span> <span class="nf">event_window</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;The real-world time of the start and end of event</span>
+
+<span class="sd">		64-bit number since 1/1/1970</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">return</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+</div>
+	<span class="k">def</span> <span class="nf">_get_peaks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">sort</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Fetch S1 or S2 peaks from our data structure</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="c"># Sort key is used on the flattened peak</span>
+		<span class="c"># Sort order is whether or not Python sort is &#39;reversed&#39;</span>
+		<span class="n">sort_key</span><span class="p">,</span> <span class="n">sort_order</span> <span class="o">=</span> <span class="n">sort</span>
+
+		<span class="n">peaks</span> <span class="o">=</span> <span class="p">{}</span>
+
+		<span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">[</span><span class="s">&#39;peaks&#39;</span><span class="p">]:</span>
+			<span class="c"># &#39;input&#39; refers to which filtered or summed waveform the peak was</span>
+			<span class="c"># computed on.</span>
+			<span class="k">if</span> <span class="n">peak</span><span class="p">[</span><span class="s">&#39;input&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">inputs</span><span class="p">:</span>
+				<span class="k">if</span> <span class="s">&#39;rejected&#39;</span> <span class="ow">in</span> <span class="n">peaks</span> <span class="ow">and</span> <span class="n">peaks</span><span class="p">[</span><span class="s">&#39;rejected&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+					<span class="k">continue</span>
+
+				<span class="c"># Flatten the peak so we can use our sort key</span>
+				<span class="n">peak_key</span> <span class="o">=</span> <span class="n">flatten</span><span class="p">(</span><span class="n">peak</span><span class="p">)[</span><span class="n">sort_key</span><span class="p">]</span>
+
+				<span class="c"># Save save into dictionary</span>
+				<span class="n">peaks</span><span class="p">[</span><span class="n">peak_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">S2</span><span class="p">(</span><span class="n">peak</span><span class="p">)</span>
+
+		<span class="c"># Return just a list, but sorted according to our sort key and order</span>
+		<span class="k">return</span> <span class="p">[</span><span class="n">peaks</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">peaks</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="n">sort_order</span><span class="p">)]</span>
+
+<div class="viewcode-block" id="Event.S2s"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.S2s">[docs]</a>	<span class="k">def</span> <span class="nf">S2s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;top_and_bottom.area&#39;</span><span class="p">,</span> <span class="bp">True</span><span class="p">)):</span>
+		<span class="sd">&quot;&quot;&quot;List of S2 (ionization) signals as Peak objects&quot;&quot;&quot;</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_peaks</span><span class="p">((</span><span class="s">&#39;filtered_for_large_s2&#39;</span><span class="p">,</span>
+		                        <span class="s">&#39;filtered_for_small_s2&#39;</span><span class="p">),</span>
+		                       <span class="n">sort</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Event.S1s"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.S1s">[docs]</a>	<span class="k">def</span> <span class="nf">S1s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;top_and_bottom.area&#39;</span><span class="p">,</span> <span class="bp">True</span><span class="p">)):</span>
+		<span class="sd">&quot;&quot;&quot;List of S1 (scintillation) signals as Peak objects&quot;&quot;&quot;</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_peaks</span><span class="p">((</span><span class="s">&#39;uncorrected_sum_waveform_for_s1&#39;</span><span class="p">),</span> <span class="n">sort</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Event.pmt_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.pmt_waveform">[docs]</a>	<span class="k">def</span> <span class="nf">pmt_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pmt</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;The individual waveform for a specific PMT&quot;&quot;&quot;</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="o">.</span><span class="n">channel_waveforms</span><span class="p">[</span><span class="n">pmt</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="Event.summed_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.summed_waveform">[docs]</a>	<span class="k">def</span> <span class="nf">summed_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Waveform summed over many PMTs&quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="s">&#39;filtered&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+			<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Use filtered_waveform, not this function: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+		<span class="k">elif</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">[</span><span class="s">&#39;processed_waveforms&#39;</span><span class="p">]:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">[</span><span class="s">&#39;processed_waveforms&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+			<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Summed waveform </span><span class="si">%s</span><span class="s"> does not exist.&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+		<span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s">&#39;uncorrected_sum_waveform_for_xerawdp_matching&#39;</span><span class="p">:</span>
+			<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">()</span>
+
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">[</span><span class="s">&#39;processed_waveforms&#39;</span><span class="p">][</span><span class="n">name</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="Event.filtered_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.filtered_waveform">[docs]</a>	<span class="k">def</span> <span class="nf">filtered_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_name</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Filtered waveform summed over many PMTs&quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="n">filter_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+			<span class="k">raise</span> <span class="ne">PendingDeprecationWarning</span><span class="p">()</span>
+			<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">[</span><span class="s">&#39;processed_waveforms&#39;</span><span class="p">][</span><span class="n">filter_name</span><span class="p">]</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">[</span><span class="s">&#39;processed_waveforms&#39;</span><span class="p">][</span><span class="s">&#39;filtered_for_large_s2&#39;</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="Event.dump"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.dump">[docs]</a>	<span class="k">def</span> <span class="nf">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="n">pprint</span><span class="o">.</span><span class="n">pprint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="Peak"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak">[docs]</a><span class="k">class</span> <span class="nc">Peak</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak_dict</span><span class="p">):</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">peak_dict</span> <span class="o">=</span> <span class="n">peak_dict</span>
+
+<div class="viewcode-block" id="Peak.type"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.type">[docs]</a>	<span class="k">def</span> <span class="nf">type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
+</div>
+	<span class="k">def</span> <span class="nf">_get_var</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pmts</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+		<span class="n">key</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">.</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pmts</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+		<span class="n">flattened_peak</span> <span class="o">=</span> <span class="n">flatten</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peak_dict</span><span class="p">)</span>
+		<span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">flattened_peak</span><span class="p">:</span>
+			<span class="n">pprint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peak_dict</span><span class="p">)</span>
+			<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s"> does not exist in peak&#39;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span>
+
+		<span class="k">return</span> <span class="n">flattened_peak</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+<div class="viewcode-block" id="Peak.area"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.area">[docs]</a>	<span class="k">def</span> <span class="nf">area</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_var</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s">&#39;area&#39;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Peak.width_fwhm"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.width_fwhm">[docs]</a>	<span class="k">def</span> <span class="nf">width_fwhm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_var</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s">&#39;fwhm&#39;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Peak.height"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.height">[docs]</a>	<span class="k">def</span> <span class="nf">height</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_var</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s">&#39;height&#39;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Peak.time_in_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.time_in_waveform">[docs]</a>	<span class="k">def</span> <span class="nf">time_in_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_var</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s">&#39;position_of_max_in_waveform&#39;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Peak.bounds"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.bounds">[docs]</a>	<span class="k">def</span> <span class="nf">bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Where the peak starts and ends in the sum waveform</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peak_dict</span><span class="p">[</span><span class="s">&#39;left&#39;</span><span class="p">],</span>
+		        <span class="bp">self</span><span class="o">.</span><span class="n">peak_dict</span><span class="p">[</span><span class="s">&#39;right&#39;</span><span class="p">])</span>
+
+</div></div>
+<div class="viewcode-block" id="S1"><a class="viewcode-back" href="../../pax.html#pax.datastructure.S1">[docs]</a><span class="k">class</span> <span class="nc">S1</span><span class="p">(</span><span class="n">Peak</span><span class="p">):</span>
+	<span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="S2"><a class="viewcode-back" href="../../pax.html#pax.datastructure.S2">[docs]</a><span class="k">class</span> <span class="nc">S2</span><span class="p">(</span><span class="n">Peak</span><span class="p">):</span>
+	<span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="explain"><a class="viewcode-back" href="../../pax.html#pax.datastructure.explain">[docs]</a><span class="k">def</span> <span class="nf">explain</span><span class="p">(</span><span class="n">class_name</span><span class="p">):</span>
+	<span class="n">x</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getmembers</span><span class="p">(</span><span class="n">class_name</span><span class="p">,</span>
+	                       <span class="n">predicate</span><span class="o">=</span><span class="n">inspect</span><span class="o">.</span><span class="n">isdatadescriptor</span><span class="p">)</span>
+
+	<span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
+		<span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;_&#39;</span><span class="p">):</span>
+			<span class="k">continue</span>
+		<span class="k">print</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">__doc__</span><span class="p">)</span>
+
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+	<span class="n">explain</span><span class="p">(</span><span class="n">Peak</span><span class="p">)</span>
+	<span class="n">explain</span><span class="p">(</span><span class="n">Event</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">processor for Analyzing XENON1T 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Christopher Tunnell.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

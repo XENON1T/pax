@@ -1,0 +1,178 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Plugins &mdash; processor for Analyzing XENON1T 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="processor for Analyzing XENON1T 0.1.0 documentation" href="index.html" />
+    <link rel="next" title="Contributing" href="contributing.html" />
+    <link rel="prev" title="Event format" href="format.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="contributing.html" title="Contributing"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="format.html" title="Event format"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">processor for Analyzing XENON1T 0.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="plugins">
+<h1>Plugins<a class="headerlink" href="#plugins" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="intro">
+<h2>Intro<a class="headerlink" href="#intro" title="Permalink to this headline">¶</a></h2>
+<p>This is a step by step guide to creating a plugin. All source code for a plugin should go in the plugins directory (subdirectories of this directory are searched automatically). You can also define custom plugin search paths in the .ini file.</p>
+</div>
+<div class="section" id="creating-the-class">
+<h2>Creating the Class<a class="headerlink" href="#creating-the-class" title="Permalink to this headline">¶</a></h2>
+<p>Plugins are always derived from one of the plugin classes. The classes are InputPlugin, OutputPlugin, and TransformPlugin. Intput and output plugins are used to define different methods of data input and output (ex. input via file, mongodb, etc.). Transform plugins are used to define intermediate processing steps on the data.</p>
+<p>Every plugin has two required functions:</p>
+<div class="highlight-python"><div class="highlight"><pre>__init__(self,config):
+__del__(self):
+</pre></div>
+</div>
+<p>Which are the constructor and destructor, repectively. The constructor should be used to initialize any member variables while the destructor can be used to close them cleanly. The different plugin types also have different required functions in addition which are described in the following sections.</p>
+<p>In order to run with a plugin it should be added to the bin/paxit.py script (or your custom copy). In this script the plugins are defined as lists in the pax.processor function. Currently this function takes three arguments:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">pax</span><span class="o">.</span><span class="n">processor</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="p">[],</span> <span class="n">transform</span><span class="o">=</span><span class="p">[],</span> <span class="n">output</span><span class="o">=</span><span class="p">[])</span>
+</pre></div>
+</div>
+<p>Your plugin should be added to the proper list. The lists are processed in order so if your plugin depends on data fields that are added to the event by other plugins please make sure your plugin is positioned after.</p>
+<div class="section" id="transform-plugins">
+<h3>Transform Plugins<a class="headerlink" href="#transform-plugins" title="Permalink to this headline">¶</a></h3>
+<p>Most user-defined plugins are probably transform plugins. These are used to perform processing steps on the data. Every transform plugin should override the</p>
+<div class="highlight-python"><div class="highlight"><pre>transform_event(self,event):
+</pre></div>
+</div>
+<p>function. All modification steps should be included in this function and it must return the modified event object.</p>
+</div>
+<div class="section" id="input-plugins">
+<h3>Input Plugins<a class="headerlink" href="#input-plugins" title="Permalink to this headline">¶</a></h3>
+<p>Input plugins are used to define input sources, which can include files or databases. These plugins must override the</p>
+<div class="highlight-python"><div class="highlight"><pre>get_events(self):
+</pre></div>
+</div>
+<p>Function. This function should yield an event object. The constructor and destructor should be used to open and close the input object.</p>
+</div>
+<div class="section" id="output-plugins">
+<h3>Output Plugins<a class="headerlink" href="#output-plugins" title="Permalink to this headline">¶</a></h3>
+<p>Output plugins are for writing data to file, database, or other output format. These plugins must override the</p>
+<div class="highlight-python"><div class="highlight"><pre>write_event(self,event):
+</pre></div>
+</div>
+<p>function. The functionality for saving the event should be contained within. It is advisable to use the constructor to define the output source and the destructor to close it.</p>
+</div>
+</div>
+<div class="section" id="plugin-specific-options">
+<h2>Plugin-specific options<a class="headerlink" href="#plugin-specific-options" title="Permalink to this headline">¶</a></h2>
+<p>Plugins should not include hard-coded constants or other numerical values. These should be included as user-configurable options in the initialization files. Plugin options should be clearly defined in pax/default.ini. An options must include the option name, a default value, and a description of what the option does as a comment (comments are defined with the &#8216;#&#8217; character). The user then has the option to overload these options in their own configuration file at run time.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Plugins</a><ul>
+<li><a class="reference internal" href="#intro">Intro</a></li>
+<li><a class="reference internal" href="#creating-the-class">Creating the Class</a><ul>
+<li><a class="reference internal" href="#transform-plugins">Transform Plugins</a></li>
+<li><a class="reference internal" href="#input-plugins">Input Plugins</a></li>
+<li><a class="reference internal" href="#output-plugins">Output Plugins</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#plugin-specific-options">Plugin-specific options</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="format.html"
+                        title="previous chapter">Event format</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="contributing.html"
+                        title="next chapter">Contributing</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/plugin.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="contributing.html" title="Contributing"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="format.html" title="Event format"
+             >previous</a> |</li>
+        <li><a href="index.html">processor for Analyzing XENON1T 0.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Christopher Tunnell.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

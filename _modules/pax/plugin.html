@@ -1,0 +1,184 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pax.plugin &mdash; processor for Analyzing XENON1T 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="processor for Analyzing XENON1T 0.1.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">processor for Analyzing XENON1T 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pax.plugin</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Definition of base classes for plugins</span>
+
+<span class="sd">Here we define every one of the plugins/modules for pax.  This describes what</span>
+<span class="sd">the interfaces are.  To add an input or a transform, you define one function</span>
+<span class="sd">that does something with an event.  An input spits out event objects.  A</span>
+<span class="sd">transform would modify the event object.</span>
+
+<span class="sd">See format for more information on the event object.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+
+<div class="viewcode-block" id="BasePlugin"><a class="viewcode-back" href="../../pax.html#pax.plugin.BasePlugin">[docs]</a><span class="k">class</span> <span class="nc">BasePlugin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_values</span><span class="p">):</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+		<span class="c"># Please do all config variable fetching in constructor to make</span>
+		<span class="c"># changing config easier.</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">config_values</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config_values</span>
+
+		<span class="bp">self</span><span class="o">.</span><span class="n">startup</span><span class="p">()</span>
+
+	<span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
+
+	<span class="nd">@staticmethod</span>
+	<span class="k">def</span> <span class="nf">_timeit</span><span class="p">(</span><span class="n">method</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Decorator for measuring class method speeds</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+
+		<span class="k">def</span> <span class="nf">timed</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+			<span class="bp">self</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+			<span class="n">ts</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+			<span class="n">result</span> <span class="o">=</span> <span class="n">method</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+			<span class="n">dt</span> <span class="o">=</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">ts</span><span class="p">)</span> <span class="o">*</span> <span class="mi">100</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Event took </span><span class="si">%2.2f</span><span class="s"> ms&#39;</span> <span class="o">%</span> <span class="n">dt</span><span class="p">)</span>
+			<span class="k">return</span> <span class="n">result</span>
+
+		<span class="k">return</span> <span class="n">timed</span>
+
+<div class="viewcode-block" id="BasePlugin.startup"><a class="viewcode-back" href="../../pax.html#pax.plugin.BasePlugin.startup">[docs]</a>	<span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="k">pass</span>
+</div>
+<div class="viewcode-block" id="BasePlugin.process_event"><a class="viewcode-back" href="../../pax.html#pax.plugin.BasePlugin.process_event">[docs]</a>	<span class="k">def</span> <span class="nf">process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="BasePlugin.shutdown"><a class="viewcode-back" href="../../pax.html#pax.plugin.BasePlugin.shutdown">[docs]</a>	<span class="k">def</span> <span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="k">pass</span>
+
+</div></div>
+<div class="viewcode-block" id="InputPlugin"><a class="viewcode-back" href="../../pax.html#pax.plugin.InputPlugin">[docs]</a><span class="k">class</span> <span class="nc">InputPlugin</span><span class="p">(</span><span class="n">BasePlugin</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;Base class for data inputs</span>
+
+<span class="sd">	This class cannot be parallelized since events are read in a specific order</span>
+<span class="sd">	&quot;&quot;&quot;</span>
+
+	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_values</span><span class="p">):</span>
+		<span class="n">BasePlugin</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_values</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+
+	<span class="nd">@BasePlugin._timeit</span>
+<div class="viewcode-block" id="InputPlugin.get_events"><a class="viewcode-back" href="../../pax.html#pax.plugin.InputPlugin.get_events">[docs]</a>	<span class="k">def</span> <span class="nf">get_events</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Get next event from the data source</span>
+
+<span class="sd">		Raise a StopIteration when done</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="InputPlugin.process_event"><a class="viewcode-back" href="../../pax.html#pax.plugin.InputPlugin.process_event">[docs]</a>	<span class="k">def</span> <span class="nf">process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+		<span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&#39;Input plugins cannot process data.&#39;</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="TransformPlugin"><a class="viewcode-back" href="../../pax.html#pax.plugin.TransformPlugin">[docs]</a><span class="k">class</span> <span class="nc">TransformPlugin</span><span class="p">(</span><span class="n">BasePlugin</span><span class="p">):</span>
+<div class="viewcode-block" id="TransformPlugin.transform_event"><a class="viewcode-back" href="../../pax.html#pax.plugin.TransformPlugin.transform_event">[docs]</a>	<span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+		<span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</div>
+	<span class="nd">@BasePlugin._timeit</span>
+<div class="viewcode-block" id="TransformPlugin.process_event"><a class="viewcode-back" href="../../pax.html#pax.plugin.TransformPlugin.process_event">[docs]</a>	<span class="k">def</span> <span class="nf">process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="OutputPlugin"><a class="viewcode-back" href="../../pax.html#pax.plugin.OutputPlugin">[docs]</a><span class="k">class</span> <span class="nc">OutputPlugin</span><span class="p">(</span><span class="n">BasePlugin</span><span class="p">):</span>
+<div class="viewcode-block" id="OutputPlugin.write_event"><a class="viewcode-back" href="../../pax.html#pax.plugin.OutputPlugin.write_event">[docs]</a>	<span class="k">def</span> <span class="nf">write_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+		<span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</div>
+	<span class="nd">@BasePlugin._timeit</span>
+<div class="viewcode-block" id="OutputPlugin.process_event"><a class="viewcode-back" href="../../pax.html#pax.plugin.OutputPlugin.process_event">[docs]</a>	<span class="k">def</span> <span class="nf">process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">write_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+		<span class="k">return</span> <span class="n">event</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">processor for Analyzing XENON1T 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Christopher Tunnell.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

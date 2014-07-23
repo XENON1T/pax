@@ -1,0 +1,54 @@
+pax package
+===========
+
+Submodules
+----------
+
+pax.datastructure module
+------------------------
+
+.. automodule:: pax.datastructure
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.format module
+-----------------
+
+.. automodule:: pax.format
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.pax module
+--------------
+
+.. automodule:: pax.pax
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.plugin module
+-----------------
+
+.. automodule:: pax.plugin
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.units module
+----------------
+
+.. automodule:: pax.units
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: pax
+    :members:
+    :undoc-members:
+    :show-inheritance:

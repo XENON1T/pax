@@ -1,0 +1,153 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Event format &mdash; processor for Analyzing XENON1T 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="processor for Analyzing XENON1T 0.1.0 documentation" href="index.html" />
+    <link rel="next" title="Plugins" href="plugin.html" />
+    <link rel="prev" title="Usage" href="usage.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="plugin.html" title="Plugins"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="usage.html" title="Usage"
+             accesskey="P">previous</a> |</li>
+        <li><a href="index.html">processor for Analyzing XENON1T 0.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="event-format">
+<h1>Event format<a class="headerlink" href="#event-format" title="Permalink to this headline">¶</a></h1>
+<p>The event data structure is the centrepiece of the life of your pax plugin. Through it, your plug-in has access to the results of previously run plug-ins&#8217; work; in return, you are expected to store the fruits of your plug-in&#8217;s labour at an appropriate place in the event data structure.</p>
+<blockquote>
+<div><ul class="simple">
+<li>&#8216;channel_occurences&#8217; : This contains the raw waveform occurrences as read by the input plug-in. JoinAndConvertWaveforms beats from this, then deletes it from the event structure: you probably never have to deal with this. Just in case you do, it&#8217;s format is similar to channel_waveforms, except that event[&#8216;channel_occurences&#8217;][7] gives you a list of (start_sample, raw_sample_list) TUPLES, each representing a waveform occurrence (starting at start_sample) in channel 7.</li>
+<li>&#8216;channel_waveforms&#8217; : This contains the waveform for every channel, in units of photoelectrons per bin (pe/bin). This implies that the waveforms are already baseline-corrected and gain-corrected. event[&#8216;channel_waveforms&#8217;][7] gives you the waveform (a list of floats) for channel 7 if channel 7 contributes to the waveform, and crashes if it does not. A safe way of iterating over all channel waveforms is:</li>
+</ul>
+</div></blockquote>
+<dl class="docutils">
+<dt>for channel, waveform in channel_waveforms:</dt>
+<dd>print &#8220;Waveform for %s is %s samples long&#8221; %s (</dd>
+</dl>
+<div class="highlight-javascript"><div class="highlight"><pre><span class="p">{</span>
+    <span class="s2">&quot;channel_waveforms&quot;</span><span class="o">:</span> <span class="nx">see</span> <span class="nx">blah</span><span class="p">,</span>
+    <span class="s2">&quot;processed_waveforms&quot;</span><span class="o">:</span> <span class="nx">see</span> <span class="nx">blah</span><span class="p">,</span>
+    <span class="s2">&quot;time&quot;</span><span class="o">:</span> <span class="kr">int</span><span class="p">,</span>
+    <span class="s2">&quot;data&quot;</span><span class="o">:</span> <span class="nx">binary</span><span class="p">,</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+<p>Blah blah</p>
+<p class="graphviz">
+<img src="_images/graphviz-45ef1ee31e54fae5ae7fbdfa5fca3fde416d66a8.png" alt="digraph foo {
+   &quot;event&quot; -&gt; &quot;baz&quot;;
+}" />
+</p>
+<div class="section" id="channel-waveforms">
+<h2>Channel waveforms<a class="headerlink" href="#channel-waveforms" title="Permalink to this headline">¶</a></h2>
+<p>Fill me.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Event format</a><ul>
+<li><a class="reference internal" href="#channel-waveforms">Channel waveforms</a></li>
+</ul>
+</li>
+</ul>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="usage.html"
+                        title="previous chapter">Usage</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="plugin.html"
+                        title="next chapter">Plugins</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/format.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="plugin.html" title="Plugins"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="usage.html" title="Usage"
+             >previous</a> |</li>
+        <li><a href="index.html">processor for Analyzing XENON1T 0.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Christopher Tunnell.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,398 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pax package &mdash; processor for Analyzing XENON1T 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="processor for Analyzing XENON1T 0.1.0 documentation" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">processor for Analyzing XENON1T 0.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="pax-package">
+<h1>pax package<a class="headerlink" href="#pax-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-pax.datastructure">
+<span id="pax-datastructure-module"></span><h2>pax.datastructure module<a class="headerlink" href="#module-pax.datastructure" title="Permalink to this headline">¶</a></h2>
+<p>Data structure for pax</p>
+<p>This is meant to be a fixed data structure that people can use to access
+physically meaningful variables.  For example, S2.</p>
+<p>NOTE: This class is stable within major releases.  Do not change any variable
+names of functionality between major releases.  You may add variables in minor
+releases.  Patch releases cannot modify this.</p>
+<dl class="class">
+<dt id="pax.datastructure.Event">
+<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Event</tt><big>(</big><em>raw={}</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
+<dl class="method">
+<dt id="pax.datastructure.Event.S1s">
+<tt class="descname">S1s</tt><big>(</big><em>sort=('top_and_bottom.area'</em>, <em>True)</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.S1s"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.S1s" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of S1 (scintillation) signals as Peak objects</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.Event.S2s">
+<tt class="descname">S2s</tt><big>(</big><em>sort=('top_and_bottom.area'</em>, <em>True)</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.S2s"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.S2s" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of S2 (ionization) signals as Peak objects</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.Event.dump">
+<tt class="descname">dump</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.dump"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.dump" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.Event.event_window">
+<tt class="descname">event_window</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.event_window"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.event_window" title="Permalink to this definition">¶</a></dt>
+<dd><p>The real-world time of the start and end of event</p>
+<p>64-bit number since 1/1/1970</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.Event.filtered_waveform">
+<tt class="descname">filtered_waveform</tt><big>(</big><em>filter_name=None</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.filtered_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.filtered_waveform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Filtered waveform summed over many PMTs</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.Event.pmt_waveform">
+<tt class="descname">pmt_waveform</tt><big>(</big><em>pmt</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.pmt_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.pmt_waveform" title="Permalink to this definition">¶</a></dt>
+<dd><p>The individual waveform for a specific PMT</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Event.raw">
+<tt class="descname">raw</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event.raw"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.raw" title="Permalink to this definition">¶</a></dt>
+<dd><p>Do not use: raw internals.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.Event.summed_waveform">
+<tt class="descname">summed_waveform</tt><big>(</big><em>name='top_and_bottom'</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.summed_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.summed_waveform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Waveform summed over many PMTs</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.datastructure.Peak">
+<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Peak</tt><big>(</big><em>peak_dict</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
+<dl class="method">
+<dt id="pax.datastructure.Peak.area">
+<tt class="descname">area</tt><big>(</big><em>key='top_and_bottom'</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Peak.area"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.area" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.Peak.bounds">
+<tt class="descname">bounds</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Peak.bounds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.bounds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Where the peak starts and ends in the sum waveform</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.Peak.height">
+<tt class="descname">height</tt><big>(</big><em>key='top_and_bottom'</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Peak.height"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.height" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.Peak.time_in_waveform">
+<tt class="descname">time_in_waveform</tt><big>(</big><em>key='top_and_bottom'</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Peak.time_in_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.time_in_waveform" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.Peak.type">
+<tt class="descname">type</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Peak.type"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.Peak.width_fwhm">
+<tt class="descname">width_fwhm</tt><big>(</big><em>key='top_and_bottom'</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Peak.width_fwhm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.width_fwhm" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.datastructure.S1">
+<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">S1</tt><big>(</big><em>peak_dict</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#S1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.S1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.datastructure.S2">
+<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">S2</tt><big>(</big><em>peak_dict</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#S2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.S2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.datastructure.explain">
+<tt class="descclassname">pax.datastructure.</tt><tt class="descname">explain</tt><big>(</big><em>class_name</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#explain"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.explain" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pax.datastructure.flatten">
+<tt class="descclassname">pax.datastructure.</tt><tt class="descname">flatten</tt><big>(</big><em>d</em>, <em>parent_key=''</em>, <em>sep='.'</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#flatten"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.flatten" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-pax.format">
+<span id="pax-format-module"></span><h2>pax.format module<a class="headerlink" href="#module-pax.format" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="pax.format.sampletime_fmt">
+<tt class="descclassname">pax.format.</tt><tt class="descname">sampletime_fmt</tt><big>(</big><em>num</em><big>)</big><a class="reference internal" href="_modules/pax/format.html#sampletime_fmt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.format.sampletime_fmt" title="Permalink to this definition">¶</a></dt>
+<dd><p>num is in 10s of ns</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.format.sizeof_fmt">
+<tt class="descclassname">pax.format.</tt><tt class="descname">sizeof_fmt</tt><big>(</big><em>num</em><big>)</big><a class="reference internal" href="_modules/pax/format.html#sizeof_fmt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.format.sizeof_fmt" title="Permalink to this definition">¶</a></dt>
+<dd><p>input is bytes</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pax.pax">
+<span id="pax-pax-module"></span><h2>pax.pax module<a class="headerlink" href="#module-pax.pax" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="pax.pax.evaluate_configuration">
+<tt class="descclassname">pax.pax.</tt><tt class="descname">evaluate_configuration</tt><big>(</big><em>config</em><big>)</big><a class="reference internal" href="_modules/pax/pax.html#evaluate_configuration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.pax.evaluate_configuration" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pax.pax.get_actions">
+<tt class="descclassname">pax.pax.</tt><tt class="descname">get_actions</tt><big>(</big><em>config</em>, <em>input</em>, <em>list_of_names</em><big>)</big><a class="reference internal" href="_modules/pax/pax.html#get_actions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.pax.get_actions" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pax.pax.get_configuration">
+<tt class="descclassname">pax.pax.</tt><tt class="descname">get_configuration</tt><big>(</big><em>config_overload=''</em><big>)</big><a class="reference internal" href="_modules/pax/pax.html#get_configuration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.pax.get_configuration" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pax.pax.get_my_dir">
+<tt class="descclassname">pax.pax.</tt><tt class="descname">get_my_dir</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/pax.html#get_my_dir"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.pax.get_my_dir" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find location of this file, then my_dir is its directory</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.pax.get_plugin_source">
+<tt class="descclassname">pax.pax.</tt><tt class="descname">get_plugin_source</tt><big>(</big><em>config</em>, <em>log=&lt;module 'logging' from '/opt/local/Library/Frameworks/Python.framework/Versions/3.4/lib/python3.4/logging/__init__.py'&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/pax.html#get_plugin_source"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.pax.get_plugin_source" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pax.pax.instantiate">
+<tt class="descclassname">pax.pax.</tt><tt class="descname">instantiate</tt><big>(</big><em>name</em>, <em>plugin_source</em>, <em>config_values</em>, <em>log=&lt;module 'logging' from '/opt/local/Library/Frameworks/Python.framework/Versions/3.4/lib/python3.4/logging/__init__.py'&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/pax.html#instantiate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.pax.instantiate" title="Permalink to this definition">¶</a></dt>
+<dd><p>take class name and build class from it</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.pax.processor">
+<tt class="descclassname">pax.pax.</tt><tt class="descname">processor</tt><big>(</big><em>config_overload=''</em><big>)</big><a class="reference internal" href="_modules/pax/pax.html#processor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.pax.processor" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-pax.plugin">
+<span id="pax-plugin-module"></span><h2>pax.plugin module<a class="headerlink" href="#module-pax.plugin" title="Permalink to this headline">¶</a></h2>
+<p>Definition of base classes for plugins</p>
+<p>Here we define every one of the plugins/modules for pax.  This describes what
+the interfaces are.  To add an input or a transform, you define one function
+that does something with an event.  An input spits out event objects.  A
+transform would modify the event object.</p>
+<p>See format for more information on the event object.</p>
+<dl class="class">
+<dt id="pax.plugin.BasePlugin">
+<em class="property">class </em><tt class="descclassname">pax.plugin.</tt><tt class="descname">BasePlugin</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugin.html#BasePlugin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.BasePlugin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
+<dl class="method">
+<dt id="pax.plugin.BasePlugin.process_event">
+<tt class="descname">process_event</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugin.html#BasePlugin.process_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.BasePlugin.process_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugin.BasePlugin.shutdown">
+<tt class="descname">shutdown</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugin.html#BasePlugin.shutdown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.BasePlugin.shutdown" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugin.BasePlugin.startup">
+<tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugin.html#BasePlugin.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.BasePlugin.startup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.plugin.InputPlugin">
+<em class="property">class </em><tt class="descclassname">pax.plugin.</tt><tt class="descname">InputPlugin</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugin.html#InputPlugin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.InputPlugin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.plugin.BasePlugin" title="pax.plugin.BasePlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.BasePlugin</span></tt></a></p>
+<p>Base class for data inputs</p>
+<p>This class cannot be parallelized since events are read in a specific order</p>
+<dl class="method">
+<dt id="pax.plugin.InputPlugin.get_events">
+<tt class="descname">get_events</tt><big>(</big><em>*args</em>, <em>**kw</em><big>)</big><a class="reference internal" href="_modules/pax/plugin.html#InputPlugin.get_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.InputPlugin.get_events" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugin.InputPlugin.process_event">
+<tt class="descname">process_event</tt><big>(</big><em>event=None</em><big>)</big><a class="reference internal" href="_modules/pax/plugin.html#InputPlugin.process_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.InputPlugin.process_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.plugin.OutputPlugin">
+<em class="property">class </em><tt class="descclassname">pax.plugin.</tt><tt class="descname">OutputPlugin</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugin.html#OutputPlugin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.OutputPlugin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.plugin.BasePlugin" title="pax.plugin.BasePlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.BasePlugin</span></tt></a></p>
+<dl class="method">
+<dt id="pax.plugin.OutputPlugin.process_event">
+<tt class="descname">process_event</tt><big>(</big><em>*args</em>, <em>**kw</em><big>)</big><a class="reference internal" href="_modules/pax/plugin.html#OutputPlugin.process_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.OutputPlugin.process_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugin.OutputPlugin.write_event">
+<tt class="descname">write_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugin.html#OutputPlugin.write_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.OutputPlugin.write_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.plugin.TransformPlugin">
+<em class="property">class </em><tt class="descclassname">pax.plugin.</tt><tt class="descname">TransformPlugin</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugin.html#TransformPlugin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.TransformPlugin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.plugin.BasePlugin" title="pax.plugin.BasePlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.BasePlugin</span></tt></a></p>
+<dl class="method">
+<dt id="pax.plugin.TransformPlugin.process_event">
+<tt class="descname">process_event</tt><big>(</big><em>*args</em>, <em>**kw</em><big>)</big><a class="reference internal" href="_modules/pax/plugin.html#TransformPlugin.process_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.TransformPlugin.process_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugin.TransformPlugin.transform_event">
+<tt class="descname">transform_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugin.html#TransformPlugin.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.TransformPlugin.transform_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-pax.units">
+<span id="pax-units-module"></span><h2>pax.units module<a class="headerlink" href="#module-pax.units" title="Permalink to this headline">¶</a></h2>
+<p>This sets up variables for the various unit abbreviations, ensuring we always
+have a &#8216;consistent&#8217; unit system.
+You can change base_units without breaking the consistency of any physical
+relations</p>
+<p>Please change comments in this code if you change any units. Better yet, don&#8217;t
+change any units!</p>
+<dl class="docutils">
+<dt>WARNING</dt>
+<dd>The unit system is not fully consistent, since the unit for energy is set
+separately from mass, time, and distance
+If you do mechanics this is a SERIOUSLY BAD IDEA
+We, however, only ever need mass for density</dd>
+</dl>
+<dl class="function">
+<dt id="pax.units.unit_name">
+<tt class="descclassname">pax.units.</tt><tt class="descname">unit_name</tt><big>(</big><em>unit</em>, <em>base_unit</em><big>)</big><a class="reference internal" href="_modules/pax/units.html#unit_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.units.unit_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Hack to get unit name back
+unit_name(ns,&#8217;s&#8217;) will give &#8216;ns&#8217;</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-pax">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pax" title="Permalink to this headline">¶</a></h2>
+<p>Processor for analyzing XENON1T</p>
+<p>Provides a framework for calling plugins that manipulate data.</p>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">pax package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-pax.datastructure">pax.datastructure module</a></li>
+<li><a class="reference internal" href="#module-pax.format">pax.format module</a></li>
+<li><a class="reference internal" href="#module-pax.pax">pax.pax module</a></li>
+<li><a class="reference internal" href="#module-pax.plugin">pax.plugin module</a></li>
+<li><a class="reference internal" href="#module-pax.units">pax.units module</a></li>
+<li><a class="reference internal" href="#module-pax">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/pax.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">processor for Analyzing XENON1T 0.1.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Christopher Tunnell.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>
