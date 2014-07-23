@@ -1,15 +1,15 @@
-<html>                                                                         
-  <head>
+<html>
+<head>
     <script src="/static/js/jquery.min.js"></script>
     <script src="/static/js/d3.v3.min.js"></script>
-  </head>                                                                
-  <body>                             
-    <svg width="300" height="300">
-    </svg>
-    <a href="/">Home</a>                                                      
-  </body> 
+</head>
+<body>
+<svg width="300" height="300">
+</svg>
+<a href="/">Home</a>
+</body>
 
-  <script>
+<script>
     $.getJSON('/get_pmtpattern', function(data){
     var circles = [];
     var svg_container = d3.select("body").append("svg")
@@ -25,6 +25,7 @@
     }
 
     });
-  </script>
-  
+
+</script>
+
 </html>
