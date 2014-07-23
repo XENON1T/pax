@@ -27,12 +27,13 @@ if __name__ == '__main__':
                              # 'PeakPruning.PruneWideS1s',
                              # 'PeakPruning.PruneS1sWithNearbyNegativeExcursions',
                              'PeakPruning.PruneS1sInS2Tails',
-                             'PeakPruning.PruneS2sInS2Tails'
-                             #'PosSimple'
+                             'PeakPruning.PruneS2sInS2Tails',
+                             'DatastructureConverter.ConvertToEventClass'
                              ],
                   output=['Plotting.PlottingWaveform', # Make plot using matplotlib
                           #'Pickle.WriteToPickleFile',  # Write to Pythonistic file
                           #'Display.DisplayServer',     # Start web server for plots
                           ],
-                  config_overload=config_overload)
+                  config_overload=config_overload,
+                  )
 

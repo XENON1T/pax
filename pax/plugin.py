@@ -9,6 +9,7 @@ See format for more information on the event object.
 """
 import logging
 import time
+import abc
 
 
 class BasePlugin(object):
@@ -53,12 +54,10 @@ class BasePlugin(object):
 
 
 class InputPlugin(BasePlugin):
-
     """Base class for data inputs
 
     This class cannot be parallelized since events are read in a specific order
     """
-
     def __init__(self, config_values):
         BasePlugin.__init__(self, config_values)
         self.i = 0
