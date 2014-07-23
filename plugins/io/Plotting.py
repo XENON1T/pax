@@ -52,8 +52,7 @@ class PlottingHitPattern(plugin.OutputPlugin):
 
         Will make a fancy plot with lots of arrows etc of a summed waveform
         """
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
+        plt.figure()
 
         x = []
         y = []
@@ -68,7 +67,6 @@ class PlottingHitPattern(plugin.OutputPlugin):
 
         area = np.array(area) / 10
 
-        ax = plt.subplot(111)
         c = plt.scatter(x, y, c='red',
                         s=area, cmap=plt.cm.hsv)
         c.set_alpha(0.75)

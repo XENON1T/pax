@@ -9,7 +9,8 @@ import numpy as np
 
 
 def is_s2(peak):  # put in plugin base class?
-    if 'rejected' in peak and peak['rejected']: return False
+    if 'rejected' in peak and peak['rejected']:
+        return False
     return peak['peak_type'] in ('large_s2', 'small_s2')
 
 
@@ -56,7 +57,8 @@ class PruneNonIsolatedPeaks(PeakPruner):
         }
 
     def decide_peak(self, peak, event, peak_index):
-        if peak['peak_type'] == 's1': return None               #TEMP REFACTOR TODO
+        if peak['peak_type'] == 's1':
+            return None  # TEMP REFACTOR TODO
 
         # Find which settings to use for this type of peak
         settings = {}
@@ -64,13 +66,12 @@ class PruneNonIsolatedPeaks(PeakPruner):
         for settingname, settingvalue in self.settings.items():
             settings[settingname] = self.settings[settingname][peak['peak_type']]
 
-
         signal = event['processed_waveforms'][peak['input']]
 
-        #Calculate before_mean and after_mean
-        assert not 'before_mean' in peak    #Fails if you run the plugin twice!
+        # Calculate before_mean and after_mean
+        assert not 'before_mean' in peak  # Fails if you run the plugin twice!
         # This seems more Xerawdp-like, but then we get messy overlapping peaks... have to test for those first...
-        left_to_use  = min(peak['left'],  peak['prepeak_left'])  if peak['peak_type'] == 'large_s2' else peak['left']
+        left_to_use = min(peak['left'],  peak['prepeak_left']) if peak['peak_type'] == 'large_s2' else peak['left']
         right_to_use = max(peak['right'], peak['prepeak_right']) if peak['peak_type'] == 'large_s2' else peak['right']
         #left_to_use  = peak['prepeak_left']  if peak['peak_type'] == 'large_s2' else peak['left']
         #right_to_use =  peak['prepeak_right'] if peak['peak_type'] == 'large_s2' else peak['right']
@@ -81,12 +82,15 @@ class PruneNonIsolatedPeaks(PeakPruner):
 
             signal[right_to_use: min(len(signal), right_to_use + settings['test_after'])])
 
-        #Do the testing
+        # Do the testing
         if peak['before_mean'] > settings['before_to_height_ratio_max'] * peak['height'] \
-            or peak['after_mean'] > settings['after_to_height_ratio_max'] * peak['height']:
-            return 'peak is not isolated enough' #Todo: add stuff
-            #return '%s samples before peak contain stuff (mean %s, which is more than %s (%s x peak height))' % (settings['test_before'], peak['before_mean'], settings['before_to_height_ratio_max'] * peak['height'], settings['before_to_height_ratio_max'])
-            #return '%s samples after peak contain stuff (mean %s, which is more than %s (%s x peak height))' % (settings['test_after'], peak['after_mean'], settings['after_to_height_ratio_max'] * peak['height'], settings['after_to_height_ratio_max'])
+                or peak['after_mean'] > settings['after_to_height_ratio_max'] * peak['height']:
+            return 'peak is not isolated enough'  # Todo: add stuff
+            # return '%s samples before peak contain stuff (mean %s, which is more than %s (%s x peak height))' % (settings['test_before'], peak['before_mean'], settings['before_to_height_ratio_max'] * peak['height'], settings['before_to_height_ratio_max'])
+            # return '%s samples after peak contain stuff (mean %s, which is more than
+            # %s (%s x peak height))' % (settings['test_after'], peak['after_mean'],
+            # settings['after_to_height_ratio_max'] * peak['height'],
+            # settings['after_to_height_ratio_max'])
         return None
 
 

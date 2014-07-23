@@ -8,6 +8,7 @@ class PosRecWeightedSum(plugin.TransformPlugin):
 
     def startup(self):
         self.topArrayMap = self.config['topArrayMap']
+
     def transform_event(self, event):
         for peak in event['peaks']:
             if 'rec' not in peak.keys():
