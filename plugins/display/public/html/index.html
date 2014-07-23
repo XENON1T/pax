@@ -1,20 +1,21 @@
-<html>                                                             
-  <head>                                                                       
-    <script src="/static/js/dygraph-combined.js"></script>                       
+<html>
+<head>
+    <script src="/static/js/dygraph-combined.js"></script>
     <script src="/static/js/jquery.min.js"></script>
-  </head>                                                                      
-  <body>                                                                       
-    <h2>Pax event display</h2>
-    <h5>Click and drag to zoom, double click to reset view</h5>
-    <div id="plot" style="width:98%%;height:85%%"></div>                                
-    <a href="/pmtpattern">PMT Hit Pattern</a>                               
-    <a href="/getnext">Next Event</a>                                       
-  </body>             
- <style type="text/css">
-     .annos1 { color:red !important;}
-     .annos2 { color:blue !important;}
-     </style>
-  <script>                                                                     
+</head>
+<body>
+<h2>Pax event display</h2>
+<h5>Click and drag to zoom, double click to reset view</h5>
+
+<div id="plot" style="width:98%%;height:85%%"></div>
+<a href="/pmtpattern">PMT Hit Pattern</a>
+<a href="/getnext">Next Event</a>
+</body>
+<style type="text/css">
+    .annos1 { color:red !important;}
+    .annos2 { color:blue !important;}
+</style>
+<script>
     $.getJSON('/get_waveform', function(data){
     
     var graph = new Dygraph(plot, data['waveform'],{
@@ -45,4 +46,5 @@
     graph.setAnnotations(annotations);
     });
         
-  </script>
+
+</script>
