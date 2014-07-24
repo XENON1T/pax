@@ -41,33 +41,6 @@ class PeakPruner(plugin.TransformPlugin):
         raise NotImplementedError("This peak pruner forgot to implement decide_peak...")
 
 
-class PruneS1sInS2Tails(PeakPruner):
-
-    def decide_peak(self, peak, event, peak_index):
-        if peak['peak_type'] != 's1':
-            return None
-        if not 'stop_looking_for_s1s_after' in event:
-            # Determine where to stop looking for S1s
-            # Certainly stop looking after the largest S2 (XerawDP behaviour)
-            s2areas = [p['top_and_bottom']['area'] for p in event['peaks'] if is_s2(p)]
-            if s2areas == []:
-                # No S2s in this waveform - S1 always ok
-                event['stop_looking_for_s1s_after'] = float('inf')
-                return None
-            # DANGER ugly code ahead...
-            s2maxarea = max(s2areas)
-            for i, p in enumerate(event['peaks']):
-                if p['top_and_bottom']['area'] == s2maxarea:
-                    event['stop_looking_for_s1s_after'] = p['left']
-            # Stop earlier if there is an earlier S2 whose amplitude exceeds a treshold
-            treshold = 3.12255  # S2 amplitude after which no more s1s are looked for
-            larges2boundaries = [p['left'] for p in event['peaks'] if is_s2(p) and p['top_and_bottom']['height'] > treshold]
-            if larges2boundaries != []:
-                event['stop_looking_for_s1s_after'] = min(event['stop_looking_for_s1s_after'], min(larges2boundaries))
-        if peak['left'] > event['stop_looking_for_s1s_after']:
-            return 'S1 starts at %s, which is beyond %s, the starting position of a "large" S2.' % (peak['left'], event['stop_looking_for_s1s_after'])
-        return None
-
 
 class PruneS2sInS2Tails(PeakPruner):
 
