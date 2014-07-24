@@ -95,7 +95,7 @@ class Event(object):
     def filtered_waveform(self, filter_name=None):
         """Filtered waveform summed over many PMTs"""
         if filter_name is not None:
-            raise PendingDeprecationWarning()
+            #raise PendingDeprecationWarning() #Why? Currently this throws an error, not a warning...
             return self._raw['processed_waveforms'][filter_name]
         return self._raw['processed_waveforms']['filtered_for_large_s2']
 
