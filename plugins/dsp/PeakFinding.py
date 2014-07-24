@@ -1,268 +1,7 @@
-"""Digital signal processing
-
-This starts from the raw channel occurrences and spits out (after running the
- many plugins) a list of peaks.
-
-"""
 import numpy as np
 from copy import copy
 
 from pax import plugin, units
-
-class JoinAndConvertWaveforms(plugin.TransformPlugin):
-
-    """Take channel_occurrences, builds channel_waveforms
-
-    Between occurrence waveforms (i.e. pulses...), zeroes are added.
-    The waveforms returned will be converted to pe/ns and baseline-corrected.
-    If a channel is absent from channel_occurrences, it wil be absent from channel_waveforms.
-
-    """
-
-    def startup(self):
-        # Short hand
-        c = self.config
-        self.gains = c['gains']
-
-        # Conversion factor from converting from ADC counts -> pe/bin
-        self.conversion_factor = c['digitizer_t_resolution'] * c['digitizer_voltage_range'] / (
-            2 ** (c['digitizer_bits']) * c['pmt_circuit_load_resistor']
-            * c['external_amplification'] * units.electron_charge
-        )
-
-    def transform_event(self, event):
-        # Check if voltage range same as reported by input plugin
-        # TODO: do the same for dt
-        if 'metadata' in event and 'voltage_range' in event['metadata']:
-            if event['metadata']['voltage_range'] != self.config['digitizer_voltage_range']:
-                raise RuntimeError(
-                    'Voltage range from event metadata (%s) is different from ini file setting (%s)!'
-                    % (event['metadata']['voltage_range'], self.config['digitizer_voltage_range'])
-                )
-
-        # Check for input plugin misbehaviour / running this plugin at the wrong time
-        if not ('channel_occurrences' in event and 'length' in event):
-            raise RuntimeError(
-                "Event contains %s, should contain at least channel_occurrences and length !"
-                % str(event.keys())
-            )
-
-        # Build the channel waveforms from occurrences
-        event['processed_waveforms'] = {}
-        uncorrected_sum_wave_for_s1 = np.zeros(event['length'])
-        uncorrected_sum_wave_for_s2 = np.zeros(event['length'])
-        event['channel_waveforms']   = {}
-        baseline_sample_size         = 46 #TODO: put in config
-        for channel, waveform_occurrences in event['channel_occurrences'].items():
-            skip_channel = False  # Temp for Xerawdp matching, refactor to continue's later
-
-            # Check that gain known
-            if channel not in self.gains:
-                self.log.warning('Gain for channel %s is not specified! Skipping channel.' % channel)
-                skip_channel = True
-
-            # Deal with unknown gains
-            if self.gains[channel] == 0:
-                if channel in event['channel_occurrences']:
-                    self.log.warning('Gain for channel %s is 0, but is in waveform.' % channel)
-                skip_channel = True
-
-            # Assemble the waveform pulse by pulse, starting from an all-zeroes waveform
-            wave = np.zeros(event['length'])
-            for i, (starting_position, wave_occurrence) in enumerate(waveform_occurrences):
-
-                # Check for pulses starting right after previous ones: Xerawdp doesn't recompute baselines
-                if i !=0 and starting_position == waveform_occurrences[i-1][0]+len(waveform_occurrences[i-1][1]):
-                    pass #baseline will still have the right value
-                else:
-                    # We need to compute the baseline.
-                    # First pulse is allowed be short (?), then Xerawdp computes baseline from last samples instead.
-                    # if len(wave_occurrence)<2*baseline_sample_size: # Xerawdp bug, this code is never reached???
-                    #     if not i==0:
-                    #         raise RuntimeError("Occurrence %s in channel %s has length %s, should be at least 2*%s!"
-                    #                            % (i, channel, len(wave_occurrence), baseline_sample_size)
-                    #         )
-                    #     print("Short first pulse, computing baseline from latest samples")
-                    #     baseline_sample = wave_occurrence[len(wave_occurrence)-baseline_sample_size:]
-                    # else:
-                    baseline_sample = wave_occurrence[:baseline_sample_size]
-                    baseline = np.mean(baseline_sample)
-                    """
-                    This is NOT THE WAY TO DO IT - we should at least average over all occurrences
-                    Better yet, take a mean of median 20% or so:
-                        return (
-                            np.mean(sorted(baseline_sample)[
-                                    int(0.4 * len(baseline_sample)):int(0.6 * len(baseline_sample))
-                                    ]),  # Ensures peaks in baseline sample don't skew computed baseline
-                            np.std(baseline_sample)  # ... but do count towards baseline_stdev!
-                        )
-                    Don't want to just take the median as V-resolution is finite
-                    Don't want the mean either: this is not robust against large fluctuations (eg peaks in sample)
-                    Better yet, do this for several events, keep a running mean
-                    However, this is how Xerawdp does it... (see Rawdata.cpp, getPulses)
-                    # TODO: Check for baseline fluctuations in event, warn if too much
-                    # How much baseline will we have in 1T? Only few samples?
-                    """
-
-                # Temp for Xerawdp matching: add pulse to the uncorrected sum waveform if they are not excluded
-                if not (channel > 178 or channel in [1, 2, 145, 148, 157, 171, 177]):
-                    uncorrected_sum_wave_for_s1[starting_position:starting_position + len(wave_occurrence)] = \
-                        np.add(-1 * (wave_occurrence - baseline) * self.conversion_factor / (2*10**6),
-                            uncorrected_sum_wave_for_s1[starting_position:starting_position + len(wave_occurrence)]
-                        )
-                if not channel > 178:
-                    uncorrected_sum_wave_for_s2[starting_position:starting_position + len(wave_occurrence)] = \
-                        np.add(-1 * (wave_occurrence - baseline) * self.conversion_factor / (2*10**6),
-                            uncorrected_sum_wave_for_s2[starting_position:starting_position + len(wave_occurrence)]
-                        )
-
-                # Put wave occurrences in the correct positions
-                if skip_channel: continue
-                wave[starting_position:starting_position + len(wave_occurrence)] = wave_occurrence - baseline
-
-            if skip_channel: continue
-            # Flip the waveform up, convert it to pe/ns, and store it in the event data structure
-            event['channel_waveforms'][channel] = -1 * wave * self.conversion_factor / self.gains[channel]
-
-        # Temp for Xerawdp matching: store uncorrected sum waveform
-        event['processed_waveforms']['uncorrected_sum_waveform_for_s1'] = uncorrected_sum_wave_for_s1
-        event['processed_waveforms']['uncorrected_sum_waveform_for_s2'] = uncorrected_sum_wave_for_s2
-
-        # Delete the channel_occurrences from the event structure, we don't need it anymore
-        del event['channel_occurrences']
-
-        return event
-
-
-class ComputeSumWaveform(plugin.TransformPlugin):
-
-    """Build the sum waveforms for, top, bottom, top_and_bottom, veto
-
-    Since channel waveforms are already gain corrected, we can just add the appropriate channel waveforms.
-    If none of the channels in a group contribute, the summed waveform will be all zeroes.
-    This guarantees that e.g. event['processed_waveforms']['top_and_bottom'] exists.
-
-    """
-
-    def startup(self):
-        self.channel_groups = {'top': self.config['pmts_top'],
-                               'bottom': self.config['pmts_bottom'],
-                               'veto': self.config['pmts_veto']}
-
-        # The groups are lists, so we add them using |, not +...
-        self.channel_groups['top_and_bottom'] = self.channel_groups['top'] | self.channel_groups['bottom']
-        # TEMP for XerawDP matching: Don't have to compute peak finding waveform yet, done in JoinAndConvertWaveforms
-
-    def transform_event(self, event):
-        if not 'processed_waveforms' in event:
-            event['processed_waveforms'] = {}
-
-        # Compute summed waveforms
-        for group, members in self.channel_groups.items():
-            event['processed_waveforms'][group] = np.zeros(event['length'])
-            for channel in members:
-                if channel in event['channel_waveforms']:
-                    event['processed_waveforms'][group] += event['channel_waveforms'][channel]
-
-        return event
-
-
-class GenericFilter(plugin.TransformPlugin):
-
-    """Generic filter base class
-
-    Do not instantiate. Instead, subclass: subclass has to set
-        self.filter_ir  --  filter impulse response (normalized, i.e. sum to 1)
-        self.input_name      --  label of waveform in processed_waveforms to filter
-        self.output_name     --  label where filtered waveform is stored in processed_waveforms
-
-    TODO: Add some check the name of the class and throw exception if base class
-          is instantiated.  use self.name.
-    TODO: check if ir normalization;
-    """
-    # Always takes input from a wave in processed_waveforms
-
-    def startup(self):
-        self.filter_ir = None
-        self.output_name = None
-        self.input_name = None
-
-    def transform_event(self, event):
-        # Check if we have all necessary information
-        if self.filter_ir is None or self.output_name is None or self.input_name is None:
-            raise RuntimeError('Filter subclass did not provide required parameters')
-        if round(sum(self.filter_ir), 4) != 1.:
-            raise RuntimeError('Impulse response sums to %s, should be 1!' % sum(self.filter_ir))
-
-        event['processed_waveforms'][self.output_name] = np.convolve(
-            event['processed_waveforms'][self.input_name],
-            self.filter_ir,
-            'same'
-        )
-        return event
-
-
-class LargeS2Filter(GenericFilter):
-
-    """Docstring  Low-pass filter using raised cosine filter
-
-    TODO: put constants into ini?
-    """
-
-    def startup(self):
-        GenericFilter.startup(self)
-
-        self.filter_ir = self.rcosfilter(31, 0.2, 3 * units.MHz * self.config['digitizer_t_resolution'])
-        self.output_name = 'filtered_for_large_s2'
-        self.input_name = 'uncorrected_sum_waveform_for_s2'
-
-    @staticmethod
-    def rcosfilter(filter_length, rolloff, cutoff_freq, sampling_freq=1):
-        """
-        Returns a nd(float)-array describing a raised cosine (RC) filter (FIR) impulse response. Arguments:
-            - filter_length:    filter length in samples
-            - rolloff:          roll-off factor
-            - cutoff_freq:      cutoff frequency = 1/(2*symbol period)
-            - sampling_freq:    sampling rate (in same units as cutoff_freq)
-        """
-        symbol_period = 1 / (2 * cutoff_freq)
-        h_rc = np.zeros(filter_length, dtype=float)
-
-        for x in np.arange(filter_length):
-            t = (x - filter_length / 2) / float(sampling_freq)
-            phase = np.pi * t / symbol_period
-            if t == 0.0:
-                h_rc[x] = 1.0
-            elif rolloff != 0 and abs(t) == symbol_period / (2 * rolloff):
-                h_rc[x] = (np.pi / 4) * (np.sin(phase) / phase)
-            else:
-                h_rc[x] = (np.sin(phase) / phase) * (
-                    np.cos(phase * rolloff) / (
-                        1 - (((2 * rolloff * t) / symbol_period) * ((2 * rolloff * t) / symbol_period))
-                    )
-                )
-
-        return h_rc / h_rc.sum()
-
-
-class SmallS2Filter(GenericFilter):
-
-    """
-
-    TODO: take this opportunity to explain why there is a small s2 filter... even if it stupid.
-    TODO: put constants into ini?
-    """
-
-    def startup(self):
-        GenericFilter.startup(self)
-
-        self.filter_ir = np.array([0, 0.103, 0.371, 0.691, 0.933, 1, 1, 1, 1, 1,
-                                   1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.933, 0.691,
-                                   0.371, 0.103, 0])
-        self.filter_ir = self.filter_ir / sum(self.filter_ir)  # Normalization
-        self.output_name = 'filtered_for_small_s2'
-        self.input_name = 'uncorrected_sum_waveform_for_s2'
-
 
 class FindS1_XeRawDPStyle(plugin.TransformPlugin):
 
@@ -276,9 +15,9 @@ class FindS1_XeRawDPStyle(plugin.TransformPlugin):
             stop_looking_after = s2s[ np.argmax([p['height'] for p in s2s]) ]['left']    # Left boundary of largest s2
             large_enough_s2s = [p for p in s2s if p['height'] > 3.12255]
             if large_enough_s2s:
-                stop_looking_after = max(
+                stop_looking_after = min(
                     stop_looking_after,
-                    max([p['left'] for p in large_enough_s2s])
+                    min([p['left'] for p in large_enough_s2s])
                 )
         else:
             stop_looking_after = float('inf')
@@ -330,7 +69,7 @@ class FindS1_XeRawDPStyle(plugin.TransformPlugin):
                 seeker_position = copy(peak_bounds[1])
 
                 # Test for non-isolated peaks
-                #TODO: dynamic window size if several s1s close together
+                #TODO: dynamic window size if several s1s close together, check with Xerawdp now that free_regions
                 if not isolation_test(signal, max_idx,
                                       right_edge_of_left_test_region=peak_bounds[0]-1,
                                       test_length_left=50,
@@ -410,9 +149,20 @@ class FindS2_XeRawDPStyle(plugin.TransformPlugin):
             # Get the signal out
             signal = event['processed_waveforms'][settings['source_waveform']]
 
+            # For small s2s, we looking stop after a sufficiently large s2 is seen
+            # We can stop looking for s1s after the largest s2, or after any sufficiently large s2
+            stop_looking_after = float('inf')
+            if peak_type == 'small_s2':
+                #Don't have to test for p['peak_type'] == 'large_s2', these are the only peaks in here
+                huge_s2s = [p for p in event['peaks'] if p['height'] > 624.151]
+                if huge_s2s:
+                    stop_looking_after = min([p['left'] for p in huge_s2s])
+
             # Find peaks in all the free regions
             free_regions = get_free_regions(event) # Can't put this in loop, peaks get added!
             for region_left, region_right in free_regions:
+                # Don't look for small S2s after a very large S2
+                if peak_type=='small_s2' and region_left >= stop_looking_after: break
                 left_boundary_for_small_peak_isolation_test = region_left
                 seeker_position = region_left
                 while 1:
@@ -479,12 +229,12 @@ class FindS2_XeRawDPStyle(plugin.TransformPlugin):
                                           after_avg_max_ratio=settings['around_to_height_ratio_max']):
                         continue
 
-                    # Test for aspect ratio
+                    # Test for aspect ratio, probably to avoid misidentifying s1s as small s2s
                     aspect_ratio_threshold = 0.062451  # 1 mV/bin = 0.1 mV/ns
                     peak_width = (right - left) / units.ns
                     aspect_ratio = height / peak_width
                     if aspect_ratio > aspect_ratio_threshold:
-                        print('For peak at %s, Max/width ratio %s is higher than %s' % (max_idx, aspect_ratio, aspect_ratio_threshold))
+                        #print('For peak at %s, Max/width ratio %s is higher than %s' % (max_idx, aspect_ratio, aspect_ratio_threshold))
                         continue
                     if the_thing: print("It passed the aspect ratio test.")
 
@@ -550,7 +300,7 @@ class FindS2_XeRawDPStyle(plugin.TransformPlugin):
 
 # TODO: Veto S1 peakfinding
 
-class ComputeQuantities(plugin.TransformPlugin):
+class ComputePeakProperties(plugin.TransformPlugin):
 
     """Compute various derived quantities of each peak (full width half maximum, etc.)
 

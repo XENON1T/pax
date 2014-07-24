@@ -5,6 +5,7 @@ config_overload = """
 [pax]
 input = 'XED.XedInput'
 output = 'Plotting.PlottingWaveform'
+#output = 'CSV.WriteCSVPeakwise'
 
 [XED.XedInput]
 filename = "xe100_120402_2000_000000.xed"
