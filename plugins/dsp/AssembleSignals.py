@@ -99,6 +99,7 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
 
                 # Temp for Xerawdp matching: add pulse to the uncorrected sum waveform if they are not excluded
                 if not (channel > 178 or channel in [1, 2, 145, 148, 157, 171, 177]):
+                    #print(starting_position, len(wave_occurrence))
                     uncorrected_sum_wave_for_s1[starting_position:starting_position + len(wave_occurrence)] = \
                         np.add(-1 * (wave_occurrence - baseline) * self.conversion_factor / (2*10**6),
                             uncorrected_sum_wave_for_s1[starting_position:starting_position + len(wave_occurrence)]
@@ -120,7 +121,6 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
         # Temp for Xerawdp matching: store uncorrected sum waveform
         event['processed_waveforms']['uncorrected_sum_waveform_for_s1'] = uncorrected_sum_wave_for_s1
         event['processed_waveforms']['uncorrected_sum_waveform_for_s2'] = uncorrected_sum_wave_for_s2
-
         # Delete the channel_occurrences from the event structure, we don't need it anymore
         del event['channel_occurrences']
 
