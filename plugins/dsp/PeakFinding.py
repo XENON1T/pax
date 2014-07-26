@@ -51,7 +51,6 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
 
     def transform_event(self, event):
         event['peaks'] = []
-        # Do everything first for large s2s, then for small s2s
         for (peak_type, settings) in self.settings_for_peaks:
             # Get the signal out
             signal = event['processed_waveforms'][settings['source_waveform']]
@@ -77,7 +76,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                         )
 
             # Find peaks in all the free regions
-            free_regions = get_free_regions(event) # Can't put this after 'for .. in', peaks get added during the loop!
+            free_regions = self.get_free_regions(event) # Can't put this after 'for .. in', peaks get added during the loop!
             for region_left, region_right in free_regions:
 
                 # Are we still interested?
@@ -187,7 +186,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             # For large S2 from top-level interval: do the isolation check on the top interval
             # If this fails, we don't even search for additional s2s in the interval!
             if toplevel:
-                if not isolation_test(signal, max_idx,
+                if not self.isolation_test(signal, max_idx,
                                       right_edge_of_left_test_region=min(left_boundary, left)-1,
                                       test_length_left=settings['test_around_interval'],
                                       left_edge_of_right_test_region=max(right_boundary, right)+1,
@@ -206,7 +205,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
 
             # An additional, different, isolation test is applied to every individual peak < 0.05 the toplevel peak
             if height < 0.05 * event['last_toplevel_max_val']:
-                if not isolation_test(signal, max_idx,
+                if not self.isolation_test(signal, max_idx,
                                       right_edge_of_left_test_region=left-1,
                                       test_length_left=settings['test_around_peak'],
                                       left_edge_of_right_test_region=right+1,
@@ -221,7 +220,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             # The Small s2 search doesn't recurse, so returning when tests fail is fine
 
             # For small s2's the isolation test is slightly different
-            if not isolation_test(signal, max_idx,
+            if not self.isolation_test(signal, max_idx,
                                   right_edge_of_left_test_region=left-1,
                                   left_edge_of_right_test_region=right+1,
                                   # This is insane, and probably a bug, but I swear it's in Xerawdp
@@ -243,7 +242,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
         elif peak_type == 's1':
             # Test for non-isolated peaks
             #TODO: dynamic window size if several s1s close together, check with Xerawdp now that free_regions
-            if not isolation_test(signal, max_idx,
+            if not self.isolation_test(signal, max_idx,
                                   right_edge_of_left_test_region=left-1,
                                   test_length_left=50,
                                   left_edge_of_right_test_region=right+1,
@@ -269,10 +268,10 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             if filtered_width > 50:
                 return
 
-        # Append the peak found, if we haven't failed the tests
+        # Append the peak found, if we haven't failed any tests
         if not failed_some_test:
             event['peaks'].append( {
-                'left':         left - (2 if peak_type == 's1' else 0),     # Xerawdp weirdness
+                'left':         left  - (2 if peak_type == 's1' else 0),     # Xerawdp weirdness
                 'right':        right + (2 if peak_type == 's1' else 0),    # ditto
                 'peak_type':    peak_type,
                 'height':       height,
@@ -289,6 +288,45 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                                left_boundary=left_boundary, right_boundary=left) #Not left-1? Who is off by one?
             self.find_peaks_in(event, peak_type, signal, settings,
                                left_boundary=right, right_boundary=right_boundary) #Not right+1? Who is off by one?
+
+    def isolation_test(
+            self,
+            signal, max_idx,
+            right_edge_of_left_test_region, test_length_left,
+            left_edge_of_right_test_region, test_length_right,
+            before_avg_max_ratio,
+            after_avg_max_ratio,
+        ):
+        """
+        Does XerawDP's arcane isolation test. Returns if test is passed or not.
+        TODO: Regions seem to come out empty sometimes... when? warn?
+        """
+        self.log.debug("        Running isolation test: RofLeft %s, LofRight %s" % (right_edge_of_left_test_region, left_edge_of_right_test_region))
+        # +1s are to compensate for python's indexing conventions...
+        pre_avg = np.mean(signal[
+             right_edge_of_left_test_region - (test_length_left-1):
+             right_edge_of_left_test_region +1
+        ])
+        post_avg = np.mean(signal[
+             left_edge_of_right_test_region:
+             left_edge_of_right_test_region + test_length_right
+        ])
+        height = signal[max_idx]
+        if pre_avg > height * before_avg_max_ratio or post_avg > height * after_avg_max_ratio:
+            self.log.debug("        Nope: %s > %s or %s > %s..." % (pre_avg, height * before_avg_max_ratio, post_avg, height * after_avg_max_ratio))
+            return False
+        else:
+            self.log.debug("        Passed!")
+            return True
+
+    # TODO: Maybe this can get moves to the event class?
+    def get_free_regions(self, event):
+        lefts = sorted([0] + [p['left'] for p in event['peaks']])
+        rights = sorted([p['right'] for p in event['peaks']] + [event['length']-1])
+        free_regions = list(zip(*[iter(sorted(lefts + rights))]*2))   #hack from stackoverflow
+        self.log.debug("Free regions: " + str(free_regions))
+        return free_regions
+
 
 class ComputePeakProperties(plugin.TransformPlugin):
 
@@ -333,39 +371,7 @@ class ComputePeakProperties(plugin.TransformPlugin):
 
 # Helper functions for peakfinding
 
-def isolation_test(
-        signal, max_idx,
-        right_edge_of_left_test_region, test_length_left,
-        left_edge_of_right_test_region, test_length_right,
-        before_avg_max_ratio,
-        after_avg_max_ratio,
-    ):
-    """
-    Does XerawDP's arcane isolation test. Returns if test is passed or not.
-    TODO: Regions seem to come out empty sometimes... when? warn?
-    """
-    print("        Running isolation test: RofLeft %s, LofRight %s" % (right_edge_of_left_test_region, left_edge_of_right_test_region))
-    # +1s are to compensate for python's indexing conventions...
-    pre_avg = np.mean(signal[
-         right_edge_of_left_test_region - (test_length_left-1):
-         right_edge_of_left_test_region +1
-    ])
-    post_avg = np.mean(signal[
-         left_edge_of_right_test_region:
-         left_edge_of_right_test_region + test_length_right
-    ])
-    height = signal[max_idx]
-    if max_idx == 23099:
-        print("Pre avg %s (threshold %s), Post avg %s (threshold %s)" %(
-            pre_avg, height * before_avg_max_ratio,
-            post_avg, height * after_avg_max_ratio
-        ))
-    if pre_avg > height * before_avg_max_ratio or post_avg > height * after_avg_max_ratio:
-        print("        Nope: %s > %s or %s > %s..." % (pre_avg, height * before_avg_max_ratio, post_avg, height * after_avg_max_ratio))
-        return False
-    else:
-        print("        Passed!")
-        return True
+
 
 def find_next_crossing(signal, threshold,
                        start=0, direction='right', min_length=1,
@@ -486,10 +492,10 @@ def find_next_crossing(signal, threshold,
                 # Left slopes of peaks are positive, so a negative slope indicates inversion
                 # If slope inversions are seen, return index of the minimum before this.
                 if direction=='left' and log_slope < - log_slope_threshold:
-                    print("    ! Inversion found on left slope at %s: log_slope %s > %s. Started from %s" %  (i, log_slope, log_slope_threshold, start))
+                    print("    ! Inversion found on rising (left) slope at %s: log_slope %s < - %s. Started from %s" %  (i, log_slope, log_slope_threshold, start))
                     return i + np.argmin(signal[i:start+1])
                 elif direction=='right' and log_slope > log_slope_threshold:
-                    print("    ! Inversion found on right slope at %s: log_slope %s > %s. started from %s" % (i, log_slope, log_slope_threshold, start))
+                    print("    ! Inversion found on falling (right) slope at %s: log_slope %s > %s. started from %s" % (i, log_slope, log_slope_threshold, start))
                     return start + np.argmin(signal[start:i+1])
 
 
@@ -524,13 +530,6 @@ def extent_until_threshold(signal, start, threshold):
     a = interval_until_threshold(signal, start, threshold)
     return a[1] - a[0]
 
-# TODO: Move this to event class?
-def get_free_regions(event):
-    lefts = sorted([0] + [p['left'] for p in event['peaks']])
-    rights = sorted([p['right'] for p in event['peaks']] + [event['length']-1])
-    free_regions = list(zip(*[iter(sorted(lefts + rights))]*2))   #hack from stackoverflow
-    print("Free regions: " + str(free_regions))
-    return free_regions
 
 def nearest_s2_boundary(event, position, direction='left'):
     if direction=='left':
@@ -540,7 +539,6 @@ def nearest_s2_boundary(event, position, direction='left'):
         boundaries = [p['left']  for p in event['peaks'] if p['peak_type'] in ('small_s2', 'large_s2') and p['left']>position]
         return min(boundaries) if len(boundaries) > 0 else event['length']-1
     raise RuntimeError("direction %s isn't left or right" % direction)
-
 
 # if peak_type == 'large_s2':
 #     with open('s2_dump_pax.txt','w') as output:
