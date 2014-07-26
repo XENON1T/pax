@@ -127,7 +127,7 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
         return event
 
 
-class ComputeSumWaveform(plugin.TransformPlugin):
+class SumWaveforms(plugin.TransformPlugin):
 
     """Build the sum waveforms for, top, bottom, top_and_bottom, veto
 
