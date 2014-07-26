@@ -166,8 +166,8 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             start=max_idx,
             left_threshold=settings['left_boundary_to_height_ratio'] * height,
             right_threshold=settings['right_boundary_to_height_ratio'] * height,
-            left_limit=(nearest_s2_boundary(event, left_boundary, 'left') if peak_type=='large_s2' else left_boundary),
-            right_limit=(nearest_s2_boundary(event, right_boundary, 'right') if peak_type=='large_s2' else right_boundary),
+            left_limit=(nearest_s2_boundary(event, max_idx, left_boundary, 'left') if peak_type=='large_s2' else left_boundary),
+            right_limit=(nearest_s2_boundary(event, max_idx, right_boundary, 'right') if peak_type=='large_s2' else right_boundary),
             stop_if_start_exceeded=settings['stop_if_start_exceeded'],
             min_crossing_length=settings['min_crossing_length'],
             activate_xerawdp_hacks_for=peak_type,
@@ -180,11 +180,9 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             self.seeker_position = right
 
         # Apply various tests to the peaks
-        failed_some_test = False
         if peak_type == 'large_s2':
 
             # For large S2 from top-level interval: do the isolation check on the top interval
-            # If this fails, we don't even search for additional s2s in the interval!
             if toplevel:
                 if not self.isolation_test(signal, max_idx,
                                       right_edge_of_left_test_region=min(left_boundary, left)-1,
@@ -196,12 +194,10 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                     self.log.debug("    Toplevel interval failed isolation test")
                     return
 
-            # If any of the below tests fail, we DO search the rest of the interval later, so don't return!
-
-            # For large s2, the peak width is also tested (base interval width tested in both cases)
+            # The peak width is also tested, only for large s2s (base interval is also checked for small s2s)
             if not settings['min_length'] <= right - left <= settings['max_length']:
                 self.log.debug("    Failed width test")
-                failed_some_test = True
+                return
 
             # An additional, different, isolation test is applied to every individual peak < 0.05 the toplevel peak
             if height < 0.05 * event['last_toplevel_max_val']:
@@ -213,7 +209,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                                       before_avg_max_ratio=settings['around_peak_to_height_ratio_max'],
                                       after_avg_max_ratio=settings['around_peak_to_height_ratio_max']):
                     self.log.debug("    Failed isolation test")
-                    failed_some_test = True
+                    return
 
 
         elif peak_type == 'small_s2':
@@ -268,16 +264,15 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             if filtered_width > 50:
                 return
 
-        # Append the peak found, if we haven't failed any tests
-        if not failed_some_test:
-            event['peaks'].append( {
-                'left':         left  - (2 if peak_type == 's1' else 0),     # Xerawdp weirdness
-                'right':        right + (2 if peak_type == 's1' else 0),    # ditto
-                'peak_type':    peak_type,
-                'height':       height,
-                'index_of_max_in_waveform': max_idx,
-                'source_waveform':          settings['source_waveform'],
-            })
+        # If we're still here, append the peak found
+        event['peaks'].append( {
+            'left':         left  - (2 if peak_type == 's1' else 0),     # Xerawdp weirdness
+            'right':        right + (2 if peak_type == 's1' else 0),    # ditto
+            'peak_type':    peak_type,
+            'height':       height,
+            'index_of_max_in_waveform': max_idx,
+            'source_waveform':          settings['source_waveform'],
+        })
         # For large s2s, recurse on the remaining intervals
         if peak_type == 'small_s2':
             event['left_boundary_for_small_peak_isolation_test'] = right
@@ -531,12 +526,19 @@ def extent_until_threshold(signal, start, threshold):
     return a[1] - a[0]
 
 
-def nearest_s2_boundary(event, position, direction='left'):
+def nearest_s2_boundary(event, peak_position, edge_position, direction):
+    boundaries = []
     if direction=='left':
-        boundaries = [p['right'] for p in event['peaks'] if p['peak_type'] in ('small_s2', 'large_s2') and p['right']<position]
+        for p in event['peaks']:
+            if p['peak_type'] in ('small_s2', 'large_s2') and\
+               max(0,edge_position-100) < p['right'] <= peak_position:    # = case actually happens!
+                    boundaries.append(p['right'])
         return max(boundaries) if len(boundaries) > 0 else 0
     elif direction=='right':
-        boundaries = [p['left']  for p in event['peaks'] if p['peak_type'] in ('small_s2', 'large_s2') and p['left']>position]
+        for p in event['peaks']:
+            if p['peak_type'] in ('small_s2', 'large_s2') and\
+               peak_position <= p['left'] < min(event['length']-1,edge_position+100):    # = case actually happens!
+                    boundaries.append(p['right'])
         return min(boundaries) if len(boundaries) > 0 else event['length']-1
     raise RuntimeError("direction %s isn't left or right" % direction)
 
