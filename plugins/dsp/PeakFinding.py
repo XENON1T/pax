@@ -48,12 +48,27 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             }),
             # TODO: Veto S1 peakfinding
         ]
+        #
+        self.highest_s2_height_ever = None
+        self.seeker_position = None
 
     def transform_event(self, event):
+        self.highest_s2_height_ever = 0
         event['peaks'] = []
         for (peak_type, settings) in self.settings_for_peaks:
             # Get the signal out
             signal = event['processed_waveforms'][settings['source_waveform']]
+
+            # if peak_type == 'large_s2':
+            #     with open('s2_dump_pax.txt','w') as output:
+            #         output.write("\n".join(map(str,signal)))
+            # if peak_type == 'small_s2':
+            #     with open('s2small_dump_pax.txt','w') as output:
+            #         output.write("\n".join(map(str,signal)))
+            # if peak_type == 's1':
+            #     with open('s1_dump_pax.txt','w') as output:
+            #         output.write("\n".join(map(str,signal)))
+            #     exit()
 
             # Determine when we should stop looking for this type of peaks
             stop_looking_after = float('inf')
@@ -86,7 +101,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                 event['region_right_end_for_small_peak_isolation_test'] = region_right
                 event['left_boundary_for_small_peak_isolation_test'] = region_left
 
-                # Search for treshold crossings
+                # Search for threshold crossings
                 self.seeker_position = region_left
                 while 1:
 
@@ -134,9 +149,14 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                     self.find_peaks_in(event, peak_type, signal, settings, left_boundary, right_boundary,
                                        toplevel=True, max_idx=max_idx)
 
-                    # Prepare for finding the next peak
+                    # Prepare for finding the next peak, s1s do this at an earlier point
                     if peak_type!='s1':
                         self.seeker_position = right_boundary
+                    # For large s2, update the dynamic threshold
+                    if peak_type=='large_s2':
+                        settings['threshold'] = max(
+                            settings['threshold'], 0.001*self.highest_s2_height_ever
+                        )
 
         del event['left_boundary_for_small_peak_isolation_test']
         del event['last_toplevel_max_val']
@@ -157,6 +177,10 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
         if max_idx is None:
             max_idx = left_boundary + np.argmax(signal[left_boundary:right_boundary+1])  # Remember silly python indexing
         height = signal[max_idx]
+        # Update highest s2 height ever for dynamic threshold determination
+        if peak_type == 'large_s2':
+            self.highest_s2_height_ever = max(self.highest_s2_height_ever, height)
+
         if toplevel: event['last_toplevel_max_val'] = height # Hack for undocumented condition for skipping large_s2 tests
                                                              # Dirty, should perhaps pass yet another argument around..
 
@@ -253,6 +277,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                 min(len(signal)-1,max_idx + 10 +1)
             ])
             if not height > 3 * abs(negex):
+                self.log.debug('    Failed negative excursion test')
                 return
 
             #Test for too wide s1s
@@ -262,6 +287,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                                                     start=max_in_filtered,
                                                     threshold=0.25*filtered_wave[max_in_filtered])
             if filtered_width > 50:
+                self.log.debug('    Failed filtered width test')
                 return
 
         # If we're still here, append the peak found
@@ -529,23 +555,17 @@ def extent_until_threshold(signal, start, threshold):
 def nearest_s2_boundary(event, peak_position, edge_position, direction):
     boundaries = []
     if direction=='left':
+        # Will take the max of 0, edge_position-100, and any s2 right boundaries before peak
+        boundaries = [0, edge_position-100]
         for p in event['peaks']:
-            if p['peak_type'] in ('small_s2', 'large_s2') and\
-               max(0,edge_position-100) < p['right'] <= peak_position:    # = case actually happens!
-                    boundaries.append(p['right'])
-        return max(boundaries) if len(boundaries) > 0 else 0
+            if p['peak_type'] in ('small_s2', 'large_s2') and p['right'] <= peak_position:  # = case actually happens!
+                boundaries.append(p['right'])
+        return max(boundaries)
     elif direction=='right':
+        # Will take the min of length-1, edge_position+100, and any s2 left boundaries after peak
+        boundaries = [event['length']-1, edge_position+100]
         for p in event['peaks']:
-            if p['peak_type'] in ('small_s2', 'large_s2') and\
-               peak_position <= p['left'] < min(event['length']-1,edge_position+100):    # = case actually happens!
-                    boundaries.append(p['right'])
-        return min(boundaries) if len(boundaries) > 0 else event['length']-1
+            if p['peak_type'] in ('small_s2', 'large_s2') and peak_position <= p['left']:    # = case actually happens!
+                boundaries.append(p['right'])
+        return min(boundaries)
     raise RuntimeError("direction %s isn't left or right" % direction)
-
-# if peak_type == 'large_s2':
-#     with open('s2_dump_pax.txt','w') as output:
-#         output.write("\n".join(map(str,signal)))
-# if peak_type == 'small_s2':
-#     with open('s2small_dump_pax.txt','w') as output:
-#         output.write("\n".join(map(str,signal)))
-#     exit()
