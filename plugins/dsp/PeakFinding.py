@@ -413,7 +413,7 @@ class ComputePeakProperties(plugin.TransformPlugin):
         for i, p in enumerate(peaks):
             for channel, wave_data in event['processed_waveforms'].items():
                 # Todo: use python's handy arcane naming/assignment convention to beautify this code
-                peak_wave = wave_data[p['left']:p['right'] + 1]  # Remember silly python indexing
+                peak_wave = wave_data[p['left']:p['right'] ]#+ 1] Xerawdp bug/feature: does not include right edge in integral...
                 peaks[i][channel] = {}
                 maxpos = peaks[i][channel]['position_of_max_in_peak'] = np.argmax(peak_wave)
                 maxval = peaks[i][channel]['height'] = peak_wave[maxpos]
