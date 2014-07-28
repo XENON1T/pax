@@ -1,6 +1,6 @@
-from pax import plugin
-
 import csv
+
+from pax import plugin
 
 
 def is_s2(peak):
@@ -8,27 +8,22 @@ def is_s2(peak):
 
 
 class WriteCSVPeakwise(plugin.OutputPlugin):
-
     def startup(self):
         self.counter = 0
 
     def write_event(self, event):
+        event = event._raw
         for p in event['peaks']:
-            if p['rejected']:
-                continue  # TEMP TEMP
             data = {
-                'event':      self.counter,  # TODO: get from mongo/xed/whatever
-                'left':       p['left'],
-                'right':      p['right'],
-                'area':       p['top_and_bottom']['area'],
-                'type':       p['peak_type'],
-                'rejected':   p['rejected'],
-                'rejected_by': p['rejected_by'],
-                'rejection_reason':   p['rejection_reason'],
+                'event': self.counter,  # TODO: get from mongo/xed/whatever
+                'left': p['left'],
+                'right': p['right'],
+                'area': p['top_and_bottom']['area'],
+                'type': p['peak_type'],
             }
             if not hasattr(self, 'csv'):
                 self.output = open('output.csv', 'w')
-                self.headers = ['event', 'type', 'left', 'right', 'area', 'rejected', 'rejected_by', 'rejection_reason']  # Grmpfh, needed for order
+                self.headers = ['event', 'type', 'left', 'right', 'area']  # Grmpfh, needed for order
                 self.csv = csv.DictWriter(self.output, self.headers, lineterminator='\n')
                 self.csv.writeheader()
             self.csv.writerow(data)
@@ -36,11 +31,10 @@ class WriteCSVPeakwise(plugin.OutputPlugin):
 
 
 class WriteEventsToCSV(plugin.OutputPlugin):
-
     def startup(self):
         self.counter = -1
         self.output = open('output.csv', 'w')
-        self.headers = ['event', 'largest_s2_area', 'largest_s2_left',  'largest_s2_right']  # Grmpfh, needed for order
+        self.headers = ['event', 'largest_s2_area', 'largest_s2_left', 'largest_s2_right']  # Grmpfh, needed for order
         self.csv = csv.DictWriter(self.output, self.headers, lineterminator='\n')
         self.csv.writeheader()
 

@@ -19,14 +19,20 @@ code for details.
 
 import math
 import bz2
+
 import io
 import numpy as np
 
 from pax import plugin, units
 
-def flatten(l): return [item for sublist in l for item in sublist]
+
+def flatten(l):
+    return [item for sublist in l for item in sublist]
+
+
 def ungarble_samplepairs(samples):
-        return flatten([(a,b) for (b,a) in zip(*2*[iter(samples)])])
+    return flatten([(a, b) for (b, a) in zip(*2 * [iter(samples)])])
+
 
 class XedInput(plugin.InputPlugin):
     file_header = np.dtype([
@@ -96,7 +102,7 @@ class XedInput(plugin.InputPlugin):
             mask = np.unpackbits(np.array(list(
                 np.fromfile(self.input, dtype=np.dtype('<S%s' % mask_bytes), count=1)[0]
             ), dtype='uint8'))
-            channels_included = [i for i, m in enumerate(reversed(mask)) if m == 1]
+            channels_included = [i+1 for i, m in enumerate(reversed(mask)) if m == 1] # +1 as first pmt is 1 in Xenon100
 
             # Decompress the event data (actually, the data from a single 'chunk') into fake binary file
             chunk_fake_file = io.BytesIO(bz2.decompress(self.input.read(
@@ -137,7 +143,7 @@ class XedInput(plugin.InputPlugin):
                         event['channel_occurrences'][channel_id].append((
                             sample_position,
                             samples_occurrence
-                            #ungarble_samplepairs(samples_occurrence)
+                            # ungarble_samplepairs(samples_occurrence)
                         ))
                         sample_position += len(samples_occurrence)
                         """
@@ -151,17 +157,15 @@ class XedInput(plugin.InputPlugin):
 
             # Finally, we make some of the Meta data provided in the XED-file available in the event structure
             event['metadata'] = {
-                'dataset_name':          self.file_metadata['dataset_name'],
+                'dataset_name': self.file_metadata['dataset_name'],
                 'dataset_creation_time': self.file_metadata['creation_time'],
-                'utc_time':              event_layer_metadata['utc_time'],
-                'utc_time_usec':         event_layer_metadata['utc_time_usec'],
-                'event_number':          event_layer_metadata['event_number'],
-                'voltage_range':         event_layer_metadata['voltage_range'] / units.V,
-                'channels_from_input':   event_layer_metadata['channels'],
+                'utc_time': event_layer_metadata['utc_time'],
+                'utc_time_usec': event_layer_metadata['utc_time_usec'],
+                'event_number': event_layer_metadata['event_number'],
+                'voltage_range': event_layer_metadata['voltage_range'] / units.V,
+                'channels_from_input': event_layer_metadata['channels'],
             }
             yield event
 
         # If we get here, all events have been read
         self.input.close()
-
-
