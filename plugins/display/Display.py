@@ -49,9 +49,11 @@ class DisplayPage(object):
 	def get_pmtpattern(self):
                 geo = []
                 total = np.sum(self.event.summed_waveform())
-                for i in range(0, len(self.top_array_map)):
+                for i in range(1, len(self.top_array_map)):
                         size = 0
-                        row = np.sum(self.event.pmt_waveform(i))
+                        row = 0
+                        if self.event.pmt_waveform(i) != None:
+                                row = np.sum(self.event.pmt_waveform(i))
                         size = (int)(row / (total / 248) * 10)
                         if size > 10:
                                 size = 10
