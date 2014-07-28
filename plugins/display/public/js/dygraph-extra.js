@@ -165,7 +165,7 @@ Dygraph.Export.drawPlot = function (canvas, dygraph, options) {
 
 	for (i = 0; i < dygraph.layout_.annotations.length; i++) {
 	    var lX = dygraph.layout_.annotations[i].x;
-	    if(lX<dygraph.xAxisRange()[0] || lX>dygraph.xAxisRange()[1]
+	    if(lX<dygraph.xAxisRange()[0] || lX>dygraph.xAxisRange()[1])
 	       continue;	       
             Dygraph.Export.putLabelAnn(ctx, dygraph.layout_.annotations[i], options, 
                 options.labelFont, options.labelColor);

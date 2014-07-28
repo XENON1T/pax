@@ -7,9 +7,12 @@
     <h2>Pax event display</h2>
     <h5>Click and drag to zoom, double click to reset view</h5>
     <div id="plot" style="width:98%%;height:85%%"></div>                                
+    
     <a href="/pmtpattern">PMT Hit Pattern</a>                               
-    <a href="/getnext">Next Event</a>                                       
-    <button id="merge">Save as png</button>
+    <form action="/getnext" style="display:inline">
+      <input type="submit" value="Next Event">
+    </form>
+    <button id="merge" style="float:right">Save as png</button>
   </body>             
  <style type="text/css">
      .annos1 { color:red !important;}
