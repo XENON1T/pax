@@ -78,7 +78,9 @@ class Event(object):
 
     def pmt_waveform(self, pmt):
         """The individual waveform for a specific PMT"""
-        return self._raw.channel_waveforms[pmt]
+        if pmt not in self._raw['channel_waveforms'].keys():
+            return None
+        return self._raw['channel_waveforms'][pmt]
 
     def summed_waveform(self, name='top_and_bottom'):
         """Waveform summed over many PMTs"""
