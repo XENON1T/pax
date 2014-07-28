@@ -11,6 +11,8 @@ import os.path
 
 from pax import plugin
 
+""" This plugin is an event display implemented as a web site loaded on a local python server. The web stuff is implemented in cherrypy. The idea is that this plugin opens a user's browser and directs it to the site index. From there all navigation and control is done within the browser. Web resources, including html files and javascript classes, are included in a subdirectory of this plugin's directory and must be present for the plugin to function properly.
+"""
 
 class DisplayPage(object):
 	""" Cherrypy website for displaying event data. """
@@ -45,54 +47,43 @@ class DisplayPage(object):
 
 	@cherrypy.expose
 	def get_pmtpattern(self):
-		geo = []
-		total = np.sum(self.event['processed_waveforms']['top_and_bottom'])
-		for i in range(0, len(self.top_array_map)):
-			size = 0
-			if i not in self.event['channel_waveforms'].keys():
-				size = 0
-			else:
-				row = np.sum(self.event['channel_waveforms'][i])
-				size = (int)(row / (total / 248) * 10)
-				if size > 10:
-					size = 10
-			color = "red"
-			if size == 0:
-				color = "blue"
-				size = 1
-			geo.append({"x_axis": self.top_array_map[i]['x'],
-			            "y_axis": self.top_array_map[i]['y'],
-			            "radius": size,
-			            "color": color})
-		ret = {'geometry': geo}
-		return json.dumps(ret)
+                geo = []
+                total = np.sum(self.event.summed_waveform())
+                for i in range(0, len(self.top_array_map)):
+                        size = 0
+                        row = np.sum(self.event.pmt_waveform(i))
+                        size = (int)(row / (total / 248) * 10)
+                        if size > 10:
+                                size = 10
+                        color = "red"
+                        if size == 0:
+                                color = "blue"
+                                size = 1
+                        geo.append({"x_axis": self.top_array_map[i]['x'],
+                                    "y_axis": self.top_array_map[i]['y'],
+                                    "radius": size,
+                                    "color": color})
+                ret = {'geometry': geo}
+                return json.dumps(ret)
 
 	@cherrypy.expose
 	def get_waveform(self):
-		points = []
-		for i in range(0, len(self.event['processed_waveforms']['top_and_bottom'])):
-			points.append([i, self.event['processed_waveforms']['top_and_bottom'][i]])
+                points = []
+                peaks = []
+                for i in range(0, len(self.event.summed_waveform())):
+                        points.append([i, self.event.summed_waveform()[i]])
 		# now get peaks
-		s1Rank = s2Rank = 0
-		peaks = []
-		for peak in sorted(self.event['peaks'], key=lambda x: 1 / x['top_and_bottom']['area']):
-			if peak['rejected']:
-				continue
-			x = peak['top_and_bottom']['position_of_max_in_waveform']
-			ptype = 's1'
-			rank = s1Rank
-			if peak['peak_type'] == 'large_s2' or peak['peak_type'] == 'small_s2':
-				ptype = 's2'
-				rank = s2Rank
-				s2Rank += 1
+                for i in range(0,len(self.event.S2s())):
+                        peak = self.event.S2s()[i]
+                        x = peak._get_var('top_and_bottom','position_of_max_in_waveform')
+                        peaks.append(['s2',i,str(x),'%2f' % peak.area(), '%i' % peak.bounds()[0], '%i' % peak.bounds()[1]])
+                for i in range(0,len(self.event.S1s())):
+                        peak = self.event.S1s()[i]
+                        x = self.event.S1s()[i]._get_var('top_and_bottom','position_of_max_in_waveform')
+                        peaks.append(['s1',i,str(x),'%2f' % peak.area(), '%i' % peak.bounds()[0], '%i' % peak.bounds()[1]])
 
-			else:
-				s1Rank += 1
-			peaks.append([ptype, rank, str(x), '%2f' % peak['top_and_bottom']['area'], '%i' % peak['left'],
-			              '%i' % peak['right']])
-
-		ret = {'waveform': points, 'peaks': peaks}
-		return json.dumps(ret)
+                ret = {'waveform': points, 'peaks': peaks}
+                return json.dumps(ret)
 
 
 class CherryThread(threading.Thread):
