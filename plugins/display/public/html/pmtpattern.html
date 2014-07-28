@@ -4,10 +4,14 @@
     <script src="/static/js/google_charts_jsapi.js"></script>
 </head>
 <body>
-<div style="width:800px;height:800px" id="chart">
+<div style="width:700px;height:700px" id="chart">
 </div>
 <button id="merge">Save as PNG Image</button>
 <a href="/">Home</a>
+<form action="/getnextpattern" style="display:inline">
+      <input type="submit" value="Next Event">
+</form>
+
 </body>
 
 <script>
@@ -17,16 +21,25 @@
       
       function drawChart(){        
           $.getJSON('get_pmtpattern', function(data){
-            withKey = [["PMT","x","y","charge"]];
+            withKey = [["PMT","x","y","charge","charge"]];
             withKey = withKey.concat(data['geometry']);
             console.log(withKey);        
             var chartData = google.visualization.arrayToDataTable(withKey);
           var options = {
+//             chartArea: {'height':'50%','witdh':'100%'},
              title: 'PMT display',
+//             width: 800,
+//             height: 800,
              hAxis: {title: 'x'},
              vAxis: {title: 'y'},
              bubble: {textStyle: {fontSize:11}},
-             sizeAxis: {maxSize: 15},
+             sizeAxis: {maxSize: 20, minSize: 4},
+            colorAxis: {colors: ['purple','blue','green','yellow','orange', 'red'], legend: {position: 'bottom'},},
+            bubble: {textStyle: {color: 'transparent', fontSize: 12}, 
+                     opacity: 0.7,
+                     stroke: 'black',
+            },
+//            explorer: {},
           };
 
           chart = new google.visualization.BubbleChart(document.getElementById('chart'));

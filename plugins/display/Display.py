@@ -16,7 +16,7 @@ from pax import plugin
 
 class DisplayPage(object):
 	""" Cherrypy website for displaying event data. """
-
+	
 	def __init__(self, config):
 		self.event = None
 		self.top_array_map = config['topArrayMap']
@@ -35,6 +35,13 @@ class DisplayPage(object):
 			time.sleep(100 / 1000000.0)
 		raise cherrypy.HTTPRedirect("/")
 
+	@cherrypy.expose
+	def getnextpattern(self):
+		self.rdy = True
+		while self.rdy == True:
+			time.sleep(100/1000000.0)
+		raise cherrypy.HTTPRedirect("/pmtpattern")
+                
 	@cherrypy.expose
 	def index(self):
 		if self.event == None:
@@ -57,7 +64,7 @@ class DisplayPage(object):
                         geo.append([str(i),
                                     self.top_array_map[i]['x'],
                                     self.top_array_map[i]['y'],
-                                    row])
+                                    row, row])
                 ret = {'geometry': geo}
                 return json.dumps(ret)
 
