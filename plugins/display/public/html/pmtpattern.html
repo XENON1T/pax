@@ -1,30 +1,56 @@
 <html>
 <head>
     <script src="/static/js/jquery.min.js"></script>
-    <script src="/static/js/d3.v3.min.js"></script>
+    <script src="/static/js/google_charts_jsapi.js"></script>
 </head>
 <body>
-<svg width="300" height="300">
-</svg>
+<div style="width:800px;height:800px" id="chart">
+</div>
+<button id="merge">Save as PNG Image</button>
 <a href="/">Home</a>
 </body>
 
 <script>
-    $.getJSON('/get_pmtpattern', function(data){
-    var circles = [];
-    var svg_container = d3.select("body").append("svg")
-                                         .attr("width",500)
-                                         .attr("height",500);
-    for(i = 0; i < data['geometry'].length; i++ ){
-        var circle = svg_container.append("circle")
-                                 .attr("cx",data['geometry'][i]['x_axis']+180)
-		                 .attr("cy",data['geometry'][i]['y_axis']+180)
-		                 .attr("r",data['geometry'][i]['radius'])
-		                 .attr("style","fill:"+data['geometry'][i]['color']);
-        circles.push(circle);        
-    }
+      var chart = null;
+      google.load("visualization","1",{packages:["corechart"]});
+      google.setOnLoadCallback(drawChart);
+      
+      function drawChart(){        
+          $.getJSON('get_pmtpattern', function(data){
+            withKey = [["PMT","x","y","charge"]];
+            withKey = withKey.concat(data['geometry']);
+            console.log(withKey);        
+            var chartData = google.visualization.arrayToDataTable(withKey);
+          var options = {
+             title: 'PMT display',
+             hAxis: {title: 'x'},
+             vAxis: {title: 'y'},
+             bubble: {textStyle: {fontSize:11}},
+             sizeAxis: {maxSize: 15},
+          };
 
+          chart = new google.visualization.BubbleChart(document.getElementById('chart'));
+
+          chart.draw(chartData,options);
+       });};
+
+  $("#merge").click(function(){      
+       var imgUri = chart.getImageURI();
+        var a = document.createElement('a');
+        a.href = imgUri;
+        a.download = 'pmtpattern.png';
+        document.querySelector('body').appendChild(a);
+        if (document.createEvent) {
+            var evt = document.createEvent("HTMLEvents");
+            evt.initEvent('click', true, true);
+            a.dispatchEvent(evt);
+        } else {
+            var evt = document.createEventObject();
+            a.fireEvent('onclick', evt)
+        }
+        document.querySelector('body').removeChild(a);
     });
+
 
 </script>
 

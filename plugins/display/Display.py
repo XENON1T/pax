@@ -54,17 +54,10 @@ class DisplayPage(object):
                         row = 0
                         if self.event.pmt_waveform(i) != None:
                                 row = np.sum(self.event.pmt_waveform(i))
-                        size = (int)(row / (total / 248) * 10)
-                        if size > 10:
-                                size = 10
-                        color = "red"
-                        if size == 0:
-                                color = "blue"
-                                size = 1
-                        geo.append({"x_axis": self.top_array_map[i]['x'],
-                                    "y_axis": self.top_array_map[i]['y'],
-                                    "radius": size,
-                                    "color": color})
+                        geo.append([str(i),
+                                    self.top_array_map[i]['x'],
+                                    self.top_array_map[i]['y'],
+                                    row])
                 ret = {'geometry': geo}
                 return json.dumps(ret)
 
