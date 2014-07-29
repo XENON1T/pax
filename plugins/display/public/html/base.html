@@ -1,0 +1,60 @@
+<html>                                                             
+  <head>                                                                       
+    <script src="/static/js/dygraph-combined.js"></script>                         
+    <script src="static/js/dygraph-extra.js"></script>  
+    <script src="/static/js/jquery.min.js"></script>
+    <script src="/static/js/google_charts_jsapi.js"></script>
+
+    <!-- css -->
+    <style>
+      .container { position:relative; padding:0 0 0 80px; height: 100%;}
+      #sidebar {
+       position:absolute;
+      top:0; bottom:0; left:0;
+      width:175px;
+      height: 100%;
+//      border: 5px;
+      background:#F7F7F7;
+      }
+
+#      #header { border:0px solid #000; width:90%; height:50px; 
+#      margin:0 0 50px 0; padding:175 0 0 0px;
+#      }
+      #content { width:90%; height:100%;
+      margin:0px 0 0px 0; padding: 0px 0px 0px 100px;
+      }
+      #footer { border:1px solid #000; width:100%; height:20px;
+      margin:5px 0 0 0;
+      }
+    </style>
+  </head>                                                                      
+  <body>        
+    <div class = "container">
+      <div id="sidebar">
+	<h2>&nbsp PAX Viewer</h2>
+	<hr>
+	<h4>&nbsp Event Info</h4>
+	<h5>&nbsp Number&nbsp<span id="eventNum"></span></h5>
+<!--	<h5><span id="fileName"></span></h5> -->
+        <br>
+	&nbsp<a href="/">Waveform</a>
+	<br>
+	&nbsp<a href="/pmtpattern">PMT Hit Pattern</a>	
+	<hr>
+	<form action="/getnext" style="display:inline">
+	  <input type="submit" value="Next Event">
+	</form>
+      </div>
+      <div id="content">
+	{% block content %}
+	
+	{% endblock %}
+      </div>
+    </div>
+    <script>
+      $.getJSON('eventdata',function(data){
+         document.getElementById("eventNum").innerHTML=data['eventNumber'];
+//         document.getElementById("fileName").innerHTML=data['dataSet']; 
+      });
+    </script>
+  </body>

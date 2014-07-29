@@ -1,19 +1,9 @@
-<html>                                                             
-  <head>                                                                       
-    <script src="/static/js/dygraph-combined.js"></script>                         <script src="static/js/dygraph-extra.js"></script>  
-    <script src="/static/js/jquery.min.js"></script>
-  </head>                                                                      
-  <body>                                                                       
-    <h2>Pax event display</h2>
+{% extends "base.html" %}
+{% block content %}
     <h5>Click and drag to zoom, double click to reset view</h5>
-    <div id="plot" style="width:98%%;height:85%%"></div>                                
+    <div id="plot" style="width:98%%;height:85%%"></div>                            
     
-    <a href="/pmtpattern">PMT Hit Pattern</a>                               
-    <form action="/getnext" style="display:inline">
-      <input type="submit" value="Next Event">
-    </form>
-    <button id="merge" style="float:right">Save as png</button>
-  </body>             
+    <button id="merge">Save as png</button>
  <style type="text/css">
      .annos1 { color:red !important;}
      .annos2 { color:blue !important;}
@@ -24,11 +14,11 @@
     
     graph = new Dygraph(plot, data['waveform'],{
     legend: 'always',                                                   
-    title: 'waveform',                                                  
+    title: 'sum waveform',                                                  
     showRoller: true,                                                   
     rollPeriod: 10,    
     labels: ["bin (10ns)", "sum_waveform"],
-    ylabel: "p.e.",                                                     
+    ylabel: "charge times something",                                                     
     xlabel: "bin (10ns)",                     
 
     });                                                                      
@@ -62,3 +52,4 @@
         
 
 </script>
+{% endblock %}

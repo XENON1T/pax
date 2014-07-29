@@ -10,6 +10,7 @@ import os
 import os.path
 
 from pax import plugin
+from jinja2 import Environment, FileSystemLoader
 
 """ This plugin is an event display implemented as a web site loaded on a local python server. The web stuff is implemented in cherrypy. The idea is that this plugin opens a user's browser and directs it to the site index. From there all navigation and control is done within the browser. Web resources, including html files and javascript classes, are included in a subdirectory of this plugin's directory and must be present for the plugin to function properly.
 """
@@ -22,7 +23,7 @@ class DisplayPage(object):
 		self.top_array_map = config['topArrayMap']
 		self.rdy = False
 		self.my_directory = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
-
+		self.env = Environment(loader = FileSystemLoader(os.path.join(self.my_directory,'public','html')))
 	def SetEvent(self, event):
 		self.rdy = False
 		self.event = event
@@ -46,11 +47,20 @@ class DisplayPage(object):
 	def index(self):
 		if self.event == None:
 			return """<html><head></head><body><h4>No event</h4></body></html>"""
-		return open(os.path.join(self.my_directory, 'public', 'html', 'index.html'))
+		template = self.env.get_template('index.html')
+		return template.render()
 
 	@cherrypy.expose
 	def pmtpattern(self):
-		return open(os.path.join(self.my_directory, 'public', 'html', 'pmtpattern.html'))
+                template = self.env.get_template('pmtpattern.html')
+                return template.render()
+                
+	@cherrypy.expose
+	def eventdata(self):
+		eventNumber = self.event.raw['metadata']['event_number']
+		dataSet = self.event.raw['metadata']['dataset_name']
+		retDic = {'eventNumber':str(eventNumber),'dataSet':str(dataSet)}
+		return json.dumps(retDic)
 
 	@cherrypy.expose
 	def get_pmtpattern(self):

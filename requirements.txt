@@ -4,3 +4,4 @@ pluginbase
 pymongo
 scikit-learn
 cherrypy
+jinja2
