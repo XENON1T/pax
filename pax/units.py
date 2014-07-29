@@ -14,7 +14,8 @@ WARNING
     We, however, only ever need mass for density
 """
 import math
-electron_charge_SI = 1.60217657 * 10 ** (-19)
+#electron_charge_SI = 1.60217657 * 10 ** (-19)
+electron_charge_SI = 1.60217733 * 10 ** (-19)   #TEMP for Xerawdp matching
 boltzmannConstant_SI = 1.3806488 * 10 ** (-23)
 
 # Here we set our unit system

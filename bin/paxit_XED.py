@@ -9,6 +9,7 @@ output = 'CSV.WriteCSVPeakwise'
 
 [XED.XedInput]
 filename = "xe100_120402_2000_000000.xed"
+#filename = "xe100_120306_1132_000000.xed"
 """
 
 if __name__ == '__main__':

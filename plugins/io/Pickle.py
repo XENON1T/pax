@@ -1,21 +1,21 @@
 from pax import plugin
 
 try:
-	import cPickle as pickle
+    import cPickle as pickle
 except:
-	import pickle
+    import pickle
 
 
 class WriteToPickleFile(plugin.OutputPlugin):
-	def startup(self):
-		self.log.debug("Writing pickled data to %s" % self.config['picklefile'])
-		self.file = open(self.config['picklefile'],
-		                 'wb')
+    def startup(self):
+        self.log.debug("Writing pickled data to %s" % self.config['picklefile'])
+        self.file = open(self.config['picklefile'],
+                         'wb')
 
-	def write_event(self, event):
-		self.log.debug('Pickling event')
-		pickle.dump(event.raw, self.file)
+    def write_event(self, event):
+        self.log.debug('Pickling event')
+        pickle.dump(event.raw, self.file)
 
-	def shutdown(self):
-		self.log.debug("Closing %s" % self.config['picklefile'])
-		self.file.close()
+    def shutdown(self):
+        self.log.debug("Closing %s" % self.config['picklefile'])
+        self.file.close()

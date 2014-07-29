@@ -15,7 +15,7 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
     def startup(self):
         # Short hand
         c = self.config
-        self.gains = c['gains']
+        self.gains = self.config['gains']
 
         # Conversion factor from converting from ADC counts -> pe/bin
         self.conversion_factor = c['digitizer_t_resolution'] * c['digitizer_voltage_range'] / (
@@ -39,6 +39,10 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
                 "Event contains %s, should contain at least channel_occurrences and length !"
                 % str(event.keys())
             )
+
+        # Dump digests of channels included
+        # bla = list(map(int,event['channel_occurrences'].keys()))
+        # print(np.sum(bla), np.sum(np.log(bla)))
 
         # Build the channel waveforms from occurrences
         event['processed_waveforms'] = {}
@@ -98,7 +102,7 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
                     """
 
                 # Temp for Xerawdp matching: add pulse to the uncorrected sum waveform if they are not excluded
-                if not (channel > 178 or channel in [1, 2, 145, 148, 157, 171, 177]):
+                if not (channel > 178 or channel in self.config['pmts_excluded_for_s1']):
                     #print(starting_position, len(wave_occurrence))
                     uncorrected_sum_wave_for_s1[starting_position:starting_position + len(wave_occurrence)] = \
                         np.add(-1 * (wave_occurrence - baseline) * self.conversion_factor / (2*10**6),
@@ -143,7 +147,8 @@ class SumWaveforms(plugin.TransformPlugin):
                                'veto': self.config['pmts_veto']}
 
         # The groups are lists, so we add them using |, not +...
-        self.channel_groups['top_and_bottom'] = self.channel_groups['top'] | self.channel_groups['bottom']
+        self.channel_groups['top_and_bottom'] = (self.channel_groups['top'] | self.channel_groups['bottom'])
+        self.channel_groups['top_and_bottom_for_s1'] = (self.channel_groups['top'] | self.channel_groups['bottom']) - self.config['pmts_excluded_for_s1']
         # TEMP for XerawDP matching: Don't have to compute peak finding waveform yet, done in JoinAndConvertWaveforms
 
     def transform_event(self, event):

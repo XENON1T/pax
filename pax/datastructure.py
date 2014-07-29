@@ -141,7 +141,28 @@ class Peak(object):
 
 
 class S1(Peak):
-    pass
+    # Get these from the summed waveform which doesn't include the pmts excluded for s1
+    # Todo: This is very inelegant. Could we define self.standard_waveform or something?
+    #       Or should we do a completely different approach?
+    def area(self, key='top_and_bottom'):
+        if key=='top_and_bottom':
+            key='top_and_bottom_for_s1'
+        return Peak.area(self, key)
+
+    def width_fwhm(self, key='top_and_bottom'):
+        if key=='top_and_bottom':
+            key='top_and_bottom_for_s1'
+        return Peak.width_fwhm(self, key)
+
+    def height(self, key='top_and_bottom'):
+        if key=='top_and_bottom':
+            key='top_and_bottom_for_s1'
+        return Peak.height(self, key)
+
+    def time_in_waveform(self, key='top_and_bottom'):
+        if key=='top_and_bottom':
+            key='top_and_bottom_for_s1'
+        return Peak.time_in_waveform(self, key)
 
 
 class S2(Peak):

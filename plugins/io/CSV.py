@@ -6,6 +6,7 @@ from pax import plugin
 def is_s2(peak):
     return peak['peak_type'] in ('large_s2', 'small_s2')
 
+#Todo: let this use the datastructure, it's a lot easier that way...
 
 class WriteCSVPeakwise(plugin.OutputPlugin):
     def startup(self):
@@ -13,20 +14,22 @@ class WriteCSVPeakwise(plugin.OutputPlugin):
 
     def write_event(self, event):
         event = event._raw
+        event['peaks'].sort(key=lambda p:p['index_of_max_in_waveform'])
         for p in event['peaks']:
-            data = {
-                'event': self.counter,  # TODO: get from mongo/xed/whatever
-                'left': p['left'],
-                'right': p['right'],
-                'area': p['top_and_bottom']['area'],
-                'type': p['peak_type'],
-            }
+            data = (
+                ('event', self.counter),
+                ('type',  p['peak_type']),
+                ('max',   p['index_of_max_in_waveform']),
+                ('left',  p['left']),
+                ('right', p['right']),
+                ('area',  p['top_and_bottom' if p['peak_type'] != 's1' else 'top_and_bottom_for_s1']['area']),
+            )
             if not hasattr(self, 'csv'):
                 self.output = open('output.csv', 'w')
-                self.headers = ['event', 'type', 'left', 'right', 'area']  # Grmpfh, needed for order
+                self.headers = [q[0] for q in data]
                 self.csv = csv.DictWriter(self.output, self.headers, lineterminator='\n')
                 self.csv.writeheader()
-            self.csv.writerow(data)
+            self.csv.writerow({a[0]: a[1] for a in data})
         self.counter += 1
 
 
