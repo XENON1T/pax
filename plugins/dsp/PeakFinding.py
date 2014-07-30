@@ -140,22 +140,26 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                         # For S2s, we need to check if we are above threshold already.
                         # If so, move along until we're not
                         # (weird Xerawdp behaviour, but which of the two options is the most sensible?)
-                        while signal[self.seeker_position] > settings['threshold']:
-                            #print("It occurs at %s" % self.seeker_position)
-                            self.seeker_position = find_next_crossing(signal, settings['threshold'],
-                                                                start=self.seeker_position, stop=region_right)
-                            if self.seeker_position == region_right:
-                                self.log.warning('Entire %s search region from %s to %s is above threshold %s!' %(
-                                    peak_type, region_left, region_right, settings['threshold']
-                                ))
-                                break
+                        # while signal[self.seeker_position] > settings['threshold']:
+                        #     #print("It occurs at %s" % self.seeker_position)
+                        #     self.seeker_position = find_next_crossing(signal, settings['threshold'],
+                        #                                         start=self.seeker_position, stop=region_right)
+                        #     if self.seeker_position == region_right:
+                        #         self.log.warning('Entire %s search region from %s to %s is above threshold %s!' %(
+                        #             peak_type, region_left, region_right, settings['threshold']
+                        #         ))
+                        #         break
                         if self.seeker_position == region_right: break
-                        assert signal[self.seeker_position] < settings['threshold']
+                        if signal[self.seeker_position] > settings['threshold']:
+                            left_boundary = self.seeker_position
+                        else:
+                            left_boundary = find_next_crossing(signal, threshold=settings['threshold'],
+                                  start=self.seeker_position, stop=region_right)
+                            if left_boundary == region_right:
+                                break # There wasn't another crossing
+                        # assert signal[self.seeker_position] < settings['threshold']
                         # Find the next threshold crossing, if it exists
-                        left_boundary = find_next_crossing(signal, threshold=settings['threshold'],
-                                                          start=self.seeker_position, stop=region_right)
-                        if left_boundary == region_right:
-                            break # There wasn't another crossing
+
                     self.seeker_position = left_boundary        # S1 stuff uses this; of course seeker_position later gets set to right_boundary (except for s1s, which handle this at another point...)
 
                     # Determine the peak window: the interval in which peaks are actually searched for
