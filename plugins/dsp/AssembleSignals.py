@@ -61,7 +61,7 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
             # Deal with unknown gains
             if self.gains[channel] == 0:
                 if channel in event['channel_occurrences']:
-                    self.log.warning('Gain for channel %s is 0, but is in waveform.' % channel)
+                    self.log.debug('Gain for channel %s is 0, but is in waveform.' % channel)
                 skip_channel = True
 
             # Assemble the waveform pulse by pulse, starting from an all-zeroes waveform
@@ -73,16 +73,20 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
                     pass #baseline will still have the right value
                 else:
                     # We need to compute the baseline.
-                    # First pulse is allowed be short (?), then Xerawdp computes baseline from last samples instead.
-                    # if len(wave_occurrence)<2*baseline_sample_size: # Xerawdp bug, this code is never reached???
-                    #     if not i==0:
-                    #         raise RuntimeError("Occurrence %s in channel %s has length %s, should be at least 2*%s!"
-                    #                            % (i, channel, len(wave_occurrence), baseline_sample_size)
-                    #         )
-                    #     print("Short first pulse, computing baseline from latest samples")
-                    #     baseline_sample = wave_occurrence[len(wave_occurrence)-baseline_sample_size:]
-                    # else:
-                    baseline_sample = wave_occurrence[:baseline_sample_size]
+                    # Only pulses at the end and beginning of the trace are allowed to be shorter than 2*46
+                    # In case of a short first pulse, computes baseline from its last samples instead of its first.
+                    if (
+                        not (starting_position + len(wave_occurrence) > event['length']-1) and
+                        len(wave_occurrence) < 2*baseline_sample_size
+                    ):
+                        if i != 0:
+                            raise RuntimeError("Occurrence %s in channel %s at %s has length %s, should be at least 2*%s!"
+                                               % (i, channel, starting_position, len(wave_occurrence), baseline_sample_size)
+                            )
+                        self.log.debug("Short first pulse, computing baseline from its LAST samples")
+                        baseline_sample = wave_occurrence[len(wave_occurrence)-baseline_sample_size:]
+                    else:
+                        baseline_sample = wave_occurrence[:baseline_sample_size]
                     baseline = np.mean(baseline_sample)
                     """
                     This is NOT THE WAY TO DO IT - we should at least average over all occurrences
