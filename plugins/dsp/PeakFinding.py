@@ -64,6 +64,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             # Get the signal out
             signal = event['processed_waveforms'][settings['source_waveform']]
 
+            # Code for dumping waveforms:
             # if peak_type == 'large_s2':
             #     with open('s2_dump_pax.txt','w') as output:
             #         output.write("\n".join(map(str,signal)))
@@ -78,22 +79,29 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             # Determine when we should stop looking for this type of peaks
             stop_looking_after = float('inf')
             if peak_type == 'small_s2':
-                # For small s2s, we stop looking after a sufficiently large s2 is seen
+                # For small s2s, we stop looking after a sufficiently large s2 (height in large_s2 waveform) is seen
                 # Don't have to test these peaks are actually s2s, those are the only peaks in here
-                huge_s2s = [p for p in event['peaks'] if p['height'] > 624.151]
+                huge_s2s = [p for p in event['peaks'] if p['height'] > 624.150636300]
                 if huge_s2s:
                     stop_looking_after = min([p['left'] for p in huge_s2s])
             if peak_type == 's1':
-                # We stop looking for s1s after the largest s2, or any sufficiently large s2
                 s2s = [p for p in event['peaks'] if p['peak_type'] in ('large_s2', 'small_s2')]
                 if s2s:
-                    stop_looking_after = s2s[ int(np.argmax([p['height'] for p in s2s])) ]['left']
-                    large_enough_s2s = [p for p in s2s if p['height'] > 3.12255]
+                    # We stop looking for s1s after the largest s2
+                    # stop_looking_after = s2s[ int(np.argmax([p['height'] for p in s2s])) ]['left']
+                    # NO! Xerawdp's comment is wrong!! It stops looking after the LAST S2!
+                    s2s.sort(key=lambda x:x['left'])
+                    stop_looking_after = s2s[-1]['left']
+                    #  Also stop looking after large enough s2s
+                    #  Size of s2s is determined from s1 peakfinding waveform!
+                    large_enough_s2s = [p for p in s2s if event['processed_waveforms']['uncorrected_sum_waveform_for_s1'][p['index_of_max_in_waveform']] > 3.1207531815]
                     if large_enough_s2s:
                         stop_looking_after = min(
                             stop_looking_after,
                             min([p['left'] for p in large_enough_s2s])
                         )
+
+            self.log.debug("Starting %s search, stop looking after %s" % (peak_type, stop_looking_after))
 
             # Find peaks in all the free regions
             free_regions = self.get_free_regions(event) # Can't put this after 'for .. in', peaks get added during the loop!
@@ -105,7 +113,11 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                     region_left = 12
 
                 # Are we still interested?
-                if region_left >= stop_looking_after: break
+                if region_left >= stop_looking_after:
+                    self.log.debug("Stopping %s search, region starts at %s, but we were asked to stop at %s" %(
+                        peak_type, region_left, stop_looking_after
+                    ))
+                    break
 
                 # hacks ... hmzz
                 self.region_right_end_for_small_peak_isolation_test = region_right
@@ -125,23 +137,13 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                         break
 
                     # Find the left_boundary of the peak candidate interval
-                    if peak_type == 's1':
-                        # If we're looking for s1s, the seeker position can count as starting an s1
-                        if signal[self.seeker_position] > settings['threshold']:
-                            left_boundary = self.seeker_position
-                        else:
-                            # Find the next threshold crossing, if it exists
-                            left_boundary = find_next_crossing(signal, threshold=settings['threshold'],
-                                                              start=self.seeker_position, stop=region_right)
-                            if left_boundary == region_right:
-                                break # There wasn't another crossing
-                        self.log.debug("S1 alert activated at %s" % left_boundary)
-                    else:
+                    # If we're looking for s1s, the seeker position can count as starting an s1
+                    # For S2s, there is a check to see if we were above threshold already...
+                    # We could implement this as:
                         # For S2s, we need to check if we are above threshold already.
                         # If so, move along until we're not
                         # (weird Xerawdp behaviour, but which of the two options is the most sensible?)
                         # while signal[self.seeker_position] > settings['threshold']:
-                        #     #print("It occurs at %s" % self.seeker_position)
                         #     self.seeker_position = find_next_crossing(signal, settings['threshold'],
                         #                                         start=self.seeker_position, stop=region_right)
                         #     if self.seeker_position == region_right:
@@ -149,16 +151,16 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                         #             peak_type, region_left, region_right, settings['threshold']
                         #         ))
                         #         break
-                        if self.seeker_position == region_right: break
-                        if signal[self.seeker_position] > settings['threshold']:
-                            left_boundary = self.seeker_position
-                        else:
-                            left_boundary = find_next_crossing(signal, threshold=settings['threshold'],
-                                  start=self.seeker_position, stop=region_right)
-                            if left_boundary == region_right:
-                                break # There wasn't another crossing
-                        # assert signal[self.seeker_position] < settings['threshold']
-                        # Find the next threshold crossing, if it exists
+                    # ... however, the most common case this happens is after a peak that fails tests
+                    # in this case Xerawdp sets above-threshold to false, even though it really may be true...
+                    if signal[self.seeker_position] > settings['threshold']:
+                        left_boundary = self.seeker_position
+                    else:
+                        # We're not currently above threshold, so find the next threshold crossing, if it exists
+                        left_boundary = find_next_crossing(signal, threshold=settings['threshold'],
+                                                          start=self.seeker_position, stop=region_right)
+                    if left_boundary == region_right:
+                        break #No other crossing found, move on to the next region
 
                     self.seeker_position = left_boundary        # S1 stuff uses this; of course seeker_position later gets set to right_boundary (except for s1s, which handle this at another point...)
 
@@ -183,9 +185,16 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                         if peak_type == 'large_s2':
                             self.seeker_position = right_boundary
 
-                    # Did the peak actually end? (in the tail of a big S2 it often doesn't)
+                    # Did the peak actually end? (the tail of a big S2 sometimes doesn't)
                     if right_boundary == region_right:
-                        if peak_type != '1': break   # Dont search this interval for S2s: Xerawdp behaviour
+                        #No, it didn't. For s1s, that means Xerawdp doesn't consider the peak...
+                        if peak_type == 's2':
+                            if right_boundary == event['len']-1:
+                                 # But s2s at the end of the waveform will always end due to the Xerawdp convolution bug
+                                pass
+                            else:
+                                self.log.debug("Peak starting at %s didn't end at region boundary %s" % (left_boundary, right_boundary))
+                                break
                     # right_boundary -= 1 # Peak end is just before crossing # But Xerawdp doesn't do this either...
 
                     # Hack for xerawdp matching: small s2 has wrong signal from here on
@@ -539,7 +548,9 @@ def find_next_crossing(signal, threshold,
 
     # Check for errors in arguments
     if not 0 <= stop <= len(signal) - 1:
-        raise ValueError("Invalid crossing search stop point: %s (signal has %s samples)" % (stop, len(signal)))
+        #TEMP HACK, this should become an error...
+        print("!!!!!!!!!!!!! Invalid crossing search stop point: %s (signal has %s samples)" % (stop, len(signal)))
+        return len(signal)-1
     if not 0 <= start <= len(signal) - 1:
         raise ValueError("Invalid crossing search start point: %s (signal has %s samples)" % (start, len(signal)))
     if direction not in ('left', 'right'):
@@ -612,24 +623,28 @@ def find_next_crossing(signal, threshold,
         # Dirty hack for Xerawdp matching
         if activate_xerawdp_hacks_for == 'large_s2':
             # Check also for slope inversions
-            if this_sample > 7.801887059:   #'0.125 V' #Todo: check if enough samples exist to compute slope..
+            if this_sample > 7.801887059:   #'0.125 V'
                 # We need to check for slope inversions. How bad is it allowed to be?
                 if this_sample < 39.00943529: #'0.625 V'
                     log_slope_threshold = 0.02 #Xerawdp says '0.02 V/bin', but it is a log slope threshold...
                 else:
                     log_slope_threshold = 0.005 #Idem '0.005 V/bin'
 
-                # Calculate the slope at this point using XeRawDP's '9-tap derivative kernel'
-                log_slope = np.sum(signal[i-4:i+5] * np.array([-0.003059, -0.035187, -0.118739, -0.143928, 0.000000, 0.143928, 0.118739, 0.035187, 0.003059]))/this_sample
-                #print("Slope is %s, threshold is %s" % (slope, slope_threshold))
-                # Left slopes of peaks are positive, so a negative slope indicates inversion
-                # If slope inversions are seen, return index of the minimum before this.
-                if direction=='left' and log_slope < - log_slope_threshold:
-                    print("    ! Inversion found on rising (left) slope at %s: log_slope %s < - %s. Started from %s" %  (i, log_slope, log_slope_threshold, start))
-                    return i + np.argmin(signal[i:start+1])
-                elif direction=='right' and log_slope > log_slope_threshold:
-                    print("    ! Inversion found on falling (right) slope at %s: log_slope %s > %s. started from %s" % (i, log_slope, log_slope_threshold, start))
-                    return start + np.argmin(signal[start:i+1])
+                #Todo: check if enough samples exist to compute slope..
+                try:
+                    # Calculate the slope at this point using XeRawDP's '9-tap derivative kernel'
+                    log_slope = np.sum(signal[i-4:i+5] * np.array([-0.003059, -0.035187, -0.118739, -0.143928, 0.000000, 0.143928, 0.118739, 0.035187, 0.003059]))/this_sample
+                    #print("Slope is %s, threshold is %s" % (slope, slope_threshold))
+                    # Left slopes of peaks are positive, so a negative slope indicates inversion
+                    # If slope inversions are seen, return index of the minimum before this.
+                    if direction=='left' and log_slope < - log_slope_threshold:
+                        print("    ! Inversion found on rising (left) slope at %s: log_slope %s < - %s. Started from %s" %  (i, log_slope, log_slope_threshold, start))
+                        return i + np.argmin(signal[i:start+1])
+                    elif direction=='right' and log_slope > log_slope_threshold:
+                        print("    ! Inversion found on falling (right) slope at %s: log_slope %s > %s. started from %s" % (i, log_slope, log_slope_threshold, start))
+                        return start + np.argmin(signal[start:i+1])
+                except ValueError:
+                    print(" !! Slope test crashed, you should check if you have enough samples... really.. ")
         # Increment the search position in the right direction
         i += -1 if direction == 'left' else 1
 
