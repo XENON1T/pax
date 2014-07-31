@@ -3,6 +3,15 @@
 History
 -------
 
+0.2.0 (2014-07-13)
+---------------------
+
+* Define static event class data structure
+* Transforms now specified in ini file
+* Can launch small web server for viewing plots
+* Matching to XeRawDP (Jelle elaborate?)
+* Transforms have start and stop methods
+
 0.1.0 (2014-07-18)
 ---------------------
 
