@@ -22,7 +22,7 @@ class WriteCSVPeakwise(plugin.OutputPlugin):
                 ('max',   p['index_of_max_in_waveform']),
                 ('left',  p['left']),
                 ('right', p['right']),
-                ('area',  p['top_and_bottom' if p['peak_type'] != 's1' else 'top_and_bottom_for_s1']['area']),
+                ('area',  p['area_for_xerawdp_matching']),
             )
             if not hasattr(self, 'csv'):
                 self.output = open('output.csv', 'w')
