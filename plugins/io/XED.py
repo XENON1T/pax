@@ -100,7 +100,7 @@ class XedInput(plugin.InputPlugin):
 
             # Read the channel bitmask to find out which channels are included in this event.
             # Lots of possibilities for errors here: 4-byte groupings, 1-byte groupings, little-endian...
-            # Checked (for one event...) agrees with channels from LibXDIO->Moxie->MongoDB->MongoDBInput plugin
+            # Checked (for 14 events); agrees with channels from LibXDIO->Moxie->MongoDB->MongoDBInput plugin
             mask_bytes = 4 * int(math.ceil(event_layer_metadata['channels'] / 32))
             # This DID NOT WORK, but almost... so very dangerous..
             # mask = np.unpackbits(np.array(list(
