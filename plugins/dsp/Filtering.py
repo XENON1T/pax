@@ -99,3 +99,21 @@ class SmallS2Filter(GenericFilter):
         self.filter_ir = self.filter_ir / sum(self.filter_ir)  # Normalization
         self.output_name = 'filtered_for_small_s2'
         self.input_name = 'uncorrected_sum_waveform_for_s2'
+
+
+class S1WidthTestFilter(GenericFilter):
+
+    """
+
+    TODO: take this opportunity to explain why there is a small s2 filter... even if it stupid.
+    TODO: put constants into ini?
+    """
+
+    def startup(self):
+        GenericFilter.startup(self)
+        # Yeah, these are the same as the large s2 filter, I know
+        # But the input waveform is different, it has some excluded PMTs
+        self.filter_ir = np.array([0.005452,  0.009142,  0.013074,  0.017179,  0.021381,  0.025597,  0.029746,  0.033740,  0.037499,  0.040941,  0.043992,  0.046586,  0.048666,  0.050185,  0.051111,  0.051422,  0.051111,  0.050185,  0.048666,  0.046586,  0.043992,  0.040941,  0.037499,  0.033740,  0.029746,  0.025597,  0.021381,  0.017179,  0.013074,  0.009142,  0.005452])
+        self.filter_ir = self.filter_ir / sum(self.filter_ir)  # Normalization
+        self.output_name = 'filtered_for_s1_width_test'
+        self.input_name = 'uncorrected_sum_waveform_for_s1'

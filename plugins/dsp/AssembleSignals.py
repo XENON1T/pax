@@ -1,4 +1,5 @@
 import numpy as np
+import math
 
 from pax import plugin, units
 
@@ -87,7 +88,7 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
                         baseline_sample = wave_occurrence[len(wave_occurrence)-baseline_sample_size:]
                     else:
                         baseline_sample = wave_occurrence[:baseline_sample_size]
-                    baseline = np.mean(baseline_sample)
+                    baseline = np.mean(baseline_sample)  # No floor, Xerawdp uses float arithmetic. Good.
                     """
                     This is NOT THE WAY TO DO IT - we should at least average over all occurrences
                     Better yet, take a mean of median 20% or so:

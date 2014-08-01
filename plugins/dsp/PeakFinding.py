@@ -304,8 +304,9 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                     self.log.debug("    Toplevel interval failed isolation test")
                     return
 
-            # The peak FWHM is tested only for large s2s #TODO: HMMZ a duplicate fwhm computation... same in Xerawdp however
-            fwhm = extent_until_threshold(signal, start=max_idx, threshold=height / 2)
+            # The peak FWHM is tested only for lage s2s #TODO: HMMZ a duplicate fwhm computation... same in Xerawdp however
+            # Hack for Xerawdp matching: FWHM test now ends at boundaries, but this introduces missed peaks!
+            fwhm = extent_until_threshold(signal[left:right+1], start=max_idx-left, threshold=height / 2)
             if not settings['min_length'] <= fwhm <= settings['max_length']:
                 self.log.debug("    Failed width test")
                 return
@@ -372,14 +373,16 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                 self.log.debug('    Failed negative excursion test')
                 return
 
-            #Test for too wide s1s
-            filtered_wave = event['processed_waveforms']['filtered_for_large_s2']   #I know, but that's how Xerawdp...
+            # Test for too wide s1s
+            # In reality this test is stricter than it seems, as the filtered width for s1s is mangled by the convolution bug!!
+            # This could be a serious Xerawdp error; one which I'm not going to simulate here
+            filtered_wave = event['processed_waveforms']['filtered_for_s1_width_test']
             max_in_filtered = left + int(np.argmax(filtered_wave[left:right]))
-            filtered_width = extent_until_threshold(filtered_wave,
-                                                    start=max_in_filtered,
+            filtered_width = extent_until_threshold(filtered_wave[left_boundary:right_boundary+1],  #Yes, Xerawdp limits filtered width... test may be less strict than it seems
+                                                    start=max_in_filtered-left_boundary,
                                                     threshold=0.25*filtered_wave[max_in_filtered])
             if filtered_width > 50:
-                self.log.debug('    Failed filtered width test')
+                self.log.debug('    Filtered width %s larger than 50' % filtered_width)
                 return
 
         # Update values for later isolation tests
@@ -391,7 +394,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             self.left_extent_small_s2_search_limit = right
         elif peak_type == 's1':
             #For s1, update the last_s1_left boundary, also used for later isolation tests
-            self.last_s1_left_boundary = self.this_s1_alert_position
+            self.last_s1_left_boundary = right
 
         # If we're still here, append the peak found
         if peak_type == 's1':
@@ -566,10 +569,14 @@ def find_next_crossing(signal, threshold,
         stop = 0 if direction == 'left' else len(signal) - 1
 
     # Check for errors in arguments
-    if not 0 <= stop <= len(signal) - 1:
-        #TEMP HACK, this should become an error...
+    # TEMP HACK, these should become errors...
+    if stop < 0:
+        print("!!!!!!!!!!!!! Invalid crossing search stop point: %s" % stop)
+        stop = 0
+    if stop > len(signal) - 1:
         print("!!!!!!!!!!!!! Invalid crossing search stop point: %s (signal has %s samples)" % (stop, len(signal)))
-        return len(signal)-1
+        stop = len(signal)-1
+    # These are already errors
     if not 0 <= start <= len(signal) - 1:
         raise ValueError("Invalid crossing search start point: %s (signal has %s samples)" % (start, len(signal)))
     if direction not in ('left', 'right'):
