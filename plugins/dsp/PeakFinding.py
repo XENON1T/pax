@@ -495,6 +495,7 @@ class ComputePeakProperties(plugin.TransformPlugin):
                 integral = np.sum(wave_data[p['left']:p['right']]) # No +1, Xerawdp forgets the right edge also
                 p['areas_per_pmt'][channel] = integral
             p['area_for_xerawdp_matching'] = sum([area for _, area in p['areas_per_pmt'].items() if area > 0])
+            p['areas_per_pmt'] = 'Not included because the datastructure flattening crashes'
             #Nicer computations, probably don't need them?
             #continue
             for channel, wave_data in event['processed_waveforms'].items():
