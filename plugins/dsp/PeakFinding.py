@@ -615,8 +615,8 @@ def find_next_crossing(signal, threshold,
                           The first index where a crossing happens is still returned.
     stop_at           --  Stops search when this index is reached, THEN RETURNS THIS INDEX!!!
     #Hack for Xerawdp matching:
-    stop_if_start_exceeded  -- If true and a value HIGHER than start is encountered, stop immediately
-    activate_large_s2_hacks -- If true, also checks slope; if fails due to slope|boundary, return argmin instead
+    stop_if_start_exceeded      -- If true and a value HIGHER than start is encountered, stop immediately
+    activate_xerawdp_hacks_for  -- Activates several hacks, for instance, slope checking for large s2
 
     This is a pretty crucial function for several DSP routines; as such, it does extensive checking for
     pathological cases. Please be very careful in making changes to this function, their effects could
