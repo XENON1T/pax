@@ -12,81 +12,81 @@ import time
 
 
 class BasePlugin(object):
-	def __init__(self, config_values):
-		self.name = self.__class__.__name__
-		self.log = logging.getLogger(self.name)
+    def __init__(self, config_values):
+        self.name = self.__class__.__name__
+        self.log = logging.getLogger(self.name)
 
-		# Please do all config variable fetching in constructor to make
-		# changing config easier.
-		self.log.debug(config_values)
-		self.config = config_values
+        # Please do all config variable fetching in constructor to make
+        # changing config easier.
+        self.log.debug(config_values)
+        self.config = config_values
 
-		self.startup()
+        self.startup()
 
-	def __del__(self):
-		self.shutdown()
+    def __del__(self):
+        self.shutdown()
 
-	@staticmethod
-	def _timeit(method):
-		"""Decorator for measuring class method speeds
-		"""
+    @staticmethod
+    def _timeit(method):
+        """Decorator for measuring class method speeds
+        """
 
-		def timed(*args, **kw):
-			self = args[0]
-			ts = time.time()
-			result = method(*args, **kw)
-			dt = (time.time() - ts) * 100
-			self.log.debug('Event took %2.2f ms' % dt)
-			return result
+        def timed(*args, **kw):
+            self = args[0]
+            ts = time.time()
+            result = method(*args, **kw)
+            dt = (time.time() - ts) * 100
+            self.log.debug('Event took %2.2f ms' % dt)
+            return result
 
-		return timed
+        return timed
 
-	def startup(self):
-		pass
+    def startup(self):
+        pass
 
-	def process_event(self):
-		raise NotImplementedError()
+    def process_event(self):
+        raise NotImplementedError()
 
-	def shutdown(self):
-		pass
+    def shutdown(self):
+        pass
 
 
 class InputPlugin(BasePlugin):
-	"""Base class for data inputs
+    """Base class for data inputs
 
-	This class cannot be parallelized since events are read in a specific order
-	"""
+    This class cannot be parallelized since events are read in a specific order
+    """
 
-	def __init__(self, config_values):
-		BasePlugin.__init__(self, config_values)
-		self.i = 0
+    def __init__(self, config_values):
+        BasePlugin.__init__(self, config_values)
+        self.i = 0
 
-	@BasePlugin._timeit
-	def get_events(self):
-		"""Get next event from the data source
+    @BasePlugin._timeit
+    def get_events(self):
+        """Get next event from the data source
 
-		Raise a StopIteration when done
-		"""
-		raise NotImplementedError()
+        Raise a StopIteration when done
+        """
+        raise NotImplementedError()
 
-	def process_event(self, event=None):
-		raise RuntimeError('Input plugins cannot process data.')
+    def process_event(self, event=None):
+        raise RuntimeError('Input plugins cannot process data.')
 
 
 class TransformPlugin(BasePlugin):
-	def transform_event(self, event):
-		raise NotImplementedError
+    def transform_event(self, event):
+        raise NotImplementedError
 
-	@BasePlugin._timeit
-	def process_event(self, event):
-		return self.transform_event(event)
+    @BasePlugin._timeit
+    def process_event(self, event):
+        return self.transform_event(event)
 
 
 class OutputPlugin(BasePlugin):
-	def write_event(self, event):
-		raise NotImplementedError
+    def write_event(self, event):
+        raise NotImplementedError
 
-	@BasePlugin._timeit
-	def process_event(self, event):
-		self.write_event(event)
-		return event
+    @BasePlugin._timeit
+    def process_event(self, event):
+        self.write_event(event)
+        return event
