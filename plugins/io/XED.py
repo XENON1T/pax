@@ -69,7 +69,6 @@ class XedInput(plugin.InputPlugin):
         assert self.file_metadata['events_in_file'] == self.file_metadata['event_index_size']
         self.event_positions = np.fromfile(self.input, dtype=np.dtype("<u4"),
                                            count=self.file_metadata['event_index_size'])
-        self.debug_channels_output_file = open('xed_channels.txt','w')
 
     def get_events(self):
 
