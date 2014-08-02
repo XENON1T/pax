@@ -73,7 +73,7 @@ class XedInput(plugin.InputPlugin):
     def get_events(self):
 
         for event_position_i, event_position in enumerate(self.event_positions):
-            # if event_position_i < 15:
+            # if event_position_i < 463:
             #     self.input.seek(self.event_positions[event_position_i+1]) #Wil barf on last event, but do you really want to skip to last event?
             #     continue  #Temp: start at event 15.
 
@@ -101,14 +101,14 @@ class XedInput(plugin.InputPlugin):
             # Read the channel bitmask to find out which channels are included in this event.
             # Lots of possibilities for errors here: 4-byte groupings, 1-byte groupings, little-endian...
             # Checked (for 14 events); agrees with channels from LibXDIO->Moxie->MongoDB->MongoDBInput plugin
-            mask_bytes = 4 * int(math.ceil(event_layer_metadata['channels'] / 32))
+            mask_bytes = 4 * math.ceil(event_layer_metadata['channels'] / 32)
             # This DID NOT WORK, but almost... so very dangerous..
             # mask = np.unpackbits(np.array(list(
             #     np.fromfile(self.input, dtype=np.dtype('<S%s' % mask_bytes), count=1)[0]
             # ), dtype='uint8'))
             # This appears to work... so far...
-            mask = np.unpackbits(np.array(np.fromfile(self.input, dtype='uint8', count=mask_bytes), dtype='uint8'))
-            channels_included = [i+1 for i, m in enumerate(reversed(mask)) if m == 1] # +1 as first pmt is 1 in Xenon100
+            mask_bits = np.unpackbits(np.fromfile(self.input, dtype='uint8', count=mask_bytes))
+            channels_included = [i+1 for i, bit in enumerate(reversed(mask_bits)) if bit == 1] # +1 as first pmt is 1 in Xenon100
 
             # Decompress the event data (actually, the data from a single 'chunk') into fake binary file
             data_to_decompress = self.input.read(event_layer_metadata['size'] - 28 - mask_bytes) # 28 is the chunk header size.

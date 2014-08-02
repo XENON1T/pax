@@ -44,12 +44,17 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                 'test_around':                      10,
                 'min_crossing_length':              1,
                 'stop_if_start_exceeded':           True,
+                'aspect_ratio_threshold':           0.06241506363,  # height/width = 1 mV/samples
             }),
             ('s1', {
                 'threshold':                        0.1872451909,
                 'left_boundary_to_height_ratio':    0.005,
                 'right_boundary_to_height_ratio':   0.005,
                 'min_crossing_length':              3,
+                'test_before':                      50,
+                'test_after':                       10,
+                'before_avg_max_ratio':             0.01,
+                'after_avg_max_ratio':              0.04,
                 #The s1 candidate interval isn't tested:
                 'min_base_interval_length':         0,
                 'max_base_interval_length':         float('inf'),
@@ -114,6 +119,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                 if peak_type == 's1' and region_l < 12:
                     region_l = 12
                 search_regions.append([region_l, region_r])
+            self.log.debug("Search regions: " + str(search_regions))
 
 
             ##
@@ -121,13 +127,13 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             ##
             ## Finds regions above threshold were peak candidates may be found
             ##
-            for region_left, region_right in free_regions:
+            for region_left, region_right in search_regions:
 
                 # (re)set some bookkeeping variables, need these later
                 self.current_region_left = region_left
                 self.current_region_right = region_right
                 self.left_extent_small_s2_search_limit = self.current_region_left
-                self.last_s1_left_boundary = region_left
+                self.last_s1_right_boundary = region_left
                 self.seeker_position = region_left
                 self.this_s1_alert_position = 0
 
@@ -369,8 +375,8 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             # Test for aspect ratio of the UNFILTERED WAVEFORM, probably to avoid misidentifying s1s as small s2s
             unfiltered_signal = event['processed_waveforms']['uncorrected_sum_waveform_for_s2']
             height_for_aspect_ratio_test = unfiltered_signal[left + int(np.argmax(unfiltered_signal[left:right+1]))]
-            aspect_ratio_threshold = 0.062451  # 1 mV/bin = 0.1 mV/ns
-            peak_width = (right - left) / units.ns
+            aspect_ratio_threshold = settings['aspect_ratio_threshold']
+            peak_width = right - left
             aspect_ratio = height_for_aspect_ratio_test / peak_width
             if aspect_ratio > aspect_ratio_threshold:
                 self.log.debug('    Failed aspect ratio test: max/width ratio %s is higher than %s' % (
@@ -380,8 +386,8 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
 
             # For small s2's the isolation test is slightly different
             # This is insane, and probably a bug, but I swear it's in Xerawdp
-            left_isolation_test_window  = min(settings['test_around'],right_boundary-left_extent_search_limit)
-            right_isolation_test_window = min(settings['test_around'],right_extent_search_limit-right_boundary)
+            left_isolation_test_window  = min(settings['test_around'], right_boundary-left_extent_search_limit)
+            right_isolation_test_window = min(settings['test_around'], right_extent_search_limit-right_boundary)
             self.log.debug("    Isolation test windows used: left %s, right %s" % (
                 left_isolation_test_window, right_isolation_test_window
             ))
@@ -399,19 +405,23 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
         elif peak_type == 's1':
             # Test for non-isolated peaks
             #TODO: dynamic window size if several s1s close together, check with Xerawdp now that free_regions
+            left_isolation_test_window  = min(settings['test_before'],self.this_s1_alert_position-self.last_s1_right_boundary)
+            right_isolation_test_window = min(settings['test_after'],self.current_region_right-self.this_s1_alert_position)
             if not self.isolation_test(signal, max_idx,
                                   right_edge_of_left_test_region=left-1,
-                                  test_length_left=min(50,self.this_s1_alert_position-self.last_s1_left_boundary),
+                                  test_length_left=left_isolation_test_window,
                                   left_edge_of_right_test_region=right+1,
-                                  test_length_right=min(10,self.current_region_right-self.this_s1_alert_position),
-                                  before_avg_max_ratio=0.01,
-                                  after_avg_max_ratio=0.04):
+                                  test_length_right=right_isolation_test_window,
+                                  before_avg_max_ratio=settings['before_avg_max_ratio'],
+                                  after_avg_max_ratio=settings['after_avg_max_ratio']):
                 return
 
             # Test for nearby negative excursions #Xerawdp bug: no check if is actually negative..
+            # Todo: check for off-by one errors...
+            # Need +1 for python indexing? Xerawdp doesn't do 1-correction here?
             negex = min(signal[
-                max(0,max_idx-50 +1) :              #Need +1 for python indexing, Xerawdp doesn't do 1-correction here
-                min(len(signal)-1,max_idx + 10 +1)
+                max_idx - left_isolation_test_window:
+                max_idx + right_isolation_test_window
             ])
             if not height > 3 * abs(negex):
                 self.log.debug('    Failed negative excursion test')
@@ -423,7 +433,6 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             #  - Xerawdp limits the width search quite strictly, making it come out lower than the real FWQM
             filtered_wave = event['processed_waveforms']['filtered_for_s1_width_test']
             max_in_filtered = left + int(np.argmax(filtered_wave[left:right]))
-            #Yes,
             filtered_width = extent_until_threshold(filtered_wave[left_boundary:right_boundary+1],
                                                     start=max_in_filtered-left_boundary,
                                                     threshold=0.25*filtered_wave[max_in_filtered])
@@ -434,13 +443,13 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
         # Update values for later isolation tests
         # This gets done only if the current peak passes all tests!
         # It has to get done AFTER the isolation test of the current peak of course.
-        # TODO: maybe we can keep track of this in a more intelligent way?
+        # TODO: maybe we can keep track of these in a more intelligent way? They're both boundaries of last peak...
         if peak_type == 'small_s2':
             # For small s2s, we need to store the right peak boundary as the left boundary for later isolation tests.
             self.left_extent_small_s2_search_limit = right
         elif peak_type == 's1':
-            #For s1, update the last_s1_left boundary, also used for later isolation tests
-            self.last_s1_left_boundary = right
+            #For s1, update the last_s1_right_boundary, also used for later isolation tests
+            self.last_s1_right_boundary = right
 
         ##
         ## STAGE 5 - STORING THE PEAK
@@ -509,9 +518,10 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
         NB: edge = first index IN region to test!
         TODO: Regions seem to come out empty sometimes, which triggers a numpy runtiome warning (only once though..)
         """
+        # Xerawdp off-by-one error:
+        right_edge_of_left_test_region -= (1 if test_length_right % 2 == 0 else 0)
         # Xerawdp reports 1 tighter boundaries in the debug output on both sides than it actually tests;
         # I could do the same to let the log files also match, but that's taking the whole matching idea too far..
-        right_edge_of_left_test_region -= (1 if test_length_right % 2 == 0 else 0)
         self.log.debug("        Running isolation test: RofLeft %s, LofRight %s, LengthLeft %s, LengthRight %s" % (
             right_edge_of_left_test_region, left_edge_of_right_test_region, test_length_left, test_length_right
         ))
@@ -643,9 +653,13 @@ def find_next_crossing(signal, threshold,
     if stop > len(signal) - 1:
         print("!!!!!!!!!!!!! Invalid crossing search stop point: %s (signal has %s samples)" % (stop, len(signal)))
         stop = len(signal)-1
+    if start < 0:
+        print("!!!!!!!!!!!!! Invalid crossing search start point: %s" % start)
+        start = 0
+    if start > len(signal) - 1:
+        print("!!!!!!!!!!!!! Invalid crossing search start point: %s (signal has %s samples)" % (start, len(signal)))
+        start = len(signal)-1
     # These are already errors
-    if not 0 <= start <= len(signal) - 1:
-        raise ValueError("Invalid crossing search start point: %s (signal has %s samples)" % (start, len(signal)))
     if direction not in ('left', 'right'):
         raise ValueError("Direction %s is not left or right" % direction)
     if not 1 <= min_length:
@@ -683,7 +697,7 @@ def find_next_crossing(signal, threshold,
             # stop_at reached, have to return something right now
             if activate_xerawdp_hacks_for == 'large_s2':
                 # We need to index of the minimum before & including this point instead...
-                if direction=='left':
+                if direction == 'left':
                     return i + np.argmin(signal[i:start+1])
                 else:    # direction=='right'
                     return start + np.argmin(signal[start:i+1])
