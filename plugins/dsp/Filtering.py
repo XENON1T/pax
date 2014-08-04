@@ -1,7 +1,6 @@
 import numpy as np
 
-from pax import plugin, units
-
+from pax import plugin
 
 class GenericFilter(plugin.TransformPlugin):
 
@@ -29,11 +28,44 @@ class GenericFilter(plugin.TransformPlugin):
             raise RuntimeError('Filter subclass did not provide required parameters')
         if round(sum(self.filter_ir), 5) != 1.:
             raise RuntimeError('Impulse response sums to %s, should be 1!' % sum(self.filter_ir))
-        event['processed_waveforms'][self.output_name] = np.convolve(
-            event['processed_waveforms'][self.input_name],
-            self.filter_ir,
-            'same'
-        )
+        signal = event['processed_waveforms'][self.input_name]
+        filter_length = len(self.filter_ir)
+        # Apply the filter
+        output = np.convolve(signal, self.filter_ir, 'same')
+        ##
+        ## TEMP: Mangle waveform for Xerawdp matching
+        ##
+        ## TODO: right boundary: subtract two more inner samples
+        # Do we know the pulse boundaries?
+        if not 'pulse_boundaries' in event:
+             event['pulse_boundaries'] = {}
+        if not self.input_name in event['pulse_boundaries']:
+            #Find the pulse boundaries - stupid slow code
+            previous = 0
+            pbs = []
+            for i,x in enumerate(signal):
+                if x==0 and previous!=0:
+                    pbs.append(('r',i-1))
+                if x!=0 and previous==0:
+                    pbs.append(('l',i))
+                previous = x
+            event['pulse_boundaries'][self.input_name] = pbs
+            #print(pbs)
+        # Mangle the waveform
+        # First mangle the edges, which are always pulse boundaries
+        output[:int(filter_length/2)] = np.zeros(int(filter_length/2))
+        output[len(output)-int(filter_length/2):] = np.zeros(int(filter_length/2))
+        # Mangle previous pulse boundaries
+        for pb in event['pulse_boundaries'][self.input_name]:
+            if pb[1] < filter_length/2: continue  #Too soon
+            bonus_samples = 0
+            #bonus_samples = (2 if pb[0] == 'r' else 0) #This code is getting insane. Maybe I'm getting insane.
+            try:
+                output[pb[1]-int(filter_length/2)-bonus_samples: pb[1]+int(filter_length/2)] = np.zeros(filter_length-1+bonus_samples)
+            except Exception as e:
+                self.log.warning("Error during waveform mutilation: " + str(e) + ". So what...")
+        # Store the result
+        event['processed_waveforms'][self.output_name] = output
         return event
 
 
@@ -117,3 +149,4 @@ class S1WidthTestFilter(GenericFilter):
         self.filter_ir = self.filter_ir / sum(self.filter_ir)  # Normalization
         self.output_name = 'filtered_for_s1_width_test'
         self.input_name = 'uncorrected_sum_waveform_for_s1'
+
