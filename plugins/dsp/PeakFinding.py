@@ -27,7 +27,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                 # For isolation test on every peak
                 'around_peak_to_height_ratio_max': 0.25,
                 'test_around_peak': 21,
-                'min_crossing_length':1,
+                'min_crossing_length': 1,
                 'stop_if_start_exceeded':False, # Not for large s2s? Bug?
             }),
             ('small_s2', {
@@ -164,7 +164,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                     # Keep a record of the s1 alert positions: needed for isolation tests
                     if peak_type == 's1':    self.this_s1_alert_position = left_boundary
 
-                    # Determine the peak candidate interval boundarier
+                    # Determine the peak candidate interval boundary
                     if peak_type == 's1':
                         # Determine the maximum in the next 60 samples that follows
                         max_pos = int(np.argmax(signal[left_boundary:min(left_boundary + 60, region_right)]))
@@ -703,7 +703,7 @@ def find_next_crossing(signal, threshold,
                     return start + np.argmin(signal[start:i+1])
             elif activate_xerawdp_hacks_for == 's1':
                 # Xerawdp keeps going, but always increments after_crossing_timer, so we know what it'll give
-                # This is a completely arcane hack due to several weird interactions of boundary errors
+                # This is a completely arcane hack due to several weird interactions of boundary cases
                 if not this_sample < threshold:
                     #The counter gets reset on this sample
                     after_crossing_timer = 0
