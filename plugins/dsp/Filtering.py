@@ -33,35 +33,34 @@ class GenericFilter(plugin.TransformPlugin):
         # Apply the filter
         output = np.convolve(signal, self.filter_ir, 'same')
         ##
-        ## TEMP: Mangle waveform for Xerawdp matching
+        ## Mutilate waveform for Xerawdp matching
+        ## This implements the Xerawdp convolution bug
         ##
-        ## TODO: right boundary: subtract two more inner samples
         # Do we know the pulse boundaries?
         if not 'pulse_boundaries' in event:
              event['pulse_boundaries'] = {}
         if not self.input_name in event['pulse_boundaries']:
-            #Find the pulse boundaries - stupid slow code
+            #Find the pulse boundaries in this input waveform - stupid slow code
             previous = 0
             pbs = []
             for i,x in enumerate(signal):
-                if x==0 and previous!=0:
+                if x==0 and previous != 0:
                     pbs.append(('r',i-1))
-                if x!=0 and previous==0:
+                if x!=0 and previous == 0:
                     pbs.append(('l',i))
                 previous = x
             event['pulse_boundaries'][self.input_name] = pbs
-            #print(pbs)
-        # Mangle the waveform
-        # First mangle the edges, which are always pulse boundaries
+        # Mutilate the waveform
+        # First mutilate the edges, which are always pulse boundaries
         output[:int(filter_length/2)] = np.zeros(int(filter_length/2))
         output[len(output)-int(filter_length/2):] = np.zeros(int(filter_length/2))
-        # Mangle previous pulse boundaries
+        # Mutilate waveform around pulse boundaries
         for pb in event['pulse_boundaries'][self.input_name]:
             if pb[1] < filter_length/2: continue  #Too soon
-            bonus_samples = 0
-            #bonus_samples = (2 if pb[0] == 'r' else 0) #This code is getting insane. Maybe I'm getting insane.
             try:
-                output[pb[1]-int(filter_length/2)-bonus_samples: pb[1]+int(filter_length/2)] = np.zeros(filter_length-1+bonus_samples)
+                lefti  = max(0,pb[1]-int(filter_length/2))
+                righti = min(len(signal)-1, pb[1]+int(filter_length/2))
+                output[lefti:righti] = np.zeros(righti-lefti)
             except Exception as e:
                 self.log.warning("Error during waveform mutilation: " + str(e) + ". So what...")
         # Store the result

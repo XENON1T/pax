@@ -17,9 +17,9 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                 'threshold':        0.6241506363,
                 'left_boundary_to_height_ratio':    0.005,
                 'right_boundary_to_height_ratio':   0.002,
-                'min_length':       35,
+                'min_length':       35+1,   #+1 as Xerawdp tests for ... > minwidth, which is stupid, so my code doesn't
                 'max_length':       float('inf'),
-                'min_base_interval_length': 60,
+                'min_base_interval_length': 60+1,
                 'max_base_interval_length': float('inf'),
                 'source_waveform':  'filtered_for_large_s2',
                 # For isolation test on top-level interval
@@ -35,8 +35,8 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                 'threshold':                        0.06241506363,
                 'left_boundary_to_height_ratio':    0.01,
                 'right_boundary_to_height_ratio':   0.01,
-                'min_base_interval_length':         40,
-                'max_base_interval_length':          200,
+                'min_base_interval_length':         40+1,
+                'max_base_interval_length':         200-1,
                 # Xerawdp bug: small_s2 filtered wv inadvertently only used for threshold crossing detection:
                 # I hardcoded filtered_for_small_s2 there and changed the source_waveform here.
                 # This is the solution with as little hardcoding as possible
@@ -58,6 +58,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                 'after_avg_max_ratio':              0.04,
                 'stop_if_start_exceeded':           True,
                 'source_waveform':                 'uncorrected_sum_waveform_for_s1',
+                'max_filtered_width':               50-1,
                 #The s1 candidate interval isn't tested:
                 'min_base_interval_length':         0,
                 'max_base_interval_length':         float('inf'),
@@ -467,7 +468,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                 filtered_width = extent_until_threshold(filtered_wave[left_boundary:right_boundary+1],
                                                         start=max_in_filtered-left_boundary,
                                                         threshold=0.25*filtered_wave[max_in_filtered])
-                if filtered_width > 50:
+                if filtered_width > settings['max_filtered_width']:
                     self.log.debug('    Filtered width %s larger than 50' % filtered_width)
                     return
 
@@ -806,13 +807,13 @@ def interval_until_threshold(signal, start,
     if right_limit is None:
         right_limit = len(signal) - 1
     l_cross = find_next_crossing(signal, left_threshold,  start=start, stop=left_limit,
-                           direction='left',  min_length=min_crossing_length,
-                           stop_if_start_exceeded=stop_if_start_exceeded,
-                           activate_xerawdp_hacks_for=activate_xerawdp_hacks_for)
+                                 direction='left',  min_length=min_crossing_length,
+                                 stop_if_start_exceeded=stop_if_start_exceeded,
+                                 activate_xerawdp_hacks_for=activate_xerawdp_hacks_for)
     r_cross = find_next_crossing(signal, right_threshold, start=start, stop=right_limit,
-                           direction='right', min_length=min_crossing_length,
-                           stop_if_start_exceeded=stop_if_start_exceeded,
-                           activate_xerawdp_hacks_for=activate_xerawdp_hacks_for)
+                                direction='right', min_length=min_crossing_length,
+                                stop_if_start_exceeded=stop_if_start_exceeded,
+                                activate_xerawdp_hacks_for=activate_xerawdp_hacks_for)
     # BADNESS, but needed for Xerawdp matching: This ins't interval_until_threshold, but 1 more on each side!
     return (l_cross, r_cross)
 
