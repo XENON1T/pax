@@ -4,7 +4,7 @@ History
 -------
 
 ------------------
-0.2.0 (2014-07-13)
+0.2.0 (2014-08-04)
 ------------------
 
 * Define static event class data structure
