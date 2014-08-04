@@ -106,30 +106,28 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
                     # How much baseline will we have in 1T? Only few samples?
                     """
 
-                # Temp for Xerawdp matching: add pulse to the uncorrected sum waveform if they are not excluded
-                if not (channel > 178 or channel in self.config['pmts_excluded_for_s1']):
-                    #print(starting_position, len(wave_occurrence))
-                    uncorrected_sum_wave_for_s1[starting_position:starting_position + len(wave_occurrence)] = \
-                        np.add(-1 * (wave_occurrence - baseline) * self.conversion_factor / (2*10**6),
-                            uncorrected_sum_wave_for_s1[starting_position:starting_position + len(wave_occurrence)]
-                        )
-                if not channel > 178:
-                    uncorrected_sum_wave_for_s2[starting_position:starting_position + len(wave_occurrence)] = \
-                        np.add(-1 * (wave_occurrence - baseline) * self.conversion_factor / (2*10**6),
-                            uncorrected_sum_wave_for_s2[starting_position:starting_position + len(wave_occurrence)]
-                        )
+                corrected_pulse = baseline - wave_occurrence   # Note: flips up!
 
                 # Put wave occurrences in the correct positions
+
+                # Temp for Xerawdp matching: add pulse to the uncorrected sum waveform if they are not excluded
+                if not channel > 178:
+                    uncorrected_sum_wave_for_s2[starting_position:starting_position + len(wave_occurrence)] += corrected_pulse
+                    if not channel in self.config['pmts_excluded_for_s1']:
+                        uncorrected_sum_wave_for_s1[starting_position:starting_position + len(wave_occurrence)] += corrected_pulse
+
                 if skip_channel: continue
-                wave[starting_position:starting_position + len(wave_occurrence)] = wave_occurrence - baseline
+                wave[starting_position:starting_position + len(wave_occurrence)] = corrected_pulse
 
             if skip_channel: continue
-            # Flip the waveform up, convert it to pe/ns, and store it in the event data structure
-            event['channel_waveforms'][channel] = -1 * wave * self.conversion_factor / self.gains[channel]
+            # Convert wave to pe/ns, and store it in the event data structure
+            event['channel_waveforms'][channel] = wave * self.conversion_factor / self.gains[channel]
 
         # Temp for Xerawdp matching: store uncorrected sum waveform
-        event['processed_waveforms']['uncorrected_sum_waveform_for_s1'] = uncorrected_sum_wave_for_s1
-        event['processed_waveforms']['uncorrected_sum_waveform_for_s2'] = uncorrected_sum_wave_for_s2
+        universal_gain_correcion = self.conversion_factor / (2*10**6)
+        event['processed_waveforms']['uncorrected_sum_waveform_for_s1'] = uncorrected_sum_wave_for_s1 * universal_gain_correcion
+        event['processed_waveforms']['uncorrected_sum_waveform_for_s2'] = uncorrected_sum_wave_for_s2 * universal_gain_correcion
+
         # Delete the channel_occurrences from the event structure, we don't need it anymore
         del event['channel_occurrences']
 

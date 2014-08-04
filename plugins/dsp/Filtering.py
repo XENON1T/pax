@@ -40,15 +40,20 @@ class GenericFilter(plugin.TransformPlugin):
         if not 'pulse_boundaries' in event:
              event['pulse_boundaries'] = {}
         if not self.input_name in event['pulse_boundaries']:
-            #Find the pulse boundaries in this input waveform - stupid slow code
-            previous = 0
-            pbs = []
-            for i,x in enumerate(signal):
-                if x==0 and previous != 0:
-                    pbs.append(('r',i-1))
-                if x!=0 and previous == 0:
-                    pbs.append(('l',i))
-                previous = x
+            # Find the pulse boundaries in this input waveform - stupid slow code
+            # previous = 0
+            # pbs = []
+            # for i,x in enumerate(signal):
+            #     if x==0 and previous != 0:
+            #         pbs.append(i-1)
+            #     if x!=0 and previous == 0:
+            #         pbs.append(i)
+            #     previous = x
+            # print(pbs)
+            # Gotta love numpy ;-)
+            # [0] and double parens are stupid though, but quite necessary here:
+            y = np.abs(np.sign(signal))
+            pbs = np.concatenate((np.where(np.roll(y,1) - y == -1)[0], np.where(np.roll(y,-1) - y == -1)[0]))
             event['pulse_boundaries'][self.input_name] = pbs
         # Mutilate the waveform
         # First mutilate the edges, which are always pulse boundaries
@@ -56,10 +61,9 @@ class GenericFilter(plugin.TransformPlugin):
         output[len(output)-int(filter_length/2):] = np.zeros(int(filter_length/2))
         # Mutilate waveform around pulse boundaries
         for pb in event['pulse_boundaries'][self.input_name]:
-            if pb[1] < filter_length/2: continue  #Too soon
             try:
-                lefti  = max(0,pb[1]-int(filter_length/2))
-                righti = min(len(signal)-1, pb[1]+int(filter_length/2))
+                lefti  = max(0,pb-int(filter_length/2))
+                righti = min(len(signal)-1, pb+int(filter_length/2))
                 output[lefti:righti] = np.zeros(righti-lefti)
             except Exception as e:
                 self.log.warning("Error during waveform mutilation: " + str(e) + ". So what...")
