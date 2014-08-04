@@ -63,33 +63,35 @@
 <span class="sd">    We, however, only ever need mass for density</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">math</span>
-
-<span class="n">electron_charge_SI</span> <span class="o">=</span> <span class="mf">1.60217657</span> <span class="o">*</span> <span class="mi">10</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mi">19</span><span class="p">)</span>
+<span class="c">#electron_charge_SI = 1.60217657 * 10 ** (-19)</span>
+<span class="n">electron_charge_SI</span> <span class="o">=</span> <span class="mf">1.60217733</span> <span class="o">*</span> <span class="mi">10</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mi">19</span><span class="p">)</span>   <span class="c">#TEMP for Xerawdp matching</span>
 <span class="n">boltzmannConstant_SI</span> <span class="o">=</span> <span class="mf">1.3806488</span> <span class="o">*</span> <span class="mi">10</span> <span class="o">**</span> <span class="p">(</span><span class="o">-</span><span class="mi">23</span><span class="p">)</span>
+
+<span class="c"># Here we set our unit system</span>
 <span class="n">base_units</span> <span class="o">=</span> <span class="p">{</span>
 	<span class="s">&#39;m&#39;</span><span class="p">:</span> <span class="mi">10</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span>  <span class="c"># distances in cm</span>
 	<span class="s">&#39;s&#39;</span><span class="p">:</span> <span class="mi">10</span> <span class="o">**</span> <span class="mi">9</span><span class="p">,</span>  <span class="c"># times in ns</span>
-	<span class="s">&#39;eV&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>  <span class="c"># energies in eV</span>
+	<span class="s">&#39;eV&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>       <span class="c"># energies in eV</span>
 	<span class="c"># charge in number of electrons (so voltage will be in Volts)</span>
 	<span class="s">&#39;C&#39;</span><span class="p">:</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">electron_charge_SI</span><span class="p">,</span>
-	<span class="s">&#39;g&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>  <span class="c"># masses in grams... please see comment above!</span>
-	<span class="s">&#39;K&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>  <span class="c"># Temperature in Kelvins</span>
+	<span class="s">&#39;g&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>        <span class="c"># masses in grams... please see comment above!</span>
+	<span class="s">&#39;K&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>        <span class="c"># Temperature in Kelvins</span>
 <span class="p">}</span>
+<span class="c"># Consequences of this unit system:</span>
+<span class="c">#   Current will be in electrons/ns, not A!</span>
+<span class="c">#   Resistance in V/(C/s), not Ohm!</span>
+
+<span class="c"># Derive secondary units from the base values - don&#39;t change this</span>
 <span class="n">base_units</span><span class="p">[</span><span class="s">&#39;Hz&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">base_units</span><span class="p">[</span><span class="s">&#39;s&#39;</span><span class="p">]</span>
 <span class="n">base_units</span><span class="p">[</span><span class="s">&#39;J&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">base_units</span><span class="p">[</span><span class="s">&#39;eV&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">electron_charge_SI</span>
 <span class="n">base_units</span><span class="p">[</span><span class="s">&#39;V&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">base_units</span><span class="p">[</span><span class="s">&#39;J&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">base_units</span><span class="p">[</span><span class="s">&#39;C&#39;</span><span class="p">]</span>
-
-<span class="c"># Current will be in electrons/ns!</span>
 <span class="n">base_units</span><span class="p">[</span><span class="s">&#39;A&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">base_units</span><span class="p">[</span><span class="s">&#39;C&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">base_units</span><span class="p">[</span><span class="s">&#39;s&#39;</span><span class="p">]</span>
-
-<span class="c"># Resistance in eV/ns</span>
 <span class="n">base_units</span><span class="p">[</span><span class="s">&#39;Ohm&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">base_units</span><span class="p">[</span><span class="s">&#39;V&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">base_units</span><span class="p">[</span><span class="s">&#39;A&#39;</span><span class="p">]</span>
-
 <span class="n">electron_charge</span> <span class="o">=</span> <span class="n">electron_charge_SI</span> <span class="o">*</span> <span class="n">base_units</span><span class="p">[</span><span class="s">&#39;C&#39;</span><span class="p">]</span>
 <span class="n">boltzmannConstant</span> <span class="o">=</span> <span class="n">boltzmannConstant_SI</span> <span class="o">*</span> <span class="n">base_units</span><span class="p">[</span><span class="s">&#39;J&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">base_units</span><span class="p">[</span><span class="s">&#39;K&#39;</span><span class="p">]</span>
 
+<span class="c"># Make variables for ns, uHz, kOhm, etc.</span>
 <span class="n">prefixes</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&#39;n&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">9</span><span class="p">,</span> <span class="s">&#39;u&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="s">&#39;m&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="s">&#39;c&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="s">&#39;k&#39;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span> <span class="s">&#39;M&#39;</span><span class="p">:</span> <span class="mi">6</span><span class="p">,</span> <span class="s">&#39;G&#39;</span><span class="p">:</span> <span class="mi">9</span><span class="p">}</span>
-
 <span class="k">for</span> <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">base_units</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
 	<span class="k">for</span> <span class="p">(</span><span class="n">p_name</span><span class="p">,</span> <span class="n">p_factor</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">prefixes</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
 		<span class="c"># Float makes sure units might work even for poor fellas who forget to</span>

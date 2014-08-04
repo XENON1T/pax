@@ -12,6 +12,14 @@ pax.datastructure module
     :undoc-members:
     :show-inheritance:
 
+pax.dsp_utils module
+--------------------
+
+.. automodule:: pax.dsp_utils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pax.format module
 -----------------
 

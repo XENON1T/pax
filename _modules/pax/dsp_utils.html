@@ -1,0 +1,296 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pax.dsp_utils &mdash; processor for Analyzing XENON1T 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="processor for Analyzing XENON1T 0.1.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">processor for Analyzing XENON1T 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pax.dsp_utils</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Helper functions for peakfinders and other plugins that look at waveforms</span>
+<span class="sd">Don&#39;t put in hacks for Xerawdp matching!</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<div class="viewcode-block" id="main"><a class="viewcode-back" href="../../pax.html#pax.dsp_utils.main">[docs]</a><span class="k">def</span> <span class="nf">main</span><span class="p">():</span>
+    <span class="c">#Todo: move this to tests!</span>
+    <span class="n">w</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span><span class="o">+</span><span class="nb">list</span><span class="p">(</span><span class="nb">reversed</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">10</span><span class="p">)))</span>
+    <span class="k">print</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>
+    <span class="c"># Left and right walking</span>
+    <span class="k">assert</span> <span class="n">walk_waveform</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">IndexReached</span><span class="p">(</span><span class="mi">7</span><span class="p">),</span> <span class="n">direction</span><span class="o">=</span><span class="s">&#39;right&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">7</span>
+    <span class="k">assert</span> <span class="n">walk_waveform</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="n">IndexReached</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span> <span class="n">direction</span><span class="o">=</span><span class="s">&#39;left&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">3</span>
+    <span class="c"># Threshold crossing</span>
+    <span class="k">assert</span> <span class="n">walk_waveform</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="n">IsBelowThreshold</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">min_crossing_length</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span> <span class="n">direction</span><span class="o">=</span><span class="s">&#39;left&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">4</span>
+    <span class="k">assert</span> <span class="n">walk_waveform</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="n">IsBelowThreshold</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">min_crossing_length</span><span class="o">=</span><span class="mi">3</span><span class="p">),</span> <span class="n">direction</span><span class="o">=</span><span class="s">&#39;right&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">15</span>
+    <span class="c">#Todo: add more here</span>
+    <span class="c"># All conditions failing</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">walk_waveform</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="n">IsBelowThreshold</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">))[</span><span class="mi">0</span><span class="p">],</span> <span class="n">WaveformEndReached</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">walk_waveform</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="n">IsBelowThreshold</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">))[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span>
+    <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">walk_waveform</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="n">IsBelowThreshold</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">),</span> <span class="n">direction</span><span class="o">=</span><span class="s">&#39;left&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span> <span class="n">WaveformEndReached</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">walk_waveform</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="n">IsBelowThreshold</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">),</span> <span class="n">direction</span><span class="o">=</span><span class="s">&#39;left&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span>
+    <span class="c"># Several conditions</span>
+    <span class="k">assert</span> <span class="n">walk_waveform</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="p">[</span><span class="n">IsAboveThreshold</span><span class="p">(</span><span class="mi">8</span><span class="p">),</span> <span class="n">IndexReached</span><span class="p">(</span><span class="mi">7</span><span class="p">)])[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">7</span>
+
+
+
+
+<span class="c">##</span>
+<span class="c">## Waveform walking</span>
+<span class="c">##</span></div>
+<div class="viewcode-block" id="walk_waveform"><a class="viewcode-back" href="../../pax.html#pax.dsp_utils.walk_waveform">[docs]</a><span class="k">def</span> <span class="nf">walk_waveform</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop_conditions</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="s">&quot;right&quot;</span><span class="p">):</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">&#39;last_possible_index&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span>
+        <span class="s">&#39;previous_index&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">),</span>
+        <span class="s">&#39;previous_value&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">),</span>    <span class="c">#Nnumerical comparisons with float(&#39;nan&#39;) always give False</span>
+    <span class="p">}</span>
+    <span class="c"># Argument checking</span>
+    <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">start</span> <span class="o">&lt;=</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;last_possible_index&#39;</span><span class="p">]:</span>
+        <span class="n">d</span><span class="p">[</span><span class="s">&#39;current_value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">signal</span><span class="p">[</span><span class="n">start</span><span class="p">]</span>
+        <span class="n">d</span><span class="p">[</span><span class="s">&#39;current_index&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">start</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Start index </span><span class="si">%s</span><span class="s"> not between </span><span class="si">%s</span><span class="s"> and </span><span class="si">%s</span><span class="s">!&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;last_possible_index&#39;</span><span class="p">]))</span>
+    <span class="k">if</span> <span class="n">direction</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&#39;left&#39;</span><span class="p">,</span><span class="s">&#39;right&#39;</span><span class="p">):</span>
+        <span class="n">d</span><span class="p">[</span><span class="s">&#39;direction&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">direction</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Invalid direction: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">direction</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">stop_conditions</span><span class="p">,</span> <span class="n">StopCondition</span><span class="p">):</span>
+        <span class="c"># Only once stop condition specified, that&#39;s ok</span>
+        <span class="n">stop_conditions</span> <span class="o">=</span> <span class="p">(</span><span class="n">stop_conditions</span><span class="p">,)</span>
+    <span class="k">while</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;current_index&#39;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;last_possible_index&#39;</span><span class="p">]:</span>
+            <span class="c"># We&#39;ve gone too far!</span>
+            <span class="c"># Todo: Complain</span>
+            <span class="k">return</span> <span class="n">WaveformEndReached</span><span class="p">(),</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;previous_index&#39;</span><span class="p">]</span>    <span class="c">#()&#39;s are so isinstance tests work</span>
+        <span class="n">d</span><span class="p">[</span><span class="s">&#39;current_value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">signal</span><span class="p">[</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;current_index&#39;</span><span class="p">]</span> <span class="p">]</span>
+        <span class="c"># Check all the stop_conditions in turn</span>
+        <span class="k">for</span> <span class="n">stop_condition</span> <span class="ow">in</span> <span class="n">stop_conditions</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">stop_condition</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+                <span class="c"># The stop condition evaluates to True, i.e. we can stop here!</span>
+                <span class="k">return</span> <span class="n">stop_condition</span><span class="p">,</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;current_index&#39;</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">False</span><span class="p">:</span>
+                 <span class="c"># The condition has specified a special return result</span>
+                <span class="k">return</span> <span class="n">stop_condition</span><span class="p">,</span> <span class="n">result</span>
+        <span class="n">d</span><span class="p">[</span><span class="s">&#39;previous_index&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;current_index&#39;</span><span class="p">]</span>
+        <span class="n">d</span><span class="p">[</span><span class="s">&#39;previous_value&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;current_value&#39;</span><span class="p">]</span>
+        <span class="n">d</span><span class="p">[</span><span class="s">&#39;current_index&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="s">&#39;left&#39;</span> <span class="k">else</span> <span class="mi">1</span>
+</div>
+<div class="viewcode-block" id="StopCondition"><a class="viewcode-back" href="../../pax.html#pax.dsp_utils.StopCondition">[docs]</a><span class="k">class</span> <span class="nc">StopCondition</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+<div class="viewcode-block" id="StopCondition.startup"><a class="viewcode-back" href="../../pax.html#pax.dsp_utils.StopCondition.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
+        <span class="k">pass</span>
+</div>
+<div class="viewcode-block" id="StopCondition.evaluate"><a class="viewcode-back" href="../../pax.html#pax.dsp_utils.StopCondition.evaluate">[docs]</a>    <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+<span class="c"># #Setup syntax sugar for &amp; and | or on stop conditions...</span>
+<span class="c"># Overkill, you only need OR anyway, will slow things down if in long chain</span>
+<span class="c">#</span>
+<span class="c">#</span>
+<span class="c"># class CompositeCondition(StopCondition):</span>
+<span class="c">#     &quot;&quot;&quot;Condition composed of several conditions, use only for syntax sugar&quot;&quot;&quot;</span>
+<span class="c">#     def __init__(self, conditions, join_operator):</span>
+<span class="c">#         self.conditions = conditions</span>
+<span class="c">#         self.join_operator = join_operator</span>
+<span class="c">#</span>
+<span class="c">#     def startup(self, d):</span>
+<span class="c">#         [c.startup(d) for c in self.conditions]</span>
+<span class="c">#</span>
+<span class="c">#     def evaluate(self, d):</span>
+<span class="c">#         for c in conditions:</span>
+<span class="c">#             c.evaluate(d)</span>
+<span class="c">#             if self.join_operator == &#39;or&#39;:</span>
+<span class="c">#             any([c.evaluate(d) for c in self.conditions])</span>
+<span class="c">#         elif self.join_operator == &#39;and&#39;:</span>
+<span class="c">#             all([c.evaluate(d) for c in self.conditions])</span>
+<span class="c">#</span>
+<span class="c"># def join_conditions_by_and(condition1, condition2):  CompositeCondition([condition1,condition2],&#39;and&#39;)</span>
+<span class="c"># def join_conditions_by_or(condition1, condition2):   CompositeCondition([condition1,condition2],&#39;or&#39;)</span>
+<span class="c"># StopCondition.__and__ = join_conditions_by_and</span>
+<span class="c"># StopCondition.__or__  = join_conditions_by_or</span>
+</div></div>
+<div class="viewcode-block" id="WaveformEndReached"><a class="viewcode-back" href="../../pax.html#pax.dsp_utils.WaveformEndReached">[docs]</a><span class="k">class</span> <span class="nc">WaveformEndReached</span><span class="p">(</span><span class="n">StopCondition</span><span class="p">):</span>
+    <span class="c"># Used by waveform walker to prevent crashes</span>
+<div class="viewcode-block" id="WaveformEndReached.evaluate"><a class="viewcode-back" href="../../pax.html#pax.dsp_utils.WaveformEndReached.evaluate">[docs]</a>    <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;You shouldn&#39;t include this condition in the stop_conditions list!&quot;</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="StartValueExceeded"><a class="viewcode-back" href="../../pax.html#pax.dsp_utils.StartValueExceeded">[docs]</a><span class="k">class</span> <span class="nc">StartValueExceeded</span><span class="p">(</span><span class="n">StopCondition</span><span class="p">):</span>
+<div class="viewcode-block" id="StartValueExceeded.evaluate"><a class="viewcode-back" href="../../pax.html#pax.dsp_utils.StartValueExceeded.evaluate">[docs]</a>    <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;current_value&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;start_value&#39;</span><span class="p">]</span>
+
+</div></div>
+<div class="viewcode-block" id="IndexReached"><a class="viewcode-back" href="../../pax.html#pax.dsp_utils.IndexReached">[docs]</a><span class="k">class</span> <span class="nc">IndexReached</span><span class="p">(</span><span class="n">StopCondition</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">limit_index</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">limit_index</span> <span class="o">=</span> <span class="n">limit_index</span>
+
+<div class="viewcode-block" id="IndexReached.startup"><a class="viewcode-back" href="../../pax.html#pax.dsp_utils.IndexReached.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="n">d</span><span class="p">[</span><span class="s">&#39;direction&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;left&#39;</span> <span class="ow">and</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;start_index&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">limit_index</span> <span class="ow">or</span>
+            <span class="n">d</span><span class="p">[</span><span class="s">&#39;direction&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;right&#39;</span><span class="ow">and</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;start_index&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">limit_index</span>
+        <span class="p">):</span>
+            <span class="k">pass</span>
+            <span class="c"># Already beyond intended endpoint!</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">limit_index</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">pass</span>
+            <span class="c"># Crash occurs before condition is satisfied!</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">limit_index</span> <span class="o">&gt;</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;last_possible_index&#39;</span><span class="p">]:</span>
+            <span class="k">pass</span>
+            <span class="c"># Crash occurs before condition is satisfied!</span>
+</div>
+<div class="viewcode-block" id="IndexReached.evaluate"><a class="viewcode-back" href="../../pax.html#pax.dsp_utils.IndexReached.evaluate">[docs]</a>    <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;direction&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;left&#39;</span> <span class="ow">and</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;current_index&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">limit_index</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;index overshoot! elaborate&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;direction&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;right&#39;</span> <span class="ow">and</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;current_index&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">limit_index</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;index overshoot! elaborate&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;current_index&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">limit_index</span>
+
+</div></div>
+<div class="viewcode-block" id="ThresholdCrossed"><a class="viewcode-back" href="../../pax.html#pax.dsp_utils.ThresholdCrossed">[docs]</a><span class="k">class</span> <span class="nc">ThresholdCrossed</span><span class="p">(</span><span class="n">StopCondition</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">min_crossing_length</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">cross_to</span><span class="o">=</span><span class="s">&#39;either&#39;</span><span class="p">,</span> <span class="n">real_crossing</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span> <span class="o">=</span> <span class="n">threshold</span>
+        <span class="k">if</span> <span class="n">min_crossing_length</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">min_crossing_length</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Crossing length must be an integer &gt; 1&quot;</span><span class="p">)</span>
+            <span class="c">#Well, could allow 0 and tell walker condition is already satisfied</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_crossing_length</span> <span class="o">=</span> <span class="n">min_crossing_length</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">real_crossing</span> <span class="o">=</span> <span class="n">real_crossing</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cross_to</span> <span class="o">=</span> <span class="n">cross_to</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cross_to</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&#39;either&#39;</span><span class="p">,</span> <span class="s">&#39;above&#39;</span><span class="p">,</span> <span class="s">&#39;below&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Invalid cross to argument: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">cross_to</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">crossing_length</span> <span class="o">=</span> <span class="mi">0</span>
+
+<div class="viewcode-block" id="ThresholdCrossed.evaluate"><a class="viewcode-back" href="../../pax.html#pax.dsp_utils.ThresholdCrossed.evaluate">[docs]</a>    <span class="k">def</span> <span class="nf">evaluate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">real_crossing</span><span class="p">:</span>
+            <span class="n">crossed_above</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;previous_value&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span> <span class="o">&lt;</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;current_value&#39;</span><span class="p">]</span>
+            <span class="n">crossed_below</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;current_value&#39;</span><span class="p">]</span>  <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span> <span class="o">&lt;</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;previous_value&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">crossed_above</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span> <span class="o">&lt;</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;current_value&#39;</span><span class="p">]</span>
+            <span class="n">crossed_below</span> <span class="o">=</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;current_value&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">cross_to</span> <span class="o">==</span> <span class="s">&#39;above&#39;</span><span class="p">:</span>
+            <span class="n">crossed</span> <span class="o">=</span> <span class="n">crossed_above</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">cross_to</span> <span class="o">==</span> <span class="s">&#39;below&#39;</span><span class="p">:</span>
+            <span class="n">crossed</span> <span class="o">=</span> <span class="n">crossed_below</span>
+        <span class="k">else</span><span class="p">:</span> <span class="c">#self.cross_to is &#39;either&#39;:</span>
+            <span class="n">crossed</span> <span class="o">=</span> <span class="p">(</span><span class="n">crossed_above</span> <span class="ow">or</span> <span class="n">crossed_below</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">crossed</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">crossing_length</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">crossing_length</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_crossing_length</span><span class="p">:</span>
+                <span class="c"># We&#39;re done! Return the index of the original crossing</span>
+                <span class="k">return</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;current_index&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">min_crossing_length</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="n">d</span><span class="p">[</span><span class="s">&#39;direction&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;left&#39;</span> <span class="k">else</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">crossing_length</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="bp">False</span>
+
+<span class="c"># Convenience forms</span></div></div>
+<div class="viewcode-block" id="CrossAboveThreshold"><a class="viewcode-back" href="../../pax.html#pax.dsp_utils.CrossAboveThreshold">[docs]</a><span class="k">class</span> <span class="nc">CrossAboveThreshold</span><span class="p">(</span><span class="n">ThresholdCrossed</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">min_crossing_length</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">ThresholdCrossed</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">min_crossing_length</span><span class="p">,</span> <span class="n">cross_to</span><span class="o">=</span><span class="s">&#39;above&#39;</span><span class="p">,</span> <span class="n">real_crossing</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="CrossBelowThreshold"><a class="viewcode-back" href="../../pax.html#pax.dsp_utils.CrossBelowThreshold">[docs]</a><span class="k">class</span> <span class="nc">CrossBelowThreshold</span><span class="p">(</span><span class="n">ThresholdCrossed</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">min_crossing_length</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">ThresholdCrossed</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">min_crossing_length</span><span class="p">,</span> <span class="n">cross_to</span><span class="o">=</span><span class="s">&#39;below&#39;</span><span class="p">,</span> <span class="n">real_crossing</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="IsAboveThreshold"><a class="viewcode-back" href="../../pax.html#pax.dsp_utils.IsAboveThreshold">[docs]</a><span class="k">class</span> <span class="nc">IsAboveThreshold</span><span class="p">(</span><span class="n">ThresholdCrossed</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">min_crossing_length</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">ThresholdCrossed</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">min_crossing_length</span><span class="p">,</span> <span class="n">cross_to</span><span class="o">=</span><span class="s">&#39;above&#39;</span><span class="p">,</span> <span class="n">real_crossing</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="IsBelowThreshold"><a class="viewcode-back" href="../../pax.html#pax.dsp_utils.IsBelowThreshold">[docs]</a><span class="k">class</span> <span class="nc">IsBelowThreshold</span><span class="p">(</span><span class="n">ThresholdCrossed</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">min_crossing_length</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">ThresholdCrossed</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">min_crossing_length</span><span class="p">,</span> <span class="n">cross_to</span><span class="o">=</span><span class="s">&#39;below&#39;</span><span class="p">,</span> <span class="n">real_crossing</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="XerawdpSlopeInversionCondition"><a class="viewcode-back" href="../../pax.html#pax.dsp_utils.XerawdpSlopeInversionCondition">[docs]</a><span class="k">class</span> <span class="nc">XerawdpSlopeInversionCondition</span><span class="p">(</span><span class="n">StopCondition</span><span class="p">):</span>
+    <span class="k">pass</span>
+
+
+<span class="c">##</span>
+<span class="c">## Width computations</span>
+<span class="c">##</span>
+
+</div>
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="n">main</span><span class="p">()</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">processor for Analyzing XENON1T 0.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Christopher Tunnell.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

@@ -57,8 +57,31 @@
 <p>PAX is used for doing digital signal processing and other data processing on the XENON1T raw data</p>
 <ul class="simple">
 <li>Free software: BSD license</li>
-<li>Documentation: <a class="reference external" href="http://pax.readthedocs.org">http://pax.readthedocs.org</a>.</li>
+<li>Documentation: <a class="reference external" href="http://xenon1t.github.io/pax/">http://xenon1t.github.io/pax/</a>.</li>
 </ul>
+<div class="section" id="quick-installation">
+<h2>Quick Installation<a class="headerlink" href="#quick-installation" title="Permalink to this headline">¶</a></h2>
+<p>It is recommended to first install a python virtual environment.</p>
+<div class="highlight-python"><div class="highlight"><pre>virtualenv pax_env
+source pax_env/bin/activate
+</pre></div>
+</div>
+<p>Pull from github</p>
+<div class="highlight-python"><div class="highlight"><pre>git clone https://{user}@github.com/XENON1T/pax pax
+{password}
+</pre></div>
+</div>
+<p>Install required packages</p>
+<div class="highlight-python"><div class="highlight"><pre>cd pax
+pip install -r requirements.txt
+</pre></div>
+</div>
+<p>Run the code</p>
+<div class="highlight-python"><div class="highlight"><pre>python bin/paxit.py
+</pre></div>
+</div>
+<p>You can edit the bin file (it&#8217;s recommended to copy it first) to put in your own custom parameters. A list of defaults is in pax/defaults.ini.</p>
+</div>
 <div class="section" id="features">
 <h2>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
@@ -91,6 +114,16 @@
 <li>Demo reconstruction algorithm of charge-weighted sum</li>
 </ul>
 </div></blockquote>
+<ul class="simple">
+<li>Interactive display</li>
+</ul>
+<blockquote>
+<div><ul class="simple">
+<li>Interactive waveform with peaks annotated</li>
+<li>PMT top layer hit pattern</li>
+<li>Display is web browser-based. Allows navigation (next event, switch plot) within browser</li>
+</ul>
+</div></blockquote>
 </div>
 </div>
 
@@ -103,6 +136,7 @@
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Processor for Analyzing XENON1T</a><ul>
+<li><a class="reference internal" href="#quick-installation">Quick Installation</a></li>
 <li><a class="reference internal" href="#features">Features</a></li>
 </ul>
 </li>

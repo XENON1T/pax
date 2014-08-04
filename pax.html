@@ -152,6 +152,26 @@ releases.  Patch releases cannot modify this.</p>
 <dt id="pax.datastructure.S1">
 <em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">S1</tt><big>(</big><em>peak_dict</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#S1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.S1" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a></p>
+<dl class="method">
+<dt id="pax.datastructure.S1.area">
+<tt class="descname">area</tt><big>(</big><em>key='top_and_bottom'</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#S1.area"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.S1.area" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.S1.height">
+<tt class="descname">height</tt><big>(</big><em>key='top_and_bottom'</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#S1.height"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.S1.height" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.S1.time_in_waveform">
+<tt class="descname">time_in_waveform</tt><big>(</big><em>key='top_and_bottom'</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#S1.time_in_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.S1.time_in_waveform" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.S1.width_fwhm">
+<tt class="descname">width_fwhm</tt><big>(</big><em>key='top_and_bottom'</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#S1.width_fwhm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.S1.width_fwhm" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -168,6 +188,116 @@ releases.  Patch releases cannot modify this.</p>
 <dl class="function">
 <dt id="pax.datastructure.flatten">
 <tt class="descclassname">pax.datastructure.</tt><tt class="descname">flatten</tt><big>(</big><em>d</em>, <em>parent_key=''</em>, <em>sep='.'</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#flatten"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.flatten" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-pax.dsp_utils">
+<span id="pax-dsp-utils-module"></span><h2>pax.dsp_utils module<a class="headerlink" href="#module-pax.dsp_utils" title="Permalink to this headline">¶</a></h2>
+<p>Helper functions for peakfinders and other plugins that look at waveforms
+Don&#8217;t put in hacks for Xerawdp matching!</p>
+<dl class="class">
+<dt id="pax.dsp_utils.CrossAboveThreshold">
+<em class="property">class </em><tt class="descclassname">pax.dsp_utils.</tt><tt class="descname">CrossAboveThreshold</tt><big>(</big><em>threshold</em>, <em>min_crossing_length=1</em><big>)</big><a class="reference internal" href="_modules/pax/dsp_utils.html#CrossAboveThreshold"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.CrossAboveThreshold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.dsp_utils.ThresholdCrossed" title="pax.dsp_utils.ThresholdCrossed"><tt class="xref py py-class docutils literal"><span class="pre">pax.dsp_utils.ThresholdCrossed</span></tt></a></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.dsp_utils.CrossBelowThreshold">
+<em class="property">class </em><tt class="descclassname">pax.dsp_utils.</tt><tt class="descname">CrossBelowThreshold</tt><big>(</big><em>threshold</em>, <em>min_crossing_length=1</em><big>)</big><a class="reference internal" href="_modules/pax/dsp_utils.html#CrossBelowThreshold"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.CrossBelowThreshold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.dsp_utils.ThresholdCrossed" title="pax.dsp_utils.ThresholdCrossed"><tt class="xref py py-class docutils literal"><span class="pre">pax.dsp_utils.ThresholdCrossed</span></tt></a></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.dsp_utils.IndexReached">
+<em class="property">class </em><tt class="descclassname">pax.dsp_utils.</tt><tt class="descname">IndexReached</tt><big>(</big><em>limit_index</em><big>)</big><a class="reference internal" href="_modules/pax/dsp_utils.html#IndexReached"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.IndexReached" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.dsp_utils.StopCondition" title="pax.dsp_utils.StopCondition"><tt class="xref py py-class docutils literal"><span class="pre">pax.dsp_utils.StopCondition</span></tt></a></p>
+<dl class="method">
+<dt id="pax.dsp_utils.IndexReached.evaluate">
+<tt class="descname">evaluate</tt><big>(</big><em>d</em><big>)</big><a class="reference internal" href="_modules/pax/dsp_utils.html#IndexReached.evaluate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.IndexReached.evaluate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.dsp_utils.IndexReached.startup">
+<tt class="descname">startup</tt><big>(</big><em>d</em><big>)</big><a class="reference internal" href="_modules/pax/dsp_utils.html#IndexReached.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.IndexReached.startup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.dsp_utils.IsAboveThreshold">
+<em class="property">class </em><tt class="descclassname">pax.dsp_utils.</tt><tt class="descname">IsAboveThreshold</tt><big>(</big><em>threshold</em>, <em>min_crossing_length=1</em><big>)</big><a class="reference internal" href="_modules/pax/dsp_utils.html#IsAboveThreshold"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.IsAboveThreshold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.dsp_utils.ThresholdCrossed" title="pax.dsp_utils.ThresholdCrossed"><tt class="xref py py-class docutils literal"><span class="pre">pax.dsp_utils.ThresholdCrossed</span></tt></a></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.dsp_utils.IsBelowThreshold">
+<em class="property">class </em><tt class="descclassname">pax.dsp_utils.</tt><tt class="descname">IsBelowThreshold</tt><big>(</big><em>threshold</em>, <em>min_crossing_length=1</em><big>)</big><a class="reference internal" href="_modules/pax/dsp_utils.html#IsBelowThreshold"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.IsBelowThreshold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.dsp_utils.ThresholdCrossed" title="pax.dsp_utils.ThresholdCrossed"><tt class="xref py py-class docutils literal"><span class="pre">pax.dsp_utils.ThresholdCrossed</span></tt></a></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.dsp_utils.StartValueExceeded">
+<em class="property">class </em><tt class="descclassname">pax.dsp_utils.</tt><tt class="descname">StartValueExceeded</tt><a class="reference internal" href="_modules/pax/dsp_utils.html#StartValueExceeded"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.StartValueExceeded" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.dsp_utils.StopCondition" title="pax.dsp_utils.StopCondition"><tt class="xref py py-class docutils literal"><span class="pre">pax.dsp_utils.StopCondition</span></tt></a></p>
+<dl class="method">
+<dt id="pax.dsp_utils.StartValueExceeded.evaluate">
+<tt class="descname">evaluate</tt><big>(</big><em>d</em><big>)</big><a class="reference internal" href="_modules/pax/dsp_utils.html#StartValueExceeded.evaluate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.StartValueExceeded.evaluate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.dsp_utils.StopCondition">
+<em class="property">class </em><tt class="descclassname">pax.dsp_utils.</tt><tt class="descname">StopCondition</tt><a class="reference internal" href="_modules/pax/dsp_utils.html#StopCondition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.StopCondition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
+<dl class="method">
+<dt id="pax.dsp_utils.StopCondition.evaluate">
+<tt class="descname">evaluate</tt><big>(</big><em>d</em><big>)</big><a class="reference internal" href="_modules/pax/dsp_utils.html#StopCondition.evaluate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.StopCondition.evaluate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.dsp_utils.StopCondition.startup">
+<tt class="descname">startup</tt><big>(</big><em>d</em><big>)</big><a class="reference internal" href="_modules/pax/dsp_utils.html#StopCondition.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.StopCondition.startup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.dsp_utils.ThresholdCrossed">
+<em class="property">class </em><tt class="descclassname">pax.dsp_utils.</tt><tt class="descname">ThresholdCrossed</tt><big>(</big><em>threshold</em>, <em>min_crossing_length=1</em>, <em>cross_to='either'</em>, <em>real_crossing=True</em><big>)</big><a class="reference internal" href="_modules/pax/dsp_utils.html#ThresholdCrossed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.ThresholdCrossed" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.dsp_utils.StopCondition" title="pax.dsp_utils.StopCondition"><tt class="xref py py-class docutils literal"><span class="pre">pax.dsp_utils.StopCondition</span></tt></a></p>
+<dl class="method">
+<dt id="pax.dsp_utils.ThresholdCrossed.evaluate">
+<tt class="descname">evaluate</tt><big>(</big><em>d</em><big>)</big><a class="reference internal" href="_modules/pax/dsp_utils.html#ThresholdCrossed.evaluate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.ThresholdCrossed.evaluate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.dsp_utils.WaveformEndReached">
+<em class="property">class </em><tt class="descclassname">pax.dsp_utils.</tt><tt class="descname">WaveformEndReached</tt><a class="reference internal" href="_modules/pax/dsp_utils.html#WaveformEndReached"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.WaveformEndReached" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.dsp_utils.StopCondition" title="pax.dsp_utils.StopCondition"><tt class="xref py py-class docutils literal"><span class="pre">pax.dsp_utils.StopCondition</span></tt></a></p>
+<dl class="method">
+<dt id="pax.dsp_utils.WaveformEndReached.evaluate">
+<tt class="descname">evaluate</tt><big>(</big><em>d</em><big>)</big><a class="reference internal" href="_modules/pax/dsp_utils.html#WaveformEndReached.evaluate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.WaveformEndReached.evaluate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.dsp_utils.XerawdpSlopeInversionCondition">
+<em class="property">class </em><tt class="descclassname">pax.dsp_utils.</tt><tt class="descname">XerawdpSlopeInversionCondition</tt><a class="reference internal" href="_modules/pax/dsp_utils.html#XerawdpSlopeInversionCondition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.XerawdpSlopeInversionCondition" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.dsp_utils.StopCondition" title="pax.dsp_utils.StopCondition"><tt class="xref py py-class docutils literal"><span class="pre">pax.dsp_utils.StopCondition</span></tt></a></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.dsp_utils.main">
+<tt class="descclassname">pax.dsp_utils.</tt><tt class="descname">main</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/dsp_utils.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.main" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pax.dsp_utils.walk_waveform">
+<tt class="descclassname">pax.dsp_utils.</tt><tt class="descname">walk_waveform</tt><big>(</big><em>signal</em>, <em>start</em>, <em>stop_conditions</em>, <em>direction='right'</em><big>)</big><a class="reference internal" href="_modules/pax/dsp_utils.html#walk_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.walk_waveform" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </div>
@@ -347,6 +477,7 @@ unit_name(ns,&#8217;s&#8217;) will give &#8216;ns&#8217;</p>
 <li><a class="reference internal" href="#">pax package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
 <li><a class="reference internal" href="#module-pax.datastructure">pax.datastructure module</a></li>
+<li><a class="reference internal" href="#module-pax.dsp_utils">pax.dsp_utils module</a></li>
 <li><a class="reference internal" href="#module-pax.format">pax.format module</a></li>
 <li><a class="reference internal" href="#module-pax.pax">pax.pax module</a></li>
 <li><a class="reference internal" href="#module-pax.plugin">pax.plugin module</a></li>
