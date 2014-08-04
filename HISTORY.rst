@@ -3,8 +3,9 @@
 History
 -------
 
+------------------
 0.2.0 (2014-07-13)
----------------------
+------------------
 
 * Define static event class data structure
 * Transforms now specified in ini file
@@ -15,8 +16,9 @@ History
  * Different summed waveforms for s1 and s2 peakfinding
 * Transforms have start and stop methods
 
+------------------
 0.1.0 (2014-07-18)
----------------------
+------------------
 
 * First release of software framework
 * Functional but not complete digital signal processing
