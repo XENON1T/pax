@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>History &mdash; processor for Analyzing XENON1T 0.1.0 documentation</title>
+    <title>History &mdash; processor for Analyzing XENON1T 0.2.0 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.1.0',
+        VERSION:     '0.2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="processor for Analyzing XENON1T 0.1.0 documentation" href="index.html" />
+    <link rel="top" title="processor for Analyzing XENON1T 0.2.0 documentation" href="index.html" />
     <link rel="prev" title="Credits" href="authors.html" /> 
   </head>
   <body>
@@ -39,7 +39,7 @@
         <li class="right" >
           <a href="authors.html" title="Credits"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">processor for Analyzing XENON1T 0.1.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">processor for Analyzing XENON1T 0.2.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -57,7 +57,16 @@
 <li>Define static event class data structure</li>
 <li>Transforms now specified in ini file</li>
 <li>Can launch small web server for viewing plots</li>
-<li>Matching to XeRawDP (Jelle elaborate?)</li>
+<li>Major changes to essentially every part of the peak finding code to better match Xerawdp. Agreement is currently at the 95% level.</li>
+</ul>
+<blockquote>
+<div><ul class="simple">
+<li>Two important bugfixes for determining included channels : XED channel mask parsing, 0-&gt;1 start</li>
+<li>Filter impulse response now identical now to Xerawdp</li>
+<li>Different summed waveforms for s1 and s2 peakfinding</li>
+</ul>
+</div></blockquote>
+<ul class="simple">
 <li>Transforms have start and stop methods</li>
 </ul>
 </div>
@@ -130,7 +139,7 @@
         <li class="right" >
           <a href="authors.html" title="Credits"
              >previous</a> |</li>
-        <li><a href="index.html">processor for Analyzing XENON1T 0.1.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">processor for Analyzing XENON1T 0.2.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
