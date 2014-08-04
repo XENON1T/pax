@@ -60,23 +60,23 @@ docs:
 	echo open docs/_build/html/index.html
 
 major: clean docs
-	bumpversion major
 	emacs HISTORY.rst
 	git commit -m "Update HISTORY for the release" HISTORY.rst
+	bumpversion major
 	git push
 	git push --tags
 
 
 minor: clean docs
-	bumpversion minor
 	emacs HISTORY.rst
 	git commit -m "Update HISTORY for the release" HISTORY.rst
+	bumpversion minor
 	git push
 	git push --tags
 
 patch: clean docs
-	bumpversion patch
 	emacs HISTORY.rst
 	git commit -m "Update HISTORY for the release" HISTORY.rst
+	bumpversion patch
 	git push
 	git push --tags
