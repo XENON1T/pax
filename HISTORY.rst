@@ -4,6 +4,12 @@ History
 -------
 
 ------------------
+0.2.1 (2014-08-14)
+------------------
+
+* paxit binaries installed by default to allow working out of source (Commit 03470f7, Issues #25) 
+
+------------------
 0.2.0 (2014-08-04)
 ------------------
 
