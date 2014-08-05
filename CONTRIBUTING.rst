@@ -36,9 +36,7 @@ is open to whoever wants to implement it.
 Write Documentation
 ~~~~~~~~~~~~~~~~~~~
 
-processor for Analyzing XENON1T could always use more documentation, whether as part of the
-official processor for Analyzing XENON1T docs, in docstrings, or even on the web in blog posts,
-articles, and such.
+pax could always use more documentation, whether as part of the official pax docs, in docstrings, or even on the wiki.
 
 Submit Feedback
 ~~~~~~~~~~~~~~~
@@ -55,9 +53,9 @@ If you are proposing a feature:
 Get Started!
 ------------
 
-Ready to contribute? Here's how to set up `pax` for local development.
+Ready to contribute? Here's how to set up `pax` for local development.  If you get lost, feel free to ask the developers for help or explore the extensive documentation that exists for github.
 
-1. Fork the `pax` repo on GitHub.
+1. Fork the `pax` repo on GitHub.  (More information can be found at <https://help.github.com/articles/working-with-repositories>)
 2. Clone your fork locally::
 
     $ git clone git@github.com:your_name_here/pax.git
@@ -99,9 +97,7 @@ Before you submit a pull request, check that it meets these guidelines:
 2. If the pull request adds functionality, the docs should be updated. Put
    your new functionality into a function with a docstring, and add the
    feature to the list in README.rst.
-3. The pull request should work for Python 2.6, 2.7, and 3.3, 3.4, and for PyPy. Check
-   https://travis-ci.org/XENON1T/pax/pull_requests
-   and make sure that the tests pass for all supported Python versions.
+
 
 Tips
 ----
