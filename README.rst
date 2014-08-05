@@ -19,7 +19,9 @@ You can now install pax, which requires a github account ::
 
     pip install git+git://github.com/XENON1T/pax.git
 
-Now you should be able to run the command 'paxit'.  For information on how to setup the code for contributing, please see the documentation.
+Now you should be able to run the command 'paxit'.  For information on how to setup the code for contributing, please see the `relevant documentation section`_.
+
+.. _relevant documentation section: CONTRIBUTING.rst
   
 You can edit the bin file (it's recommended to copy it first) to put in your own custom parameters. A list of defaults is in pax/defaults.ini.
 
