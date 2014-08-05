@@ -1,5 +1,4 @@
 import numpy as np
-import math
 
 from pax import plugin, units
 
@@ -85,12 +84,10 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             #         output.write("\n".join(map(str,signal)))
             #     exit()
 
-
-
             ##
             ## STAGE 1 - REGION FINDING
             ##
-            ## Determines the regions in which to search for peak candidate intervals
+            ## Determines the regions in which to search for peak candidate intervalsf
             ##
 
             # Determine when we should stop looking for this type of peaks
@@ -102,11 +99,15 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                 if huge_s2s:
                     stop_looking_after = min([p['left'] for p in huge_s2s])
             if peak_type == 's1':
-                s2s = [p for p in event['peaks'] if p['peak_type'] in ('large_s2', 'small_s2')]
+                # All peaks are still s2s by this point,
+                # no need for s2s = [p for p in event['peaks'] if p['peak_type'] in ('large_s2', 'small_s2')]
+                # Delete peaks beyond the 32 with largest area
+                event['peaks'] = self.sort_and_prune_by(event['peaks'], 'integral', 32, reverse=True)
+                s2s = event['peaks']
                 if s2s:
                     # We stop looking for s1s after the s2 with the largest INTEGRAL
                     # Very confusing, and undocumented!
-                    stop_looking_after = s2s[ int(np.argmax([p['integral'] for p in s2s])) ]['left']
+                    stop_looking_after = s2s[0]['left']
                     #  Also stop looking after large enough s2s
                     #  Size of s2s is determined from s1 peak finding waveform!
                     large_enough_s2s = [p for p in s2s if event['processed_waveforms']['uncorrected_sum_waveform_for_s1'][p['index_of_max_in_waveform']] > 3.1207531815]
@@ -282,6 +283,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
         # I don't see how Xerawdp can prevent seriously madhat behavior without checking this...
         if height == 0:
             # ABORT ABORT ABORT
+            self.log.debug("Ghost peak (0 height) at %s, cannot compute extent!" % max_idx)
             # Have to set seeker position... Guess:
             self.seeker_position = right_boundary +1
             return
@@ -407,10 +409,9 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             aspect_ratio_threshold = settings['aspect_ratio_threshold']
             peak_width = right - left
             aspect_ratio = height_for_aspect_ratio_test / peak_width
+            self.log.debug("    Aspect ratio test: %s <? threshold %s" % (aspect_ratio, aspect_ratio_threshold))
             if aspect_ratio > aspect_ratio_threshold:
-                self.log.debug('    Failed aspect ratio test: max/width ratio %s is higher than %s' % (
-                    aspect_ratio, aspect_ratio_threshold
-                ))
+                self.log.debug('    Failed!')
                 return
 
             # For small s2's the isolation test is slightly different
@@ -518,6 +519,14 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                                left_boundary=right, right_boundary=right_boundary) #Not right+1? Who is off by one?
 
     # Helper methods used only in the peakfinding
+    @staticmethod
+    def sort_and_prune_by(peaklist, key, keep_number=float('inf'), reverse=False):
+        peaklist.sort(key=lambda x : x[key], reverse=reverse)
+        if len(peaklist) > keep_number:
+            return peaklist[:keep_number]
+        else:
+            return peaklist
+
 
     def nearest_s2_boundary(self, event, peak_position, edge_position, direction):
         """Finds the nearest s2 boundary according to arcane Xerawdp rules"""
@@ -570,14 +579,15 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             left_edge_of_right_test_region + test_length_right
         ])
         height = signal[max_idx]
+        self.log.debug("        Pass test if before avg %s > %s and/or above avg %s > %s" % (
+            pre_avg, height * before_avg_max_ratio, post_avg, height * after_avg_max_ratio
+        ))
         if can_fail_one:
             failed = pre_avg > height * before_avg_max_ratio and post_avg > height * after_avg_max_ratio
         else:
             failed = pre_avg > height * before_avg_max_ratio or post_avg > height * after_avg_max_ratio
         if failed:
-            self.log.debug("        Nope: %s > %s and/or %s > %s..." % (
-                pre_avg, height * before_avg_max_ratio, post_avg, height * after_avg_max_ratio
-            ))
+            self.log.debug("        Nope!")
             return False
         else:
             self.log.debug("        Passed!")

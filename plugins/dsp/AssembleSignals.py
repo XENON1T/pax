@@ -124,9 +124,9 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
             event['channel_waveforms'][channel] = wave * self.conversion_factor / self.gains[channel]
 
         # Temp for Xerawdp matching: store uncorrected sum waveform
-        universal_gain_correcion = self.conversion_factor / (2*10**6)
-        event['processed_waveforms']['uncorrected_sum_waveform_for_s1'] = uncorrected_sum_wave_for_s1 * universal_gain_correcion
-        event['processed_waveforms']['uncorrected_sum_waveform_for_s2'] = uncorrected_sum_wave_for_s2 * universal_gain_correcion
+        universal_gain_correction = self.conversion_factor / (2*10**6)
+        event['processed_waveforms']['uncorrected_sum_waveform_for_s1'] = uncorrected_sum_wave_for_s1 * universal_gain_correction
+        event['processed_waveforms']['uncorrected_sum_waveform_for_s2'] = uncorrected_sum_wave_for_s2 * universal_gain_correction
 
         # Delete the channel_occurrences from the event structure, we don't need it anymore
         del event['channel_occurrences']
