@@ -54,11 +54,11 @@ class GenericFilter(plugin.TransformPlugin):
             # [0] and double parens are stupid though, but quite necessary here:
             y = np.abs(np.sign(signal))
             pbs = np.concatenate((np.where(np.roll(y,1) - y == -1)[0], np.where(np.roll(y,-1) - y == -1)[0]))
-            # Check if these are real pulse boundaries: at least two samples before or after must be zero
+            # Check if these are real pulse boundaries: at least three samples before or after must be zero
             real_pbs = []
             for q in pbs:
-                if q < 2 or q > len(signal)-3: continue #So these tests don't fail
-                if signal[q-1]==signal[q-2]==0 or signal[q+1]==signal[q+2]==0:
+                if q < 3 or q > len(signal)-4: continue #So these tests don't fail
+                if signal[q-1]==signal[q-2]==signal[q-3]==0 or signal[q+1]==signal[q+2]==signal[q+3]==0:
                    real_pbs.append(q)
             event['pulse_boundaries'][self.input_name] = real_pbs
         # Mutilate the waveform

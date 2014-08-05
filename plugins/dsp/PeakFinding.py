@@ -470,7 +470,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                                                         start=max_in_filtered-left_boundary,
                                                         threshold=0.25*filtered_wave[max_in_filtered])
                 if filtered_width > settings['max_filtered_width']:
-                    self.log.debug('    Filtered width %s larger than 50' % filtered_width)
+                    self.log.debug('    Filtered width %s larger than %s' % (filtered_width, settings['max_filtered_width']))
                     return
 
         # Update values for later isolation tests
@@ -691,7 +691,7 @@ def find_next_crossing(signal, threshold,
         stop = 0 if direction == 'left' else len(signal) - 1
 
     # Check for errors in arguments
-    # TEMP HACK, these should become errors...
+    # TEMP HACK, these should become errors... or at least stern warnings!
     if stop < 0:
         print("!!!!!!!!!!!!! Invalid crossing search stop point: %s" % stop)
         stop = 0
