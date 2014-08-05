@@ -59,7 +59,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'processor for Analyzing XENON1T'
+project = u'Processor for Analyzing XENON1T'
 copyright = u'2014, Christopher Tunnell'
 
 # The version info for the project you're documenting, acts as replacement
@@ -213,7 +213,7 @@ latex_elements = {
 # [howto/manual]).
 latex_documents = [
 	('index', 'pax.tex',
-	 u'processor for Analyzing XENON1T Documentation',
+	 u'Processor for Analyzing XENON1T Documentation',
 	 u'Christopher Tunnell', 'manual'),
 ]
 
@@ -244,7 +244,7 @@ latex_documents = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
 	('index', 'pax',
-	 u'processor for Analyzing XENON1T Documentation',
+	 u'Processor for Analyzing XENON1T Documentation',
 	 [u'Christopher Tunnell'], 1)
 ]
 
@@ -259,7 +259,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
 	('index', 'pax',
-	 u'processor for Analyzing XENON1T Documentation',
+	 u'Processor for Analyzing XENON1T Documentation',
 	 u'Christopher Tunnell',
 	 'pax',
 	 'One line description of project.',

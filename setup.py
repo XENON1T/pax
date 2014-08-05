@@ -29,6 +29,7 @@ setup(
 		'pax',
 	],
 	package_dir={'pax': 'pax'},
+	scripts = ['bin/paxit', 'bin/paxit_XED'],
 	include_package_data=True,
 	install_requires=requirements,
 	license="BSD",
