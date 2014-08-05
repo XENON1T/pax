@@ -15,15 +15,15 @@ It is recommended to first install a python virtual environment. ::
         virtualenv pax_env
         source pax_env/bin/activate
   
-Pull from github ::
+Pull from github (and replace ${USER} with your username)::
 
-        git clone https://{user}@github.com/XENON1T/pax pax
-        {password}
+        git clone https://${USER}@github.com/XENON1T/pax pax
+        # Input your password when prompted
 
-Install required packages ::
+Install pax ::
 
         cd pax
-        pip install -r requirements.txt
+        python setup.py install
 
 Run the code ::
 
