@@ -61,23 +61,29 @@
 </ul>
 <div class="section" id="quick-installation">
 <h2>Quick Installation<a class="headerlink" href="#quick-installation" title="Permalink to this headline">¶</a></h2>
-<p>It is recommended to first install a python virtual environment.</p>
-<div class="highlight-python"><div class="highlight"><pre>virtualenv pax_env
-source pax_env/bin/activate
+<p>Currently, we require Python 3.4.  Therefore, it is recommended to first install a Python virtual environment and specify where your Python binary is located.</p>
+<div class="highlight-python"><div class="highlight"><pre>virtualenv -p python3.4 paxenv
+source paxenv/bin/activate
 </pre></div>
 </div>
-<p>Pull from github</p>
-<div class="highlight-python"><div class="highlight"><pre>git clone https://{user}@github.com/XENON1T/pax pax
-{password}
+<p>You can now install pax, which requires a github account</p>
+<div class="highlight-python"><div class="highlight"><pre>pip install git+git://github.com/XENON1T/pax.git
 </pre></div>
 </div>
-<p>Install required packages</p>
-<div class="highlight-python"><div class="highlight"><pre>cd pax
-pip install -r requirements.txt
-</pre></div>
-</div>
-<p>Run the code</p>
-<div class="highlight-python"><div class="highlight"><pre>python bin/paxit.py
+<p>Now you should be able to run the command &#8216;paxit&#8217;.  For information on how to setup the code for contributing, please see the <a class="reference external" href="CONTRIBUTING.rst">relevant documentation section</a>.</p>
+<p>If you want to do something fancy, you can create and run your own Python file that could be, for example, the following</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">pax</span>
+
+<span class="c"># Any configuration to overload</span>
+<span class="n">config_overload</span> <span class="o">=</span> <span class="s">&quot;&quot;&quot;</span>
+<span class="s">[pax]</span>
+<span class="s">input = &#39;MongoDB.MongoDBInput&#39;</span>
+<span class="s">my_extra_transforms = [&quot;PosSimple.PosRecWeightedSum&quot;]</span>
+<span class="s">output = [&quot;Plotting.PlottingWaveform&quot;]</span>
+<span class="s">&quot;&quot;&quot;</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
+   <span class="n">pax</span><span class="o">.</span><span class="n">processor</span><span class="p">(</span><span class="n">config_overload</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>You can edit the bin file (it&#8217;s recommended to copy it first) to put in your own custom parameters. A list of defaults is in pax/defaults.ini.</p>
