@@ -10,24 +10,16 @@ PAX is used for doing digital signal processing and other data processing on the
 Quick Installation
 ------------------
 
-It is recommended to first install a python virtual environment. ::
+Currently, we require Python 3.4.  Therefore, it is recommended to first install a python virtual environment and specify where your python binary is located. ::
     
-        virtualenv pax_env
-        source pax_env/bin/activate
+    virtualenv -p python3.4 paxenv
+    source paxenv/bin/activate
   
-Pull from github (and replace ${USER} with your username)::
+You can now install pax, which requires a github account ::
 
-        git clone https://${USER}@github.com/XENON1T/pax pax
-        # Input your password when prompted
+    pip install git+git://github.com/XENON1T/pax.git
 
-Install pax ::
-
-        cd pax
-        python setup.py install
-
-Run the code ::
-
-        python bin/paxit.py
+Now you should be able to run the command 'paxit'.  For information on how to setup the code for contributing, please see the documentation.
   
 You can edit the bin file (it's recommended to copy it first) to put in your own custom parameters. A list of defaults is in pax/defaults.ini.
 
