@@ -59,9 +59,9 @@
 
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">inspect</span>
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">pprint</span> <span class="kn">import</span> <span class="n">pprint</span>
 
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">collections</span>
 
 
@@ -81,6 +81,7 @@
 
 <span class="sd">	All functions are not necessarily able to be used in C++ mode or serialized.</span>
 <span class="sd">	&quot;&quot;&quot;</span>
+
 	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">configuration</span><span class="p">):</span>
 		<span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;Event&#39;</span><span class="p">)</span>
 		<span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">configuration</span>
@@ -92,7 +93,7 @@
 			<span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;pmts_top&#39;</span><span class="p">,</span> <span class="s">&#39;pmts_bottom&#39;</span><span class="p">,</span> <span class="s">&#39;pmts_veto&#39;</span><span class="p">]:</span>
 				<span class="bp">self</span><span class="o">.</span><span class="n">_pmt_groupings</span><span class="p">[</span><span class="n">key</span><span class="p">[</span><span class="mi">5</span><span class="p">:]]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
 
-			<span class="bp">self</span><span class="o">.</span><span class="n">_pmt_groupings</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_pmt_groupings</span><span class="p">[</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pmt_groupings</span><span class="p">[</span><span class="s">&#39;top&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pmt_groupings</span><span class="p">[</span><span class="s">&#39;bottom&#39;</span><span class="p">]</span>
 
 
 	<span class="k">def</span> <span class="nf">_fetch_variable</span><span class="p">(</span><span class="n">original_function</span><span class="p">):</span>
@@ -127,13 +128,13 @@
 			<span class="k">finally</span><span class="p">:</span>
 				<span class="n">variable_name</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">stack</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span>
 				<span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Setting </span><span class="si">%s</span><span class="s"> with value </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">variable_name</span><span class="p">,</span>
-														 <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)))</span>
+				                                             <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)))</span>
 				<span class="bp">self</span><span class="o">.</span><span class="n">_internal_values</span><span class="p">[</span><span class="n">variable_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 
 		<span class="n">new_function</span><span class="o">.</span><span class="n">__doc__</span> <span class="o">=</span> <span class="n">original_function</span><span class="o">.</span><span class="n">__doc__</span>
 		<span class="k">return</span> <span class="n">new_function</span>
 
-	<span class="c">## Begining of properties ##</span>
+	<span class="c"># # Begining of properties ##</span>
 
 	<span class="nd">@property</span>
 	<span class="nd">@_fetch_variable</span>
@@ -173,7 +174,16 @@
 			<span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Found </span><span class="si">%d</span><span class="s"> channels, which seems high.&quot;</span> <span class="o">%</span> <span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
 		<span class="k">elif</span> <span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">100000</span><span class="p">:</span>
 			<span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Found </span><span class="si">%d</span><span class="s"> samples, which seems high.&quot;</span> <span class="o">%</span> <span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-
+</div>
+	<span class="nd">@property</span>
+<div class="viewcode-block" id="Event.total_area"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.total_area">[docs]</a>	<span class="k">def</span> <span class="nf">total_area</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Sum area of waveform</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmt_waveforms</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+</div>
+	<span class="nd">@property</span>
+<div class="viewcode-block" id="Event.total_area_veto"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.total_area_veto">[docs]</a>	<span class="k">def</span> <span class="nf">total_area_veto</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmt_waveforms</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_pmt_groupings</span><span class="p">[</span><span class="s">&#39;veto&#39;</span><span class="p">]]</span>
 
 	<span class="c">## End of getter setter ##</span>
 
@@ -254,8 +264,27 @@
 	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak_dict</span><span class="p">):</span>
 		<span class="bp">self</span><span class="o">.</span><span class="n">peak_dict</span> <span class="o">=</span> <span class="n">peak_dict</span>
 
-<div class="viewcode-block" id="Peak.type"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.type">[docs]</a>	<span class="k">def</span> <span class="nf">type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
+	<span class="nd">@property</span>
+	<span class="k">def</span> <span class="nf">area</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="k">pass</span>
+
+	<span class="nd">@property</span>
+<div class="viewcode-block" id="Peak.peak"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.peak">[docs]</a>	<span class="k">def</span> <span class="nf">peak</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;position of each S1 peak&quot;&quot;&quot;</span>
+		<span class="k">pass</span>
+</div>
+	<span class="k">def</span> <span class="nf">height</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;&quot;&quot;&quot;</span>
+		<span class="k">pass</span>
+
+<div class="viewcode-block" id="Peak.peak_window"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.peak_window">[docs]</a>	<span class="k">def</span> <span class="nf">peak_window</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;The start and stop time of the peak</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+</div>
+	<span class="nd">@property</span>
+<div class="viewcode-block" id="Peak.width"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.width">[docs]</a>	<span class="k">def</span> <span class="nf">width</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="k">pass</span>
+
 </div>
 	<span class="k">def</span> <span class="nf">_get_var</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pmts</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
 		<span class="n">key</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">.</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pmts</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
