@@ -112,19 +112,17 @@ Or rather, it starts from January 1, 1970.</p>
 <p>This should only be the filtered waveform used for S2 finding.</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="pax.datastructure.Event.pmt_waveform">
-<tt class="descname">pmt_waveform</tt><big>(</big><em>pmt</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.pmt_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.pmt_waveform" title="Permalink to this definition">¶</a></dt>
-<dd><p>The individual waveform for a specific PMT.</p>
-<p>The pmt variable must be a nonnegative int.</p>
-</dd></dl>
-
 <dl class="attribute">
 <dt id="pax.datastructure.Event.pmt_waveforms">
 <tt class="descname">pmt_waveforms</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event.pmt_waveforms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.pmt_waveforms" title="Permalink to this definition">¶</a></dt>
 <dd><p>A 2D array of all the PMT waveforms.</p>
 <p>The first index is the PMT number (starting from zero), and the second
-index is the sample number.  This must be a numpy array.</p>
+index is the sample number.  This must be a numpy array.  To access the
+waveform for a specific PMT such as PMT 10, you can do:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">event</span><span class="o">.</span><span class="n">pmt_waveforms</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>which returns a 1D array of samples.</p>
 </dd></dl>
 
 <dl class="method">

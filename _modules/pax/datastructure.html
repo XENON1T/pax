@@ -160,7 +160,13 @@
 		<span class="sd">&quot;&quot;&quot;A 2D array of all the PMT waveforms.</span>
 
 <span class="sd">		The first index is the PMT number (starting from zero), and the second</span>
-<span class="sd">		index is the sample number.  This must be a numpy array.&quot;&quot;&quot;</span>
+<span class="sd">		index is the sample number.  This must be a numpy array.  To access the</span>
+<span class="sd">		waveform for a specific PMT such as PMT 10, you can do::</span>
+
+<span class="sd">			event.pmt_waveforms[10]</span>
+
+<span class="sd">		which returns a 1D array of samples.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
 		<span class="k">pass</span>
 
 	<span class="nd">@pmt_waveforms.setter</span>
@@ -215,17 +221,8 @@
 	<span class="c">##</span>
 	<span class="c">##  Helper functions below</span>
 	<span class="c">##</span>
-</div>
-<div class="viewcode-block" id="Event.pmt_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.pmt_waveform">[docs]</a>	<span class="k">def</span> <span class="nf">pmt_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pmt</span><span class="p">):</span>
-		<span class="sd">&quot;&quot;&quot;The individual waveform for a specific PMT.</span>
 
-<span class="sd">		The pmt variable must be a nonnegative int.&quot;&quot;&quot;</span>
-		<span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pmt</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-			<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Type must be int&quot;</span><span class="p">)</span>
-		<span class="k">elif</span> <span class="n">pmt</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-			<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;PMT number must be positive&quot;</span><span class="p">)</span>
-		<span class="k">else</span><span class="p">:</span>
-			<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmt_waveforms</span><span class="p">[</span><span class="n">pmt</span><span class="p">]</span>
+
 </div>
 <div class="viewcode-block" id="Event.summed_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.summed_waveform">[docs]</a>	<span class="k">def</span> <span class="nf">summed_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
 		<span class="sd">&quot;&quot;&quot;Waveform summed over many PMTs&quot;&quot;&quot;</span>
