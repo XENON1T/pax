@@ -32,8 +32,7 @@ Blah blah
    }
 
 
-pax.datastructure module
-------------------------
+:class:`pax.datastructure.Event`
 
 .. automodule:: pax.datastructure
     :members:
