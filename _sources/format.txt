@@ -35,6 +35,7 @@ Blah blah
 :class:`pax.datastructure.Event`
 
 .. autoclass:: pax.datastructure.Event
+    :properties:
     :members:
 
 .. autoclass:: pax.datastructure.S1
