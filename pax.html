@@ -63,35 +63,16 @@ releases.  Patch releases cannot modify this.</p>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
 <p>The event class</p>
 <p>All functions are not necessarily able to be used in C++ mode or serialized.</p>
-<dl class="method">
+<dl class="attribute">
 <dt id="pax.datastructure.Event.S1s">
-<tt class="descname">S1s</tt><big>(</big><em>sort=('top_and_bottom.area'</em>, <em>True)</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.S1s"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.S1s" title="Permalink to this definition">¶</a></dt>
-<dd><p>List of S1 (scintillation) signals as Peak objects</p>
-<p>By default, this is sorted by cooincidence (TODO) such that the first
-S1 is also the most coincident one.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sort</strong> &#8211; how to sort S2s</td>
-</tr>
-</tbody>
-</table>
+<tt class="descname">S1s</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event.S1s"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.S1s" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of S1 (scintillation) signals inherited from Peak objects</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="attribute">
 <dt id="pax.datastructure.Event.S2s">
-<tt class="descname">S2s</tt><big>(</big><em>sort=('top_and_bottom.area'</em>, <em>True)</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.S2s"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.S2s" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">S2s</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event.S2s"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.S2s" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of S2 (ionization) signals as Peak objects</p>
-<p>By default, this is sorted by area such that the largest S2 is first.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sort</strong> &#8211; how to sort S2s</td>
-</tr>
-</tbody>
-</table>
 </dd></dl>
 
 <dl class="attribute">
@@ -122,20 +103,6 @@ waveform for a specific PMT such as PMT 10, you can do:</p>
 <p>which returns a 1D array of samples.</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="pax.datastructure.Event.summed_waveform">
-<tt class="descname">summed_waveform</tt><big>(</big><em>name='top_and_bottom'</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.summed_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.summed_waveform" title="Permalink to this definition">¶</a></dt>
-<dd><p>Waveform summed over many PMTs.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> &#8211; the name of the PMTs to sum over (e.g., top, veto, etc.)</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
 <dl class="attribute">
 <dt id="pax.datastructure.Event.total_area">
 <tt class="descname">total_area</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event.total_area"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.total_area" title="Permalink to this definition">¶</a></dt>
@@ -148,11 +115,17 @@ waveform for a specific PMT such as PMT 10, you can do:</p>
 <dd><p>Summed area of waveform only for veto PMTs</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="pax.datastructure.Event.waveforms">
+<tt class="descname">waveforms</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event.waveforms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.waveforms" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of S1 (scintillation) signals inherited from Peak objects</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
 <dt id="pax.datastructure.Peak">
-<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Peak</tt><big>(</big><em>peak_dict</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Peak</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.area">
@@ -186,14 +159,44 @@ waveform for a specific PMT such as PMT 10, you can do:</p>
 
 <dl class="class">
 <dt id="pax.datastructure.S1">
-<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">S1</tt><big>(</big><em>peak_dict</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#S1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.S1" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">S1</tt><a class="reference internal" href="_modules/pax/datastructure.html#S1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.S1" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a></p>
 </dd></dl>
 
 <dl class="class">
 <dt id="pax.datastructure.S2">
-<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">S2</tt><big>(</big><em>peak_dict</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#S2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.S2" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">S2</tt><a class="reference internal" href="_modules/pax/datastructure.html#S2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.S2" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.datastructure.Waveform">
+<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Waveform</tt><a class="reference internal" href="_modules/pax/datastructure.html#Waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Waveform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
+<dl class="attribute">
+<dt id="pax.datastructure.Waveform.is_filtered">
+<tt class="descname">is_filtered</tt><a class="reference internal" href="_modules/pax/datastructure.html#Waveform.is_filtered"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Waveform.is_filtered" title="Permalink to this definition">¶</a></dt>
+<dd><p>Boolean</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Waveform.pmt_list">
+<tt class="descname">pmt_list</tt><a class="reference internal" href="_modules/pax/datastructure.html#Waveform.pmt_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Waveform.pmt_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>list of PMT numbers</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Waveform.samples">
+<tt class="descname">samples</tt><a class="reference internal" href="_modules/pax/datastructure.html#Waveform.samples"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Waveform.samples" title="Permalink to this definition">¶</a></dt>
+<dd><p>each sample</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Waveform.short_name">
+<tt class="descname">short_name</tt><a class="reference internal" href="_modules/pax/datastructure.html#Waveform.short_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Waveform.short_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>e.g., top</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="function">

@@ -210,43 +210,60 @@
 		<span class="k">elif</span> <span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">100000</span><span class="p">:</span>
 			<span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Found </span><span class="si">%d</span><span class="s"> samples, which seems high.&quot;</span> <span class="o">%</span> <span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
 </div>
-<div class="viewcode-block" id="Event.S2s"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.S2s">[docs]</a>	<span class="k">def</span> <span class="nf">S2s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;top_and_bottom.area&#39;</span><span class="p">,</span> <span class="bp">True</span><span class="p">)):</span>
+	<span class="nd">@property</span>
+	<span class="nd">@_fetch_variable</span>
+	<span class="k">def</span> <span class="nf">S2s</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 		<span class="sd">&quot;&quot;&quot;List of S2 (ionization) signals as Peak objects</span>
-
-<span class="sd">		By default, this is sorted by area such that the largest S2 is first.</span>
-
-<span class="sd">		:param sort: how to sort S2s</span>
 <span class="sd">		&quot;&quot;&quot;</span>
-		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_peaks</span><span class="p">((</span><span class="s">&#39;large_s2&#39;</span><span class="p">,</span> <span class="s">&#39;small_s2&#39;</span><span class="p">),</span> <span class="n">S2</span><span class="p">,</span> <span class="n">sort</span><span class="p">)</span>
-</div>
-<div class="viewcode-block" id="Event.S1s"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.S1s">[docs]</a>	<span class="k">def</span> <span class="nf">S1s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;top_and_bottom.area&#39;</span><span class="p">,</span> <span class="bp">True</span><span class="p">)):</span>
-		<span class="sd">&quot;&quot;&quot;List of S1 (scintillation) signals as Peak objects</span>
+		<span class="k">pass</span>
 
-<span class="sd">		By default, this is sorted by cooincidence (TODO) such that the first</span>
-<span class="sd">		S1 is also the most coincident one.</span>
-
-<span class="sd">		:param sort: how to sort S2s</span>
-<span class="sd">		&quot;&quot;&quot;</span>
-		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_peaks</span><span class="p">((</span><span class="s">&#39;s1&#39;</span><span class="p">),</span> <span class="n">S1</span><span class="p">,</span> <span class="n">sort</span><span class="p">)</span>
+	<span class="nd">@S2s.setter</span>
+	<span class="nd">@_set_variable</span>
+<div class="viewcode-block" id="Event.S2s"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.S2s">[docs]</a>	<span class="k">def</span> <span class="nf">S2s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+			<span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Wrong type; must be ntuple.&quot;</span><span class="p">)</span>
+		<span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
+			<span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">S2</span><span class="p">):</span>
+				<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Must pass S2&quot;</span><span class="p">)</span>
 
 </div>
-<div class="viewcode-block" id="Event.summed_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.summed_waveform">[docs]</a>	<span class="k">def</span> <span class="nf">summed_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
-		<span class="sd">&quot;&quot;&quot;Waveform summed over many PMTs.</span>
-
-<span class="sd">		:param name:  the name of the PMTs to sum over (e.g., top, veto, etc.)</span>
+	<span class="nd">@property</span>
+	<span class="nd">@_fetch_variable</span>
+	<span class="k">def</span> <span class="nf">S1s</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;List of S1 (scintillation) signals inherited from Peak objects</span>
 <span class="sd">		&quot;&quot;&quot;</span>
-		<span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pmt_groupings</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-			<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Cannot find summed waveform&quot;</span><span class="p">)</span>
-		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmt_waveforms</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_pmt_groupings</span><span class="p">[</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+		<span class="k">pass</span>
 
+	<span class="nd">@S1s.setter</span>
+	<span class="nd">@_set_variable</span>
+<div class="viewcode-block" id="Event.S1s"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.S1s">[docs]</a>	<span class="k">def</span> <span class="nf">S1s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+			<span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Wrong type; must be ntuple.&quot;</span><span class="p">)</span>
+		<span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
+			<span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">S1</span><span class="p">):</span>
+				<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Must pass S1&quot;</span><span class="p">)</span>
+</div>
+	<span class="nd">@property</span>
+	<span class="nd">@_fetch_variable</span>
+	<span class="k">def</span> <span class="nf">waveforms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;List of S1 (scintillation) signals inherited from Peak objects</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">pass</span>
 
-
+	<span class="nd">@waveforms.setter</span>
+	<span class="nd">@_set_variable</span>
+<div class="viewcode-block" id="Event.waveforms"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.waveforms">[docs]</a>	<span class="k">def</span> <span class="nf">waveforms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+			<span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Wrong type; must be ntuple.&quot;</span><span class="p">)</span>
+		<span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
+			<span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Waveform</span><span class="p">):</span>
+				<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Must pass Waveform&quot;</span><span class="p">)</span>
 
 
 </div></div>
 <div class="viewcode-block" id="Peak"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak">[docs]</a><span class="k">class</span> <span class="nc">Peak</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak_dict</span><span class="p">):</span>
-		<span class="bp">self</span><span class="o">.</span><span class="n">peak_dict</span> <span class="o">=</span> <span class="n">peak_dict</span>
+	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_area</span> <span class="o">=</span> <span class="s">&#39;blah&#39;</span>
 
 	<span class="nd">@property</span>
 <div class="viewcode-block" id="Peak.area"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.area">[docs]</a>	<span class="k">def</span> <span class="nf">area</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -282,8 +299,31 @@
 </div>
 <div class="viewcode-block" id="S2"><a class="viewcode-back" href="../../pax.html#pax.datastructure.S2">[docs]</a><span class="k">class</span> <span class="nc">S2</span><span class="p">(</span><span class="n">Peak</span><span class="p">):</span>
 	<span class="k">pass</span>
-
 </div>
+<div class="viewcode-block" id="Waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Waveform">[docs]</a><span class="k">class</span> <span class="nc">Waveform</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+	<span class="nd">@property</span>
+<div class="viewcode-block" id="Waveform.is_filtered"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Waveform.is_filtered">[docs]</a>	<span class="k">def</span> <span class="nf">is_filtered</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Boolean&quot;&quot;&quot;</span>
+		<span class="k">pass</span>
+</div>
+	<span class="nd">@property</span>
+<div class="viewcode-block" id="Waveform.short_name"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Waveform.short_name">[docs]</a>	<span class="k">def</span> <span class="nf">short_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;e.g., top&quot;&quot;&quot;</span>
+		<span class="k">pass</span>
+</div>
+	<span class="nd">@property</span>
+<div class="viewcode-block" id="Waveform.pmt_list"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Waveform.pmt_list">[docs]</a>	<span class="k">def</span> <span class="nf">pmt_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;list of PMT numbers&quot;&quot;&quot;</span>
+		<span class="k">pass</span>
+</div>
+	<span class="nd">@property</span>
+<div class="viewcode-block" id="Waveform.samples"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Waveform.samples">[docs]</a>	<span class="k">def</span> <span class="nf">samples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;each sample</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">pass</span>
+
+</div></div>
 <div class="viewcode-block" id="explain"><a class="viewcode-back" href="../../pax.html#pax.datastructure.explain">[docs]</a><span class="k">def</span> <span class="nf">explain</span><span class="p">(</span><span class="n">class_name</span><span class="p">):</span>
 	<span class="n">x</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getmembers</span><span class="p">(</span><span class="n">class_name</span><span class="p">,</span>
 	                       <span class="n">predicate</span><span class="o">=</span><span class="n">inspect</span><span class="o">.</span><span class="n">isdatadescriptor</span><span class="p">)</span>
