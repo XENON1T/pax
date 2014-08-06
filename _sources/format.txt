@@ -34,11 +34,16 @@ Blah blah
 
 :class:`pax.datastructure.Event`
 
-.. automodule:: pax.datastructure
-    :members:
-    :undoc-members:
-    :show-inheritance:
+.. autoclass:: pax.datastructure.Event
+    :functions:
 
+.. autoclass:: pax.datastructure.S1
+    :functions:
+    :inherited-members:
+
+.. autoclass:: pax.datastructure.S2
+    :functions:
+    :inherited-members:
 
 Channel waveforms
 =================
