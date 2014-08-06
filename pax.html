@@ -61,8 +61,15 @@ releases.  Patch releases cannot modify this.</p>
 <dt id="pax.datastructure.Event">
 <em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Event</tt><big>(</big><em>configuration</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
-<p>The event class</p>
-<p>All functions are not necessarily able to be used in C++ mode or serialized.</p>
+<p>The event class.</p>
+<p>This class defines the data structure for pax.  Within it are all of the
+high-level quantities that pax computes.  For example, the size of the S2
+signals.  This class is passed between the pax plugins and used as an
+information container.</p>
+<dl class="docutils">
+<dt>..note: This class should not include much logic since otherwise it makes it</dt>
+<dd>harder to serialize.</dd>
+</dl>
 <dl class="attribute">
 <dt id="pax.datastructure.Event.S1s">
 <tt class="descname">S1s</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event.S1s"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.S1s" title="Permalink to this definition">¶</a></dt>
@@ -130,6 +137,7 @@ waveform for a specific PMT such as PMT 10, you can do:</p>
 <dt id="pax.datastructure.Peak">
 <em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Peak</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
+<p>Class for S1 and S2 peak information</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.area">
 <tt class="descname">area</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.area"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.area" title="Permalink to this definition">¶</a></dt>
@@ -167,6 +175,7 @@ waveform for a specific PMT such as PMT 10, you can do:</p>
 <dt id="pax.datastructure.SumWaveform">
 <em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">SumWaveform</tt><a class="reference internal" href="_modules/pax/datastructure.html#SumWaveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.SumWaveform" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
+<p>Class used to store sum (filtered or not) waveform information.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.SumWaveform.is_filtered">
 <tt class="descname">is_filtered</tt><a class="reference internal" href="_modules/pax/datastructure.html#SumWaveform.is_filtered"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.SumWaveform.is_filtered" title="Permalink to this definition">¶</a></dt>

@@ -77,9 +77,15 @@
 
 
 <div class="viewcode-block" id="Event"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event">[docs]</a><span class="k">class</span> <span class="nc">Event</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-	<span class="sd">&quot;&quot;&quot;The event class</span>
+	<span class="sd">&quot;&quot;&quot;The event class.</span>
 
-<span class="sd">	All functions are not necessarily able to be used in C++ mode or serialized.</span>
+<span class="sd">	This class defines the data structure for pax.  Within it are all of the</span>
+<span class="sd">	high-level quantities that pax computes.  For example, the size of the S2</span>
+<span class="sd">	signals.  This class is passed between the pax plugins and used as an</span>
+<span class="sd">	information container.</span>
+
+<span class="sd">	..note: This class should not include much logic since otherwise it makes it</span>
+<span class="sd">	        harder to serialize.</span>
 <span class="sd">	&quot;&quot;&quot;</span>
 
 	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">configuration</span><span class="p">):</span>
@@ -268,6 +274,8 @@
 
 </div></div>
 <div class="viewcode-block" id="Peak"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak">[docs]</a><span class="k">class</span> <span class="nc">Peak</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+	<span class="sd">&quot;&quot;&quot;Class for S1 and S2 peak information</span>
+<span class="sd">	&quot;&quot;&quot;</span>
 	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 		<span class="bp">self</span><span class="o">.</span><span class="n">_area</span> <span class="o">=</span> <span class="s">&#39;blah&#39;</span>
 
@@ -305,7 +313,8 @@
 
 </div></div>
 <div class="viewcode-block" id="SumWaveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.SumWaveform">[docs]</a><span class="k">class</span> <span class="nc">SumWaveform</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-
+	<span class="sd">&quot;&quot;&quot;Class used to store sum (filtered or not) waveform information.</span>
+<span class="sd">	&quot;&quot;&quot;</span>
 	<span class="nd">@property</span>
 <div class="viewcode-block" id="SumWaveform.is_filtered"><a class="viewcode-back" href="../../pax.html#pax.datastructure.SumWaveform.is_filtered">[docs]</a>	<span class="k">def</span> <span class="nf">is_filtered</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 		<span class="sd">&quot;&quot;&quot;Boolean&quot;&quot;&quot;</span>

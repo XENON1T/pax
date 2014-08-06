@@ -54,37 +54,19 @@
             
   <div class="section" id="event-format">
 <h1>Event format<a class="headerlink" href="#event-format" title="Permalink to this headline">¶</a></h1>
-<p>The event data structure is the centrepiece of the life of your pax plugin. Through it, your plug-in has access to the results of previously run plug-ins&#8217; work; in return, you are expected to store the fruits of your plug-in&#8217;s labour at an appropriate place in the event data structure.</p>
-<blockquote>
-<div><ul class="simple">
-<li>&#8216;channel_occurences&#8217; : This contains the raw waveform occurrences as read by the input plug-in. JoinAndConvertWaveforms beats from this, then deletes it from the event structure: you probably never have to deal with this. Just in case you do, it&#8217;s format is similar to channel_waveforms, except that event[&#8216;channel_occurences&#8217;][7] gives you a list of (start_sample, raw_sample_list) TUPLES, each representing a waveform occurrence (starting at start_sample) in channel 7.</li>
-<li>&#8216;channel_waveforms&#8217; : This contains the waveform for every channel, in units of photoelectrons per bin (pe/bin). This implies that the waveforms are already baseline-corrected and gain-corrected. event[&#8216;channel_waveforms&#8217;][7] gives you the waveform (a list of floats) for channel 7 if channel 7 contributes to the waveform, and crashes if it does not. A safe way of iterating over all channel waveforms is:</li>
-</ul>
-</div></blockquote>
-<dl class="docutils">
-<dt>for channel, waveform in channel_waveforms:</dt>
-<dd>print &#8220;SumWaveform for %s is %s samples long&#8221; %s (</dd>
-</dl>
-<div class="highlight-javascript"><div class="highlight"><pre><span class="p">{</span>
-    <span class="s2">&quot;channel_waveforms&quot;</span><span class="o">:</span> <span class="nx">see</span> <span class="nx">blah</span><span class="p">,</span>
-    <span class="s2">&quot;processed_waveforms&quot;</span><span class="o">:</span> <span class="nx">see</span> <span class="nx">blah</span><span class="p">,</span>
-    <span class="s2">&quot;time&quot;</span><span class="o">:</span> <span class="kr">int</span><span class="p">,</span>
-    <span class="s2">&quot;data&quot;</span><span class="o">:</span> <span class="nx">binary</span><span class="p">,</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-<p>Blah blah</p>
-<p class="graphviz">
-<img src="_images/graphviz-45ef1ee31e54fae5ae7fbdfa5fca3fde416d66a8.png" alt="digraph foo {
-   &quot;event&quot; -&gt; &quot;baz&quot;;
-}" />
-</p>
-<p><a class="reference internal" href="pax.html#pax.datastructure.Event" title="pax.datastructure.Event"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Event</span></tt></a></p>
+<p>The event data structure is the centrepiece of the life of your pax plugin. Through it, your plug-in has access to the results of previously run plug-ins&#8217; work; in return, you are expected to store the fruits of your plug-in&#8217;s labour at an appropriate place in the event data structure.  The following is the <a class="reference internal" href="pax.html#pax.datastructure.Event" title="pax.datastructure.Event"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Event</span></tt></a> class that you must modify.</p>
 <dl class="class">
 <dt id="pax.datastructure.Event">
 <em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Event</tt><big>(</big><em>configuration</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event" title="Permalink to this definition">¶</a></dt>
-<dd><p>The event class</p>
-<p>All functions are not necessarily able to be used in C++ mode or serialized.</p>
+<dd><p>The event class.</p>
+<p>This class defines the data structure for pax.  Within it are all of the
+high-level quantities that pax computes.  For example, the size of the S2
+signals.  This class is passed between the pax plugins and used as an
+information container.</p>
+<dl class="docutils">
+<dt>..note: This class should not include much logic since otherwise it makes it</dt>
+<dd>harder to serialize.</dd>
+</dl>
 <dl class="attribute">
 <dt id="pax.datastructure.Event.S1s">
 <tt class="descname">S1s</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event.S1s"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.S1s" title="Permalink to this definition">¶</a></dt>
@@ -148,10 +130,45 @@ waveform for a specific PMT such as PMT 10, you can do:</p>
 
 </dd></dl>
 
-<div class="section" id="channel-waveforms">
-<h2>Channel waveforms<a class="headerlink" href="#channel-waveforms" title="Permalink to this headline">¶</a></h2>
-<p>Fill me.</p>
-</div>
+<p>There are variables within the class that refer to <a class="reference internal" href="pax.html#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a> and <a class="reference internal" href="pax.html#pax.datastructure.SumWaveform" title="pax.datastructure.SumWaveform"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.SumWaveform</span></tt></a> objects.  These have their own class structure.  For example, both S1 and S2 peaks follow the following syntax.</p>
+<dl class="class">
+<dt id="pax.datastructure.Peak">
+<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Peak</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class for S1 and S2 peak information</p>
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.area">
+<tt class="descname">area</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.area"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.area" title="Permalink to this definition">¶</a></dt>
+<dd><p>Area of the pulse in photoelectrons</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.bounds">
+<tt class="descname">bounds</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.bounds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.bounds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Where the peak starts and ends in the sum waveform</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.height">
+<tt class="descname">height</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.height"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.height" title="Permalink to this definition">¶</a></dt>
+<dd><p>Highest point in peak in units of ADC counts</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.time_in_waveform">
+<tt class="descname">time_in_waveform</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.time_in_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.time_in_waveform" title="Permalink to this definition">¶</a></dt>
+<dd><p>position of each S1 peak</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.width_fwhm">
+<tt class="descname">width_fwhm</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.width_fwhm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.width_fwhm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Width at full width half max</p>
+<p>Units are 10 ns.</p>
+</dd></dl>
+
+</dd></dl>
+
+<p>Waveforms, which are not typically saved, follow the following format.</p>
 </div>
 
 
@@ -160,14 +177,6 @@ waveform for a specific PMT such as PMT 10, you can do:</p>
       </div>
       <div class="sphinxsidebar">
         <div class="sphinxsidebarwrapper">
-  <h3><a href="index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Event format</a><ul>
-<li><a class="reference internal" href="#channel-waveforms">Channel waveforms</a></li>
-</ul>
-</li>
-</ul>
-
   <h4>Previous topic</h4>
   <p class="topless"><a href="usage.html"
                         title="previous chapter">Usage</a></p>
