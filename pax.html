@@ -49,8 +49,172 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="pax-datastructure-module">
-<h2>pax.datastructure module<a class="headerlink" href="#pax-datastructure-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-pax.datastructure">
+<span id="pax-datastructure-module"></span><h2>pax.datastructure module<a class="headerlink" href="#module-pax.datastructure" title="Permalink to this headline">¶</a></h2>
+<p>Data structure for pax</p>
+<p>This is meant to be a fixed data structure that people can use to access
+physically meaningful variables.  For example, S2.</p>
+<p>NOTE: This class is stable within major releases.  Do not change any variable
+names of functionality between major releases.  You may add variables in minor
+releases.  Patch releases cannot modify this.</p>
+<dl class="class">
+<dt id="pax.datastructure.Event">
+<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Event</tt><big>(</big><em>configuration</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
+<p>The event class.</p>
+<p>This class defines the data structure for pax.  Within it are all of the
+high-level quantities that pax computes.  For example, the size of the S2
+signals.  This class is passed between the pax plugins and used as an
+information container.</p>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">This class should not include much logic since otherwise it
+makes it harder to serialize.  Nevertheless, some methods are
+provided for convienence.</p>
+</div>
+<dl class="attribute">
+<dt id="pax.datastructure.Event.S1s">
+<tt class="descname">S1s</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event.S1s"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.S1s" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of S1 (scintillation) signals</p>
+<p>Returns an <a class="reference internal" href="#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a> class.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Event.S2s">
+<tt class="descname">S2s</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event.S2s"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.S2s" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of S2 (ionization) signals</p>
+<p>Returns an <a class="reference internal" href="#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a> class.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Event.event_window">
+<tt class="descname">event_window</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event.event_window"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.event_window" title="Permalink to this definition">¶</a></dt>
+<dd><p>Two numbers for the start and stop time of the event.</p>
+<p>This is a 64-bit number in units of 10 ns that follows the UNIX clock.
+Or rather, it starts from January 1, 1970.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.Event.filtered_waveform">
+<tt class="descname">filtered_waveform</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.filtered_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.filtered_waveform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Top and bottom filtered waveform method for convienence.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Event.pmt_waveforms">
+<tt class="descname">pmt_waveforms</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event.pmt_waveforms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.pmt_waveforms" title="Permalink to this definition">¶</a></dt>
+<dd><p>A 2D array of all the PMT waveforms.</p>
+<p>The first index is the PMT number (starting from zero), and the second
+index is the sample number.  This must be a numpy array.  To access the
+waveform for a specific PMT such as PMT 10, you can do:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">event</span><span class="o">.</span><span class="n">pmt_waveforms</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>which returns a 1D array of samples.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.Event.sum_waveform">
+<tt class="descname">sum_waveform</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.sum_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.sum_waveform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Top and bottom sum waveform method for convienence.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Event.total_area">
+<tt class="descname">total_area</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event.total_area"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.total_area" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sum area of waveform</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Event.total_area_veto">
+<tt class="descname">total_area_veto</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event.total_area_veto"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.total_area_veto" title="Permalink to this definition">¶</a></dt>
+<dd><p>Summed area of waveform only for veto PMTs</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Event.waveforms">
+<tt class="descname">waveforms</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event.waveforms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.waveforms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of waveforms</p>
+<p>Returns an <a class="reference internal" href="#pax.datastructure.SumWaveform" title="pax.datastructure.SumWaveform"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.SumWaveform</span></tt></a> class.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.datastructure.Peak">
+<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Peak</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
+<p>Class for S1 and S2 peak information</p>
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.area">
+<tt class="descname">area</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.area"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.area" title="Permalink to this definition">¶</a></dt>
+<dd><p>Area of the pulse in photoelectrons</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.bounds">
+<tt class="descname">bounds</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.bounds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.bounds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Where the peak starts and ends in the sum waveform</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.height">
+<tt class="descname">height</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.height"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.height" title="Permalink to this definition">¶</a></dt>
+<dd><p>Highest point in peak in units of ADC counts</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.time_in_waveform">
+<tt class="descname">time_in_waveform</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.time_in_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.time_in_waveform" title="Permalink to this definition">¶</a></dt>
+<dd><p>position of each S1 peak</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.width_fwhm">
+<tt class="descname">width_fwhm</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.width_fwhm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.width_fwhm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Width at full width half max</p>
+<p>Units are 10 ns.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.datastructure.SumWaveform">
+<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">SumWaveform</tt><a class="reference internal" href="_modules/pax/datastructure.html#SumWaveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.SumWaveform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
+<p>Class used to store sum (filtered or not) waveform information.</p>
+<dl class="attribute">
+<dt id="pax.datastructure.SumWaveform.is_filtered">
+<tt class="descname">is_filtered</tt><a class="reference internal" href="_modules/pax/datastructure.html#SumWaveform.is_filtered"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.SumWaveform.is_filtered" title="Permalink to this definition">¶</a></dt>
+<dd><p>Boolean</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.SumWaveform.name_of_filter">
+<tt class="descname">name_of_filter</tt><a class="reference internal" href="_modules/pax/datastructure.html#SumWaveform.name_of_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.SumWaveform.name_of_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name of the filter used (or None)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.SumWaveform.pmt_list">
+<tt class="descname">pmt_list</tt><a class="reference internal" href="_modules/pax/datastructure.html#SumWaveform.pmt_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.SumWaveform.pmt_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Array of PMT numbers included in this waveform</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.SumWaveform.samples">
+<tt class="descname">samples</tt><a class="reference internal" href="_modules/pax/datastructure.html#SumWaveform.samples"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.SumWaveform.samples" title="Permalink to this definition">¶</a></dt>
+<dd><p>Array of samples.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.SumWaveform.short_name">
+<tt class="descname">short_name</tt><a class="reference internal" href="_modules/pax/datastructure.html#SumWaveform.short_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.SumWaveform.short_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>e.g., top</p>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 <div class="section" id="module-pax.dsp_utils">
 <span id="pax-dsp-utils-module"></span><h2>pax.dsp_utils module<a class="headerlink" href="#module-pax.dsp_utils" title="Permalink to this headline">¶</a></h2>
@@ -337,7 +501,7 @@ unit_name(ns,&#8217;s&#8217;) will give &#8216;ns&#8217;</p>
   <ul>
 <li><a class="reference internal" href="#">pax package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#pax-datastructure-module">pax.datastructure module</a></li>
+<li><a class="reference internal" href="#module-pax.datastructure">pax.datastructure module</a></li>
 <li><a class="reference internal" href="#module-pax.dsp_utils">pax.dsp_utils module</a></li>
 <li><a class="reference internal" href="#module-pax.format">pax.format module</a></li>
 <li><a class="reference internal" href="#module-pax.pax">pax.pax module</a></li>

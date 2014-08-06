@@ -84,8 +84,9 @@
 <span class="sd">	signals.  This class is passed between the pax plugins and used as an</span>
 <span class="sd">	information container.</span>
 
-<span class="sd">	.. note:: This class should not include much logic since otherwise it makes it</span>
-<span class="sd">	        harder to serialize.</span>
+<span class="sd">	.. note:: This class should not include much logic since otherwise it</span>
+<span class="sd">			  makes it harder to serialize.  Nevertheless, some methods are</span>
+<span class="sd">			  provided for convienence.</span>
 <span class="sd">	&quot;&quot;&quot;</span>
 
 	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">configuration</span><span class="p">):</span>
@@ -198,23 +199,15 @@
 		<span class="sd">&quot;&quot;&quot;Summed area of waveform only for veto PMTs&quot;&quot;&quot;</span>
 		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmt_waveforms</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_pmt_groupings</span><span class="p">[</span><span class="s">&#39;veto&#39;</span><span class="p">]]</span>
 </div>
-	<span class="nd">@property</span>
-	<span class="nd">@_fetch_variable</span>
-	<span class="k">def</span> <span class="nf">filtered_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-		<span class="sd">&quot;&quot;&quot;Filtered waveform summed over many PMTs.</span>
-
-<span class="sd">		This should only be the filtered waveform used for S2 finding.&quot;&quot;&quot;</span>
+<div class="viewcode-block" id="Event.sum_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.sum_waveform">[docs]</a>	<span class="k">def</span> <span class="nf">sum_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Top and bottom sum waveform method for convienence.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
 		<span class="k">pass</span>
-
-	<span class="nd">@filtered_waveform.setter</span>
-	<span class="nd">@_set_variable</span>
-<div class="viewcode-block" id="Event.filtered_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.filtered_waveform">[docs]</a>	<span class="k">def</span> <span class="nf">filtered_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-		<span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">)):</span>
-			<span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Wrong type; must be numpy array.&quot;</span><span class="p">)</span>
-		<span class="k">elif</span> <span class="n">value</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
-			<span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Wrong size; must be dimension 1.&quot;</span><span class="p">)</span>
-		<span class="k">elif</span> <span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">100000</span><span class="p">:</span>
-			<span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Found </span><span class="si">%d</span><span class="s"> samples, which seems high.&quot;</span> <span class="o">%</span> <span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+</div>
+<div class="viewcode-block" id="Event.filtered_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.filtered_waveform">[docs]</a>	<span class="k">def</span> <span class="nf">filtered_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Top and bottom filtered waveform method for convienence.</span>
+<span class="sd">		&quot;&quot;&quot;</span>
+		<span class="k">pass</span>
 </div>
 	<span class="nd">@property</span>
 	<span class="nd">@_fetch_variable</span>
