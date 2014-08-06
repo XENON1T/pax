@@ -75,11 +75,6 @@ releases.  Patch releases cannot modify this.</p>
 <dd><p>List of S2 (ionization) signals as Peak objects</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="pax.datastructure.Event.dump">
-<tt class="descname">dump</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.dump"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.dump" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 <dl class="attribute">
 <dt id="pax.datastructure.Event.event_window">
 <tt class="descname">event_window</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event.event_window"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.event_window" title="Permalink to this definition">¶</a></dt>
@@ -88,9 +83,9 @@ releases.  Patch releases cannot modify this.</p>
 Or rather, it starts from January 1, 1970.</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="attribute">
 <dt id="pax.datastructure.Event.filtered_waveform">
-<tt class="descname">filtered_waveform</tt><big>(</big><em>filter_name=None</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.filtered_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.filtered_waveform" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">filtered_waveform</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event.filtered_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.filtered_waveform" title="Permalink to this definition">¶</a></dt>
 <dd><p>Filtered waveform summed over many PMTs.</p>
 <p>This should only be the filtered waveform used for S2 finding.</p>
 </dd></dl>
@@ -125,7 +120,8 @@ index is the sample number.  This must be a numpy array.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Event.total_area_veto">
 <tt class="descname">total_area_veto</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event.total_area_veto"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.total_area_veto" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Summed area of waveform only for veto PMTs</p>
+</dd></dl>
 
 </dd></dl>
 

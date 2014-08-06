@@ -183,34 +183,27 @@
 </div>
 	<span class="nd">@property</span>
 <div class="viewcode-block" id="Event.total_area_veto"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.total_area_veto">[docs]</a>	<span class="k">def</span> <span class="nf">total_area_veto</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Summed area of waveform only for veto PMTs&quot;&quot;&quot;</span>
 		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmt_waveforms</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_pmt_groupings</span><span class="p">[</span><span class="s">&#39;veto&#39;</span><span class="p">]]</span>
-
-	<span class="c">## End of getter setter ##</span>
-
 </div>
-	<span class="k">def</span> <span class="nf">_get_peaks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak_types</span><span class="p">,</span> <span class="n">peak_class</span><span class="p">,</span> <span class="n">sort</span><span class="p">):</span>
-		<span class="sd">&quot;&quot;&quot;Fetch S1 or S2 peaks from our data structure</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-		<span class="c"># Sort key is used on the flattened peak</span>
-		<span class="c"># Sort order is whether or not Python sort is &#39;reversed&#39;</span>
-		<span class="n">sort_key</span><span class="p">,</span> <span class="n">sort_order</span> <span class="o">=</span> <span class="n">sort</span>
+	<span class="nd">@property</span>
+	<span class="nd">@_fetch_variable</span>
+	<span class="k">def</span> <span class="nf">filtered_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Filtered waveform summed over many PMTs.</span>
 
-		<span class="n">peaks</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="sd">		This should only be the filtered waveform used for S2 finding.&quot;&quot;&quot;</span>
+		<span class="k">pass</span>
 
-		<span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">[</span><span class="s">&#39;peaks&#39;</span><span class="p">]:</span>
-			<span class="k">if</span> <span class="n">peak</span><span class="p">[</span><span class="s">&#39;peak_type&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">peak_types</span><span class="p">:</span>
-				<span class="k">if</span> <span class="s">&#39;rejected&#39;</span> <span class="ow">in</span> <span class="n">peaks</span> <span class="ow">and</span> <span class="n">peaks</span><span class="p">[</span><span class="s">&#39;rejected&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
-					<span class="k">continue</span>
-
-				<span class="c"># Flatten the peak so we can use our sort key</span>
-				<span class="n">peak_key</span> <span class="o">=</span> <span class="n">flatten</span><span class="p">(</span><span class="n">peak</span><span class="p">)[</span><span class="n">sort_key</span><span class="p">]</span>
-
-				<span class="c"># Save save into dictionary</span>
-				<span class="n">peaks</span><span class="p">[</span><span class="n">peak_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">peak_class</span><span class="p">(</span><span class="n">peak</span><span class="p">)</span>
-
-		<span class="c"># Return just a list, but sorted according to our sort key and order</span>
-		<span class="k">return</span> <span class="p">[</span><span class="n">peaks</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">peaks</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="n">sort_order</span><span class="p">)]</span>
-
+	<span class="nd">@filtered_waveform.setter</span>
+	<span class="nd">@_set_variable</span>
+<div class="viewcode-block" id="Event.filtered_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.filtered_waveform">[docs]</a>	<span class="k">def</span> <span class="nf">filtered_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">)):</span>
+			<span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Wrong type; must be numpy array.&quot;</span><span class="p">)</span>
+		<span class="k">elif</span> <span class="n">value</span><span class="o">.</span><span class="n">ndim</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+			<span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Wrong size; must be dimension 1.&quot;</span><span class="p">)</span>
+		<span class="k">elif</span> <span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">100000</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Found </span><span class="si">%d</span><span class="s"> samples, which seems high.&quot;</span> <span class="o">%</span> <span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+</div>
 <div class="viewcode-block" id="Event.S2s"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.S2s">[docs]</a>	<span class="k">def</span> <span class="nf">S2s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;top_and_bottom.area&#39;</span><span class="p">,</span> <span class="bp">True</span><span class="p">)):</span>
 		<span class="sd">&quot;&quot;&quot;List of S2 (ionization) signals as Peak objects&quot;&quot;&quot;</span>
 		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_peaks</span><span class="p">((</span><span class="s">&#39;large_s2&#39;</span><span class="p">,</span> <span class="s">&#39;small_s2&#39;</span><span class="p">),</span> <span class="n">S2</span><span class="p">,</span> <span class="n">sort</span><span class="p">)</span>
@@ -236,28 +229,13 @@
 </div>
 <div class="viewcode-block" id="Event.summed_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.summed_waveform">[docs]</a>	<span class="k">def</span> <span class="nf">summed_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
 		<span class="sd">&quot;&quot;&quot;Waveform summed over many PMTs&quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pmt_groupings</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+			<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Cannot find summed waveform&quot;</span><span class="p">)</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmt_waveforms</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_pmt_groupings</span><span class="p">[</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
-		<span class="k">if</span> <span class="s">&#39;filtered&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
-			<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Use filtered_waveform, not this function: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
-		<span class="k">elif</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">[</span><span class="s">&#39;processed_waveforms&#39;</span><span class="p">]:</span>
-			<span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">[</span><span class="s">&#39;processed_waveforms&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-			<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Summed waveform </span><span class="si">%s</span><span class="s"> does not exist.&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
-		<span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s">&#39;uncorrected_sum_waveform_for_xerawdp_matching&#39;</span><span class="p">:</span>
-			<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">()</span>
 
-		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">[</span><span class="s">&#39;processed_waveforms&#39;</span><span class="p">][</span><span class="n">name</span><span class="p">]</span>
-</div>
-<div class="viewcode-block" id="Event.filtered_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.filtered_waveform">[docs]</a>	<span class="k">def</span> <span class="nf">filtered_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_name</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-		<span class="sd">&quot;&quot;&quot;Filtered waveform summed over many PMTs.</span>
 
-<span class="sd">		This should only be the filtered waveform used for S2 finding.&quot;&quot;&quot;</span>
-		<span class="k">if</span> <span class="n">filter_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-			<span class="c"># raise PendingDeprecationWarning() #Why? Currently this throws an error, not a warning...</span>
-			<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">[</span><span class="s">&#39;processed_waveforms&#39;</span><span class="p">][</span><span class="n">filter_name</span><span class="p">]</span>
-		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">[</span><span class="s">&#39;processed_waveforms&#39;</span><span class="p">][</span><span class="s">&#39;filtered_for_large_s2&#39;</span><span class="p">]</span>
-</div>
-<div class="viewcode-block" id="Event.dump"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.dump">[docs]</a>	<span class="k">def</span> <span class="nf">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-		<span class="n">pprint</span><span class="o">.</span><span class="n">pprint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">)</span>
+
 
 </div></div>
 <div class="viewcode-block" id="Peak"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak">[docs]</a><span class="k">class</span> <span class="nc">Peak</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
