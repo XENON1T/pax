@@ -462,9 +462,13 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             #  - the filtered waveform is mangled by the convolution bug, so the widths come out lower
             #  - Xerawdp limits the width search quite strictly, making it come out lower than the real FWQM
             filtered_wave = event['processed_waveforms']['filtered_for_s1_width_test']
-            max_in_filtered = left + int(np.argmax(filtered_wave[left:right]))
-            if filtered_wave[max_in_filtered] == 0:
-                pass    # Happens due to Xerawdp's convolution bug, Xerawdp's width will return 0, passes test
+            max_in_filtered = left + int(np.argmax(filtered_wave[left:right])) #not right+1, Xerawdp doesn't include it either
+            if filtered_wave[max_in_filtered] <= 0:
+                # = 0 Happens due to Xerawdp's convolution bug, Xerawdp's width will return 0, passes test
+                # <0 happens for very short&shallow s1s, it breaks my implementation of extent_until_threshold,
+                #    since it searches for crossings, which it never finds). Xerawdp it should return a filtered
+                #    width of 0 since it is already below threshold, so it always passes the test.
+                pass
             else:
                 filtered_width = extent_until_threshold(filtered_wave[left_boundary:right_boundary+1],
                                                         start=max_in_filtered-left_boundary,
