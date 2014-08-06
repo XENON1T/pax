@@ -65,172 +65,190 @@
 
 
 <div class="viewcode-block" id="flatten"><a class="viewcode-back" href="../../pax.html#pax.datastructure.flatten">[docs]</a><span class="k">def</span> <span class="nf">flatten</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">parent_key</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s">&#39;.&#39;</span><span class="p">):</span>
-    <span class="n">items</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="n">new_key</span> <span class="o">=</span> <span class="n">parent_key</span> <span class="o">+</span> <span class="n">sep</span> <span class="o">+</span> <span class="n">k</span> <span class="k">if</span> <span class="n">parent_key</span> <span class="k">else</span> <span class="n">k</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">MutableMapping</span><span class="p">):</span>
-            <span class="n">items</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">flatten</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">new_key</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">new_key</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
-    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
+	<span class="n">items</span> <span class="o">=</span> <span class="p">[]</span>
+	<span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+		<span class="n">new_key</span> <span class="o">=</span> <span class="n">parent_key</span> <span class="o">+</span> <span class="n">sep</span> <span class="o">+</span> <span class="n">k</span> <span class="k">if</span> <span class="n">parent_key</span> <span class="k">else</span> <span class="n">k</span>
+		<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">MutableMapping</span><span class="p">):</span>
+			<span class="n">items</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">flatten</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">new_key</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">new_key</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
+	<span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
 
 </div>
 <div class="viewcode-block" id="Event"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event">[docs]</a><span class="k">class</span> <span class="nc">Event</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw</span><span class="o">=</span><span class="p">{}):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;Event&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span> <span class="o">=</span> <span class="n">raw</span>
+	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw</span><span class="o">=</span><span class="p">{}):</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;Event&#39;</span><span class="p">)</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_raw</span> <span class="o">=</span> <span class="n">raw</span>
 
-    <span class="nd">@property</span>
-<div class="viewcode-block" id="Event.raw"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.raw">[docs]</a>    <span class="k">def</span> <span class="nf">raw</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i_know_what_i_am_doing</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Do not use: raw internals.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">i_know_what_i_am_doing</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Using RAW event data.&quot;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_variables</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;event_window&#39;</span><span class="p">]</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">_internal_values</span> <span class="o">=</span> <span class="p">{}</span>
+
+		<span class="k">for</span> <span class="n">variable</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_variables</span><span class="p">:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_internal_values</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
+
+	<span class="k">def</span> <span class="nf">_fetch_variable</span><span class="p">(</span><span class="n">original_function</span><span class="p">):</span>
+		<span class="c"># This is the variable being accessed</span>
+		<span class="n">var</span> <span class="o">=</span> <span class="n">original_function</span><span class="o">.</span><span class="n">__name__</span>
+
+		<span class="k">def</span> <span class="nf">new_function</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+			<span class="k">if</span> <span class="n">var</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_internal_values</span><span class="p">:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">fatal</span><span class="p">(</span><span class="s">&quot;Tried to define getter for variable that does not exist&quot;</span><span class="p">)</span>
+				<span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Variable </span><span class="si">%s</span><span class="s"> doesn&#39;t exist&quot;</span> <span class="o">%</span> <span class="n">var</span><span class="p">)</span>
+			<span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_internal_values</span><span class="p">[</span><span class="n">var</span><span class="p">]</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
+				<span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Tried to access </span><span class="si">%s</span><span class="s">, but not set yet. Returning None.&quot;</span><span class="p">)</span>
+			<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_internal_values</span><span class="p">[</span><span class="n">var</span><span class="p">]</span>
+
+		<span class="k">return</span> <span class="n">new_function</span>
+
+
+	<span class="nd">@property</span>
+	<span class="nd">@_fetch_variable</span>
+	<span class="k">def</span> <span class="nf">event_window</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;a&quot;&quot;&quot;</span>
+		<span class="k">pass</span>
+
+	<span class="nd">@event_window.setter</span>
+<div class="viewcode-block" id="Event.event_window"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.event_window">[docs]</a>	<span class="k">def</span> <span class="nf">event_window</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;b&quot;&quot;&quot;</span>
+		<span class="k">return</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
 </div>
-<div class="viewcode-block" id="Event.event_window"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.event_window">[docs]</a>    <span class="k">def</span> <span class="nf">event_window</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;The real-world time of the start and end of event</span>
-
-<span class="sd">        64-bit number since 1/1/1970</span>
+	<span class="k">def</span> <span class="nf">_get_peaks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak_types</span><span class="p">,</span> <span class="n">peak_class</span><span class="p">,</span> <span class="n">sort</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Fetch S1 or S2 peaks from our data structure</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+		<span class="c"># Sort key is used on the flattened peak</span>
+		<span class="c"># Sort order is whether or not Python sort is &#39;reversed&#39;</span>
+		<span class="n">sort_key</span><span class="p">,</span> <span class="n">sort_order</span> <span class="o">=</span> <span class="n">sort</span>
+
+		<span class="n">peaks</span> <span class="o">=</span> <span class="p">{}</span>
+
+		<span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">[</span><span class="s">&#39;peaks&#39;</span><span class="p">]:</span>
+			<span class="k">if</span> <span class="n">peak</span><span class="p">[</span><span class="s">&#39;peak_type&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">peak_types</span><span class="p">:</span>
+				<span class="k">if</span> <span class="s">&#39;rejected&#39;</span> <span class="ow">in</span> <span class="n">peaks</span> <span class="ow">and</span> <span class="n">peaks</span><span class="p">[</span><span class="s">&#39;rejected&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
+					<span class="k">continue</span>
+
+				<span class="c"># Flatten the peak so we can use our sort key</span>
+				<span class="n">peak_key</span> <span class="o">=</span> <span class="n">flatten</span><span class="p">(</span><span class="n">peak</span><span class="p">)[</span><span class="n">sort_key</span><span class="p">]</span>
+
+				<span class="c"># Save save into dictionary</span>
+				<span class="n">peaks</span><span class="p">[</span><span class="n">peak_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">peak_class</span><span class="p">(</span><span class="n">peak</span><span class="p">)</span>
+
+		<span class="c"># Return just a list, but sorted according to our sort key and order</span>
+		<span class="k">return</span> <span class="p">[</span><span class="n">peaks</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">peaks</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="n">sort_order</span><span class="p">)]</span>
+
+<div class="viewcode-block" id="Event.S2s"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.S2s">[docs]</a>	<span class="k">def</span> <span class="nf">S2s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;top_and_bottom.area&#39;</span><span class="p">,</span> <span class="bp">True</span><span class="p">)):</span>
+		<span class="sd">&quot;&quot;&quot;List of S2 (ionization) signals as Peak objects&quot;&quot;&quot;</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_peaks</span><span class="p">((</span><span class="s">&#39;large_s2&#39;</span><span class="p">,</span> <span class="s">&#39;small_s2&#39;</span><span class="p">),</span> <span class="n">S2</span><span class="p">,</span> <span class="n">sort</span><span class="p">)</span>
 </div>
-    <span class="k">def</span> <span class="nf">_get_peaks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak_types</span><span class="p">,</span> <span class="n">peak_class</span><span class="p">,</span> <span class="n">sort</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Fetch S1 or S2 peaks from our data structure</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c"># Sort key is used on the flattened peak</span>
-        <span class="c"># Sort order is whether or not Python sort is &#39;reversed&#39;</span>
-        <span class="n">sort_key</span><span class="p">,</span> <span class="n">sort_order</span> <span class="o">=</span> <span class="n">sort</span>
-
-        <span class="n">peaks</span> <span class="o">=</span> <span class="p">{}</span>
-
-        <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">[</span><span class="s">&#39;peaks&#39;</span><span class="p">]:</span>
-            <span class="k">if</span> <span class="n">peak</span><span class="p">[</span><span class="s">&#39;peak_type&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">peak_types</span><span class="p">:</span>
-                <span class="k">if</span> <span class="s">&#39;rejected&#39;</span> <span class="ow">in</span> <span class="n">peaks</span> <span class="ow">and</span> <span class="n">peaks</span><span class="p">[</span><span class="s">&#39;rejected&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">True</span><span class="p">:</span>
-                    <span class="k">continue</span>
-
-                <span class="c"># Flatten the peak so we can use our sort key</span>
-                <span class="n">peak_key</span> <span class="o">=</span> <span class="n">flatten</span><span class="p">(</span><span class="n">peak</span><span class="p">)[</span><span class="n">sort_key</span><span class="p">]</span>
-
-                <span class="c"># Save save into dictionary</span>
-                <span class="n">peaks</span><span class="p">[</span><span class="n">peak_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">peak_class</span><span class="p">(</span><span class="n">peak</span><span class="p">)</span>
-
-        <span class="c"># Return just a list, but sorted according to our sort key and order</span>
-        <span class="k">return</span> <span class="p">[</span><span class="n">peaks</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">peaks</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="n">sort_order</span><span class="p">)]</span>
-
-<div class="viewcode-block" id="Event.S2s"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.S2s">[docs]</a>    <span class="k">def</span> <span class="nf">S2s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;top_and_bottom.area&#39;</span><span class="p">,</span> <span class="bp">True</span><span class="p">)):</span>
-        <span class="sd">&quot;&quot;&quot;List of S2 (ionization) signals as Peak objects&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_peaks</span><span class="p">((</span><span class="s">&#39;large_s2&#39;</span><span class="p">,</span> <span class="s">&#39;small_s2&#39;</span><span class="p">),</span> <span class="n">S2</span><span class="p">,</span> <span class="n">sort</span><span class="p">)</span>
+<div class="viewcode-block" id="Event.S1s"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.S1s">[docs]</a>	<span class="k">def</span> <span class="nf">S1s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;top_and_bottom.area&#39;</span><span class="p">,</span> <span class="bp">True</span><span class="p">)):</span>
+		<span class="sd">&quot;&quot;&quot;List of S1 (scintillation) signals as Peak objects&quot;&quot;&quot;</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_peaks</span><span class="p">((</span><span class="s">&#39;s1&#39;</span><span class="p">),</span> <span class="n">S1</span><span class="p">,</span> <span class="n">sort</span><span class="p">)</span>
 </div>
-<div class="viewcode-block" id="Event.S1s"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.S1s">[docs]</a>    <span class="k">def</span> <span class="nf">S1s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;top_and_bottom.area&#39;</span><span class="p">,</span> <span class="bp">True</span><span class="p">)):</span>
-        <span class="sd">&quot;&quot;&quot;List of S1 (scintillation) signals as Peak objects&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_peaks</span><span class="p">((</span><span class="s">&#39;s1&#39;</span><span class="p">),</span> <span class="n">S1</span><span class="p">,</span> <span class="n">sort</span><span class="p">)</span>
+<div class="viewcode-block" id="Event.pmt_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.pmt_waveform">[docs]</a>	<span class="k">def</span> <span class="nf">pmt_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pmt</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;The individual waveform for a specific PMT&quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="n">pmt</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">[</span><span class="s">&#39;channel_waveforms&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+			<span class="k">return</span> <span class="bp">None</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">[</span><span class="s">&#39;channel_waveforms&#39;</span><span class="p">][</span><span class="n">pmt</span><span class="p">]</span>
 </div>
-<div class="viewcode-block" id="Event.pmt_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.pmt_waveform">[docs]</a>    <span class="k">def</span> <span class="nf">pmt_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pmt</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;The individual waveform for a specific PMT&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">pmt</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">[</span><span class="s">&#39;channel_waveforms&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="k">return</span> <span class="bp">None</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">[</span><span class="s">&#39;channel_waveforms&#39;</span><span class="p">][</span><span class="n">pmt</span><span class="p">]</span>
-</div>
-<div class="viewcode-block" id="Event.summed_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.summed_waveform">[docs]</a>    <span class="k">def</span> <span class="nf">summed_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Waveform summed over many PMTs&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="s">&#39;filtered&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Use filtered_waveform, not this function: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">[</span><span class="s">&#39;processed_waveforms&#39;</span><span class="p">]:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">[</span><span class="s">&#39;processed_waveforms&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Summed waveform </span><span class="si">%s</span><span class="s"> does not exist.&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s">&#39;uncorrected_sum_waveform_for_xerawdp_matching&#39;</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">()</span>
+<div class="viewcode-block" id="Event.summed_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.summed_waveform">[docs]</a>	<span class="k">def</span> <span class="nf">summed_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Waveform summed over many PMTs&quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="s">&#39;filtered&#39;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
+			<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Use filtered_waveform, not this function: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+		<span class="k">elif</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">[</span><span class="s">&#39;processed_waveforms&#39;</span><span class="p">]:</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">[</span><span class="s">&#39;processed_waveforms&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+			<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Summed waveform </span><span class="si">%s</span><span class="s"> does not exist.&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+		<span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s">&#39;uncorrected_sum_waveform_for_xerawdp_matching&#39;</span><span class="p">:</span>
+			<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">()</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">[</span><span class="s">&#39;processed_waveforms&#39;</span><span class="p">][</span><span class="n">name</span><span class="p">]</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">[</span><span class="s">&#39;processed_waveforms&#39;</span><span class="p">][</span><span class="n">name</span><span class="p">]</span>
 </div>
-<div class="viewcode-block" id="Event.filtered_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.filtered_waveform">[docs]</a>    <span class="k">def</span> <span class="nf">filtered_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_name</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Filtered waveform summed over many PMTs&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">filter_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="c">#raise PendingDeprecationWarning() #Why? Currently this throws an error, not a warning...</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">[</span><span class="s">&#39;processed_waveforms&#39;</span><span class="p">][</span><span class="n">filter_name</span><span class="p">]</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">[</span><span class="s">&#39;processed_waveforms&#39;</span><span class="p">][</span><span class="s">&#39;filtered_for_large_s2&#39;</span><span class="p">]</span>
+<div class="viewcode-block" id="Event.filtered_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.filtered_waveform">[docs]</a>	<span class="k">def</span> <span class="nf">filtered_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filter_name</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Filtered waveform summed over many PMTs&quot;&quot;&quot;</span>
+		<span class="k">if</span> <span class="n">filter_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+			<span class="c"># raise PendingDeprecationWarning() #Why? Currently this throws an error, not a warning...</span>
+			<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">[</span><span class="s">&#39;processed_waveforms&#39;</span><span class="p">][</span><span class="n">filter_name</span><span class="p">]</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">[</span><span class="s">&#39;processed_waveforms&#39;</span><span class="p">][</span><span class="s">&#39;filtered_for_large_s2&#39;</span><span class="p">]</span>
 </div>
-<div class="viewcode-block" id="Event.dump"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.dump">[docs]</a>    <span class="k">def</span> <span class="nf">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">pprint</span><span class="o">.</span><span class="n">pprint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">)</span>
+<div class="viewcode-block" id="Event.dump"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.dump">[docs]</a>	<span class="k">def</span> <span class="nf">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="n">pprint</span><span class="o">.</span><span class="n">pprint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_raw</span><span class="p">)</span>
 
 </div></div>
 <div class="viewcode-block" id="Peak"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak">[docs]</a><span class="k">class</span> <span class="nc">Peak</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak_dict</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">peak_dict</span> <span class="o">=</span> <span class="n">peak_dict</span>
+	<span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak_dict</span><span class="p">):</span>
+		<span class="bp">self</span><span class="o">.</span><span class="n">peak_dict</span> <span class="o">=</span> <span class="n">peak_dict</span>
 
-<div class="viewcode-block" id="Peak.type"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.type">[docs]</a>    <span class="k">def</span> <span class="nf">type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
+<div class="viewcode-block" id="Peak.type"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.type">[docs]</a>	<span class="k">def</span> <span class="nf">type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
 </div>
-    <span class="k">def</span> <span class="nf">_get_var</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pmts</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
-        <span class="n">key</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">.</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pmts</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
-        <span class="n">flattened_peak</span> <span class="o">=</span> <span class="n">flatten</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peak_dict</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">flattened_peak</span><span class="p">:</span>
-            <span class="n">pprint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peak_dict</span><span class="p">)</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s"> does not exist in peak&#39;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span>
+	<span class="k">def</span> <span class="nf">_get_var</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pmts</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+		<span class="n">key</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">.</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pmts</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+		<span class="n">flattened_peak</span> <span class="o">=</span> <span class="n">flatten</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peak_dict</span><span class="p">)</span>
+		<span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">flattened_peak</span><span class="p">:</span>
+			<span class="n">pprint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peak_dict</span><span class="p">)</span>
+			<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s"> does not exist in peak&#39;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">flattened_peak</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+		<span class="k">return</span> <span class="n">flattened_peak</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
 
-<div class="viewcode-block" id="Peak.area"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.area">[docs]</a>    <span class="k">def</span> <span class="nf">area</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_var</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s">&#39;area&#39;</span><span class="p">)</span>
+<div class="viewcode-block" id="Peak.area"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.area">[docs]</a>	<span class="k">def</span> <span class="nf">area</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_var</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s">&#39;area&#39;</span><span class="p">)</span>
 </div>
-<div class="viewcode-block" id="Peak.width_fwhm"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.width_fwhm">[docs]</a>    <span class="k">def</span> <span class="nf">width_fwhm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_var</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s">&#39;fwhm&#39;</span><span class="p">)</span>
+<div class="viewcode-block" id="Peak.width_fwhm"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.width_fwhm">[docs]</a>	<span class="k">def</span> <span class="nf">width_fwhm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_var</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s">&#39;fwhm&#39;</span><span class="p">)</span>
 </div>
-<div class="viewcode-block" id="Peak.height"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.height">[docs]</a>    <span class="k">def</span> <span class="nf">height</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_var</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s">&#39;height&#39;</span><span class="p">)</span>
+<div class="viewcode-block" id="Peak.height"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.height">[docs]</a>	<span class="k">def</span> <span class="nf">height</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_var</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s">&#39;height&#39;</span><span class="p">)</span>
 </div>
-<div class="viewcode-block" id="Peak.time_in_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.time_in_waveform">[docs]</a>    <span class="k">def</span> <span class="nf">time_in_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_var</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s">&#39;position_of_max_in_waveform&#39;</span><span class="p">)</span>
+<div class="viewcode-block" id="Peak.time_in_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.time_in_waveform">[docs]</a>	<span class="k">def</span> <span class="nf">time_in_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
+		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_var</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s">&#39;position_of_max_in_waveform&#39;</span><span class="p">)</span>
 </div>
-<div class="viewcode-block" id="Peak.bounds"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.bounds">[docs]</a>    <span class="k">def</span> <span class="nf">bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Where the peak starts and ends in the sum waveform</span>
+<div class="viewcode-block" id="Peak.bounds"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.bounds">[docs]</a>	<span class="k">def</span> <span class="nf">bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Where the peak starts and ends in the sum waveform</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peak_dict</span><span class="p">[</span><span class="s">&#39;left&#39;</span><span class="p">],</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">peak_dict</span><span class="p">[</span><span class="s">&#39;right&#39;</span><span class="p">])</span>
+		<span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peak_dict</span><span class="p">[</span><span class="s">&#39;left&#39;</span><span class="p">],</span>
+		        <span class="bp">self</span><span class="o">.</span><span class="n">peak_dict</span><span class="p">[</span><span class="s">&#39;right&#39;</span><span class="p">])</span>
 
 </div></div>
 <div class="viewcode-block" id="S1"><a class="viewcode-back" href="../../pax.html#pax.datastructure.S1">[docs]</a><span class="k">class</span> <span class="nc">S1</span><span class="p">(</span><span class="n">Peak</span><span class="p">):</span>
-    <span class="c"># Get these from the summed waveform which doesn&#39;t include the pmts excluded for s1</span>
-    <span class="c"># Todo: This is very inelegant. Could we define self.standard_waveform or something?</span>
-    <span class="c">#       Or should we do a completely different approach?</span>
-<div class="viewcode-block" id="S1.area"><a class="viewcode-back" href="../../pax.html#pax.datastructure.S1.area">[docs]</a>    <span class="k">def</span> <span class="nf">area</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">key</span><span class="o">==</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">:</span>
-            <span class="n">key</span><span class="o">=</span><span class="s">&#39;top_and_bottom_for_s1&#39;</span>
-        <span class="k">return</span> <span class="n">Peak</span><span class="o">.</span><span class="n">area</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+	<span class="c"># Get these from the summed waveform which doesn&#39;t include the pmts excluded for s1</span>
+	<span class="c"># Todo: This is very inelegant. Could we define self.standard_waveform or something?</span>
+	<span class="c"># Or should we do a completely different approach?</span>
+<div class="viewcode-block" id="S1.area"><a class="viewcode-back" href="../../pax.html#pax.datastructure.S1.area">[docs]</a>	<span class="k">def</span> <span class="nf">area</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
+		<span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&#39;top_and_bottom&#39;</span><span class="p">:</span>
+			<span class="n">key</span> <span class="o">=</span> <span class="s">&#39;top_and_bottom_for_s1&#39;</span>
+		<span class="k">return</span> <span class="n">Peak</span><span class="o">.</span><span class="n">area</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
 </div>
-<div class="viewcode-block" id="S1.width_fwhm"><a class="viewcode-back" href="../../pax.html#pax.datastructure.S1.width_fwhm">[docs]</a>    <span class="k">def</span> <span class="nf">width_fwhm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">key</span><span class="o">==</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">:</span>
-            <span class="n">key</span><span class="o">=</span><span class="s">&#39;top_and_bottom_for_s1&#39;</span>
-        <span class="k">return</span> <span class="n">Peak</span><span class="o">.</span><span class="n">width_fwhm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+<div class="viewcode-block" id="S1.width_fwhm"><a class="viewcode-back" href="../../pax.html#pax.datastructure.S1.width_fwhm">[docs]</a>	<span class="k">def</span> <span class="nf">width_fwhm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
+		<span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&#39;top_and_bottom&#39;</span><span class="p">:</span>
+			<span class="n">key</span> <span class="o">=</span> <span class="s">&#39;top_and_bottom_for_s1&#39;</span>
+		<span class="k">return</span> <span class="n">Peak</span><span class="o">.</span><span class="n">width_fwhm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
 </div>
-<div class="viewcode-block" id="S1.height"><a class="viewcode-back" href="../../pax.html#pax.datastructure.S1.height">[docs]</a>    <span class="k">def</span> <span class="nf">height</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">key</span><span class="o">==</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">:</span>
-            <span class="n">key</span><span class="o">=</span><span class="s">&#39;top_and_bottom_for_s1&#39;</span>
-        <span class="k">return</span> <span class="n">Peak</span><span class="o">.</span><span class="n">height</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+<div class="viewcode-block" id="S1.height"><a class="viewcode-back" href="../../pax.html#pax.datastructure.S1.height">[docs]</a>	<span class="k">def</span> <span class="nf">height</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
+		<span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&#39;top_and_bottom&#39;</span><span class="p">:</span>
+			<span class="n">key</span> <span class="o">=</span> <span class="s">&#39;top_and_bottom_for_s1&#39;</span>
+		<span class="k">return</span> <span class="n">Peak</span><span class="o">.</span><span class="n">height</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
 </div>
-<div class="viewcode-block" id="S1.time_in_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.S1.time_in_waveform">[docs]</a>    <span class="k">def</span> <span class="nf">time_in_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">key</span><span class="o">==</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">:</span>
-            <span class="n">key</span><span class="o">=</span><span class="s">&#39;top_and_bottom_for_s1&#39;</span>
-        <span class="k">return</span> <span class="n">Peak</span><span class="o">.</span><span class="n">time_in_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+<div class="viewcode-block" id="S1.time_in_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.S1.time_in_waveform">[docs]</a>	<span class="k">def</span> <span class="nf">time_in_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
+		<span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&#39;top_and_bottom&#39;</span><span class="p">:</span>
+			<span class="n">key</span> <span class="o">=</span> <span class="s">&#39;top_and_bottom_for_s1&#39;</span>
+		<span class="k">return</span> <span class="n">Peak</span><span class="o">.</span><span class="n">time_in_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
 
 </div></div>
 <div class="viewcode-block" id="S2"><a class="viewcode-back" href="../../pax.html#pax.datastructure.S2">[docs]</a><span class="k">class</span> <span class="nc">S2</span><span class="p">(</span><span class="n">Peak</span><span class="p">):</span>
-    <span class="k">pass</span>
+	<span class="k">pass</span>
 
 </div>
 <div class="viewcode-block" id="explain"><a class="viewcode-back" href="../../pax.html#pax.datastructure.explain">[docs]</a><span class="k">def</span> <span class="nf">explain</span><span class="p">(</span><span class="n">class_name</span><span class="p">):</span>
-    <span class="n">x</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getmembers</span><span class="p">(</span><span class="n">class_name</span><span class="p">,</span>
-                           <span class="n">predicate</span><span class="o">=</span><span class="n">inspect</span><span class="o">.</span><span class="n">isdatadescriptor</span><span class="p">)</span>
+	<span class="n">x</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getmembers</span><span class="p">(</span><span class="n">class_name</span><span class="p">,</span>
+	                       <span class="n">predicate</span><span class="o">=</span><span class="n">inspect</span><span class="o">.</span><span class="n">isdatadescriptor</span><span class="p">)</span>
 
-    <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;_&#39;</span><span class="p">):</span>
-            <span class="k">continue</span>
-        <span class="k">print</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">__doc__</span><span class="p">)</span>
+	<span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
+		<span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;_&#39;</span><span class="p">):</span>
+			<span class="k">continue</span>
+		<span class="k">print</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">__doc__</span><span class="p">)</span>
 
 </div>
 <span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
-    <span class="n">explain</span><span class="p">(</span><span class="n">Peak</span><span class="p">)</span>
-    <span class="n">explain</span><span class="p">(</span><span class="n">Event</span><span class="p">)</span>
+	<span class="n">explain</span><span class="p">(</span><span class="n">Peak</span><span class="p">)</span>
+	<span class="n">explain</span><span class="p">(</span><span class="n">Event</span><span class="p">)</span>
 </pre></div>
 
           </div>
