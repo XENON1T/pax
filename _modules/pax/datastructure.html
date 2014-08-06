@@ -252,7 +252,7 @@
 	<span class="k">def</span> <span class="nf">waveforms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 		<span class="sd">&quot;&quot;&quot;Returns a list of waveforms</span>
 
-<span class="sd">		Returns an :class:`pax.datastructure.Waveform` class.</span>
+<span class="sd">		Returns an :class:`pax.datastructure.SumWaveform` class.</span>
 <span class="sd">		&quot;&quot;&quot;</span>
 		<span class="k">pass</span>
 
@@ -262,8 +262,8 @@
 		<span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
 			<span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Wrong type; must be ntuple.&quot;</span><span class="p">)</span>
 		<span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
-			<span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Waveform</span><span class="p">):</span>
-				<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Must pass Waveform&quot;</span><span class="p">)</span>
+			<span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">SumWaveform</span><span class="p">):</span>
+				<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Must pass SumWaveform&quot;</span><span class="p">)</span>
 
 
 </div></div>
@@ -304,33 +304,39 @@
 		        <span class="bp">self</span><span class="o">.</span><span class="n">peak_dict</span><span class="p">[</span><span class="s">&#39;right&#39;</span><span class="p">])</span>
 
 </div></div>
-<div class="viewcode-block" id="Waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Waveform">[docs]</a><span class="k">class</span> <span class="nc">Waveform</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="SumWaveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.SumWaveform">[docs]</a><span class="k">class</span> <span class="nc">SumWaveform</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
 	<span class="nd">@property</span>
-<div class="viewcode-block" id="Waveform.is_filtered"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Waveform.is_filtered">[docs]</a>	<span class="k">def</span> <span class="nf">is_filtered</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="SumWaveform.is_filtered"><a class="viewcode-back" href="../../pax.html#pax.datastructure.SumWaveform.is_filtered">[docs]</a>	<span class="k">def</span> <span class="nf">is_filtered</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 		<span class="sd">&quot;&quot;&quot;Boolean&quot;&quot;&quot;</span>
 		<span class="k">pass</span>
 </div>
 	<span class="nd">@property</span>
-<div class="viewcode-block" id="Waveform.name_of_filter"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Waveform.name_of_filter">[docs]</a>	<span class="k">def</span> <span class="nf">name_of_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="SumWaveform.name_of_filter"><a class="viewcode-back" href="../../pax.html#pax.datastructure.SumWaveform.name_of_filter">[docs]</a>	<span class="k">def</span> <span class="nf">name_of_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 		<span class="sd">&quot;&quot;&quot;Name of the filter used (or None)</span>
 <span class="sd">		&quot;&quot;&quot;</span>
 		<span class="k">pass</span>
 </div>
 	<span class="nd">@property</span>
-<div class="viewcode-block" id="Waveform.short_name"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Waveform.short_name">[docs]</a>	<span class="k">def</span> <span class="nf">short_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="SumWaveform.short_name"><a class="viewcode-back" href="../../pax.html#pax.datastructure.SumWaveform.short_name">[docs]</a>	<span class="k">def</span> <span class="nf">short_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 		<span class="sd">&quot;&quot;&quot;e.g., top&quot;&quot;&quot;</span>
 		<span class="k">pass</span>
 </div>
 	<span class="nd">@property</span>
-<div class="viewcode-block" id="Waveform.pmt_list"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Waveform.pmt_list">[docs]</a>	<span class="k">def</span> <span class="nf">pmt_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="SumWaveform.pmt_list"><a class="viewcode-back" href="../../pax.html#pax.datastructure.SumWaveform.pmt_list">[docs]</a>	<span class="k">def</span> <span class="nf">pmt_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 		<span class="sd">&quot;&quot;&quot;Array of PMT numbers included in this waveform&quot;&quot;&quot;</span>
 		<span class="k">pass</span>
 </div>
 	<span class="nd">@property</span>
-<div class="viewcode-block" id="Waveform.samples"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Waveform.samples">[docs]</a>	<span class="k">def</span> <span class="nf">samples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="SumWaveform.samples"><a class="viewcode-back" href="../../pax.html#pax.datastructure.SumWaveform.samples">[docs]</a>	<span class="k">def</span> <span class="nf">samples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 		<span class="sd">&quot;&quot;&quot;Array of samples.</span>
 <span class="sd">		&quot;&quot;&quot;</span>
+		<span class="c">#if not isinstance(value, (np.array)):</span>
+		<span class="c">#	raise RuntimeError(&quot;Wrong type; must be numpy array.&quot;)</span>
+		<span class="c">#elif value.ndim != 1:</span>
+		<span class="c">#		raise RuntimeError(&quot;Wrong size; must be dimension 1.&quot;)</span>
+		<span class="c">#	elif value.shape[0] &gt; 100000:</span>
+		<span class="c">#	self.log.warning(&quot;Found %d samples, which seems high.&quot; % value.shape[1])</span>
 		<span class="k">pass</span>
 
 </div></div>

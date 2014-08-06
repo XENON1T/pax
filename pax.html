@@ -121,7 +121,7 @@ waveform for a specific PMT such as PMT 10, you can do:</p>
 <dt id="pax.datastructure.Event.waveforms">
 <tt class="descname">waveforms</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event.waveforms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.waveforms" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a list of waveforms</p>
-<p>Returns an <a class="reference internal" href="#pax.datastructure.Waveform" title="pax.datastructure.Waveform"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Waveform</span></tt></a> class.</p>
+<p>Returns an <a class="reference internal" href="#pax.datastructure.SumWaveform" title="pax.datastructure.SumWaveform"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.SumWaveform</span></tt></a> class.</p>
 </dd></dl>
 
 </dd></dl>
@@ -164,36 +164,36 @@ waveform for a specific PMT such as PMT 10, you can do:</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="pax.datastructure.Waveform">
-<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Waveform</tt><a class="reference internal" href="_modules/pax/datastructure.html#Waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Waveform" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.datastructure.SumWaveform">
+<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">SumWaveform</tt><a class="reference internal" href="_modules/pax/datastructure.html#SumWaveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.SumWaveform" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
 <dl class="attribute">
-<dt id="pax.datastructure.Waveform.is_filtered">
-<tt class="descname">is_filtered</tt><a class="reference internal" href="_modules/pax/datastructure.html#Waveform.is_filtered"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Waveform.is_filtered" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.datastructure.SumWaveform.is_filtered">
+<tt class="descname">is_filtered</tt><a class="reference internal" href="_modules/pax/datastructure.html#SumWaveform.is_filtered"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.SumWaveform.is_filtered" title="Permalink to this definition">¶</a></dt>
 <dd><p>Boolean</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pax.datastructure.Waveform.name_of_filter">
-<tt class="descname">name_of_filter</tt><a class="reference internal" href="_modules/pax/datastructure.html#Waveform.name_of_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Waveform.name_of_filter" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.datastructure.SumWaveform.name_of_filter">
+<tt class="descname">name_of_filter</tt><a class="reference internal" href="_modules/pax/datastructure.html#SumWaveform.name_of_filter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.SumWaveform.name_of_filter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Name of the filter used (or None)</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pax.datastructure.Waveform.pmt_list">
-<tt class="descname">pmt_list</tt><a class="reference internal" href="_modules/pax/datastructure.html#Waveform.pmt_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Waveform.pmt_list" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.datastructure.SumWaveform.pmt_list">
+<tt class="descname">pmt_list</tt><a class="reference internal" href="_modules/pax/datastructure.html#SumWaveform.pmt_list"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.SumWaveform.pmt_list" title="Permalink to this definition">¶</a></dt>
 <dd><p>Array of PMT numbers included in this waveform</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pax.datastructure.Waveform.samples">
-<tt class="descname">samples</tt><a class="reference internal" href="_modules/pax/datastructure.html#Waveform.samples"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Waveform.samples" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.datastructure.SumWaveform.samples">
+<tt class="descname">samples</tt><a class="reference internal" href="_modules/pax/datastructure.html#SumWaveform.samples"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.SumWaveform.samples" title="Permalink to this definition">¶</a></dt>
 <dd><p>Array of samples.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pax.datastructure.Waveform.short_name">
-<tt class="descname">short_name</tt><a class="reference internal" href="_modules/pax/datastructure.html#Waveform.short_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Waveform.short_name" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.datastructure.SumWaveform.short_name">
+<tt class="descname">short_name</tt><a class="reference internal" href="_modules/pax/datastructure.html#SumWaveform.short_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.SumWaveform.short_name" title="Permalink to this definition">¶</a></dt>
 <dd><p>e.g., top</p>
 </dd></dl>
 

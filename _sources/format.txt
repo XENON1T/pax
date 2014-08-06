@@ -10,7 +10,7 @@ The event data structure is the centrepiece of the life of your pax plugin. Thro
  * 'channel_waveforms' : This contains the waveform for every channel, in units of photoelectrons per bin (pe/bin). This implies that the waveforms are already baseline-corrected and gain-corrected. event['channel_waveforms'][7] gives you the waveform (a list of floats) for channel 7 if channel 7 contributes to the waveform, and crashes if it does not. A safe way of iterating over all channel waveforms is:
  
 for channel, waveform in channel_waveforms:
-    print "Waveform for %s is %s samples long" %s (
+    print "SumWaveform for %s is %s samples long" %s (
  
 
 
