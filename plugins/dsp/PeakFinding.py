@@ -573,23 +573,33 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
         self.log.debug("        Running isolation test: RofLeft %s, LofRight %s, LengthLeft %s, LengthRight %s" % (
             right_edge_of_left_test_region, left_edge_of_right_test_region, test_length_left, test_length_right
         ))
-        # +1s are to compensate for python's indexing conventions...
-        pre_avg = np.mean(signal[
-            right_edge_of_left_test_region - (test_length_left-1):
-            right_edge_of_left_test_region + 1
-        ])
-        post_avg = np.mean(signal[
-            left_edge_of_right_test_region:
-            left_edge_of_right_test_region + test_length_right
-        ])
         height = signal[max_idx]
-        self.log.debug("        Pass test if before avg %s > %s and/or above avg %s > %s" % (
-            pre_avg, height * before_avg_max_ratio, post_avg, height * after_avg_max_ratio
-        ))
-        if can_fail_one:
-            failed = pre_avg > height * before_avg_max_ratio and post_avg > height * after_avg_max_ratio
+        # For empty test regions, Xerawdp gives 0.0/0 = some kind of Nan for average, ensuring test always fails
+        if test_length_left == 0:
+            failed_pre = True
         else:
-            failed = pre_avg > height * before_avg_max_ratio or post_avg > height * after_avg_max_ratio
+            # +1s are to compensate for python's indexing conventions...
+            pre_avg = np.mean(signal[
+                right_edge_of_left_test_region - (test_length_left-1):
+                right_edge_of_left_test_region + 1
+            ])
+            failed_pre = pre_avg > height * before_avg_max_ratio
+        if test_length_right == 0:
+            failed_post = True
+        else:
+            post_avg = np.mean(signal[
+                left_edge_of_right_test_region:
+                left_edge_of_right_test_region + test_length_right
+            ])
+            failed_post = post_avg > height * after_avg_max_ratio
+        # Only enable when you're sure no empty test regions occur
+        # self.log.debug("        Pass test if before avg %s > %s and/or above avg %s > %s" % (
+        #     pre_avg, height * before_avg_max_ratio, post_avg, height * after_avg_max_ratio
+        # ))
+        if can_fail_one:
+            failed = failed_pre and failed_post
+        else:
+            failed = failed_pre or failed_post
         if failed:
             self.log.debug("        Nope!")
             return False
