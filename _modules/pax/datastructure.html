@@ -105,13 +105,24 @@
 	<span class="nd">@property</span>
 	<span class="nd">@_fetch_variable</span>
 	<span class="k">def</span> <span class="nf">event_window</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-		<span class="sd">&quot;&quot;&quot;a&quot;&quot;&quot;</span>
+		<span class="sd">&quot;&quot;&quot;Two numbers for the start and stop time of the event.</span>
+
+<span class="sd">		This is a 64-bit number in units of 10 ns that follows the UNIX clock.</span>
+<span class="sd">		Or rather, it starts from January 1, 1970.&quot;&quot;&quot;</span>
 		<span class="k">pass</span>
 
 	<span class="nd">@event_window.setter</span>
 <div class="viewcode-block" id="Event.event_window"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.event_window">[docs]</a>	<span class="k">def</span> <span class="nf">event_window</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-		<span class="sd">&quot;&quot;&quot;b&quot;&quot;&quot;</span>
-		<span class="k">return</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+		<span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+			<span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Wrong type; must be ntuple.&quot;</span><span class="p">)</span>
+		<span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+			<span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Wrong size; must be length 2.&quot;</span><span class="p">)</span>
+		<span class="k">else</span><span class="p">:</span>
+			<span class="n">variable_name</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">stack</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="mi">3</span><span class="p">]</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Setting </span><span class="si">%s</span><span class="s"> with value </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">variable_name</span><span class="p">,</span>
+														 <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)))</span>
+			<span class="bp">self</span><span class="o">.</span><span class="n">_internal_values</span><span class="p">[</span><span class="n">variable_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+
 </div>
 	<span class="k">def</span> <span class="nf">_get_peaks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak_types</span><span class="p">,</span> <span class="n">peak_class</span><span class="p">,</span> <span class="n">sort</span><span class="p">):</span>
 		<span class="sd">&quot;&quot;&quot;Fetch S1 or S2 peaks from our data structure</span>
