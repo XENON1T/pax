@@ -65,17 +65,17 @@
 <span class="kn">import</span> <span class="nn">collections</span>
 
 
-<div class="viewcode-block" id="flatten"><a class="viewcode-back" href="../../pax.html#pax.datastructure.flatten">[docs]</a><span class="k">def</span> <span class="nf">flatten</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">parent_key</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s">&#39;.&#39;</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_flatten</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">parent_key</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s">&#39;.&#39;</span><span class="p">):</span>
 	<span class="n">items</span> <span class="o">=</span> <span class="p">[]</span>
 	<span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
 		<span class="n">new_key</span> <span class="o">=</span> <span class="n">parent_key</span> <span class="o">+</span> <span class="n">sep</span> <span class="o">+</span> <span class="n">k</span> <span class="k">if</span> <span class="n">parent_key</span> <span class="k">else</span> <span class="n">k</span>
 		<span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">MutableMapping</span><span class="p">):</span>
-			<span class="n">items</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">flatten</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">new_key</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+			<span class="n">items</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_flatten</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">new_key</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
 		<span class="k">else</span><span class="p">:</span>
 			<span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">new_key</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
 	<span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
 
-</div>
+
 <div class="viewcode-block" id="Event"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event">[docs]</a><span class="k">class</span> <span class="nc">Event</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 	<span class="sd">&quot;&quot;&quot;The event class</span>
 
@@ -324,7 +324,7 @@
 		<span class="k">pass</span>
 
 </div></div>
-<div class="viewcode-block" id="explain"><a class="viewcode-back" href="../../pax.html#pax.datastructure.explain">[docs]</a><span class="k">def</span> <span class="nf">explain</span><span class="p">(</span><span class="n">class_name</span><span class="p">):</span>
+<span class="k">def</span> <span class="nf">_explain</span><span class="p">(</span><span class="n">class_name</span><span class="p">):</span>
 	<span class="n">x</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getmembers</span><span class="p">(</span><span class="n">class_name</span><span class="p">,</span>
 	                       <span class="n">predicate</span><span class="o">=</span><span class="n">inspect</span><span class="o">.</span><span class="n">isdatadescriptor</span><span class="p">)</span>
 
@@ -333,10 +333,10 @@
 			<span class="k">continue</span>
 		<span class="k">print</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">__doc__</span><span class="p">)</span>
 
-</div>
+
 <span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
-	<span class="n">explain</span><span class="p">(</span><span class="n">Peak</span><span class="p">)</span>
-	<span class="n">explain</span><span class="p">(</span><span class="n">Event</span><span class="p">)</span>
+	<span class="n">_explain</span><span class="p">(</span><span class="n">Peak</span><span class="p">)</span>
+	<span class="n">_explain</span><span class="p">(</span><span class="n">Event</span><span class="p">)</span>
 </pre></div>
 
           </div>
