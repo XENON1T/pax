@@ -32,6 +32,15 @@ Blah blah
    }
 
 
+pax.datastructure module
+------------------------
+
+.. automodule:: pax.datastructure
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
 Channel waveforms
 =================
 
