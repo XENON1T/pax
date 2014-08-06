@@ -211,21 +211,30 @@
 			<span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Found </span><span class="si">%d</span><span class="s"> samples, which seems high.&quot;</span> <span class="o">%</span> <span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
 </div>
 <div class="viewcode-block" id="Event.S2s"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.S2s">[docs]</a>	<span class="k">def</span> <span class="nf">S2s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;top_and_bottom.area&#39;</span><span class="p">,</span> <span class="bp">True</span><span class="p">)):</span>
-		<span class="sd">&quot;&quot;&quot;List of S2 (ionization) signals as Peak objects&quot;&quot;&quot;</span>
+		<span class="sd">&quot;&quot;&quot;List of S2 (ionization) signals as Peak objects</span>
+
+<span class="sd">		By default, this is sorted by area such that the largest S2 is first.</span>
+
+<span class="sd">		:param sort: how to sort S2s</span>
+<span class="sd">		&quot;&quot;&quot;</span>
 		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_peaks</span><span class="p">((</span><span class="s">&#39;large_s2&#39;</span><span class="p">,</span> <span class="s">&#39;small_s2&#39;</span><span class="p">),</span> <span class="n">S2</span><span class="p">,</span> <span class="n">sort</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="Event.S1s"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.S1s">[docs]</a>	<span class="k">def</span> <span class="nf">S1s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sort</span><span class="o">=</span><span class="p">(</span><span class="s">&#39;top_and_bottom.area&#39;</span><span class="p">,</span> <span class="bp">True</span><span class="p">)):</span>
-		<span class="sd">&quot;&quot;&quot;List of S1 (scintillation) signals as Peak objects&quot;&quot;&quot;</span>
+		<span class="sd">&quot;&quot;&quot;List of S1 (scintillation) signals as Peak objects</span>
+
+<span class="sd">		By default, this is sorted by cooincidence (TODO) such that the first</span>
+<span class="sd">		S1 is also the most coincident one.</span>
+
+<span class="sd">		:param sort: how to sort S2s</span>
+<span class="sd">		&quot;&quot;&quot;</span>
 		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_peaks</span><span class="p">((</span><span class="s">&#39;s1&#39;</span><span class="p">),</span> <span class="n">S1</span><span class="p">,</span> <span class="n">sort</span><span class="p">)</span>
-
-	<span class="c">##</span>
-	<span class="c">##  Helper functions below</span>
-	<span class="c">##</span>
-
 
 </div>
 <div class="viewcode-block" id="Event.summed_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.summed_waveform">[docs]</a>	<span class="k">def</span> <span class="nf">summed_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
-		<span class="sd">&quot;&quot;&quot;Waveform summed over many PMTs&quot;&quot;&quot;</span>
+		<span class="sd">&quot;&quot;&quot;Waveform summed over many PMTs.</span>
+
+<span class="sd">		:param name:  the name of the PMTs to sum over (e.g., top, veto, etc.)</span>
+<span class="sd">		&quot;&quot;&quot;</span>
 		<span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pmt_groupings</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
 			<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Cannot find summed waveform&quot;</span><span class="p">)</span>
 		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmt_waveforms</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_pmt_groupings</span><span class="p">[</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">]]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>

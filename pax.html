@@ -67,12 +67,31 @@ releases.  Patch releases cannot modify this.</p>
 <dt id="pax.datastructure.Event.S1s">
 <tt class="descname">S1s</tt><big>(</big><em>sort=('top_and_bottom.area'</em>, <em>True)</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.S1s"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.S1s" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of S1 (scintillation) signals as Peak objects</p>
+<p>By default, this is sorted by cooincidence (TODO) such that the first
+S1 is also the most coincident one.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sort</strong> &#8211; how to sort S2s</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="method">
 <dt id="pax.datastructure.Event.S2s">
 <tt class="descname">S2s</tt><big>(</big><em>sort=('top_and_bottom.area'</em>, <em>True)</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.S2s"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.S2s" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of S2 (ionization) signals as Peak objects</p>
+<p>By default, this is sorted by area such that the largest S2 is first.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sort</strong> &#8211; how to sort S2s</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
@@ -106,7 +125,15 @@ waveform for a specific PMT such as PMT 10, you can do:</p>
 <dl class="method">
 <dt id="pax.datastructure.Event.summed_waveform">
 <tt class="descname">summed_waveform</tt><big>(</big><em>name='top_and_bottom'</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.summed_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.summed_waveform" title="Permalink to this definition">¶</a></dt>
-<dd><p>Waveform summed over many PMTs</p>
+<dd><p>Waveform summed over many PMTs.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> &#8211; the name of the PMTs to sum over (e.g., top, veto, etc.)</td>
+</tr>
+</tbody>
+</table>
 </dd></dl>
 
 <dl class="attribute">
