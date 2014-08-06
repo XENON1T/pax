@@ -2,7 +2,7 @@
 Event format
 ============
 
-The event data structure is the centrepiece of the life of your pax plugin. Through it, your plug-in has access to the results of previously run plug-ins' work; in return, you are expected to store the fruits of your plug-in's labour at an appropriate place in the event data structure.
+All data available for the current event is stored in the event data structure. Input plugins are required to fill the event with a bare amount of raw information. Transform plugins subsequently add their processed variables. 
 
 
  * 'channel_occurences' : This contains the raw waveform occurrences as read by the input plug-in. JoinAndConvertWaveforms beats from this, then deletes it from the event structure: you probably never have to deal with this. Just in case you do, it's format is similar to channel_waveforms, except that event['channel_occurences'][7] gives you a list of (start_sample, raw_sample_list) TUPLES, each representing a waveform occurrence (starting at start_sample) in channel 7.
