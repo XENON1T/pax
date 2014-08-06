@@ -154,48 +154,33 @@ waveform for a specific PMT such as PMT 10, you can do:</p>
 <dt id="pax.datastructure.Peak">
 <em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Peak</tt><big>(</big><em>peak_dict</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
-<dl class="method">
+<dl class="attribute">
 <dt id="pax.datastructure.Peak.area">
-<tt class="descname">area</tt><big>(</big><em>key='top_and_bottom'</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Peak.area"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.area" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">area</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.area"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.area" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="method">
+<dl class="attribute">
 <dt id="pax.datastructure.Peak.bounds">
-<tt class="descname">bounds</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Peak.bounds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.bounds" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">bounds</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.bounds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.bounds" title="Permalink to this definition">¶</a></dt>
 <dd><p>Where the peak starts and ends in the sum waveform</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="attribute">
 <dt id="pax.datastructure.Peak.height">
-<tt class="descname">height</tt><big>(</big><em>key='top_and_bottom'</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Peak.height"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.height" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">height</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.height"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.height" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="pax.datastructure.Peak.peak">
-<tt class="descname">peak</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.peak" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.datastructure.Peak.time_in_waveform">
+<tt class="descname">time_in_waveform</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.time_in_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.time_in_waveform" title="Permalink to this definition">¶</a></dt>
 <dd><p>position of each S1 peak</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="pax.datastructure.Peak.peak_window">
-<tt class="descname">peak_window</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Peak.peak_window"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.peak_window" title="Permalink to this definition">¶</a></dt>
-<dd><p>The start and stop time of the peak</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.datastructure.Peak.time_in_waveform">
-<tt class="descname">time_in_waveform</tt><big>(</big><em>key='top_and_bottom'</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Peak.time_in_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.time_in_waveform" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 <dl class="attribute">
-<dt id="pax.datastructure.Peak.width">
-<tt class="descname">width</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.width"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.width" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
 <dt id="pax.datastructure.Peak.width_fwhm">
-<tt class="descname">width_fwhm</tt><big>(</big><em>key='top_and_bottom'</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Peak.width_fwhm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.width_fwhm" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<tt class="descname">width_fwhm</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.width_fwhm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.width_fwhm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Width at full width half max</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -203,26 +188,6 @@ waveform for a specific PMT such as PMT 10, you can do:</p>
 <dt id="pax.datastructure.S1">
 <em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">S1</tt><big>(</big><em>peak_dict</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#S1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.S1" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a></p>
-<dl class="method">
-<dt id="pax.datastructure.S1.area">
-<tt class="descname">area</tt><big>(</big><em>key='top_and_bottom'</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#S1.area"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.S1.area" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.datastructure.S1.height">
-<tt class="descname">height</tt><big>(</big><em>key='top_and_bottom'</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#S1.height"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.S1.height" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.datastructure.S1.time_in_waveform">
-<tt class="descname">time_in_waveform</tt><big>(</big><em>key='top_and_bottom'</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#S1.time_in_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.S1.time_in_waveform" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.datastructure.S1.width_fwhm">
-<tt class="descname">width_fwhm</tt><big>(</big><em>key='top_and_bottom'</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#S1.width_fwhm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.S1.width_fwhm" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 <dl class="class">

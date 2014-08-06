@@ -249,48 +249,26 @@
 		<span class="bp">self</span><span class="o">.</span><span class="n">peak_dict</span> <span class="o">=</span> <span class="n">peak_dict</span>
 
 	<span class="nd">@property</span>
-	<span class="k">def</span> <span class="nf">area</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Peak.area"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.area">[docs]</a>	<span class="k">def</span> <span class="nf">area</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 		<span class="k">pass</span>
-
+</div>
 	<span class="nd">@property</span>
-<div class="viewcode-block" id="Peak.peak"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.peak">[docs]</a>	<span class="k">def</span> <span class="nf">peak</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Peak.time_in_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.time_in_waveform">[docs]</a>	<span class="k">def</span> <span class="nf">time_in_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 		<span class="sd">&quot;&quot;&quot;position of each S1 peak&quot;&quot;&quot;</span>
 		<span class="k">pass</span>
 </div>
-	<span class="k">def</span> <span class="nf">height</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+	<span class="nd">@property</span>
+<div class="viewcode-block" id="Peak.height"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.height">[docs]</a>	<span class="k">def</span> <span class="nf">height</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 		<span class="sd">&quot;&quot;&quot;&quot;&quot;&quot;</span>
 		<span class="k">pass</span>
-
-<div class="viewcode-block" id="Peak.peak_window"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.peak_window">[docs]</a>	<span class="k">def</span> <span class="nf">peak_window</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-		<span class="sd">&quot;&quot;&quot;The start and stop time of the peak</span>
-<span class="sd">		&quot;&quot;&quot;</span>
 </div>
 	<span class="nd">@property</span>
-<div class="viewcode-block" id="Peak.width"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.width">[docs]</a>	<span class="k">def</span> <span class="nf">width</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Peak.width_fwhm"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.width_fwhm">[docs]</a>	<span class="k">def</span> <span class="nf">width_fwhm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+		<span class="sd">&quot;&quot;&quot;Width at full width half max</span>
+<span class="sd">		&quot;&quot;&quot;</span>
 		<span class="k">pass</span>
-
 </div>
-	<span class="k">def</span> <span class="nf">_get_var</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pmts</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
-		<span class="n">key</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">.</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pmts</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
-		<span class="n">flattened_peak</span> <span class="o">=</span> <span class="n">flatten</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peak_dict</span><span class="p">)</span>
-		<span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">flattened_peak</span><span class="p">:</span>
-			<span class="n">pprint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peak_dict</span><span class="p">)</span>
-			<span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s"> does not exist in peak&#39;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span>
-
-		<span class="k">return</span> <span class="n">flattened_peak</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-
-<div class="viewcode-block" id="Peak.area"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.area">[docs]</a>	<span class="k">def</span> <span class="nf">area</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
-		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_var</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s">&#39;area&#39;</span><span class="p">)</span>
-</div>
-<div class="viewcode-block" id="Peak.width_fwhm"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.width_fwhm">[docs]</a>	<span class="k">def</span> <span class="nf">width_fwhm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
-		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_var</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s">&#39;fwhm&#39;</span><span class="p">)</span>
-</div>
-<div class="viewcode-block" id="Peak.height"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.height">[docs]</a>	<span class="k">def</span> <span class="nf">height</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
-		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_var</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s">&#39;height&#39;</span><span class="p">)</span>
-</div>
-<div class="viewcode-block" id="Peak.time_in_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.time_in_waveform">[docs]</a>	<span class="k">def</span> <span class="nf">time_in_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
-		<span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_var</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s">&#39;position_of_max_in_waveform&#39;</span><span class="p">)</span>
-</div>
+	<span class="nd">@property</span>
 <div class="viewcode-block" id="Peak.bounds"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.bounds">[docs]</a>	<span class="k">def</span> <span class="nf">bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 		<span class="sd">&quot;&quot;&quot;Where the peak starts and ends in the sum waveform</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -299,30 +277,9 @@
 
 </div></div>
 <div class="viewcode-block" id="S1"><a class="viewcode-back" href="../../pax.html#pax.datastructure.S1">[docs]</a><span class="k">class</span> <span class="nc">S1</span><span class="p">(</span><span class="n">Peak</span><span class="p">):</span>
-	<span class="c"># Get these from the summed waveform which doesn&#39;t include the pmts excluded for s1</span>
-	<span class="c"># Todo: This is very inelegant. Could we define self.standard_waveform or something?</span>
-	<span class="c"># Or should we do a completely different approach?</span>
-<div class="viewcode-block" id="S1.area"><a class="viewcode-back" href="../../pax.html#pax.datastructure.S1.area">[docs]</a>	<span class="k">def</span> <span class="nf">area</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
-		<span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&#39;top_and_bottom&#39;</span><span class="p">:</span>
-			<span class="n">key</span> <span class="o">=</span> <span class="s">&#39;top_and_bottom_for_s1&#39;</span>
-		<span class="k">return</span> <span class="n">Peak</span><span class="o">.</span><span class="n">area</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
-</div>
-<div class="viewcode-block" id="S1.width_fwhm"><a class="viewcode-back" href="../../pax.html#pax.datastructure.S1.width_fwhm">[docs]</a>	<span class="k">def</span> <span class="nf">width_fwhm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
-		<span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&#39;top_and_bottom&#39;</span><span class="p">:</span>
-			<span class="n">key</span> <span class="o">=</span> <span class="s">&#39;top_and_bottom_for_s1&#39;</span>
-		<span class="k">return</span> <span class="n">Peak</span><span class="o">.</span><span class="n">width_fwhm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
-</div>
-<div class="viewcode-block" id="S1.height"><a class="viewcode-back" href="../../pax.html#pax.datastructure.S1.height">[docs]</a>	<span class="k">def</span> <span class="nf">height</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
-		<span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&#39;top_and_bottom&#39;</span><span class="p">:</span>
-			<span class="n">key</span> <span class="o">=</span> <span class="s">&#39;top_and_bottom_for_s1&#39;</span>
-		<span class="k">return</span> <span class="n">Peak</span><span class="o">.</span><span class="n">height</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
-</div>
-<div class="viewcode-block" id="S1.time_in_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.S1.time_in_waveform">[docs]</a>	<span class="k">def</span> <span class="nf">time_in_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s">&#39;top_and_bottom&#39;</span><span class="p">):</span>
-		<span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&#39;top_and_bottom&#39;</span><span class="p">:</span>
-			<span class="n">key</span> <span class="o">=</span> <span class="s">&#39;top_and_bottom_for_s1&#39;</span>
-		<span class="k">return</span> <span class="n">Peak</span><span class="o">.</span><span class="n">time_in_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+	<span class="k">pass</span>
 
-</div></div>
+</div>
 <div class="viewcode-block" id="S2"><a class="viewcode-back" href="../../pax.html#pax.datastructure.S2">[docs]</a><span class="k">class</span> <span class="nc">S2</span><span class="p">(</span><span class="n">Peak</span><span class="p">):</span>
 	<span class="k">pass</span>
 
