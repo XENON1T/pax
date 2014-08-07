@@ -10,7 +10,6 @@ releases.  Patch releases cannot modify this.
 
 import logging
 import inspect
-from pprint import pprint
 
 import numpy as np
 import collections
@@ -41,18 +40,11 @@ class Event(object):
                       provided for convienence.
     """
 
-    def __init__(self, configuration):
+    def __init__(self):
         self.log = logging.getLogger('Event')
-        self.config = configuration
 
         self._internal_values = {}
 
-        self._pmt_groupings = {}
-        if configuration != {}:
-            for key in ['pmts_top', 'pmts_bottom', 'pmts_veto']:
-                self._pmt_groupings[key[5:]] = np.array(self.config[key])
-
-            self._pmt_groupings['top_and_bottom'] = self._pmt_groupings['top'] + self._pmt_groupings['bottom']
 
     def _fetch_variable(original_function):
         """Decorator
@@ -63,7 +55,8 @@ class Event(object):
 
         def new_function(self):
             if var not in self._internal_values:
-                self.log.fatal("Tried to access %s, but not set yet. Returning None.")
+                self.log.debug(self._internal_values)
+                self.log.fatal("Tried to access %s, but not set yet. Returning None." % var)
                 raise RuntimeError("Variable %s not set" % var)
             return self._internal_values[var]
 
@@ -84,15 +77,31 @@ class Event(object):
                 self.log.exception(e)
                 raise e
             finally:
-                variable_name = inspect.stack()[0][3]
-                self.log.debug("Setting %s with value %s" % (variable_name,
+                self.log.debug("Setting %s with value %s" % (var,
                                                              str(value)))
-                self._internal_values[variable_name] = value
+                self._internal_values[var] = value
 
         new_function.__doc__ = original_function.__doc__
         return new_function
 
     # # Begining of properties ##
+
+    @property
+    @_fetch_variable
+    def event_number(self):
+        """An integer event number that uniquely identifies the event.
+
+        Always positive.
+        """
+        pass
+
+    @event_number.setter
+    @_set_variable
+    def event_number(self, value):
+        if not isinstance(value, (int)):
+            raise RuntimeError("Wrong type; must be int.")
+        elif value < 0:
+            raise RuntimeError("Must be positive")
 
     @property
     @_fetch_variable
@@ -243,6 +252,42 @@ class Event(object):
             if not isinstance(value, SumWaveform):
                 raise ValueError("Must pass SumWaveform")
 
+
+    @property
+    @_fetch_variable
+    def occurences(self):
+        """Returns a list of waveforms
+
+        Returns an :class:`pax.datastructure.SumWaveform` class.
+        """
+        pass
+
+    @occurences.setter
+    @_set_variable
+    def occurences(self, value):
+        if not isinstance(value, dict):
+            raise RuntimeError("Wrong type; must be dict.")
+        for k, v in value.items():
+            if not isinstance(k, int):
+                raise RuntimeError("Wrong type; key be int.")
+            if not isinstance(v, list):
+                raise RuntimeError("Wrong type; value be list.")
+
+
+    def length(self):
+        """Length of event window in units of 10 ns
+        """
+        return self.event_window[1] - self.event_window[0]
+
+    def event_start(self):
+        """Start time of the event
+        """
+        return self.event_window[0]
+
+    def event_end(self):
+        """End time of event
+        """
+        return self.event_window[1]
 
 class Peak(object):
 

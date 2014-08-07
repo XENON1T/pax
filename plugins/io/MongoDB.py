@@ -1,5 +1,6 @@
 import pymongo
 import numpy as np
+from pax.datastructure import Event
 
 from pax import plugin
 
@@ -29,21 +30,25 @@ class MongoDBInput(plugin.InputPlugin):
 
         What is returned is all the channel's occurrences
         """
-        for doc_event in self.collection.find():
+        for i, doc_event in enumerate(self.collection.find()):
             # Store channel waveform-occurrences by iterating over all occurrences.
             # This involves parsing MongoDB documents using WAX output format
-            (event_start, event_end) = doc_event['range']
-            event = {
-                'length': event_end - event_start,
-                'channel_occurrences': {},
-            }
+            event = Event()
+            event.event_number = i # TODO: should come from Mongo
+            event.event_window = doc_event['range']
+
+            channel_occurrences = {}
+
             for doc_occurrence in doc_event['docs']:
                 channel = doc_occurrence['channel'] + 1   # +1 so it works with Xenon100 gain lists
-                if channel not in event['channel_occurrences']:
-                    event['channel_occurrences'][channel] = []
-                event['channel_occurrences'][channel].append((
-                    doc_occurrence['time'] - event_start,  # Start sample index
+                if channel not in channel_occurrences:
+                    channel_occurrences[channel] = []
+
+                channel_occurrences[channel].append((
+                    doc_occurrence['time'] - event.event_start(),  # Start sample index
                     np.fromstring(doc_occurrence['data'], dtype=np.int16)  # SumWaveform occurrence data
                 ))
+
+            event.occurences = channel_occurrences
 
             yield event

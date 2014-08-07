@@ -64,6 +64,13 @@ class InputPlugin(BasePlugin):
         BasePlugin.__init__(self, config_values)
         self.i = 0
 
+    def get_single_event(self, index):
+        for event in self.get_events():
+            if event.event_number == index:
+                return event
+
+        raise RuntimeError("Event %d not found" % index)
+
     @BasePlugin._timeit
     def get_events(self):
         """Get next event from the data source

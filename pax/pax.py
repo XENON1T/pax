@@ -108,6 +108,12 @@ def get_actions(config, input, list_of_names):
     return input, actions
 
 
+def process_single_event(actions, event, log):
+    for j, block in enumerate(actions):
+        log.debug("Step %d with %s", j, block.__class__.__name__)
+        event = block.process_event(event)
+
+
 def processor(config_overload=""):
     # Load configuration
     config = get_configuration(config_overload)
@@ -125,10 +131,6 @@ def processor(config_overload=""):
     group.add_argument('--single',
                        type=int,
                        help="Process a single event.")
-    group.add_argument('--range',
-                       type=int,
-                       nargs=2,
-                       help="Process inclusive range of events")
     group.add_argument('-n',
                        type=int,
                        help="Stop after this number of events has been processed.")
@@ -157,26 +159,18 @@ def processor(config_overload=""):
     input = instantiate(input, plugin_source, config, log)
     actions = [instantiate(x, plugin_source, config, log) for x in actions]
 
-    # This is the *actual* event loop
-    for i, event in enumerate(input.get_events()):
-        if args.n is not None:
-            if i >= args.n:
-                break
-        elif args.single is not None:
-            if i < args.single:
-                continue
-            elif i > args.single:
-                break
-        elif args.range is not None:
-            if i < args.range[0]:
-                continue
-            elif i > args.range[1]:
-                break
-
-        log.info("Event %d" % i)
-
-        for j, block in enumerate(actions):
-            log.debug("Step %d with %s", j, block.__class__.__name__)
-            event = block.process_event(event)
+    if args.single is not None:
+        event = input.get_single_event(args.single)
+        process_single_event(actions, event, log)
     else:
+        # This is the *actual* event loop
+        for i, event in enumerate(input.get_events()):
+            if args.n is not None:
+                if i >= args.n:
+                    break
+
+            log.info("Event %d" % i)
+
+            process_single_event(actions, event, log)
+
         log.info("Finished event loop.")
