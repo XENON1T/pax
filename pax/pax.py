@@ -3,7 +3,6 @@ import inspect
 import argparse
 import configparser
 import glob
-#import itertools
 
 from io import StringIO
 import os
@@ -120,24 +119,20 @@ def processor(config_overload=""):
     # Deal with command line arguments for the logging level
     parser = argparse.ArgumentParser(description="Process XENON1T data")
     parser.add_argument('--log', default='INFO', help="Set log level")
-    # Suggestion: provide more detailed input control?
-    # parser.add_argument('--single',
-    #                     type=int,
-    #                     help="Process a single event.")
-    # parser.add_argument('--start',
-    #                     type=int,
-    #                     default=0,
-    #                     help="First event to process.")
-    # parser.add_argument('--stop',
-    #                     type=int,
-    #                     help="Last event to process.")
-    # parser.add_argument('--skip',
-    #                     type=int,
-    #                     default=0,
-    #                     help="Skip this many events after processing an event (useful for subset processing).")
-    parser.add_argument('-n',
-                        type=int,
-                        help="Stop after this number of events has been processed.")
+
+    # Event control
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--single',
+                       type=int,
+                       help="Process a single event.")
+    group.add_argument('--range',
+                       type=int,
+                       nargs=2,
+                       help="Process inclusive range of events")
+    group.add_argument('-n',
+                       type=int,
+                       help="Stop after this number of events has been processed.")
+
     args = parser.parse_args()
 
     # Setup logging
@@ -162,25 +157,24 @@ def processor(config_overload=""):
     input = instantiate(input, plugin_source, config, log)
     actions = [instantiate(x, plugin_source, config, log) for x in actions]
 
-    # Suggestion: provide more detailed input control?
-    # for i in itertools.count(args.start, 1 + args.skip):
-    #     try:
-    #         event = input.get_event(i)
-    #     except EventDoesNotExistError:
-    #         self.log.warning("Event %s does not exist! Continuing processing...")
-    #     except InputPluginError as e:
-    #         raise RuntimeError("Input plugin error: %s" % e.strerror)
-    #     # Do actions per plugin
-
     # This is the *actual* event loop
     for i, event in enumerate(input.get_events()):
-        if args.n:
+        if args.n is not None:
             if i >= args.n:
+                break
+        elif args.single is not None:
+            if i < args.single:
+                continue
+            elif i > args.single:
+                break
+        elif args.range is not None:
+            if i < args.range[0]:
+                continue
+            elif i > args.range[1]:
                 break
 
         log.info("Event %d" % i)
-        # Can we catch plugin errors here and move to the next event?
-        # That prevents the entire processing from crashing on rare plugin errors.
+
         for j, block in enumerate(actions):
             log.debug("Step %d with %s", j, block.__class__.__name__)
             event = block.process_event(event)
