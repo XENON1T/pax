@@ -121,15 +121,15 @@ def processor(config_overload=""):
     parser.add_argument('--log', default='INFO', help="Set log level")
 
     # Event control
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument('--single',
+    input_control_group = parser.add_mutually_exclusive_group()
+    input_control_group.add_argument('--single',
                        type=int,
                        help="Process a single event.")
-    group.add_argument('--range',
+    input_control_group.add_argument('--range',
                        type=int,
                        nargs=2,
                        help="Process inclusive range of events")
-    group.add_argument('-n',
+    input_control_group.add_argument('-n',
                        type=int,
                        help="Stop after this number of events has been processed.")
 
@@ -157,26 +157,51 @@ def processor(config_overload=""):
     input = instantiate(input, plugin_source, config, log)
     actions = [instantiate(x, plugin_source, config, log) for x in actions]
 
-    # This is the *actual* event loop
-    for i, event in enumerate(input.get_events()):
-        if args.n is not None:
-            if i >= args.n:
-                break
-        elif args.single is not None:
-            if i < args.single:
-                continue
-            elif i > args.single:
-                break
+
+    # Does the input plugin support getting individual events?
+    if hasattr(input, 'get_event'):
+        # What is the range of events we want?
+        event_range = []
+        if args.single is not None:
+            event_range = [args.single, args.single]
         elif args.range is not None:
-            if i < args.range[0]:
-                continue
-            elif i > args.range[1]:
-                break
+            event_range = [args.range[0], args.range[1]]
+        elif args.n is not None:
+            max_number_of_events = (1 + input.last_event - input.first_event)
+            if args.n > max_number_of_events:
+                raise ValueError("There are only %s events in the file, can't process %s!" % (max_number_of_events, n))
+            event_range = [input.first_event, input.first_event + args.n]
+        else:
+            event_range = [input.first_event, input.last_event]
+        # Do the event loop:
+        for event_number in range(event_range[0], event_range[1] + 1):    # +1 for funny python indexing
+            log.info("Event %d" % event_number)
+            process_one_event(input.get_event(event_number), actions, log)
 
-        log.info("Event %d" % i)
-
-        for j, block in enumerate(actions):
-            log.debug("Step %d with %s", j, block.__class__.__name__)
-            event = block.process_event(event)
     else:
-        log.info("Finished event loop.")
+        # We'll have to read events sequentlly, skipping events until we hit the desired range
+        # This is much slower!
+        for i, event in enumerate(input.get_events()):
+            if args.n is not None:
+                if i >= args.n:
+                    break
+            elif args.single is not None:
+                if i < args.single:
+                    continue
+                elif i > args.single:
+                    break
+            elif args.range is not None:
+                if i < args.range[0]:
+                    continue
+                elif i > args.range[1]:
+                    break
+            log.info("Event %d" % i)
+            process_one_event(event, actions, log)
+
+    log.info("Finished processing.")
+
+def process_one_event(event, actions, log):
+
+    for j, block in enumerate(actions):
+        log.debug("Step %d with %s", j, block.__class__.__name__)
+        event = block.process_event(event)
