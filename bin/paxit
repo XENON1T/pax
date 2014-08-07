@@ -10,11 +10,11 @@ config_overload = """
 [pax]
 input = 'MongoDB.MongoDBInput'
 my_extra_transforms = ["PosSimple.PosRecWeightedSum"]
-output = ["Plotting.PlottingWaveform"]
+#output = ["Plotting.PlottingWaveform"]
 
 [MongoDB.MongoDBInput]
 collection = "dataset"
-address = "145.102.135.218:27017"
+address = "127.0.0.1:27017"
 """
 
 if __name__ == '__main__':

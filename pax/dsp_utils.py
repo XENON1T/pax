@@ -5,8 +5,8 @@ Don't put in hacks for Xerawdp matching!
 
 
 def main():
-    #Todo: move this to tests!
-    w = list(range(10))+list(reversed(range(10)))
+    # Todo: move this to tests!
+    w = list(range(10)) + list(reversed(range(10)))
     print(w)
     # Left and right walking
     assert walk_waveform(w, 3, IndexReached(7), direction='right')[1] == 7
@@ -14,26 +14,24 @@ def main():
     # Threshold crossing
     assert walk_waveform(w, 7, IsBelowThreshold(5, min_crossing_length=3), direction='left')[1] == 4
     assert walk_waveform(w, 7, IsBelowThreshold(5, min_crossing_length=3), direction='right')[1] == 15
-    #Todo: add more here
+    # Todo: add more here
     # All conditions failing
     assert isinstance(walk_waveform(w, 7, IsBelowThreshold(-5))[0], WaveformEndReached)
-    assert walk_waveform(w, 7, IsBelowThreshold(-5))[1] == len(w)-1
+    assert walk_waveform(w, 7, IsBelowThreshold(-5))[1] == len(w) - 1
     assert isinstance(walk_waveform(w, 7, IsBelowThreshold(-5), direction='left')[0], WaveformEndReached)
     assert walk_waveform(w, 7, IsBelowThreshold(-5), direction='left')[1] == 0
     # Several conditions
     assert walk_waveform(w, 3, [IsAboveThreshold(8), IndexReached(7)])[1] == 7
 
 
-
-
 ##
-## Waveform walking
+# SumWaveform walking
 ##
 def walk_waveform(signal, start, stop_conditions, direction="right"):
     d = {
-        'last_possible_index': len(signal)-1,
+        'last_possible_index': len(signal) - 1,
         'previous_index': float('nan'),
-        'previous_value': float('nan'),    #Nnumerical comparisons with float('nan') always give False
+        'previous_value': float('nan'),  # Nnumerical comparisons with float('nan') always give False
     }
     # Argument checking
     if 0 <= start <= d['last_possible_index']:
@@ -41,7 +39,7 @@ def walk_waveform(signal, start, stop_conditions, direction="right"):
         d['current_index'] = start
     else:
         raise ValueError("Start index %s not between %s and %s!" % (start, 0, d['last_possible_index']))
-    if direction in ('left','right'):
+    if direction in ('left', 'right'):
         d['direction'] = direction
     else:
         raise ValueError("Invalid direction: %s" % direction)
@@ -52,8 +50,8 @@ def walk_waveform(signal, start, stop_conditions, direction="right"):
         if not 0 <= d['current_index'] <= d['last_possible_index']:
             # We've gone too far!
             # Todo: Complain
-            return WaveformEndReached(), d['previous_index']    #()'s are so isinstance tests work
-        d['current_value'] = signal[ d['current_index'] ]
+            return WaveformEndReached(), d['previous_index']  # ()'s are so isinstance tests work
+        d['current_value'] = signal[d['current_index']]
         # Check all the stop_conditions in turn
         for stop_condition in stop_conditions:
             result = stop_condition.evaluate(d)
@@ -67,6 +65,7 @@ def walk_waveform(signal, start, stop_conditions, direction="right"):
         d['previous_value'] = d['current_value']
         d['current_index'] += -1 if direction == 'left' else 1
 
+
 class StopCondition(object):
 
     def startup(self, d):
@@ -75,7 +74,7 @@ class StopCondition(object):
     def evaluate(self, d):
         raise NotImplementedError
 
-# #Setup syntax sugar for & and | or on stop conditions...
+# Setup syntax sugar for & and | or on stop conditions...
 # Overkill, you only need OR anyway, will slow things down if in long chain
 #
 #
@@ -101,18 +100,22 @@ class StopCondition(object):
 # StopCondition.__and__ = join_conditions_by_and
 # StopCondition.__or__  = join_conditions_by_or
 
+
 class WaveformEndReached(StopCondition):
     # Used by waveform walker to prevent crashes
+
     def evaluate(self, d):
         raise ValueError("You shouldn't include this condition in the stop_conditions list!")
 
 
 class StartValueExceeded(StopCondition):
+
     def evaluate(self, d):
         return d['current_value'] > d['start_value']
 
 
 class IndexReached(StopCondition):
+
     def __init__(self, limit_index):
         self.limit_index = limit_index
 
@@ -139,11 +142,12 @@ class IndexReached(StopCondition):
 
 
 class ThresholdCrossed(StopCondition):
+
     def __init__(self, threshold, min_crossing_length=1, cross_to='either', real_crossing=True, ):
         self.threshold = threshold
         if min_crossing_length < 1 or not isinstance(min_crossing_length, int):
             raise ValueError("Crossing length must be an integer > 1")
-            #Well, could allow 0 and tell walker condition is already satisfied
+            # Well, could allow 0 and tell walker condition is already satisfied
         self.min_crossing_length = min_crossing_length
         self.real_crossing = real_crossing
         self.cross_to = cross_to
@@ -154,7 +158,7 @@ class ThresholdCrossed(StopCondition):
     def evaluate(self, d):
         if self.real_crossing:
             crossed_above = d['previous_value'] < self.threshold < d['current_value']
-            crossed_below = d['current_value']  < self.threshold < d['previous_value']
+            crossed_below = d['current_value'] < self.threshold < d['previous_value']
         else:
             crossed_above = self.threshold < d['current_value']
             crossed_below = d['current_value'] < self.threshold
@@ -162,31 +166,40 @@ class ThresholdCrossed(StopCondition):
             crossed = crossed_above
         elif self.cross_to == 'below':
             crossed = crossed_below
-        else: #self.cross_to is 'either':
+        else:  # self.cross_to is 'either':
             crossed = (crossed_above or crossed_below)
         if crossed:
             self.crossing_length += 1
             if self.crossing_length == self.min_crossing_length:
                 # We're done! Return the index of the original crossing
-                return d['current_index'] + (1-self.min_crossing_length)*(-1 if d['direction'] == 'left' else 1)
+                return d['current_index'] + (1 - self.min_crossing_length) * (-1 if d['direction'] == 'left' else 1)
         else:
             self.crossing_length = 0
         return False
 
 # Convenience forms
+
+
 class CrossAboveThreshold(ThresholdCrossed):
+
     def __init__(self, threshold, min_crossing_length=1):
         ThresholdCrossed.__init__(self, threshold, min_crossing_length, cross_to='above', real_crossing=True)
 
+
 class CrossBelowThreshold(ThresholdCrossed):
+
     def __init__(self, threshold, min_crossing_length=1):
         ThresholdCrossed.__init__(self, threshold, min_crossing_length, cross_to='below', real_crossing=True)
 
+
 class IsAboveThreshold(ThresholdCrossed):
+
     def __init__(self, threshold, min_crossing_length=1):
         ThresholdCrossed.__init__(self, threshold, min_crossing_length, cross_to='above', real_crossing=False)
 
+
 class IsBelowThreshold(ThresholdCrossed):
+
     def __init__(self, threshold, min_crossing_length=1):
         ThresholdCrossed.__init__(self, threshold, min_crossing_length, cross_to='below', real_crossing=False)
 
@@ -196,7 +209,7 @@ class XerawdpSlopeInversionCondition(StopCondition):
 
 
 ##
-## Width computations
+# Width computations
 ##
 
 

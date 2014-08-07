@@ -43,7 +43,7 @@ class MongoDBInput(plugin.InputPlugin):
                     event['channel_occurrences'][channel] = []
                 event['channel_occurrences'][channel].append((
                     doc_occurrence['time'] - event_start,  # Start sample index
-                    np.fromstring(doc_occurrence['data'], dtype=np.int16)  # Waveform occurrence data
+                    np.fromstring(doc_occurrence['data'], dtype=np.int16)  # SumWaveform occurrence data
                 ))
 
             yield event

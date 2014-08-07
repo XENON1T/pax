@@ -462,9 +462,13 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             #  - the filtered waveform is mangled by the convolution bug, so the widths come out lower
             #  - Xerawdp limits the width search quite strictly, making it come out lower than the real FWQM
             filtered_wave = event['processed_waveforms']['filtered_for_s1_width_test']
-            max_in_filtered = left + int(np.argmax(filtered_wave[left:right]))
-            if filtered_wave[max_in_filtered] == 0:
-                pass    # Happens due to Xerawdp's convolution bug, Xerawdp's width will return 0, passes test
+            max_in_filtered = left + int(np.argmax(filtered_wave[left:right])) #not right+1, Xerawdp doesn't include it either
+            if filtered_wave[max_in_filtered] <= 0:
+                # = 0 Happens due to Xerawdp's convolution bug, Xerawdp's width will return 0, passes test
+                # <0 happens for very short&shallow s1s, it breaks my implementation of extent_until_threshold,
+                #    since it searches for crossings, which it never finds). Xerawdp it should return a filtered
+                #    width of 0 since it is already below threshold, so it always passes the test.
+                pass
             else:
                 filtered_width = extent_until_threshold(filtered_wave[left_boundary:right_boundary+1],
                                                         start=max_in_filtered-left_boundary,
@@ -569,23 +573,33 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
         self.log.debug("        Running isolation test: RofLeft %s, LofRight %s, LengthLeft %s, LengthRight %s" % (
             right_edge_of_left_test_region, left_edge_of_right_test_region, test_length_left, test_length_right
         ))
-        # +1s are to compensate for python's indexing conventions...
-        pre_avg = np.mean(signal[
-            right_edge_of_left_test_region - (test_length_left-1):
-            right_edge_of_left_test_region + 1
-        ])
-        post_avg = np.mean(signal[
-            left_edge_of_right_test_region:
-            left_edge_of_right_test_region + test_length_right
-        ])
         height = signal[max_idx]
-        self.log.debug("        Pass test if before avg %s > %s and/or above avg %s > %s" % (
-            pre_avg, height * before_avg_max_ratio, post_avg, height * after_avg_max_ratio
-        ))
-        if can_fail_one:
-            failed = pre_avg > height * before_avg_max_ratio and post_avg > height * after_avg_max_ratio
+        # For empty test regions, Xerawdp gives 0.0/0 = some kind of Nan for average, ensuring test always fails
+        if test_length_left == 0:
+            failed_pre = True
         else:
-            failed = pre_avg > height * before_avg_max_ratio or post_avg > height * after_avg_max_ratio
+            # +1s are to compensate for python's indexing conventions...
+            pre_avg = np.mean(signal[
+                right_edge_of_left_test_region - (test_length_left-1):
+                right_edge_of_left_test_region + 1
+            ])
+            failed_pre = pre_avg > height * before_avg_max_ratio
+        if test_length_right == 0:
+            failed_post = True
+        else:
+            post_avg = np.mean(signal[
+                left_edge_of_right_test_region:
+                left_edge_of_right_test_region + test_length_right
+            ])
+            failed_post = post_avg > height * after_avg_max_ratio
+        # Only enable when you're sure no empty test regions occur
+        # self.log.debug("        Pass test if before avg %s > %s and/or above avg %s > %s" % (
+        #     pre_avg, height * before_avg_max_ratio, post_avg, height * after_avg_max_ratio
+        # ))
+        if can_fail_one:
+            failed = failed_pre and failed_post
+        else:
+            failed = failed_pre or failed_post
         if failed:
             self.log.debug("        Nope!")
             return False

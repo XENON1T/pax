@@ -9,9 +9,11 @@ See format for more information on the event object.
 """
 import logging
 import time
+from pax.datastructure import Event
 
 
 class BasePlugin(object):
+
     def __init__(self, config_values):
         self.name = self.__class__.__name__
         self.log = logging.getLogger(self.name)
@@ -52,6 +54,7 @@ class BasePlugin(object):
 
 
 class InputPlugin(BasePlugin):
+
     """Base class for data inputs
 
     This class cannot be parallelized since events are read in a specific order
@@ -74,15 +77,31 @@ class InputPlugin(BasePlugin):
 
 
 class TransformPlugin(BasePlugin):
+
     def transform_event(self, event):
         raise NotImplementedError
 
     @BasePlugin._timeit
     def process_event(self, event):
-        return self.transform_event(event)
+        if event is None:
+            raise RuntimeError("%s transform received a 'None' event." % self.name)
+        elif not isinstance(event, (dict, Event)):
+            raise RuntimeError("%s transform received wrongly typed event. %s" % (self.name,
+                                                                                  event))
+
+        #  The actual work is done in this line
+        result = self.transform_event(event)
+
+        if result is None:
+            raise RuntimeError("%s transform did not return event." % self.name)
+        elif not isinstance(result, (dict, Event)):
+            raise RuntimeError("%s transform returned wrongly typed event." % self.name)
+
+        return result
 
 
 class OutputPlugin(BasePlugin):
+
     def write_event(self, event):
         raise NotImplementedError
 

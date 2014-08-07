@@ -12,164 +12,318 @@ import logging
 import inspect
 from pprint import pprint
 
+import numpy as np
 import collections
 
 
-def flatten(d, parent_key='', sep='.'):
+def _flatten(d, parent_key='', sep='.'):
     items = []
     for k, v in d.items():
         new_key = parent_key + sep + k if parent_key else k
         if isinstance(v, collections.MutableMapping):
-            items.extend(flatten(v, new_key).items())
+            items.extend(_flatten(v, new_key).items())
         else:
             items.append((new_key, v))
     return dict(items)
 
 
 class Event(object):
-    def __init__(self, raw={}):
+
+    """The event class.
+
+    This class defines the data structure for pax.  Within it are all of the
+    high-level quantities that pax computes.  For example, the size of the S2
+    signals.  This class is passed between the pax plugins and used as an
+    information container.
+
+    .. note:: This class should not include much logic since otherwise it
+                      makes it harder to serialize.  Nevertheless, some methods are
+                      provided for convienence.
+    """
+
+    def __init__(self, configuration):
         self.log = logging.getLogger('Event')
-        self._raw = raw
+        self.config = configuration
+
+        self._internal_values = {}
+
+        self._pmt_groupings = {}
+        if configuration != {}:
+            for key in ['pmts_top', 'pmts_bottom', 'pmts_veto']:
+                self._pmt_groupings[key[5:]] = np.array(self.config[key])
+
+            self._pmt_groupings['top_and_bottom'] = self._pmt_groupings['top'] + self._pmt_groupings['bottom']
+
+    def _fetch_variable(original_function):
+        """Decorator
+        """
+
+        # This is the variable being accessed
+        var = original_function.__name__
+
+        def new_function(self):
+            if var not in self._internal_values:
+                self.log.fatal("Tried to access %s, but not set yet. Returning None.")
+                raise RuntimeError("Variable %s not set" % var)
+            return self._internal_values[var]
+
+        new_function.__doc__ = original_function.__doc__
+        return new_function
+
+    def _set_variable(original_function):
+        """Decorator
+        """
+
+        # This is the variable being accessed
+        var = original_function.__name__
+
+        def new_function(self, value):
+            try:
+                original_function(self, value)
+            except Exception as e:
+                self.log.exception(e)
+                raise e
+            finally:
+                variable_name = inspect.stack()[0][3]
+                self.log.debug("Setting %s with value %s" % (variable_name,
+                                                             str(value)))
+                self._internal_values[variable_name] = value
+
+        new_function.__doc__ = original_function.__doc__
+        return new_function
+
+    # # Begining of properties ##
 
     @property
-    def raw(self, i_know_what_i_am_doing=False):
-        """Do not use: raw internals."""
-        if not i_know_what_i_am_doing:
-            self.log.warning("Using RAW event data.")
-        return self._raw
-
+    @_fetch_variable
     def event_window(self):
-        """The real-world time of the start and end of event
+        """Two numbers for the start and stop time of the event.
 
-        64-bit number since 1/1/1970
+        This is a 64-bit number in units of 10 ns that follows the UNIX clock.
+        Or rather, it starts from January 1, 1970."""
+        pass
+
+    @event_window.setter
+    @_set_variable
+    def event_window(self, value):
+        if not isinstance(value, (list, tuple)):
+            raise RuntimeError("Wrong type; must be ntuple.")
+        elif len(value) != 2:
+            raise RuntimeError("Wrong size; must be length 2.")
+
+    @property
+    @_fetch_variable
+    def pmt_waveforms(self):
+        """A 2D array of all the PMT waveforms.
+
+        The first index is the PMT number (starting from zero), and the second
+        index is the sample number.  This must be a numpy array.  To access the
+        waveform for a specific PMT such as PMT 10, you can do::
+
+                event.pmt_waveforms[10]
+
+        which returns a 1D array of samples.
         """
-        return (0.0, 0.0)
+        pass
 
-    def _get_peaks(self, peak_types, peak_class, sort):
-        """Fetch S1 or S2 peaks from our data structure
+    @pmt_waveforms.setter
+    @_set_variable
+    def pmt_waveforms(self, value):
+        if not isinstance(value, (np.array)):
+            raise RuntimeError("Wrong type; must be numpy array.")
+        elif value.ndim != 2:
+            raise RuntimeError("Wrong size; must be dimension 2.")
+        elif value.shape[0] > 500:
+            self.log.warning("Found %d channels, which seems high." % value.shape[0])
+        elif value.shape[1] > 100000:
+            self.log.warning("Found %d samples, which seems high." % value.shape[1])
+
+    @property
+    def user_float_0(self):
+        """Unused float (useful for developing)
         """
-        # Sort key is used on the flattened peak
-        # Sort order is whether or not Python sort is 'reversed'
-        sort_key, sort_order = sort
+        pass
 
-        peaks = {}
+    @property
+    def user_float_1(self):
+        """Unused float (useful for developing)
+        """
+        pass
 
-        for peak in self._raw['peaks']:
-            if peak['peak_type'] in peak_types:
-                if 'rejected' in peaks and peaks['rejected'] is True:
-                    continue
+    @property
+    def user_float_3(self):
+        """Unused float (useful for developing)
+        """
+        pass
 
-                # Flatten the peak so we can use our sort key
-                peak_key = flatten(peak)[sort_key]
+    @property
+    def user_array_0(self):
+        """Unused array (useful for developing)
+        """
+        pass
 
-                # Save save into dictionary
-                peaks[peak_key] = peak_class(peak)
+    @property
+    def user_array_1(self):
+        """Unused array (useful for developing)
+        """
+        pass
 
-        # Return just a list, but sorted according to our sort key and order
-        return [peaks[i] for i in sorted(peaks, reverse=sort_order)]
+    @property
+    def total_area(self):
+        """Sum area of waveform
+        """
+        return self.pmt_waveforms.sum()
 
-    def S2s(self, sort=('top_and_bottom.area', True)):
-        """List of S2 (ionization) signals as Peak objects"""
-        return self._get_peaks(('large_s2', 'small_s2'), S2, sort)
+    @property
+    def total_area_veto(self):
+        """Summed area of waveform only for veto PMTs"""
+        return self.pmt_waveforms[self._pmt_groupings['veto']]
 
-    def S1s(self, sort=('top_and_bottom.area', True)):
-        """List of S1 (scintillation) signals as Peak objects"""
-        return self._get_peaks(('s1'), S1, sort)
+    def sum_waveform(self):
+        """Top and bottom sum waveform method for convienence.
+        """
+        pass
 
-    def pmt_waveform(self, pmt):
-        """The individual waveform for a specific PMT"""
-        if pmt not in self._raw['channel_waveforms'].keys():
-            return None
-        return self._raw['channel_waveforms'][pmt]
+    def filtered_waveform(self):
+        """Top and bottom filtered waveform method for convienence.
+        """
+        pass
 
-    def summed_waveform(self, name='top_and_bottom'):
-        """Waveform summed over many PMTs"""
-        if 'filtered' in name:
-            raise ValueError('Use filtered_waveform, not this function: %s' % name)
-        elif name not in self._raw['processed_waveforms']:
-            self.log.debug(self._raw['processed_waveforms'].keys())
-            raise ValueError("Summed waveform %s does not exist." % name)
-        elif name == 'uncorrected_sum_waveform_for_xerawdp_matching':
-            raise ValueError()
+    @property
+    @_fetch_variable
+    def S2s(self):
+        """List of S2 (ionization) signals
 
-        return self._raw['processed_waveforms'][name]
+        Returns an :class:`pax.datastructure.Peak` class.
+        """
+        pass
 
-    def filtered_waveform(self, filter_name=None):
-        """Filtered waveform summed over many PMTs"""
-        if filter_name is not None:
-            #raise PendingDeprecationWarning() #Why? Currently this throws an error, not a warning...
-            return self._raw['processed_waveforms'][filter_name]
-        return self._raw['processed_waveforms']['filtered_for_large_s2']
+    @S2s.setter
+    @_set_variable
+    def S2s(self, value):
+        if not isinstance(value, (list, tuple)):
+            raise RuntimeError("Wrong type; must be ntuple.")
+        for item in value:
+            if not isinstance(value, Peak):
+                raise ValueError("Must pass Peak class")
 
-    def dump(self):
-        pprint.pprint(self._raw)
+    @property
+    @_fetch_variable
+    def S1s(self):
+        """List of S1 (scintillation) signals
+
+        Returns an :class:`pax.datastructure.Peak` class.
+        """
+        pass
+
+    @S1s.setter
+    @_set_variable
+    def S1s(self, value):
+        if not isinstance(value, (list, tuple)):
+            raise RuntimeError("Wrong type; must be ntuple.")
+        for item in value:
+            if not isinstance(value, Peak):
+                raise ValueError("Must pass Peak class")
+
+    @property
+    @_fetch_variable
+    def waveforms(self):
+        """Returns a list of waveforms
+
+        Returns an :class:`pax.datastructure.SumWaveform` class.
+        """
+        pass
+
+    @waveforms.setter
+    @_set_variable
+    def waveforms(self, value):
+        if not isinstance(value, (list, tuple)):
+            raise RuntimeError("Wrong type; must be ntuple.")
+        for item in value:
+            if not isinstance(value, SumWaveform):
+                raise ValueError("Must pass SumWaveform")
 
 
 class Peak(object):
-    def __init__(self, peak_dict):
-        self.peak_dict = peak_dict
 
-    def type(self):
-        return self.__class__.__name__
+    """Class for S1 and S2 peak information
+    """
 
-    def _get_var(self, pmts, key):
-        key = '%s.%s' % (pmts, key)
-        flattened_peak = flatten(self.peak_dict)
-        if key not in flattened_peak:
-            pprint(self.peak_dict)
-            raise ValueError('%s does not exist in peak' % key)
+    def __init__(self):
+        self._area = 'blah'
 
-        return flattened_peak[key]
+    @property
+    def area(self):
+        """Area of the pulse in photoelectrons
+        """
+        pass
 
-    def area(self, key='top_and_bottom'):
-        return self._get_var(key, 'area')
+    @property
+    def time_in_waveform(self):
+        """position of each S1 peak"""
+        pass
 
-    def width_fwhm(self, key='top_and_bottom'):
-        return self._get_var(key, 'fwhm')
+    @property
+    def height(self):
+        """Highest point in peak in units of ADC counts
+        """
+        pass
 
-    def height(self, key='top_and_bottom'):
-        return self._get_var(key, 'height')
+    @property
+    def width_fwhm(self):
+        """Width at full width half max
 
-    def time_in_waveform(self, key='top_and_bottom'):
-        return self._get_var(key, 'position_of_max_in_waveform')
+        Units are 10 ns.
+        """
+        pass
 
+    @property
     def bounds(self):
         """Where the peak starts and ends in the sum waveform
-        """
+"""
         return (self.peak_dict['left'],
                 self.peak_dict['right'])
 
 
-class S1(Peak):
-    # Get these from the summed waveform which doesn't include the pmts excluded for s1
-    # Todo: This is very inelegant. Could we define self.standard_waveform or something?
-    #       Or should we do a completely different approach?
-    def area(self, key='top_and_bottom'):
-        if key=='top_and_bottom':
-            key='top_and_bottom_for_s1'
-        return Peak.area(self, key)
+class SumWaveform(object):
 
-    def width_fwhm(self, key='top_and_bottom'):
-        if key=='top_and_bottom':
-            key='top_and_bottom_for_s1'
-        return Peak.width_fwhm(self, key)
+    """Class used to store sum (filtered or not) waveform information.
+    """
+    @property
+    def is_filtered(self):
+        """Boolean"""
+        pass
 
-    def height(self, key='top_and_bottom'):
-        if key=='top_and_bottom':
-            key='top_and_bottom_for_s1'
-        return Peak.height(self, key)
+    @property
+    def name_of_filter(self):
+        """Name of the filter used (or None)
+        """
+        pass
 
-    def time_in_waveform(self, key='top_and_bottom'):
-        if key=='top_and_bottom':
-            key='top_and_bottom_for_s1'
-        return Peak.time_in_waveform(self, key)
+    @property
+    def short_name(self):
+        """e.g., top"""
+        pass
+
+    @property
+    def pmt_list(self):
+        """Array of PMT numbers included in this waveform"""
+        pass
+
+    @property
+    def samples(self):
+        """Array of samples.
+        """
+        # if not isinstance(value, (np.array)):
+        #	raise RuntimeError("Wrong type; must be numpy array.")
+        # elif value.ndim != 1:
+        #		raise RuntimeError("Wrong size; must be dimension 1.")
+        #	elif value.shape[0] > 100000:
+        #	self.log.warning("Found %d samples, which seems high." % value.shape[1])
+        pass
 
 
-class S2(Peak):
-    pass
-
-
-def explain(class_name):
+def _explain(class_name):
     x = inspect.getmembers(class_name,
                            predicate=inspect.isdatadescriptor)
 
@@ -180,5 +334,5 @@ def explain(class_name):
 
 
 if __name__ == '__main__':
-    explain(Peak)
-    explain(Event)
+    _explain(Peak)
+    _explain(Event)
