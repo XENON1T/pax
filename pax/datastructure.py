@@ -15,21 +15,121 @@ import numpy as np
 import collections
 
 
-def _flatten(d, parent_key='', sep='.'):
-    items = []
-    for k, v in d.items():
-        new_key = parent_key + sep + k if parent_key else k
-        if isinstance(v, collections.MutableMapping):
-            items.extend(_flatten(v, new_key).items())
-        else:
-            items.append((new_key, v))
-    return dict(items)
+
+class BaseField(object):
+    """Base class for all field types.
+
+    The ``source`` parameter sets the key that will be retrieved from the source
+    data. If ``source`` is not specified, the field instance will use its own
+    name as the key to retrieve the value from the source data.
+
+    """
+    def __init__(self, source=None):
+        self.source = source
+
+    def populate(self, data):
+        """Set the value or values wrapped by this field"""
+
+        self.data = data
+
+    def to_python(self):
+        '''After being populated, this method casts the source data into a
+        Python object. The default behavior is to simply return the source
+        value. Subclasses should override this method.
+
+        '''
+        return self.data
+
+class CharField(BaseField):
+    """Field to represent a simple Unicode string value."""
+
+    def to_python(self):
+        """Convert the data supplied using the :meth:`populate` method to a
+        Unicode string.
+
+        """
+        if self.data is None:
+            return ''
+        return unicode(self.data)
+
+
+class IntegerField(BaseField):
+    """Field to represent an integer value"""
+
+    def to_python(self):
+        """Convert the data supplied to the :meth:`populate` method to an
+        integer.
+
+        """
+        if self.data is None:
+            return 0
+        return int(self.data)
+
+
+class FloatField(BaseField):
+    """Field to represent a floating point value"""
+
+    def to_python(self):
+        """Convert the data supplied to the :meth:`populate` method to a
+        float.
+
+        """
+        if self.data is None:
+            return 0.0
+        return float(self.data)
+
+
+class BooleanField(BaseField):
+    """Field to represent a boolean"""
+
+    def to_python(self):
+        """The string ``'True'`` (case insensitive) will be converted
+        to ``True``, as will any positive integers.
+
+        """
+        if isinstance(self.data, basestring):
+            return self.data.strip().lower() == 'true'
+        if isinstance(self.data, int):
+            return self.data > 0
+        return bool(self.data)
+
+
+class StorageObject(object):
+    class __metaclass__(type):
+        '''Creates the metaclass for Model. The main function of this metaclass
+        is to move all of fields into the _fields variable on the class.
+
+        '''
+        def __init__(cls, name, bases, attrs):
+            cls._clsfields = {}
+            for key, value in attrs.iteritems():
+                if isinstance(value, BaseField):
+                    cls._clsfields[key] = value
+                    delattr(cls, key)
+
+        def __setattr__(self, key, value):
+            if key in self._fields:
+                field = self._fields[key]
+                field.populate(value)
+                field._related_obj = self
+                super(StorageObject, self).__setattr__(key, field.to_python())
+            else:
+                super(StorageObject, self).__setattr__(key, value)
+
+        @property
+        def _fields(self):
+            return dict(self._clsfields, **self._extra)
+
+class Event2(object):
+    test = FloatField()
 
 class BaseStorageObject(object):
     def __init__(self):
         self.log = logging.getLogger('Event')
 
         self._internal_values = {}
+
+
 
     def _fetch_variable(original_function):
         """Decorator
@@ -92,6 +192,9 @@ class Event(BaseStorageObject):
         BaseStorageObject.__init__(self)
 
         self._internal_values['waveforms'] = []
+        self._internal_values['S1s'] = []
+        self._internal_values['S2s'] = []
+
 
     @property
     @BaseStorageObject._fetch_variable
@@ -321,8 +424,7 @@ class Event(BaseStorageObject):
 
         self.waveforms.append(sw)
 
-    def get_waveform(self,
-                    name):
+    def get_waveform(self, name):
         """Get waveform for name
         """
         for sw in self.waveforms:
@@ -332,13 +434,23 @@ class Event(BaseStorageObject):
         raise RuntimeError("Waveform not found")
 
 
+
 class Peak(BaseStorageObject):
 
     """Class for S1 and S2 peak information
     """
 
-    def __init__(self):
-        self._area = 'blah'
+    def __init__(self,
+                 area,
+                 time_in_waveform,
+                 height,
+                 width_fwhm,
+                 bounds):
+        self.area = area
+        self.time_in_waveform = time_in_waveform
+        self.height = height
+        self.width_fwhm = width_fwhm
+        self.bounds = bounds
 
     @property
     def area(self):
