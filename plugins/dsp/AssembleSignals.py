@@ -50,7 +50,7 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
         # event['processed_waveforms'] = {}
         uncorrected_sum_wave_for_s1 = np.zeros(event.length())
         uncorrected_sum_wave_for_s2 = np.zeros(event.length())
-        pmt_waveform_matrix = np.zeros((1+max(event.occurrences.keys()),event.length()))
+        pmt_waveform_matrix = np.zeros((999,event.length())) #TODO: get max pmt number somewhere
         # event['channel_waveforms']   = {}
         baseline_sample_size = 46 #TODO: put in config!!!!
         for channel, waveform_occurrences in event.occurrences.items():
@@ -129,16 +129,14 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
         event.pmt_waveforms = pmt_waveform_matrix
         # Temp for Xerawdp matching: store uncorrected sum waveform
         universal_gain_correction = self.conversion_factor / (2*10**6)
-        event.append_sum_waveform(
+        event.append_waveform(
             samples=uncorrected_sum_wave_for_s1 * universal_gain_correction,
-            name='Uncorrected sum waveform for s1',
-            short_name='uS1',
+            name='uS1',
             pmt_list=set(list(range(1,178))) - self.config['pmts_excluded_for_s1'],
         )
-        event.append_sum_waveform(
+        event.append_waveform(
             samples=uncorrected_sum_wave_for_s2 * universal_gain_correction,
-            name='Uncorrected sum waveform for s2',
-            short_name='uS2',
+            name='uS2',
             pmt_list=set(list(range(1,178))),
         )
         # TODO: Maybe Delete the channel_occurrences from the event structure, we don't need it anymore
@@ -167,16 +165,10 @@ class SumWaveforms(plugin.TransformPlugin):
         # TEMP for XerawDP matching: Don't have to compute peak finding waveform yet, done in JoinAndConvertWaveforms
 
     def transform_event(self, event):
-        # if not 'processed_waveforms' in event:
-        #     event['processed_waveforms'] = {}
-
         # Compute summed waveforms
         for group, members in self.channel_groups.items():
-            wave = np.zeros(event['event_duration'])
-            for channel in members:
-                if channel in event['channel_waveforms']:
-                    wave += event['channel_waveforms'][channel]
-            event.processed_waveforms[group] = wave
+            print(group)
+            event.append_waveform(samples=np.sum(event.pmt_waveforms[[list(members)]], axis=0), name=group, pmt_list=members)
 
         return event
 
