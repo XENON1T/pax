@@ -1,6 +1,6 @@
 import numpy as np
 
-from pax import plugin, units
+from pax import plugin, units, datastructure
 
 class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
 
@@ -56,7 +56,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                 'before_avg_max_ratio':             0.01,
                 'after_avg_max_ratio':              0.04,
                 'stop_if_start_exceeded':           True,
-                'source_waveform':                 'uncorrected_sum_waveform_for_s1',
+                'source_waveform':                 'uS1',
                 'max_filtered_width':               50-1,
                 #The s1 candidate interval isn't tested:
                 'min_base_interval_length':         0,
@@ -66,10 +66,10 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
         ]
         self.seeker_position = None
         self.highest_s2_height_ever = 0
-        event['peaks'] = []
+        #event['peaks'] = []
         for (peak_type, settings) in self.settings_for_peaks:
             # Get the signal out
-            signal = event['processed_waveforms'][settings['source_waveform']]
+            signal = event.get_waveform(settings['source_waveform']).samples
 
 
             # Code for dumping waveforms:
@@ -95,34 +95,33 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             if peak_type == 'small_s2':
                 # For small s2s, we stop looking after a sufficiently large s2 (height in large_s2 waveform) is seen
                 # Don't have to test these peaks are actually s2s, those are the only peaks in here
-                huge_s2s = [p for p in event['peaks'] if p['height'] > 624.150636300]
+                huge_s2s = [p for p in event.S2s if p.height > 624.150636300]
                 if huge_s2s:
-                    stop_looking_after = min([p['left'] for p in huge_s2s])
+                    stop_looking_after = min([p.left for p in huge_s2s])
             if peak_type == 's1':
                 # All peaks are still s2s by this point,
                 # no need for s2s = [p for p in event['peaks'] if p['peak_type'] in ('large_s2', 'small_s2')]
                 # Delete peaks beyond the 32 with largest area
-                event['peaks'] = self.sort_and_prune_by(event['peaks'], 'integral', 32, reverse=True)
-                s2s = event['peaks']
-                if s2s:
+                event.S2s = self.sort_and_prune_by(event.S2s, 'area', 32, reverse=True)
+                if event.S2s == []:
                     # We stop looking for s1s after the s2 with the largest INTEGRAL
                     # Very confusing, and undocumented!
-                    stop_looking_after = s2s[0]['left']
+                    stop_looking_after = event.S2s[0].left
                     #  Also stop looking after large enough s2s
                     #  Size of s2s is determined from s1 peak finding waveform!
-                    large_enough_s2s = [p for p in s2s if event['processed_waveforms']['uncorrected_sum_waveform_for_s1'][p['index_of_max_in_waveform']] > 3.1207531815]
+                    large_enough_s2s = [p for p in event.S2s if event.get_waveform('uncorrected_sum_waveform_for_s1').samples[p.index_of_maximum] > 3.1207531815]
                     if large_enough_s2s:
                         stop_looking_after = min(
                             stop_looking_after,
-                            min([p['left'] for p in large_enough_s2s])
+                            min([p.left for p in large_enough_s2s])
                         )
 
             self.log.debug("Starting %s search, stop looking after %s" % (peak_type, stop_looking_after))
 
             # Find the free regions - regions where peaks haven't yet been found
             # We could move this to the event class...
-            lefts = sorted([0] + [p['left'] for p in event['peaks']])
-            rights = sorted([p['right'] for p in event['peaks']] + [event['event_duration']-1])
+            lefts = sorted([0] + [p.left for p in event.S2s])
+            rights = sorted([p.right for p in event.S2s] + [event.length()-1])
             free_regions = list(zip(*[iter(sorted(lefts + rights))]*2))   #hack from stackoverflow
             self.log.debug("Free regions: " + str(free_regions))
 
@@ -221,7 +220,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                         if peak_type == 's2':
                             # Xerawdp should only 'see' an S2 when it drops below threshold, (really? test this!)
                             # however, s2s at the end of the waveform will always end due to the Xerawdp convolution bug
-                            if right_boundary == event['len']-1:
+                            if right_boundary == event.length()-1:
                                 pass
                             else:
                                 self.log.debug("%s starting at %s didn't end at region boundary %s" % (
@@ -234,7 +233,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
 
                     # Hack for xerawdp matching: small s2 has wrong signal from here on
                     if peak_type=='small_s2':
-                        signal_for_later_stages = event['processed_waveforms']['filtered_for_large_s2']
+                        signal_for_later_stages = event.get_waveform('filtered_for_large_s2').samples
                     else:
                         signal_for_later_stages = signal
 
@@ -404,7 +403,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
         elif peak_type == 'small_s2':
 
             # Test for aspect ratio of the UNFILTERED WAVEFORM, probably to avoid misidentifying s1s as small s2s
-            unfiltered_signal = event['processed_waveforms']['uncorrected_sum_waveform_for_s2']
+            unfiltered_signal = event.get_waveform('uS2').samples
             height_for_aspect_ratio_test = unfiltered_signal[left + int(np.argmax(unfiltered_signal[left:right+1]))]
             aspect_ratio_threshold = settings['aspect_ratio_threshold']
             peak_width = right - left
@@ -461,7 +460,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             # In reality this test is less strict than it seems:
             #  - the filtered waveform is mangled by the convolution bug, so the widths come out lower
             #  - Xerawdp limits the width search quite strictly, making it come out lower than the real FWQM
-            filtered_wave = event['processed_waveforms']['filtered_for_s1_width_test']
+            filtered_wave = event.get_waveform('filtered_for_s1_width_test').samples
             max_in_filtered = left + int(np.argmax(filtered_wave[left:right])) #not right+1, Xerawdp doesn't include it either
             if filtered_wave[max_in_filtered] <= 0:
                 # = 0 Happens due to Xerawdp's convolution bug, Xerawdp's width will return 0, passes test
@@ -500,15 +499,19 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             left -= 2
             right += 2
         self.log.debug("! Appending %s (%s-%s-%s) to peaks" % (peak_type, left, max_idx, right))
-        event['peaks'].append( {
-            'left':         left,
-            'right':        right,
-            'peak_type':    peak_type,
-            'height':       height,
-            'index_of_max_in_waveform': max_idx,
-            'source_waveform':          settings['source_waveform'],
-            'integral':     np.sum(signal[left:right]),     #Yeah, that's a waste of time! But it is really needed for s2s at least...
-        })
+        brand_new_peak =  datastructure.Peak(
+                area=np.sum(signal[left:right]),
+                index_of_maximum=max_idx, #Yeah, that's a waste of time! But it is really needed for s2s at least...
+                height= height,
+                left=left,
+                right=right,
+                #width_fwhm=0
+        )
+        if peak_type == 's1':
+            event.S1s.append(brand_new_peak)
+        else:
+            event.S2s.append(brand_new_peak)
+
 
         # Recursion for large s2s
         if peak_type == 'large_s2':
@@ -525,7 +528,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
     # Helper methods used only in the peakfinding
     @staticmethod
     def sort_and_prune_by(peaklist, key, keep_number=float('inf'), reverse=False):
-        peaklist.sort(key=lambda x : x[key], reverse=reverse)
+        peaklist.sort(key=lambda x : getattr(x,key), reverse=reverse)
         if len(peaklist) > keep_number:
             return peaklist[:keep_number]
         else:
@@ -538,18 +541,18 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
         if direction=='left':
             # Will take the max of 0, edge_position-100, and any s2 right boundaries before peak
             boundaries = [0, edge_position-100]
-            for p in event['peaks']:
-                if p['peak_type'] in ('small_s2', 'large_s2') and p['right'] <= peak_position:
+            for p in event.S2s:
+                if p.right <= peak_position:
                       # The = case actually happens!
-                    boundaries.append(p['right'])
+                    boundaries.append(p.right)
             return max(boundaries)
         elif direction=='right':
             # Will take the min of event_duration-1, edge_position+100, and any s2 left boundaries after peak
-            boundaries = [event['event_duration']-1, edge_position+100]
-            for p in event['peaks']:
-                if p['peak_type'] in ('small_s2', 'large_s2') and peak_position <= p['left']:
+            boundaries = [event.length()-1, edge_position+100]
+            for p in event.S2s:
+                if peak_position <= p.left:
                     # The = case actually happens!
-                    boundaries.append(p['right'])
+                    boundaries.append(p.left)       #Had p.right here earlier... TODO: check if this wasn't a Xerawdp bug
             return min(boundaries)
         raise RuntimeError("direction %s isn't left or right" % direction)
 
@@ -620,49 +623,49 @@ class ComputePeakProperties(plugin.TransformPlugin):
     """
 
     def transform_event(self, event):
-        """For every filtered waveform, find peaks
+        """Only computes area for Xerawdp matching at the moment
         """
 
         # Compute relevant peak quantities for each pmt's peak: height, FWHM, FWTM, area, ..
-        # Todo: maybe clean up this data structure? This way it was good for csv..
-        peaks = event['peaks']
-
-        for i, p in enumerate(peaks):
+        #TODO: remove this ugly hack before Chris sees it
+        for p in event.S1s:
+            setattr(p,'is_s1',True)
+        for i, peak in enumerate(event.S1s + event.S2s):
             # Hack for Xerawdp matching: we need to compute the area of EVERY CHANNEL in EVERY PEAK
             # The only reason we do this is because channels with negative area don't get contribute to a peak's area...
-            p['areas_per_pmt'] = {}
-            for channel, wave_data in event['channel_waveforms'].items():
+            areas_per_pmt = {}
+            for channel, wave_data in enumerate(event.pmt_waveforms):
                 #TODO: Don't hardcode this...!!!
                 if channel > 178: continue
-                if p['peak_type'] == 's1' and channel in self.config['pmts_excluded_for_s1']: continue
-                integral = np.sum(wave_data[p['left']:p['right']]) # No +1, Xerawdp forgets the right edge also
-                p['areas_per_pmt'][channel] = integral
-            p['area_for_xerawdp_matching'] = sum([area for _, area in p['areas_per_pmt'].items() if area > 0])
-            p['areas_per_pmt'] = 'Not included because the datastructure flattening crashes'
+                if hasattr(p,'is_s1') and channel in self.config['pmts_excluded_for_s1']: continue
+                integral = np.sum(wave_data[p.left:p.right]) # No +1, Xerawdp forgets the right edge also
+                areas_per_pmt[channel] = integral
+            area_for_xerawdp_matching = sum([area for _, area in areas_per_pmt.items() if area > 0])
+            peak.area = area_for_xerawdp_matching
             #Nicer computations, probably don't need them?
             #continue
-            for channel, wave_data in event['processed_waveforms'].items():
-                # Todo: use python's handy arcane naming/assignment convention to beautify this code
-                peak_wave = wave_data[p['left']:p['right'] ]#+ 1] Xerawdp bug/feature: does not include right edge in integral...
-                peaks[i][channel] = {}
-                maxpos = peaks[i][channel]['position_of_max_in_peak'] = np.argmax(peak_wave)
-                maxval = peaks[i][channel]['height'] = peak_wave[maxpos]
-                peaks[i][channel]['position_of_max_in_waveform'] = p['left'] + maxpos
-                peaks[i][channel]['area'] = np.sum(peak_wave)
-                if channel == 'top_and_bottom':
-                    # Expensive stuff...
-                    # Have to search the actual whole waveform, not peak_wave:
-                    # TODO: Can search for a VERY VERY LONG TIME when there are weird peaks, e.g in afterpulse tail..
-                    # Fix by computing baseline for inividual peak, or limiting search region...
-                    # how does XerawDP do this?
-                    samples_to_ns = self.config['digitizer_t_resolution'] / units.ns
-                    peaks[i][channel]['fwhm'] = extent_until_threshold(wave_data, start=p['index_of_max_in_waveform'],
-                                                                       threshold=maxval / 2) * samples_to_ns
-                    peaks[i][channel]['fwtm'] = extent_until_threshold(wave_data, start=p['index_of_max_in_waveform'],
-                                                                       threshold=maxval / 10) * samples_to_ns
-                    # if 'top' in peaks[i] and 'bottom' in peaks[i]:
-                    # peaks[i]['asymmetry'] = (peaks[i]['top']['area'] - peaks[i]['bottom']['area']) / (
-                    # peaks[i]['top']['area'] + peaks[i]['bottom']['area'])
+            # for channel, wave_data in event['processed_waveforms'].items():
+            #     # Todo: use python's handy arcane naming/assignment convention to beautify this code
+            #     peak_wave = wave_data[p.left:p.right ]#+ 1] Xerawdp bug/feature: does not include right edge in integral...
+            #     peaks[i][channel] = {}
+            #     maxpos = peaks[i][channel]['position_of_max_in_peak'] = np.argmax(peak_wave)
+            #     maxval = peaks[i][channel]['height'] = peak_wave[maxpos]
+            #     peaks[i][channel]['position_of_max_in_waveform'] = p.left + maxpos
+            #     peaks[i][channel]['area'] = np.sum(peak_wave)
+            #     if channel == 'top_and_bottom':
+            #         # Expensive stuff...
+            #         # Have to search the actual whole waveform, not peak_wave:
+            #         # TODO: Can search for a VERY VERY LONG TIME when there are weird peaks, e.g in afterpulse tail..
+            #         # Fix by computing baseline for inividual peak, or limiting search region...
+            #         # how does XerawDP do this?
+            #         samples_to_ns = self.config['digitizer_t_resolution'] / units.ns
+            #         peaks[i][channel]['fwhm'] = extent_until_threshold(wave_data, start=p['index_of_max_in_waveform'],
+            #                                                            threshold=maxval / 2) * samples_to_ns
+            #         peaks[i][channel]['fwtm'] = extent_until_threshold(wave_data, start=p['index_of_max_in_waveform'],
+            #                                                            threshold=maxval / 10) * samples_to_ns
+            #         # if 'top' in peaks[i] and 'bottom' in peaks[i]:
+            #         # peaks[i]['asymmetry'] = (peaks[i]['top']['area'] - peaks[i]['bottom']['area']) / (
+            #         # peaks[i]['top']['area'] + peaks[i]['bottom']['area'])
 
         return event
 
