@@ -54,10 +54,10 @@
             
   <div class="section" id="event-format">
 <h1>Event format<a class="headerlink" href="#event-format" title="Permalink to this headline">¶</a></h1>
-<p>The event data structure is the centrepiece of the life of your pax plugin. Through it, your plug-in has access to the results of previously run plug-ins&#8217; work; in return, you are expected to store the fruits of your plug-in&#8217;s labour at an appropriate place in the event data structure.  The following is the <a class="reference internal" href="pax.html#pax.datastructure.Event" title="pax.datastructure.Event"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Event</span></tt></a> class that you must modify.</p>
+<p>All data available for the current event is stored in the event data structure. Input plugins are required to fill the event with a bare amount of raw information. Transform plugins subsequently add their processed variables.</p>
 <dl class="class">
 <dt id="pax.datastructure.Event">
-<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Event</tt><big>(</big><em>configuration</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Event</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event" title="Permalink to this definition">¶</a></dt>
 <dd><p>The event class.</p>
 <p>This class defines the data structure for pax.  Within it are all of the
 high-level quantities that pax computes.  For example, the size of the S2
@@ -83,6 +83,25 @@ provided for convienence.</p>
 <p>Returns an <a class="reference internal" href="pax.html#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a> class.</p>
 </dd></dl>
 
+<dl class="method">
+<dt id="pax.datastructure.Event.event_end">
+<tt class="descname">event_end</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.event_end"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.event_end" title="Permalink to this definition">¶</a></dt>
+<dd><p>End time of event</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Event.event_number">
+<tt class="descname">event_number</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event.event_number"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.event_number" title="Permalink to this definition">¶</a></dt>
+<dd><p>An integer event number that uniquely identifies the event.</p>
+<p>Always positive.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.Event.event_start">
+<tt class="descname">event_start</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.event_start"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.event_start" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start time of the event</p>
+</dd></dl>
+
 <dl class="attribute">
 <dt id="pax.datastructure.Event.event_window">
 <tt class="descname">event_window</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event.event_window"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.event_window" title="Permalink to this definition">¶</a></dt>
@@ -95,6 +114,19 @@ Or rather, it starts from January 1, 1970.</p>
 <dt id="pax.datastructure.Event.filtered_waveform">
 <tt class="descname">filtered_waveform</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.filtered_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.filtered_waveform" title="Permalink to this definition">¶</a></dt>
 <dd><p>Top and bottom filtered waveform method for convienence.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.Event.length">
+<tt class="descname">length</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.length"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.length" title="Permalink to this definition">¶</a></dt>
+<dd><p>Length of event window in units of 10 ns</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Event.occurences">
+<tt class="descname">occurences</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event.occurences"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.occurences" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of waveforms</p>
+<p>Returns an <a class="reference internal" href="pax.html#pax.datastructure.SumWaveform" title="pax.datastructure.SumWaveform"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.SumWaveform</span></tt></a> class.</p>
 </dd></dl>
 
 <dl class="attribute">
