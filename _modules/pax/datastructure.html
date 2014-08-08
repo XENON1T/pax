@@ -167,7 +167,7 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Wrong type; must be tuple.&quot;</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Wrong size; must be length 2.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Wrong size; must be event_duration 2.&quot;</span><span class="p">)</span>
 </div>
     <span class="nd">@property</span>
     <span class="nd">@_fetch_variable</span>
@@ -195,57 +195,6 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Found </span><span class="si">%d</span><span class="s"> channels, which seems high.&quot;</span> <span class="o">%</span> <span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
         <span class="k">elif</span> <span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">100000</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Found </span><span class="si">%d</span><span class="s"> samples, which seems high.&quot;</span> <span class="o">%</span> <span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-</div>
-    <span class="nd">@property</span>
-<div class="viewcode-block" id="Event.user_float_0"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.user_float_0">[docs]</a>    <span class="k">def</span> <span class="nf">user_float_0</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Unused float (useful for developing)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">pass</span>
-</div>
-    <span class="nd">@property</span>
-<div class="viewcode-block" id="Event.user_float_1"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.user_float_1">[docs]</a>    <span class="k">def</span> <span class="nf">user_float_1</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Unused float (useful for developing)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">pass</span>
-</div>
-    <span class="nd">@property</span>
-<div class="viewcode-block" id="Event.user_float_3"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.user_float_3">[docs]</a>    <span class="k">def</span> <span class="nf">user_float_3</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Unused float (useful for developing)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">pass</span>
-</div>
-    <span class="nd">@property</span>
-<div class="viewcode-block" id="Event.user_array_0"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.user_array_0">[docs]</a>    <span class="k">def</span> <span class="nf">user_array_0</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Unused array (useful for developing)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">pass</span>
-</div>
-    <span class="nd">@property</span>
-<div class="viewcode-block" id="Event.user_array_1"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.user_array_1">[docs]</a>    <span class="k">def</span> <span class="nf">user_array_1</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Unused array (useful for developing)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">pass</span>
-</div>
-    <span class="nd">@property</span>
-<div class="viewcode-block" id="Event.total_area"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.total_area">[docs]</a>    <span class="k">def</span> <span class="nf">total_area</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Sum area of waveform</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmt_waveforms</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-</div>
-    <span class="nd">@property</span>
-<div class="viewcode-block" id="Event.total_area_veto"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.total_area_veto">[docs]</a>    <span class="k">def</span> <span class="nf">total_area_veto</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Summed area of waveform only for veto PMTs&quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmt_waveforms</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_pmt_groupings</span><span class="p">[</span><span class="s">&#39;veto&#39;</span><span class="p">]]</span>
-</div>
-<div class="viewcode-block" id="Event.sum_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.sum_waveform">[docs]</a>    <span class="k">def</span> <span class="nf">sum_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Top and bottom sum waveform method for convienence.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">pass</span>
-</div>
-<div class="viewcode-block" id="Event.filtered_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.filtered_waveform">[docs]</a>    <span class="k">def</span> <span class="nf">filtered_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Top and bottom filtered waveform method for convienence.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">pass</span>
 </div>
     <span class="nd">@property</span>
     <span class="nd">@_fetch_variable</span>
@@ -321,22 +270,72 @@
                 <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Wrong type; key be int.&quot;</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Wrong type; value be list.&quot;</span><span class="p">)</span>
-
 </div>
-<div class="viewcode-block" id="Event.length"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.length">[docs]</a>    <span class="k">def</span> <span class="nf">length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Length of event window in units of 10 ns</span>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Event.user_float_0"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.user_float_0">[docs]</a>    <span class="k">def</span> <span class="nf">user_float_0</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Unused float (useful for developing)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Event.user_float_1"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.user_float_1">[docs]</a>    <span class="k">def</span> <span class="nf">user_float_1</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Unused float (useful for developing)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Event.user_float_3"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.user_float_3">[docs]</a>    <span class="k">def</span> <span class="nf">user_float_3</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Unused float (useful for developing)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Event.user_array_0"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.user_array_0">[docs]</a>    <span class="k">def</span> <span class="nf">user_array_0</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Unused array (useful for developing)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Event.user_array_1"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.user_array_1">[docs]</a>    <span class="k">def</span> <span class="nf">user_array_1</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Unused array (useful for developing)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Event.total_area"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.total_area">[docs]</a>    <span class="k">def</span> <span class="nf">total_area</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sum area of waveform</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmt_waveforms</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+</div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="Event.total_area_veto"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.total_area_veto">[docs]</a>    <span class="k">def</span> <span class="nf">total_area_veto</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Summed area of waveform only for veto PMTs&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmt_waveforms</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_pmt_groupings</span><span class="p">[</span><span class="s">&#39;veto&#39;</span><span class="p">]]</span>
+</div>
+<div class="viewcode-block" id="Event.event_duration"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.event_duration">[docs]</a>    <span class="k">def</span> <span class="nf">event_duration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Duration of event window in units of samples</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_window</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_window</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 </div>
 <div class="viewcode-block" id="Event.event_start"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.event_start">[docs]</a>    <span class="k">def</span> <span class="nf">event_start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Start time of the event</span>
+        <span class="sd">&quot;&quot;&quot;Start time of the event in units of samples</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_window</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 </div>
 <div class="viewcode-block" id="Event.event_end"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.event_end">[docs]</a>    <span class="k">def</span> <span class="nf">event_end</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;End time of event</span>
+        <span class="sd">&quot;&quot;&quot;End time of event in units of samples</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_window</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="Event.sum_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.sum_waveform">[docs]</a>    <span class="k">def</span> <span class="nf">sum_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Top and bottom sum waveform method for convienence.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+</div>
+<div class="viewcode-block" id="Event.filtered_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.filtered_waveform">[docs]</a>    <span class="k">def</span> <span class="nf">filtered_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Top and bottom filtered waveform method for convienence.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
 </div></div>
 <div class="viewcode-block" id="Peak"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak">[docs]</a><span class="k">class</span> <span class="nc">Peak</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
