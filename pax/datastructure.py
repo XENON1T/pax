@@ -219,11 +219,6 @@ class Event(object):
     def occurrences(self, value):
         if not isinstance(value, dict):
             raise RuntimeError("Wrong type; must be dict.")
-        for k, v in value.items():
-            if not isinstance(k, int):
-                raise RuntimeError("Wrong type; key be int.")
-            if not isinstance(v, list):
-                raise RuntimeError("Wrong type; value be list.")
 
     @property
     def user_float_0(self):
