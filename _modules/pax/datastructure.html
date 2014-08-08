@@ -68,11 +68,25 @@
 <div class="viewcode-block" id="Event2"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event2">[docs]</a><span class="k">class</span> <span class="nc">Event2</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Event class</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c">#:An integer event number that uniquely identifies the event within the dataset.</span>
+    <span class="c">#: An integer number that uniquely identifies the event within the dataset.</span>
     <span class="c">#:</span>
     <span class="c">#: Always positive.</span>
     <span class="n">event_number</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>
 
+    <span class="c">#: Time duration of a sample in units of ns</span>
+    <span class="n">sample_duration</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>
+
+    <span class="c">#: Start time of the event.</span>
+    <span class="c">#:</span>
+    <span class="c">#: This is a 64-bit number in units of ns that follows the UNIX clock.</span>
+    <span class="c">#: Or rather, it starts from January 1, 1970.</span>
+    <span class="n">event_start</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>
+
+    <span class="c">#: Stop time of the event.</span>
+    <span class="c">#:</span>
+    <span class="c">#: This is a 64-bit number in units of ns that follows the UNIX clock.</span>
+    <span class="c">#: Or rather, it starts from January 1, 1970.</span>
+    <span class="n">event_start</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>
 
 
 <span class="c"># class Event2(metaclass=StorageObject):</span>
@@ -151,35 +165,6 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_internal_values</span><span class="p">[</span><span class="s">&#39;S2s&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
 
-    <span class="nd">@property</span>
-    <span class="nd">@BaseStorageObject._fetch_variable</span>
-    <span class="k">def</span> <span class="nf">sample_duration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Time duraation of a sample in units of ns</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">pass</span>
-
-    <span class="nd">@sample_duration.setter</span>
-    <span class="nd">@BaseStorageObject._set_variable</span>
-<div class="viewcode-block" id="Event.sample_duration"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.sample_duration">[docs]</a>    <span class="k">def</span> <span class="nf">sample_duration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="k">pass</span>
-</div>
-    <span class="nd">@property</span>
-    <span class="nd">@BaseStorageObject._fetch_variable</span>
-    <span class="k">def</span> <span class="nf">event_number</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;An integer event number that uniquely identifies the event.</span>
-
-<span class="sd">        Always positive.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">pass</span>
-
-    <span class="nd">@event_number.setter</span>
-    <span class="nd">@BaseStorageObject._set_variable</span>
-<div class="viewcode-block" id="Event.event_number"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.event_number">[docs]</a>    <span class="k">def</span> <span class="nf">event_number</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)):</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Wrong type; must be int np.int64.&quot;</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">value</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Must be positive&quot;</span><span class="p">)</span>
-</div>
     <span class="nd">@property</span>
     <span class="nd">@BaseStorageObject._fetch_variable</span>
     <span class="k">def</span> <span class="nf">event_window</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
