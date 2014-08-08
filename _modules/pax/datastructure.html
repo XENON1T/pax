@@ -65,9 +65,6 @@
 <span class="kn">import</span> <span class="nn">pax.fields</span>
 
 
-
-
-
 <div class="viewcode-block" id="StorageObject"><a class="viewcode-back" href="../../pax.html#pax.datastructure.StorageObject">[docs]</a><span class="k">class</span> <span class="nc">StorageObject</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="k">class</span> <span class="nc">__metaclass__</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
         <span class="sd">&#39;&#39;&#39;Creates the metaclass for Model. The main function of this metaclass</span>
@@ -89,12 +86,19 @@
                 <span class="nb">super</span><span class="p">(</span><span class="n">StorageObject</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">field</span><span class="o">.</span><span class="n">to_python</span><span class="p">())</span>
             <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> does not exist&quot;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span>
 
+        <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&#39;getattr&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">:</span>
+                <span class="n">field</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                <span class="k">return</span> <span class="n">field</span><span class="o">.</span><span class="n">to_python</span><span class="p">()</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> does not exist&quot;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span>
+
         <span class="nd">@property</span>
         <span class="k">def</span> <span class="nf">_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
             <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_clsfields</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_extra</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="Event2"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event2">[docs]</a><span class="k">class</span> <span class="nc">Event2</span><span class="p">(</span><span class="n">StorageObject</span><span class="p">):</span>
-    <span class="n">test</span> <span class="o">=</span> <span class="n">pax</span><span class="o">.</span><span class="n">fields</span><span class="o">.</span><span class="n">FloatField</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+    <span class="n">test</span> <span class="o">=</span> <span class="n">pax</span><span class="o">.</span><span class="n">fields</span><span class="o">.</span><span class="n">FloatField</span><span class="p">()</span>
 </div>
 <div class="viewcode-block" id="BaseStorageObject"><a class="viewcode-back" href="../../pax.html#pax.datastructure.BaseStorageObject">[docs]</a><span class="k">class</span> <span class="nc">BaseStorageObject</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -418,12 +422,14 @@
                  <span class="n">index_of_maximum</span><span class="p">,</span>
                  <span class="n">height</span><span class="p">,</span>
                  <span class="n">width_fwhm</span><span class="p">,</span>
-                 <span class="n">bounds</span><span class="p">):</span>
+                 <span class="n">left</span><span class="p">,</span>
+                 <span class="n">right</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">area</span> <span class="o">=</span> <span class="n">area</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">index_of_maximum</span> <span class="o">=</span> <span class="n">index_of_maximum</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="n">height</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">width_fwhm</span> <span class="o">=</span> <span class="n">width_fwhm</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span> <span class="o">=</span> <span class="n">bounds</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="n">left</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="n">right</span>
 
     <span class="nd">@property</span>
     <span class="nd">@BaseStorageObject._fetch_variable</span>
@@ -459,20 +465,26 @@
 </div>
     <span class="nd">@property</span>
     <span class="nd">@BaseStorageObject._fetch_variable</span>
-    <span class="k">def</span> <span class="nf">bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Where the peak starts and ends in the sum waveform</span>
+    <span class="k">def</span> <span class="nf">left</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Index of left bound (inclusive) in sum waveform.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span>
 
-    <span class="nd">@bounds.setter</span>
+    <span class="nd">@left.setter</span>
     <span class="nd">@BaseStorageObject._set_variable</span>
-<div class="viewcode-block" id="Peak.bounds"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.bounds">[docs]</a>    <span class="k">def</span> <span class="nf">bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span> <span class="k">pass</span>
+<div class="viewcode-block" id="Peak.left"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.left">[docs]</a>    <span class="k">def</span> <span class="nf">left</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span> <span class="k">pass</span>
 </div>
-<div class="viewcode-block" id="Peak.left"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.left">[docs]</a>    <span class="k">def</span> <span class="nf">left</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-</div>
-<div class="viewcode-block" id="Peak.right"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.right">[docs]</a>    <span class="k">def</span> <span class="nf">right</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="nd">@property</span>
+    <span class="nd">@BaseStorageObject._fetch_variable</span>
+    <span class="k">def</span> <span class="nf">right</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Index of right bound (exclusive) in sum waveform.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
+
+    <span class="nd">@right.setter</span>
+    <span class="nd">@BaseStorageObject._set_variable</span>
+<div class="viewcode-block" id="Peak.right"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.right">[docs]</a>    <span class="k">def</span> <span class="nf">right</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span> <span class="k">pass</span>
+
 
 </div></div>
 <div class="viewcode-block" id="SumWaveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.SumWaveform">[docs]</a><span class="k">class</span> <span class="nc">SumWaveform</span><span class="p">(</span><span class="n">BaseStorageObject</span><span class="p">):</span>

@@ -234,26 +234,20 @@ waveform for a specific PMT such as PMT 10, you can do:</p>
 <dd><p>Bases: <a class="reference internal" href="#pax.datastructure.StorageObject" title="pax.datastructure.StorageObject"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.StorageObject</span></tt></a></p>
 <dl class="attribute">
 <dt id="pax.datastructure.Event2.test">
-<tt class="descname">test</tt><em class="property"> = &lt;pax.fields.FloatField object at 0x102fdb7b8&gt;</em><a class="headerlink" href="#pax.datastructure.Event2.test" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">test</tt><em class="property"> = &lt;pax.fields.FloatField object at 0x10b584668&gt;</em><a class="headerlink" href="#pax.datastructure.Event2.test" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="class">
 <dt id="pax.datastructure.Peak">
-<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Peak</tt><big>(</big><em>area</em>, <em>index_of_maximum</em>, <em>height</em>, <em>width_fwhm</em>, <em>bounds</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Peak</tt><big>(</big><em>area</em>, <em>index_of_maximum</em>, <em>height</em>, <em>width_fwhm</em>, <em>left</em>, <em>right</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.datastructure.BaseStorageObject" title="pax.datastructure.BaseStorageObject"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.BaseStorageObject</span></tt></a></p>
 <p>Class for S1 and S2 peak information</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.area">
 <tt class="descname">area</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.area"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.area" title="Permalink to this definition">¶</a></dt>
 <dd><p>Area of the pulse in photoelectrons</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Peak.bounds">
-<tt class="descname">bounds</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.bounds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.bounds" title="Permalink to this definition">¶</a></dt>
-<dd><p>Where the peak starts and ends in the sum waveform</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -268,15 +262,17 @@ waveform for a specific PMT such as PMT 10, you can do:</p>
 <dd><p>position of each S1 peak</p>
 </dd></dl>
 
-<dl class="method">
+<dl class="attribute">
 <dt id="pax.datastructure.Peak.left">
-<tt class="descname">left</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Peak.left"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.left" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<tt class="descname">left</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.left"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.left" title="Permalink to this definition">¶</a></dt>
+<dd><p>Index of left bound (inclusive) in sum waveform.</p>
+</dd></dl>
 
-<dl class="method">
+<dl class="attribute">
 <dt id="pax.datastructure.Peak.right">
-<tt class="descname">right</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Peak.right"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.right" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<tt class="descname">right</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.right"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.right" title="Permalink to this definition">¶</a></dt>
+<dd><p>Index of right bound (exclusive) in sum waveform.</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -444,7 +440,7 @@ Don&#8217;t put in hacks for Xerawdp matching!</p>
 <span id="pax-fields-module"></span><h2>pax.fields module<a class="headerlink" href="#module-pax.fields" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="pax.fields.BaseField">
-<em class="property">class </em><tt class="descclassname">pax.fields.</tt><tt class="descname">BaseField</tt><big>(</big><em>source=None</em><big>)</big><a class="reference internal" href="_modules/pax/fields.html#BaseField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.BaseField" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.fields.</tt><tt class="descname">BaseField</tt><a class="reference internal" href="_modules/pax/fields.html#BaseField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.BaseField" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
 <p>Base class for all field types.</p>
 <p>The <tt class="docutils literal"><span class="pre">source</span></tt> parameter sets the key that will be retrieved from the source
@@ -468,7 +464,7 @@ value. Subclasses should override this method.</p>
 
 <dl class="class">
 <dt id="pax.fields.BooleanField">
-<em class="property">class </em><tt class="descclassname">pax.fields.</tt><tt class="descname">BooleanField</tt><big>(</big><em>source=None</em><big>)</big><a class="reference internal" href="_modules/pax/fields.html#BooleanField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.BooleanField" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.fields.</tt><tt class="descname">BooleanField</tt><a class="reference internal" href="_modules/pax/fields.html#BooleanField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.BooleanField" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.fields.BaseField" title="pax.fields.BaseField"><tt class="xref py py-class docutils literal"><span class="pre">pax.fields.BaseField</span></tt></a></p>
 <p>Field to represent a boolean</p>
 <dl class="method">
@@ -482,7 +478,7 @@ to <tt class="docutils literal"><span class="pre">True</span></tt>, as will any 
 
 <dl class="class">
 <dt id="pax.fields.CharField">
-<em class="property">class </em><tt class="descclassname">pax.fields.</tt><tt class="descname">CharField</tt><big>(</big><em>source=None</em><big>)</big><a class="reference internal" href="_modules/pax/fields.html#CharField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.CharField" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.fields.</tt><tt class="descname">CharField</tt><a class="reference internal" href="_modules/pax/fields.html#CharField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.CharField" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.fields.BaseField" title="pax.fields.BaseField"><tt class="xref py py-class docutils literal"><span class="pre">pax.fields.BaseField</span></tt></a></p>
 <p>Field to represent a simple Unicode string value.</p>
 <dl class="method">
@@ -496,7 +492,7 @@ Unicode string.</p>
 
 <dl class="class">
 <dt id="pax.fields.FloatField">
-<em class="property">class </em><tt class="descclassname">pax.fields.</tt><tt class="descname">FloatField</tt><big>(</big><em>source=None</em><big>)</big><a class="reference internal" href="_modules/pax/fields.html#FloatField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.FloatField" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.fields.</tt><tt class="descname">FloatField</tt><a class="reference internal" href="_modules/pax/fields.html#FloatField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.FloatField" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.fields.BaseField" title="pax.fields.BaseField"><tt class="xref py py-class docutils literal"><span class="pre">pax.fields.BaseField</span></tt></a></p>
 <p>Field to represent a floating point value</p>
 <dl class="method">
@@ -510,7 +506,7 @@ float.</p>
 
 <dl class="class">
 <dt id="pax.fields.IntegerField">
-<em class="property">class </em><tt class="descclassname">pax.fields.</tt><tt class="descname">IntegerField</tt><big>(</big><em>source=None</em><big>)</big><a class="reference internal" href="_modules/pax/fields.html#IntegerField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.IntegerField" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.fields.</tt><tt class="descname">IntegerField</tt><a class="reference internal" href="_modules/pax/fields.html#IntegerField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.IntegerField" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.fields.BaseField" title="pax.fields.BaseField"><tt class="xref py py-class docutils literal"><span class="pre">pax.fields.BaseField</span></tt></a></p>
 <p>Field to represent an integer value</p>
 <dl class="method">
