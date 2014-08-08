@@ -72,6 +72,7 @@ class Event(object):
 
         def new_function(self, value):
             if isinstance(value, int):
+                self.log.debug("Converting to int")
                 value = np.int64(value)
 
             try:
@@ -215,10 +216,9 @@ class Event(object):
         pass
 
     @occurrences.setter
-    @_set_variable
+    #@_set_variable
     def occurrences(self, value):
-        if not isinstance(value, dict):
-            raise RuntimeError("Wrong type; must be dict.")
+        self._internal_values['occurrences'] = value#pass
 
     @property
     def user_float_0(self):
