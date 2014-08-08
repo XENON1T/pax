@@ -62,20 +62,6 @@ releases.  Patch releases cannot modify this.</p>
 <em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Event</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.models.Model" title="pax.models.Model"><tt class="xref py py-class docutils literal"><span class="pre">pax.models.Model</span></tt></a></p>
 <p>Event class</p>
-<dl class="attribute">
-<dt id="pax.datastructure.Event.S1s">
-<tt class="descname">S1s</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.S1s" title="Permalink to this definition">¶</a></dt>
-<dd><p>List of S1 (scintillation) signals
-Returns an <tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak2</span></tt> class.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Event.S2s">
-<tt class="descname">S2s</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.S2s" title="Permalink to this definition">¶</a></dt>
-<dd><p>List of S2 (ionization) signals
-Returns an <tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak2</span></tt> class.</p>
-</dd></dl>
-
 <dl class="method">
 <dt id="pax.datastructure.Event.append_waveform">
 <tt class="descname">append_waveform</tt><big>(</big><em>name</em>, <em>pmt_list</em>, <em>samples</em>, <em>name_of_filter=None</em>, <em>is_filtered=False</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.append_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.append_waveform" title="Permalink to this definition">¶</a></dt>
@@ -88,6 +74,32 @@ own SumWaveform class.</p>
 <dt id="pax.datastructure.Event.event_duration">
 <tt class="descname">event_duration</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.event_duration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.event_duration" title="Permalink to this definition">¶</a></dt>
 <dd><p>Duration of event window in units of ns</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.Event.get_waveform">
+<tt class="descname">get_waveform</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.get_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.get_waveform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get waveform for name</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.Event.length">
+<tt class="descname">length</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.length"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.length" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of samples for the sum waveform</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Event.S1s">
+<tt class="descname">S1s</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.S1s" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of S1 (scintillation) signals
+Returns an <tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak2</span></tt> class.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Event.S2s">
+<tt class="descname">S2s</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.S2s" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of S2 (ionization) signals
+Returns an <tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak2</span></tt> class.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -111,18 +123,6 @@ Or rather, it starts from January 1, 1970.</p>
 <dd><p>Stop time of the event.</p>
 <p>This is a 64-bit number in units of ns that follows the UNIX clock.
 Or rather, it starts from January 1, 1970.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.datastructure.Event.get_waveform">
-<tt class="descname">get_waveform</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.get_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.get_waveform" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get waveform for name</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.datastructure.Event.length">
-<tt class="descname">length</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.length"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.length" title="Permalink to this definition">¶</a></dt>
-<dd><p>Number of samples for the sum waveform</p>
 </dd></dl>
 
 <dl class="attribute">

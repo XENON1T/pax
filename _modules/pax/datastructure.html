@@ -89,10 +89,11 @@
 <div class="viewcode-block" id="Event"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event">[docs]</a><span class="k">class</span> <span class="nc">Event</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Event class</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c">#: An integer number that uniquely identifies the event within the dataset.</span>
-    <span class="c">#:</span>
-    <span class="c">#: Always positive.</span>
+
     <span class="n">event_number</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>
+    <span class="sd">&quot;&quot;&quot;An integer number that uniquely identifies the event within the dataset.</span>
+
+<span class="sd">    Always positive.&quot;&quot;&quot;</span>
 
     <span class="c">#: Time duration of a sample in units of ns</span>
     <span class="n">sample_duration</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
