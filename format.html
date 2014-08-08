@@ -173,36 +173,10 @@ Or rather, it starts from January 1, 1970.</p>
 <em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Peak</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak" title="Permalink to this definition">¶</a></dt>
 <dd><p>Peak object</p>
 <p>Used for either S1 or S2</p>
-<dl class="method">
-<dt id="pax.datastructure.Peak.add_field">
-<tt class="descname">add_field</tt><big>(</big><em>key</em>, <em>value</em>, <em>field</em><big>)</big><a class="headerlink" href="#pax.datastructure.Peak.add_field" title="Permalink to this definition">¶</a></dt>
-<dd><p><tt class="xref py py-meth docutils literal"><span class="pre">add_field()</span></tt> must be used to add a field to an existing
-instance of Model. This method is required so that serialization of the
-data is possible. Data on existing fields (defined in the class) can be
-reassigned without using this method.</p>
-</dd></dl>
-
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.area">
 <tt class="descname">area</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.area" title="Permalink to this definition">¶</a></dt>
 <dd><p>Area of the pulse in photoelectrons</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.datastructure.Peak.from_dict">
-<tt class="descname">from_dict</tt><big>(</big><em>D</em>, <em>is_json=False</em><big>)</big><a class="headerlink" href="#pax.datastructure.Peak.from_dict" title="Permalink to this definition">¶</a></dt>
-<dd><p>This factory for <tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt>
-takes either a native Python dictionary or a JSON dictionary/object
-if <tt class="docutils literal"><span class="pre">is_json</span></tt> is <tt class="docutils literal"><span class="pre">True</span></tt>. The dictionary passed does not need to
-contain all of the values that the Model declares.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.datastructure.Peak.from_kwargs">
-<tt class="descname">from_kwargs</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#pax.datastructure.Peak.from_kwargs" title="Permalink to this definition">¶</a></dt>
-<dd><p>This factory for <tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt> only takes keywork arguments.
-Each key and value pair that represents a field in the <tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt> is
-set on the new <tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt> instance.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -229,30 +203,27 @@ set on the new <tt class="xref py py-class docutils literal"><span class="pre">M
 <dd><p>Index of right bound (exclusive) in sum waveform.</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="pax.datastructure.Peak.set_data">
-<tt class="descname">set_data</tt><big>(</big><em>data</em>, <em>is_json=False</em><big>)</big><a class="headerlink" href="#pax.datastructure.Peak.set_data" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.datastructure.Peak.to_dict">
-<tt class="descname">to_dict</tt><big>(</big><em>serial=False</em><big>)</big><a class="headerlink" href="#pax.datastructure.Peak.to_dict" title="Permalink to this definition">¶</a></dt>
-<dd><p>A dictionary representing the the data of the class is returned.
-Native Python objects will still exist in this dictionary (for example,
-a <tt class="docutils literal"><span class="pre">datetime</span></tt> object will be returned rather than a string)
-unless <tt class="docutils literal"><span class="pre">serial</span></tt> is set to True.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.datastructure.Peak.to_json">
-<tt class="descname">to_json</tt><big>(</big><big>)</big><a class="headerlink" href="#pax.datastructure.Peak.to_json" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a representation of the model as a JSON string. This method
-relies on the <tt class="xref py py-meth docutils literal"><span class="pre">to_dict()</span></tt> method.</p>
-</dd></dl>
-
 </dd></dl>
 
 <p>Waveforms, which are not typically saved, follow the following format.</p>
+<dl class="class">
+<dt id="pax.datastructure.Waveform">
+<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Waveform</tt><a class="reference internal" href="_modules/pax/datastructure.html#Waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Waveform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class used to store sum (filtered or not) waveform information.</p>
+<dl class="attribute">
+<dt id="pax.datastructure.Waveform.name">
+<tt class="descname">name</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Waveform.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>e.g. top</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Waveform.name_of_filter">
+<tt class="descname">name_of_filter</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Waveform.name_of_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name of the filter used (or None)</p>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 
 
