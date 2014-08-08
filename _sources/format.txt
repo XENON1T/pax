@@ -6,7 +6,6 @@ All data available for the current event is stored in the event data structure. 
 
 .. autoclass:: pax.datastructure.Event
     :members:
-    :autodoc_member_order:
     :undoc-members:
 
 There are variables within the class that refer to :class:`pax.datastructure.Peak` and :class:`pax.datastructure.SumWaveform` objects.  These have their own class structure.  For example, both S1 and S2 peaks follow the following syntax.
