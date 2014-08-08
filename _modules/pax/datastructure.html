@@ -253,16 +253,16 @@
 </div>
     <span class="nd">@property</span>
     <span class="nd">@_fetch_variable</span>
-    <span class="k">def</span> <span class="nf">occurences</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns a list of waveforms</span>
+    <span class="k">def</span> <span class="nf">occurrences</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;A dictionary of DAQ occurrences</span>
 
-<span class="sd">        Returns an :class:`pax.datastructure.SumWaveform` class.</span>
+<span class="sd">        A DAQ occurrence is essentially a &#39;pulse&#39; for one channel.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span>
 
-    <span class="nd">@occurences.setter</span>
+    <span class="nd">@occurrences.setter</span>
     <span class="nd">@_set_variable</span>
-<div class="viewcode-block" id="Event.occurences"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.occurences">[docs]</a>    <span class="k">def</span> <span class="nf">occurences</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<div class="viewcode-block" id="Event.occurrences"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.occurrences">[docs]</a>    <span class="k">def</span> <span class="nf">occurrences</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Wrong type; must be dict.&quot;</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
