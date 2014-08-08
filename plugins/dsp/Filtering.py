@@ -28,7 +28,8 @@ class GenericFilter(plugin.TransformPlugin):
             raise RuntimeError('Filter subclass did not provide required parameters')
         if round(sum(self.filter_ir), 5) != 1.:
             raise RuntimeError('Impulse response sums to %s, should be 1!' % sum(self.filter_ir))
-        signal = event['processed_waveforms'][self.input_name]
+        input_w = event.get_waveform(self.input_name)
+        signal = input_w.samples
         filter_length = len(self.filter_ir)
         # Apply the filter
         output = np.convolve(signal, self.filter_ir, 'same')
@@ -37,36 +38,37 @@ class GenericFilter(plugin.TransformPlugin):
         ## This implements the Xerawdp convolution bug
         ##
         # Do we know the pulse boundaries?
-        if not 'pulse_boundaries' in event:
-             event['pulse_boundaries'] = {}
-        if not self.input_name in event['pulse_boundaries']:
-            # Find the pulse boundaries in this input waveform - stupid slow code
-            # previous = 0
-            # pbs = []
-            # for i,x in enumerate(signal):
-            #     if x==0 and previous != 0:
-            #         pbs.append(i-1)
-            #     if x!=0 and previous == 0:
-            #         pbs.append(i)
-            #     previous = x
-            # print(pbs)
-            # Gotta love numpy ;-)
-            # [0] and double parens are stupid though, but quite necessary here:
-            y = np.abs(np.sign(signal))
-            pbs = np.concatenate((np.where(np.roll(y,1) - y == -1)[0], np.where(np.roll(y,-1) - y == -1)[0]))
-            # Check if these are real pulse boundaries: at least three samples before or after must be zero
-            real_pbs = []
-            for q in pbs:
-                if q < 3 or q > len(signal)-4: continue #So these tests don't fail
-                if signal[q-1]==signal[q-2]==signal[q-3]==0 or signal[q+1]==signal[q+2]==signal[q+3]==0:
-                   real_pbs.append(q)
-            event['pulse_boundaries'][self.input_name] = real_pbs
+        # if not 'pulse_boundaries' in event:
+        #      event['pulse_boundaries'] = {}
+        # if not self.input_name in event['pulse_boundaries']:
+        #TODO: store pulse boundaries with waveform
+        # Find the pulse boundaries in this input waveform - stupid slow code
+        # previous = 0
+        # pbs = []
+        # for i,x in enumerate(signal):
+        #     if x==0 and previous != 0:
+        #         pbs.append(i-1)
+        #     if x!=0 and previous == 0:
+        #         pbs.append(i)
+        #     previous = x
+        # print(pbs)
+        # Gotta love numpy ;-)
+        # [0] and double parens are stupid though, but quite necessary here:
+        y = np.abs(np.sign(signal))
+        pbs = np.concatenate((np.where(np.roll(y,1) - y == -1)[0], np.where(np.roll(y,-1) - y == -1)[0]))
+        # Check if these are real pulse boundaries: at least three samples before or after must be zero
+        real_pbs = []
+        for q in pbs:
+            if q < 3 or q > len(signal)-4: continue #So these tests don't fail
+            if signal[q-1]==signal[q-2]==signal[q-3]==0 or signal[q+1]==signal[q+2]==signal[q+3]==0:
+               real_pbs.append(q)
+        #event['pulse_boundaries'][self.input_name] = real_pbs
         # Mutilate the waveform
         # First mutilate the edges, which are always pulse boundaries
         output[:int(filter_length/2)] = np.zeros(int(filter_length/2))
         output[len(output)-int(filter_length/2):] = np.zeros(int(filter_length/2))
         # Mutilate waveform around pulse boundaries
-        for pb in event['pulse_boundaries'][self.input_name]:
+        for pb in real_pbs:
             try:
                 lefti  = max(0,pb-int(filter_length/2))
                 righti = min(len(signal)-1, pb+int(filter_length/2))
@@ -74,7 +76,7 @@ class GenericFilter(plugin.TransformPlugin):
             except Exception as e:
                 self.log.warning("Error during waveform mutilation: " + str(e) + ". So what...")
         # Store the result
-        event['processed_waveforms'][self.output_name] = output
+        event.append_waveform(samples=output, name=self.output_name, pmt_list=input_w.pmt_list)
         return event
 
 
@@ -92,7 +94,7 @@ class LargeS2Filter(GenericFilter):
         #Guillaum's raised cosine coeffs:
         self.filter_ir = [0.005452,  0.009142,  0.013074,  0.017179,  0.021381,  0.025597,  0.029746,  0.033740,  0.037499,  0.040941,  0.043992,  0.046586,  0.048666,  0.050185,  0.051111,  0.051422,  0.051111,  0.050185,  0.048666,  0.046586,  0.043992,  0.040941,  0.037499,  0.033740,  0.029746,  0.025597,  0.021381,  0.017179,  0.013074,  0.009142,  0.005452] 
         self.output_name = 'filtered_for_large_s2'
-        self.input_name = 'uncorrected_sum_waveform_for_s2'
+        self.input_name = 'uS2'
 
     @staticmethod
     def rcosfilter(filter_length, rolloff, cutoff_freq, sampling_freq=1):
@@ -139,7 +141,7 @@ class SmallS2Filter(GenericFilter):
                                    0.371, 0.103, 0])
         self.filter_ir = self.filter_ir / sum(self.filter_ir)  # Normalization
         self.output_name = 'filtered_for_small_s2'
-        self.input_name = 'uncorrected_sum_waveform_for_s2'
+        self.input_name = 'uS2'
 
 
 class S1WidthTestFilter(GenericFilter):
@@ -157,5 +159,5 @@ class S1WidthTestFilter(GenericFilter):
         self.filter_ir = np.array([0.005452,  0.009142,  0.013074,  0.017179,  0.021381,  0.025597,  0.029746,  0.033740,  0.037499,  0.040941,  0.043992,  0.046586,  0.048666,  0.050185,  0.051111,  0.051422,  0.051111,  0.050185,  0.048666,  0.046586,  0.043992,  0.040941,  0.037499,  0.033740,  0.029746,  0.025597,  0.021381,  0.017179,  0.013074,  0.009142,  0.005452])
         self.filter_ir = self.filter_ir / sum(self.filter_ir)  # Normalization
         self.output_name = 'filtered_for_s1_width_test'
-        self.input_name = 'uncorrected_sum_waveform_for_s1'
+        self.input_name = 'uS1'
 
