@@ -37,7 +37,7 @@ class Event(object):
 
     .. note:: This class should not include much logic since otherwise it
                       makes it harder to serialize.  Nevertheless, some methods are
-                      provided for convienence.
+                      provided for convenience.
     """
 
     def __init__(self):
@@ -71,6 +71,9 @@ class Event(object):
         var = original_function.__name__
 
         def new_function(self, value):
+            if isinstance(value, int):
+                value = np.int64(value)
+
             try:
                 original_function(self, value)
             except Exception as e:
@@ -98,8 +101,8 @@ class Event(object):
     @event_number.setter
     @_set_variable
     def event_number(self, value):
-        if not isinstance(value, (int)):
-            raise RuntimeError("Wrong type; must be int.")
+        if not isinstance(value, (np.int64)):
+            raise RuntimeError("Wrong type; must be int np.int64.")
         elif value < 0:
             raise RuntimeError("Must be positive")
 
@@ -279,12 +282,12 @@ class Event(object):
         return self.event_window[1]
 
     def sum_waveform(self):
-        """Top and bottom sum waveform method for convienence.
+        """Top and bottom sum waveform method for convenience.
         """
         pass
 
     def filtered_waveform(self):
-        """Top and bottom filtered waveform method for convienence.
+        """Top and bottom filtered waveform method for convenience.
         """
         pass
 
