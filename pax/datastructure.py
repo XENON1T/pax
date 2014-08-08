@@ -321,6 +321,16 @@ class Event(BaseStorageObject):
 
         self.waveforms.append(sw)
 
+    def get_waveform(self,
+                    name):
+        """Get waveform for name
+        """
+        for sw in self.waveforms:
+            if sw.name == name:
+                return sw
+
+        raise RuntimeError("Waveform not found")
+
 
 class Peak(BaseStorageObject):
 
@@ -424,6 +434,10 @@ class SumWaveform(BaseStorageObject):
     @samples.setter
     @BaseStorageObject._set_variable
     def samples(self, value): pass
+
+
+    #: Blah blah
+    testtest = None
 
 
 def _explain(class_name):
