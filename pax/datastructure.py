@@ -71,7 +71,7 @@ class Event(object):
         var = original_function.__name__
 
         def new_function(self, value):
-            if isinstance(value, int):
+            if isinstance(value, (int, np.int32)):
                 value = np.int64(value)
 
             try:
