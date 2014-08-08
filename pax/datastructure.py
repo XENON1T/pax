@@ -205,9 +205,9 @@ class Event(object):
     @property
     @_fetch_variable
     def occurrences(self):
-        """Returns a list of waveforms
+        """A dictionary of DAQ occurrences
 
-        Returns an :class:`pax.datastructure.SumWaveform` class.
+        A DAQ occurrence is essentially a 'pulse' for one channel.
         """
         pass
 
