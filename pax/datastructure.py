@@ -204,16 +204,16 @@ class Event(object):
 
     @property
     @_fetch_variable
-    def occurences(self):
+    def occurrences(self):
         """Returns a list of waveforms
 
         Returns an :class:`pax.datastructure.SumWaveform` class.
         """
         pass
 
-    @occurences.setter
+    @occurrences.setter
     @_set_variable
-    def occurences(self, value):
+    def occurrences(self, value):
         if not isinstance(value, dict):
             raise RuntimeError("Wrong type; must be dict.")
         for k, v in value.items():

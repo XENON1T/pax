@@ -49,6 +49,6 @@ class MongoDBInput(plugin.InputPlugin):
                     np.fromstring(doc_occurrence['data'], dtype=np.int16)  # SumWaveform occurrence data
                 ))
 
-            event.occurences = channel_occurrences
+            event.occurrences = channel_occurrences
 
             yield event
