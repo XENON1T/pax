@@ -75,6 +75,28 @@
     <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
 
 
+<div class="viewcode-block" id="Properties"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Properties">[docs]</a><span class="k">class</span> <span class="nc">Properties</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_property</span><span class="p">(</span><span class="s">&#39;fuck&#39;</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Properties.add_property"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Properties.add_property">[docs]</a>    <span class="k">def</span> <span class="nf">add_property</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">doc</span><span class="o">=</span><span class="s">&#39;test&#39;</span><span class="p">):</span>
+        <span class="c"># create local fget and fset functions</span>
+        <span class="n">fget</span> <span class="o">=</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_property</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+        <span class="n">fset</span> <span class="o">=</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_property</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="c"># add property to self</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="nb">property</span><span class="p">(</span><span class="n">fget</span><span class="p">,</span> <span class="n">fset</span><span class="p">,</span>
+                                               <span class="n">doc</span><span class="o">=</span><span class="n">doc</span><span class="p">))</span>
+        <span class="c"># add corresponding local variable</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;_&#39;</span> <span class="o">+</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+</div>
+    <span class="k">def</span> <span class="nf">_set_property</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;_&#39;</span> <span class="o">+</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_get_property</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;_&#39;</span> <span class="o">+</span> <span class="n">name</span><span class="p">)</span>
+</div>
 <div class="viewcode-block" id="Event"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event">[docs]</a><span class="k">class</span> <span class="nc">Event</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;The event class.</span>
@@ -139,13 +161,6 @@
 
     <span class="c"># # Begining of properties ##</span>
 
-<div class="viewcode-block" id="Event.getx"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.getx">[docs]</a>    <span class="k">def</span> <span class="nf">getx</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x</span></div>
-<div class="viewcode-block" id="Event.setx"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.setx">[docs]</a>    <span class="k">def</span> <span class="nf">setx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_x</span> <span class="o">=</span> <span class="n">value</span></div>
-<div class="viewcode-block" id="Event.delx"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.delx">[docs]</a>    <span class="k">def</span> <span class="nf">delx</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x</span></div>
-    <span class="n">x</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">getx</span><span class="p">,</span> <span class="n">setx</span><span class="p">,</span> <span class="n">delx</span><span class="p">,</span> <span class="s">&quot;I&#39;m the &#39;x&#39; property.&quot;</span><span class="p">)</span>
 
     <span class="nd">@property</span>
     <span class="nd">@_fetch_variable</span>
