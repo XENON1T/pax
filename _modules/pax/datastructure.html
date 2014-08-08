@@ -64,21 +64,121 @@
 <span class="kn">import</span> <span class="nn">collections</span>
 
 
-<span class="k">def</span> <span class="nf">_flatten</span><span class="p">(</span><span class="n">d</span><span class="p">,</span> <span class="n">parent_key</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s">&#39;.&#39;</span><span class="p">):</span>
-    <span class="n">items</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="n">new_key</span> <span class="o">=</span> <span class="n">parent_key</span> <span class="o">+</span> <span class="n">sep</span> <span class="o">+</span> <span class="n">k</span> <span class="k">if</span> <span class="n">parent_key</span> <span class="k">else</span> <span class="n">k</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">collections</span><span class="o">.</span><span class="n">MutableMapping</span><span class="p">):</span>
-            <span class="n">items</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_flatten</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">new_key</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">new_key</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
-    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
 
+<div class="viewcode-block" id="BaseField"><a class="viewcode-back" href="../../pax.html#pax.datastructure.BaseField">[docs]</a><span class="k">class</span> <span class="nc">BaseField</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base class for all field types.</span>
+
+<span class="sd">    The ``source`` parameter sets the key that will be retrieved from the source</span>
+<span class="sd">    data. If ``source`` is not specified, the field instance will use its own</span>
+<span class="sd">    name as the key to retrieve the value from the source data.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source</span> <span class="o">=</span> <span class="n">source</span>
+
+<div class="viewcode-block" id="BaseField.populate"><a class="viewcode-back" href="../../pax.html#pax.datastructure.BaseField.populate">[docs]</a>    <span class="k">def</span> <span class="nf">populate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the value or values wrapped by this field&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
+</div>
+<div class="viewcode-block" id="BaseField.to_python"><a class="viewcode-back" href="../../pax.html#pax.datastructure.BaseField.to_python">[docs]</a>    <span class="k">def</span> <span class="nf">to_python</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;After being populated, this method casts the source data into a</span>
+<span class="sd">        Python object. The default behavior is to simply return the source</span>
+<span class="sd">        value. Subclasses should override this method.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+</div></div>
+<div class="viewcode-block" id="CharField"><a class="viewcode-back" href="../../pax.html#pax.datastructure.CharField">[docs]</a><span class="k">class</span> <span class="nc">CharField</span><span class="p">(</span><span class="n">BaseField</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Field to represent a simple Unicode string value.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="CharField.to_python"><a class="viewcode-back" href="../../pax.html#pax.datastructure.CharField.to_python">[docs]</a>    <span class="k">def</span> <span class="nf">to_python</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert the data supplied using the :meth:`populate` method to a</span>
+<span class="sd">        Unicode string.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s">&#39;&#39;</span>
+        <span class="k">return</span> <span class="nb">unicode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="IntegerField"><a class="viewcode-back" href="../../pax.html#pax.datastructure.IntegerField">[docs]</a><span class="k">class</span> <span class="nc">IntegerField</span><span class="p">(</span><span class="n">BaseField</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Field to represent an integer value&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="IntegerField.to_python"><a class="viewcode-back" href="../../pax.html#pax.datastructure.IntegerField.to_python">[docs]</a>    <span class="k">def</span> <span class="nf">to_python</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert the data supplied to the :meth:`populate` method to an</span>
+<span class="sd">        integer.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="FloatField"><a class="viewcode-back" href="../../pax.html#pax.datastructure.FloatField">[docs]</a><span class="k">class</span> <span class="nc">FloatField</span><span class="p">(</span><span class="n">BaseField</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Field to represent a floating point value&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="FloatField.to_python"><a class="viewcode-back" href="../../pax.html#pax.datastructure.FloatField.to_python">[docs]</a>    <span class="k">def</span> <span class="nf">to_python</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert the data supplied to the :meth:`populate` method to a</span>
+<span class="sd">        float.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">0.0</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="BooleanField"><a class="viewcode-back" href="../../pax.html#pax.datastructure.BooleanField">[docs]</a><span class="k">class</span> <span class="nc">BooleanField</span><span class="p">(</span><span class="n">BaseField</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Field to represent a boolean&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="BooleanField.to_python"><a class="viewcode-back" href="../../pax.html#pax.datastructure.BooleanField.to_python">[docs]</a>    <span class="k">def</span> <span class="nf">to_python</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The string ``&#39;True&#39;`` (case insensitive) will be converted</span>
+<span class="sd">        to ``True``, as will any positive integers.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="nb">basestring</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s">&#39;true&#39;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="StorageObject"><a class="viewcode-back" href="../../pax.html#pax.datastructure.StorageObject">[docs]</a><span class="k">class</span> <span class="nc">StorageObject</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">class</span> <span class="nc">__metaclass__</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Creates the metaclass for Model. The main function of this metaclass</span>
+<span class="sd">        is to move all of fields into the _fields variable on the class.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">attrs</span><span class="p">):</span>
+            <span class="n">cls</span><span class="o">.</span><span class="n">_clsfields</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">attrs</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">BaseField</span><span class="p">):</span>
+                    <span class="n">cls</span><span class="o">.</span><span class="n">_clsfields</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+                    <span class="nb">delattr</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">:</span>
+                <span class="n">field</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                <span class="n">field</span><span class="o">.</span><span class="n">populate</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+                <span class="n">field</span><span class="o">.</span><span class="n">_related_obj</span> <span class="o">=</span> <span class="bp">self</span>
+                <span class="nb">super</span><span class="p">(</span><span class="n">StorageObject</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">field</span><span class="o">.</span><span class="n">to_python</span><span class="p">())</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">super</span><span class="p">(</span><span class="n">StorageObject</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+
+        <span class="nd">@property</span>
+        <span class="k">def</span> <span class="nf">_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_clsfields</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_extra</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Event2"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event2">[docs]</a><span class="k">class</span> <span class="nc">Event2</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="n">test</span> <span class="o">=</span> <span class="n">FloatField</span><span class="p">()</span>
+</div>
 <div class="viewcode-block" id="BaseStorageObject"><a class="viewcode-back" href="../../pax.html#pax.datastructure.BaseStorageObject">[docs]</a><span class="k">class</span> <span class="nc">BaseStorageObject</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;Event&#39;</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_internal_values</span> <span class="o">=</span> <span class="p">{}</span>
+
+
 
     <span class="k">def</span> <span class="nf">_fetch_variable</span><span class="p">(</span><span class="n">original_function</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Decorator</span>
@@ -141,6 +241,9 @@
         <span class="n">BaseStorageObject</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_internal_values</span><span class="p">[</span><span class="s">&#39;waveforms&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_internal_values</span><span class="p">[</span><span class="s">&#39;S1s&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_internal_values</span><span class="p">[</span><span class="s">&#39;S2s&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
 
     <span class="nd">@property</span>
     <span class="nd">@BaseStorageObject._fetch_variable</span>
@@ -369,6 +472,16 @@
         <span class="n">sw</span><span class="o">.</span><span class="n">is_filtered</span> <span class="o">=</span> <span class="n">is_filtered</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">waveforms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sw</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Event.get_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.get_waveform">[docs]</a>    <span class="k">def</span> <span class="nf">get_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get waveform for name</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">sw</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">waveforms</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">sw</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">name</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">sw</span>
+
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Waveform not found&quot;</span><span class="p">)</span>
+
 
 </div></div>
 <div class="viewcode-block" id="Peak"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak">[docs]</a><span class="k">class</span> <span class="nc">Peak</span><span class="p">(</span><span class="n">BaseStorageObject</span><span class="p">):</span>
@@ -376,8 +489,17 @@
     <span class="sd">&quot;&quot;&quot;Class for S1 and S2 peak information</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_area</span> <span class="o">=</span> <span class="s">&#39;blah&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">area</span><span class="p">,</span>
+                 <span class="n">time_in_waveform</span><span class="p">,</span>
+                 <span class="n">height</span><span class="p">,</span>
+                 <span class="n">width_fwhm</span><span class="p">,</span>
+                 <span class="n">bounds</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">area</span> <span class="o">=</span> <span class="n">area</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time_in_waveform</span> <span class="o">=</span> <span class="n">time_in_waveform</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="n">height</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">width_fwhm</span> <span class="o">=</span> <span class="n">width_fwhm</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bounds</span> <span class="o">=</span> <span class="n">bounds</span>
 
     <span class="nd">@property</span>
 <div class="viewcode-block" id="Peak.area"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.area">[docs]</a>    <span class="k">def</span> <span class="nf">area</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
