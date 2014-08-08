@@ -75,28 +75,7 @@
     <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="Properties"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Properties">[docs]</a><span class="k">class</span> <span class="nc">Properties</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">add_property</span><span class="p">(</span><span class="s">&#39;fuck&#39;</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Properties.add_property"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Properties.add_property">[docs]</a>    <span class="k">def</span> <span class="nf">add_property</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">doc</span><span class="o">=</span><span class="s">&#39;test&#39;</span><span class="p">):</span>
-        <span class="c"># create local fget and fset functions</span>
-        <span class="n">fget</span> <span class="o">=</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_property</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
-        <span class="n">fset</span> <span class="o">=</span> <span class="k">lambda</span> <span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_set_property</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-
-        <span class="c"># add property to self</span>
-        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="nb">property</span><span class="p">(</span><span class="n">fget</span><span class="p">,</span> <span class="n">fset</span><span class="p">,</span>
-                                               <span class="n">doc</span><span class="o">=</span><span class="n">doc</span><span class="p">))</span>
-        <span class="c"># add corresponding local variable</span>
-        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;_&#39;</span> <span class="o">+</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-
-</div>
-    <span class="k">def</span> <span class="nf">_set_property</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;_&#39;</span> <span class="o">+</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">_get_property</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;_&#39;</span> <span class="o">+</span> <span class="n">name</span><span class="p">)</span>
-</div>
 <div class="viewcode-block" id="Event"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event">[docs]</a><span class="k">class</span> <span class="nc">Event</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;The event class.</span>
@@ -161,7 +140,18 @@
 
     <span class="c"># # Begining of properties ##</span>
 
+    <span class="nd">@property</span>
+    <span class="nd">@_fetch_variable</span>
+    <span class="k">def</span> <span class="nf">sample_duration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Time duraation of a sample in units of ns</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span>
 
+    <span class="nd">@sample_duration.setter</span>
+    <span class="nd">@_set_variable</span>
+<div class="viewcode-block" id="Event.sample_duration"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.sample_duration">[docs]</a>    <span class="k">def</span> <span class="nf">sample_duration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">pass</span>
+</div>
     <span class="nd">@property</span>
     <span class="nd">@_fetch_variable</span>
     <span class="k">def</span> <span class="nf">event_number</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -337,6 +327,11 @@
         <span class="sd">&quot;&quot;&quot;Duration of event window in units of ns</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_window</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_window</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="Event.length"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.length">[docs]</a>    <span class="k">def</span> <span class="nf">length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Number of samples for the sum waveform</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_duration</span><span class="p">()</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_duration</span>
 </div>
 <div class="viewcode-block" id="Event.event_start"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.event_start">[docs]</a>    <span class="k">def</span> <span class="nf">event_start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Start time of the event in units of ns</span>
