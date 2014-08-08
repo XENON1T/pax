@@ -16,6 +16,8 @@ import numpy as np
 import pax.fields
 
 
+#metaclass=OrderedClass
+
 class StorageObject(object):
     class __metaclass__(type):
         '''Creates the metaclass for Model. The main function of this metaclass
@@ -23,6 +25,7 @@ class StorageObject(object):
 
         '''
         def __init__(cls, name, bases, attrs):
+            print('hi')
             cls._clsfields = {}
             for key, value in attrs.iteritems():
                 if isinstance(value, pax.fields.BaseField):
@@ -48,7 +51,7 @@ class StorageObject(object):
         def _fields(self):
             return dict(self._clsfields, **self._extra)
 
-class Event2(StorageObject):
+class Event2(metaclass=StorageObject):
     test = pax.fields.FloatField()
 
 class BaseStorageObject(object):
@@ -372,13 +375,11 @@ class Peak(BaseStorageObject):
                  area,
                  index_of_maximum,
                  height,
-                 width_fwhm,
                  left,
                  right):
         self.area = area
         self.index_of_maximum = index_of_maximum
         self.height = height
-        self.width_fwhm = width_fwhm
         self.left = left
         self.right = right
 
