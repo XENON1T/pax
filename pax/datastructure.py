@@ -377,6 +377,7 @@ class Peak(BaseStorageObject):
                  height,
                  left,
                  right):
+        BaseStorageObject.__init__(self)
         self.area = area
         self.index_of_maximum = index_of_maximum
         self.height = height
