@@ -157,7 +157,7 @@ class Event(BaseStorageObject):
     @pmt_waveforms.setter
     @BaseStorageObject._set_variable
     def pmt_waveforms(self, value):
-        if not isinstance(value, np.array):
+        if not isinstance(value, np.ndarray):
             raise RuntimeError("Wrong type; must be numpy array.")
         elif value.ndim != 2:
             raise RuntimeError("Wrong size; must be dimension 2.")
