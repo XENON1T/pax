@@ -35,7 +35,8 @@ class MongoDBInput(plugin.InputPlugin):
             # This involves parsing MongoDB documents using WAX output format
             event = Event()
             event.event_number = i # TODO: should come from Mongo
-            event.event_window = tuple(doc_event['range'])
+            event.event_window = tuple(doc_event['range'][0] * 10,
+                                       doc_event['range'][1] * 10)
 
             channel_occurrences = {}
 

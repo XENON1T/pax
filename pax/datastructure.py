@@ -108,7 +108,7 @@ class Event(object):
     def event_window(self):
         """Two numbers for the start and stop time of the event.
 
-        This is a 64-bit number in units of 10 ns that follows the UNIX clock.
+        This is a 64-bit number in units of ns that follows the UNIX clock.
         Or rather, it starts from January 1, 1970."""
         pass
 
@@ -264,17 +264,17 @@ class Event(object):
         return self.pmt_waveforms[self._pmt_groupings['veto']]
 
     def event_duration(self):
-        """Duration of event window in units of samples
+        """Duration of event window in units of ns
         """
         return self.event_window[1] - self.event_window[0]
 
     def event_start(self):
-        """Start time of the event in units of samples
+        """Start time of the event in units of ns
         """
         return self.event_window[0]
 
     def event_end(self):
-        """End time of event in units of samples
+        """End time of event in units of ns
         """
         return self.event_window[1]
 
@@ -317,7 +317,7 @@ class Peak(object):
     def width_fwhm(self):
         """Width at full width half max
 
-        Units are 10 ns.
+        Units are ns.
         """
         pass
 
