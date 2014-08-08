@@ -25,27 +25,11 @@ def _flatten(d, parent_key='', sep='.'):
             items.append((new_key, v))
     return dict(items)
 
-
-
-class Event(object):
-
-    """The event class.
-
-    This class defines the data structure for pax.  Within it are all of the
-    high-level quantities that pax computes.  For example, the size of the S2
-    signals.  This class is passed between the pax plugins and used as an
-    information container.
-
-    .. note:: This class should not include much logic since otherwise it
-                      makes it harder to serialize.  Nevertheless, some methods are
-                      provided for convenience.
-    """
-
+class BaseStorageObject(object):
     def __init__(self):
         self.log = logging.getLogger('Event')
 
         self._internal_values = {}
-
 
     def _fetch_variable(original_function):
         """Decorator
@@ -89,22 +73,40 @@ class Event(object):
         new_function.__doc__ = original_function.__doc__
         return new_function
 
-    # # Begining of properties ##
+
+class Event(BaseStorageObject):
+
+    """The event class.
+
+    This class defines the data structure for pax.  Within it are all of the
+    high-level quantities that pax computes.  For example, the size of the S2
+    signals.  This class is passed between the pax plugins and used as an
+    information container.
+
+    .. note:: This class should not include much logic since otherwise it
+                      makes it harder to serialize.  Nevertheless, some methods are
+                      provided for convenience.
+    """
+
+    def __init__(self):
+        BaseStorageObject.__init__(self)
+
+        self._internal_values['waveforms'] = []
 
     @property
-    @_fetch_variable
+    @BaseStorageObject._fetch_variable
     def sample_duration(self):
         """Time duraation of a sample in units of ns
         """
         pass
 
     @sample_duration.setter
-    @_set_variable
+    @BaseStorageObject._set_variable
     def sample_duration(self, value):
         pass
 
     @property
-    @_fetch_variable
+    @BaseStorageObject._fetch_variable
     def event_number(self):
         """An integer event number that uniquely identifies the event.
 
@@ -113,7 +115,7 @@ class Event(object):
         pass
 
     @event_number.setter
-    @_set_variable
+    @BaseStorageObject._set_variable
     def event_number(self, value):
         if not isinstance(value, (np.int64)):
             raise RuntimeError("Wrong type; must be int np.int64.")
@@ -121,7 +123,7 @@ class Event(object):
             raise RuntimeError("Must be positive")
 
     @property
-    @_fetch_variable
+    @BaseStorageObject._fetch_variable
     def event_window(self):
         """Two numbers for the start and stop time of the event.
 
@@ -130,7 +132,7 @@ class Event(object):
         pass
 
     @event_window.setter
-    @_set_variable
+    @BaseStorageObject._set_variable
     def event_window(self, value):
         if not isinstance(value, (tuple)):
             raise RuntimeError("Wrong type; must be tuple.")
@@ -138,7 +140,7 @@ class Event(object):
             raise RuntimeError("Wrong size; must be event_duration 2.")
 
     @property
-    @_fetch_variable
+    @BaseStorageObject._fetch_variable
     def pmt_waveforms(self):
         """A 2D array of all the PMT waveforms.
 
@@ -153,7 +155,7 @@ class Event(object):
         pass
 
     @pmt_waveforms.setter
-    @_set_variable
+    @BaseStorageObject._set_variable
     def pmt_waveforms(self, value):
         if not isinstance(value, (np.array)):
             raise RuntimeError("Wrong type; must be numpy array.")
@@ -165,7 +167,7 @@ class Event(object):
             self.log.warning("Found %d samples, which seems high." % value.shape[1])
 
     @property
-    @_fetch_variable
+    @BaseStorageObject._fetch_variable
     def S2s(self):
         """List of S2 (ionization) signals
 
@@ -174,7 +176,7 @@ class Event(object):
         pass
 
     @S2s.setter
-    @_set_variable
+    @BaseStorageObject._set_variable
     def S2s(self, value):
         if not isinstance(value, (list, tuple)):
             raise RuntimeError("Wrong type; must be ntuple.")
@@ -183,7 +185,7 @@ class Event(object):
                 raise ValueError("Must pass Peak class")
 
     @property
-    @_fetch_variable
+    @BaseStorageObject._fetch_variable
     def S1s(self):
         """List of S1 (scintillation) signals
 
@@ -192,7 +194,7 @@ class Event(object):
         pass
 
     @S1s.setter
-    @_set_variable
+    @BaseStorageObject._set_variable
     def S1s(self, value):
         if not isinstance(value, (list, tuple)):
             raise RuntimeError("Wrong type; must be ntuple.")
@@ -201,16 +203,16 @@ class Event(object):
                 raise ValueError("Must pass Peak class")
 
     @property
-    @_fetch_variable
+    @BaseStorageObject._fetch_variable
     def waveforms(self):
-        """Returns a list of waveforms
+        """Returns a list of sum waveforms
 
         Returns an :class:`pax.datastructure.SumWaveform` class.
         """
         pass
 
     @waveforms.setter
-    @_set_variable
+    @BaseStorageObject._set_variable
     def waveforms(self, value):
         if not isinstance(value, (list, tuple)):
             raise RuntimeError("Wrong type; must be ntuple.")
@@ -220,7 +222,7 @@ class Event(object):
 
 
     @property
-    @_fetch_variable
+    @BaseStorageObject._fetch_variable
     def occurrences(self):
         """A dictionary of DAQ occurrences
 
@@ -229,7 +231,7 @@ class Event(object):
         pass
 
     @occurrences.setter
-    #@_set_variable
+    #@BaseStorageObject._set_variable
     def occurrences(self, value):
         self._internal_values['occurrences'] = value#pass
 
@@ -294,17 +296,33 @@ class Event(object):
         """
         return self.event_window[1]
 
-    def sum_waveform(self):
-        """Top and bottom sum waveform method for convenience.
-        """
-        pass
-
     def filtered_waveform(self):
         """Top and bottom filtered waveform method for convenience.
         """
         pass
 
-class Peak(object):
+    def append_waveform(self,
+                            short_name,
+                            pmt_list,
+                            samples,
+                            name_of_filter=None,
+                            is_filtered=False):
+        """Append a sum waveform to the event
+
+        This is useful for adding sum waveforms without having to create your
+        own SumWaveform class.
+        """
+        sw = SumWaveform()
+        sw.short_name = short_name
+        sw.pmt_list = pmt_list
+        sw.samples = samples
+        sw.name_of_filter = name_of_filter
+        sw.is_filtered = is_filtered
+
+        self.waveforms.append(sw)
+
+
+class Peak(BaseStorageObject):
 
     """Class for S1 and S2 peak information
     """
@@ -340,37 +358,58 @@ class Peak(object):
     @property
     def bounds(self):
         """Where the peak starts and ends in the sum waveform
-"""
+        """
         return (self.peak_dict['left'],
                 self.peak_dict['right'])
 
 
-class SumWaveform(object):
-
+class SumWaveform(BaseStorageObject):
     """Class used to store sum (filtered or not) waveform information.
     """
+
     @property
+    @BaseStorageObject._fetch_variable
     def is_filtered(self):
         """Boolean"""
         pass
 
+    @is_filtered.setter
+    @BaseStorageObject._set_variable
+    def is_filtered(self, value): pass
+
     @property
+    @BaseStorageObject._fetch_variable
     def name_of_filter(self):
         """Name of the filter used (or None)
         """
         pass
 
+    @name_of_filter.setter
+    @BaseStorageObject._set_variable
+    def name_of_filter(self, value): pass
+
     @property
+    @BaseStorageObject._fetch_variable
     def short_name(self):
         """e.g., top"""
         pass
 
+    @short_name.setter
+    @BaseStorageObject._set_variable
+    def short_name(self, value): pass
+
     @property
+    @BaseStorageObject._fetch_variable
     def pmt_list(self):
         """Array of PMT numbers included in this waveform"""
         pass
 
+    @pmt_list.setter
+    @BaseStorageObject._set_variable
+    def pmt_list(self, value): pass
+
     @property
+    @BaseStorageObject._fetch_variable
     def samples(self):
         """Array of samples.
         """
@@ -381,6 +420,10 @@ class SumWaveform(object):
         #	elif value.shape[0] > 100000:
         #	self.log.warning("Found %d samples, which seems high." % value.shape[1])
         pass
+
+    @samples.setter
+    @BaseStorageObject._set_variable
+    def samples(self, value): pass
 
 
 def _explain(class_name):
