@@ -16,9 +16,6 @@ import numpy as np
 import pax.fields
 
 
-
-
-
 class StorageObject(object):
     class __metaclass__(type):
         '''Creates the metaclass for Model. The main function of this metaclass
@@ -28,7 +25,7 @@ class StorageObject(object):
         def __init__(cls, name, bases, attrs):
             cls._clsfields = {}
             for key, value in attrs.iteritems():
-                if isinstance(value, BaseField):
+                if isinstance(value, pax.fields.BaseField):
                     cls._clsfields[key] = value
                     delattr(cls, key)
 
@@ -40,12 +37,19 @@ class StorageObject(object):
                 super(StorageObject, self).__setattr__(key, field.to_python())
             raise AttributeError("%s does not exist" % key)
 
+        def __getattr__(self, key):
+            print('getattr')
+            if key in self._fields:
+                field = self._fields[key]
+                return field.to_python()
+            raise AttributeError("%s does not exist" % key)
+
         @property
         def _fields(self):
             return dict(self._clsfields, **self._extra)
 
 class Event2(StorageObject):
-    test = pax.fields.FloatField(0.0)
+    test = pax.fields.FloatField()
 
 class BaseStorageObject(object):
     def __init__(self):
@@ -369,12 +373,14 @@ class Peak(BaseStorageObject):
                  index_of_maximum,
                  height,
                  width_fwhm,
-                 bounds):
+                 left,
+                 right):
         self.area = area
         self.index_of_maximum = index_of_maximum
         self.height = height
         self.width_fwhm = width_fwhm
-        self.bounds = bounds
+        self.left = left
+        self.right = right
 
     @property
     @BaseStorageObject._fetch_variable
@@ -410,20 +416,26 @@ class Peak(BaseStorageObject):
 
     @property
     @BaseStorageObject._fetch_variable
-    def bounds(self):
-        """Where the peak starts and ends in the sum waveform
+    def left(self):
+        """Index of left bound (inclusive) in sum waveform.
         """
         pass
 
-    @bounds.setter
+    @left.setter
     @BaseStorageObject._set_variable
-    def bounds(self, value): pass
+    def left(self, value): pass
 
-    def left(self):
-        return self.bounds[0]
-
+    @property
+    @BaseStorageObject._fetch_variable
     def right(self):
-        return self.bounds[1]
+        """Index of right bound (exclusive) in sum waveform.
+        """
+        pass
+
+    @right.setter
+    @BaseStorageObject._set_variable
+    def right(self, value): pass
+
 
 
 class SumWaveform(BaseStorageObject):
