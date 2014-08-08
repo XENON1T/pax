@@ -47,7 +47,10 @@
           <div class="body">
             
   <h1>Source code for pax.fields</h1><div class="highlight"><pre>
-<span class="n">__author__</span> <span class="o">=</span> <span class="s">&#39;tunnell&#39;</span>
+<span class="sd">&quot;&quot;&quot;Fork of micromodels</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">datetime</span>
 
 
 <div class="viewcode-block" id="BaseField"><a class="viewcode-back" href="../../pax.html#pax.fields.BaseField">[docs]</a><span class="k">class</span> <span class="nc">BaseField</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -58,8 +61,8 @@
 <span class="sd">    name as the key to retrieve the value from the source data.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source</span> <span class="o">=</span> <span class="n">source</span>
 
 <div class="viewcode-block" id="BaseField.populate"><a class="viewcode-back" href="../../pax.html#pax.fields.BaseField.populate">[docs]</a>    <span class="k">def</span> <span class="nf">populate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Set the value or values wrapped by this field&quot;&quot;&quot;</span>
@@ -73,19 +76,31 @@
 
 <span class="sd">        &#39;&#39;&#39;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+</div>
+<div class="viewcode-block" id="BaseField.to_serial"><a class="viewcode-back" href="../../pax.html#pax.fields.BaseField.to_serial">[docs]</a>    <span class="k">def</span> <span class="nf">to_serial</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Used to serialize forms back into JSON or other formats.</span>
+
+<span class="sd">        This method is essentially the opposite of</span>
+<span class="sd">        :meth:`~micromodels.fields.BaseField.to_python`. A string, boolean,</span>
+<span class="sd">        number, dictionary, list, or tuple must be returned. Subclasses should</span>
+<span class="sd">        override this method.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">data</span>
 
 </div></div>
-<div class="viewcode-block" id="CharField"><a class="viewcode-back" href="../../pax.html#pax.fields.CharField">[docs]</a><span class="k">class</span> <span class="nc">CharField</span><span class="p">(</span><span class="n">BaseField</span><span class="p">):</span>
+<div class="viewcode-block" id="StringField"><a class="viewcode-back" href="../../pax.html#pax.fields.StringField">[docs]</a><span class="k">class</span> <span class="nc">StringField</span><span class="p">(</span><span class="n">BaseField</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Field to represent a simple Unicode string value.&quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="CharField.to_python"><a class="viewcode-back" href="../../pax.html#pax.fields.CharField.to_python">[docs]</a>    <span class="k">def</span> <span class="nf">to_python</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="StringField.to_python"><a class="viewcode-back" href="../../pax.html#pax.fields.StringField.to_python">[docs]</a>    <span class="k">def</span> <span class="nf">to_python</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Convert the data supplied using the :meth:`populate` method to a</span>
 <span class="sd">        Unicode string.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="s">&#39;&#39;</span>
-        <span class="k">return</span> <span class="nb">unicode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
 </div></div>
 <div class="viewcode-block" id="IntegerField"><a class="viewcode-back" href="../../pax.html#pax.fields.IntegerField">[docs]</a><span class="k">class</span> <span class="nc">IntegerField</span><span class="p">(</span><span class="n">BaseField</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Field to represent an integer value&quot;&quot;&quot;</span>
@@ -121,11 +136,265 @@
 <span class="sd">        to ``True``, as will any positive integers.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="nb">basestring</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s">&#39;true&#39;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">&gt;</span> <span class="mi">0</span>
-        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="DateTimeField"><a class="viewcode-back" href="../../pax.html#pax.fields.DateTimeField">[docs]</a><span class="k">class</span> <span class="nc">DateTimeField</span><span class="p">(</span><span class="n">BaseField</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Field to represent a datetime</span>
+
+<span class="sd">    The ``format`` parameter dictates the format of the input strings, and is</span>
+<span class="sd">    used in the construction of the :class:`datetime.datetime` object.</span>
+
+<span class="sd">    The ``serial_format`` parameter is a strftime formatted string for</span>
+<span class="sd">    serialization. If ``serial_format`` isn&#39;t specified, an ISO formatted string</span>
+<span class="sd">    will be returned by :meth:`~micromodels.DateTimeField.to_serial`.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">serial_format</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">use_int</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">DateTimeField</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">format</span> <span class="o">=</span> <span class="n">format</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">serial_format</span> <span class="o">=</span> <span class="n">serial_format</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">use_int</span> <span class="o">=</span> <span class="n">use_int</span>
+
+<div class="viewcode-block" id="DateTimeField.to_python"><a class="viewcode-back" href="../../pax.html#pax.fields.DateTimeField.to_python">[docs]</a>    <span class="k">def</span> <span class="nf">to_python</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;A :class:`datetime.datetime` object is returned.&#39;&#39;&#39;</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">None</span>
+
+        <span class="c"># don&#39;t parse data that is already native</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_int</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcfromtimestamp</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">format</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="c"># parse as iso8601</span>
+            <span class="k">return</span> <span class="n">PySO8601</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">format</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="DateTimeField.to_serial"><a class="viewcode-back" href="../../pax.html#pax.fields.DateTimeField.to_serial">[docs]</a>    <span class="k">def</span> <span class="nf">to_serial</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time_obj</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_int</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">round</span><span class="p">((</span><span class="n">time_obj</span> <span class="o">-</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">utcfromtimestamp</span><span class="p">(</span><span class="mi">0</span><span class="p">))</span><span class="o">.</span><span class="n">total_seconds</span><span class="p">()</span> <span class="o">*</span> <span class="mi">1000</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">serial_format</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">time_obj</span><span class="o">.</span><span class="n">isoformat</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">time_obj</span><span class="o">.</span><span class="n">strftime</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">serial_format</span><span class="p">)</span>
+</div></div>
+<div class="viewcode-block" id="DateField"><a class="viewcode-back" href="../../pax.html#pax.fields.DateField">[docs]</a><span class="k">class</span> <span class="nc">DateField</span><span class="p">(</span><span class="n">DateTimeField</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Field to represent a :mod:`datetime.date`&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="DateField.to_python"><a class="viewcode-back" href="../../pax.html#pax.fields.DateField.to_python">[docs]</a>    <span class="k">def</span> <span class="nf">to_python</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c"># don&#39;t parse data that is already native</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+        
+        <span class="n">dt</span> <span class="o">=</span> <span class="nb">super</span><span class="p">(</span><span class="n">DateField</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">to_python</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">dt</span><span class="o">.</span><span class="n">date</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="TimeField"><a class="viewcode-back" href="../../pax.html#pax.fields.TimeField">[docs]</a><span class="k">class</span> <span class="nc">TimeField</span><span class="p">(</span><span class="n">DateTimeField</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Field to represent a :mod:`datetime.time`&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="TimeField.to_python"><a class="viewcode-back" href="../../pax.html#pax.fields.TimeField.to_python">[docs]</a>    <span class="k">def</span> <span class="nf">to_python</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c"># don&#39;t parse data that is already native</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">format</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="c"># parse as iso8601</span>
+            <span class="k">return</span> <span class="n">PySO8601</span><span class="o">.</span><span class="n">parse_time</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">datetime</span><span class="o">.</span><span class="n">strptime</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">format</span><span class="p">)</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="WrappedObjectField"><a class="viewcode-back" href="../../pax.html#pax.fields.WrappedObjectField">[docs]</a><span class="k">class</span> <span class="nc">WrappedObjectField</span><span class="p">(</span><span class="n">BaseField</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Superclass for any fields that wrap an object&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wrapped_class</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_wrapped_class</span> <span class="o">=</span> <span class="n">wrapped_class</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_related_name</span> <span class="o">=</span> <span class="n">related_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_related_obj</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="n">BaseField</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="ModelField"><a class="viewcode-back" href="../../pax.html#pax.fields.ModelField">[docs]</a><span class="k">class</span> <span class="nc">ModelField</span><span class="p">(</span><span class="n">WrappedObjectField</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Field containing a model instance</span>
+
+<span class="sd">    Use this field when you wish to nest one object inside another.</span>
+<span class="sd">    It takes a single required argument, which is the nested class.</span>
+<span class="sd">    For example, given the following dictionary::</span>
+
+<span class="sd">        some_data = {</span>
+<span class="sd">            &#39;first_item&#39;: &#39;Some value&#39;,</span>
+<span class="sd">            &#39;second_item&#39;: {</span>
+<span class="sd">                &#39;nested_item&#39;: &#39;Some nested value&#39;,</span>
+<span class="sd">            },</span>
+<span class="sd">        }</span>
+
+<span class="sd">    You could build the following classes</span>
+<span class="sd">    (note that you have to define the inner nested models first)::</span>
+
+<span class="sd">        class MyNestedModel(micromodels.Model):</span>
+<span class="sd">            nested_item = micromodels.CharField()</span>
+
+<span class="sd">        class MyMainModel(micromodels.Model):</span>
+<span class="sd">            first_item = micromodels.CharField()</span>
+<span class="sd">            second_item = micromodels.ModelField(MyNestedModel)</span>
+
+<span class="sd">    Then you can access the data as follows::</span>
+
+<span class="sd">        &gt;&gt;&gt; m = MyMainModel(some_data)</span>
+<span class="sd">        &gt;&gt;&gt; m.first_item</span>
+<span class="sd">        u&#39;Some value&#39;</span>
+<span class="sd">        &gt;&gt;&gt; m.second_item.__class__.__name__</span>
+<span class="sd">        &#39;MyNestedModel&#39;</span>
+<span class="sd">        &gt;&gt;&gt; m.second_item.nested_item</span>
+<span class="sd">        u&#39;Some nested value&#39;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="ModelField.to_python"><a class="viewcode-back" href="../../pax.html#pax.fields.ModelField.to_python">[docs]</a>    <span class="k">def</span> <span class="nf">to_python</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wrapped_class</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wrapped_class</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="ow">or</span> <span class="p">{})</span>
+
+        <span class="c"># Set the related object to the related field</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_related_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_related_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_related_obj</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">obj</span>
+</div>
+<div class="viewcode-block" id="ModelField.to_serial"><a class="viewcode-back" href="../../pax.html#pax.fields.ModelField.to_serial">[docs]</a>    <span class="k">def</span> <span class="nf">to_serial</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_instance</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">model_instance</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">serial</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="ModelCollectionField"><a class="viewcode-back" href="../../pax.html#pax.fields.ModelCollectionField">[docs]</a><span class="k">class</span> <span class="nc">ModelCollectionField</span><span class="p">(</span><span class="n">WrappedObjectField</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Field containing a list of model instances.</span>
+
+<span class="sd">    Use this field when your source data dictionary contains a list of</span>
+<span class="sd">    dictionaries. It takes a single required argument, which is the name of the</span>
+<span class="sd">    nested class that each item in the list should be converted to.</span>
+<span class="sd">    For example::</span>
+
+<span class="sd">        some_data = {</span>
+<span class="sd">            &#39;list&#39;: [</span>
+<span class="sd">                {&#39;value&#39;: &#39;First value&#39;},</span>
+<span class="sd">                {&#39;value&#39;: &#39;Second value&#39;},</span>
+<span class="sd">                {&#39;value&#39;: &#39;Third value&#39;},</span>
+<span class="sd">            ]</span>
+<span class="sd">        }</span>
+
+<span class="sd">        class MyNestedModel(micromodels.Model):</span>
+<span class="sd">            value = micromodels.CharField()</span>
+
+<span class="sd">        class MyMainModel(micromodels.Model):</span>
+<span class="sd">            list = micromodels.ModelCollectionField(MyNestedModel)</span>
+
+<span class="sd">        &gt;&gt;&gt; m = MyMainModel(some_data)</span>
+<span class="sd">        &gt;&gt;&gt; len(m.list)</span>
+<span class="sd">        3</span>
+<span class="sd">        &gt;&gt;&gt; m.list[0].__class__.__name__</span>
+<span class="sd">        &#39;MyNestedModel&#39;</span>
+<span class="sd">        &gt;&gt;&gt; m.list[0].value</span>
+<span class="sd">        u&#39;First value&#39;</span>
+<span class="sd">        &gt;&gt;&gt; [item.value for item in m.list]</span>
+<span class="sd">        [u&#39;First value&#39;, u&#39;Second value&#39;, u&#39;Third value&#39;]</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="ModelCollectionField.to_python"><a class="viewcode-back" href="../../pax.html#pax.fields.ModelCollectionField.to_python">[docs]</a>    <span class="k">def</span> <span class="nf">to_python</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">object_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wrapped_class</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_related_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_related_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_related_obj</span><span class="p">)</span>
+            <span class="n">object_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">object_list</span>
+</div>
+<div class="viewcode-block" id="ModelCollectionField.to_serial"><a class="viewcode-back" href="../../pax.html#pax.fields.ModelCollectionField.to_serial">[docs]</a>    <span class="k">def</span> <span class="nf">to_serial</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_instances</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">instance</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">serial</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">instance</span> <span class="ow">in</span> <span class="n">model_instances</span><span class="p">]</span>
+
+</div></div>
+<div class="viewcode-block" id="FieldCollectionField"><a class="viewcode-back" href="../../pax.html#pax.fields.FieldCollectionField">[docs]</a><span class="k">class</span> <span class="nc">FieldCollectionField</span><span class="p">(</span><span class="n">BaseField</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Field containing a list of the same type of fields.</span>
+
+<span class="sd">    The constructor takes an instance of the field.</span>
+
+<span class="sd">    Here are some examples::</span>
+
+<span class="sd">        data = {</span>
+<span class="sd">                    &#39;legal_name&#39;: &#39;John Smith&#39;,</span>
+<span class="sd">                    &#39;aliases&#39;: [&#39;Larry&#39;, &#39;Mo&#39;, &#39;Curly&#39;]</span>
+<span class="sd">        }</span>
+
+<span class="sd">        class Person(Model):</span>
+<span class="sd">            legal_name = CharField()</span>
+<span class="sd">            aliases = FieldCollectionField(CharField())</span>
+
+<span class="sd">        p = Person(data)</span>
+
+<span class="sd">    And now a quick REPL session::</span>
+
+<span class="sd">        &gt;&gt;&gt; p.legal_name</span>
+<span class="sd">        u&#39;John Smith&#39;</span>
+<span class="sd">        &gt;&gt;&gt; p.aliases</span>
+<span class="sd">        [u&#39;Larry&#39;, u&#39;Mo&#39;, u&#39;Curly&#39;]</span>
+<span class="sd">        &gt;&gt;&gt; p.to_dict()</span>
+<span class="sd">        {&#39;legal_name&#39;: u&#39;John Smith&#39;, &#39;aliases&#39;: [u&#39;Larry&#39;, u&#39;Mo&#39;, u&#39;Curly&#39;]}</span>
+<span class="sd">        &gt;&gt;&gt; p.to_dict() == p.to_dict(serial=True)</span>
+<span class="sd">        True</span>
+
+<span class="sd">    Here is a bit more complicated example involving args and kwargs::</span>
+
+<span class="sd">        data = {</span>
+<span class="sd">                    &#39;name&#39;: &#39;San Andreas&#39;,</span>
+<span class="sd">                    &#39;dates&#39;: [&#39;1906-05-11&#39;, &#39;1948-11-02&#39;, &#39;1970-01-01&#39;]</span>
+<span class="sd">        }</span>
+
+<span class="sd">        class FaultLine(Model):</span>
+<span class="sd">            name = CharField()</span>
+<span class="sd">            earthquake_dates = FieldCollectionField(DateField(&#39;%Y-%m-%d&#39;,</span>
+<span class="sd">                                                    serial_format=&#39;%m-%d-%Y&#39;),</span>
+<span class="sd">                                                    source=&#39;dates&#39;)</span>
+
+<span class="sd">        f = FaultLine(data)</span>
+
+<span class="sd">    Notice that source is passed to to the</span>
+<span class="sd">    :class:`~micromodels.FieldCollectionField`, not the</span>
+<span class="sd">    :class:`~micromodels.DateField`.</span>
+
+<span class="sd">    Let&#39;s check out the resulting :class:`~micromodels.Model` instance with the</span>
+<span class="sd">    REPL::</span>
+
+<span class="sd">        &gt;&gt;&gt; f.name</span>
+<span class="sd">        u&#39;San Andreas&#39;</span>
+<span class="sd">        &gt;&gt;&gt; f.earthquake_dates</span>
+<span class="sd">        [datetime.date(1906, 5, 11), datetime.date(1948, 11, 2), datetime.date(1970, 1, 1)]</span>
+<span class="sd">        &gt;&gt;&gt; f.to_dict()</span>
+<span class="sd">        {&#39;earthquake_dates&#39;: [datetime.date(1906, 5, 11), datetime.date(1948, 11, 2), datetime.date(1970, 1, 1)],</span>
+<span class="sd">         &#39;name&#39;: u&#39;San Andreas&#39;}</span>
+<span class="sd">        &gt;&gt;&gt; f.to_dict(serial=True)</span>
+<span class="sd">        {&#39;earthquake_dates&#39;: [&#39;05-11-1906&#39;, &#39;11-02-1948&#39;, &#39;01-01-1970&#39;], &#39;name&#39;: u&#39;San Andreas&#39;}</span>
+<span class="sd">        &gt;&gt;&gt; f.to_json()</span>
+<span class="sd">        &#39;{&quot;earthquake_dates&quot;: [&quot;05-11-1906&quot;, &quot;11-02-1948&quot;, &quot;01-01-1970&quot;], &quot;name&quot;: &quot;San Andreas&quot;}&#39;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field_instance</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">FieldCollectionField</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span> <span class="o">=</span> <span class="n">field_instance</span>
+
+<div class="viewcode-block" id="FieldCollectionField.to_python"><a class="viewcode-back" href="../../pax.html#pax.fields.FieldCollectionField.to_python">[docs]</a>    <span class="k">def</span> <span class="nf">to_python</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">def</span> <span class="nf">convert</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span><span class="o">.</span><span class="n">populate</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span><span class="o">.</span><span class="n">to_python</span><span class="p">()</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">convert</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="ow">or</span> <span class="p">[]]</span>
+</div>
+<div class="viewcode-block" id="FieldCollectionField.to_serial"><a class="viewcode-back" href="../../pax.html#pax.fields.FieldCollectionField.to_serial">[docs]</a>    <span class="k">def</span> <span class="nf">to_serial</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_of_fields</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_instance</span><span class="o">.</span><span class="n">to_serial</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">list_of_fields</span><span class="p">]</span></div></div>
 </pre></div>
 
           </div>

@@ -62,43 +62,21 @@
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 
-<span class="kn">import</span> <span class="nn">pax.fields</span>
+<span class="kn">from</span> <span class="nn">pax.models</span> <span class="kn">import</span> <span class="n">Model</span>
+<span class="kn">from</span> <span class="nn">pax.fields</span> <span class="kn">import</span> <span class="n">IntegerField</span>
+
+<div class="viewcode-block" id="Event2"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event2">[docs]</a><span class="k">class</span> <span class="nc">Event2</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;:An integer event number that uniquely identifies the event within the dataset.</span>
+
+<span class="sd">    Always positive.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">event_number</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>
 
 
-<div class="viewcode-block" id="StorageObject"><a class="viewcode-back" href="../../pax.html#pax.datastructure.StorageObject">[docs]</a><span class="k">class</span> <span class="nc">StorageObject</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="k">class</span> <span class="nc">__metaclass__</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
-        <span class="sd">&#39;&#39;&#39;Creates the metaclass for Model. The main function of this metaclass</span>
-<span class="sd">        is to move all of fields into the _fields variable on the class.</span>
 
-<span class="sd">        &#39;&#39;&#39;</span>
-        <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">attrs</span><span class="p">):</span>
-            <span class="n">cls</span><span class="o">.</span><span class="n">_clsfields</span> <span class="o">=</span> <span class="p">{}</span>
-            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">attrs</span><span class="o">.</span><span class="n">iteritems</span><span class="p">():</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">pax</span><span class="o">.</span><span class="n">fields</span><span class="o">.</span><span class="n">BaseField</span><span class="p">):</span>
-                    <span class="n">cls</span><span class="o">.</span><span class="n">_clsfields</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
-                    <span class="nb">delattr</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
-
-        <span class="k">def</span> <span class="nf">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">:</span>
-                <span class="n">field</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-                <span class="n">field</span><span class="o">.</span><span class="n">populate</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-                <span class="n">field</span><span class="o">.</span><span class="n">_related_obj</span> <span class="o">=</span> <span class="bp">self</span>
-                <span class="nb">super</span><span class="p">(</span><span class="n">StorageObject</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">field</span><span class="o">.</span><span class="n">to_python</span><span class="p">())</span>
-            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> does not exist&quot;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span>
-
-        <span class="k">def</span> <span class="nf">__getattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
-            <span class="k">print</span><span class="p">(</span><span class="s">&#39;getattr&#39;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">:</span>
-                <span class="n">field</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-                <span class="k">return</span> <span class="n">field</span><span class="o">.</span><span class="n">to_python</span><span class="p">()</span>
-            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> does not exist&quot;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span>
-
-        <span class="nd">@property</span>
-        <span class="k">def</span> <span class="nf">_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-            <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_clsfields</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_extra</span><span class="p">)</span>
-</div>
-<div class="viewcode-block" id="Event2"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event2">[docs]</a><span class="k">class</span> <span class="nc">Event2</span><span class="p">(</span><span class="n">StorageObject</span><span class="p">):</span>
-    <span class="n">test</span> <span class="o">=</span> <span class="n">pax</span><span class="o">.</span><span class="n">fields</span><span class="o">.</span><span class="n">FloatField</span><span class="p">()</span>
+<span class="c"># class Event2(metaclass=StorageObject):</span>
+<span class="c">#     test = pax.fields.FloatField()</span>
 </div>
 <div class="viewcode-block" id="BaseStorageObject"><a class="viewcode-back" href="../../pax.html#pax.datastructure.BaseStorageObject">[docs]</a><span class="k">class</span> <span class="nc">BaseStorageObject</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -261,7 +239,7 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Wrong type; must be ntuple.&quot;</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">value</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">Peak</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">Peak</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Must pass Peak class&quot;</span><span class="p">)</span>
 </div>
     <span class="nd">@property</span>
@@ -421,13 +399,12 @@
                  <span class="n">area</span><span class="p">,</span>
                  <span class="n">index_of_maximum</span><span class="p">,</span>
                  <span class="n">height</span><span class="p">,</span>
-                 <span class="n">width_fwhm</span><span class="p">,</span>
                  <span class="n">left</span><span class="p">,</span>
                  <span class="n">right</span><span class="p">):</span>
+        <span class="n">BaseStorageObject</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">area</span> <span class="o">=</span> <span class="n">area</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">index_of_maximum</span> <span class="o">=</span> <span class="n">index_of_maximum</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="n">height</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">width_fwhm</span> <span class="o">=</span> <span class="n">width_fwhm</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="n">left</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="n">right</span>
 

@@ -36,6 +36,14 @@ pax.format module
     :undoc-members:
     :show-inheritance:
 
+pax.models module
+-----------------
+
+.. automodule:: pax.models
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pax.pax module
 --------------
 
