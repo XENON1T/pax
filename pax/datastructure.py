@@ -26,6 +26,7 @@ def _flatten(d, parent_key='', sep='.'):
     return dict(items)
 
 
+
 class Event(object):
 
     """The event class.
@@ -89,6 +90,18 @@ class Event(object):
         return new_function
 
     # # Begining of properties ##
+
+    @property
+    @_fetch_variable
+    def sample_duration(self):
+        """Time duraation of a sample in units of ns
+        """
+        pass
+
+    @sample_duration.setter
+    @_set_variable
+    def sample_duration(self, value):
+        pass
 
     @property
     @_fetch_variable
@@ -265,6 +278,11 @@ class Event(object):
         """Duration of event window in units of ns
         """
         return self.event_window[1] - self.event_window[0]
+
+    def length(self):
+        """Number of samples for the sum waveform
+        """
+        return self.event_duration()/self.sample_duration
 
     def event_start(self):
         """Start time of the event in units of ns
