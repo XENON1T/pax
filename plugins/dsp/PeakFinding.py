@@ -103,13 +103,13 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                 # no need for s2s = [p for p in event['peaks'] if p['peak_type'] in ('large_s2', 'small_s2')]
                 # Delete peaks beyond the 32 with largest area
                 event.S2s = self.sort_and_prune_by(event.S2s, 'area', 32, reverse=True)
-                if event.S2s == []:
+                if event.S2s != []:
                     # We stop looking for s1s after the s2 with the largest INTEGRAL
                     # Very confusing, and undocumented!
                     stop_looking_after = event.S2s[0].left
                     #  Also stop looking after large enough s2s
                     #  Size of s2s is determined from s1 peak finding waveform!
-                    large_enough_s2s = [p for p in event.S2s if event.get_waveform('uncorrected_sum_waveform_for_s1').samples[p.index_of_maximum] > 3.1207531815]
+                    large_enough_s2s = [p for p in event.S2s if event.get_waveform('uS1').samples[p.index_of_maximum] > 3.1207531815]
                     if large_enough_s2s:
                         stop_looking_after = min(
                             stop_looking_after,
@@ -552,7 +552,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             for p in event.S2s:
                 if peak_position <= p.left:
                     # The = case actually happens!
-                    boundaries.append(p.left)       #Had p.right here earlier... TODO: check if this wasn't a Xerawdp bug
+                    boundaries.append(p.left)       #TODO: Was this a Xerawdp bug? or should you now redo the matching?
             return min(boundaries)
         raise RuntimeError("direction %s isn't left or right" % direction)
 
@@ -637,8 +637,8 @@ class ComputePeakProperties(plugin.TransformPlugin):
             for channel, wave_data in enumerate(event.pmt_waveforms):
                 #TODO: Don't hardcode this...!!!
                 if channel > 178: continue
-                if hasattr(p,'is_s1') and channel in self.config['pmts_excluded_for_s1']: continue
-                integral = np.sum(wave_data[p.left:p.right]) # No +1, Xerawdp forgets the right edge also
+                if hasattr(peak,'is_s1') and channel in self.config['pmts_excluded_for_s1']: continue
+                integral = np.sum(wave_data[peak.left:peak.right]) # No +1, Xerawdp forgets the right edge also
                 areas_per_pmt[channel] = integral
             area_for_xerawdp_matching = sum([area for _, area in areas_per_pmt.items() if area > 0])
             peak.area = area_for_xerawdp_matching
