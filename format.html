@@ -55,7 +55,203 @@
   <div class="section" id="event-format">
 <h1>Event format<a class="headerlink" href="#event-format" title="Permalink to this headline">¶</a></h1>
 <p>All data available for the current event is stored in the event data structure. Input plugins are required to fill the event with a bare amount of raw information. Transform plugins subsequently add their processed variables.</p>
-<p>There are variables within the class that refer to <tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt> and <tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.SumWaveform</span></tt> objects.  These have their own class structure.  For example, both S1 and S2 peaks follow the following syntax.</p>
+<dl class="class">
+<dt id="pax.datastructure.Event">
+<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Event</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Event class</p>
+<dl class="attribute">
+<dt id="pax.datastructure.Event.S1s">
+<tt class="descname">S1s</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.S1s" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of S1 (scintillation) signals
+Returns an <tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak2</span></tt> class.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Event.S2s">
+<tt class="descname">S2s</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.S2s" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of S2 (ionization) signals
+Returns an <tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak2</span></tt> class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.Event.append_waveform">
+<tt class="descname">append_waveform</tt><big>(</big><em>name</em>, <em>pmt_list</em>, <em>samples</em>, <em>name_of_filter=None</em>, <em>is_filtered=False</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.append_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.append_waveform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Append a sum waveform to the event</p>
+<p>This is useful for adding sum waveforms without having to create your
+own SumWaveform class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.Event.event_duration">
+<tt class="descname">event_duration</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.event_duration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.event_duration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Duration of event window in units of ns</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Event.event_number">
+<tt class="descname">event_number</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.event_number" title="Permalink to this definition">¶</a></dt>
+<dd><p>An integer number that uniquely identifies the event within the dataset.</p>
+<p>Always positive.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Event.event_start">
+<tt class="descname">event_start</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.event_start" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start time of the event.</p>
+<p>This is a 64-bit number in units of ns that follows the UNIX clock.
+Or rather, it starts from January 1, 1970.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Event.event_stop">
+<tt class="descname">event_stop</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.event_stop" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stop time of the event.</p>
+<p>This is a 64-bit number in units of ns that follows the UNIX clock.
+Or rather, it starts from January 1, 1970.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.Event.get_waveform">
+<tt class="descname">get_waveform</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.get_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.get_waveform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get waveform for name</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.Event.length">
+<tt class="descname">length</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.length"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.length" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of samples for the sum waveform</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Event.sample_duration">
+<tt class="descname">sample_duration</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.sample_duration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Time duration of a sample in units of ns</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Event.user_float_0">
+<tt class="descname">user_float_0</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.user_float_0" title="Permalink to this definition">¶</a></dt>
+<dd><p>Unused float (useful for developing)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Event.user_float_1">
+<tt class="descname">user_float_1</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.user_float_1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Unused float (useful for developing)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Event.user_float_2">
+<tt class="descname">user_float_2</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.user_float_2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Unused float (useful for developing)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Event.user_float_3">
+<tt class="descname">user_float_3</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.user_float_3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Unused float (useful for developing)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Event.user_float_4">
+<tt class="descname">user_float_4</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.user_float_4" title="Permalink to this definition">¶</a></dt>
+<dd><p>Unused float (useful for developing)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Event.waveforms">
+<tt class="descname">waveforms</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.waveforms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of sum waveforms</p>
+<p>Returns an <tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.SumWaveform</span></tt> class.</p>
+</dd></dl>
+
+</dd></dl>
+
+<p>There are variables within the class that refer to <a class="reference internal" href="pax.html#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a> and <tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.SumWaveform</span></tt> objects.  These have their own class structure.  For example, both S1 and S2 peaks follow the following syntax.</p>
+<dl class="class">
+<dt id="pax.datastructure.Peak">
+<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Peak</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak" title="Permalink to this definition">¶</a></dt>
+<dd><p>Peak object</p>
+<p>Used for either S1 or S2</p>
+<dl class="method">
+<dt id="pax.datastructure.Peak.add_field">
+<tt class="descname">add_field</tt><big>(</big><em>key</em>, <em>value</em>, <em>field</em><big>)</big><a class="headerlink" href="#pax.datastructure.Peak.add_field" title="Permalink to this definition">¶</a></dt>
+<dd><p><tt class="xref py py-meth docutils literal"><span class="pre">add_field()</span></tt> must be used to add a field to an existing
+instance of Model. This method is required so that serialization of the
+data is possible. Data on existing fields (defined in the class) can be
+reassigned without using this method.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.area">
+<tt class="descname">area</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.area" title="Permalink to this definition">¶</a></dt>
+<dd><p>Area of the pulse in photoelectrons</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.Peak.from_dict">
+<tt class="descname">from_dict</tt><big>(</big><em>D</em>, <em>is_json=False</em><big>)</big><a class="headerlink" href="#pax.datastructure.Peak.from_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>This factory for <tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt>
+takes either a native Python dictionary or a JSON dictionary/object
+if <tt class="docutils literal"><span class="pre">is_json</span></tt> is <tt class="docutils literal"><span class="pre">True</span></tt>. The dictionary passed does not need to
+contain all of the values that the Model declares.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.Peak.from_kwargs">
+<tt class="descname">from_kwargs</tt><big>(</big><em>**kwargs</em><big>)</big><a class="headerlink" href="#pax.datastructure.Peak.from_kwargs" title="Permalink to this definition">¶</a></dt>
+<dd><p>This factory for <tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt> only takes keywork arguments.
+Each key and value pair that represents a field in the <tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt> is
+set on the new <tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt> instance.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.height">
+<tt class="descname">height</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.height" title="Permalink to this definition">¶</a></dt>
+<dd><p>Highest point in peak in units of ADC counts</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.index_of_maximum">
+<tt class="descname">index_of_maximum</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.index_of_maximum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Index of maximum value within sum waveform.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.left">
+<tt class="descname">left</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.left" title="Permalink to this definition">¶</a></dt>
+<dd><p>Index of left bound (inclusive) in sum waveform.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.right">
+<tt class="descname">right</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.right" title="Permalink to this definition">¶</a></dt>
+<dd><p>Index of right bound (exclusive) in sum waveform.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.Peak.set_data">
+<tt class="descname">set_data</tt><big>(</big><em>data</em>, <em>is_json=False</em><big>)</big><a class="headerlink" href="#pax.datastructure.Peak.set_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.Peak.to_dict">
+<tt class="descname">to_dict</tt><big>(</big><em>serial=False</em><big>)</big><a class="headerlink" href="#pax.datastructure.Peak.to_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>A dictionary representing the the data of the class is returned.
+Native Python objects will still exist in this dictionary (for example,
+a <tt class="docutils literal"><span class="pre">datetime</span></tt> object will be returned rather than a string)
+unless <tt class="docutils literal"><span class="pre">serial</span></tt> is set to True.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.Peak.to_json">
+<tt class="descname">to_json</tt><big>(</big><big>)</big><a class="headerlink" href="#pax.datastructure.Peak.to_json" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a representation of the model as a JSON string. This method
+relies on the <tt class="xref py py-meth docutils literal"><span class="pre">to_dict()</span></tt> method.</p>
+</dd></dl>
+
+</dd></dl>
+
 <p>Waveforms, which are not typically saved, follow the following format.</p>
 </div>
 
