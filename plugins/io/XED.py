@@ -24,6 +24,7 @@ import io
 import numpy as np
 
 from pax import plugin, units
+from pax.datastructure import Event
 
 
 def flatten(l):
@@ -75,9 +76,9 @@ class XedInput(plugin.InputPlugin):
     #Temp for old API compatibility
     def get_events(self):
         for event_position_i, event_position in enumerate(self.event_positions):
-            yield self.get_event(event_position_i + self.file_metadata['first_event_number'])
+            yield self.get_single_event(event_position_i + self.file_metadata['first_event_number'])
 
-    def get_event(self, event_number):
+    def get_single_event(self, event_number):
         # Superfluous, Pax should do this check already:
         if not self.first_event <= event_number <= self.last_event:
             raise RuntimeError("Event number not present in XED file!")
@@ -93,11 +94,6 @@ class XedInput(plugin.InputPlugin):
         if event_layer_metadata['type'] != b'zle0':
             raise NotImplementedError(
                 "Still have to code grokking for sample type %s..." % event_layer_metadata['type'])
-        event = {
-            'channel_occurrences': {},
-            'event_duration': event_layer_metadata['samples_in_event']
-        }
-
         # Read the channel bitmask to find out which channels are included in this event.
         # Lots of possibilities for errors here: 4-byte groupings, 1-byte groupings, little-endian...
         # Checked (for 14 events); agrees with channels from LibXDIO->Moxie->MongoDB->MongoDBInput plugin
@@ -120,8 +116,9 @@ class XedInput(plugin.InputPlugin):
             chunk_fake_file = io.BytesIO(data_to_decompress)
 
         # Loop over all channels in the event
+        occurrences = {}
         for channel_id in channels_included:
-            event['channel_occurrences'][channel_id] = []
+            occurrences[channel_id] = []
 
             # Read channel size (in 4bit words), subtract header size, convert from 4-byte words to bytes
             channel_data_size = int(4 * (np.fromstring(chunk_fake_file.read(4), dtype='<u4')[0] - 1))
@@ -150,7 +147,7 @@ class XedInput(plugin.InputPlugin):
                     data_samples = 2 * (control_word - (2 ** 31))  # Subtract the control word flag
                     samples_occurrence = np.fromstring(channel_fake_file.read(2 * data_samples), dtype="<i2")
 
-                    event['channel_occurrences'][channel_id].append((
+                    occurrences[channel_id].append((
                         sample_position,
                         samples_occurrence
                         # ungarble_samplepairs(samples_occurrence)
@@ -165,17 +162,27 @@ class XedInput(plugin.InputPlugin):
                     We won't do any ungarbling for now.
                     """
 
-        # Finally, we make some of the Meta data provided in the XED-file available in the event structure
-        event['metadata'] = {
-            'dataset_name': self.file_metadata['dataset_name'],
-            'dataset_creation_time': self.file_metadata['creation_time'],
-            'utc_time': event_layer_metadata['utc_time'],
-            'utc_time_usec': event_layer_metadata['utc_time_usec'],
-            'event_number': event_layer_metadata['event_number'],
-            'voltage_range': event_layer_metadata['voltage_range'] / units.V,
-            'channels_from_input': event_layer_metadata['channels'],
-        }
+        #Return the event
+        event = Event()
+        event.event_number = int(event_layer_metadata['event_number'])
+        print("Before...")
+        event.occurrences = occurrences
+        print("Now i am here")
+        ev_start = event_layer_metadata['utc_time']*units.s +event_layer_metadata['utc_time_usec']*units.us
+        #TODO: don't hardcode sample size...
+        event.event_window = (ev_start, ev_start + event_layer_metadata['samples_in_event']*10)
         return event
+        # Finally, we make some of the Meta data provided in the XED-file available in the event structure
+        # event['metadata'] = {
+        #     'dataset_name': self.file_metadata['dataset_name'],
+        #     'dataset_creation_time': self.file_metadata['creation_time'],
+        #     'utc_time': event_layer_metadata['utc_time'],
+        #     'utc_time_usec': event_layer_metadata['utc_time_usec'],
+        #     'event_number': event_layer_metadata['event_number'],
+        #     'voltage_range': event_layer_metadata['voltage_range'] / units.V,
+        #     'channels_from_input': event_layer_metadata['channels'],
+        # }
+        # return event
 
     # If we get here, all events have been read
     #self.input.close()
