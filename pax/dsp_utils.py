@@ -146,7 +146,7 @@ class ThresholdCrossed(StopCondition):
     def __init__(self, threshold, min_crossing_length=1, cross_to='either', real_crossing=True, ):
         self.threshold = threshold
         if min_crossing_length < 1 or not isinstance(min_crossing_length, int):
-            raise ValueError("Crossing length must be an integer > 1")
+            raise ValueError("Crossing event_duration must be an integer > 1")
             # Well, could allow 0 and tell walker condition is already satisfied
         self.min_crossing_length = min_crossing_length
         self.real_crossing = real_crossing

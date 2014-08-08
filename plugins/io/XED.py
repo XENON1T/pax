@@ -95,7 +95,7 @@ class XedInput(plugin.InputPlugin):
                 "Still have to code grokking for sample type %s..." % event_layer_metadata['type'])
         event = {
             'channel_occurrences': {},
-            'length': event_layer_metadata['samples_in_event']
+            'event_duration': event_layer_metadata['samples_in_event']
         }
 
         # Read the channel bitmask to find out which channels are included in this event.

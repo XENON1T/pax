@@ -131,9 +131,9 @@ def processor(config_overload=""):
     input_control_group.add_argument('--single',
                        type=int,
                        help="Process a single event.")
-    group.add_argument('-n',
-                       type=int,
-                       help="Stop after this number of events has been processed.")
+    input_control_group.add_argument('-n',
+                                     type=int,
+                                     help="Stop after this number of events has been processed.")
 
     args = parser.parse_args()
 

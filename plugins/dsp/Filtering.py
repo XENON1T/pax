@@ -98,7 +98,7 @@ class LargeS2Filter(GenericFilter):
     def rcosfilter(filter_length, rolloff, cutoff_freq, sampling_freq=1):
         """
         Returns a nd(float)-array describing a raised cosine (RC) filter (FIR) impulse response. Arguments:
-            - filter_length:    filter length in samples
+            - filter_length:    filter event_duration in samples
             - rolloff:          roll-off factor
             - cutoff_freq:      cutoff frequency = 1/(2*symbol period)
             - sampling_freq:    sampling rate (in same units as cutoff_freq)

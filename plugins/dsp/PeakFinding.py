@@ -122,7 +122,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             # Find the free regions - regions where peaks haven't yet been found
             # We could move this to the event class...
             lefts = sorted([0] + [p['left'] for p in event['peaks']])
-            rights = sorted([p['right'] for p in event['peaks']] + [event['length']-1])
+            rights = sorted([p['right'] for p in event['peaks']] + [event['event_duration']-1])
             free_regions = list(zip(*[iter(sorted(lefts + rights))]*2))   #hack from stackoverflow
             self.log.debug("Free regions: " + str(free_regions))
 
@@ -544,8 +544,8 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                     boundaries.append(p['right'])
             return max(boundaries)
         elif direction=='right':
-            # Will take the min of length-1, edge_position+100, and any s2 left boundaries after peak
-            boundaries = [event['length']-1, edge_position+100]
+            # Will take the min of event_duration-1, edge_position+100, and any s2 left boundaries after peak
+            boundaries = [event['event_duration']-1, edge_position+100]
             for p in event['peaks']:
                 if p['peak_type'] in ('small_s2', 'large_s2') and peak_position <= p['left']:
                     # The = case actually happens!
@@ -728,7 +728,7 @@ def find_next_crossing(signal, threshold,
        raise ValueError("min_length must be at least 1, %s specified." %  min_length)
     if (direction == 'left' and start < stop) or (direction == 'right' and stop < start):
         # When Xerawdp matching is done, this should become a runtime error
-        raise RuntimeError("Search region (start: %s, stop: %s, direction: %s) has negative length!" % (
+        raise RuntimeError("Search region (start: %s, stop: %s, direction: %s) has negative event_duration!" % (
             start, stop, direction
         ))
         #return stop #I hope this is what the Xerawdp algorithm does in this case...
@@ -744,7 +744,7 @@ def find_next_crossing(signal, threshold,
         return stop
     if not min_length <= abs(start - stop):
         # This is probably ok, can happen, remove warning later on
-        print("Minimum crossing length %s will never happen in a region %s samples in size!" % (
+        print("Minimum crossing event_duration %s will never happen in a region %s samples in size!" % (
             min_length, abs(start - stop)
         ))
         return stop

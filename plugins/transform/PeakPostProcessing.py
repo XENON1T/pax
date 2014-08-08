@@ -7,7 +7,7 @@ from pax import plugin
 
 class MakeHitList(plugin.TransformPlugin):
 	""" Class to make a hit list for each s1 and s2 peak as well as the multiplicity. Hit list stored in list with
-	length equal to number of PMTs"""
+	event_duration equal to number of PMTs"""
 
 	def startup(self):
 		self.num_channels = self.config['num_pmts']

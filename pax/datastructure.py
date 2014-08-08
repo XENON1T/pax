@@ -115,10 +115,10 @@ class Event(object):
     @event_window.setter
     @_set_variable
     def event_window(self, value):
-        if not isinstance(value, (list, tuple)):
-            raise RuntimeError("Wrong type; must be ntuple.")
+        if not isinstance(value, (tuple)):
+            raise RuntimeError("Wrong type; must be tuple.")
         elif len(value) != 2:
-            raise RuntimeError("Wrong size; must be length 2.")
+            raise RuntimeError("Wrong size; must be event_duration 2.")
 
     @property
     @_fetch_variable
@@ -146,57 +146,6 @@ class Event(object):
             self.log.warning("Found %d channels, which seems high." % value.shape[0])
         elif value.shape[1] > 100000:
             self.log.warning("Found %d samples, which seems high." % value.shape[1])
-
-    @property
-    def user_float_0(self):
-        """Unused float (useful for developing)
-        """
-        pass
-
-    @property
-    def user_float_1(self):
-        """Unused float (useful for developing)
-        """
-        pass
-
-    @property
-    def user_float_3(self):
-        """Unused float (useful for developing)
-        """
-        pass
-
-    @property
-    def user_array_0(self):
-        """Unused array (useful for developing)
-        """
-        pass
-
-    @property
-    def user_array_1(self):
-        """Unused array (useful for developing)
-        """
-        pass
-
-    @property
-    def total_area(self):
-        """Sum area of waveform
-        """
-        return self.pmt_waveforms.sum()
-
-    @property
-    def total_area_veto(self):
-        """Summed area of waveform only for veto PMTs"""
-        return self.pmt_waveforms[self._pmt_groupings['veto']]
-
-    def sum_waveform(self):
-        """Top and bottom sum waveform method for convienence.
-        """
-        pass
-
-    def filtered_waveform(self):
-        """Top and bottom filtered waveform method for convienence.
-        """
-        pass
 
     @property
     @_fetch_variable
@@ -273,21 +222,71 @@ class Event(object):
             if not isinstance(v, list):
                 raise RuntimeError("Wrong type; value be list.")
 
+    @property
+    def user_float_0(self):
+        """Unused float (useful for developing)
+        """
+        pass
 
-    def length(self):
-        """Length of event window in units of 10 ns
+    @property
+    def user_float_1(self):
+        """Unused float (useful for developing)
+        """
+        pass
+
+    @property
+    def user_float_3(self):
+        """Unused float (useful for developing)
+        """
+        pass
+
+    @property
+    def user_array_0(self):
+        """Unused array (useful for developing)
+        """
+        pass
+
+    @property
+    def user_array_1(self):
+        """Unused array (useful for developing)
+        """
+        pass
+
+    @property
+    def total_area(self):
+        """Sum area of waveform
+        """
+        return self.pmt_waveforms.sum()
+
+    @property
+    def total_area_veto(self):
+        """Summed area of waveform only for veto PMTs"""
+        return self.pmt_waveforms[self._pmt_groupings['veto']]
+
+    def event_duration(self):
+        """Duration of event window in units of samples
         """
         return self.event_window[1] - self.event_window[0]
 
     def event_start(self):
-        """Start time of the event
+        """Start time of the event in units of samples
         """
         return self.event_window[0]
 
     def event_end(self):
-        """End time of event
+        """End time of event in units of samples
         """
         return self.event_window[1]
+
+    def sum_waveform(self):
+        """Top and bottom sum waveform method for convienence.
+        """
+        pass
+
+    def filtered_waveform(self):
+        """Top and bottom filtered waveform method for convienence.
+        """
+        pass
 
 class Peak(object):
 

@@ -35,9 +35,9 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
                 )
 
         # Check for input plugin misbehaviour / running this plugin at the wrong time
-        if not ('channel_occurrences' in event and 'length' in event):
+        if not ('channel_occurrences' in event and 'event_duration' in event):
             raise RuntimeError(
-                "Event contains %s, should contain at least channel_occurrences and length !"
+                "Event contains %s, should contain at least channel_occurrences and event_duration !"
                 % str(event.keys())
             )
 
@@ -47,8 +47,8 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
 
         # Build the channel waveforms from occurrences
         event['processed_waveforms'] = {}
-        uncorrected_sum_wave_for_s1 = np.zeros(event['length'])
-        uncorrected_sum_wave_for_s2 = np.zeros(event['length'])
+        uncorrected_sum_wave_for_s1 = np.zeros(event['event_duration'])
+        uncorrected_sum_wave_for_s2 = np.zeros(event['event_duration'])
         event['channel_waveforms']   = {}
         baseline_sample_size         = 46 #TODO: put in config
         for channel, waveform_occurrences in event['channel_occurrences'].items():
@@ -66,7 +66,7 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
                 skip_channel = True
 
             # Assemble the waveform pulse by pulse, starting from an all-zeroes waveform
-            wave = np.zeros(event['length'])
+            wave = np.zeros(event['event_duration'])
             for i, (starting_position, wave_occurrence) in enumerate(waveform_occurrences):
 
                 # Check for pulses starting right after previous ones: Xerawdp doesn't recompute baselines
@@ -77,11 +77,11 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
                     # Only pulses at the end and beginning of the trace are allowed to be shorter than 2*46
                     # In case of a short first pulse, computes baseline from its last samples instead of its first.
                     if (
-                        not (starting_position + len(wave_occurrence) > event['length']-1) and
+                        not (starting_position + len(wave_occurrence) > event['event_duration']-1) and
                         len(wave_occurrence) < 2*baseline_sample_size
                     ):
                         if i != 0:
-                            raise RuntimeError("Occurrence %s in channel %s at %s has length %s, should be at least 2*%s!"
+                            raise RuntimeError("Occurrence %s in channel %s at %s has event_duration %s, should be at least 2*%s!"
                                                % (i, channel, starting_position, len(wave_occurrence), baseline_sample_size)
                             )
                         self.log.debug("Short first pulse, computing baseline from its LAST samples")
@@ -160,7 +160,7 @@ class SumWaveforms(plugin.TransformPlugin):
 
         # Compute summed waveforms
         for group, members in self.channel_groups.items():
-            event['processed_waveforms'][group] = np.zeros(event['length'])
+            event['processed_waveforms'][group] = np.zeros(event['event_duration'])
             for channel in members:
                 if channel in event['channel_waveforms']:
                     event['processed_waveforms'][group] += event['channel_waveforms'][channel]
