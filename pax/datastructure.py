@@ -157,7 +157,7 @@ class Event(BaseStorageObject):
     @pmt_waveforms.setter
     @BaseStorageObject._set_variable
     def pmt_waveforms(self, value):
-        if not isinstance(value, (np.array)):
+        if not isinstance(value, np.array):
             raise RuntimeError("Wrong type; must be numpy array.")
         elif value.ndim != 2:
             raise RuntimeError("Wrong size; must be dimension 2.")
@@ -284,7 +284,7 @@ class Event(BaseStorageObject):
     def length(self):
         """Number of samples for the sum waveform
         """
-        return self.event_duration()/self.sample_duration
+        return int(self.event_duration()/self.sample_duration)
 
     def event_start(self):
         """Start time of the event in units of ns
