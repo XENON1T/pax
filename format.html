@@ -84,6 +84,14 @@ provided for convenience.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="pax.datastructure.Event.append_waveform">
+<tt class="descname">append_waveform</tt><big>(</big><em>short_name</em>, <em>pmt_list</em>, <em>samples</em>, <em>name_of_filter=None</em>, <em>is_filtered=False</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.append_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.append_waveform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Append a sum waveform to the event</p>
+<p>This is useful for adding sum waveforms without having to create your
+own SumWaveform class.</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="pax.datastructure.Event.event_duration">
 <tt class="descname">event_duration</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.event_duration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.event_duration" title="Permalink to this definition">¶</a></dt>
 <dd><p>Duration of event window in units of ns</p>
@@ -154,12 +162,6 @@ waveform for a specific PMT such as PMT 10, you can do:</p>
 <dd><p>Time duraation of a sample in units of ns</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="pax.datastructure.Event.sum_waveform">
-<tt class="descname">sum_waveform</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.sum_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.sum_waveform" title="Permalink to this definition">¶</a></dt>
-<dd><p>Top and bottom sum waveform method for convenience.</p>
-</dd></dl>
-
 <dl class="attribute">
 <dt id="pax.datastructure.Event.total_area">
 <tt class="descname">total_area</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event.total_area"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.total_area" title="Permalink to this definition">¶</a></dt>
@@ -205,7 +207,7 @@ waveform for a specific PMT such as PMT 10, you can do:</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Event.waveforms">
 <tt class="descname">waveforms</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event.waveforms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.waveforms" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a list of waveforms</p>
+<dd><p>Returns a list of sum waveforms</p>
 <p>Returns an <a class="reference internal" href="pax.html#pax.datastructure.SumWaveform" title="pax.datastructure.SumWaveform"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.SumWaveform</span></tt></a> class.</p>
 </dd></dl>
 

@@ -58,9 +58,15 @@ physically meaningful variables.  For example, S2.</p>
 names of functionality between major releases.  You may add variables in minor
 releases.  Patch releases cannot modify this.</p>
 <dl class="class">
+<dt id="pax.datastructure.BaseStorageObject">
+<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">BaseStorageObject</tt><a class="reference internal" href="_modules/pax/datastructure.html#BaseStorageObject"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.BaseStorageObject" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
+</dd></dl>
+
+<dl class="class">
 <dt id="pax.datastructure.Event">
 <em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Event</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
+<dd><p>Bases: <a class="reference internal" href="#pax.datastructure.BaseStorageObject" title="pax.datastructure.BaseStorageObject"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.BaseStorageObject</span></tt></a></p>
 <p>The event class.</p>
 <p>This class defines the data structure for pax.  Within it are all of the
 high-level quantities that pax computes.  For example, the size of the S2
@@ -84,6 +90,14 @@ provided for convenience.</p>
 <tt class="descname">S2s</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event.S2s"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.S2s" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of S2 (ionization) signals</p>
 <p>Returns an <a class="reference internal" href="#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a> class.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.Event.append_waveform">
+<tt class="descname">append_waveform</tt><big>(</big><em>short_name</em>, <em>pmt_list</em>, <em>samples</em>, <em>name_of_filter=None</em>, <em>is_filtered=False</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.append_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.append_waveform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Append a sum waveform to the event</p>
+<p>This is useful for adding sum waveforms without having to create your
+own SumWaveform class.</p>
 </dd></dl>
 
 <dl class="method">
@@ -157,12 +171,6 @@ waveform for a specific PMT such as PMT 10, you can do:</p>
 <dd><p>Time duraation of a sample in units of ns</p>
 </dd></dl>
 
-<dl class="method">
-<dt id="pax.datastructure.Event.sum_waveform">
-<tt class="descname">sum_waveform</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.sum_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.sum_waveform" title="Permalink to this definition">¶</a></dt>
-<dd><p>Top and bottom sum waveform method for convenience.</p>
-</dd></dl>
-
 <dl class="attribute">
 <dt id="pax.datastructure.Event.total_area">
 <tt class="descname">total_area</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event.total_area"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.total_area" title="Permalink to this definition">¶</a></dt>
@@ -208,7 +216,7 @@ waveform for a specific PMT such as PMT 10, you can do:</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Event.waveforms">
 <tt class="descname">waveforms</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event.waveforms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.waveforms" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a list of waveforms</p>
+<dd><p>Returns a list of sum waveforms</p>
 <p>Returns an <a class="reference internal" href="#pax.datastructure.SumWaveform" title="pax.datastructure.SumWaveform"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.SumWaveform</span></tt></a> class.</p>
 </dd></dl>
 
@@ -217,7 +225,7 @@ waveform for a specific PMT such as PMT 10, you can do:</p>
 <dl class="class">
 <dt id="pax.datastructure.Peak">
 <em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Peak</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
+<dd><p>Bases: <a class="reference internal" href="#pax.datastructure.BaseStorageObject" title="pax.datastructure.BaseStorageObject"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.BaseStorageObject</span></tt></a></p>
 <p>Class for S1 and S2 peak information</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.area">
@@ -255,7 +263,7 @@ waveform for a specific PMT such as PMT 10, you can do:</p>
 <dl class="class">
 <dt id="pax.datastructure.SumWaveform">
 <em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">SumWaveform</tt><a class="reference internal" href="_modules/pax/datastructure.html#SumWaveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.SumWaveform" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
+<dd><p>Bases: <a class="reference internal" href="#pax.datastructure.BaseStorageObject" title="pax.datastructure.BaseStorageObject"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.BaseStorageObject</span></tt></a></p>
 <p>Class used to store sum (filtered or not) waveform information.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.SumWaveform.is_filtered">

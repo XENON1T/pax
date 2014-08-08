@@ -74,27 +74,11 @@
             <span class="n">items</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">new_key</span><span class="p">,</span> <span class="n">v</span><span class="p">))</span>
     <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">items</span><span class="p">)</span>
 
-
-
-<div class="viewcode-block" id="Event"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event">[docs]</a><span class="k">class</span> <span class="nc">Event</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-
-    <span class="sd">&quot;&quot;&quot;The event class.</span>
-
-<span class="sd">    This class defines the data structure for pax.  Within it are all of the</span>
-<span class="sd">    high-level quantities that pax computes.  For example, the size of the S2</span>
-<span class="sd">    signals.  This class is passed between the pax plugins and used as an</span>
-<span class="sd">    information container.</span>
-
-<span class="sd">    .. note:: This class should not include much logic since otherwise it</span>
-<span class="sd">                      makes it harder to serialize.  Nevertheless, some methods are</span>
-<span class="sd">                      provided for convenience.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
+<div class="viewcode-block" id="BaseStorageObject"><a class="viewcode-back" href="../../pax.html#pax.datastructure.BaseStorageObject">[docs]</a><span class="k">class</span> <span class="nc">BaseStorageObject</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;Event&#39;</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_internal_values</span> <span class="o">=</span> <span class="p">{}</span>
-
 
     <span class="k">def</span> <span class="nf">_fetch_variable</span><span class="p">(</span><span class="n">original_function</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Decorator</span>
@@ -138,22 +122,40 @@
         <span class="n">new_function</span><span class="o">.</span><span class="n">__doc__</span> <span class="o">=</span> <span class="n">original_function</span><span class="o">.</span><span class="n">__doc__</span>
         <span class="k">return</span> <span class="n">new_function</span>
 
-    <span class="c"># # Begining of properties ##</span>
+</div>
+<div class="viewcode-block" id="Event"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event">[docs]</a><span class="k">class</span> <span class="nc">Event</span><span class="p">(</span><span class="n">BaseStorageObject</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;The event class.</span>
+
+<span class="sd">    This class defines the data structure for pax.  Within it are all of the</span>
+<span class="sd">    high-level quantities that pax computes.  For example, the size of the S2</span>
+<span class="sd">    signals.  This class is passed between the pax plugins and used as an</span>
+<span class="sd">    information container.</span>
+
+<span class="sd">    .. note:: This class should not include much logic since otherwise it</span>
+<span class="sd">                      makes it harder to serialize.  Nevertheless, some methods are</span>
+<span class="sd">                      provided for convenience.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">BaseStorageObject</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_internal_values</span><span class="p">[</span><span class="s">&#39;waveforms&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
     <span class="nd">@property</span>
-    <span class="nd">@_fetch_variable</span>
+    <span class="nd">@BaseStorageObject._fetch_variable</span>
     <span class="k">def</span> <span class="nf">sample_duration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Time duraation of a sample in units of ns</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span>
 
     <span class="nd">@sample_duration.setter</span>
-    <span class="nd">@_set_variable</span>
+    <span class="nd">@BaseStorageObject._set_variable</span>
 <div class="viewcode-block" id="Event.sample_duration"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.sample_duration">[docs]</a>    <span class="k">def</span> <span class="nf">sample_duration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">pass</span>
 </div>
     <span class="nd">@property</span>
-    <span class="nd">@_fetch_variable</span>
+    <span class="nd">@BaseStorageObject._fetch_variable</span>
     <span class="k">def</span> <span class="nf">event_number</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;An integer event number that uniquely identifies the event.</span>
 
@@ -162,7 +164,7 @@
         <span class="k">pass</span>
 
     <span class="nd">@event_number.setter</span>
-    <span class="nd">@_set_variable</span>
+    <span class="nd">@BaseStorageObject._set_variable</span>
 <div class="viewcode-block" id="Event.event_number"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.event_number">[docs]</a>    <span class="k">def</span> <span class="nf">event_number</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Wrong type; must be int np.int64.&quot;</span><span class="p">)</span>
@@ -170,7 +172,7 @@
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Must be positive&quot;</span><span class="p">)</span>
 </div>
     <span class="nd">@property</span>
-    <span class="nd">@_fetch_variable</span>
+    <span class="nd">@BaseStorageObject._fetch_variable</span>
     <span class="k">def</span> <span class="nf">event_window</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Two numbers for the start and stop time of the event.</span>
 
@@ -179,7 +181,7 @@
         <span class="k">pass</span>
 
     <span class="nd">@event_window.setter</span>
-    <span class="nd">@_set_variable</span>
+    <span class="nd">@BaseStorageObject._set_variable</span>
 <div class="viewcode-block" id="Event.event_window"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.event_window">[docs]</a>    <span class="k">def</span> <span class="nf">event_window</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Wrong type; must be tuple.&quot;</span><span class="p">)</span>
@@ -187,7 +189,7 @@
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Wrong size; must be event_duration 2.&quot;</span><span class="p">)</span>
 </div>
     <span class="nd">@property</span>
-    <span class="nd">@_fetch_variable</span>
+    <span class="nd">@BaseStorageObject._fetch_variable</span>
     <span class="k">def</span> <span class="nf">pmt_waveforms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;A 2D array of all the PMT waveforms.</span>
 
@@ -202,7 +204,7 @@
         <span class="k">pass</span>
 
     <span class="nd">@pmt_waveforms.setter</span>
-    <span class="nd">@_set_variable</span>
+    <span class="nd">@BaseStorageObject._set_variable</span>
 <div class="viewcode-block" id="Event.pmt_waveforms"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.pmt_waveforms">[docs]</a>    <span class="k">def</span> <span class="nf">pmt_waveforms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Wrong type; must be numpy array.&quot;</span><span class="p">)</span>
@@ -214,7 +216,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Found </span><span class="si">%d</span><span class="s"> samples, which seems high.&quot;</span> <span class="o">%</span> <span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
 </div>
     <span class="nd">@property</span>
-    <span class="nd">@_fetch_variable</span>
+    <span class="nd">@BaseStorageObject._fetch_variable</span>
     <span class="k">def</span> <span class="nf">S2s</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;List of S2 (ionization) signals</span>
 
@@ -223,7 +225,7 @@
         <span class="k">pass</span>
 
     <span class="nd">@S2s.setter</span>
-    <span class="nd">@_set_variable</span>
+    <span class="nd">@BaseStorageObject._set_variable</span>
 <div class="viewcode-block" id="Event.S2s"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.S2s">[docs]</a>    <span class="k">def</span> <span class="nf">S2s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Wrong type; must be ntuple.&quot;</span><span class="p">)</span>
@@ -232,7 +234,7 @@
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Must pass Peak class&quot;</span><span class="p">)</span>
 </div>
     <span class="nd">@property</span>
-    <span class="nd">@_fetch_variable</span>
+    <span class="nd">@BaseStorageObject._fetch_variable</span>
     <span class="k">def</span> <span class="nf">S1s</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;List of S1 (scintillation) signals</span>
 
@@ -241,7 +243,7 @@
         <span class="k">pass</span>
 
     <span class="nd">@S1s.setter</span>
-    <span class="nd">@_set_variable</span>
+    <span class="nd">@BaseStorageObject._set_variable</span>
 <div class="viewcode-block" id="Event.S1s"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.S1s">[docs]</a>    <span class="k">def</span> <span class="nf">S1s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Wrong type; must be ntuple.&quot;</span><span class="p">)</span>
@@ -250,16 +252,16 @@
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Must pass Peak class&quot;</span><span class="p">)</span>
 </div>
     <span class="nd">@property</span>
-    <span class="nd">@_fetch_variable</span>
+    <span class="nd">@BaseStorageObject._fetch_variable</span>
     <span class="k">def</span> <span class="nf">waveforms</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns a list of waveforms</span>
+        <span class="sd">&quot;&quot;&quot;Returns a list of sum waveforms</span>
 
 <span class="sd">        Returns an :class:`pax.datastructure.SumWaveform` class.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span>
 
     <span class="nd">@waveforms.setter</span>
-    <span class="nd">@_set_variable</span>
+    <span class="nd">@BaseStorageObject._set_variable</span>
 <div class="viewcode-block" id="Event.waveforms"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.waveforms">[docs]</a>    <span class="k">def</span> <span class="nf">waveforms</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Wrong type; must be ntuple.&quot;</span><span class="p">)</span>
@@ -269,7 +271,7 @@
 
 </div>
     <span class="nd">@property</span>
-    <span class="nd">@_fetch_variable</span>
+    <span class="nd">@BaseStorageObject._fetch_variable</span>
     <span class="k">def</span> <span class="nf">occurrences</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;A dictionary of DAQ occurrences</span>
 
@@ -278,7 +280,7 @@
         <span class="k">pass</span>
 
     <span class="nd">@occurrences.setter</span>
-    <span class="c">#@_set_variable</span>
+    <span class="c">#@BaseStorageObject._set_variable</span>
 <div class="viewcode-block" id="Event.occurrences"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.occurrences">[docs]</a>    <span class="k">def</span> <span class="nf">occurrences</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_internal_values</span><span class="p">[</span><span class="s">&#39;occurrences&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="c">#pass</span>
 </div>
@@ -343,17 +345,33 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_window</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 </div>
-<div class="viewcode-block" id="Event.sum_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.sum_waveform">[docs]</a>    <span class="k">def</span> <span class="nf">sum_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Top and bottom sum waveform method for convenience.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">pass</span>
-</div>
 <div class="viewcode-block" id="Event.filtered_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.filtered_waveform">[docs]</a>    <span class="k">def</span> <span class="nf">filtered_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Top and bottom filtered waveform method for convenience.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span>
+</div>
+<div class="viewcode-block" id="Event.append_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.append_waveform">[docs]</a>    <span class="k">def</span> <span class="nf">append_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                            <span class="n">short_name</span><span class="p">,</span>
+                            <span class="n">pmt_list</span><span class="p">,</span>
+                            <span class="n">samples</span><span class="p">,</span>
+                            <span class="n">name_of_filter</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                            <span class="n">is_filtered</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Append a sum waveform to the event</span>
+
+<span class="sd">        This is useful for adding sum waveforms without having to create your</span>
+<span class="sd">        own SumWaveform class.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">sw</span> <span class="o">=</span> <span class="n">SumWaveform</span><span class="p">()</span>
+        <span class="n">sw</span><span class="o">.</span><span class="n">short_name</span> <span class="o">=</span> <span class="n">short_name</span>
+        <span class="n">sw</span><span class="o">.</span><span class="n">pmt_list</span> <span class="o">=</span> <span class="n">pmt_list</span>
+        <span class="n">sw</span><span class="o">.</span><span class="n">samples</span> <span class="o">=</span> <span class="n">samples</span>
+        <span class="n">sw</span><span class="o">.</span><span class="n">name_of_filter</span> <span class="o">=</span> <span class="n">name_of_filter</span>
+        <span class="n">sw</span><span class="o">.</span><span class="n">is_filtered</span> <span class="o">=</span> <span class="n">is_filtered</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">waveforms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sw</span><span class="p">)</span>
+
 </div></div>
-<div class="viewcode-block" id="Peak"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak">[docs]</a><span class="k">class</span> <span class="nc">Peak</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="Peak"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak">[docs]</a><span class="k">class</span> <span class="nc">Peak</span><span class="p">(</span><span class="n">BaseStorageObject</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;Class for S1 and S2 peak information</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -389,38 +407,59 @@
     <span class="nd">@property</span>
 <div class="viewcode-block" id="Peak.bounds"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.bounds">[docs]</a>    <span class="k">def</span> <span class="nf">bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Where the peak starts and ends in the sum waveform</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">peak_dict</span><span class="p">[</span><span class="s">&#39;left&#39;</span><span class="p">],</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">peak_dict</span><span class="p">[</span><span class="s">&#39;right&#39;</span><span class="p">])</span>
 
 </div></div>
-<div class="viewcode-block" id="SumWaveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.SumWaveform">[docs]</a><span class="k">class</span> <span class="nc">SumWaveform</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-
+<div class="viewcode-block" id="SumWaveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.SumWaveform">[docs]</a><span class="k">class</span> <span class="nc">SumWaveform</span><span class="p">(</span><span class="n">BaseStorageObject</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class used to store sum (filtered or not) waveform information.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="nd">@property</span>
-<div class="viewcode-block" id="SumWaveform.is_filtered"><a class="viewcode-back" href="../../pax.html#pax.datastructure.SumWaveform.is_filtered">[docs]</a>    <span class="k">def</span> <span class="nf">is_filtered</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="nd">@BaseStorageObject._fetch_variable</span>
+    <span class="k">def</span> <span class="nf">is_filtered</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Boolean&quot;&quot;&quot;</span>
         <span class="k">pass</span>
+
+    <span class="nd">@is_filtered.setter</span>
+    <span class="nd">@BaseStorageObject._set_variable</span>
+<div class="viewcode-block" id="SumWaveform.is_filtered"><a class="viewcode-back" href="../../pax.html#pax.datastructure.SumWaveform.is_filtered">[docs]</a>    <span class="k">def</span> <span class="nf">is_filtered</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span> <span class="k">pass</span>
 </div>
     <span class="nd">@property</span>
-<div class="viewcode-block" id="SumWaveform.name_of_filter"><a class="viewcode-back" href="../../pax.html#pax.datastructure.SumWaveform.name_of_filter">[docs]</a>    <span class="k">def</span> <span class="nf">name_of_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="nd">@BaseStorageObject._fetch_variable</span>
+    <span class="k">def</span> <span class="nf">name_of_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Name of the filter used (or None)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span>
+
+    <span class="nd">@name_of_filter.setter</span>
+    <span class="nd">@BaseStorageObject._set_variable</span>
+<div class="viewcode-block" id="SumWaveform.name_of_filter"><a class="viewcode-back" href="../../pax.html#pax.datastructure.SumWaveform.name_of_filter">[docs]</a>    <span class="k">def</span> <span class="nf">name_of_filter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span> <span class="k">pass</span>
 </div>
     <span class="nd">@property</span>
-<div class="viewcode-block" id="SumWaveform.short_name"><a class="viewcode-back" href="../../pax.html#pax.datastructure.SumWaveform.short_name">[docs]</a>    <span class="k">def</span> <span class="nf">short_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="nd">@BaseStorageObject._fetch_variable</span>
+    <span class="k">def</span> <span class="nf">short_name</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;e.g., top&quot;&quot;&quot;</span>
         <span class="k">pass</span>
+
+    <span class="nd">@short_name.setter</span>
+    <span class="nd">@BaseStorageObject._set_variable</span>
+<div class="viewcode-block" id="SumWaveform.short_name"><a class="viewcode-back" href="../../pax.html#pax.datastructure.SumWaveform.short_name">[docs]</a>    <span class="k">def</span> <span class="nf">short_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span> <span class="k">pass</span>
 </div>
     <span class="nd">@property</span>
-<div class="viewcode-block" id="SumWaveform.pmt_list"><a class="viewcode-back" href="../../pax.html#pax.datastructure.SumWaveform.pmt_list">[docs]</a>    <span class="k">def</span> <span class="nf">pmt_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="nd">@BaseStorageObject._fetch_variable</span>
+    <span class="k">def</span> <span class="nf">pmt_list</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Array of PMT numbers included in this waveform&quot;&quot;&quot;</span>
         <span class="k">pass</span>
+
+    <span class="nd">@pmt_list.setter</span>
+    <span class="nd">@BaseStorageObject._set_variable</span>
+<div class="viewcode-block" id="SumWaveform.pmt_list"><a class="viewcode-back" href="../../pax.html#pax.datastructure.SumWaveform.pmt_list">[docs]</a>    <span class="k">def</span> <span class="nf">pmt_list</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span> <span class="k">pass</span>
 </div>
     <span class="nd">@property</span>
-<div class="viewcode-block" id="SumWaveform.samples"><a class="viewcode-back" href="../../pax.html#pax.datastructure.SumWaveform.samples">[docs]</a>    <span class="k">def</span> <span class="nf">samples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="nd">@BaseStorageObject._fetch_variable</span>
+    <span class="k">def</span> <span class="nf">samples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Array of samples.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c"># if not isinstance(value, (np.array)):</span>
@@ -430,6 +469,10 @@
         <span class="c">#	elif value.shape[0] &gt; 100000:</span>
         <span class="c">#	self.log.warning(&quot;Found %d samples, which seems high.&quot; % value.shape[1])</span>
         <span class="k">pass</span>
+
+    <span class="nd">@samples.setter</span>
+    <span class="nd">@BaseStorageObject._set_variable</span>
+<div class="viewcode-block" id="SumWaveform.samples"><a class="viewcode-back" href="../../pax.html#pax.datastructure.SumWaveform.samples">[docs]</a>    <span class="k">def</span> <span class="nf">samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span> <span class="k">pass</span>
 
 </div></div>
 <span class="k">def</span> <span class="nf">_explain</span><span class="p">(</span><span class="n">class_name</span><span class="p">):</span>
