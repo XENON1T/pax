@@ -18,41 +18,41 @@ import pax.fields
 
 #metaclass=OrderedClass
 
-class StorageObject(object):
-    class __metaclass__(type):
-        '''Creates the metaclass for Model. The main function of this metaclass
-        is to move all of fields into the _fields variable on the class.
-
-        '''
-        def __init__(cls, name, bases, attrs):
-            print('hi')
-            cls._clsfields = {}
-            for key, value in attrs.iteritems():
-                if isinstance(value, pax.fields.BaseField):
-                    cls._clsfields[key] = value
-                    delattr(cls, key)
-
-        def __setattr__(self, key, value):
-            if key in self._fields:
-                field = self._fields[key]
-                field.populate(value)
-                field._related_obj = self
-                super(StorageObject, self).__setattr__(key, field.to_python())
-            raise AttributeError("%s does not exist" % key)
-
-        def __getattr__(self, key):
-            print('getattr')
-            if key in self._fields:
-                field = self._fields[key]
-                return field.to_python()
-            raise AttributeError("%s does not exist" % key)
-
-        @property
-        def _fields(self):
-            return dict(self._clsfields, **self._extra)
-
-class Event2(metaclass=StorageObject):
-    test = pax.fields.FloatField()
+# class StorageObject(object):
+#     class __metaclass__(type):
+#         '''Creates the metaclass for Model. The main function of this metaclass
+#         is to move all of fields into the _fields variable on the class.
+#
+#         '''
+#         def __init__(cls, name, bases, attrs):
+#             print('hi')
+#             cls._clsfields = {}
+#             for key, value in attrs.iteritems():
+#                 if isinstance(value, pax.fields.BaseField):
+#                     cls._clsfields[key] = value
+#                     delattr(cls, key)
+#
+#         def __setattr__(self, key, value):
+#             if key in self._fields:
+#                 field = self._fields[key]
+#                 field.populate(value)
+#                 field._related_obj = self
+#                 super(StorageObject, self).__setattr__(key, field.to_python())
+#             raise AttributeError("%s does not exist" % key)
+#
+#         def __getattr__(self, key):
+#             print('getattr')
+#             if key in self._fields:
+#                 field = self._fields[key]
+#                 return field.to_python()
+#             raise AttributeError("%s does not exist" % key)
+#
+#         @property
+#         def _fields(self):
+#             return dict(self._clsfields, **self._extra)
+#
+# class Event2(metaclass=StorageObject):
+#     test = pax.fields.FloatField()
 
 class BaseStorageObject(object):
     def __init__(self):
