@@ -127,8 +127,8 @@ def processor(config_overload=""):
     parser.add_argument('--log', default='INFO', help="Set log level")
 
     # Event control
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument('--single',
+    input_control_group = parser.add_mutually_exclusive_group()
+    input_control_group.add_argument('--single',
                        type=int,
                        help="Process a single event.")
     group.add_argument('-n',

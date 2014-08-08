@@ -576,6 +576,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
         height = signal[max_idx]
         # For empty test regions, Xerawdp gives 0.0/0 = some kind of Nan for average, ensuring test always fails
         if test_length_left == 0:
+            self.log.debug("        Empty left test region! Auto-failing before-avg test.")
             failed_pre = True
         else:
             # +1s are to compensate for python's indexing conventions...
@@ -585,6 +586,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             ])
             failed_pre = pre_avg > height * before_avg_max_ratio
         if test_length_right == 0:
+            self.log.debug("        Empty right test region! Auto-failing after-avg test.")
             failed_post = True
         else:
             post_avg = np.mean(signal[
@@ -592,10 +594,11 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                 left_edge_of_right_test_region + test_length_right
             ])
             failed_post = post_avg > height * after_avg_max_ratio
-        # Only enable when you're sure no empty test regions occur
-        # self.log.debug("        Pass test if before avg %s > %s and/or above avg %s > %s" % (
-        #     pre_avg, height * before_avg_max_ratio, post_avg, height * after_avg_max_ratio
-        # ))
+        if test_length_left and test_length_right:
+            # Can only print these when no empty test regions occur (or we could add lots of if stuff..)
+            self.log.debug("        Fail test if before avg %s > %s and/or above avg %s > %s" % (
+                pre_avg, height * before_avg_max_ratio, post_avg, height * after_avg_max_ratio
+            ))
         if can_fail_one:
             failed = failed_pre and failed_post
         else:
