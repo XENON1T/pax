@@ -63,7 +63,7 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 
 <span class="kn">from</span> <span class="nn">pax.models</span> <span class="kn">import</span> <span class="n">Model</span>
-<span class="kn">from</span> <span class="nn">pax.fields</span> <span class="kn">import</span> <span class="n">IntegerField</span>
+<span class="kn">from</span> <span class="nn">pax.fields</span> <span class="kn">import</span> <span class="n">IntegerField</span><span class="p">,</span> <span class="n">FloatField</span>
 
 <div class="viewcode-block" id="Event2"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event2">[docs]</a><span class="k">class</span> <span class="nc">Event2</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Event class</span>
@@ -86,11 +86,17 @@
     <span class="c">#:</span>
     <span class="c">#: This is a 64-bit number in units of ns that follows the UNIX clock.</span>
     <span class="c">#: Or rather, it starts from January 1, 1970.</span>
-    <span class="n">event_start</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>
+    <span class="n">event_stop</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>
+
+    <span class="c">#: Unused float (useful for developing)</span>
+    <span class="n">user_float_0</span> <span class="o">=</span> <span class="n">FloatField</span><span class="p">()</span>
+    <span class="n">user_float_1</span> <span class="o">=</span> <span class="n">FloatField</span><span class="p">()</span>
+    <span class="n">user_float_2</span> <span class="o">=</span> <span class="n">FloatField</span><span class="p">()</span>
+    <span class="n">user_float_3</span> <span class="o">=</span> <span class="n">FloatField</span><span class="p">()</span>
+    <span class="n">user_float_4</span> <span class="o">=</span> <span class="n">FloatField</span><span class="p">()</span>
 
 
-<span class="c"># class Event2(metaclass=StorageObject):</span>
-<span class="c">#     test = pax.fields.FloatField()</span>
+
 </div>
 <div class="viewcode-block" id="BaseStorageObject"><a class="viewcode-back" href="../../pax.html#pax.datastructure.BaseStorageObject">[docs]</a><span class="k">class</span> <span class="nc">BaseStorageObject</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
