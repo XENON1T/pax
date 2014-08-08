@@ -222,7 +222,7 @@ waveform for a specific PMT such as PMT 10, you can do:</p>
 <p>There are variables within the class that refer to <a class="reference internal" href="pax.html#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a> and <a class="reference internal" href="pax.html#pax.datastructure.SumWaveform" title="pax.datastructure.SumWaveform"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.SumWaveform</span></tt></a> objects.  These have their own class structure.  For example, both S1 and S2 peaks follow the following syntax.</p>
 <dl class="class">
 <dt id="pax.datastructure.Peak">
-<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Peak</tt><big>(</big><em>area</em>, <em>time_in_waveform</em>, <em>height</em>, <em>width_fwhm</em>, <em>bounds</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Peak</tt><big>(</big><em>area</em>, <em>index_of_maximum</em>, <em>height</em>, <em>width_fwhm</em>, <em>bounds</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class for S1 and S2 peak information</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.area">
@@ -243,17 +243,20 @@ waveform for a specific PMT such as PMT 10, you can do:</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pax.datastructure.Peak.time_in_waveform">
-<tt class="descname">time_in_waveform</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.time_in_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.time_in_waveform" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.datastructure.Peak.index_of_maximum">
+<tt class="descname">index_of_maximum</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.index_of_maximum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.index_of_maximum" title="Permalink to this definition">¶</a></dt>
 <dd><p>position of each S1 peak</p>
 </dd></dl>
 
-<dl class="attribute">
-<dt id="pax.datastructure.Peak.width_fwhm">
-<tt class="descname">width_fwhm</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.width_fwhm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.width_fwhm" title="Permalink to this definition">¶</a></dt>
-<dd><p>Width at full width half max</p>
-<p>Units are ns.</p>
-</dd></dl>
+<dl class="method">
+<dt id="pax.datastructure.Peak.left">
+<tt class="descname">left</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Peak.left"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.left" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.Peak.right">
+<tt class="descname">right</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Peak.right"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.right" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 

@@ -20,6 +20,14 @@ pax.dsp_utils module
     :undoc-members:
     :show-inheritance:
 
+pax.fields module
+-----------------
+
+.. automodule:: pax.fields
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pax.format module
 -----------------
 

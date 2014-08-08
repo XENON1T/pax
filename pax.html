@@ -58,61 +58,9 @@ physically meaningful variables.  For example, S2.</p>
 names of functionality between major releases.  You may add variables in minor
 releases.  Patch releases cannot modify this.</p>
 <dl class="class">
-<dt id="pax.datastructure.BaseField">
-<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">BaseField</tt><big>(</big><em>source=None</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#BaseField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.BaseField" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
-<p>Base class for all field types.</p>
-<p>The <tt class="docutils literal"><span class="pre">source</span></tt> parameter sets the key that will be retrieved from the source
-data. If <tt class="docutils literal"><span class="pre">source</span></tt> is not specified, the field instance will use its own
-name as the key to retrieve the value from the source data.</p>
-<dl class="method">
-<dt id="pax.datastructure.BaseField.populate">
-<tt class="descname">populate</tt><big>(</big><em>data</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#BaseField.populate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.BaseField.populate" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the value or values wrapped by this field</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.datastructure.BaseField.to_python">
-<tt class="descname">to_python</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#BaseField.to_python"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.BaseField.to_python" title="Permalink to this definition">¶</a></dt>
-<dd><p>After being populated, this method casts the source data into a
-Python object. The default behavior is to simply return the source
-value. Subclasses should override this method.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
 <dt id="pax.datastructure.BaseStorageObject">
 <em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">BaseStorageObject</tt><a class="reference internal" href="_modules/pax/datastructure.html#BaseStorageObject"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.BaseStorageObject" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.datastructure.BooleanField">
-<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">BooleanField</tt><big>(</big><em>source=None</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#BooleanField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.BooleanField" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.datastructure.BaseField" title="pax.datastructure.BaseField"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.BaseField</span></tt></a></p>
-<p>Field to represent a boolean</p>
-<dl class="method">
-<dt id="pax.datastructure.BooleanField.to_python">
-<tt class="descname">to_python</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#BooleanField.to_python"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.BooleanField.to_python" title="Permalink to this definition">¶</a></dt>
-<dd><p>The string <tt class="docutils literal"><span class="pre">'True'</span></tt> (case insensitive) will be converted
-to <tt class="docutils literal"><span class="pre">True</span></tt>, as will any positive integers.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.datastructure.CharField">
-<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">CharField</tt><big>(</big><em>source=None</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#CharField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.CharField" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.datastructure.BaseField" title="pax.datastructure.BaseField"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.BaseField</span></tt></a></p>
-<p>Field to represent a simple Unicode string value.</p>
-<dl class="method">
-<dt id="pax.datastructure.CharField.to_python">
-<tt class="descname">to_python</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#CharField.to_python"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.CharField.to_python" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convert the data supplied using the <tt class="xref py py-meth docutils literal"><span class="pre">populate()</span></tt> method to a
-Unicode string.</p>
-</dd></dl>
-
 </dd></dl>
 
 <dl class="class">
@@ -283,45 +231,17 @@ waveform for a specific PMT such as PMT 10, you can do:</p>
 <dl class="class">
 <dt id="pax.datastructure.Event2">
 <em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Event2</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event2" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
+<dd><p>Bases: <a class="reference internal" href="#pax.datastructure.StorageObject" title="pax.datastructure.StorageObject"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.StorageObject</span></tt></a></p>
 <dl class="attribute">
 <dt id="pax.datastructure.Event2.test">
-<tt class="descname">test</tt><em class="property"> = &lt;pax.datastructure.FloatField object at 0x10cf960b8&gt;</em><a class="headerlink" href="#pax.datastructure.Event2.test" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">test</tt><em class="property"> = &lt;pax.fields.FloatField object at 0x101cc5278&gt;</em><a class="headerlink" href="#pax.datastructure.Event2.test" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="class">
-<dt id="pax.datastructure.FloatField">
-<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">FloatField</tt><big>(</big><em>source=None</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#FloatField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.FloatField" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.datastructure.BaseField" title="pax.datastructure.BaseField"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.BaseField</span></tt></a></p>
-<p>Field to represent a floating point value</p>
-<dl class="method">
-<dt id="pax.datastructure.FloatField.to_python">
-<tt class="descname">to_python</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#FloatField.to_python"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.FloatField.to_python" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convert the data supplied to the <tt class="xref py py-meth docutils literal"><span class="pre">populate()</span></tt> method to a
-float.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.datastructure.IntegerField">
-<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">IntegerField</tt><big>(</big><em>source=None</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#IntegerField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.IntegerField" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.datastructure.BaseField" title="pax.datastructure.BaseField"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.BaseField</span></tt></a></p>
-<p>Field to represent an integer value</p>
-<dl class="method">
-<dt id="pax.datastructure.IntegerField.to_python">
-<tt class="descname">to_python</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#IntegerField.to_python"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.IntegerField.to_python" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convert the data supplied to the <tt class="xref py py-meth docutils literal"><span class="pre">populate()</span></tt> method to an
-integer.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
 <dt id="pax.datastructure.Peak">
-<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Peak</tt><big>(</big><em>area</em>, <em>time_in_waveform</em>, <em>height</em>, <em>width_fwhm</em>, <em>bounds</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Peak</tt><big>(</big><em>area</em>, <em>index_of_maximum</em>, <em>height</em>, <em>width_fwhm</em>, <em>bounds</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.datastructure.BaseStorageObject" title="pax.datastructure.BaseStorageObject"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.BaseStorageObject</span></tt></a></p>
 <p>Class for S1 and S2 peak information</p>
 <dl class="attribute">
@@ -343,17 +263,20 @@ integer.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pax.datastructure.Peak.time_in_waveform">
-<tt class="descname">time_in_waveform</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.time_in_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.time_in_waveform" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.datastructure.Peak.index_of_maximum">
+<tt class="descname">index_of_maximum</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.index_of_maximum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.index_of_maximum" title="Permalink to this definition">¶</a></dt>
 <dd><p>position of each S1 peak</p>
 </dd></dl>
 
-<dl class="attribute">
-<dt id="pax.datastructure.Peak.width_fwhm">
-<tt class="descname">width_fwhm</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.width_fwhm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.width_fwhm" title="Permalink to this definition">¶</a></dt>
-<dd><p>Width at full width half max</p>
-<p>Units are ns.</p>
-</dd></dl>
+<dl class="method">
+<dt id="pax.datastructure.Peak.left">
+<tt class="descname">left</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Peak.left"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.left" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.Peak.right">
+<tt class="descname">right</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Peak.right"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.right" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 </dd></dl>
 
@@ -515,6 +438,89 @@ Don&#8217;t put in hacks for Xerawdp matching!</p>
 <dt id="pax.dsp_utils.walk_waveform">
 <tt class="descclassname">pax.dsp_utils.</tt><tt class="descname">walk_waveform</tt><big>(</big><em>signal</em>, <em>start</em>, <em>stop_conditions</em>, <em>direction='right'</em><big>)</big><a class="reference internal" href="_modules/pax/dsp_utils.html#walk_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.walk_waveform" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
+
+</div>
+<div class="section" id="module-pax.fields">
+<span id="pax-fields-module"></span><h2>pax.fields module<a class="headerlink" href="#module-pax.fields" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pax.fields.BaseField">
+<em class="property">class </em><tt class="descclassname">pax.fields.</tt><tt class="descname">BaseField</tt><big>(</big><em>source=None</em><big>)</big><a class="reference internal" href="_modules/pax/fields.html#BaseField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.BaseField" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
+<p>Base class for all field types.</p>
+<p>The <tt class="docutils literal"><span class="pre">source</span></tt> parameter sets the key that will be retrieved from the source
+data. If <tt class="docutils literal"><span class="pre">source</span></tt> is not specified, the field instance will use its own
+name as the key to retrieve the value from the source data.</p>
+<dl class="method">
+<dt id="pax.fields.BaseField.populate">
+<tt class="descname">populate</tt><big>(</big><em>data</em><big>)</big><a class="reference internal" href="_modules/pax/fields.html#BaseField.populate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.BaseField.populate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the value or values wrapped by this field</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.fields.BaseField.to_python">
+<tt class="descname">to_python</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/fields.html#BaseField.to_python"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.BaseField.to_python" title="Permalink to this definition">¶</a></dt>
+<dd><p>After being populated, this method casts the source data into a
+Python object. The default behavior is to simply return the source
+value. Subclasses should override this method.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.fields.BooleanField">
+<em class="property">class </em><tt class="descclassname">pax.fields.</tt><tt class="descname">BooleanField</tt><big>(</big><em>source=None</em><big>)</big><a class="reference internal" href="_modules/pax/fields.html#BooleanField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.BooleanField" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.fields.BaseField" title="pax.fields.BaseField"><tt class="xref py py-class docutils literal"><span class="pre">pax.fields.BaseField</span></tt></a></p>
+<p>Field to represent a boolean</p>
+<dl class="method">
+<dt id="pax.fields.BooleanField.to_python">
+<tt class="descname">to_python</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/fields.html#BooleanField.to_python"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.BooleanField.to_python" title="Permalink to this definition">¶</a></dt>
+<dd><p>The string <tt class="docutils literal"><span class="pre">'True'</span></tt> (case insensitive) will be converted
+to <tt class="docutils literal"><span class="pre">True</span></tt>, as will any positive integers.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.fields.CharField">
+<em class="property">class </em><tt class="descclassname">pax.fields.</tt><tt class="descname">CharField</tt><big>(</big><em>source=None</em><big>)</big><a class="reference internal" href="_modules/pax/fields.html#CharField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.CharField" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.fields.BaseField" title="pax.fields.BaseField"><tt class="xref py py-class docutils literal"><span class="pre">pax.fields.BaseField</span></tt></a></p>
+<p>Field to represent a simple Unicode string value.</p>
+<dl class="method">
+<dt id="pax.fields.CharField.to_python">
+<tt class="descname">to_python</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/fields.html#CharField.to_python"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.CharField.to_python" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert the data supplied using the <tt class="xref py py-meth docutils literal"><span class="pre">populate()</span></tt> method to a
+Unicode string.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.fields.FloatField">
+<em class="property">class </em><tt class="descclassname">pax.fields.</tt><tt class="descname">FloatField</tt><big>(</big><em>source=None</em><big>)</big><a class="reference internal" href="_modules/pax/fields.html#FloatField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.FloatField" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.fields.BaseField" title="pax.fields.BaseField"><tt class="xref py py-class docutils literal"><span class="pre">pax.fields.BaseField</span></tt></a></p>
+<p>Field to represent a floating point value</p>
+<dl class="method">
+<dt id="pax.fields.FloatField.to_python">
+<tt class="descname">to_python</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/fields.html#FloatField.to_python"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.FloatField.to_python" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert the data supplied to the <tt class="xref py py-meth docutils literal"><span class="pre">populate()</span></tt> method to a
+float.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.fields.IntegerField">
+<em class="property">class </em><tt class="descclassname">pax.fields.</tt><tt class="descname">IntegerField</tt><big>(</big><em>source=None</em><big>)</big><a class="reference internal" href="_modules/pax/fields.html#IntegerField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.IntegerField" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.fields.BaseField" title="pax.fields.BaseField"><tt class="xref py py-class docutils literal"><span class="pre">pax.fields.BaseField</span></tt></a></p>
+<p>Field to represent an integer value</p>
+<dl class="method">
+<dt id="pax.fields.IntegerField.to_python">
+<tt class="descname">to_python</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/fields.html#IntegerField.to_python"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.IntegerField.to_python" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert the data supplied to the <tt class="xref py py-meth docutils literal"><span class="pre">populate()</span></tt> method to an
+integer.</p>
+</dd></dl>
+
+</dd></dl>
 
 </div>
 <div class="section" id="module-pax.format">
@@ -704,6 +710,7 @@ unit_name(ns,&#8217;s&#8217;) will give &#8216;ns&#8217;</p>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
 <li><a class="reference internal" href="#module-pax.datastructure">pax.datastructure module</a></li>
 <li><a class="reference internal" href="#module-pax.dsp_utils">pax.dsp_utils module</a></li>
+<li><a class="reference internal" href="#module-pax.fields">pax.fields module</a></li>
 <li><a class="reference internal" href="#module-pax.format">pax.format module</a></li>
 <li><a class="reference internal" href="#module-pax.pax">pax.pax module</a></li>
 <li><a class="reference internal" href="#module-pax.plugin">pax.plugin module</a></li>
