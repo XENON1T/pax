@@ -70,7 +70,7 @@ information container.</p>
 <p class="first admonition-title">Note</p>
 <p class="last">This class should not include much logic since otherwise it
 makes it harder to serialize.  Nevertheless, some methods are
-provided for convienence.</p>
+provided for convenience.</p>
 </div>
 <dl class="attribute">
 <dt id="pax.datastructure.Event.S1s">
@@ -87,15 +87,20 @@ provided for convienence.</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="pax.datastructure.Event.delx">
+<tt class="descname">delx</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.delx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.delx" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="pax.datastructure.Event.event_duration">
 <tt class="descname">event_duration</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.event_duration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.event_duration" title="Permalink to this definition">¶</a></dt>
-<dd><p>Duration of event window in units of samples</p>
+<dd><p>Duration of event window in units of ns</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="pax.datastructure.Event.event_end">
 <tt class="descname">event_end</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.event_end"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.event_end" title="Permalink to this definition">¶</a></dt>
-<dd><p>End time of event in units of samples</p>
+<dd><p>End time of event in units of ns</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -108,22 +113,27 @@ provided for convienence.</p>
 <dl class="method">
 <dt id="pax.datastructure.Event.event_start">
 <tt class="descname">event_start</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.event_start"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.event_start" title="Permalink to this definition">¶</a></dt>
-<dd><p>Start time of the event in units of samples</p>
+<dd><p>Start time of the event in units of ns</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.event_window">
 <tt class="descname">event_window</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event.event_window"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.event_window" title="Permalink to this definition">¶</a></dt>
 <dd><p>Two numbers for the start and stop time of the event.</p>
-<p>This is a 64-bit number in units of 10 ns that follows the UNIX clock.
+<p>This is a 64-bit number in units of ns that follows the UNIX clock.
 Or rather, it starts from January 1, 1970.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="pax.datastructure.Event.filtered_waveform">
 <tt class="descname">filtered_waveform</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.filtered_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.filtered_waveform" title="Permalink to this definition">¶</a></dt>
-<dd><p>Top and bottom filtered waveform method for convienence.</p>
+<dd><p>Top and bottom filtered waveform method for convenience.</p>
 </dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.Event.getx">
+<tt class="descname">getx</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.getx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.getx" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.occurrences">
@@ -146,9 +156,14 @@ waveform for a specific PMT such as PMT 10, you can do:</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="pax.datastructure.Event.setx">
+<tt class="descname">setx</tt><big>(</big><em>value</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.setx"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.setx" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="pax.datastructure.Event.sum_waveform">
 <tt class="descname">sum_waveform</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.sum_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.sum_waveform" title="Permalink to this definition">¶</a></dt>
-<dd><p>Top and bottom sum waveform method for convienence.</p>
+<dd><p>Top and bottom sum waveform method for convenience.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -200,6 +215,12 @@ waveform for a specific PMT such as PMT 10, you can do:</p>
 <p>Returns an <a class="reference internal" href="#pax.datastructure.SumWaveform" title="pax.datastructure.SumWaveform"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.SumWaveform</span></tt></a> class.</p>
 </dd></dl>
 
+<dl class="attribute">
+<dt id="pax.datastructure.Event.x">
+<tt class="descname">x</tt><a class="headerlink" href="#pax.datastructure.Event.x" title="Permalink to this definition">¶</a></dt>
+<dd><p>I&#8217;m the &#8216;x&#8217; property.</p>
+</dd></dl>
+
 </dd></dl>
 
 <dl class="class">
@@ -235,7 +256,7 @@ waveform for a specific PMT such as PMT 10, you can do:</p>
 <dt id="pax.datastructure.Peak.width_fwhm">
 <tt class="descname">width_fwhm</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.width_fwhm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.width_fwhm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Width at full width half max</p>
-<p>Units are 10 ns.</p>
+<p>Units are ns.</p>
 </dd></dl>
 
 </dd></dl>

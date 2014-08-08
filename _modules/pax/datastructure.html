@@ -86,7 +86,7 @@
 
 <span class="sd">    .. note:: This class should not include much logic since otherwise it</span>
 <span class="sd">                      makes it harder to serialize.  Nevertheless, some methods are</span>
-<span class="sd">                      provided for convienence.</span>
+<span class="sd">                      provided for convenience.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -120,6 +120,10 @@
         <span class="n">var</span> <span class="o">=</span> <span class="n">original_function</span><span class="o">.</span><span class="n">__name__</span>
 
         <span class="k">def</span> <span class="nf">new_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Converting to int&quot;</span><span class="p">)</span>
+                <span class="n">value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">original_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
             <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
@@ -135,6 +139,14 @@
 
     <span class="c"># # Begining of properties ##</span>
 
+<div class="viewcode-block" id="Event.getx"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.getx">[docs]</a>    <span class="k">def</span> <span class="nf">getx</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x</span></div>
+<div class="viewcode-block" id="Event.setx"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.setx">[docs]</a>    <span class="k">def</span> <span class="nf">setx</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_x</span> <span class="o">=</span> <span class="n">value</span></div>
+<div class="viewcode-block" id="Event.delx"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.delx">[docs]</a>    <span class="k">def</span> <span class="nf">delx</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_x</span></div>
+    <span class="n">x</span> <span class="o">=</span> <span class="nb">property</span><span class="p">(</span><span class="n">getx</span><span class="p">,</span> <span class="n">setx</span><span class="p">,</span> <span class="n">delx</span><span class="p">,</span> <span class="s">&quot;I&#39;m the &#39;x&#39; property.&quot;</span><span class="p">)</span>
+
     <span class="nd">@property</span>
     <span class="nd">@_fetch_variable</span>
     <span class="k">def</span> <span class="nf">event_number</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -147,8 +159,8 @@
     <span class="nd">@event_number.setter</span>
     <span class="nd">@_set_variable</span>
 <div class="viewcode-block" id="Event.event_number"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.event_number">[docs]</a>    <span class="k">def</span> <span class="nf">event_number</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">)):</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Wrong type; must be int.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Wrong type; must be int np.int64.&quot;</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">value</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Must be positive&quot;</span><span class="p">)</span>
 </div>
@@ -157,7 +169,7 @@
     <span class="k">def</span> <span class="nf">event_window</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Two numbers for the start and stop time of the event.</span>
 
-<span class="sd">        This is a 64-bit number in units of 10 ns that follows the UNIX clock.</span>
+<span class="sd">        This is a 64-bit number in units of ns that follows the UNIX clock.</span>
 <span class="sd">        Or rather, it starts from January 1, 1970.&quot;&quot;&quot;</span>
         <span class="k">pass</span>
 
@@ -261,15 +273,9 @@
         <span class="k">pass</span>
 
     <span class="nd">@occurrences.setter</span>
-    <span class="nd">@_set_variable</span>
+    <span class="c">#@_set_variable</span>
 <div class="viewcode-block" id="Event.occurrences"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.occurrences">[docs]</a>    <span class="k">def</span> <span class="nf">occurrences</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Wrong type; must be dict.&quot;</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Wrong type; key be int.&quot;</span><span class="p">)</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Wrong type; value be list.&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_internal_values</span><span class="p">[</span><span class="s">&#39;occurrences&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="c">#pass</span>
 </div>
     <span class="nd">@property</span>
 <div class="viewcode-block" id="Event.user_float_0"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.user_float_0">[docs]</a>    <span class="k">def</span> <span class="nf">user_float_0</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -313,27 +319,27 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmt_waveforms</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_pmt_groupings</span><span class="p">[</span><span class="s">&#39;veto&#39;</span><span class="p">]]</span>
 </div>
 <div class="viewcode-block" id="Event.event_duration"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.event_duration">[docs]</a>    <span class="k">def</span> <span class="nf">event_duration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Duration of event window in units of samples</span>
+        <span class="sd">&quot;&quot;&quot;Duration of event window in units of ns</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_window</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_window</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 </div>
 <div class="viewcode-block" id="Event.event_start"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.event_start">[docs]</a>    <span class="k">def</span> <span class="nf">event_start</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Start time of the event in units of samples</span>
+        <span class="sd">&quot;&quot;&quot;Start time of the event in units of ns</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_window</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 </div>
 <div class="viewcode-block" id="Event.event_end"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.event_end">[docs]</a>    <span class="k">def</span> <span class="nf">event_end</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;End time of event in units of samples</span>
+        <span class="sd">&quot;&quot;&quot;End time of event in units of ns</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_window</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 </div>
 <div class="viewcode-block" id="Event.sum_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.sum_waveform">[docs]</a>    <span class="k">def</span> <span class="nf">sum_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Top and bottom sum waveform method for convienence.</span>
+        <span class="sd">&quot;&quot;&quot;Top and bottom sum waveform method for convenience.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span>
 </div>
 <div class="viewcode-block" id="Event.filtered_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.filtered_waveform">[docs]</a>    <span class="k">def</span> <span class="nf">filtered_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Top and bottom filtered waveform method for convienence.</span>
+        <span class="sd">&quot;&quot;&quot;Top and bottom filtered waveform method for convenience.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span>
 </div></div>
@@ -366,7 +372,7 @@
 <div class="viewcode-block" id="Peak.width_fwhm"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.width_fwhm">[docs]</a>    <span class="k">def</span> <span class="nf">width_fwhm</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Width at full width half max</span>
 
-<span class="sd">        Units are 10 ns.</span>
+<span class="sd">        Units are ns.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">pass</span>
 </div>
