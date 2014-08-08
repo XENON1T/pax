@@ -113,15 +113,14 @@ class StorageObject(object):
                 field.populate(value)
                 field._related_obj = self
                 super(StorageObject, self).__setattr__(key, field.to_python())
-            else:
-                super(StorageObject, self).__setattr__(key, value)
+            raise AttributeError("%s does not exist" % key)
 
         @property
         def _fields(self):
             return dict(self._clsfields, **self._extra)
 
-class Event2(object):
-    test = FloatField()
+class Event2(StorageObject):
+    test = FloatField(0.0)
 
 class BaseStorageObject(object):
     def __init__(self):
@@ -442,47 +441,58 @@ class Peak(BaseStorageObject):
 
     def __init__(self,
                  area,
-                 time_in_waveform,
+                 index_of_maximum,
                  height,
                  width_fwhm,
                  bounds):
         self.area = area
-        self.time_in_waveform = time_in_waveform
+        self.index_of_maximum = index_of_maximum
         self.height = height
         self.width_fwhm = width_fwhm
         self.bounds = bounds
 
     @property
+    @BaseStorageObject._fetch_variable
     def area(self):
         """Area of the pulse in photoelectrons
         """
         pass
 
+    @area.setter
+    @BaseStorageObject._set_variable
+    def area(self, value): pass
+
     @property
-    def time_in_waveform(self):
+    @BaseStorageObject._fetch_variable
+    def index_of_maximum(self):
         """position of each S1 peak"""
         pass
 
+    @index_of_maximum.setter
+    @BaseStorageObject._set_variable
+    def index_of_maximum(self, value): pass
+
     @property
+    @BaseStorageObject._fetch_variable
     def height(self):
         """Highest point in peak in units of ADC counts
         """
         pass
 
-    @property
-    def width_fwhm(self):
-        """Width at full width half max
-
-        Units are ns.
-        """
-        pass
+    @height.setter
+    @BaseStorageObject._set_variable
+    def height(self, value): pass
 
     @property
+    @BaseStorageObject._fetch_variable
     def bounds(self):
         """Where the peak starts and ends in the sum waveform
         """
-        return (self.peak_dict['left'],
-                self.peak_dict['right'])
+        pass
+
+    @bounds.setter
+    @BaseStorageObject._set_variable
+    def bounds(self, value): pass
 
 
 class SumWaveform(BaseStorageObject):
