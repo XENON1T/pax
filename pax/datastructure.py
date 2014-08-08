@@ -302,7 +302,7 @@ class Event(BaseStorageObject):
         pass
 
     def append_waveform(self,
-                            short_name,
+                            name,
                             pmt_list,
                             samples,
                             name_of_filter=None,
@@ -313,7 +313,7 @@ class Event(BaseStorageObject):
         own SumWaveform class.
         """
         sw = SumWaveform()
-        sw.short_name = short_name
+        sw.name = name
         sw.pmt_list = pmt_list
         sw.samples = samples
         sw.name_of_filter = name_of_filter
@@ -390,13 +390,13 @@ class SumWaveform(BaseStorageObject):
 
     @property
     @BaseStorageObject._fetch_variable
-    def short_name(self):
+    def name(self):
         """e.g., top"""
         pass
 
-    @short_name.setter
+    @name.setter
     @BaseStorageObject._set_variable
-    def short_name(self, value): pass
+    def name(self, value): pass
 
     @property
     @BaseStorageObject._fetch_variable
