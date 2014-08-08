@@ -215,7 +215,7 @@ class Event(BaseStorageObject):
         if not isinstance(value, (list, tuple)):
             raise RuntimeError("Wrong type; must be ntuple.")
         for item in value:
-            if not isinstance(value, Peak):
+            if not isinstance(item, Peak):
                 raise ValueError("Must pass Peak class")
 
     @property
