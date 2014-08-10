@@ -66,14 +66,14 @@ releases.  Patch releases cannot modify this.</p>
 <dt id="pax.datastructure.Event.S1s">
 <tt class="descname">S1s</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.S1s" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of S1 (scintillation) signals
-Returns an <tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak2</span></tt> class.</p>
+Returns an <a class="reference internal" href="#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a> class.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.S2s">
 <tt class="descname">S2s</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.S2s" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of S2 (ionization) signals
-Returns an <tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak2</span></tt> class.</p>
+Returns an <a class="reference internal" href="#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a> class.</p>
 </dd></dl>
 
 <dl class="method">
@@ -118,15 +118,22 @@ Or rather, it starts from January 1, 1970.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pax.datastructure.Event.sample_duration">
-<tt class="descname">sample_duration</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.sample_duration" title="Permalink to this definition">¶</a></dt>
-<dd><p>Time duration of a sample in units of ns</p>
+<dt id="pax.datastructure.Event.occurrences">
+<tt class="descname">occurrences</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.occurrences" title="Permalink to this definition">¶</a></dt>
+<dd><p>Occurences</p>
+<p>Each one of these is like a &#8216;pulse&#8217; from one channel.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pax.datastructure.Event.user_array_0">
-<tt class="descname">user_array_0</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.user_array_0" title="Permalink to this definition">¶</a></dt>
-<dd><p>Unused array (userful for developing)</p>
+<dt id="pax.datastructure.Event.pmt_waveforms">
+<tt class="descname">pmt_waveforms</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.pmt_waveforms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Array of samples.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Event.sample_duration">
+<tt class="descname">sample_duration</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.sample_duration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Time duration of a sample in units of ns</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -173,7 +180,9 @@ Or rather, it starts from January 1, 1970.</p>
 <em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Peak</tt><big>(</big><em>kwargs=None</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.models.Model" title="pax.models.Model"><tt class="xref py py-class docutils literal"><span class="pre">pax.models.Model</span></tt></a></p>
 <p>Peak object</p>
-<p>Used for either S1 or S2</p>
+<p>Used for either S1 or S2.  Please do not add an &#8220;is_S1&#8221; or &#8220;is_S2&#8221; field because this
+can lead to discrepancies if an &#8216;is_S1&#8217; is in the S2 list.  Then we need to check
+for that.  Maybe we can do something smart with a method?  See Issue #30.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.area">
 <tt class="descname">area</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.area" title="Permalink to this definition">¶</a></dt>
@@ -396,85 +405,6 @@ override this method.</p>
 <dd><p>The string <tt class="docutils literal"><span class="pre">'True'</span></tt> (case insensitive) will be converted
 to <tt class="docutils literal"><span class="pre">True</span></tt>, as will any positive integers.</p>
 </dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.fields.FieldCollectionField">
-<em class="property">class </em><tt class="descclassname">pax.fields.</tt><tt class="descname">FieldCollectionField</tt><big>(</big><em>field_instance</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/pax/fields.html#FieldCollectionField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.FieldCollectionField" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.fields.BaseField" title="pax.fields.BaseField"><tt class="xref py py-class docutils literal"><span class="pre">pax.fields.BaseField</span></tt></a></p>
-<p>Field containing a list of the same type of fields.</p>
-<p>The constructor takes an instance of the field.</p>
-<p>Here are some examples:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s">&#39;legal_name&#39;</span><span class="p">:</span> <span class="s">&#39;John Smith&#39;</span><span class="p">,</span>
-            <span class="s">&#39;aliases&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;Larry&#39;</span><span class="p">,</span> <span class="s">&#39;Mo&#39;</span><span class="p">,</span> <span class="s">&#39;Curly&#39;</span><span class="p">]</span>
-<span class="p">}</span>
-
-<span class="k">class</span> <span class="nc">Person</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">legal_name</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">()</span>
-    <span class="n">aliases</span> <span class="o">=</span> <span class="n">FieldCollectionField</span><span class="p">(</span><span class="n">CharField</span><span class="p">())</span>
-
-<span class="n">p</span> <span class="o">=</span> <span class="n">Person</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>And now a quick REPL session:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">p</span><span class="o">.</span><span class="n">legal_name</span>
-<span class="go">u&#39;John Smith&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">p</span><span class="o">.</span><span class="n">aliases</span>
-<span class="go">[u&#39;Larry&#39;, u&#39;Mo&#39;, u&#39;Curly&#39;]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">p</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
-<span class="go">{&#39;legal_name&#39;: u&#39;John Smith&#39;, &#39;aliases&#39;: [u&#39;Larry&#39;, u&#39;Mo&#39;, u&#39;Curly&#39;]}</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">p</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span> <span class="o">==</span> <span class="n">p</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">serial</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-<span class="go">True</span>
-</pre></div>
-</div>
-<p>Here is a bit more complicated example involving args and kwargs:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s">&#39;name&#39;</span><span class="p">:</span> <span class="s">&#39;San Andreas&#39;</span><span class="p">,</span>
-            <span class="s">&#39;dates&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s">&#39;1906-05-11&#39;</span><span class="p">,</span> <span class="s">&#39;1948-11-02&#39;</span><span class="p">,</span> <span class="s">&#39;1970-01-01&#39;</span><span class="p">]</span>
-<span class="p">}</span>
-
-<span class="k">class</span> <span class="nc">FaultLine</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">name</span> <span class="o">=</span> <span class="n">CharField</span><span class="p">()</span>
-    <span class="n">earthquake_dates</span> <span class="o">=</span> <span class="n">FieldCollectionField</span><span class="p">(</span><span class="n">DateField</span><span class="p">(</span><span class="s">&#39;%Y-%m-</span><span class="si">%d</span><span class="s">&#39;</span><span class="p">,</span>
-                                            <span class="n">serial_format</span><span class="o">=</span><span class="s">&#39;%m-</span><span class="si">%d</span><span class="s">-%Y&#39;</span><span class="p">),</span>
-                                            <span class="n">source</span><span class="o">=</span><span class="s">&#39;dates&#39;</span><span class="p">)</span>
-
-<span class="n">f</span> <span class="o">=</span> <span class="n">FaultLine</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>Notice that source is passed to to the
-<tt class="xref py py-class docutils literal"><span class="pre">FieldCollectionField</span></tt>, not the
-<tt class="xref py py-class docutils literal"><span class="pre">DateField</span></tt>.</p>
-<p>Let&#8217;s check out the resulting <tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt> instance with the
-REPL:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">.</span><span class="n">name</span>
-<span class="go">u&#39;San Andreas&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">.</span><span class="n">earthquake_dates</span>
-<span class="go">[datetime.date(1906, 5, 11), datetime.date(1948, 11, 2), datetime.date(1970, 1, 1)]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
-<span class="go">{&#39;earthquake_dates&#39;: [datetime.date(1906, 5, 11), datetime.date(1948, 11, 2), datetime.date(1970, 1, 1)],</span>
-<span class="go"> &#39;name&#39;: u&#39;San Andreas&#39;}</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">serial</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-<span class="go">{&#39;earthquake_dates&#39;: [&#39;05-11-1906&#39;, &#39;11-02-1948&#39;, &#39;01-01-1970&#39;], &#39;name&#39;: u&#39;San Andreas&#39;}</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">f</span><span class="o">.</span><span class="n">to_json</span><span class="p">()</span>
-<span class="go">&#39;{&quot;earthquake_dates&quot;: [&quot;05-11-1906&quot;, &quot;11-02-1948&quot;, &quot;01-01-1970&quot;], &quot;name&quot;: &quot;San Andreas&quot;}&#39;</span>
-</pre></div>
-</div>
-<div class="admonition warning">
-<p class="first admonition-title">Warning</p>
-<p class="last">Do not use this for numpy arrays.</p>
-</div>
-<dl class="method">
-<dt id="pax.fields.FieldCollectionField.to_python">
-<tt class="descname">to_python</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/fields.html#FieldCollectionField.to_python"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.FieldCollectionField.to_python" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.fields.FieldCollectionField.to_serial">
-<tt class="descname">to_serial</tt><big>(</big><em>list_of_fields</em><big>)</big><a class="reference internal" href="_modules/pax/fields.html#FieldCollectionField.to_serial"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.FieldCollectionField.to_serial" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 </dd></dl>
 

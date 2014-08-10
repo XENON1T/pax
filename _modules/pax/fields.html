@@ -51,6 +51,7 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">logging</span>
 
 <div class="viewcode-block" id="BaseField"><a class="viewcode-back" href="../../pax.html#pax.fields.BaseField">[docs]</a><span class="k">class</span> <span class="nc">BaseField</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Base class for all field types.</span>
@@ -102,9 +103,14 @@
 <div class="viewcode-block" id="NumpyArrayField.to_python"><a class="viewcode-back" href="../../pax.html#pax.fields.NumpyArrayField.to_python">[docs]</a>    <span class="k">def</span> <span class="nf">to_python</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;Wrong data type; must be </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">))</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Casting.  Wrong data type; must be </span><span class="si">%s</span><span class="s">, not </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">),</span>
+                                                                                   <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">dtype</span><span class="p">)))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="nb">set</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">),</span>
+                            <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="nb">set</span><span class="p">)):</span>
             <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;Data must be array: not </span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)),</span>
@@ -264,98 +270,22 @@
 <div class="viewcode-block" id="ModelCollectionField.to_python"><a class="viewcode-back" href="../../pax.html#pax.fields.ModelCollectionField.to_python">[docs]</a>    <span class="k">def</span> <span class="nf">to_python</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">object_list</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
-            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wrapped_class</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_related_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-                <span class="nb">setattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_related_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_related_obj</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wrapped_class</span><span class="p">):</span>
+                <span class="n">obj</span> <span class="o">=</span> <span class="n">item</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wrapped_class</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_related_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="nb">setattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_related_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_related_obj</span><span class="p">)</span>
             <span class="n">object_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">object_list</span>
 </div>
 <div class="viewcode-block" id="ModelCollectionField.to_serial"><a class="viewcode-back" href="../../pax.html#pax.fields.ModelCollectionField.to_serial">[docs]</a>    <span class="k">def</span> <span class="nf">to_serial</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_instances</span><span class="p">):</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;or here&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">instance</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">serial</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">instance</span> <span class="ow">in</span> <span class="n">model_instances</span><span class="p">]</span>
 </div>
 <div class="viewcode-block" id="ModelCollectionField.append"><a class="viewcode-back" href="../../pax.html#pax.fields.ModelCollectionField.append">[docs]</a>    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_python</span><span class="p">()</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-
-</div></div>
-<div class="viewcode-block" id="FieldCollectionField"><a class="viewcode-back" href="../../pax.html#pax.fields.FieldCollectionField">[docs]</a><span class="k">class</span> <span class="nc">FieldCollectionField</span><span class="p">(</span><span class="n">BaseField</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Field containing a list of the same type of fields.</span>
-
-<span class="sd">    The constructor takes an instance of the field.</span>
-
-<span class="sd">    Here are some examples::</span>
-
-<span class="sd">        data = {</span>
-<span class="sd">                    &#39;legal_name&#39;: &#39;John Smith&#39;,</span>
-<span class="sd">                    &#39;aliases&#39;: [&#39;Larry&#39;, &#39;Mo&#39;, &#39;Curly&#39;]</span>
-<span class="sd">        }</span>
-
-<span class="sd">        class Person(Model):</span>
-<span class="sd">            legal_name = CharField()</span>
-<span class="sd">            aliases = FieldCollectionField(CharField())</span>
-
-<span class="sd">        p = Person(data)</span>
-
-<span class="sd">    And now a quick REPL session::</span>
-
-<span class="sd">        &gt;&gt;&gt; p.legal_name</span>
-<span class="sd">        u&#39;John Smith&#39;</span>
-<span class="sd">        &gt;&gt;&gt; p.aliases</span>
-<span class="sd">        [u&#39;Larry&#39;, u&#39;Mo&#39;, u&#39;Curly&#39;]</span>
-<span class="sd">        &gt;&gt;&gt; p.to_dict()</span>
-<span class="sd">        {&#39;legal_name&#39;: u&#39;John Smith&#39;, &#39;aliases&#39;: [u&#39;Larry&#39;, u&#39;Mo&#39;, u&#39;Curly&#39;]}</span>
-<span class="sd">        &gt;&gt;&gt; p.to_dict() == p.to_dict(serial=True)</span>
-<span class="sd">        True</span>
-
-<span class="sd">    Here is a bit more complicated example involving args and kwargs::</span>
-
-<span class="sd">        data = {</span>
-<span class="sd">                    &#39;name&#39;: &#39;San Andreas&#39;,</span>
-<span class="sd">                    &#39;dates&#39;: [&#39;1906-05-11&#39;, &#39;1948-11-02&#39;, &#39;1970-01-01&#39;]</span>
-<span class="sd">        }</span>
-
-<span class="sd">        class FaultLine(Model):</span>
-<span class="sd">            name = CharField()</span>
-<span class="sd">            earthquake_dates = FieldCollectionField(DateField(&#39;%Y-%m-%d&#39;,</span>
-<span class="sd">                                                    serial_format=&#39;%m-%d-%Y&#39;),</span>
-<span class="sd">                                                    source=&#39;dates&#39;)</span>
-
-<span class="sd">        f = FaultLine(data)</span>
-
-<span class="sd">    Notice that source is passed to to the</span>
-<span class="sd">    :class:`~micromodels.FieldCollectionField`, not the</span>
-<span class="sd">    :class:`~micromodels.DateField`.</span>
-
-<span class="sd">    Let&#39;s check out the resulting :class:`~micromodels.Model` instance with the</span>
-<span class="sd">    REPL::</span>
-
-<span class="sd">        &gt;&gt;&gt; f.name</span>
-<span class="sd">        u&#39;San Andreas&#39;</span>
-<span class="sd">        &gt;&gt;&gt; f.earthquake_dates</span>
-<span class="sd">        [datetime.date(1906, 5, 11), datetime.date(1948, 11, 2), datetime.date(1970, 1, 1)]</span>
-<span class="sd">        &gt;&gt;&gt; f.to_dict()</span>
-<span class="sd">        {&#39;earthquake_dates&#39;: [datetime.date(1906, 5, 11), datetime.date(1948, 11, 2), datetime.date(1970, 1, 1)],</span>
-<span class="sd">         &#39;name&#39;: u&#39;San Andreas&#39;}</span>
-<span class="sd">        &gt;&gt;&gt; f.to_dict(serial=True)</span>
-<span class="sd">        {&#39;earthquake_dates&#39;: [&#39;05-11-1906&#39;, &#39;11-02-1948&#39;, &#39;01-01-1970&#39;], &#39;name&#39;: u&#39;San Andreas&#39;}</span>
-<span class="sd">        &gt;&gt;&gt; f.to_json()</span>
-<span class="sd">        &#39;{&quot;earthquake_dates&quot;: [&quot;05-11-1906&quot;, &quot;11-02-1948&quot;, &quot;01-01-1970&quot;], &quot;name&quot;: &quot;San Andreas&quot;}&#39;</span>
-
-
-<span class="sd">    .. warning::  Do not use this for numpy arrays.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field_instance</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">FieldCollectionField</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span> <span class="o">=</span> <span class="n">field_instance</span>
-
-<div class="viewcode-block" id="FieldCollectionField.to_python"><a class="viewcode-back" href="../../pax.html#pax.fields.FieldCollectionField.to_python">[docs]</a>    <span class="k">def</span> <span class="nf">to_python</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">def</span> <span class="nf">convert</span><span class="p">(</span><span class="n">item</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span><span class="o">.</span><span class="n">populate</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_instance</span><span class="o">.</span><span class="n">to_python</span><span class="p">()</span>
-        <span class="k">return</span> <span class="p">[</span><span class="n">convert</span><span class="p">(</span><span class="n">item</span><span class="p">)</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="ow">or</span> <span class="p">[]]</span>
-</div>
-<div class="viewcode-block" id="FieldCollectionField.to_serial"><a class="viewcode-back" href="../../pax.html#pax.fields.FieldCollectionField.to_serial">[docs]</a>    <span class="k">def</span> <span class="nf">to_serial</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">list_of_fields</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_instance</span><span class="o">.</span><span class="n">to_serial</span><span class="p">(</span><span class="n">data</span><span class="p">)</span> <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">list_of_fields</span><span class="p">]</span>
 </pre></div></div></div>
 
           </div>

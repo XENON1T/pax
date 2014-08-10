@@ -64,12 +64,14 @@
 
 <span class="kn">from</span> <span class="nn">pax.models</span> <span class="kn">import</span> <span class="n">Model</span>
 <span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">fields</span> <span class="k">as</span> <span class="n">f</span>
-<span class="kn">from</span> <span class="nn">pax.fields</span> <span class="kn">import</span> <span class="n">IntegerField</span><span class="p">,</span> <span class="n">FloatField</span><span class="p">,</span> <span class="n">ModelCollectionField</span><span class="p">,</span> <span class="n">BooleanField</span><span class="p">,</span> <span class="n">StringField</span><span class="p">,</span> <span class="n">FieldCollectionField</span>
+<span class="kn">from</span> <span class="nn">pax.fields</span> <span class="kn">import</span> <span class="n">IntegerField</span><span class="p">,</span> <span class="n">FloatField</span><span class="p">,</span> <span class="n">ModelCollectionField</span><span class="p">,</span> <span class="n">StringField</span>
 
 <div class="viewcode-block" id="Peak"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak">[docs]</a><span class="k">class</span> <span class="nc">Peak</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Peak object</span>
 
-<span class="sd">    Used for either S1 or S2</span>
+<span class="sd">    Used for either S1 or S2.  Please do not add an &quot;is_S1&quot; or &quot;is_S2&quot; field because this</span>
+<span class="sd">    can lead to discrepancies if an &#39;is_S1&#39; is in the S2 list.  Then we need to check</span>
+<span class="sd">    for that.  Maybe we can do something smart with a method?  See Issue #30.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">area</span> <span class="o">=</span> <span class="n">FloatField</span><span class="p">()</span>  <span class="c">#: Area of the pulse in photoelectrons</span>
     <span class="n">index_of_maximum</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span> <span class="c">#: Index of maximum value within sum waveform.</span>
@@ -81,7 +83,7 @@
 <div class="viewcode-block" id="Waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Waveform">[docs]</a><span class="k">class</span> <span class="nc">Waveform</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class used to store sum (filtered or not) waveform information.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">is_filtered</span> <span class="o">=</span> <span class="n">BooleanField</span><span class="p">()</span>
+    <span class="n">is_filtered</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">BooleanField</span><span class="p">()</span>
     <span class="n">name_of_filter</span> <span class="o">=</span> <span class="n">StringField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s">&quot;none&quot;</span><span class="p">)</span> <span class="c">#: Name of the filter used (or None)</span>
     <span class="n">name</span> <span class="o">=</span> <span class="n">StringField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s">&quot;none&quot;</span><span class="p">)</span> <span class="c">#: e.g. top</span>
 
@@ -120,18 +122,15 @@
     <span class="n">user_float_3</span> <span class="o">=</span> <span class="n">FloatField</span><span class="p">()</span> <span class="c">#: Unused float (useful for developing)</span>
     <span class="n">user_float_4</span> <span class="o">=</span> <span class="n">FloatField</span><span class="p">()</span> <span class="c">#: Unused float (useful for developing)</span>
 
-    <span class="c">#: Unused array (userful for developing)</span>
-    <span class="n">user_array_0</span> <span class="o">=</span> <span class="n">FieldCollectionField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="p">[],</span>
-                                    <span class="n">field_instance</span><span class="o">=</span><span class="n">FloatField</span><span class="p">())</span>
 
     <span class="c">#: List of S1 (scintillation) signals</span>
     <span class="c">#</span>
-    <span class="c">#: Returns an :class:`pax.datastructure.Peak2` class.</span>
+    <span class="c">#: Returns an :class:`pax.datastructure.Peak` class.</span>
     <span class="n">S1s</span> <span class="o">=</span> <span class="n">ModelCollectionField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="p">[],</span> <span class="n">wrapped_class</span><span class="o">=</span><span class="n">Peak</span><span class="p">)</span>
 
     <span class="c">#: List of S2 (ionization) signals</span>
     <span class="c">#</span>
-    <span class="c">#: Returns an :class:`pax.datastructure.Peak2` class.</span>
+    <span class="c">#: Returns an :class:`pax.datastructure.Peak` class.</span>
     <span class="n">S2s</span> <span class="o">=</span> <span class="n">ModelCollectionField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="p">[],</span> <span class="n">wrapped_class</span><span class="o">=</span><span class="n">Peak</span><span class="p">)</span>
 
     <span class="c">#: Returns a list of sum waveforms</span>
@@ -148,12 +147,19 @@
     <span class="c">#:     event.pmt_waveforms[10]</span>
     <span class="c">#:</span>
     <span class="c">#:which returns a 1D array of samples.</span>
-    <span class="c">#pmt_waveforms =matrxi</span>
+    <span class="n">pmt_waveforms</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">NumpyArrayField</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span> <span class="c">#: Array of samples.</span>
+
+    <span class="c">#: Occurences</span>
+    <span class="c">#:</span>
+    <span class="c">#: Each one of these is like a &#39;pulse&#39; from one channel.</span>
+    <span class="n">occurrences</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">BaseField</span><span class="p">()</span>
+
+
 
 <div class="viewcode-block" id="Event.event_duration"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.event_duration">[docs]</a>    <span class="k">def</span> <span class="nf">event_duration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Duration of event window in units of ns</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_window</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_window</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_stop</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_start</span>
 </div>
 <div class="viewcode-block" id="Event.length"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.length">[docs]</a>    <span class="k">def</span> <span class="nf">length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Number of samples for the sum waveform</span>
