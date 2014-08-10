@@ -3,6 +3,8 @@ import math
 
 from pax import plugin, units
 
+from pax.datastructure import Waveform
+
 class JoinAndConvertWaveforms(plugin.TransformPlugin):
 
     """Take channel_occurrences, builds channel_waveforms
@@ -129,16 +131,18 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
         event.pmt_waveforms = pmt_waveform_matrix
         # Temp for Xerawdp matching: store uncorrected sum waveform
         universal_gain_correction = self.conversion_factor / (2*10**6)
-        event.append_waveform(
-            samples=uncorrected_sum_wave_for_s1 * universal_gain_correction,
-            name='uS1',
-            pmt_list=set(list(range(1,178))) - self.config['pmts_excluded_for_s1'],
-        )
-        event.append_waveform(
-            samples=uncorrected_sum_wave_for_s2 * universal_gain_correction,
-            name='uS2',
-            pmt_list=set(list(range(1,178))),
-        )
+        event.waveforms.append(Waveform({
+            'samples' : uncorrected_sum_wave_for_s1 * universal_gain_correction,
+            'name' : 'uS1',
+            'pmt_list' : set(list(range(1,178))) - self.config['pmts_excluded_for_s1'],
+            }))
+
+        event.waveforms.append(Waveform({
+                    'samples' : uncorrected_sum_wave_for_s2 * universal_gain_correction,
+                    'name' : 'uS2',
+                    'pmt_list' : set(list(range(1,178))),
+                    }))
+
         # TODO: Maybe Delete the channel_occurrences from the event structure, we don't need it anymore
 
         return event
@@ -167,8 +171,12 @@ class SumWaveforms(plugin.TransformPlugin):
     def transform_event(self, event):
         # Compute summed waveforms
         for group, members in self.channel_groups.items():
-            print(group)
-            event.append_waveform(samples=np.sum(event.pmt_waveforms[[list(members)]], axis=0), name=group, pmt_list=members)
+            self.log.warning(group)
+            event.waveforms.append((Waveform({'samples' : np.sum(event.pmt_waveforms[[list(members)]],
+                                                         axis=0),
+                                              'name' : group,
+                                              'pmt_list' : members,
+                                              })))
 
         return event
 

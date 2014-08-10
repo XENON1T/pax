@@ -2,6 +2,8 @@ import numpy as np
 
 from pax import plugin
 
+from pax.datastructure import Waveform
+
 class GenericFilter(plugin.TransformPlugin):
 
     """Generic filter base class
@@ -76,7 +78,9 @@ class GenericFilter(plugin.TransformPlugin):
             except Exception as e:
                 self.log.warning("Error during waveform mutilation: " + str(e) + ". So what...")
         # Store the result
-        event.append_waveform(samples=output, name=self.output_name, pmt_list=input_w.pmt_list)
+        event.waveforms.append(Waveform({'samples' : output,
+                                         'name' : self.output_name,
+                                         'pmt_list' : input_w.pmt_list}))
         return event
 
 

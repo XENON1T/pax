@@ -12,12 +12,10 @@ There are variables within the class that refer to :class:`pax.datastructure.Pea
 
 .. autoclass:: pax.datastructure.Peak
     :members:
-    :inherited-members:
     :undoc-members:
 
 Waveforms, which are not typically saved, follow the following format.
 
-.. autoclass:: pax.datastructure.SumWaveform
+.. autoclass:: pax.datastructure.Waveform
     :members:
-    :inherited-members:
     :undoc-members:

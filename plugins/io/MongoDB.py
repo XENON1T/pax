@@ -35,8 +35,9 @@ class MongoDBInput(plugin.InputPlugin):
             # This involves parsing MongoDB documents using WAX output format
             event = Event()
             event.event_number = i # TODO: should come from Mongo
-            event.event_window = tuple(doc_event['range'][0] * 10,
-                                       doc_event['range'][1] * 10)
+
+            event.event_start = doc_event['range'][0] * 10
+            event.event_stop = doc_event['range'][1] * 10
 
             channel_occurrences = {}
 
@@ -46,7 +47,7 @@ class MongoDBInput(plugin.InputPlugin):
                     channel_occurrences[channel] = []
 
                 channel_occurrences[channel].append((
-                    doc_occurrence['time'] - event.event_start(),  # Start sample index
+                    doc_occurrence['time'] - event.event_start,  # Start sample index
                     np.fromstring(doc_occurrence['data'], dtype=np.int16)  # SumWaveform occurrence data
                 ))
 

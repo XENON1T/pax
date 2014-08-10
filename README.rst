@@ -47,18 +47,25 @@ Features
 --------
 
 * Digital signal processing
+
  * Sum waveform for top, bottom, veto
  * Filtering with raised cosine filter
  * Peak finding of S1 and S2
+
 * I/O
+
  * MongoDB (used online for DAQ)
  * XED (XENON100 format)
  * ROOT
  * Pickle
  * Plots
+
 * Position reconstruction of events
+
  * Demo reconstruction algorithm of charge-weighted sum
+
 * Interactive display
+
  * Interactive waveform with peaks annotated
  * PMT top layer hit pattern
  * Display is web browser-based. Allows navigation (next event, switch plot) within browser
