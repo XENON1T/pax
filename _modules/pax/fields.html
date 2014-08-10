@@ -116,7 +116,9 @@
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;Data must be array: not </span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)),</span>
                                                                 <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)))</span>
 
-
+</div>
+<div class="viewcode-block" id="NumpyArrayField.to_serial"><a class="viewcode-back" href="../../pax.html#pax.fields.NumpyArrayField.to_serial">[docs]</a>    <span class="k">def</span> <span class="nf">to_serial</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_instances</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">instance</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">serial</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">instance</span> <span class="ow">in</span> <span class="n">model_instances</span><span class="p">]</span>
 </div></div>
 <div class="viewcode-block" id="StringField"><a class="viewcode-back" href="../../pax.html#pax.fields.StringField">[docs]</a><span class="k">class</span> <span class="nc">StringField</span><span class="p">(</span><span class="n">BaseField</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Field to represent a simple Unicode string value.&quot;&quot;&quot;</span>
@@ -281,7 +283,6 @@
         <span class="k">return</span> <span class="n">object_list</span>
 </div>
 <div class="viewcode-block" id="ModelCollectionField.to_serial"><a class="viewcode-back" href="../../pax.html#pax.fields.ModelCollectionField.to_serial">[docs]</a>    <span class="k">def</span> <span class="nf">to_serial</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_instances</span><span class="p">):</span>
-        <span class="k">print</span><span class="p">(</span><span class="s">&quot;or here&quot;</span><span class="p">)</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">instance</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">serial</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">instance</span> <span class="ow">in</span> <span class="n">model_instances</span><span class="p">]</span>
 </div>
 <div class="viewcode-block" id="ModelCollectionField.append"><a class="viewcode-back" href="../../pax.html#pax.fields.ModelCollectionField.append">[docs]</a>    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
