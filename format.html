@@ -57,7 +57,7 @@
 <p>All data available for the current event is stored in the event data structure. Input plugins are required to fill the event with a bare amount of raw information. Transform plugins subsequently add their processed variables.</p>
 <dl class="class">
 <dt id="pax.datastructure.Event">
-<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Event</tt><a class="reference internal" href="_modules/pax/datastructure.html#Event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Event</tt><big>(</big><em>kwargs=None</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event" title="Permalink to this definition">¶</a></dt>
 <dd><p>Event class</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Event.S1s">
@@ -71,14 +71,6 @@ Returns an <tt class="xref py py-class docutils literal"><span class="pre">pax.d
 <tt class="descname">S2s</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.S2s" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of S2 (ionization) signals
 Returns an <tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak2</span></tt> class.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.datastructure.Event.append_waveform">
-<tt class="descname">append_waveform</tt><big>(</big><em>name</em>, <em>pmt_list</em>, <em>samples</em>, <em>name_of_filter=None</em>, <em>is_filtered=False</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.append_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.append_waveform" title="Permalink to this definition">¶</a></dt>
-<dd><p>Append a sum waveform to the event</p>
-<p>This is useful for adding sum waveforms without having to create your
-own SumWaveform class.</p>
 </dd></dl>
 
 <dl class="method">
@@ -129,6 +121,12 @@ Or rather, it starts from January 1, 1970.</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="pax.datastructure.Event.user_array_0">
+<tt class="descname">user_array_0</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.user_array_0" title="Permalink to this definition">¶</a></dt>
+<dd><p>Unused array (userful for developing)</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="pax.datastructure.Event.user_float_0">
 <tt class="descname">user_float_0</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.user_float_0" title="Permalink to this definition">¶</a></dt>
 <dd><p>Unused float (useful for developing)</p>
@@ -170,7 +168,7 @@ Or rather, it starts from January 1, 1970.</p>
 <p>There are variables within the class that refer to <a class="reference internal" href="pax.html#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a> and <tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.SumWaveform</span></tt> objects.  These have their own class structure.  For example, both S1 and S2 peaks follow the following syntax.</p>
 <dl class="class">
 <dt id="pax.datastructure.Peak">
-<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Peak</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Peak</tt><big>(</big><em>kwargs=None</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak" title="Permalink to this definition">¶</a></dt>
 <dd><p>Peak object</p>
 <p>Used for either S1 or S2</p>
 <dl class="attribute">
@@ -208,7 +206,7 @@ Or rather, it starts from January 1, 1970.</p>
 <p>Waveforms, which are not typically saved, follow the following format.</p>
 <dl class="class">
 <dt id="pax.datastructure.Waveform">
-<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Waveform</tt><a class="reference internal" href="_modules/pax/datastructure.html#Waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Waveform" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Waveform</tt><big>(</big><em>kwargs=None</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Waveform" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class used to store sum (filtered or not) waveform information.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Waveform.name">
@@ -220,6 +218,18 @@ Or rather, it starts from January 1, 1970.</p>
 <dt id="pax.datastructure.Waveform.name_of_filter">
 <tt class="descname">name_of_filter</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Waveform.name_of_filter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Name of the filter used (or None)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Waveform.pmt_list">
+<tt class="descname">pmt_list</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Waveform.pmt_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Array of PMT numbers included in this waveform</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Waveform.samples">
+<tt class="descname">samples</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Waveform.samples" title="Permalink to this definition">¶</a></dt>
+<dd><p>Array of samples.</p>
 </dd></dl>
 
 </dd></dl>

@@ -63,7 +63,8 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 
 <span class="kn">from</span> <span class="nn">pax.models</span> <span class="kn">import</span> <span class="n">Model</span>
-<span class="kn">from</span> <span class="nn">pax.fields</span> <span class="kn">import</span> <span class="n">IntegerField</span><span class="p">,</span> <span class="n">FloatField</span><span class="p">,</span> <span class="n">ModelCollectionField</span><span class="p">,</span> <span class="n">BooleanField</span><span class="p">,</span> <span class="n">StringField</span>
+<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">fields</span> <span class="k">as</span> <span class="n">f</span>
+<span class="kn">from</span> <span class="nn">pax.fields</span> <span class="kn">import</span> <span class="n">IntegerField</span><span class="p">,</span> <span class="n">FloatField</span><span class="p">,</span> <span class="n">ModelCollectionField</span><span class="p">,</span> <span class="n">BooleanField</span><span class="p">,</span> <span class="n">StringField</span><span class="p">,</span> <span class="n">FieldCollectionField</span>
 
 <div class="viewcode-block" id="Peak"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak">[docs]</a><span class="k">class</span> <span class="nc">Peak</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Peak object</span>
@@ -81,10 +82,13 @@
     <span class="sd">&quot;&quot;&quot;Class used to store sum (filtered or not) waveform information.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">is_filtered</span> <span class="o">=</span> <span class="n">BooleanField</span><span class="p">()</span>
-    <span class="n">name_of_filter</span> <span class="o">=</span> <span class="n">StringField</span><span class="p">()</span> <span class="c">#: Name of the filter used (or None)</span>
-    <span class="n">name</span> <span class="o">=</span> <span class="n">StringField</span><span class="p">()</span> <span class="c">#: e.g. top</span>
-    <span class="c">#pmt_list = list  #: Array of PMT numbers included in this waveform</span>
-    <span class="c">#samples = list #: Array of samples.</span>
+    <span class="n">name_of_filter</span> <span class="o">=</span> <span class="n">StringField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s">&quot;none&quot;</span><span class="p">)</span> <span class="c">#: Name of the filter used (or None)</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">StringField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s">&quot;none&quot;</span><span class="p">)</span> <span class="c">#: e.g. top</span>
+
+    <span class="c">#: Array of PMT numbers included in this waveform</span>
+    <span class="n">pmt_list</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">NumpyArrayField</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+
+    <span class="n">samples</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">NumpyArrayField</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span> <span class="c">#: Array of samples.</span>
 </div>
 <div class="viewcode-block" id="Event"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event">[docs]</a><span class="k">class</span> <span class="nc">Event</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Event class</span>
@@ -96,7 +100,7 @@
 <span class="sd">    Always positive.&quot;&quot;&quot;</span>
 
     <span class="c">#: Time duration of a sample in units of ns</span>
-    <span class="n">sample_duration</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">sample_duration</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 
     <span class="c">#: Start time of the event.</span>
     <span class="c">#:</span>
@@ -116,23 +120,24 @@
     <span class="n">user_float_3</span> <span class="o">=</span> <span class="n">FloatField</span><span class="p">()</span> <span class="c">#: Unused float (useful for developing)</span>
     <span class="n">user_float_4</span> <span class="o">=</span> <span class="n">FloatField</span><span class="p">()</span> <span class="c">#: Unused float (useful for developing)</span>
 
-    <span class="c">#user_array_0</span>
-    <span class="c">#user_array_1</span>
+    <span class="c">#: Unused array (userful for developing)</span>
+    <span class="n">user_array_0</span> <span class="o">=</span> <span class="n">FieldCollectionField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="p">[],</span>
+                                    <span class="n">field_instance</span><span class="o">=</span><span class="n">FloatField</span><span class="p">())</span>
 
     <span class="c">#: List of S1 (scintillation) signals</span>
     <span class="c">#</span>
     <span class="c">#: Returns an :class:`pax.datastructure.Peak2` class.</span>
-    <span class="n">S1s</span> <span class="o">=</span> <span class="n">ModelCollectionField</span><span class="p">(</span><span class="n">Peak</span><span class="p">)</span>
+    <span class="n">S1s</span> <span class="o">=</span> <span class="n">ModelCollectionField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="p">[],</span> <span class="n">wrapped_class</span><span class="o">=</span><span class="n">Peak</span><span class="p">)</span>
 
     <span class="c">#: List of S2 (ionization) signals</span>
     <span class="c">#</span>
     <span class="c">#: Returns an :class:`pax.datastructure.Peak2` class.</span>
-    <span class="n">S2s</span> <span class="o">=</span> <span class="n">ModelCollectionField</span><span class="p">(</span><span class="n">Peak</span><span class="p">)</span>
+    <span class="n">S2s</span> <span class="o">=</span> <span class="n">ModelCollectionField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="p">[],</span> <span class="n">wrapped_class</span><span class="o">=</span><span class="n">Peak</span><span class="p">)</span>
 
     <span class="c">#: Returns a list of sum waveforms</span>
     <span class="c">#:</span>
     <span class="c">#: Returns an :class:`pax.datastructure.SumWaveform` class.</span>
-    <span class="n">waveforms</span> <span class="o">=</span> <span class="n">ModelCollectionField</span><span class="p">(</span><span class="n">Waveform</span><span class="p">)</span>
+    <span class="n">waveforms</span> <span class="o">=</span> <span class="n">ModelCollectionField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="p">[],</span> <span class="n">wrapped_class</span><span class="o">=</span><span class="n">Waveform</span><span class="p">)</span>
 
     <span class="c">#: A 2D array of all the PMT waveforms.</span>
     <span class="c">#:</span>
@@ -154,26 +159,6 @@
         <span class="sd">&quot;&quot;&quot;Number of samples for the sum waveform</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">event_duration</span><span class="p">()</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_duration</span><span class="p">)</span>
-</div>
-<div class="viewcode-block" id="Event.append_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.append_waveform">[docs]</a>    <span class="k">def</span> <span class="nf">append_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                            <span class="n">name</span><span class="p">,</span>
-                            <span class="n">pmt_list</span><span class="p">,</span>
-                            <span class="n">samples</span><span class="p">,</span>
-                            <span class="n">name_of_filter</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
-                            <span class="n">is_filtered</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Append a sum waveform to the event</span>
-
-<span class="sd">        This is useful for adding sum waveforms without having to create your</span>
-<span class="sd">        own SumWaveform class.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">sw</span> <span class="o">=</span> <span class="n">SumWaveform</span><span class="p">()</span>
-        <span class="n">sw</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
-        <span class="n">sw</span><span class="o">.</span><span class="n">pmt_list</span> <span class="o">=</span> <span class="n">pmt_list</span>
-        <span class="n">sw</span><span class="o">.</span><span class="n">samples</span> <span class="o">=</span> <span class="n">samples</span>
-        <span class="n">sw</span><span class="o">.</span><span class="n">name_of_filter</span> <span class="o">=</span> <span class="n">name_of_filter</span>
-        <span class="n">sw</span><span class="o">.</span><span class="n">is_filtered</span> <span class="o">=</span> <span class="n">is_filtered</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">waveforms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sw</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="Event.get_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.get_waveform">[docs]</a>    <span class="k">def</span> <span class="nf">get_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get waveform for name</span>
