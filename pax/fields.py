@@ -221,96 +221,20 @@ class ModelCollectionField(WrappedObjectField):
     def to_python(self):
         object_list = []
         for item in self.data:
-            obj = self._wrapped_class.from_dict(item)
-            if self._related_name is not None:
-                setattr(obj, self._related_name, self._related_obj)
+            if isinstance(item, self._wrapped_class):
+                obj = item
+            else:
+                obj = self._wrapped_class.from_dict(item)
+                if self._related_name is not None:
+                    setattr(obj, self._related_name, self._related_obj)
             object_list.append(obj)
 
         return object_list
 
     def to_serial(self, model_instances):
+        print("or here")
         return [instance.to_dict(serial=True) for instance in model_instances]
 
     def append(self, value):
         self.list = self.to_python().append(value)
-
-
-class FieldCollectionField(BaseField):
-    """Field containing a list of the same type of fields.
-
-    The constructor takes an instance of the field.
-
-    Here are some examples::
-
-        data = {
-                    'legal_name': 'John Smith',
-                    'aliases': ['Larry', 'Mo', 'Curly']
-        }
-
-        class Person(Model):
-            legal_name = CharField()
-            aliases = FieldCollectionField(CharField())
-
-        p = Person(data)
-
-    And now a quick REPL session::
-
-        >>> p.legal_name
-        u'John Smith'
-        >>> p.aliases
-        [u'Larry', u'Mo', u'Curly']
-        >>> p.to_dict()
-        {'legal_name': u'John Smith', 'aliases': [u'Larry', u'Mo', u'Curly']}
-        >>> p.to_dict() == p.to_dict(serial=True)
-        True
-
-    Here is a bit more complicated example involving args and kwargs::
-
-        data = {
-                    'name': 'San Andreas',
-                    'dates': ['1906-05-11', '1948-11-02', '1970-01-01']
-        }
-
-        class FaultLine(Model):
-            name = CharField()
-            earthquake_dates = FieldCollectionField(DateField('%Y-%m-%d',
-                                                    serial_format='%m-%d-%Y'),
-                                                    source='dates')
-
-        f = FaultLine(data)
-
-    Notice that source is passed to to the
-    :class:`~micromodels.FieldCollectionField`, not the
-    :class:`~micromodels.DateField`.
-
-    Let's check out the resulting :class:`~micromodels.Model` instance with the
-    REPL::
-
-        >>> f.name
-        u'San Andreas'
-        >>> f.earthquake_dates
-        [datetime.date(1906, 5, 11), datetime.date(1948, 11, 2), datetime.date(1970, 1, 1)]
-        >>> f.to_dict()
-        {'earthquake_dates': [datetime.date(1906, 5, 11), datetime.date(1948, 11, 2), datetime.date(1970, 1, 1)],
-         'name': u'San Andreas'}
-        >>> f.to_dict(serial=True)
-        {'earthquake_dates': ['05-11-1906', '11-02-1948', '01-01-1970'], 'name': u'San Andreas'}
-        >>> f.to_json()
-        '{"earthquake_dates": ["05-11-1906", "11-02-1948", "01-01-1970"], "name": "San Andreas"}'
-
-
-    .. warning::  Do not use this for numpy arrays.
-    """
-    def __init__(self, field_instance, **kwargs):
-        super(FieldCollectionField, self).__init__(**kwargs)
-        self._instance = field_instance
-
-    def to_python(self):
-        def convert(item):
-            self._instance.populate(item)
-            return self._instance.to_python()
-        return [convert(item) for item in self.data or []]
-
-    def to_serial(self, list_of_fields):
-        return [self._instance.to_serial(data) for data in list_of_fields]
 
