@@ -39,9 +39,9 @@ class Waveform(Model):
     name = StringField(default="none") #: e.g. top
 
     #: Array of PMT numbers included in this waveform
-    pmt_list = f.NumpyArrayField(dtype=np.int16)
+    pmt_list = f.NumpyArrayField(dtype=np.float64)
 
-    samples = f.NumpyArrayField(dtype=np.int16) #: Array of samples.
+    samples = f.NumpyArrayField(dtype=np.float64) #: Array of samples.
 
 class Event(Model):
     """Event class
@@ -98,7 +98,7 @@ class Event(Model):
     #:     event.pmt_waveforms[10]
     #:
     #:which returns a 1D array of samples.
-    pmt_waveforms = f.NumpyArrayField(dtype=np.int32) #: Array of samples.
+    pmt_waveforms = f.NumpyArrayField(dtype=np.float64) #: Array of samples.
 
     #: Occurences
     #:
