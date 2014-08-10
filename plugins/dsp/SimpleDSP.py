@@ -3,13 +3,6 @@ from pax import plugin, units, datastructure
 
 
 class JoinAndConvertWaveforms(plugin.TransformPlugin):
-    """Take channel_occurrences, builds channel_waveforms
-
-    Between occurrence waveforms (i.e. pulses...), zeroes are added.
-    The waveforms returned will be converted to pe/ns and baseline-corrected.
-    If a channel is absent from channel_occurrences, it wil be absent from channel_waveforms.
-
-    """
 
     def startup(self):
         c = self.config
@@ -25,7 +18,7 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
 
         pmts = 1+max(self.config['pmts_veto'])   # TODO: really??
         event.pmt_waveforms = np.zeros((pmts, event.length()))
-        # Todo: these two should also go in event class
+        # Should these go into event class?
         baselines = np.zeros(pmts)
         baseline_stdevs = np.zeros(pmts)
 
@@ -56,7 +49,6 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
             ])
             baseline_stdevs[channel] = np.std(baseline_samples)
 
-
             # Convert and store the PMT waveform in the right place
             for i, (start_index, pulse_wave) in enumerate(waveform_occurrences):
                 event.pmt_waveforms[channel][
@@ -84,16 +76,16 @@ class SumWaveforms(plugin.TransformPlugin):
     def transform_event(self, event):
         # Compute summed waveforms
         for group, members in self.channel_groups.items():
-            event.append_waveform(
-                samples=np.sum(event.pmt_waveforms[[list(members)]], axis=0),
-                name=group,
-                pmt_list=members
-            )
-        event.append_waveform(
-            samples=event.get_waveform('top').samples + event.get_waveform('bottom').samples,
-            name='tpc',
-            pmt_list=(self.channel_groups['top'] | self.channel_groups['bottom'])
-        )
+            event.waveforms.append(datastructure.Waveform({
+                'samples':  np.sum(event.pmt_waveforms[[list(members)]], axis=0),
+                'name':     group,
+                'pmt_list': members
+            }))
+        event.waveforms.append(datastructure.Waveform({
+            'samples':  event.get_waveform('top').samples + event.get_waveform('bottom').samples,
+            'name':     'tpc',
+            'pmt_list': (self.channel_groups['top'] | self.channel_groups['bottom'])
+        }))
         return event
 
 
@@ -101,11 +93,12 @@ class S2Filter(plugin.TransformPlugin):
 
     def transform_event(self, event):
         input_w = event.get_waveform('tpc')
-        event.append_waveform(
-            name='filtered_for_s2',
-            samples=np.convolve(input_w.samples, self.config['normalized_filter_ir'], 'same'),
-            pmt_list=input_w.pmt_list
-        )
+        event.waveforms.append(datastructure.Waveform({
+            'name':     'filtered_for_s2',
+            'samples':  np.convolve(input_w.samples, self.config['normalized_filter_ir'], 'same'),
+            'pmt_list': input_w.pmt_list,
+        }))
+
         return event
 
 
@@ -121,14 +114,13 @@ class FindPeaks(plugin.TransformPlugin):
             left = itv_left
             right = itv_right
             self.log.debug("S2 candidate peak %s-%s-%s" % (left, max_idx, right))
-            brand_new_peak = datastructure.Peak(
-                area=np.sum(unfiltered[left:right]),
-                index_of_maximum=max_idx,
-                height=unfiltered[max_idx],
-                left=left,
-                right=right,
-            )
-            event.S2s.append(brand_new_peak)
+            event.S2s.append(datastructure.Peak({
+                'area':             np.sum(unfiltered[left:right]),
+                'index_of_maximum': max_idx,
+                'height':           unfiltered[max_idx],
+                'left':             left,
+                'right':            right,
+            }))
         return event
 
     @staticmethod

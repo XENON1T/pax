@@ -12,12 +12,12 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
     def transform_event(self, event):
         # Load settings here, so we are sure dynamic threshold stuff etc gets reset
         # Don't need to move these to ini I think, this plugin is meant to match Xerawdp, which always used these
-        self.settings_for_peaks = [ #We need a specific order, so we can't use a dict
+        self.settings_for_peaks = [   # We need a specific order, so we can't use a dict
             ('large_s2', {
                 'threshold':        0.6241506363,
                 'left_boundary_to_height_ratio':    0.005,
                 'right_boundary_to_height_ratio':   0.002,
-                'min_length':       35+1,   #+1 as Xerawdp tests for ... > minwidth, which is stupid, so my code doesn't
+                'min_length':       35+1,  # +1 as Xerawdp tests for ... > minwidth, which is stupid, so my code doesn't
                 'max_length':       float('inf'),
                 'min_base_interval_length': 60+1,
                 'max_base_interval_length': float('inf'),
@@ -486,13 +486,13 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             left -= 2
             right += 2
         self.log.debug("! Appending %s (%s-%s-%s) to peaks" % (peak_type, left, max_idx, right))
-        brand_new_peak =  datastructure.Peak({
-                'area' : np.sum(signal[left:right]),
-                'index_of_maximum' : max_idx, #Yeah, that's a waste of time! But it is really needed for s2s at least...  # TODO: Make clearer messages? 
-                'height' : height,
-                'left' : left,
-                'right' : right,
-                })
+        brand_new_peak = datastructure.Peak({
+            'area':             np.sum(signal[left:right]),   # Waste of time, only gets used for sorting s2s...
+            'index_of_maximum': max_idx,
+            'height':           height,
+            'left':             left,
+            'right':            right,
+        })
 
         if peak_type == 's1':
             event.S1s.append(brand_new_peak)
