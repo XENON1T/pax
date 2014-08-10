@@ -68,6 +68,8 @@ class NumpyArrayField(BaseField):
                                                                 str(self.data)))
 
 
+    def to_serial(self, model_instances):
+        return [instance.to_dict(serial=True) for instance in model_instances]
 
 class StringField(BaseField):
     """Field to represent a simple Unicode string value."""
@@ -232,7 +234,6 @@ class ModelCollectionField(WrappedObjectField):
         return object_list
 
     def to_serial(self, model_instances):
-        print("or here")
         return [instance.to_dict(serial=True) for instance in model_instances]
 
     def append(self, value):

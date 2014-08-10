@@ -1,10 +1,7 @@
 """Fork of micromodels
 """
 
-try:
-    import json
-except ImportError:
-    import simplejson as json
+import numpyson
 
 from .fields import BaseField
 
@@ -147,4 +144,4 @@ class Model(object, metaclass=ModelMeta):
         relies on the :meth:`~micromodels.Model.to_dict` method.
 
         '''
-        return json.dumps(self.to_dict(serial=True))
+        return numpyson.dumps(self.to_dict(serial=True))
