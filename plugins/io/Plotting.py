@@ -30,6 +30,9 @@ class PlottingWaveform(plugin.OutputPlugin):
                                         fc="0.6", ec="none",
                                         connectionstyle="angle3,angleA=0,angleB=-90"))
 
+        # plt.plot(event.get_waveform('tpc').samples,  label='TPC')
+        # plt.plot(event.get_waveform('filtered_for_s2').samples, label='TPC - filtered')
+        # plt.plot(event.get_waveform('veto').samples, label='Veto')
         plt.plot(event.get_waveform('uS1').samples, label='S1 peakfinding')
         plt.plot(event.get_waveform('uS2').samples, label='S2 peakfinding')
         plt.plot(event.get_waveform('filtered_for_large_s2').samples, label='Large s2 filtered')

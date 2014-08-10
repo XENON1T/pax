@@ -169,7 +169,7 @@ class XedInput(plugin.InputPlugin):
         ev_start = event_layer_metadata['utc_time']*units.s +event_layer_metadata['utc_time_usec']*units.us
         #TODO: don't hardcode sample size...
         dt = 10*units.ns
-        event.event_window = (ev_start, ev_start + event_layer_metadata['samples_in_event']*dt)
+        event.event_window = (ev_start, ev_start + (event_layer_metadata['samples_in_event']-1+1)*dt) #+1 Temp for fence post error in event class!!
         event.sample_duration = dt
         return event
         # Finally, we make some of the Meta data provided in the XED-file available in the event structure
