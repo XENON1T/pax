@@ -60,14 +60,6 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
 
 class SumWaveforms(plugin.TransformPlugin):
 
-    """Build the sum waveforms for, top, bottom, top_and_bottom, veto
-
-    Since channel waveforms are already gain corrected, we can just add the appropriate channel waveforms.
-    If none of the channels in a group contribute, the summed waveform will be all zeroes.
-    This guarantees that e.g. event['processed_waveforms']['top_and_bottom'] exists.
-
-    """
-
     def startup(self):
         self.channel_groups = {'top': self.config['pmts_top'],
                                'bottom': self.config['pmts_bottom'],
