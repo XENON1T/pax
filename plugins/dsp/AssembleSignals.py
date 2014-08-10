@@ -1,6 +1,4 @@
 import numpy as np
-import math
-
 from pax import plugin, units
 
 from pax.datastructure import Waveform
@@ -71,6 +69,7 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
 
             # Assemble the waveform pulse by pulse, starting from an all-zeroes waveform
             wave = np.zeros(event.length())
+
             for i, (starting_position, wave_occurrence) in enumerate(waveform_occurrences):
 
                 # Check for pulses starting right after previous ones: Xerawdp doesn't recompute baselines
@@ -172,7 +171,7 @@ class SumWaveforms(plugin.TransformPlugin):
         # Compute summed waveforms
         for group, members in self.channel_groups.items():
             self.log.warning(group)
-            event.waveforms.append((Waveform({'samples' : np.sum(event.pmt_waveforms[[list(members)]],
+            event.waveforms.append((Waveform({'samples' : np.sum(event.pmt_waveforms[[list(members)]], axis=0),
                                                          axis=0),
                                               'name' : group,
                                               'pmt_list' : members,

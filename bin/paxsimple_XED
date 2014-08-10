@@ -4,7 +4,13 @@ from pax import pax
 config_overload = """
 [pax]
 input = 'XED.XedInput'
-output = 'Plotting.PlottingWaveform'
+
+dsp = ['SimpleDSP.JoinAndConvertWaveforms',
+       'SimpleDSP.SumWaveforms',
+       'SimpleDSP.S2Filter',
+       'SimpleDSP.FindPeaks']
+
+#output = 'Plotting.PlottingWaveform'
 #output = 'CSV.WriteCSVPeakwise'
 
 [XED.XedInput]
