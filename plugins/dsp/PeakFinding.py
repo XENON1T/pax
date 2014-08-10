@@ -486,14 +486,14 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             left -= 2
             right += 2
         self.log.debug("! Appending %s (%s-%s-%s) to peaks" % (peak_type, left, max_idx, right))
-        brand_new_peak =  datastructure.Peak(
-                area=np.sum(signal[left:right]),
-                index_of_maximum=max_idx, #Yeah, that's a waste of time! But it is really needed for s2s at least...
-                height= height,
-                left=left,
-                right=right,
-                #width_fwhm=0
-        )
+        brand_new_peak =  datastructure.Peak({
+                'area' : np.sum(signal[left:right]),
+                'index_of_maximum' : max_idx, #Yeah, that's a waste of time! But it is really needed for s2s at least...  # TODO: Make clearer messages? 
+                'height' : height,
+                'left' : left,
+                'right' : right,
+                })
+
         if peak_type == 's1':
             event.S1s.append(brand_new_peak)
         else:
@@ -614,17 +614,20 @@ class ComputePeakProperties(plugin.TransformPlugin):
         """
 
         # Compute relevant peak quantities for each pmt's peak: height, FWHM, FWTM, area, ..
-        #TODO: remove this ugly hack before Chris sees it
-        for p in event.S1s:
-            setattr(p,'is_s1',True)
-        for i, peak in enumerate(event.S1s + event.S2s):
+
+        #  Create a list of IDs that we can 'zip' in with our summed S1 and S2 list
+        is_s1_ids = np.zeros(len(event.S1s + event.S2s))
+        is_s1_ids[0:len(event.S1s)] = 1
+
+        for i, values in enumerate(zip((event.S1s + event.S2s), is_s1_ids)):
+            peak, is_S1 = values
             # Hack for Xerawdp matching: we need to compute the area of EVERY CHANNEL in EVERY PEAK
             # The only reason we do this is because channels with negative area don't get contribute to a peak's area...
             areas_per_pmt = {}
             for channel, wave_data in enumerate(event.pmt_waveforms):
                 #TODO: Don't hardcode this...!!!
                 if channel > 178: continue
-                if hasattr(peak,'is_s1') and channel in self.config['pmts_excluded_for_s1']: continue
+                if is_S1 and channel in self.config['pmts_excluded_for_s1']: continue
                 integral = np.sum(wave_data[peak.left:peak.right]) # No +1, Xerawdp forgets the right edge also
                 areas_per_pmt[channel] = integral
             area_for_xerawdp_matching = sum([area for _, area in areas_per_pmt.items() if area > 0])
