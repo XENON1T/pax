@@ -6,6 +6,7 @@ from pax import plugin
 
 
 class MongoDBInput(plugin.InputPlugin):
+
     def startup(self):
         self.log.debug("Connecting to %s" % self.config['address'])
         try:
@@ -16,7 +17,6 @@ class MongoDBInput(plugin.InputPlugin):
             self.log.fatal("Cannot connect to database")
             self.log.exception(e)
             raise
-
 
         # TODO (tunnell): Sort by event number
         self.cursor = self.collection.find()
@@ -34,7 +34,7 @@ class MongoDBInput(plugin.InputPlugin):
             # Store channel waveform-occurrences by iterating over all occurrences.
             # This involves parsing MongoDB documents using WAX output format
             event = Event()
-            event.event_number = i # TODO: should come from Mongo
+            event.event_number = i  # TODO: should come from Mongo
 
             event.event_start = doc_event['range'][0] * 10
             event.event_stop = doc_event['range'][1] * 10

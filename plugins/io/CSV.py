@@ -6,15 +6,17 @@ from pax import plugin
 def is_s2(peak):
     return peak['peak_type'] in ('large_s2', 'small_s2')
 
-#Todo: let this use the datastructure, it's a lot easier that way...
+# Todo: let this use the datastructure, it's a lot easier that way...
+
 
 class WriteCSVPeakwise(plugin.OutputPlugin):
+
     def startup(self):
         self.counter = 0
 
     def write_event(self, event):
         event = event._raw
-        event['peaks'].sort(key=lambda p:p['index_of_max_in_waveform'])
+        event['peaks'].sort(key=lambda p: p['index_of_max_in_waveform'])
         for p in event['peaks']:
             data = (
                 ('event', self.counter),
@@ -34,6 +36,7 @@ class WriteCSVPeakwise(plugin.OutputPlugin):
 
 
 class WriteEventsToCSV(plugin.OutputPlugin):
+
     def startup(self):
         self.counter = -1
         self.output = open('output.csv', 'w')

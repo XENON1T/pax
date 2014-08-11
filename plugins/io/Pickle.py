@@ -7,6 +7,7 @@ except:
 
 
 class WriteToPickleFile(plugin.OutputPlugin):
+
     def startup(self):
         self.log.debug("Writing pickled data to %s" % self.config['picklefile'])
         self.file = open(self.config['picklefile'],

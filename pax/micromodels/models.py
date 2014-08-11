@@ -101,7 +101,7 @@ class Model(object, metaclass=ModelMeta):
 
     def set_data(self, data, is_json=False):
         if is_json:
-            data = json.loads(data)
+            data = numpyson.loads(data)
         for name, field in self._clsfields.items():
             key = field.source or name
             if key in data:

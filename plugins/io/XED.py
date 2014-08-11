@@ -73,7 +73,7 @@ class XedInput(plugin.InputPlugin):
         self.first_event = self.file_metadata['first_event_number']
         self.last_event = self.file_metadata['events_in_file'] - self.file_metadata['first_event_number'] - 1
 
-    #Temp for old API compatibility
+    # Temp for old API compatibility
     def get_events(self):
         for event_position_i, event_position in enumerate(self.event_positions):
             yield self.get_single_event(event_position_i + self.file_metadata['first_event_number'])
@@ -104,10 +104,10 @@ class XedInput(plugin.InputPlugin):
         # ), dtype='uint8'))
         # This appears to work... so far...
         mask_bits = np.unpackbits(np.fromfile(self.input, dtype='uint8', count=mask_bytes))
-        channels_included = [i+1 for i, bit in enumerate(reversed(mask_bits)) if bit == 1] # +1 as first pmt is 1 in Xenon100
+        channels_included = [i + 1 for i, bit in enumerate(reversed(mask_bits)) if bit == 1]  # +1 as first pmt is 1 in Xenon100
 
         # Decompress the event data (actually, the data from a single 'chunk') into fake binary file
-        data_to_decompress = self.input.read(event_layer_metadata['size'] - 28 - mask_bytes) # 28 is the chunk header size.
+        data_to_decompress = self.input.read(event_layer_metadata['size'] - 28 - mask_bytes)  # 28 is the chunk header size.
         try:
             chunk_fake_file = io.BytesIO(bz2.decompress(data_to_decompress))
         except OSError:
@@ -162,20 +162,19 @@ class XedInput(plugin.InputPlugin):
                     We won't do any ungarbling for now.
                     """
 
-        #Return the event
+        # Return the event
         event = Event()
         event.event_number = int(event_layer_metadata['event_number'])
         event.occurrences = occurrences
 
-
-        #TODO: don't hardcode sample size...
-        event.sample_duration = int(10*units.ns)
+        # TODO: don't hardcode sample size...
+        event.sample_duration = int(10 * units.ns)
         event.event_start = int(
-            event_layer_metadata['utc_time']*units.s +event_layer_metadata['utc_time_usec']*units.us
+            event_layer_metadata['utc_time'] * units.s + event_layer_metadata['utc_time_usec'] * units.us
         )
         # Remember event_stop is the stop time of the LAST sample!
-        event.event_stop = event.event_start + int(event_layer_metadata['samples_in_event']*event.sample_duration)
+        event.event_stop = event.event_start + int(event_layer_metadata['samples_in_event'] * event.sample_duration)
         return event
 
     # If we get here, all events have been read
-    #self.input.close()
+    # self.input.close()

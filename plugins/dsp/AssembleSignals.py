@@ -3,6 +3,7 @@ from pax import plugin, units
 
 from pax.datastructure import Waveform
 
+
 class JoinAndConvertWaveforms(plugin.TransformPlugin):
 
     """Take channel_occurrences, builds channel_waveforms
@@ -50,9 +51,9 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
         # event['processed_waveforms'] = {}
         uncorrected_sum_wave_for_s1 = np.zeros(event.length())
         uncorrected_sum_wave_for_s2 = np.zeros(event.length())
-        pmt_waveform_matrix = np.zeros((999,event.length())) #TODO: get max pmt number somewhere
+        pmt_waveform_matrix = np.zeros((999, event.length()))  # TODO: get max pmt number somewhere
         # event['channel_waveforms']   = {}
-        baseline_sample_size = 46 #TODO: put in config!!!!
+        baseline_sample_size = 46  # TODO: put in config!!!!
         for channel, waveform_occurrences in event.occurrences.items():
             skip_channel = False  # Temp for Xerawdp matching, refactor to continue's later
 
@@ -73,22 +74,22 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
             for i, (starting_position, wave_occurrence) in enumerate(waveform_occurrences):
 
                 # Check for pulses starting right after previous ones: Xerawdp doesn't recompute baselines
-                if i !=0 and starting_position == waveform_occurrences[i-1][0]+len(waveform_occurrences[i-1][1]):
-                    pass #baseline will still have the right value
+                if i != 0 and starting_position == waveform_occurrences[i - 1][0] + len(waveform_occurrences[i - 1][1]):
+                    pass  # baseline will still have the right value
                 else:
                     # We need to compute the baseline.
                     # Only pulses at the end and beginning of the trace are allowed to be shorter than 2*46
                     # In case of a short first pulse, computes baseline from its last samples instead of its first.
                     if (
-                        not (starting_position + len(wave_occurrence) > event.length()-1) and
-                        len(wave_occurrence) < 2*baseline_sample_size
+                        not (starting_position + len(wave_occurrence) > event.length() - 1) and
+                        len(wave_occurrence) < 2 * baseline_sample_size
                     ):
                         if i != 0:
                             raise RuntimeError("Occurrence %s in channel %s at %s has event_duration %s, should be at least 2*%s!"
                                                % (i, channel, starting_position, len(wave_occurrence), baseline_sample_size)
-                            )
+                                               )
                         self.log.debug("Short first pulse, computing baseline from its LAST samples")
-                        baseline_sample = wave_occurrence[len(wave_occurrence)-baseline_sample_size:]
+                        baseline_sample = wave_occurrence[len(wave_occurrence) - baseline_sample_size:]
                     else:
                         baseline_sample = wave_occurrence[:baseline_sample_size]
                     baseline = np.mean(baseline_sample)  # No floor, Xerawdp uses float arithmetic. Good.
@@ -119,28 +120,30 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
                     if not channel in self.config['pmts_excluded_for_s1']:
                         uncorrected_sum_wave_for_s1[starting_position:starting_position + len(wave_occurrence)] += corrected_pulse
 
-                if skip_channel: continue
+                if skip_channel:
+                    continue
                 wave[starting_position:starting_position + len(wave_occurrence)] = corrected_pulse
 
-            if skip_channel: continue
+            if skip_channel:
+                continue
             # Convert wave to pe/ns, and store it in the event data structure
             pmt_waveform_matrix[channel] = wave * self.conversion_factor / self.gains[channel]
 
         # Store everything
         event.pmt_waveforms = pmt_waveform_matrix
         # Temp for Xerawdp matching: store uncorrected sum waveform
-        universal_gain_correction = self.conversion_factor / (2*10**6)
+        universal_gain_correction = self.conversion_factor / (2 * 10 ** 6)
         event.waveforms.append(Waveform({
-            'samples' : uncorrected_sum_wave_for_s1 * universal_gain_correction,
-            'name' : 'uS1',
-            'pmt_list' : set(list(range(1,178))) - self.config['pmts_excluded_for_s1'],
-            }))
+            'samples': uncorrected_sum_wave_for_s1 * universal_gain_correction,
+            'name': 'uS1',
+            'pmt_list': set(list(range(1, 178))) - self.config['pmts_excluded_for_s1'],
+        }))
 
         event.waveforms.append(Waveform({
-                    'samples' : uncorrected_sum_wave_for_s2 * universal_gain_correction,
-                    'name' : 'uS2',
-                    'pmt_list' : set(list(range(1,178))),
-                    }))
+            'samples': uncorrected_sum_wave_for_s2 * universal_gain_correction,
+            'name': 'uS2',
+                    'pmt_list': set(list(range(1, 178))),
+        }))
 
         # TODO: Maybe Delete the channel_occurrences from the event structure, we don't need it anymore
 
@@ -170,12 +173,10 @@ class SumWaveforms(plugin.TransformPlugin):
     def transform_event(self, event):
         # Compute summed waveforms
         for group, members in self.channel_groups.items():
-            event.waveforms.append((Waveform({'samples' : np.sum(event.pmt_waveforms[[list(members)]],
-                                                                 axis=0),
-                                              'name' : group,
-                                              'pmt_list' : members,
+            event.waveforms.append((Waveform({'samples': np.sum(event.pmt_waveforms[[list(members)]],
+                                                                axis=0),
+                                              'name': group,
+                                              'pmt_list': members,
                                               })))
 
         return event
-
-

@@ -16,7 +16,7 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
 
     def transform_event(self, event):
 
-        pmts = 1+max(self.config['pmts_veto'])   # TODO: really??
+        pmts = 1 + max(self.config['pmts_veto'])   # TODO: really??
         event.pmt_waveforms = np.zeros((pmts, event.length()))
         # Should these go into event class?
         baselines = np.zeros(pmts)
@@ -95,6 +95,7 @@ class S2Filter(plugin.TransformPlugin):
 
 
 class FindPeaks(plugin.TransformPlugin):
+
     def transform_event(self, event):
         filtered = event.get_waveform('filtered_for_s2').samples
         unfiltered = event.get_waveform('tpc').samples
@@ -102,7 +103,7 @@ class FindPeaks(plugin.TransformPlugin):
         for itv_left, itv_right in candidates:
             self.log.debug("S2 candidate interval %s-%s" % (itv_left, itv_right))
             max_idx = itv_left + np.argmax(unfiltered[itv_left:itv_right + 1])
-            #TODO: better extent determination
+            # TODO: better extent determination
             left = itv_left
             right = itv_right
             self.log.debug("S2 candidate peak %s-%s-%s" % (left, max_idx, right))
@@ -124,4 +125,4 @@ class FindPeaks(plugin.TransformPlugin):
         cross_above = np.sort(np.where(above0 - above0_next == 1)[0])
         cross_below = np.sort(np.where(above0 - above0_next == -1)[0] - 1)
         # Assuming each interval's left <= right, we can simply split sorted(lefts+rights) in pairs:
-        return list(zip(*[iter(sorted(list(cross_above) +list(cross_below)))] * 2))
+        return list(zip(*[iter(sorted(list(cross_above) + list(cross_below)))] * 2))
