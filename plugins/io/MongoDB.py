@@ -39,18 +39,19 @@ class MongoDBInput(plugin.InputPlugin):
             event.event_start = doc_event['range'][0] * 10
             event.event_stop = doc_event['range'][1] * 10
 
-            channel_occurrences = {}
+            # Key is channel number, value is list of occurences
+            occurrences = {}
 
             for doc_occurrence in doc_event['docs']:
-                channel = doc_occurrence['channel'] + 1   # +1 so it works with Xenon100 gain lists
-                if channel not in channel_occurrences:
-                    channel_occurrences[channel] = []
+                channel = doc_occurrence['channel'] + 1  # +1 so it works with Xenon100 gain lists
+                if channel not in occurrences:
+                    occurrences[channel] = []
 
-                channel_occurrences[channel].append((
-                    doc_occurrence['time'] - event.event_start,  # Start sample index
-                    np.fromstring(doc_occurrence['data'], dtype=np.int16)  # SumWaveform occurrence data
+                occurrences[channel].append((
+                    doc_occurrence['time'] - doc_event['range'][0],  # Start sample index
+                    np.fromstring(doc_occurrence['data'], dtype=np.uint16)  # SumWaveform occurrence data
                 ))
 
-            event.occurrences = channel_occurrences
+            event.occurrences = occurrences
 
             yield event
