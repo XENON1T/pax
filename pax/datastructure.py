@@ -126,6 +126,21 @@ class Event(Model):
 
         raise RuntimeError("Waveform not found")
 
+    def get_all_peaks(self, sort_by='index_of_maximum', reverse=False):
+        """Return all peaks in the event
+        Arguments:
+            sort_by   attribute to sort returned peak list by. Default: index_of_maximum
+            reversed  whether to reverse sort order. Default: False
+        The returned format is [(type,Peak), (type, Peak), ...]
+            type is 's1' or 's2'
+            Peak is an instance of the Peak class
+        """
+        return sorted(
+            [('s1', p) for p in self.S1s] + [('s2', p) for p in self.S2s],
+            key=lambda x: getattr(x[1], sort_by),
+            reverse=reverse
+        )
+
 
 
 def _explain(class_name):
