@@ -1,4 +1,6 @@
 """Fork of micromodels
+
+Add numpy support and quite a few ways the code operates.
 """
 
 import numpy as np
@@ -54,14 +56,16 @@ class NumpyArrayField(BaseField):
     def to_python(self):
         if isinstance(self.data, np.ndarray):
             if self.data.dtype != self._dtype:
-                logging.warning("Casting.  Wrong data type; must be %s, not %s" % (str(self._dtype),
+                logging.warning("Casting.  Wrong data type; must be %s, not %s." % (str(self._dtype),
                                                                                    str(self.data.dtype)))
                 self.data = self.data.astype(self._dtype, copy=False)
             return self.data
         elif isinstance(self.data, set):
+            logging.warning("Converting set to list then numpy array.")
             return np.array(list(self.data),
                             dtype=self._dtype)
-        elif isinstance(self.data, (list, tuple, set)):
+        elif isinstance(self.data, (list, tuple)):
+            logging.warning("Converting set to numpy array.")
             return np.array(self.data, dtype=self._dtype)
         else:
             raise TypeError("Data must be array: not %s, %s" % (str(type(self.data)),

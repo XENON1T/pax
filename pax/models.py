@@ -1,4 +1,6 @@
 """Fork of micromodels
+
+Add numpy support and quite a few ways the code operates.
 """
 
 import numpyson
