@@ -46,6 +46,20 @@
             
   <div class="section" id="pax-package">
 <h1>pax package<a class="headerlink" href="#pax-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="subpackages">
+<h2>Subpackages<a class="headerlink" href="#subpackages" title="Permalink to this headline">¶</a></h2>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="pax.micromodels.html">pax.micromodels package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pax.micromodels.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pax.micromodels.html#module-pax.micromodels.fields">pax.micromodels.fields module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pax.micromodels.html#module-pax.micromodels.models">pax.micromodels.models module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pax.micromodels.html#module-pax.micromodels">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
@@ -60,20 +74,20 @@ releases.  Patch releases cannot modify this.</p>
 <dl class="class">
 <dt id="pax.datastructure.Event">
 <em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Event</tt><big>(</big><em>kwargs=None</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.models.Model" title="pax.models.Model"><tt class="xref py py-class docutils literal"><span class="pre">pax.models.Model</span></tt></a></p>
+<dd><p>Bases: <a class="reference internal" href="pax.micromodels.html#pax.micromodels.models.Model" title="pax.micromodels.models.Model"><tt class="xref py py-class docutils literal"><span class="pre">pax.micromodels.models.Model</span></tt></a></p>
 <p>Event class</p>
-<dl class="attribute">
+<dl class="method">
 <dt id="pax.datastructure.Event.S1s">
-<tt class="descname">S1s</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.S1s" title="Permalink to this definition">¶</a></dt>
-<dd><p>List of S1 (scintillation) signals
-Returns an <a class="reference internal" href="#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a> class.</p>
+<tt class="descname">S1s</tt><big>(</big><em>sort_key='area'</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.S1s"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.S1s" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of S1 (scintillation) signals</p>
+<p>Returns an <a class="reference internal" href="#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a> class.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="method">
 <dt id="pax.datastructure.Event.S2s">
-<tt class="descname">S2s</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.S2s" title="Permalink to this definition">¶</a></dt>
-<dd><p>List of S2 (ionization) signals
-Returns an <a class="reference internal" href="#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a> class.</p>
+<tt class="descname">S2s</tt><big>(</big><em>sort_key='area'</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.S2s"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.S2s" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of S2 (ionization) signals</p>
+<p>Returns an <a class="reference internal" href="#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a> class.</p>
 </dd></dl>
 
 <dl class="method">
@@ -128,49 +142,34 @@ The first element of the 2-tuple is the index within the event (i.e.
 units of sample, e.g., 10 ns) where this &#8216;occurence&#8217;/pulse begins. The
 second element is a numpy array 16-bit signed integers, which represent
 the ADC counts.</p>
-<p>(This may get moved into the Input plugin baseclass, see issue #32)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Event.peaks">
+<tt class="descname">peaks</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.peaks" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of peaks</p>
+<p>Returns a list of <a class="reference internal" href="#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a> classes.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.pmt_waveforms">
 <tt class="descname">pmt_waveforms</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.pmt_waveforms" title="Permalink to this definition">¶</a></dt>
-<dd><p>Array of samples.</p>
+<dd><p>A 2D array of all the PMT waveforms, units of pe/bin.</p>
+<p>The first index is the PMT number (starting from zero), and the second
+index is the sample number.  This must be a numpy array.  To access the
+waveform for a specific PMT such as PMT 10, you can do:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">event</span><span class="o">.</span><span class="n">pmt_waveforms</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>which returns a 1D array of samples.</p>
+<p>The data type is a float32 since these numbers are already baseline
+and gain corrected.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.sample_duration">
 <tt class="descname">sample_duration</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.sample_duration" title="Permalink to this definition">¶</a></dt>
 <dd><p>Time duration of a sample in units of ns</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Event.user_float_0">
-<tt class="descname">user_float_0</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.user_float_0" title="Permalink to this definition">¶</a></dt>
-<dd><p>Unused float (useful for developing)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Event.user_float_1">
-<tt class="descname">user_float_1</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.user_float_1" title="Permalink to this definition">¶</a></dt>
-<dd><p>Unused float (useful for developing)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Event.user_float_2">
-<tt class="descname">user_float_2</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.user_float_2" title="Permalink to this definition">¶</a></dt>
-<dd><p>Unused float (useful for developing)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Event.user_float_3">
-<tt class="descname">user_float_3</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.user_float_3" title="Permalink to this definition">¶</a></dt>
-<dd><p>Unused float (useful for developing)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Event.user_float_4">
-<tt class="descname">user_float_4</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.user_float_4" title="Permalink to this definition">¶</a></dt>
-<dd><p>Unused float (useful for developing)</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -185,11 +184,8 @@ the ADC counts.</p>
 <dl class="class">
 <dt id="pax.datastructure.Peak">
 <em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Peak</tt><big>(</big><em>kwargs=None</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.models.Model" title="pax.models.Model"><tt class="xref py py-class docutils literal"><span class="pre">pax.models.Model</span></tt></a></p>
+<dd><p>Bases: <a class="reference internal" href="pax.micromodels.html#pax.micromodels.models.Model" title="pax.micromodels.models.Model"><tt class="xref py py-class docutils literal"><span class="pre">pax.micromodels.models.Model</span></tt></a></p>
 <p>Peak object</p>
-<p>Used for either S1 or S2.  Please do not add an &#8220;is_S1&#8221; or &#8220;is_S2&#8221; field because this
-can lead to discrepancies if an &#8216;is_S1&#8217; is in the S2 list.  Then we need to check
-for that.  Maybe we can do something smart with a method?  See Issue #30.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.area">
 <tt class="descname">area</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.area" title="Permalink to this definition">¶</a></dt>
@@ -199,7 +195,7 @@ for that.  Maybe we can do something smart with a method?  See Issue #30.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.height">
 <tt class="descname">height</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.height" title="Permalink to this definition">¶</a></dt>
-<dd><p>Highest point in peak in units of ADC counts</p>
+<dd><p>Height of highest point in peak (in pe/bin)</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -215,9 +211,22 @@ for that.  Maybe we can do something smart with a method?  See Issue #30.</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="pax.datastructure.Peak.pmt_list">
+<tt class="descname">pmt_list</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.pmt_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Array of PMT numbers included in this peaks.</p>
+<p>This is added by PeakPostProcessing.MakeHitList</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="pax.datastructure.Peak.right">
 <tt class="descname">right</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.right" title="Permalink to this definition">¶</a></dt>
 <dd><p>Index of right bound (exclusive) in sum waveform.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.type">
+<tt class="descname">type</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Type of peak (e.g., &#8216;S1&#8217; or &#8216;S2&#8217;)</p>
 </dd></dl>
 
 </dd></dl>
@@ -225,8 +234,13 @@ for that.  Maybe we can do something smart with a method?  See Issue #30.</p>
 <dl class="class">
 <dt id="pax.datastructure.Waveform">
 <em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Waveform</tt><big>(</big><em>kwargs=None</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Waveform" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.models.Model" title="pax.models.Model"><tt class="xref py py-class docutils literal"><span class="pre">pax.models.Model</span></tt></a></p>
+<dd><p>Bases: <a class="reference internal" href="pax.micromodels.html#pax.micromodels.models.Model" title="pax.micromodels.models.Model"><tt class="xref py py-class docutils literal"><span class="pre">pax.micromodels.models.Model</span></tt></a></p>
 <p>Class used to store sum (filtered or not) waveform information.</p>
+<dl class="method">
+<dt id="pax.datastructure.Waveform.is_filtered">
+<tt class="descname">is_filtered</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Waveform.is_filtered"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Waveform.is_filtered" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="attribute">
 <dt id="pax.datastructure.Waveform.name">
 <tt class="descname">name</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Waveform.name" title="Permalink to this definition">¶</a></dt>
@@ -236,7 +250,7 @@ for that.  Maybe we can do something smart with a method?  See Issue #30.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Waveform.name_of_filter">
 <tt class="descname">name_of_filter</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Waveform.name_of_filter" title="Permalink to this definition">¶</a></dt>
-<dd><p>Name of the filter used (or None)</p>
+<dd><p>Name of the filter used (or &#8216;none&#8217;)</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -248,336 +262,9 @@ for that.  Maybe we can do something smart with a method?  See Issue #30.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Waveform.samples">
 <tt class="descname">samples</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Waveform.samples" title="Permalink to this definition">¶</a></dt>
-<dd><p>Array of samples.</p>
+<dd><p>Array of samples, units of pe/bin.</p>
 </dd></dl>
 
-</dd></dl>
-
-</div>
-<div class="section" id="module-pax.dsp_utils">
-<span id="pax-dsp-utils-module"></span><h2>pax.dsp_utils module<a class="headerlink" href="#module-pax.dsp_utils" title="Permalink to this headline">¶</a></h2>
-<p>Helper functions for peakfinders and other plugins that look at waveforms
-Don&#8217;t put in hacks for Xerawdp matching!</p>
-<dl class="class">
-<dt id="pax.dsp_utils.CrossAboveThreshold">
-<em class="property">class </em><tt class="descclassname">pax.dsp_utils.</tt><tt class="descname">CrossAboveThreshold</tt><big>(</big><em>threshold</em>, <em>min_crossing_length=1</em><big>)</big><a class="reference internal" href="_modules/pax/dsp_utils.html#CrossAboveThreshold"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.CrossAboveThreshold" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.dsp_utils.ThresholdCrossed" title="pax.dsp_utils.ThresholdCrossed"><tt class="xref py py-class docutils literal"><span class="pre">pax.dsp_utils.ThresholdCrossed</span></tt></a></p>
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.dsp_utils.CrossBelowThreshold">
-<em class="property">class </em><tt class="descclassname">pax.dsp_utils.</tt><tt class="descname">CrossBelowThreshold</tt><big>(</big><em>threshold</em>, <em>min_crossing_length=1</em><big>)</big><a class="reference internal" href="_modules/pax/dsp_utils.html#CrossBelowThreshold"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.CrossBelowThreshold" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.dsp_utils.ThresholdCrossed" title="pax.dsp_utils.ThresholdCrossed"><tt class="xref py py-class docutils literal"><span class="pre">pax.dsp_utils.ThresholdCrossed</span></tt></a></p>
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.dsp_utils.IndexReached">
-<em class="property">class </em><tt class="descclassname">pax.dsp_utils.</tt><tt class="descname">IndexReached</tt><big>(</big><em>limit_index</em><big>)</big><a class="reference internal" href="_modules/pax/dsp_utils.html#IndexReached"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.IndexReached" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.dsp_utils.StopCondition" title="pax.dsp_utils.StopCondition"><tt class="xref py py-class docutils literal"><span class="pre">pax.dsp_utils.StopCondition</span></tt></a></p>
-<dl class="method">
-<dt id="pax.dsp_utils.IndexReached.evaluate">
-<tt class="descname">evaluate</tt><big>(</big><em>d</em><big>)</big><a class="reference internal" href="_modules/pax/dsp_utils.html#IndexReached.evaluate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.IndexReached.evaluate" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.dsp_utils.IndexReached.startup">
-<tt class="descname">startup</tt><big>(</big><em>d</em><big>)</big><a class="reference internal" href="_modules/pax/dsp_utils.html#IndexReached.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.IndexReached.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.dsp_utils.IsAboveThreshold">
-<em class="property">class </em><tt class="descclassname">pax.dsp_utils.</tt><tt class="descname">IsAboveThreshold</tt><big>(</big><em>threshold</em>, <em>min_crossing_length=1</em><big>)</big><a class="reference internal" href="_modules/pax/dsp_utils.html#IsAboveThreshold"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.IsAboveThreshold" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.dsp_utils.ThresholdCrossed" title="pax.dsp_utils.ThresholdCrossed"><tt class="xref py py-class docutils literal"><span class="pre">pax.dsp_utils.ThresholdCrossed</span></tt></a></p>
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.dsp_utils.IsBelowThreshold">
-<em class="property">class </em><tt class="descclassname">pax.dsp_utils.</tt><tt class="descname">IsBelowThreshold</tt><big>(</big><em>threshold</em>, <em>min_crossing_length=1</em><big>)</big><a class="reference internal" href="_modules/pax/dsp_utils.html#IsBelowThreshold"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.IsBelowThreshold" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.dsp_utils.ThresholdCrossed" title="pax.dsp_utils.ThresholdCrossed"><tt class="xref py py-class docutils literal"><span class="pre">pax.dsp_utils.ThresholdCrossed</span></tt></a></p>
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.dsp_utils.StartValueExceeded">
-<em class="property">class </em><tt class="descclassname">pax.dsp_utils.</tt><tt class="descname">StartValueExceeded</tt><a class="reference internal" href="_modules/pax/dsp_utils.html#StartValueExceeded"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.StartValueExceeded" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.dsp_utils.StopCondition" title="pax.dsp_utils.StopCondition"><tt class="xref py py-class docutils literal"><span class="pre">pax.dsp_utils.StopCondition</span></tt></a></p>
-<dl class="method">
-<dt id="pax.dsp_utils.StartValueExceeded.evaluate">
-<tt class="descname">evaluate</tt><big>(</big><em>d</em><big>)</big><a class="reference internal" href="_modules/pax/dsp_utils.html#StartValueExceeded.evaluate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.StartValueExceeded.evaluate" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.dsp_utils.StopCondition">
-<em class="property">class </em><tt class="descclassname">pax.dsp_utils.</tt><tt class="descname">StopCondition</tt><a class="reference internal" href="_modules/pax/dsp_utils.html#StopCondition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.StopCondition" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
-<dl class="method">
-<dt id="pax.dsp_utils.StopCondition.evaluate">
-<tt class="descname">evaluate</tt><big>(</big><em>d</em><big>)</big><a class="reference internal" href="_modules/pax/dsp_utils.html#StopCondition.evaluate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.StopCondition.evaluate" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.dsp_utils.StopCondition.startup">
-<tt class="descname">startup</tt><big>(</big><em>d</em><big>)</big><a class="reference internal" href="_modules/pax/dsp_utils.html#StopCondition.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.StopCondition.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.dsp_utils.ThresholdCrossed">
-<em class="property">class </em><tt class="descclassname">pax.dsp_utils.</tt><tt class="descname">ThresholdCrossed</tt><big>(</big><em>threshold</em>, <em>min_crossing_length=1</em>, <em>cross_to='either'</em>, <em>real_crossing=True</em><big>)</big><a class="reference internal" href="_modules/pax/dsp_utils.html#ThresholdCrossed"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.ThresholdCrossed" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.dsp_utils.StopCondition" title="pax.dsp_utils.StopCondition"><tt class="xref py py-class docutils literal"><span class="pre">pax.dsp_utils.StopCondition</span></tt></a></p>
-<dl class="method">
-<dt id="pax.dsp_utils.ThresholdCrossed.evaluate">
-<tt class="descname">evaluate</tt><big>(</big><em>d</em><big>)</big><a class="reference internal" href="_modules/pax/dsp_utils.html#ThresholdCrossed.evaluate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.ThresholdCrossed.evaluate" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.dsp_utils.WaveformEndReached">
-<em class="property">class </em><tt class="descclassname">pax.dsp_utils.</tt><tt class="descname">WaveformEndReached</tt><a class="reference internal" href="_modules/pax/dsp_utils.html#WaveformEndReached"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.WaveformEndReached" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.dsp_utils.StopCondition" title="pax.dsp_utils.StopCondition"><tt class="xref py py-class docutils literal"><span class="pre">pax.dsp_utils.StopCondition</span></tt></a></p>
-<dl class="method">
-<dt id="pax.dsp_utils.WaveformEndReached.evaluate">
-<tt class="descname">evaluate</tt><big>(</big><em>d</em><big>)</big><a class="reference internal" href="_modules/pax/dsp_utils.html#WaveformEndReached.evaluate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.WaveformEndReached.evaluate" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.dsp_utils.XerawdpSlopeInversionCondition">
-<em class="property">class </em><tt class="descclassname">pax.dsp_utils.</tt><tt class="descname">XerawdpSlopeInversionCondition</tt><a class="reference internal" href="_modules/pax/dsp_utils.html#XerawdpSlopeInversionCondition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.XerawdpSlopeInversionCondition" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.dsp_utils.StopCondition" title="pax.dsp_utils.StopCondition"><tt class="xref py py-class docutils literal"><span class="pre">pax.dsp_utils.StopCondition</span></tt></a></p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pax.dsp_utils.main">
-<tt class="descclassname">pax.dsp_utils.</tt><tt class="descname">main</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/dsp_utils.html#main"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.main" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="pax.dsp_utils.walk_waveform">
-<tt class="descclassname">pax.dsp_utils.</tt><tt class="descname">walk_waveform</tt><big>(</big><em>signal</em>, <em>start</em>, <em>stop_conditions</em>, <em>direction='right'</em><big>)</big><a class="reference internal" href="_modules/pax/dsp_utils.html#walk_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsp_utils.walk_waveform" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</div>
-<div class="section" id="module-pax.fields">
-<span id="pax-fields-module"></span><h2>pax.fields module<a class="headerlink" href="#module-pax.fields" title="Permalink to this headline">¶</a></h2>
-<p>Fork of micromodels</p>
-<dl class="class">
-<dt id="pax.fields.BaseField">
-<em class="property">class </em><tt class="descclassname">pax.fields.</tt><tt class="descname">BaseField</tt><big>(</big><em>default=0</em>, <em>source=None</em><big>)</big><a class="reference internal" href="_modules/pax/fields.html#BaseField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.BaseField" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
-<p>Base class for all field types.</p>
-<p>The <tt class="docutils literal"><span class="pre">source</span></tt> parameter sets the key that will be retrieved from the source
-data. If <tt class="docutils literal"><span class="pre">source</span></tt> is not specified, the field instance will use its own
-name as the key to retrieve the value from the source data.</p>
-<dl class="method">
-<dt id="pax.fields.BaseField.populate">
-<tt class="descname">populate</tt><big>(</big><em>data</em><big>)</big><a class="reference internal" href="_modules/pax/fields.html#BaseField.populate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.BaseField.populate" title="Permalink to this definition">¶</a></dt>
-<dd><p>Set the value or values wrapped by this field</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.fields.BaseField.to_python">
-<tt class="descname">to_python</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/fields.html#BaseField.to_python"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.BaseField.to_python" title="Permalink to this definition">¶</a></dt>
-<dd><p>After being populated, this method casts the source data into a
-Python object. The default behavior is to simply return the source
-value. Subclasses should override this method.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.fields.BaseField.to_serial">
-<tt class="descname">to_serial</tt><big>(</big><em>data</em><big>)</big><a class="reference internal" href="_modules/pax/fields.html#BaseField.to_serial"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.BaseField.to_serial" title="Permalink to this definition">¶</a></dt>
-<dd><p>Used to serialize forms back into JSON or other formats.</p>
-<p>This method is essentially the opposite of
-<tt class="xref py py-meth docutils literal"><span class="pre">to_python()</span></tt>. A string, boolean,
-number, dictionary, list, or tuple must be returned. Subclasses should
-override this method.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.fields.BooleanField">
-<em class="property">class </em><tt class="descclassname">pax.fields.</tt><tt class="descname">BooleanField</tt><big>(</big><em>default=0</em>, <em>source=None</em><big>)</big><a class="reference internal" href="_modules/pax/fields.html#BooleanField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.BooleanField" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.fields.BaseField" title="pax.fields.BaseField"><tt class="xref py py-class docutils literal"><span class="pre">pax.fields.BaseField</span></tt></a></p>
-<p>Field to represent a boolean</p>
-<dl class="method">
-<dt id="pax.fields.BooleanField.to_python">
-<tt class="descname">to_python</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/fields.html#BooleanField.to_python"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.BooleanField.to_python" title="Permalink to this definition">¶</a></dt>
-<dd><p>The string <tt class="docutils literal"><span class="pre">'True'</span></tt> (case insensitive) will be converted
-to <tt class="docutils literal"><span class="pre">True</span></tt>, as will any positive integers.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.fields.FloatField">
-<em class="property">class </em><tt class="descclassname">pax.fields.</tt><tt class="descname">FloatField</tt><big>(</big><em>default=0</em>, <em>source=None</em><big>)</big><a class="reference internal" href="_modules/pax/fields.html#FloatField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.FloatField" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.fields.BaseField" title="pax.fields.BaseField"><tt class="xref py py-class docutils literal"><span class="pre">pax.fields.BaseField</span></tt></a></p>
-<p>Field to represent a floating point value</p>
-<dl class="method">
-<dt id="pax.fields.FloatField.to_python">
-<tt class="descname">to_python</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/fields.html#FloatField.to_python"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.FloatField.to_python" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convert the data supplied to the <tt class="xref py py-meth docutils literal"><span class="pre">populate()</span></tt> method to a
-float.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.fields.IntegerField">
-<em class="property">class </em><tt class="descclassname">pax.fields.</tt><tt class="descname">IntegerField</tt><big>(</big><em>default=0</em>, <em>source=None</em><big>)</big><a class="reference internal" href="_modules/pax/fields.html#IntegerField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.IntegerField" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.fields.BaseField" title="pax.fields.BaseField"><tt class="xref py py-class docutils literal"><span class="pre">pax.fields.BaseField</span></tt></a></p>
-<p>Field to represent an integer value</p>
-<dl class="method">
-<dt id="pax.fields.IntegerField.to_python">
-<tt class="descname">to_python</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/fields.html#IntegerField.to_python"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.IntegerField.to_python" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convert the data supplied to the <tt class="xref py py-meth docutils literal"><span class="pre">populate()</span></tt> method to an
-integer.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.fields.ModelCollectionField">
-<em class="property">class </em><tt class="descclassname">pax.fields.</tt><tt class="descname">ModelCollectionField</tt><big>(</big><em>wrapped_class</em>, <em>related_name=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/pax/fields.html#ModelCollectionField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.ModelCollectionField" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.fields.WrappedObjectField" title="pax.fields.WrappedObjectField"><tt class="xref py py-class docutils literal"><span class="pre">pax.fields.WrappedObjectField</span></tt></a></p>
-<p>Field containing a list of model instances.</p>
-<p>Use this field when your source data dictionary contains a list of
-dictionaries. It takes a single required argument, which is the name of the
-nested class that each item in the list should be converted to.
-For example:</p>
-<div class="highlight-python"><div class="highlight"><pre>some_data = {
-    &#39;list&#39;: [
-        {&#39;value&#39;: &#39;First value&#39;},
-        {&#39;value&#39;: &#39;Second value&#39;},
-        {&#39;value&#39;: &#39;Third value&#39;},
-    ]
-}
-
-class MyNestedModel(micromodels.Model):
-    value = micromodels.CharField()
-
-class MyMainModel(micromodels.Model):
-    list = micromodels.ModelCollectionField(MyNestedModel)
-
-&gt;&gt;&gt; m = MyMainModel(some_data)
-&gt;&gt;&gt; len(m.list)
-3
-&gt;&gt;&gt; m.list[0].__class__.__name__
-&#39;MyNestedModel&#39;
-&gt;&gt;&gt; m.list[0].value
-u&#39;First value&#39;
-&gt;&gt;&gt; [item.value for item in m.list]
-[u&#39;First value&#39;, u&#39;Second value&#39;, u&#39;Third value&#39;]
-</pre></div>
-</div>
-<dl class="method">
-<dt id="pax.fields.ModelCollectionField.append">
-<tt class="descname">append</tt><big>(</big><em>value</em><big>)</big><a class="reference internal" href="_modules/pax/fields.html#ModelCollectionField.append"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.ModelCollectionField.append" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.fields.ModelCollectionField.to_python">
-<tt class="descname">to_python</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/fields.html#ModelCollectionField.to_python"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.ModelCollectionField.to_python" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.fields.ModelCollectionField.to_serial">
-<tt class="descname">to_serial</tt><big>(</big><em>model_instances</em><big>)</big><a class="reference internal" href="_modules/pax/fields.html#ModelCollectionField.to_serial"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.ModelCollectionField.to_serial" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.fields.ModelField">
-<em class="property">class </em><tt class="descclassname">pax.fields.</tt><tt class="descname">ModelField</tt><big>(</big><em>wrapped_class</em>, <em>related_name=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/pax/fields.html#ModelField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.ModelField" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.fields.WrappedObjectField" title="pax.fields.WrappedObjectField"><tt class="xref py py-class docutils literal"><span class="pre">pax.fields.WrappedObjectField</span></tt></a></p>
-<p>Field containing a model instance</p>
-<p>Use this field when you wish to nest one object inside another.
-It takes a single required argument, which is the nested class.
-For example, given the following dictionary:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">some_data</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s">&#39;first_item&#39;</span><span class="p">:</span> <span class="s">&#39;Some value&#39;</span><span class="p">,</span>
-    <span class="s">&#39;second_item&#39;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s">&#39;nested_item&#39;</span><span class="p">:</span> <span class="s">&#39;Some nested value&#39;</span><span class="p">,</span>
-    <span class="p">},</span>
-<span class="p">}</span>
-</pre></div>
-</div>
-<p>You could build the following classes
-(note that you have to define the inner nested models first):</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="k">class</span> <span class="nc">MyNestedModel</span><span class="p">(</span><span class="n">micromodels</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">nested_item</span> <span class="o">=</span> <span class="n">micromodels</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>
-
-<span class="k">class</span> <span class="nc">MyMainModel</span><span class="p">(</span><span class="n">micromodels</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
-    <span class="n">first_item</span> <span class="o">=</span> <span class="n">micromodels</span><span class="o">.</span><span class="n">CharField</span><span class="p">()</span>
-    <span class="n">second_item</span> <span class="o">=</span> <span class="n">micromodels</span><span class="o">.</span><span class="n">ModelField</span><span class="p">(</span><span class="n">MyNestedModel</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>Then you can access the data as follows:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="gp">&gt;&gt;&gt; </span><span class="n">m</span> <span class="o">=</span> <span class="n">MyMainModel</span><span class="p">(</span><span class="n">some_data</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">m</span><span class="o">.</span><span class="n">first_item</span>
-<span class="go">u&#39;Some value&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">m</span><span class="o">.</span><span class="n">second_item</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
-<span class="go">&#39;MyNestedModel&#39;</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">m</span><span class="o">.</span><span class="n">second_item</span><span class="o">.</span><span class="n">nested_item</span>
-<span class="go">u&#39;Some nested value&#39;</span>
-</pre></div>
-</div>
-<dl class="method">
-<dt id="pax.fields.ModelField.to_python">
-<tt class="descname">to_python</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/fields.html#ModelField.to_python"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.ModelField.to_python" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.fields.ModelField.to_serial">
-<tt class="descname">to_serial</tt><big>(</big><em>model_instance</em><big>)</big><a class="reference internal" href="_modules/pax/fields.html#ModelField.to_serial"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.ModelField.to_serial" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.fields.NumpyArrayField">
-<em class="property">class </em><tt class="descclassname">pax.fields.</tt><tt class="descname">NumpyArrayField</tt><big>(</big><em>dtype</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/pax/fields.html#NumpyArrayField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.NumpyArrayField" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.fields.BaseField" title="pax.fields.BaseField"><tt class="xref py py-class docutils literal"><span class="pre">pax.fields.BaseField</span></tt></a></p>
-<p>Field to represent a numpy array</p>
-<dl class="method">
-<dt id="pax.fields.NumpyArrayField.to_python">
-<tt class="descname">to_python</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/fields.html#NumpyArrayField.to_python"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.NumpyArrayField.to_python" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.fields.NumpyArrayField.to_serial">
-<tt class="descname">to_serial</tt><big>(</big><em>model_instances</em><big>)</big><a class="reference internal" href="_modules/pax/fields.html#NumpyArrayField.to_serial"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.NumpyArrayField.to_serial" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.fields.StringField">
-<em class="property">class </em><tt class="descclassname">pax.fields.</tt><tt class="descname">StringField</tt><big>(</big><em>default=0</em>, <em>source=None</em><big>)</big><a class="reference internal" href="_modules/pax/fields.html#StringField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.StringField" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.fields.BaseField" title="pax.fields.BaseField"><tt class="xref py py-class docutils literal"><span class="pre">pax.fields.BaseField</span></tt></a></p>
-<p>Field to represent a simple Unicode string value.</p>
-<dl class="method">
-<dt id="pax.fields.StringField.to_python">
-<tt class="descname">to_python</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/fields.html#StringField.to_python"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.StringField.to_python" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convert the data supplied using the <tt class="xref py py-meth docutils literal"><span class="pre">populate()</span></tt> method to a
-Unicode string.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.fields.WrappedObjectField">
-<em class="property">class </em><tt class="descclassname">pax.fields.</tt><tt class="descname">WrappedObjectField</tt><big>(</big><em>wrapped_class</em>, <em>related_name=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/pax/fields.html#WrappedObjectField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.fields.WrappedObjectField" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.fields.BaseField" title="pax.fields.BaseField"><tt class="xref py py-class docutils literal"><span class="pre">pax.fields.BaseField</span></tt></a></p>
-<p>Superclass for any fields that wrap an object</p>
 </dd></dl>
 
 </div>
@@ -593,105 +280,6 @@ Unicode string.</p>
 <dt id="pax.format.sizeof_fmt">
 <tt class="descclassname">pax.format.</tt><tt class="descname">sizeof_fmt</tt><big>(</big><em>num</em><big>)</big><a class="reference internal" href="_modules/pax/format.html#sizeof_fmt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.format.sizeof_fmt" title="Permalink to this definition">¶</a></dt>
 <dd><p>input is bytes</p>
-</dd></dl>
-
-</div>
-<div class="section" id="module-pax.models">
-<span id="pax-models-module"></span><h2>pax.models module<a class="headerlink" href="#module-pax.models" title="Permalink to this headline">¶</a></h2>
-<p>Fork of micromodels</p>
-<dl class="class">
-<dt id="pax.models.Model">
-<em class="property">class </em><tt class="descclassname">pax.models.</tt><tt class="descname">Model</tt><big>(</big><em>kwargs=None</em><big>)</big><a class="reference internal" href="_modules/pax/models.html#Model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.models.Model" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
-<p>The Model is the main component of micromodels. Model makes it trivial
-to parse data from many sources, including JSON APIs.</p>
-<p>You will probably want to initialize this class using the class methods
-<a class="reference internal" href="#pax.models.Model.from_dict" title="pax.models.Model.from_dict"><tt class="xref py py-meth docutils literal"><span class="pre">from_dict()</span></tt></a> or <a class="reference internal" href="#pax.models.Model.from_kwargs" title="pax.models.Model.from_kwargs"><tt class="xref py py-meth docutils literal"><span class="pre">from_kwargs()</span></tt></a>. If you want to initialize an
-instance without any data, just call <a class="reference internal" href="#pax.models.Model" title="pax.models.Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> with no parameters.</p>
-<p><a class="reference internal" href="#pax.models.Model" title="pax.models.Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> instances have a unique behavior when an attribute is set
-on them. This is needed to properly format data as the fields specify.
-The variable name is referred to as the key, and the value will be called
-the value. For example, in:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">instance</span> <span class="o">=</span> <span class="n">Model</span><span class="p">()</span>
-<span class="n">instance</span><span class="o">.</span><span class="n">age</span> <span class="o">=</span> <span class="mi">18</span>
-</pre></div>
-</div>
-<p><tt class="docutils literal"><span class="pre">age</span></tt> is the key and <tt class="docutils literal"><span class="pre">18</span></tt> is the value.</p>
-<p>First, the model checks if it has a field with a name matching the key.</p>
-<p>If there is a matching field, then <tt class="xref py py-meth docutils literal"><span class="pre">to_python()</span></tt> is called on the field
-with the value.</p>
-<blockquote>
-<div><p>If <tt class="xref py py-meth docutils literal"><span class="pre">to_python()</span></tt> does not raise an exception, then the result of
-<tt class="xref py py-meth docutils literal"><span class="pre">to_python()</span></tt> is set on the instance, and the method is completed.
-Essentially, this means that the first thing setting an attribute tries
-to do is process the data as if it was a &#8220;primitive&#8221; data type.</p>
-<p>If <tt class="xref py py-meth docutils literal"><span class="pre">to_python()</span></tt> does raise an exception, this means that the data
-might already be an appropriate Python type. The <a class="reference internal" href="#pax.models.Model" title="pax.models.Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> then
-attempts to <em>serialize</em> the data into a &#8220;primitive&#8221; type using the
-field&#8217;s <tt class="xref py py-meth docutils literal"><span class="pre">to_serial()</span></tt> method.</p>
-<blockquote>
-<div><p>If this fails, a <tt class="docutils literal"><span class="pre">TypeError</span></tt> is raised.</p>
-<p>If it does not fail, the value is set on the instance, and the
-method is complete.</p>
-</div></blockquote>
-</div></blockquote>
-<p>If the instance doesn&#8217;t have a field matching the key, then the key and
-value are just set on the instance like any other assignment in Python.</p>
-<dl class="method">
-<dt id="pax.models.Model.add_field">
-<tt class="descname">add_field</tt><big>(</big><em>key</em>, <em>value</em>, <em>field</em><big>)</big><a class="reference internal" href="_modules/pax/models.html#Model.add_field"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.models.Model.add_field" title="Permalink to this definition">¶</a></dt>
-<dd><p><a class="reference internal" href="#pax.models.Model.add_field" title="pax.models.Model.add_field"><tt class="xref py py-meth docutils literal"><span class="pre">add_field()</span></tt></a> must be used to add a field to an existing
-instance of Model. This method is required so that serialization of the
-data is possible. Data on existing fields (defined in the class) can be
-reassigned without using this method.</p>
-</dd></dl>
-
-<dl class="classmethod">
-<dt id="pax.models.Model.from_dict">
-<em class="property">classmethod </em><tt class="descname">from_dict</tt><big>(</big><em>D</em>, <em>is_json=False</em><big>)</big><a class="reference internal" href="_modules/pax/models.html#Model.from_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.models.Model.from_dict" title="Permalink to this definition">¶</a></dt>
-<dd><p>This factory for <a class="reference internal" href="#pax.models.Model" title="pax.models.Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a>
-takes either a native Python dictionary or a JSON dictionary/object
-if <tt class="docutils literal"><span class="pre">is_json</span></tt> is <tt class="docutils literal"><span class="pre">True</span></tt>. The dictionary passed does not need to
-contain all of the values that the Model declares.</p>
-</dd></dl>
-
-<dl class="classmethod">
-<dt id="pax.models.Model.from_kwargs">
-<em class="property">classmethod </em><tt class="descname">from_kwargs</tt><big>(</big><em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/pax/models.html#Model.from_kwargs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.models.Model.from_kwargs" title="Permalink to this definition">¶</a></dt>
-<dd><p>This factory for <a class="reference internal" href="#pax.models.Model" title="pax.models.Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> only takes keywork arguments.
-Each key and value pair that represents a field in the <a class="reference internal" href="#pax.models.Model" title="pax.models.Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> is
-set on the new <a class="reference internal" href="#pax.models.Model" title="pax.models.Model"><tt class="xref py py-class docutils literal"><span class="pre">Model</span></tt></a> instance.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.models.Model.set_data">
-<tt class="descname">set_data</tt><big>(</big><em>data</em>, <em>is_json=False</em><big>)</big><a class="reference internal" href="_modules/pax/models.html#Model.set_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.models.Model.set_data" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.models.Model.to_dict">
-<tt class="descname">to_dict</tt><big>(</big><em>serial=False</em><big>)</big><a class="reference internal" href="_modules/pax/models.html#Model.to_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.models.Model.to_dict" title="Permalink to this definition">¶</a></dt>
-<dd><p>A dictionary representing the the data of the class is returned.
-Native Python objects will still exist in this dictionary (for example,
-a <tt class="docutils literal"><span class="pre">datetime</span></tt> object will be returned rather than a string)
-unless <tt class="docutils literal"><span class="pre">serial</span></tt> is set to True.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.models.Model.to_json">
-<tt class="descname">to_json</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/models.html#Model.to_json"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.models.Model.to_json" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a representation of the model as a JSON string. This method
-relies on the <tt class="xref py py-meth docutils literal"><span class="pre">to_dict()</span></tt> method.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.models.ModelMeta">
-<em class="property">class </em><tt class="descclassname">pax.models.</tt><tt class="descname">ModelMeta</tt><big>(</big><em>name</em>, <em>bases</em>, <em>attrs</em><big>)</big><a class="reference internal" href="_modules/pax/models.html#ModelMeta"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.models.ModelMeta" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.type</span></tt></p>
-<p>Creates the metaclass for Model. The main function of this metaclass
-is to move all of fields into the _fields variable on the class.</p>
 </dd></dl>
 
 </div>
@@ -864,12 +452,10 @@ unit_name(ns,&#8217;s&#8217;) will give &#8216;ns&#8217;</p>
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">pax package</a><ul>
+<li><a class="reference internal" href="#subpackages">Subpackages</a></li>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
 <li><a class="reference internal" href="#module-pax.datastructure">pax.datastructure module</a></li>
-<li><a class="reference internal" href="#module-pax.dsp_utils">pax.dsp_utils module</a></li>
-<li><a class="reference internal" href="#module-pax.fields">pax.fields module</a></li>
 <li><a class="reference internal" href="#module-pax.format">pax.format module</a></li>
-<li><a class="reference internal" href="#module-pax.models">pax.models module</a></li>
 <li><a class="reference internal" href="#module-pax.pax">pax.pax module</a></li>
 <li><a class="reference internal" href="#module-pax.plugin">pax.plugin module</a></li>
 <li><a class="reference internal" href="#module-pax.units">pax.units module</a></li>

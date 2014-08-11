@@ -1,0 +1,352 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pax.micromodels.fields &mdash; Processor for Analyzing XENON1T 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="Processor for Analyzing XENON1T 0.2.0 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Processor for Analyzing XENON1T 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pax.micromodels.fields</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Fork of micromodels</span>
+
+<span class="sd">https://github.com/j4mie/micromodels</span>
+
+<span class="sd">Add numpy support and quite a few ways the code operates.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+
+
+<div class="viewcode-block" id="BaseField"><a class="viewcode-back" href="../../../pax.micromodels.html#pax.micromodels.fields.BaseField">[docs]</a><span class="k">class</span> <span class="nc">BaseField</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;Base class for all field types.</span>
+
+<span class="sd">    The ``source`` parameter sets the key that will be retrieved from the source</span>
+<span class="sd">    data. If ``source`` is not specified, the field instance will use its own</span>
+<span class="sd">    name as the key to retrieve the value from the source data.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">source</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_default</span> <span class="o">=</span> <span class="n">default</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">source</span> <span class="o">=</span> <span class="n">source</span>
+
+<div class="viewcode-block" id="BaseField.populate"><a class="viewcode-back" href="../../../pax.micromodels.html#pax.micromodels.fields.BaseField.populate">[docs]</a>    <span class="k">def</span> <span class="nf">populate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Set the value or values wrapped by this field&quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">data</span>
+</div>
+<div class="viewcode-block" id="BaseField.to_python"><a class="viewcode-back" href="../../../pax.micromodels.html#pax.micromodels.fields.BaseField.to_python">[docs]</a>    <span class="k">def</span> <span class="nf">to_python</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;After being populated, this method casts the source data into a</span>
+<span class="sd">        Python object. The default behavior is to simply return the source</span>
+<span class="sd">        value. Subclasses should override this method.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+</div>
+<div class="viewcode-block" id="BaseField.to_serial"><a class="viewcode-back" href="../../../pax.micromodels.html#pax.micromodels.fields.BaseField.to_serial">[docs]</a>    <span class="k">def</span> <span class="nf">to_serial</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Used to serialize forms back into JSON or other formats.</span>
+
+<span class="sd">        This method is essentially the opposite of</span>
+<span class="sd">        :meth:`~micromodels.fields.BaseField.to_python`. A string, boolean,</span>
+<span class="sd">        number, dictionary, list, or tuple must be returned. Subclasses should</span>
+<span class="sd">        override this method.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">data</span>
+
+</div></div>
+<div class="viewcode-block" id="NumpyArrayField"><a class="viewcode-back" href="../../../pax.micromodels.html#pax.micromodels.fields.NumpyArrayField">[docs]</a><span class="k">class</span> <span class="nc">NumpyArrayField</span><span class="p">(</span><span class="n">BaseField</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;Field to represent a numpy array&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dtype</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span> <span class="o">=</span> <span class="n">dtype</span>
+
+        <span class="k">if</span> <span class="s">&#39;default&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;default&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+
+        <span class="n">BaseField</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="NumpyArrayField.to_python"><a class="viewcode-back" href="../../../pax.micromodels.html#pax.micromodels.fields.NumpyArrayField.to_python">[docs]</a>    <span class="k">def</span> <span class="nf">to_python</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Casting.  Wrong data type; must be </span><span class="si">%s</span><span class="s">, not </span><span class="si">%s</span><span class="s">.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">),</span>
+                                                                                    <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">dtype</span><span class="p">)))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="bp">False</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="nb">set</span><span class="p">):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Converting set to list then numpy array.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">),</span>
+                            <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Converting set to numpy array.&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dtype</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&quot;Data must be array: not </span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)),</span>
+                                                                <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)))</span>
+</div>
+<div class="viewcode-block" id="NumpyArrayField.to_serial"><a class="viewcode-back" href="../../../pax.micromodels.html#pax.micromodels.fields.NumpyArrayField.to_serial">[docs]</a>    <span class="k">def</span> <span class="nf">to_serial</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_instances</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">instance</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">serial</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">instance</span> <span class="ow">in</span> <span class="n">model_instances</span><span class="p">]</span>
+
+</div></div>
+<div class="viewcode-block" id="StringField"><a class="viewcode-back" href="../../../pax.micromodels.html#pax.micromodels.fields.StringField">[docs]</a><span class="k">class</span> <span class="nc">StringField</span><span class="p">(</span><span class="n">BaseField</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;Field to represent a simple Unicode string value.&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="StringField.to_python"><a class="viewcode-back" href="../../../pax.micromodels.html#pax.micromodels.fields.StringField.to_python">[docs]</a>    <span class="k">def</span> <span class="nf">to_python</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert the data supplied using the :meth:`populate` method to a</span>
+<span class="sd">        Unicode string.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s">&#39;&#39;</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="IntegerField"><a class="viewcode-back" href="../../../pax.micromodels.html#pax.micromodels.fields.IntegerField">[docs]</a><span class="k">class</span> <span class="nc">IntegerField</span><span class="p">(</span><span class="n">BaseField</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;Field to represent an integer value&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="IntegerField.to_python"><a class="viewcode-back" href="../../../pax.micromodels.html#pax.micromodels.fields.IntegerField.to_python">[docs]</a>    <span class="k">def</span> <span class="nf">to_python</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert the data supplied to the :meth:`populate` method to an</span>
+<span class="sd">        integer.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="FloatField"><a class="viewcode-back" href="../../../pax.micromodels.html#pax.micromodels.fields.FloatField">[docs]</a><span class="k">class</span> <span class="nc">FloatField</span><span class="p">(</span><span class="n">BaseField</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;Field to represent a floating point value&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="FloatField.to_python"><a class="viewcode-back" href="../../../pax.micromodels.html#pax.micromodels.fields.FloatField.to_python">[docs]</a>    <span class="k">def</span> <span class="nf">to_python</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert the data supplied to the :meth:`populate` method to a</span>
+<span class="sd">        float.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mf">0.0</span>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="BooleanField"><a class="viewcode-back" href="../../../pax.micromodels.html#pax.micromodels.fields.BooleanField">[docs]</a><span class="k">class</span> <span class="nc">BooleanField</span><span class="p">(</span><span class="n">BaseField</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;Field to represent a boolean&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="BooleanField.to_python"><a class="viewcode-back" href="../../../pax.micromodels.html#pax.micromodels.fields.BooleanField.to_python">[docs]</a>    <span class="k">def</span> <span class="nf">to_python</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;The string ``&#39;True&#39;`` (case insensitive) will be converted</span>
+<span class="sd">        to ``True``, as will any positive integers.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s">&#39;true&#39;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">&gt;</span> <span class="mi">0</span>
+        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="WrappedObjectField"><a class="viewcode-back" href="../../../pax.micromodels.html#pax.micromodels.fields.WrappedObjectField">[docs]</a><span class="k">class</span> <span class="nc">WrappedObjectField</span><span class="p">(</span><span class="n">BaseField</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;Superclass for any fields that wrap an object&quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">wrapped_class</span><span class="p">,</span> <span class="n">related_name</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_wrapped_class</span> <span class="o">=</span> <span class="n">wrapped_class</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_related_name</span> <span class="o">=</span> <span class="n">related_name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_related_obj</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="n">BaseField</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="ModelField"><a class="viewcode-back" href="../../../pax.micromodels.html#pax.micromodels.fields.ModelField">[docs]</a><span class="k">class</span> <span class="nc">ModelField</span><span class="p">(</span><span class="n">WrappedObjectField</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;Field containing a model instance</span>
+
+<span class="sd">    Use this field when you wish to nest one object inside another.</span>
+<span class="sd">    It takes a single required argument, which is the nested class.</span>
+<span class="sd">    For example, given the following dictionary::</span>
+
+<span class="sd">        some_data = {</span>
+<span class="sd">            &#39;first_item&#39;: &#39;Some value&#39;,</span>
+<span class="sd">            &#39;second_item&#39;: {</span>
+<span class="sd">                &#39;nested_item&#39;: &#39;Some nested value&#39;,</span>
+<span class="sd">            },</span>
+<span class="sd">        }</span>
+
+<span class="sd">    You could build the following classes</span>
+<span class="sd">    (note that you have to define the inner nested models first)::</span>
+
+<span class="sd">        class MyNestedModel(micromodels.Model):</span>
+<span class="sd">            nested_item = micromodels.CharField()</span>
+
+<span class="sd">        class MyMainModel(micromodels.Model):</span>
+<span class="sd">            first_item = micromodels.CharField()</span>
+<span class="sd">            second_item = micromodels.ModelField(MyNestedModel)</span>
+
+<span class="sd">    Then you can access the data as follows::</span>
+
+<span class="sd">        &gt;&gt;&gt; m = MyMainModel(some_data)</span>
+<span class="sd">        &gt;&gt;&gt; m.first_item</span>
+<span class="sd">        u&#39;Some value&#39;</span>
+<span class="sd">        &gt;&gt;&gt; m.second_item.__class__.__name__</span>
+<span class="sd">        &#39;MyNestedModel&#39;</span>
+<span class="sd">        &gt;&gt;&gt; m.second_item.nested_item</span>
+<span class="sd">        u&#39;Some nested value&#39;</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ModelField.to_python"><a class="viewcode-back" href="../../../pax.micromodels.html#pax.micromodels.fields.ModelField.to_python">[docs]</a>    <span class="k">def</span> <span class="nf">to_python</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wrapped_class</span><span class="p">):</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wrapped_class</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="ow">or</span> <span class="p">{})</span>
+
+        <span class="c"># Set the related object to the related field</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_related_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="nb">setattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_related_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_related_obj</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">obj</span>
+</div>
+<div class="viewcode-block" id="ModelField.to_serial"><a class="viewcode-back" href="../../../pax.micromodels.html#pax.micromodels.fields.ModelField.to_serial">[docs]</a>    <span class="k">def</span> <span class="nf">to_serial</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_instance</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">model_instance</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">serial</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="ModelCollectionField"><a class="viewcode-back" href="../../../pax.micromodels.html#pax.micromodels.fields.ModelCollectionField">[docs]</a><span class="k">class</span> <span class="nc">ModelCollectionField</span><span class="p">(</span><span class="n">WrappedObjectField</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;Field containing a list of model instances.</span>
+
+<span class="sd">    Use this field when your source data dictionary contains a list of</span>
+<span class="sd">    dictionaries. It takes a single required argument, which is the name of the</span>
+<span class="sd">    nested class that each item in the list should be converted to.</span>
+<span class="sd">    For example::</span>
+
+<span class="sd">        some_data = {</span>
+<span class="sd">            &#39;list&#39;: [</span>
+<span class="sd">                {&#39;value&#39;: &#39;First value&#39;},</span>
+<span class="sd">                {&#39;value&#39;: &#39;Second value&#39;},</span>
+<span class="sd">                {&#39;value&#39;: &#39;Third value&#39;},</span>
+<span class="sd">            ]</span>
+<span class="sd">        }</span>
+
+<span class="sd">        class MyNestedModel(micromodels.Model):</span>
+<span class="sd">            value = micromodels.CharField()</span>
+
+<span class="sd">        class MyMainModel(micromodels.Model):</span>
+<span class="sd">            list = micromodels.ModelCollectionField(MyNestedModel)</span>
+
+<span class="sd">        &gt;&gt;&gt; m = MyMainModel(some_data)</span>
+<span class="sd">        &gt;&gt;&gt; len(m.list)</span>
+<span class="sd">        3</span>
+<span class="sd">        &gt;&gt;&gt; m.list[0].__class__.__name__</span>
+<span class="sd">        &#39;MyNestedModel&#39;</span>
+<span class="sd">        &gt;&gt;&gt; m.list[0].value</span>
+<span class="sd">        u&#39;First value&#39;</span>
+<span class="sd">        &gt;&gt;&gt; [item.value for item in m.list]</span>
+<span class="sd">        [u&#39;First value&#39;, u&#39;Second value&#39;, u&#39;Third value&#39;]</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ModelCollectionField.to_python"><a class="viewcode-back" href="../../../pax.micromodels.html#pax.micromodels.fields.ModelCollectionField.to_python">[docs]</a>    <span class="k">def</span> <span class="nf">to_python</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">object_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wrapped_class</span><span class="p">):</span>
+                <span class="n">obj</span> <span class="o">=</span> <span class="n">item</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">obj</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_wrapped_class</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_related_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="nb">setattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_related_name</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_related_obj</span><span class="p">)</span>
+            <span class="n">object_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">object_list</span>
+</div>
+<div class="viewcode-block" id="ModelCollectionField.to_serial"><a class="viewcode-back" href="../../../pax.micromodels.html#pax.micromodels.fields.ModelCollectionField.to_serial">[docs]</a>    <span class="k">def</span> <span class="nf">to_serial</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_instances</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">instance</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">serial</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span> <span class="k">for</span> <span class="n">instance</span> <span class="ow">in</span> <span class="n">model_instances</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="ModelCollectionField.append"><a class="viewcode-back" href="../../../pax.micromodels.html#pax.micromodels.fields.ModelCollectionField.append">[docs]</a>    <span class="k">def</span> <span class="nf">append</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">list</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_python</span><span class="p">()</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Processor for Analyzing XENON1T 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Christopher Tunnell.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

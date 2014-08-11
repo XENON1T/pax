@@ -70,7 +70,8 @@
 <span class="c"># Here we set our unit system</span>
 <span class="n">base_units</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s">&#39;m&#39;</span><span class="p">:</span> <span class="mi">10</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span>  <span class="c"># distances in cm</span>
-    <span class="s">&#39;s&#39;</span><span class="p">:</span> <span class="mi">10</span> <span class="o">**</span> <span class="mi">9</span><span class="p">,</span>  <span class="c"># times in ns</span>
+    <span class="s">&#39;s&#39;</span><span class="p">:</span> <span class="mi">10</span> <span class="o">**</span> <span class="mi">9</span><span class="p">,</span>  <span class="c"># times in ns.</span>
+    <span class="c"># Sample size must be an integer multiple of unit time to use our datastructure!</span>
     <span class="s">&#39;eV&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>       <span class="c"># energies in eV</span>
     <span class="c"># charge in number of electrons (so voltage will be in Volts)</span>
     <span class="s">&#39;C&#39;</span><span class="p">:</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">electron_charge_SI</span><span class="p">,</span>

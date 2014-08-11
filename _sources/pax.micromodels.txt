@@ -1,0 +1,30 @@
+pax.micromodels package
+=======================
+
+Submodules
+----------
+
+pax.micromodels.fields module
+-----------------------------
+
+.. automodule:: pax.micromodels.fields
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.micromodels.models module
+-----------------------------
+
+.. automodule:: pax.micromodels.models
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: pax.micromodels
+    :members:
+    :undoc-members:
+    :show-inheritance:

@@ -59,18 +59,18 @@
 <dt id="pax.datastructure.Event">
 <em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Event</tt><big>(</big><em>kwargs=None</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event" title="Permalink to this definition">¶</a></dt>
 <dd><p>Event class</p>
-<dl class="attribute">
+<dl class="method">
 <dt id="pax.datastructure.Event.S1s">
-<tt class="descname">S1s</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.S1s" title="Permalink to this definition">¶</a></dt>
-<dd><p>List of S1 (scintillation) signals
-Returns an <a class="reference internal" href="pax.html#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a> class.</p>
+<tt class="descname">S1s</tt><big>(</big><em>sort_key='area'</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.S1s"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.S1s" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of S1 (scintillation) signals</p>
+<p>Returns an <a class="reference internal" href="pax.html#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a> class.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="method">
 <dt id="pax.datastructure.Event.S2s">
-<tt class="descname">S2s</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.S2s" title="Permalink to this definition">¶</a></dt>
-<dd><p>List of S2 (ionization) signals
-Returns an <a class="reference internal" href="pax.html#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a> class.</p>
+<tt class="descname">S2s</tt><big>(</big><em>sort_key='area'</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.S2s"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.S2s" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of S2 (ionization) signals</p>
+<p>Returns an <a class="reference internal" href="pax.html#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a> class.</p>
 </dd></dl>
 
 <dl class="method">
@@ -125,49 +125,34 @@ The first element of the 2-tuple is the index within the event (i.e.
 units of sample, e.g., 10 ns) where this &#8216;occurence&#8217;/pulse begins. The
 second element is a numpy array 16-bit signed integers, which represent
 the ADC counts.</p>
-<p>(This may get moved into the Input plugin baseclass, see issue #32)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Event.peaks">
+<tt class="descname">peaks</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.peaks" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of peaks</p>
+<p>Returns a list of <a class="reference internal" href="pax.html#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a> classes.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.pmt_waveforms">
 <tt class="descname">pmt_waveforms</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.pmt_waveforms" title="Permalink to this definition">¶</a></dt>
-<dd><p>Array of samples.</p>
+<dd><p>A 2D array of all the PMT waveforms, units of pe/bin.</p>
+<p>The first index is the PMT number (starting from zero), and the second
+index is the sample number.  This must be a numpy array.  To access the
+waveform for a specific PMT such as PMT 10, you can do:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">event</span><span class="o">.</span><span class="n">pmt_waveforms</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>which returns a 1D array of samples.</p>
+<p>The data type is a float32 since these numbers are already baseline
+and gain corrected.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.sample_duration">
 <tt class="descname">sample_duration</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.sample_duration" title="Permalink to this definition">¶</a></dt>
 <dd><p>Time duration of a sample in units of ns</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Event.user_float_0">
-<tt class="descname">user_float_0</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.user_float_0" title="Permalink to this definition">¶</a></dt>
-<dd><p>Unused float (useful for developing)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Event.user_float_1">
-<tt class="descname">user_float_1</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.user_float_1" title="Permalink to this definition">¶</a></dt>
-<dd><p>Unused float (useful for developing)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Event.user_float_2">
-<tt class="descname">user_float_2</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.user_float_2" title="Permalink to this definition">¶</a></dt>
-<dd><p>Unused float (useful for developing)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Event.user_float_3">
-<tt class="descname">user_float_3</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.user_float_3" title="Permalink to this definition">¶</a></dt>
-<dd><p>Unused float (useful for developing)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Event.user_float_4">
-<tt class="descname">user_float_4</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.user_float_4" title="Permalink to this definition">¶</a></dt>
-<dd><p>Unused float (useful for developing)</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -184,9 +169,6 @@ the ADC counts.</p>
 <dt id="pax.datastructure.Peak">
 <em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Peak</tt><big>(</big><em>kwargs=None</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak" title="Permalink to this definition">¶</a></dt>
 <dd><p>Peak object</p>
-<p>Used for either S1 or S2.  Please do not add an &#8220;is_S1&#8221; or &#8220;is_S2&#8221; field because this
-can lead to discrepancies if an &#8216;is_S1&#8217; is in the S2 list.  Then we need to check
-for that.  Maybe we can do something smart with a method?  See Issue #30.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.area">
 <tt class="descname">area</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.area" title="Permalink to this definition">¶</a></dt>
@@ -196,7 +178,7 @@ for that.  Maybe we can do something smart with a method?  See Issue #30.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.height">
 <tt class="descname">height</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.height" title="Permalink to this definition">¶</a></dt>
-<dd><p>Highest point in peak in units of ADC counts</p>
+<dd><p>Height of highest point in peak (in pe/bin)</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -212,9 +194,22 @@ for that.  Maybe we can do something smart with a method?  See Issue #30.</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="pax.datastructure.Peak.pmt_list">
+<tt class="descname">pmt_list</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.pmt_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Array of PMT numbers included in this peaks.</p>
+<p>This is added by PeakPostProcessing.MakeHitList</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="pax.datastructure.Peak.right">
 <tt class="descname">right</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.right" title="Permalink to this definition">¶</a></dt>
 <dd><p>Index of right bound (exclusive) in sum waveform.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.type">
+<tt class="descname">type</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Type of peak (e.g., &#8216;S1&#8217; or &#8216;S2&#8217;)</p>
 </dd></dl>
 
 </dd></dl>
@@ -224,6 +219,11 @@ for that.  Maybe we can do something smart with a method?  See Issue #30.</p>
 <dt id="pax.datastructure.Waveform">
 <em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Waveform</tt><big>(</big><em>kwargs=None</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Waveform" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class used to store sum (filtered or not) waveform information.</p>
+<dl class="method">
+<dt id="pax.datastructure.Waveform.is_filtered">
+<tt class="descname">is_filtered</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Waveform.is_filtered"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Waveform.is_filtered" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="attribute">
 <dt id="pax.datastructure.Waveform.name">
 <tt class="descname">name</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Waveform.name" title="Permalink to this definition">¶</a></dt>
@@ -233,7 +233,7 @@ for that.  Maybe we can do something smart with a method?  See Issue #30.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Waveform.name_of_filter">
 <tt class="descname">name_of_filter</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Waveform.name_of_filter" title="Permalink to this definition">¶</a></dt>
-<dd><p>Name of the filter used (or None)</p>
+<dd><p>Name of the filter used (or &#8216;none&#8217;)</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -245,7 +245,7 @@ for that.  Maybe we can do something smart with a method?  See Issue #30.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Waveform.samples">
 <tt class="descname">samples</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Waveform.samples" title="Permalink to this definition">¶</a></dt>
-<dd><p>Array of samples.</p>
+<dd><p>Array of samples, units of pe/bin.</p>
 </dd></dl>
 
 </dd></dl>

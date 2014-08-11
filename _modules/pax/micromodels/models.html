@@ -1,0 +1,244 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pax.micromodels.models &mdash; Processor for Analyzing XENON1T 0.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../',
+        VERSION:     '0.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../_static/doctools.js"></script>
+    <link rel="top" title="Processor for Analyzing XENON1T 0.2.0 documentation" href="../../../index.html" />
+    <link rel="up" title="Module code" href="../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Processor for Analyzing XENON1T 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pax.micromodels.models</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Fork of micromodels</span>
+
+<span class="sd">https://github.com/j4mie/micromodels</span>
+
+<span class="sd">Add numpy support and quite a few ways the code operates.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpyson</span>
+
+<span class="kn">from</span> <span class="nn">pax.micromodels.fields</span> <span class="kn">import</span> <span class="n">BaseField</span>
+
+
+<div class="viewcode-block" id="ModelMeta"><a class="viewcode-back" href="../../../pax.micromodels.html#pax.micromodels.models.ModelMeta">[docs]</a><span class="k">class</span> <span class="nc">ModelMeta</span><span class="p">(</span><span class="nb">type</span><span class="p">):</span>
+
+    <span class="sd">&#39;&#39;&#39;Creates the metaclass for Model. The main function of this metaclass</span>
+<span class="sd">    is to move all of fields into the _fields variable on the class.</span>
+
+<span class="sd">    &#39;&#39;&#39;</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">attrs</span><span class="p">):</span>
+        <span class="n">cls</span><span class="o">.</span><span class="n">_clsfields</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">BaseField</span><span class="p">):</span>
+                <span class="n">cls</span><span class="o">.</span><span class="n">_clsfields</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+                <span class="nb">delattr</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="Model"><a class="viewcode-back" href="../../../pax.micromodels.html#pax.micromodels.models.Model">[docs]</a><span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="nb">object</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ModelMeta</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;The Model is the main component of micromodels. Model makes it trivial</span>
+<span class="sd">    to parse data from many sources, including JSON APIs.</span>
+
+<span class="sd">    You will probably want to initialize this class using the class methods</span>
+<span class="sd">    :meth:`from_dict` or :meth:`from_kwargs`. If you want to initialize an</span>
+<span class="sd">    instance without any data, just call :class:`Model` with no parameters.</span>
+
+<span class="sd">    :class:`Model` instances have a unique behavior when an attribute is set</span>
+<span class="sd">    on them. This is needed to properly format data as the fields specify.</span>
+<span class="sd">    The variable name is referred to as the key, and the value will be called</span>
+<span class="sd">    the value. For example, in::</span>
+
+<span class="sd">        instance = Model()</span>
+<span class="sd">        instance.age = 18</span>
+
+<span class="sd">    ``age`` is the key and ``18`` is the value.</span>
+
+<span class="sd">    First, the model checks if it has a field with a name matching the key.</span>
+
+<span class="sd">    If there is a matching field, then :meth:`to_python` is called on the field</span>
+<span class="sd">    with the value.</span>
+<span class="sd">        If :meth:`to_python` does not raise an exception, then the result of</span>
+<span class="sd">        :meth:`to_python` is set on the instance, and the method is completed.</span>
+<span class="sd">        Essentially, this means that the first thing setting an attribute tries</span>
+<span class="sd">        to do is process the data as if it was a &quot;primitive&quot; data type.</span>
+
+<span class="sd">        If :meth:`to_python` does raise an exception, this means that the data</span>
+<span class="sd">        might already be an appropriate Python type. The :class:`Model` then</span>
+<span class="sd">        attempts to *serialize* the data into a &quot;primitive&quot; type using the</span>
+<span class="sd">        field&#39;s :meth:`to_serial` method.</span>
+
+<span class="sd">            If this fails, a ``TypeError`` is raised.</span>
+
+<span class="sd">            If it does not fail, the value is set on the instance, and the</span>
+<span class="sd">            method is complete.</span>
+
+<span class="sd">    If the instance doesn&#39;t have a field matching the key, then the key and</span>
+<span class="sd">    value are just set on the instance like any other assignment in Python.</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">Model</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="s">&#39;_extra&#39;</span><span class="p">,</span> <span class="p">{})</span>
+
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_clsfields</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">_default</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">kwargs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">set_data</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="Model.from_dict"><a class="viewcode-back" href="../../../pax.micromodels.html#pax.micromodels.models.Model.from_dict">[docs]</a>    <span class="k">def</span> <span class="nf">from_dict</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">D</span><span class="p">,</span> <span class="n">is_json</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;This factory for :class:`Model`</span>
+<span class="sd">        takes either a native Python dictionary or a JSON dictionary/object</span>
+<span class="sd">        if ``is_json`` is ``True``. The dictionary passed does not need to</span>
+<span class="sd">        contain all of the values that the Model declares.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">instance</span> <span class="o">=</span> <span class="n">cls</span><span class="p">()</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">set_data</span><span class="p">(</span><span class="n">D</span><span class="p">,</span> <span class="n">is_json</span><span class="o">=</span><span class="n">is_json</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">instance</span>
+</div>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="Model.from_kwargs"><a class="viewcode-back" href="../../../pax.micromodels.html#pax.micromodels.models.Model.from_kwargs">[docs]</a>    <span class="k">def</span> <span class="nf">from_kwargs</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;This factory for :class:`Model` only takes keywork arguments.</span>
+<span class="sd">        Each key and value pair that represents a field in the :class:`Model` is</span>
+<span class="sd">        set on the new :class:`Model` instance.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="n">instance</span> <span class="o">=</span> <span class="n">cls</span><span class="p">()</span>
+        <span class="n">instance</span><span class="o">.</span><span class="n">set_data</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">instance</span>
+</div>
+<div class="viewcode-block" id="Model.set_data"><a class="viewcode-back" href="../../../pax.micromodels.html#pax.micromodels.models.Model.set_data">[docs]</a>    <span class="k">def</span> <span class="nf">set_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">,</span> <span class="n">is_json</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">is_json</span><span class="p">:</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">numpyson</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_clsfields</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">key</span> <span class="o">=</span> <span class="n">field</span><span class="o">.</span><span class="n">source</span> <span class="ow">or</span> <span class="n">name</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">data</span><span class="p">:</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+</div>
+    <span class="k">def</span> <span class="nf">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">:</span>
+            <span class="n">field</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+            <span class="n">field</span><span class="o">.</span><span class="n">populate</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+            <span class="n">field</span><span class="o">.</span><span class="n">_related_obj</span> <span class="o">=</span> <span class="bp">self</span>
+            <span class="nb">super</span><span class="p">(</span><span class="n">Model</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">field</span><span class="o">.</span><span class="n">to_python</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">AttributeError</span><span class="p">(</span><span class="s">&quot;Field &#39;</span><span class="si">%s</span><span class="s">&#39; not found.&quot;</span> <span class="o">%</span> <span class="n">key</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">_fields</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_clsfields</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_extra</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Model.add_field"><a class="viewcode-back" href="../../../pax.micromodels.html#pax.micromodels.models.Model.add_field">[docs]</a>    <span class="k">def</span> <span class="nf">add_field</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">field</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;:meth:`add_field` must be used to add a field to an existing</span>
+<span class="sd">        instance of Model. This method is required so that serialization of the</span>
+<span class="sd">        data is possible. Data on existing fields (defined in the class) can be</span>
+<span class="sd">        reassigned without using this method.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_extra</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Model.to_dict"><a class="viewcode-back" href="../../../pax.micromodels.html#pax.micromodels.models.Model.to_dict">[docs]</a>    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">serial</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;A dictionary representing the the data of the class is returned.</span>
+<span class="sd">        Native Python objects will still exist in this dictionary (for example,</span>
+<span class="sd">        a ``datetime`` object will be returned rather than a string)</span>
+<span class="sd">        unless ``serial`` is set to True.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">if</span> <span class="n">serial</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">dict</span><span class="p">((</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">to_serial</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)))</span>
+                        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">dict</span><span class="p">((</span><span class="n">key</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">))</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_fields</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+                        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="Model.to_json"><a class="viewcode-back" href="../../../pax.micromodels.html#pax.micromodels.models.Model.to_json">[docs]</a>    <span class="k">def</span> <span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&#39;&#39;&#39;Returns a representation of the model as a JSON string. This method</span>
+<span class="sd">        relies on the :meth:`~micromodels.Model.to_dict` method.</span>
+
+<span class="sd">        &#39;&#39;&#39;</span>
+        <span class="k">return</span> <span class="n">numpyson</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">serial</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../index.html">Processor for Analyzing XENON1T 0.2.0 documentation</a> &raquo;</li>
+          <li><a href="../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Christopher Tunnell.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>
