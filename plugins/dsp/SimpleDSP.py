@@ -87,12 +87,19 @@ class SumWaveforms(plugin.TransformPlugin):
 
 class S2Filter(plugin.TransformPlugin):
 
+    def startup(self):
+        filter_sigma = self.config['gauss_filter_fwhm']/2.35482
+        x = np.linspace(-2,2,num=(1+4*filter_sigma/self.config['digitizer_t_resolution']))
+        self.filter_ir = 1/(filter_sigma*np.sqrt(2*np.pi)) * np.exp(-x**2 / (2*filter_sigma**2))
+        self.filter_ir /= np.sum(self.filter_ir)
+        print(len(self.filter_ir))
+
     def transform_event(self, event):
         input_w = event.get_waveform('tpc')
         event.waveforms.append(datastructure.Waveform({
             'name':     'filtered_for_s2',
             'samples':  np.array(
-                np.convolve(input_w.samples, self.config['normalized_filter_ir'], 'same'), dtype=np.float32
+                np.convolve(input_w.samples, self.filter_ir, 'same'), dtype=np.float32
             ),
             'pmt_list': input_w.pmt_list,
         }))
