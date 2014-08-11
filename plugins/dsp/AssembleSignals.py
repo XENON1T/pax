@@ -170,7 +170,6 @@ class SumWaveforms(plugin.TransformPlugin):
     def transform_event(self, event):
         # Compute summed waveforms
         for group, members in self.channel_groups.items():
-            self.log.warning(group)
             event.waveforms.append((Waveform({'samples' : np.sum(event.pmt_waveforms[[list(members)]],
                                                                  axis=0),
                                               'name' : group,
