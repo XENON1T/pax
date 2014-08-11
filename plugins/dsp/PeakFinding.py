@@ -1,6 +1,6 @@
 import numpy as np
 
-from pax import plugin, units, datastructure
+from pax import plugin, datastructure
 
 class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
 
@@ -12,24 +12,24 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
     def transform_event(self, event):
         # Load settings here, so we are sure dynamic threshold stuff etc gets reset
         # Don't need to move these to ini I think, this plugin is meant to match Xerawdp, which always used these
-        self.settings_for_peaks = [ #We need a specific order, so we can't use a dict
+        self.settings_for_peaks = [   # We need a specific order, so we can't use a dict
             ('large_s2', {
-                'threshold':        0.6241506363,
+                'threshold':                        0.6241506363,
                 'left_boundary_to_height_ratio':    0.005,
                 'right_boundary_to_height_ratio':   0.002,
-                'min_length':       35+1,   #+1 as Xerawdp tests for ... > minwidth, which is stupid, so my code doesn't
-                'max_length':       float('inf'),
-                'min_base_interval_length': 60+1,
-                'max_base_interval_length': float('inf'),
-                'source_waveform':  'filtered_for_large_s2',
+                'min_length':                       35+1,  # +1 as Xerawdp tests for ... > minwidth, which is stupid, so my code doesn't
+                'max_length':                       float('inf'),
+                'min_base_interval_length':         60+1,
+                'max_base_interval_length':         float('inf'),
+                'source_waveform':                  'filtered_for_large_s2',
                 # For isolation test on top-level interval
                 'around_interval_to_height_ratio_max': 0.05,
-                'test_around_interval': 21,
+                'test_around_interval':             21,
                 # For isolation test on every peak
-                'around_peak_to_height_ratio_max': 0.25,
-                'test_around_peak': 21,
-                'min_crossing_length': 1,
-                'stop_if_start_exceeded':False, # Not for large s2s? Bug?
+                'around_peak_to_height_ratio_max':  0.25,
+                'test_around_peak':                 21,
+                'min_crossing_length':              1,
+                'stop_if_start_exceeded':           False, # Not for large s2s? Bug?
             }),
             ('small_s2', {
                 'threshold':                        0.06241506363,
@@ -357,13 +357,13 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             # For large S2 from top-level interval: do the isolation check on the top interval
             if toplevel:
                 if not self.isolation_test(signal, max_idx,
-                                      right_edge_of_left_test_region=min(left_boundary, left)-1,
-                                      test_length_left=settings['test_around_interval'],
-                                      left_edge_of_right_test_region=max(right_boundary, right)+1,
-                                      test_length_right=settings['test_around_interval'],
-                                      before_avg_max_ratio=settings['around_interval_to_height_ratio_max'],
-                                      after_avg_max_ratio=settings['around_interval_to_height_ratio_max'],
-                                      can_fail_one = True): #NB Different from all the others!!!! (also s1?)
+                                           right_edge_of_left_test_region=min(left_boundary, left)-1,
+                                           test_length_left=settings['test_around_interval'],
+                                           left_edge_of_right_test_region=max(right_boundary, right)+1,
+                                           test_length_right=settings['test_around_interval'],
+                                           before_avg_max_ratio=settings['around_interval_to_height_ratio_max'],
+                                           after_avg_max_ratio=settings['around_interval_to_height_ratio_max'],
+                                           can_fail_one=True): #NB Different from all the others!!!! (also s1?)
                     self.log.debug("    Toplevel interval failed isolation test")
                     return
 
@@ -377,12 +377,12 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             # An additional, different, isolation test is applied to every individual peak < 0.05 the toplevel peak
             if height < 0.05 * self.last_toplevel_max_val:
                 if not self.isolation_test(signal, max_idx,
-                                      right_edge_of_left_test_region=left-1,
-                                      test_length_left=settings['test_around_peak'],
-                                      left_edge_of_right_test_region=right+1,
-                                      test_length_right=settings['test_around_peak'],
-                                      before_avg_max_ratio=settings['around_peak_to_height_ratio_max'],
-                                      after_avg_max_ratio=settings['around_peak_to_height_ratio_max']):
+                                           right_edge_of_left_test_region=left-1,
+                                           test_length_left=settings['test_around_peak'],
+                                           left_edge_of_right_test_region=right+1,
+                                           test_length_right=settings['test_around_peak'],
+                                           before_avg_max_ratio=settings['around_peak_to_height_ratio_max'],
+                                           after_avg_max_ratio=settings['around_peak_to_height_ratio_max']):
                     self.log.debug("    Failed isolation test")
                     return
 
@@ -486,13 +486,13 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             left -= 2
             right += 2
         self.log.debug("! Appending %s (%s-%s-%s) to peaks" % (peak_type, left, max_idx, right))
-        brand_new_peak =  datastructure.Peak({
-                'area' : np.sum(signal[left:right]),
-                'index_of_maximum' : max_idx, #Yeah, that's a waste of time! But it is really needed for s2s at least...  # TODO: Make clearer messages? 
-                'height' : height,
-                'left' : left,
-                'right' : right,
-                })
+        brand_new_peak = datastructure.Peak({
+            'area':             np.sum(signal[left:right]),   # Waste of time, only gets used for sorting s2s...
+            'index_of_maximum': max_idx,
+            'height':           height,
+            'left':             left,
+            'right':            right,
+        })
 
         if peak_type == 's1':
             event.S1s.append(brand_new_peak)
@@ -568,6 +568,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
         if test_length_left == 0:
             self.log.debug("        Empty left test region! Auto-failing before-avg test.")
             failed_pre = True
+            pre_avg = 'not computed'
         else:
             # +1s are to compensate for python's indexing conventions...
             pre_avg = np.mean(signal[
@@ -578,17 +579,16 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
         if test_length_right == 0:
             self.log.debug("        Empty right test region! Auto-failing after-avg test.")
             failed_post = True
+            post_avg = 'not computed'
         else:
             post_avg = np.mean(signal[
                 left_edge_of_right_test_region:
                 left_edge_of_right_test_region + test_length_right
             ])
             failed_post = post_avg > height * after_avg_max_ratio
-        if test_length_left and test_length_right:
-            # Can only print these when no empty test regions occur (or we could add lots of if stuff..)
-            self.log.debug("        Fail test if before avg %s > %s and/or above avg %s > %s" % (
-                pre_avg, height * before_avg_max_ratio, post_avg, height * after_avg_max_ratio
-            ))
+        self.log.debug("        Fail test if before avg %s > %s and/or above avg %s > %s" % (
+            pre_avg, height * before_avg_max_ratio, post_avg, height * after_avg_max_ratio
+        ))
         if can_fail_one:
             failed = failed_pre and failed_post
         else:
@@ -614,48 +614,18 @@ class ComputePeakProperties(plugin.TransformPlugin):
         """
 
         # Compute relevant peak quantities for each pmt's peak: height, FWHM, FWTM, area, ..
-
-        #  Create a list of IDs that we can 'zip' in with our summed S1 and S2 list
-        is_s1_ids = np.zeros(len(event.S1s + event.S2s))
-        is_s1_ids[0:len(event.S1s)] = 1
-
-        for i, values in enumerate(zip((event.S1s + event.S2s), is_s1_ids)):
-            peak, is_S1 = values
+        for peak_type, peak in event.get_all_peaks():
             # Hack for Xerawdp matching: we need to compute the area of EVERY CHANNEL in EVERY PEAK
             # The only reason we do this is because channels with negative area don't get contribute to a peak's area...
             areas_per_pmt = {}
             for channel, wave_data in enumerate(event.pmt_waveforms):
-                #TODO: Don't hardcode this...!!!
-                if channel > 178: continue
-                if is_S1 and channel in self.config['pmts_excluded_for_s1']: continue
-                integral = np.sum(wave_data[peak.left:peak.right]) # No +1, Xerawdp forgets the right edge also
+                if channel in self.config['pmts_veto'] or \
+                   peak_type == 's1' and channel in self.config['pmts_excluded_for_s1']:
+                    continue
+                integral = np.sum(wave_data[peak.left:peak.right])    # No +1, Xerawdp forgets the right edge also
                 areas_per_pmt[channel] = integral
             area_for_xerawdp_matching = sum([area for _, area in areas_per_pmt.items() if area > 0])
             peak.area = area_for_xerawdp_matching
-            #Nicer computations, probably don't need them?
-            #continue
-            # for channel, wave_data in event['processed_waveforms'].items():
-            #     # Todo: use python's handy arcane naming/assignment convention to beautify this code
-            #     peak_wave = wave_data[p.left:p.right ]#+ 1] Xerawdp bug/feature: does not include right edge in integral...
-            #     peaks[i][channel] = {}
-            #     maxpos = peaks[i][channel]['position_of_max_in_peak'] = np.argmax(peak_wave)
-            #     maxval = peaks[i][channel]['height'] = peak_wave[maxpos]
-            #     peaks[i][channel]['position_of_max_in_waveform'] = p.left + maxpos
-            #     peaks[i][channel]['area'] = np.sum(peak_wave)
-            #     if channel == 'top_and_bottom':
-            #         # Expensive stuff...
-            #         # Have to search the actual whole waveform, not peak_wave:
-            #         # TODO: Can search for a VERY VERY LONG TIME when there are weird peaks, e.g in afterpulse tail..
-            #         # Fix by computing baseline for inividual peak, or limiting search region...
-            #         # how does XerawDP do this?
-            #         samples_to_ns = self.config['digitizer_t_resolution'] / units.ns
-            #         peaks[i][channel]['fwhm'] = extent_until_threshold(wave_data, start=p['index_of_max_in_waveform'],
-            #                                                            threshold=maxval / 2) * samples_to_ns
-            #         peaks[i][channel]['fwtm'] = extent_until_threshold(wave_data, start=p['index_of_max_in_waveform'],
-            #                                                            threshold=maxval / 10) * samples_to_ns
-            #         # if 'top' in peaks[i] and 'bottom' in peaks[i]:
-            #         # peaks[i]['asymmetry'] = (peaks[i]['top']['area'] - peaks[i]['bottom']['area']) / (
-            #         # peaks[i]['top']['area'] + peaks[i]['bottom']['area'])
 
         return event
 
@@ -841,21 +811,3 @@ def interval_until_threshold(signal, start,
 def extent_until_threshold(signal, start, threshold):
     a = interval_until_threshold(signal, start, threshold)
     return a[1] - a[0]
-
-
-
-
-
-
-                    # Code for checking if we are above threshold already
-                        # For S2s, we need to check if we are above threshold already.
-                        # If so, move along until we're not
-                        # (weird Xerawdp behaviour, but which of the two options is the most sensible?)
-                        # while signal[self.seeker_position] > settings['threshold']:
-                        #     self.seeker_position = find_next_crossing(signal, settings['threshold'],
-                        #                                         start=self.seeker_position, stop=region_right)
-                        #     if self.seeker_position == region_right:
-                        #         self.log.warning('Entire %s search region from %s to %s is above threshold %s!' %(
-                        #             peak_type, region_left, region_right, settings['threshold']
-                        #         ))
-                        #         break

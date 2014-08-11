@@ -166,26 +166,16 @@ class XedInput(plugin.InputPlugin):
         event = Event()
         event.event_number = int(event_layer_metadata['event_number'])
         event.occurrences = occurrences
-        ev_start = event_layer_metadata['utc_time']*units.s +event_layer_metadata['utc_time_usec']*units.us
+
+
         #TODO: don't hardcode sample size...
-        dt = 10*units.ns
-
-        event.event_start= ev_start
-        event.event_stop = ev_start + (event_layer_metadata['samples_in_event']-1+1)*dt
-
-        event.sample_duration = dt
+        event.sample_duration = int(10*units.ns)
+        event.event_start = int(
+            event_layer_metadata['utc_time']*units.s +event_layer_metadata['utc_time_usec']*units.us
+        )
+        # Remember event_stop is the stop time of the LAST sample!
+        event.event_stop = event.event_start + int(event_layer_metadata['samples_in_event']*event.sample_duration)
         return event
-        # Finally, we make some of the Meta data provided in the XED-file available in the event structure
-        # event['metadata'] = {
-        #     'dataset_name': self.file_metadata['dataset_name'],
-        #     'dataset_creation_time': self.file_metadata['creation_time'],
-        #     'utc_time': event_layer_metadata['utc_time'],
-        #     'utc_time_usec': event_layer_metadata['utc_time_usec'],
-        #     'event_number': event_layer_metadata['event_number'],
-        #     'voltage_range': event_layer_metadata['voltage_range'] / units.V,
-        #     'channels_from_input': event_layer_metadata['channels'],
-        # }
-        # return event
 
     # If we get here, all events have been read
     #self.input.close()

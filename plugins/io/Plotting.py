@@ -17,13 +17,13 @@ class PlottingWaveform(plugin.OutputPlugin):
         # Plot all peaks
         max_y = max([p.height for p in event.S2s + event.S1s])
 
-        for peak in event.S2s + event.S1s:
+        for peak_type, peak in event.get_all_peaks():
 
             x = peak.index_of_maximum
             y = peak.height
 
             plt.hlines(y, peak.left, peak.right)
-            ax.annotate('%s:%s' % (('s1' if hasattr(peak, 'is_s1') else 's2'), int(peak.area)),
+            ax.annotate('%s:%s' % (peak_type, int(peak.area)),
                         xy=(x, y),
                         xytext=(x, y + (max_y-y)*(0.05+0.2*random.random())),
                         arrowprops=dict(arrowstyle="fancy",
@@ -32,11 +32,11 @@ class PlottingWaveform(plugin.OutputPlugin):
 
         # plt.plot(event.get_waveform('tpc').samples,  label='TPC')
         # plt.plot(event.get_waveform('filtered_for_s2').samples, label='TPC - filtered')
-        # plt.plot(event.get_waveform('veto').samples, label='Veto')
         plt.plot(event.get_waveform('uS1').samples, label='S1 peakfinding')
         plt.plot(event.get_waveform('uS2').samples, label='S2 peakfinding')
         plt.plot(event.get_waveform('filtered_for_large_s2').samples, label='Large s2 filtered')
         plt.plot(event.get_waveform('filtered_for_small_s2').samples, label='Small s2 filtered')
+        plt.plot(event.get_waveform('veto').samples, label='Veto')
         plt.plot([0.6241506363] * event.length(),  '--', label='Large S2 threshold')
         plt.plot([0.06241506363]* event.length(),  '--', label='Small S2 threshold')
         plt.plot([0.1872451909] * event.length(),  '--', label='S1 threshold')
