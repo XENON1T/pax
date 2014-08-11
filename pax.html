@@ -120,8 +120,14 @@ Or rather, it starts from January 1, 1970.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Event.occurrences">
 <tt class="descname">occurrences</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.occurrences" title="Permalink to this definition">¶</a></dt>
-<dd><p>Occurences</p>
-<p>Each one of these is like a &#8216;pulse&#8217; from one channel.</p>
+<dd><p>Occurrences</p>
+<p>Each one of these is like a &#8216;pulse&#8217; from one channel.  This field is a
+dictionary where each key is an integer channel number.  Each value for
+the dictionary is a list, where each element of the list is a 2-tuple.
+The first element of the 2-tuple is the index within the event (i.e.
+units of sample, e.g., 10 ns) where this &#8216;occurence&#8217;/pulse begins. The
+second element is a numpy array 16-bit signed integers, which represent
+the ADC counts.</p>
 </dd></dl>
 
 <dl class="attribute">
