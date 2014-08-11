@@ -160,7 +160,7 @@ class Event(Model):
             if peak.type.upper() == desired_type:
                 peaks.append(peak)
 
-        # Sort the peaks
+        # Sort the peaks by your sort key
         peaks = sorted(peaks,
                        key=lambda x: getattr(x, sort_key))
 
