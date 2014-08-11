@@ -24,7 +24,7 @@ class Peak(Model):
     """
     area = FloatField()  #: Area of the pulse in photoelectrons
     index_of_maximum = IntegerField()  #: Index of maximum value within sum waveform.
-    height = IntegerField()  #: Highest point in peak in units of ADC counts
+    height = IntegerField()  #: Height of highest point in peak (in pe/bin)
     left = IntegerField()  #: Index of left bound (inclusive) in sum waveform.
     right = IntegerField()  #: Index of right bound (exclusive) in sum waveform.
     type = StringField(default='S1')  #: Type of peak (e.g., 'S1' or 'S2')

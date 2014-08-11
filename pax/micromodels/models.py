@@ -7,7 +7,7 @@ Add numpy support and quite a few ways the code operates.
 
 import numpyson
 
-from .pax.micromodels.fields import BaseField
+from pax.micromodels.fields import BaseField
 
 
 class ModelMeta(type):

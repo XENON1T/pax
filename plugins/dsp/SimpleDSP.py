@@ -17,7 +17,7 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
     def transform_event(self, event):
 
         pmts = 1 + max(self.config['pmts_veto'])   # TODO: really??
-        event.pmt_waveforms = np.zeros((pmts, event.length()))
+        event.pmt_waveforms = np.zeros((pmts, event.length()), dtype=np.float32)
         # Should these go into event class?
         baselines = np.zeros(pmts)
         baseline_stdevs = np.zeros(pmts)
@@ -71,14 +71,18 @@ class SumWaveforms(plugin.TransformPlugin):
             event.waveforms.append(datastructure.Waveform({
                 'samples':  np.sum(event.pmt_waveforms[[list(members)]], axis=0),
                 'name':     group,
-                'pmt_list': members
+                'pmt_list': self.crazy_type_conversion(members),
             }))
         event.waveforms.append(datastructure.Waveform({
             'samples':  event.get_waveform('top').samples + event.get_waveform('bottom').samples,
             'name':     'tpc',
-            'pmt_list': (self.channel_groups['top'] | self.channel_groups['bottom'])
+            'pmt_list': self.crazy_type_conversion(self.channel_groups['top'] | self.channel_groups['bottom'])
         }))
         return event
+
+    @staticmethod
+    def crazy_type_conversion(x):
+        return np.array(list(x), dtype=np.uint16)
 
 
 class S2Filter(plugin.TransformPlugin):
@@ -87,7 +91,9 @@ class S2Filter(plugin.TransformPlugin):
         input_w = event.get_waveform('tpc')
         event.waveforms.append(datastructure.Waveform({
             'name':     'filtered_for_s2',
-            'samples':  np.convolve(input_w.samples, self.config['normalized_filter_ir'], 'same'),
+            'samples':  np.array(
+                np.convolve(input_w.samples, self.config['normalized_filter_ir'], 'same'), dtype=np.float32
+            ),
             'pmt_list': input_w.pmt_list,
         }))
 
@@ -107,7 +113,8 @@ class FindPeaks(plugin.TransformPlugin):
             left = itv_left
             right = itv_right
             self.log.debug("S2 candidate peak %s-%s-%s" % (left, max_idx, right))
-            event.S2s.append(datastructure.Peak({
+            event.peaks.append(datastructure.Peak({
+                'type':             's2',
                 'area':             np.sum(unfiltered[left:right]),
                 'index_of_maximum': max_idx,
                 'height':           unfiltered[max_idx],
@@ -124,5 +131,6 @@ class FindPeaks(plugin.TransformPlugin):
         above0_next = np.roll(above0, 1)
         cross_above = np.sort(np.where(above0 - above0_next == 1)[0])
         cross_below = np.sort(np.where(above0 - above0_next == -1)[0] - 1)
-        # Assuming each interval's left <= right, we can simply split sorted(lefts+rights) in pairs:
+        # Assuming each interval's left <= right, we can simply split sorted(lefts+rights) in pairs
+        # Todo: come on, there must be a numpy method for this!
         return list(zip(*[iter(sorted(list(cross_above) + list(cross_below)))] * 2))

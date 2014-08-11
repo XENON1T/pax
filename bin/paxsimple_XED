@@ -10,7 +10,7 @@ dsp = ['SimpleDSP.JoinAndConvertWaveforms',
        'SimpleDSP.S2Filter',
        'SimpleDSP.FindPeaks']
 
-#output = 'Plotting.PlottingWaveform'
+output = 'Plotting.PlottingWaveform'
 #output = 'CSV.WriteCSVPeakwise'
 
 [XED.XedInput]
