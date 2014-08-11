@@ -31,7 +31,7 @@ class TestDatastructure(unittest.TestCase):
     def test_default(self):
         e = Event()
         self.assertEqual(e.event_number, 0)
-        self.assertEqual(e.S1s, [])
+        self.assertEqual(e.peaks, [])
 
     def test_wrong_type(self):
         e = Event()
@@ -39,14 +39,14 @@ class TestDatastructure(unittest.TestCase):
         with self.assertRaises(ValueError):
             e.event_number = "abc"
 
-    def test_s1s(self):
+    def test_peaks(self):
         e = Event()
-        e.S1s = [{'area' : 0,
+        e.peaks = [{'area' : 0,
                       'index_of_maximum': 0}]
 
-        self.assertEqual(len(e.S1s), 1)
-        self.assertIsInstance(e.S1s[0], Peak)
-        self.assertEqual(e.S1s[0].area, 0)
+        self.assertEqual(len(e.peaks), 1)
+        self.assertIsInstance(e.peaks[0], Peak)
+        self.assertEqual(e.peaks[0].area, 0)
 
     def test_peak_instantiation(self):
         p = Peak({'area' : 3.0,
@@ -55,14 +55,42 @@ class TestDatastructure(unittest.TestCase):
         self.assertEqual(p.area, 3.0)
 
 
-    def test_s1s_append(self):
+    def test_peaks_append(self):
         e = Event()
-        e.S1s.append(Peak({'area' : 0,
-                          'index_of_maximum': 0}))
+        e.peaks.append(Peak({'area' : 2.0,
+                          'index_of_maximum': 0,
+                          'type' : 'S1'}))
 
-        self.assertEqual(len(e.S1s), 1)
-        self.assertIsInstance(e.S1s[0], Peak)
-        self.assertEqual(e.S1s[0].area, 0)
+        self.assertEqual(len(e.peaks), 1)
+        self.assertIsInstance(e.peaks[0], Peak)
+        self.assertEqual(e.peaks[0].area, 2.0)
+
+    def test_s1_helper_method(self):
+        e = Event()
+        e.peaks.append(Peak({'area' : 2.0,
+                          'index_of_maximum': 0,
+                          'type' : 'S1'}))
+
+        self.assertEqual(len(e.S1s()), 1)
+        self.assertIsInstance(e.S1s()[0], Peak)
+        self.assertEqual(e.S1s()[0].area, 2.0)
+
+    def test_s1_helper_method_sort(self):
+        areas = [3.0, 1.0, 2.0, 1.2]
+
+        e = Event()
+        for area in areas:
+            e.peaks.append(Peak({'area' : area,
+                                 'type' : 'S2'}))
+
+        s2s = e.S2s()
+        self.assertEqual(len(s2s), len(areas))
+
+        areas = sorted(areas)
+
+        for i, area in enumerate(areas):
+            self.assertIsInstance(s2s[i], Peak)
+            self.assertEqual(s2s[i].area, area)
 
     def test_waveform_string_name(self):
         w = Waveform()
@@ -82,19 +110,17 @@ class TestDatastructure(unittest.TestCase):
 
         w.samples = samples
 
-        print(w.samples)
+        self.assertEqual(len(w.samples),
+                         len(samples))
+        self.assertIsInstance(w.samples, np.ndarray)
+        self.assertEqual(w.samples.dtype, np.float32)
+
+        w.samples = np.array(samples, dtype=np.float32)
 
         self.assertEqual(len(w.samples),
                          len(samples))
         self.assertIsInstance(w.samples, np.ndarray)
-        self.assertEqual(w.samples.dtype, np.int16)
-
-        w.samples = np.array(samples, dtype=np.int16)
-
-        self.assertEqual(len(w.samples),
-                         len(samples))
-        self.assertIsInstance(w.samples, np.ndarray)
-        self.assertEqual(w.samples.dtype, np.int16)
+        self.assertEqual(w.samples.dtype, np.float32)
 
     def tearDown(self):
         pass

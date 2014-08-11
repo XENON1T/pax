@@ -20,28 +20,33 @@ from pax.fields import IntegerField, FloatField, ModelCollectionField, StringFie
 class Peak(Model):
     """Peak object
 
-    Used for either S1 or S2.  Please do not add an "is_S1" or "is_S2" field because this
-    can lead to discrepancies if an 'is_S1' is in the S2 list.  Then we need to check
-    for that.  Maybe we can do something smart with a method?  See Issue #30.
     """
     area = FloatField()  #: Area of the pulse in photoelectrons
     index_of_maximum = IntegerField() #: Index of maximum value within sum waveform.
     height = IntegerField() #: Highest point in peak in units of ADC counts
     left = IntegerField() #: Index of left bound (inclusive) in sum waveform.
     right = IntegerField()  #: Index of right bound (exclusive) in sum waveform.
+    type = StringField(default='S1')  #: Type of peak (e.g., 'S1' or 'S2')
 
 
 class Waveform(Model):
     """Class used to store sum (filtered or not) waveform information.
     """
-    is_filtered = f.BooleanField()
-    name_of_filter = StringField(default="none") #: Name of the filter used (or None)
-    name = StringField(default="none") #: e.g. top
+
+    name_of_filter = StringField(default='none') #: Name of the filter used (or 'none')
+    name = StringField(default='none') #: e.g. top
 
     #: Array of PMT numbers included in this waveform
-    pmt_list = f.NumpyArrayField(dtype=np.float64)
+    pmt_list = f.NumpyArrayField(dtype=np.uint16)
 
-    samples = f.NumpyArrayField(dtype=np.float64) #: Array of samples.
+    #: Array of samples, units of pe/bin.
+    samples = f.NumpyArrayField(dtype=np.float32)
+
+    def is_filtered(self):
+        if self.name_of_filter != 'none':
+            return True
+        else:
+            return False
 
 class Event(Model):
     """Event class
@@ -73,23 +78,18 @@ class Event(Model):
     user_float_3 = FloatField() #: Unused float (useful for developing)
     user_float_4 = FloatField() #: Unused float (useful for developing)
 
-
-    #: List of S1 (scintillation) signals
+    #: List of peaks
     #
-    #: Returns an :class:`pax.datastructure.Peak` class.
-    S1s = ModelCollectionField(default=[], wrapped_class=Peak)
+    #: Returns a list of :class:`pax.datastructure.Peak` classes.
+    peaks = ModelCollectionField(default=[], wrapped_class=Peak)
 
-    #: List of S2 (ionization) signals
-    #
-    #: Returns an :class:`pax.datastructure.Peak` class.
-    S2s = ModelCollectionField(default=[], wrapped_class=Peak)
 
     #: Returns a list of sum waveforms
     #:
     #: Returns an :class:`pax.datastructure.SumWaveform` class.
     waveforms = ModelCollectionField(default=[], wrapped_class=Waveform)
 
-    #: A 2D array of all the PMT waveforms.
+    #: A 2D array of all the PMT waveforms, units of pe/bin.
     #:
     #: The first index is the PMT number (starting from zero), and the second
     #: index is the sample number.  This must be a numpy array.  To access the
@@ -97,25 +97,29 @@ class Event(Model):
     #:
     #:     event.pmt_waveforms[10]
     #:
-    #:which returns a 1D array of samples.
-    pmt_waveforms = f.NumpyArrayField(dtype=np.float64) #: Array of samples.
-
-    #: Occurences
+    #: which returns a 1D array of samples.
     #:
-    #: Each one of these is like a 'pulse' from one channel.
+    #: The data type is a float32 since these numbers are already baseline
+    #: and gain corrected.
+    pmt_waveforms = f.NumpyArrayField(dtype=np.float32) #: Array of samples.
+
+    #: Occurrences
+    #:
+    #: Each one of these is like a 'pulse' from one channel.  This field is a
+    #: dictionary where each key is an integer channel number.  Each value for
+    #: the dictionary is a list, where each element of the list is a 2-tuple.
+    #: The first element of the 2-tuple is the index within the event (i.e.
+    #: units of sample, e.g., 10 ns) where this 'occurence'/pulse begins. The
+    #: second element is a numpy array 16-bit signed integers, which represent
+    #: the ADC counts.
+    #:
+    #: (This may get moved into the Input plugin baseclass, see issue #32)
     occurrences = f.BaseField()
-
-
 
     def event_duration(self):
         """Duration of event window in units of ns
         """
         return self.event_stop - self.event_start
-
-    def length(self):
-        """Number of samples for the sum waveform
-        """
-        return int(self.event_duration()/self.sample_duration)
 
     def get_waveform(self, name):
         """Get waveform for name
@@ -126,6 +130,41 @@ class Event(Model):
 
         raise RuntimeError("Waveform not found")
 
+    def length(self):
+        """Number of samples for the sum waveform
+        """
+        return int(self.event_duration()/self.sample_duration)
+
+    def S1s(self, sort_key='area'):
+        """List of S1 (scintillation) signals
+
+        Returns an :class:`pax.datastructure.Peak` class.
+        """
+        return self._get_peaks_by_type('S1', sort_key)
+
+    def S2s(self, sort_key='area'):
+        """List of S2 (ionization) signals
+
+        Returns an :class:`pax.datastructure.Peak` class.
+        """
+        return self._get_peaks_by_type('S2', sort_key)
+
+    def _get_peaks_by_type(self, desired_type, sort_key):
+        """Helper function for retrieving only certain types of peaks
+
+        You shouldn't be using this directly.
+        """
+        # Extract only peaks of a certain type
+        peaks = []
+        for peak in self.peaks:
+            if peak.type.upper() == desired_type:
+                peaks.append(peak)
+
+        # Sort the peaks
+        peaks = sorted(peaks,
+                       key=lambda x: getattr(x, sort_key))
+
+        return peaks
 
 
 def _explain(class_name):
