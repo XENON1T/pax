@@ -9,7 +9,9 @@ import numpyson
 
 from .pax.micromodels.fields import BaseField
 
+
 class ModelMeta(type):
+
     '''Creates the metaclass for Model. The main function of this metaclass
     is to move all of fields into the _fields variable on the class.
 
@@ -23,6 +25,7 @@ class ModelMeta(type):
 
 
 class Model(object, metaclass=ModelMeta):
+
     """The Model is the main component of micromodels. Model makes it trivial
     to parse data from many sources, including JSON APIs.
 
@@ -68,11 +71,10 @@ class Model(object, metaclass=ModelMeta):
         super(Model, self).__setattr__('_extra', {})
 
         for name, value in self._clsfields.items():
-           self.__setattr__(name, value._default)
+            self.__setattr__(name, value._default)
 
         if kwargs is not None:
             self.set_data(kwargs)
-
 
     @classmethod
     def from_dict(cls, D, is_json=False):
@@ -128,7 +130,6 @@ class Model(object, metaclass=ModelMeta):
         self._extra[key] = field
         setattr(self, key, value)
 
-
     def to_dict(self, serial=False):
         '''A dictionary representing the the data of the class is returned.
         Native Python objects will still exist in this dictionary (for example,
@@ -141,7 +142,7 @@ class Model(object, metaclass=ModelMeta):
                         for key in list(self._fields.keys()) if hasattr(self, key))
         else:
             return dict((key, getattr(self, key)) for key in list(self._fields.keys())
-                       if hasattr(self, key))
+                        if hasattr(self, key))
 
     def to_json(self):
         '''Returns a representation of the model as a JSON string. This method

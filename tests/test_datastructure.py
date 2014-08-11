@@ -14,6 +14,7 @@ from pax.datastructure import Event, Peak, Waveform
 
 
 class TestDatastructure(unittest.TestCase):
+
     def setUp(self):
         pass
 
@@ -41,25 +42,24 @@ class TestDatastructure(unittest.TestCase):
 
     def test_peaks(self):
         e = Event()
-        e.peaks = [{'area' : 0,
-                      'index_of_maximum': 0}]
+        e.peaks = [{'area': 0,
+                    'index_of_maximum': 0}]
 
         self.assertEqual(len(e.peaks), 1)
         self.assertIsInstance(e.peaks[0], Peak)
         self.assertEqual(e.peaks[0].area, 0)
 
     def test_peak_instantiation(self):
-        p = Peak({'area' : 3.0,
-                           'index_of_maximum': 0})
+        p = Peak({'area': 3.0,
+                  'index_of_maximum': 0})
         self.assertIsInstance(p, Peak)
         self.assertEqual(p.area, 3.0)
 
-
     def test_peaks_append(self):
         e = Event()
-        e.peaks.append(Peak({'area' : 2.0,
-                          'index_of_maximum': 0,
-                          'type' : 'S1'}))
+        e.peaks.append(Peak({'area': 2.0,
+                             'index_of_maximum': 0,
+                             'type': 'S1'}))
 
         self.assertEqual(len(e.peaks), 1)
         self.assertIsInstance(e.peaks[0], Peak)
@@ -67,9 +67,9 @@ class TestDatastructure(unittest.TestCase):
 
     def test_s1_helper_method(self):
         e = Event()
-        e.peaks.append(Peak({'area' : 2.0,
-                          'index_of_maximum': 0,
-                          'type' : 'S1'}))
+        e.peaks.append(Peak({'area': 2.0,
+                             'index_of_maximum': 0,
+                             'type': 'S1'}))
 
         self.assertEqual(len(e.S1s()), 1)
         self.assertIsInstance(e.S1s()[0], Peak)
@@ -80,8 +80,8 @@ class TestDatastructure(unittest.TestCase):
 
         e = Event()
         for area in areas:
-            e.peaks.append(Peak({'area' : area,
-                                 'type' : 'S2'}))
+            e.peaks.append(Peak({'area': area,
+                                 'type': 'S2'}))
 
         s2s = e.S2s()
         self.assertEqual(len(s2s), len(areas))
@@ -99,9 +99,8 @@ class TestDatastructure(unittest.TestCase):
         w.name_of_filter = "blahblah"
         self.assertEqual(w.name_of_filter, "blahblah")
 
-
     def test_numpy_array_type(self):
-        samples = [3,4,5]
+        samples = [3, 4, 5]
 
         w = Waveform()
         self.assertIsInstance(w, Waveform)
@@ -127,4 +126,4 @@ class TestDatastructure(unittest.TestCase):
 
 
 if __name__ == '__main__':
-	unittest.main()
+    unittest.main()

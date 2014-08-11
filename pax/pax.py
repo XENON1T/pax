@@ -129,8 +129,8 @@ def processor(config_overload=""):
     # Event control
     input_control_group = parser.add_mutually_exclusive_group()
     input_control_group.add_argument('--single',
-                       type=int,
-                       help="Process a single event.")
+                                     type=int,
+                                     help="Process a single event.")
     input_control_group.add_argument('-n',
                                      type=int,
                                      help="Stop after this number of events has been processed.")

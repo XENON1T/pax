@@ -16,24 +16,27 @@ from pax.micromodels.models import Model
 from pax.micromodels import fields as f
 from pax.micromodels.fields import IntegerField, FloatField, StringField
 
+
 class Peak(Model):
+
     """Peak object
 
     """
     area = FloatField()  #: Area of the pulse in photoelectrons
-    index_of_maximum = IntegerField() #: Index of maximum value within sum waveform.
-    height = IntegerField() #: Highest point in peak in units of ADC counts
-    left = IntegerField() #: Index of left bound (inclusive) in sum waveform.
+    index_of_maximum = IntegerField()  #: Index of maximum value within sum waveform.
+    height = IntegerField()  #: Highest point in peak in units of ADC counts
+    left = IntegerField()  #: Index of left bound (inclusive) in sum waveform.
     right = IntegerField()  #: Index of right bound (exclusive) in sum waveform.
     type = StringField(default='S1')  #: Type of peak (e.g., 'S1' or 'S2')
 
 
 class Waveform(Model):
+
     """Class used to store sum (filtered or not) waveform information.
     """
 
-    name_of_filter = StringField(default='none') #: Name of the filter used (or 'none')
-    name = StringField(default='none') #: e.g. top
+    name_of_filter = StringField(default='none')  #: Name of the filter used (or 'none')
+    name = StringField(default='none')  #: e.g. top
 
     #: Array of PMT numbers included in this waveform
     pmt_list = f.NumpyArrayField(dtype=np.uint16)
@@ -47,7 +50,9 @@ class Waveform(Model):
         else:
             return False
 
+
 class Event(Model):
+
     """Event class
     """
 
@@ -71,17 +76,16 @@ class Event(Model):
     #: Or rather, it starts from January 1, 1970.
     event_stop = IntegerField()
 
-    user_float_0 = FloatField() #: Unused float (useful for developing)
-    user_float_1 = FloatField() #: Unused float (useful for developing)
-    user_float_2 = FloatField() #: Unused float (useful for developing)
-    user_float_3 = FloatField() #: Unused float (useful for developing)
-    user_float_4 = FloatField() #: Unused float (useful for developing)
+    user_float_0 = FloatField()  # : Unused float (useful for developing)
+    user_float_1 = FloatField()  # : Unused float (useful for developing)
+    user_float_2 = FloatField()  # : Unused float (useful for developing)
+    user_float_3 = FloatField()  # : Unused float (useful for developing)
+    user_float_4 = FloatField()  # : Unused float (useful for developing)
 
     #: List of peaks
-    #
+    #:
     #: Returns a list of :class:`pax.datastructure.Peak` classes.
     peaks = f.ModelCollectionField(default=[], wrapped_class=Peak)
-
 
     #: Returns a list of sum waveforms
     #:
@@ -100,7 +104,7 @@ class Event(Model):
     #:
     #: The data type is a float32 since these numbers are already baseline
     #: and gain corrected.
-    pmt_waveforms = f.NumpyArrayField(dtype=np.float32) #: Array of samples.
+    pmt_waveforms = f.NumpyArrayField(dtype=np.float32)  # : Array of samples.
 
     #: Occurrences
     #:
@@ -112,7 +116,7 @@ class Event(Model):
     #: second element is a numpy array 16-bit signed integers, which represent
     #: the ADC counts.
     #:
-    #: (This may get moved into the Input plugin baseclass, see issue #32)
+    # : (This may get moved into the Input plugin baseclass, see issue #32)
     occurrences = f.BaseField()
 
     def event_duration(self):
@@ -132,7 +136,7 @@ class Event(Model):
     def length(self):
         """Number of samples for the sum waveform
         """
-        return int(self.event_duration()/self.sample_duration)
+        return int(self.event_duration() / self.sample_duration)
 
     def S1s(self, sort_key='area'):
         """List of S1 (scintillation) signals

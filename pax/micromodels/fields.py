@@ -8,7 +8,9 @@ Add numpy support and quite a few ways the code operates.
 import numpy as np
 import logging
 
+
 class BaseField(object):
+
     """Base class for all field types.
 
     The ``source`` parameter sets the key that will be retrieved from the source
@@ -16,6 +18,7 @@ class BaseField(object):
     name as the key to retrieve the value from the source data.
 
     """
+
     def __init__(self, default=0, source=None):
         self._default = default
         self.source = source
@@ -44,7 +47,9 @@ class BaseField(object):
         '''
         return data
 
+
 class NumpyArrayField(BaseField):
+
     """Field to represent a numpy array"""
 
     def __init__(self, dtype, **kwargs):
@@ -59,7 +64,7 @@ class NumpyArrayField(BaseField):
         if isinstance(self.data, np.ndarray):
             if self.data.dtype != self._dtype:
                 logging.warning("Casting.  Wrong data type; must be %s, not %s." % (str(self._dtype),
-                                                                                   str(self.data.dtype)))
+                                                                                    str(self.data.dtype)))
                 self.data = self.data.astype(self._dtype, copy=False)
             return self.data
         elif isinstance(self.data, set):
@@ -73,11 +78,12 @@ class NumpyArrayField(BaseField):
             raise TypeError("Data must be array: not %s, %s" % (str(type(self.data)),
                                                                 str(self.data)))
 
-
     def to_serial(self, model_instances):
         return [instance.to_dict(serial=True) for instance in model_instances]
 
+
 class StringField(BaseField):
+
     """Field to represent a simple Unicode string value."""
 
     def to_python(self):
@@ -91,6 +97,7 @@ class StringField(BaseField):
 
 
 class IntegerField(BaseField):
+
     """Field to represent an integer value"""
 
     def to_python(self):
@@ -104,6 +111,7 @@ class IntegerField(BaseField):
 
 
 class FloatField(BaseField):
+
     """Field to represent a floating point value"""
 
     def to_python(self):
@@ -117,6 +125,7 @@ class FloatField(BaseField):
 
 
 class BooleanField(BaseField):
+
     """Field to represent a boolean"""
 
     def to_python(self):
@@ -132,6 +141,7 @@ class BooleanField(BaseField):
 
 
 class WrappedObjectField(BaseField):
+
     """Superclass for any fields that wrap an object"""
 
     def __init__(self, wrapped_class, related_name=None, **kwargs):
@@ -143,6 +153,7 @@ class WrappedObjectField(BaseField):
 
 
 class ModelField(WrappedObjectField):
+
     """Field containing a model instance
 
     Use this field when you wish to nest one object inside another.
@@ -177,6 +188,7 @@ class ModelField(WrappedObjectField):
         u'Some nested value'
 
     """
+
     def to_python(self):
         if isinstance(self.data, self._wrapped_class):
             obj = self.data
@@ -194,6 +206,7 @@ class ModelField(WrappedObjectField):
 
 
 class ModelCollectionField(WrappedObjectField):
+
     """Field containing a list of model instances.
 
     Use this field when your source data dictionary contains a list of
@@ -226,6 +239,7 @@ class ModelCollectionField(WrappedObjectField):
         [u'First value', u'Second value', u'Third value']
 
     """
+
     def to_python(self):
         object_list = []
         for item in self.data:
@@ -244,4 +258,3 @@ class ModelCollectionField(WrappedObjectField):
 
     def append(self, value):
         self.list = self.to_python().append(value)
-
