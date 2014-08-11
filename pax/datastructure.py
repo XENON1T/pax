@@ -29,6 +29,11 @@ class Peak(Model):
     right = IntegerField()  #: Index of right bound (exclusive) in sum waveform.
     type = StringField(default='S1')  #: Type of peak (e.g., 'S1' or 'S2')
 
+    #: Array of PMT numbers included in this peaks.
+    #:
+    #: This is added by PeakPostProcessing.MakeHitList
+    pmt_list = f.NumpyArrayField(dtype=np.uint16)
+
 
 class Waveform(Model):
 
