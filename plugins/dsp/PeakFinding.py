@@ -5,7 +5,7 @@ from pax import plugin, datastructure
 class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
 
     def startup(self):
-        self.log.debug(("If you compare the isolation test intervals with xerawdp,it looks like ours are too large.\n" +
+        self.log.debug(("If you compare the isolation test intervals with xerawdp, it looks like ours are too large.\n" +
                         "In reality, Xerawdp's math is off, and we are testing the same intervals."
         ))
 

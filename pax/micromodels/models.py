@@ -1,11 +1,13 @@
 """Fork of micromodels
 
+https://github.com/j4mie/micromodels
+
 Add numpy support and quite a few ways the code operates.
 """
 
 import numpyson
 
-from .fields import BaseField
+from .pax.micromodels.fields import BaseField
 
 class ModelMeta(type):
     '''Creates the metaclass for Model. The main function of this metaclass

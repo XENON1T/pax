@@ -1,5 +1,7 @@
 """Fork of micromodels
 
+https://github.com/j4mie/micromodels
+
 Add numpy support and quite a few ways the code operates.
 """
 

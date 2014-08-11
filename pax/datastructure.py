@@ -8,14 +8,13 @@ names of functionality between major releases.  You may add variables in minor
 releases.  Patch releases cannot modify this.
 """
 
-import logging
 import inspect
 
 import numpy as np
 
-from pax.models import Model
-from pax import fields as f
-from pax.fields import IntegerField, FloatField, ModelCollectionField, StringField
+from pax.micromodels.models import Model
+from pax.micromodels import fields as f
+from pax.micromodels.fields import IntegerField, FloatField, StringField
 
 class Peak(Model):
     """Peak object
@@ -81,13 +80,13 @@ class Event(Model):
     #: List of peaks
     #
     #: Returns a list of :class:`pax.datastructure.Peak` classes.
-    peaks = ModelCollectionField(default=[], wrapped_class=Peak)
+    peaks = f.ModelCollectionField(default=[], wrapped_class=Peak)
 
 
     #: Returns a list of sum waveforms
     #:
     #: Returns an :class:`pax.datastructure.SumWaveform` class.
-    waveforms = ModelCollectionField(default=[], wrapped_class=Waveform)
+    waveforms = f.ModelCollectionField(default=[], wrapped_class=Waveform)
 
     #: A 2D array of all the PMT waveforms, units of pe/bin.
     #:
