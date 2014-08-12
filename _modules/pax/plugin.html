@@ -136,15 +136,14 @@
 
 <div class="viewcode-block" id="TransformPlugin.transform_event"><a class="viewcode-back" href="../../pax.html#pax.plugin.TransformPlugin.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
-
-    <span class="c">#@BasePlugin._timeit</span></div>
+</div>
+    <span class="nd">@BasePlugin._timeit</span>
 <div class="viewcode-block" id="TransformPlugin.process_event"><a class="viewcode-back" href="../../pax.html#pax.plugin.TransformPlugin.process_event">[docs]</a>    <span class="k">def</span> <span class="nf">process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">event</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> transform received a &#39;None&#39; event.&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
         <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">Event</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> transform received wrongly typed event. </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
                                                                                   <span class="n">event</span><span class="p">))</span>
-
         <span class="c">#  The actual work is done in this line</span>
         <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
 
