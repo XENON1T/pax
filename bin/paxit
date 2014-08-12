@@ -9,7 +9,7 @@ from pax import pax
 config_overload = """
 [pax]
 input = 'MongoDB.MongoDBInput'
-my_extra_transforms = ["PosSimple.PosRecWeightedSum"]
+my_postprocessing = ["PosSimple.PosRecWeightedSum"]
 output = ["PrintToScreen.PrintToScreen"]
 
 [MongoDB.MongoDBInput]

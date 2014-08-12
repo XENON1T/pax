@@ -78,8 +78,9 @@ class NumpyArrayField(BaseField):
             raise TypeError("Data must be array: not %s, %s" % (str(type(self.data)),
                                                                 str(self.data)))
 
+
     def to_serial(self, model_instances):
-        return [instance.to_dict(serial=True) for instance in model_instances]
+        return self.data.tolist()
 
 
 class StringField(BaseField):
