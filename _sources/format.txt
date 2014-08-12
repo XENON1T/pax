@@ -19,3 +19,7 @@ Waveforms, which are not typically saved, follow the following format.
 .. autoclass:: pax.datastructure.Waveform
     :members:
     :undoc-members:
+
+.. autoclass:: pax.datastructure.ReconstructedPosition
+    :members:
+    :undoc-members:
