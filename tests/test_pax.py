@@ -19,10 +19,6 @@ class TestPax(unittest.TestCase):
     def setUp(self):
         pass
 
-    def test_processor_type(self):
-        with self.assertRaises(AssertionError):
-            pax.processor(4, 4, 4)
-
     def test_evaluate_configuration_string(self):
         x = {'test': "\"mystring\""}
         y = pax.evaluate_configuration(x)
