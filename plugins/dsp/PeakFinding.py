@@ -73,7 +73,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
 
             # Delete peaks beyond the 32 with largest area - must do AFTER small s2 peakfinding
             if peak_type == 's1':
-                event.S2s = self.sort_and_prune_by(event.S2s, 'area', 32, reverse=True)
+                event.peaks = self.sort_and_prune_by(event.peaks, 'area', 32, reverse=True)
 
             ##
             # STAGE 1 - REGION FINDING
@@ -88,23 +88,23 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                 # Don't have to test these peaks are actually s2s, those are the only peaks in here
                 stop_looking_after = min(
                     [stop_looking_after] +
-                    [p.left for p in event.S2s if p.height > settings['stop_after_s2_height']]
+                    [p.left for p in event.peaks if p.height > settings['stop_after_s2_height']]
                 )
             if peak_type == 's1':
-                if event.S2s:
+                if event.peaks:
                     stop_looking_after = min(
                         # We stop looking for s1s after the s2 with the largest area - undocumented!
-                        [event.S2s[0].left] +
+                        [event.peaks[0].left] +
                         # Also stop looking after s2s with large enough amplitude.
                         # Xerawdp redetermines the amplitude here, using the s1 peakfinding waveform!
-                        [p.left for p in event.S2s if event.get_waveform('uS1').samples[p.index_of_maximum] > settings['stop_after_s2_height']]
+                        [p.left for p in event.peaks if event.get_waveform('uS1').samples[p.index_of_maximum] > settings['stop_after_s2_height']]
                     )
             self.log.debug("Starting %s search, stop looking after %s" % (peak_type, stop_looking_after))
 
             # Find the free regions - regions where peaks haven't yet been found
             # We could move this to the event class...
-            lefts = sorted([0] + [p.left for p in event.S2s])
-            rights = sorted([p.right for p in event.S2s] + [event.length() - 1])
+            lefts = sorted([0] + [p.left for p in event.peaks])
+            rights = sorted([p.right for p in event.peaks] + [event.length() - 1])
             # Assuming each peak's right > left, we can simply split sorted(lefts+rights) in pairs:
             free_regions = list(zip(*[iter(sorted(lefts + rights))] * 2))
             self.log.debug("Free regions: " + str(free_regions))
@@ -484,18 +484,14 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             left -= 2
             right += 2
         self.log.debug("! Appending %s (%s-%s-%s) to peaks" % (peak_type, left, max_idx, right))
-        brand_new_peak = datastructure.Peak({
+        event.peaks.append(datastructure.Peak({
+            'type':             's1' if peak_type == 's1' else 's2',    # Don't want large_s2 and small_s2 here
             'area':             np.sum(signal[left:right]),   # Waste of time, only gets used for sorting s2s...
             'index_of_maximum': max_idx,
             'height':           height,
             'left':             left,
             'right':            right,
-        })
-
-        if peak_type == 's1':
-            event.S1s.append(brand_new_peak)
-        else:
-            event.S2s.append(brand_new_peak)
+        }))
 
         # Recursion for large s2s
         if peak_type == 'large_s2':
@@ -511,12 +507,12 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
 
     # Helper methods used only in the peakfinding
     @staticmethod
-    def sort_and_prune_by(peaklist, key, keep_number=float('inf'), reverse=False):
-        peaklist.sort(key=lambda x: getattr(x, key), reverse=reverse)
-        if len(peaklist) > keep_number:
-            return peaklist[:keep_number]
+    def sort_and_prune_by(peak_list, key, keep_number=float('inf'), reverse=False):
+        peak_list.sort(key=lambda x: getattr(x, key), reverse=reverse)
+        if len(peak_list) > keep_number:
+            return peak_list[:keep_number]
         else:
-            return peaklist
+            return peak_list
 
     def nearest_s2_boundary(self, event, peak_position, edge_position, direction):
         """Finds the nearest s2 boundary according to arcane Xerawdp rules"""
@@ -524,7 +520,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
         if direction == 'left':
             # Will take the max of 0, edge_position-100, and any s2 right boundaries before peak
             boundaries = [0, edge_position - 100]
-            for p in event.S2s:
+            for p in event.S2s():
                 if p.right <= peak_position:
                       # The = case actually happens!
                     boundaries.append(p.right)
@@ -532,7 +528,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
         elif direction == 'right':
             # Will take the min of event_duration-1, edge_position+100, and any s2 left boundaries after peak
             boundaries = [event.length() - 1, edge_position + 100]
-            for p in event.S2s:
+            for p in event.S2s():
                 if peak_position <= p.left:
                     # The = case actually happens!
                     boundaries.append(p.left)  # TODO: Was this a Xerawdp bug? or should you now redo the matching?
@@ -609,13 +605,13 @@ class ComputePeakProperties(plugin.TransformPlugin):
         """
 
         # Compute relevant peak quantities for each pmt's peak: height, FWHM, FWTM, area, ..
-        for peak_type, peak in event.get_all_peaks():
+        for peak in event.peaks:
             # Hack for Xerawdp matching: we need to compute the area of EVERY CHANNEL in EVERY PEAK
             # The only reason we do this is because channels with negative area don't get contribute to a peak's area...
             areas_per_pmt = {}
             for channel, wave_data in enumerate(event.pmt_waveforms):
                 if channel in self.config['pmts_veto'] or \
-                   peak_type == 's1' and channel in self.config['pmts_excluded_for_s1']:
+                   peak.type == 's1' and channel in self.config['pmts_excluded_for_s1']:
                     continue
                 integral = np.sum(wave_data[peak.left:peak.right])    # No +1, Xerawdp forgets the right edge also
                 areas_per_pmt[channel] = integral
