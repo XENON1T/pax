@@ -33,7 +33,13 @@ class TestPosRecWeightedSum(unittest.TestCase):
         self.e.pmt_waveforms = np.arange(1000).reshape(100,10)
         e2 = self.objy.process_event(self.e)
 
-        print(self.e, e2.to_json())
+        rps = e2.peaks[0].reconstructed_positions
+        self.assertEqual(len(rps), 1)
+        self.assertEqual(rps[0].algorithm, 'PosRecWeightedSum')
+
+        self.assertAlmostEqual(rps[0].x, 0.012204295277433013)
+        self.assertEqual(rps[0].y, -0.09300181089384905)
+        self.assertNotEqual(rps[0].z, rps[0].z)  # nan
 
 
 
