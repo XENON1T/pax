@@ -101,9 +101,9 @@
     <span class="n">pmt_list</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">NumpyArrayField</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span>
 
 
-    <span class="c">#: Returns a list of sum waveforms</span>
+    <span class="c">#: Returns a list of reconstructed positions</span>
     <span class="c">#:</span>
-    <span class="c">#: Returns an :class:`pax.datastructure.SumWaveform` class.</span>
+    <span class="c">#: Returns an :class:`pax.datastructure.ReconstructedPosition` class.</span>
     <span class="n">reconstructed_positions</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">ModelCollectionField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="p">[],</span>
                                                      <span class="n">wrapped_class</span><span class="o">=</span><span class="n">ReconstructedPosition</span><span class="p">)</span>
 
@@ -113,7 +113,8 @@
     <span class="sd">&quot;&quot;&quot;Class used to store sum (filtered or not) waveform information.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">name_of_filter</span> <span class="o">=</span> <span class="n">StringField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s">&#39;none&#39;</span><span class="p">)</span>  <span class="c">#: Name of the filter used (or &#39;none&#39;)</span>
+    <span class="c">#: Name of the filter used (or &#39;none&#39;)</span>
+    <span class="n">name_of_filter</span> <span class="o">=</span> <span class="n">StringField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s">&#39;none&#39;</span><span class="p">)</span>
     <span class="n">name</span> <span class="o">=</span> <span class="n">StringField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s">&#39;none&#39;</span><span class="p">)</span>  <span class="c">#: e.g. top</span>
 
     <span class="c">#: Array of PMT numbers included in this waveform</span>
