@@ -17,24 +17,24 @@ from pax.datastructure import Event, Peak, Waveform
 
 class TestPosRecWeightedSum(unittest.TestCase):
     def setUp(self):
-        conf = pax.get_configuration("")
-        plugin_source = pax.get_plugin_source(conf)
-        self.obj = pax.instantiate('PosSimple.PosRecWeightedSum',
-                                   plugin_source,
-                                   conf)
-        print(type(self.obj))
+        self.conf = pax.get_configuration("")
+        self.plugin_source = pax.get_plugin_source(self.conf)
+        self.objy = pax.instantiate('PosSimple.PosRecWeightedSum',
+                                    self.plugin_source,
+                                    self.conf)
+
+        self.e = Event()
 
 
-        #self.e.pmt_waveforms = np.arange(100).reshape(10,10)
-
-        #self.e.peaks.append(Peak({'left' : 5,
-        #                        'right' : 9}))
+        self.e.peaks.append(Peak({'left' : 5,
+                                  'right' : 9}))
 
     def test_something(self):
-        print('ho', type(self.obj), )
-        self.assertEqual(self.obj.say_hi(), 1)
-        e2 = self.obj.transform_event(Event())
-        print(self.e.do_dict(), e2.to_dict())
+        self.e.pmt_waveforms = np.arange(1000).reshape(100,10)
+        e2 = self.objy.process_event(self.e)
+
+        print(self.e, e2.to_json())
+
 
 
     def tearDown(self):

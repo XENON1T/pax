@@ -41,7 +41,6 @@ def instantiate(name, plugin_source, config_values, log=logging):
 
     instance = getattr(plugin_module, name_class)(this_config)
 
-    assert instance.say_hi() == 1
     return instance
 
 
@@ -123,7 +122,8 @@ def processor(config_overload=""):
 
     input, actions = get_actions(config,
                                  'input',
-                                 ['dsp', 'transform', 'my_postprocessing', 'output'])
+                                 ['dsp', 'transform',
+                                  'my_postprocessing', 'output'])
 
     # Deal with command line arguments for the logging level
     parser = argparse.ArgumentParser(description="Process XENON1T data")
@@ -136,7 +136,7 @@ def processor(config_overload=""):
                                      help="Process a single event.")
     input_control_group.add_argument('-n',
                                      type=int,
-                                     help="Stop after this number of events has been processed.")
+                                     help="Stop after 'n' events processed.")
 
     args = parser.parse_args()
 
@@ -146,7 +146,7 @@ def processor(config_overload=""):
         raise ValueError('Invalid log level: %s' % args.log.upper())
 
     logging.basicConfig(level=numeric_level,
-                        format='%(name)s L%(lineno)s - %(levelname)s %(message)s')
+                        format='%(name)s L%(lineno)s %(levelname)s %(message)s')
     log = logging.getLogger('processor')
 
     # Print settings to log

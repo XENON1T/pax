@@ -17,6 +17,23 @@ from pax.micromodels import fields as f
 from pax.micromodels.fields import IntegerField, FloatField, StringField
 
 
+class ReconstructedPosition(Model):
+    """Reconstructed position
+
+    Each reconstruction algorithm creates one of these.
+    """
+    x = FloatField()  #: x position (cm)
+    y = FloatField()  #: y position (cm)
+    z = FloatField()  #: z position (cm)
+
+    #: Name of algorithm used for computation
+    algorithm = StringField(default='none')
+
+    #: Errors
+    error_matrix = f.NumpyArrayField(dtype=np.float64)
+
+
+
 class Peak(Model):
 
     """Peak object
@@ -33,6 +50,13 @@ class Peak(Model):
     #:
     #: This is added by PeakPostProcessing.MakeHitList
     pmt_list = f.NumpyArrayField(dtype=np.uint16)
+
+
+    #: Returns a list of sum waveforms
+    #:
+    #: Returns an :class:`pax.datastructure.SumWaveform` class.
+    reconstructed_positions = f.ModelCollectionField(default=[],
+                                                     wrapped_class=ReconstructedPosition)
 
 
 class Waveform(Model):
