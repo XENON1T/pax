@@ -38,9 +38,9 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
 
         # Build the channel waveforms from occurrences
         pmts = 1 + max(self.config['pmts_veto'])   # TODO: really??
-        uncorrected_sum_wave_for_s1 = np.zeros(event.length(), dtype=np.float32)
-        uncorrected_sum_wave_for_s2 = np.zeros(event.length(), dtype=np.float32)
-        pmt_waveform_matrix = np.zeros((pmts, event.length()), dtype=np.float32)
+        uncorrected_sum_wave_for_s1 = np.zeros(event.length(), dtype=np.float64)
+        uncorrected_sum_wave_for_s2 = np.zeros(event.length(), dtype=np.float64)
+        pmt_waveform_matrix = np.zeros((pmts, event.length()), dtype=np.float64)
         # event['channel_waveforms']   = {}
         baseline_sample_size = 46
         for channel, waveform_occurrences in event.occurrences.items():
@@ -58,7 +58,7 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
                 skip_channel = True
 
             # Assemble the waveform pulse by pulse, starting from an all-zeroes waveform
-            wave = np.zeros(event.length(), dtype=np.float32)
+            wave = np.zeros(event.length(), dtype=np.float64)
 
             for i, (starting_position, wave_occurrence) in enumerate(waveform_occurrences):
 

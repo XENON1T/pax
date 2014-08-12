@@ -34,7 +34,7 @@ class GenericFilter(plugin.TransformPlugin):
         signal = input_w.samples
         filter_length = len(self.filter_ir)
         # Apply the filter
-        output = np.array(np.convolve(signal, self.filter_ir, 'same'), dtype=np.float32)
+        output = np.array(np.convolve(signal, self.filter_ir, 'same'), dtype=np.float64)
         ##
         # Mutilate waveform for Xerawdp matching
         # This implements the Xerawdp convolution bug

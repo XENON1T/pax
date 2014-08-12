@@ -47,7 +47,7 @@ class Waveform(Model):
     pmt_list = f.NumpyArrayField(dtype=np.uint16)
 
     #: Array of samples, units of pe/bin.
-    samples = f.NumpyArrayField(dtype=np.float32)
+    samples = f.NumpyArrayField(dtype=np.float64)
 
     def is_filtered(self):
         if self.name_of_filter != 'none':
@@ -109,7 +109,7 @@ class Event(Model):
     #:
     #: The data type is a float32 since these numbers are already baseline
     #: and gain corrected.
-    pmt_waveforms = f.NumpyArrayField(dtype=np.float32)  # : Array of samples.
+    pmt_waveforms = f.NumpyArrayField(dtype=np.float64)  # : Array of samples.
 
     #: Occurrences
     #:
