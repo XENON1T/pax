@@ -88,14 +88,13 @@ class TransformPlugin(BasePlugin):
     def transform_event(self, event):
         raise NotImplementedError
 
-    #@BasePlugin._timeit
+    @BasePlugin._timeit
     def process_event(self, event):
         if event is None:
             raise RuntimeError("%s transform received a 'None' event." % self.name)
         elif not isinstance(event, Event):
             raise RuntimeError("%s transform received wrongly typed event. %s" % (self.name,
                                                                                   event))
-
         #  The actual work is done in this line
         result = self.transform_event(event)
 

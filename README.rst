@@ -62,7 +62,7 @@ Features
 
 * Position reconstruction of events
 
- * Demo reconstruction algorithm of charge-weighted sum
+ * Charge-weighted sum (x, y) reconstruction
 
 * Interactive display
 

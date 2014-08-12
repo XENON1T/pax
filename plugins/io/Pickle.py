@@ -15,7 +15,7 @@ class WriteToPickleFile(plugin.OutputPlugin):
 
     def write_event(self, event):
         self.log.debug('Pickling event')
-        pickle.dump(event.to_json(),
+        pickle.dump(event,
                     self.file)
 
     def shutdown(self):

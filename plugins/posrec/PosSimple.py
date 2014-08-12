@@ -18,9 +18,8 @@ class PosRecWeightedSum(plugin.TransformPlugin):
     def transform_event(self, event):
         new_peaks = []
 
-        print("PMT waveforms: %s" % str(event.pmt_waveforms))
         for peak in event.peaks:
-            print("Left %d, Right: %d" % (peak.left, peak.right))
+            self.log.debug("Left %d, Right: %d" % (peak.left, peak.right))
             hits = event.pmt_waveforms[..., peak.left:peak.right].sum(axis=1)
 
             if hits.sum() != 0:

@@ -29,8 +29,8 @@ class ReconstructedPosition(Model):
     #: Name of algorithm used for computation
     algorithm = StringField(default='none')
 
-    #: Errors
-    error_matrix = f.NumpyArrayField(dtype=np.float64)
+    # #: Errors - currently not used
+    # error_matrix = f.NumpyArrayField(dtype=np.float64)
 
 
 
@@ -52,9 +52,9 @@ class Peak(Model):
     pmt_list = f.NumpyArrayField(dtype=np.uint16)
 
 
-    #: Returns a list of sum waveforms
+    #: Returns a list of reconstructed positions
     #:
-    #: Returns an :class:`pax.datastructure.SumWaveform` class.
+    #: Returns an :class:`pax.datastructure.ReconstructedPosition` class.
     reconstructed_positions = f.ModelCollectionField(default=[],
                                                      wrapped_class=ReconstructedPosition)
 
@@ -64,7 +64,8 @@ class Waveform(Model):
     """Class used to store sum (filtered or not) waveform information.
     """
 
-    name_of_filter = StringField(default='none')  #: Name of the filter used (or 'none')
+    #: Name of the filter used (or 'none')
+    name_of_filter = StringField(default='none')
     name = StringField(default='none')  #: e.g. top
 
     #: Array of PMT numbers included in this waveform
