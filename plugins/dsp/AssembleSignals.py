@@ -36,24 +36,13 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
         #             % (event['metadata']['voltage_range'], self.config['digitizer_voltage_range'])
         #         )
 
-        # Check for input plugin misbehaviour / running this plugin at the wrong time
-        # if not ('channel_occurrences' in event and 'event_duration' in event):
-        #     raise RuntimeError(
-        #         "Event contains %s, should contain at least channel_occurrences and event_duration !"
-        #         % str(event.keys())
-        #     )
-
-        # Dump digests of channels included
-        # bla = list(map(int,event['channel_occurrences'].keys()))
-        # print(np.sum(bla), np.sum(np.log(bla)))
-
         # Build the channel waveforms from occurrences
-        # event['processed_waveforms'] = {}
-        uncorrected_sum_wave_for_s1 = np.zeros(event.length())
-        uncorrected_sum_wave_for_s2 = np.zeros(event.length())
-        pmt_waveform_matrix = np.zeros((999, event.length()))  # TODO: get max pmt number somewhere
+        pmts = 1 + max(self.config['pmts_veto'])   # TODO: really??
+        uncorrected_sum_wave_for_s1 = np.zeros(event.length(), dtype=np.float32)
+        uncorrected_sum_wave_for_s2 = np.zeros(event.length(), dtype=np.float32)
+        pmt_waveform_matrix = np.zeros((pmts, event.length()), dtype=np.float32)
         # event['channel_waveforms']   = {}
-        baseline_sample_size = 46  # TODO: put in config!!!!
+        baseline_sample_size = 46
         for channel, waveform_occurrences in event.occurrences.items():
             skip_channel = False  # Temp for Xerawdp matching, refactor to continue's later
 
@@ -69,7 +58,7 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
                 skip_channel = True
 
             # Assemble the waveform pulse by pulse, starting from an all-zeroes waveform
-            wave = np.zeros(event.length())
+            wave = np.zeros(event.length(), dtype=np.float32)
 
             for i, (starting_position, wave_occurrence) in enumerate(waveform_occurrences):
 
@@ -136,13 +125,13 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
         event.waveforms.append(Waveform({
             'samples': uncorrected_sum_wave_for_s1 * universal_gain_correction,
             'name': 'uS1',
-            'pmt_list': set(list(range(1, 178))) - self.config['pmts_excluded_for_s1'],
+            'pmt_list': np.array(list(set(list(range(1, 178 + 1))) - self.config['pmts_excluded_for_s1']), dtype=np.uint16),
         }))
 
         event.waveforms.append(Waveform({
             'samples': uncorrected_sum_wave_for_s2 * universal_gain_correction,
             'name': 'uS2',
-                    'pmt_list': set(list(range(1, 178))),
+            'pmt_list': np.array(list(range(1, 178 + 1)), dtype=np.uint16),
         }))
 
         # TODO: Maybe Delete the channel_occurrences from the event structure, we don't need it anymore
@@ -172,11 +161,12 @@ class SumWaveforms(plugin.TransformPlugin):
 
     def transform_event(self, event):
         # Compute summed waveforms
+        # Todo: top_and_bottom, top_and_bottom_for_s1 etc can be computed faster
         for group, members in self.channel_groups.items():
-            event.waveforms.append((Waveform({'samples': np.sum(event.pmt_waveforms[[list(members)]],
-                                                                axis=0),
-                                              'name': group,
-                                              'pmt_list': members,
-                                              })))
+            event.waveforms.append((Waveform({
+                'samples': np.sum(event.pmt_waveforms[[list(members)]], axis=0),
+                'name': group,
+                'pmt_list': np.array(list(members), dtype=np.uint16),
+            })))
 
         return event

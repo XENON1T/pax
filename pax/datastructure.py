@@ -27,7 +27,7 @@ class Peak(Model):
     height = IntegerField()  #: Height of highest point in peak (in pe/bin)
     left = IntegerField()  #: Index of left bound (inclusive) in sum waveform.
     right = IntegerField()  #: Index of right bound (exclusive) in sum waveform.
-    type = StringField(default='S1')  #: Type of peak (e.g., 'S1' or 'S2')
+    type = StringField(default='s1')  #: Type of peak (e.g., 'S1' or 'S2')
 
     #: Array of PMT numbers included in this peaks.
     #:
@@ -148,14 +148,14 @@ class Event(Model):
 
         Returns an :class:`pax.datastructure.Peak` class.
         """
-        return self._get_peaks_by_type('S1', sort_key)
+        return self._get_peaks_by_type('s1', sort_key)
 
     def S2s(self, sort_key='area'):
         """List of S2 (ionization) signals
 
         Returns an :class:`pax.datastructure.Peak` class.
         """
-        return self._get_peaks_by_type('S2', sort_key)
+        return self._get_peaks_by_type('s2', sort_key)
 
     def _get_peaks_by_type(self, desired_type, sort_key):
         """Helper function for retrieving only certain types of peaks
@@ -165,7 +165,7 @@ class Event(Model):
         # Extract only peaks of a certain type
         peaks = []
         for peak in self.peaks:
-            if peak.type.upper() == desired_type:
+            if peak.type.lower() == desired_type:
                 peaks.append(peak)
 
         # Sort the peaks by your sort key

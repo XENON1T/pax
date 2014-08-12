@@ -37,11 +37,12 @@ class PlottingWaveform(plugin.OutputPlugin):
             ax = plt.subplot2grid((rows, cols), (0, 1))
             ax.yaxis.set_label_position("right")
             largest_s2 = sorted(event.S2s(), key=lambda x: x.area, reverse=True)[0]
-            self.plot_waveform(event, left=largest_s2.left, right=largest_s2.right, pad=50)
-            plt.title("S2 at %.1f us" % (largest_s2.index_of_maximum * self.time_conversion_factor))
-            if largest_s2.height > 100:
+            pad = 200 if largest_s2.height > 100 else 50
+            self.plot_waveform(event, left=largest_s2.left, right=largest_s2.right, pad=pad)
+            if largest_s2.height:
                 plt.yscale('log', nonposy='clip')
                 plt.ylim(10 ** (-1), plt.ylim()[1])
+            plt.title("S2 at %.1f us" % (largest_s2.index_of_maximum * self.time_conversion_factor))
 
         #plt.subplot2grid((rows,cols), (0,2))
         #plt.title('Event %s from %s' % (event.event_number, 'mysterious_dataset'))
@@ -75,16 +76,16 @@ class PlottingWaveform(plugin.OutputPlugin):
         )
         xlabels = xlabels[:nsamples]
         plt.autoscale(True, axis='both', tight=True)
-        plt.plot(xlabels, event.get_waveform('tpc').samples[lefti:righti + 1],  label='TPC')
-        plt.plot(xlabels, event.get_waveform('filtered_for_s2').samples[lefti:righti + 1], label='TPC - filtered')
-        plt.plot(xlabels, event.get_waveform('veto').samples[lefti:righti + 1], label='Veto')
-        # plt.plot(xlabels, event.get_waveform('uS1').samples[lefti:righti + 1], label='S1 peakfinding')
-        # plt.plot(xlabels, event.get_waveform('uS2').samples[lefti:righti + 1], label='S2 peakfinding')
-        # plt.plot(xlabels, event.get_waveform('filtered_for_large_s2').samples[lefti:righti + 1], label='Large s2 filtered')
-        # plt.plot(xlabels, event.get_waveform('filtered_for_small_s2').samples[lefti:righti + 1], label='Small s2 filtered')
-        # plt.plot(xlabels, [0.6241506363] * nsamples,  '--', label='Large S2 threshold')
-        # plt.plot(xlabels, [0.06241506363] * nsamples,  '--', label='Small S2 threshold')
-        # plt.plot(xlabels, [0.1872451909] * nsamples,  '--', label='S1 threshold')
+        # plt.plot(xlabels, event.get_waveform('tpc').samples[lefti:righti + 1],  label='TPC')
+        # plt.plot(xlabels, event.get_waveform('filtered_for_s2').samples[lefti:righti + 1], label='TPC - filtered')
+        # plt.plot(xlabels, event.get_waveform('veto').samples[lefti:righti + 1], label='Veto')
+        plt.plot(xlabels, event.get_waveform('uS1').samples[lefti:righti + 1], label='S1 peakfinding')
+        plt.plot(xlabels, event.get_waveform('uS2').samples[lefti:righti + 1], label='S2 peakfinding')
+        plt.plot(xlabels, event.get_waveform('filtered_for_large_s2').samples[lefti:righti + 1], label='Large s2 filtered')
+        plt.plot(xlabels, event.get_waveform('filtered_for_small_s2').samples[lefti:righti + 1], label='Small s2 filtered')
+        plt.plot(xlabels, [0.6241506363] * nsamples,  '--', label='Large S2 threshold')
+        plt.plot(xlabels, [0.06241506363] * nsamples,  '--', label='Small S2 threshold')
+        plt.plot(xlabels, [0.1872451909] * nsamples,  '--', label='S1 threshold')
         plt.ylabel('Amplitude (pe/ns)')
         plt.xlabel('Time (us)')
         if show_peaks:

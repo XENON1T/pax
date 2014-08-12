@@ -16,7 +16,6 @@ class GenericFilter(plugin.TransformPlugin):
 
     TODO: Add some check the name of the class and throw exception if base class
           is instantiated.  use self.name.
-    TODO: check if ir normalization;
     """
     # Always takes input from a wave in processed_waveforms
 
@@ -35,28 +34,12 @@ class GenericFilter(plugin.TransformPlugin):
         signal = input_w.samples
         filter_length = len(self.filter_ir)
         # Apply the filter
-        output = np.convolve(signal, self.filter_ir, 'same')
+        output = np.array(np.convolve(signal, self.filter_ir, 'same'), dtype=np.float32)
         ##
         # Mutilate waveform for Xerawdp matching
         # This implements the Xerawdp convolution bug
         ##
-        # Do we know the pulse boundaries?
-        # if not 'pulse_boundaries' in event:
-        #      event['pulse_boundaries'] = {}
-        # if not self.input_name in event['pulse_boundaries']:
-        # TODO: store pulse boundaries with waveform
-        # Find the pulse boundaries in this input waveform - stupid slow code
-        # previous = 0
-        # pbs = []
-        # for i,x in enumerate(signal):
-        #     if x==0 and previous != 0:
-        #         pbs.append(i-1)
-        #     if x!=0 and previous == 0:
-        #         pbs.append(i)
-        #     previous = x
-        # print(pbs)
-        # Gotta love numpy ;-)
-        # [0] and double parens are stupid though, but quite necessary here:
+        # Determine the pulse boundaries
         y = np.abs(np.sign(signal))
         pbs = np.concatenate((np.where(np.roll(y, 1) - y == -1)[0], np.where(np.roll(y, -1) - y == -1)[0]))
         # Check if these are real pulse boundaries: at least three samples before or after must be zero
@@ -80,9 +63,11 @@ class GenericFilter(plugin.TransformPlugin):
             except Exception as e:
                 self.log.warning("Error during waveform mutilation: " + str(e) + ". So what...")
         # Store the result
-        event.waveforms.append(Waveform({'samples': output,
-                                         'name': self.output_name,
-                                         'pmt_list': input_w.pmt_list}))
+        event.waveforms.append(Waveform({
+            'samples':  output,
+            'name':     self.output_name,
+            'pmt_list': input_w.pmt_list
+        }))
         return event
 
 
