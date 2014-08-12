@@ -39,7 +39,10 @@ def instantiate(name, plugin_source, config_values, log=logging):
 
     this_config = evaluate_configuration(this_config)
 
-    return getattr(plugin_module, name_class)(this_config)
+    instance = getattr(plugin_module, name_class)(this_config)
+
+    assert instance.say_hi() == 1
+    return instance
 
 
 def get_my_dir():

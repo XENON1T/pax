@@ -28,6 +28,10 @@ class BasePlugin(object):
     def __del__(self):
         self.shutdown()
 
+    def say_hi(self):
+        self.log.error("Hi")
+        return 1
+
     @staticmethod
     def _timeit(method):
         """Decorator for measuring class method speeds
@@ -92,7 +96,7 @@ class TransformPlugin(BasePlugin):
     def process_event(self, event):
         if event is None:
             raise RuntimeError("%s transform received a 'None' event." % self.name)
-        elif not isinstance(event, (dict, Event)):
+        elif not isinstance(event, Event):
             raise RuntimeError("%s transform received wrongly typed event. %s" % (self.name,
                                                                                   event))
 

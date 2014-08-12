@@ -20,14 +20,10 @@ class MakeHitList(plugin.TransformPlugin):
 
     def transform_event(self, event):
         for peak in event.peaks:
-            pmt_list = np.zeros(self.num_channels,
+            hit_list = np.zeros(self.pmt_waveforms.shape[0],
                                 np.int16)
 
-            for i, waveform in enumerate(self.pmt_waveforms):
-                hit_pmts = []
-
-                if waveform[peak.left:peak.right].sum() > 0:
-                    hit_pmts.append(i)
+            self.pmt_waveforms[..., peak.left:peak.right].sum(axis=1)
 
             peak.pmt_list = pmt_list
 

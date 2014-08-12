@@ -29,6 +29,14 @@ class TestDatastructure(unittest.TestCase):
         e.event_number = 3.0
         self.assertEqual(e.event_number, 3.0)
 
+    def test_to_json(self):
+        e = Event()
+        e.to_json()
+
+    def test_to_dict(self):
+        e = Event()
+        e.to_dict()
+
     def test_default(self):
         e = Event()
         self.assertEqual(e.event_number, 0)
