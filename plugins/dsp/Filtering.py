@@ -35,33 +35,34 @@ class GenericFilter(plugin.TransformPlugin):
         filter_length = len(self.filter_ir)
         # Apply the filter
         output = np.array(np.convolve(signal, self.filter_ir, 'same'), dtype=np.float64)
-        ##
-        # Mutilate waveform for Xerawdp matching
-        # This implements the Xerawdp convolution bug
-        ##
-        # Determine the pulse boundaries
-        y = np.abs(np.sign(signal))
-        pbs = np.concatenate((np.where(np.roll(y, 1) - y == -1)[0], np.where(np.roll(y, -1) - y == -1)[0]))
-        # Check if these are real pulse boundaries: at least three samples before or after must be zero
-        real_pbs = []
-        for q in pbs:
-            if q < 3 or q > len(signal) - 4:
-                continue  # So these tests don't fail
-            if signal[q - 1] == signal[q - 2] == signal[q - 3] == 0 or signal[q + 1] == signal[q + 2] == signal[q + 3] == 0:
-                real_pbs.append(q)
-        # event['pulse_boundaries'][self.input_name] = real_pbs
-        # Mutilate the waveform
-        # First mutilate the edges, which are always pulse boundaries
-        output[:int(filter_length / 2)] = np.zeros(int(filter_length / 2))
-        output[len(output) - int(filter_length / 2):] = np.zeros(int(filter_length / 2))
-        # Mutilate waveform around pulse boundaries
-        for pb in real_pbs:
-            try:
-                lefti = max(0, pb - int(filter_length / 2))
-                righti = min(len(signal) - 1, pb + int(filter_length / 2))
-                output[lefti:righti] = np.zeros(righti - lefti)
-            except Exception as e:
-                self.log.warning("Error during waveform mutilation: " + str(e) + ". So what...")
+        if 'simulate_Xerawdp_convolution_bug' in self.config and self.config['simulate_Xerawdp_convolution_bug']:
+            ##
+            # Mutilate waveform for Xerawdp matching
+            # This implements the Xerawdp convolution bug
+            ##
+            # Determine the pulse boundaries
+            y = np.abs(np.sign(signal))
+            pbs = np.concatenate((np.where(np.roll(y, 1) - y == -1)[0], np.where(np.roll(y, -1) - y == -1)[0]))
+            # Check if these are real pulse boundaries: at least three samples before or after must be zero
+            real_pbs = []
+            for q in pbs:
+                if q < 3 or q > len(signal) - 4:
+                    continue  # So these tests don't fail
+                if signal[q - 1] == signal[q - 2] == signal[q - 3] == 0 or signal[q + 1] == signal[q + 2] == signal[q + 3] == 0:
+                    real_pbs.append(q)
+            # event['pulse_boundaries'][self.input_name] = real_pbs
+            # Mutilate the waveform
+            # First mutilate the edges, which are always pulse boundaries
+            output[:int(filter_length / 2)] = np.zeros(int(filter_length / 2))
+            output[len(output) - int(filter_length / 2):] = np.zeros(int(filter_length / 2))
+            # Mutilate waveform around pulse boundaries
+            for pb in real_pbs:
+                try:
+                    lefti = max(0, pb - int(filter_length / 2))
+                    righti = min(len(signal) - 1, pb + int(filter_length / 2))
+                    output[lefti:righti] = np.zeros(righti - lefti)
+                except Exception as e:
+                    self.log.warning("Error during waveform mutilation: " + str(e) + ". So what...")
         # Store the result
         event.waveforms.append(Waveform({
             'samples':  output,

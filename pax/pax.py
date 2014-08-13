@@ -152,9 +152,9 @@ def processor(config_overload=""):
     # Print settings to log
     string_file = StringIO()
     config.write(string_file)
-    log.debug("Dumping INI file")
-    for line in string_file.getvalue().split('\n'):
-        log.debug(line)
+    # log.debug("Dumping INI file")
+    # for line in string_file.getvalue().split('\n'):
+    #     log.debug(line)
 
     # Gather information about plugins
     plugin_source = get_plugin_source(config, log)

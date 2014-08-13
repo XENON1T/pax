@@ -4,6 +4,7 @@ from pax import pax
 config_overload = """
 [pax]
 input = 'XED.XedInput'
+#input = 'fax.FaX'
 #output = 'Plotting.PlottingWaveform'
 output = 'CSV.WritePeaksCSV'
 

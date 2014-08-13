@@ -20,7 +20,7 @@ class BasePlugin(object):
 
         # Please do all config variable fetching in constructor to make
         # changing config easier.
-        self.log.debug(config_values)
+        #self.log.debug(config_values)
         self.config = config_values
 
         self.startup()

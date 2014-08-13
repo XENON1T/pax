@@ -5,11 +5,6 @@ from pax import plugin, datastructure
 
 class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
 
-    def startup(self):
-        self.log.debug(("If you compare the isolation test intervals with xerawdp, it looks like ours are too large.\n" +
-                        "In reality, Xerawdp's math is off, and we are testing the same intervals."
-                        ))
-
     def transform_event(self, event):
         # Load settings here, so we are sure dynamic threshold stuff etc gets reset
         # Don't need to move these to ini I think, this plugin is meant to match Xerawdp, which always used these
@@ -547,6 +542,9 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
         """Does XerawDP's arcane isolation test. Returns if test is passed or not.
         NB: edge = first index IN region to test!
         TODO: Regions seem to come out empty sometimes, which triggers a numpy runtiome warning (only once though..)
+
+        If you compare the isolation test intervals with xerawdp, it looks like ours are too large.
+        In reality, Xerawdp's math is off, and we are testing the same intervals.
         """
         # Xerawdp off-by-one error:
         right_edge_of_left_test_region -= (1 if test_length_left % 2 == 0 else 0)
