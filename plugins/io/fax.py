@@ -240,7 +240,7 @@ class FaX(plugin.InputPlugin):
         n_samples = math.ceil((max(all_photons) + pad_after - start_time)/dt) + 2 + self.samples_after_pulse_center
 
         # Build waveform channel by channel
-        pmt_waveforms = np.zeros((len(hitlist), n_samples), dtype=np.uint16)
+        pmt_waveforms = np.zeros((len(hitlist), n_samples), dtype=np.int16)
         for channel, photon_detection_times in enumerate(hitlist):
             if len(photon_detection_times) == 0: continue   #No photons in this channel
 
@@ -275,13 +275,14 @@ class FaX(plugin.InputPlugin):
                          : center_index[i] + 1 +self.samples_after_pulse_center
                     ] = self.pmt_pulse_current(gain=self.config['gains'][channel], offset=offsets[i])
 
-            # Convert current to digitizer count (should I trunc, ceil or floor?), clip, and store
+            # Convert current to digitizer count (should I trunc, ceil or floor?) and store
+            # Don't baseline correct, clip or flip down here, we do that at the very end when all signals are combined
             temp = np.trunc(
-                self.config['digitizer_baseline'] -
                 self.config['pmt_circuit_load_resistor'] * self.config['external_amplification'] / dV *
                 current_wave
             )
-            pmt_waveforms[channel] = np.clip(temp.astype(np.uint16), 0, 2**(self.config['digitizer_bits']))
+            pmt_waveforms[channel] = temp.astype(np.int16)
+            #pmt_waveforms[channel] = np.clip(temp.astype(np.uint16), 0, 2**(self.config['digitizer_bits']))
 
         return start_time, pmt_waveforms
 
@@ -310,29 +311,11 @@ class FaX(plugin.InputPlugin):
             ),
         )
 
-    def add_noise(self, signals):
-        return [
-            (s[0], s[1] + self.pe_bin_to_adc_counts * np.random.normal(
-                0, self.config['pmt_noise_sigma'], s[1].shape
-            ))
-            for s in signals if s is not None
-        ]
-
-    def make_occurrences(self, signals, start_time_offset):
-        occurrences = {ch : [] for ch in self.channels}
-        for s in signals:
-            if s is None: continue
-            start_time, pmt_waveforms = s
-            for ch in range(pmt_waveforms.shape[0]):
-                occurrences[ch].append(
-                    (int((start_time - start_time_offset)/self.dt), pmt_waveforms[ch])
-                )
-        return occurrences
-
     def get_events(self):
-        # TODO: support for multiple scatters!
+
         event_number = 0
         for instructions in self.get_instructions_for_next_event():
+            # Make (start_time, waveform matrix) tuples for every s1/s2 we have to generate
             signals = []
             for q in instructions:
                 self.log.debug("Simulating %s photons and %s electrons at %s cm depth, at t=%s ns" % (
@@ -342,18 +325,41 @@ class FaX(plugin.InputPlugin):
                     signals += [self.s1(int(q['s1_photons']), t=float(q['t']))]
                 if int(q['s2_electrons']):
                     signals += [self.s2(int(q['s2_electrons']), z=float(q['z'])*units.cm, t=float(q['t']))]
-            signals = self.add_noise(signals)
-            self.log.debug("Done!")
+
+            # Remove empty signals (None) from signal list
+            signals = [s for s in signals if s is not None]
+
+            # Combine everything into a single waveform matrix
+            # Baseline addition & flipping down is done here
+            self.log.debug("Combining %s signals into a single matrix" % len(signals))
+            start_time_offset = min([s[0] for s in signals])
+            event_length = int((2*self.config['event_padding'] + max([s[0] - start_time_offset for s in signals]))/self.dt + max([s[1].shape[1] for s in signals]))
+            pmt_waveforms = self.config['digitizer_baseline'] * np.ones((len(self.channels), event_length), dtype=np.int16)
+            for s in signals:
+                start_index = int((s[0] - start_time_offset + self.config['event_padding'])/self.dt)
+                pmt_waveforms[:, start_index:start_index+s[1].shape[1]] -= s[1]     #NOTE: MINUS!
+            # Clipping
+            pmt_waveforms = np.clip(pmt_waveforms, 0, 2**(self.config['digitizer_bits']))
+
+            # Add white noise
+            pmt_waveforms += np.random.normal(
+                0, self.config['pmt_noise_sigma'], pmt_waveforms.shape
+            )
+            self.log.debug("Creating pax event")
 
             # Create and yield a pax event
             event = datastructure.Event()
             event.event_number = event_number
             now = int(time.time() * units.s)
-            start_time_offset = min([s[0] for s in signals])
-            event.event_start = int(now + start_time_offset)
-            event.event_stop = event.event_start + int(2*self.config['event_padding'] + max([s[0] - start_time_offset for s in signals]) + self.dt * max([s[1].shape[1] for s in signals]))
+            event.event_start = int(now)
+            event.event_stop = event.event_start + int(event_length * self.dt)
             event.sample_duration = self.dt
-            event.occurrences = self.make_occurrences(signals, start_time_offset - self.config['event_padding'])
+            # Make a single occurrence for the entire event... yeah, this should be changed
+            event.occurrences = {
+                ch: [(0, pmt_waveforms[ch])]
+                for ch in self.channels
+            }
+            self.log.debug("These numbers should be the same: %s %s %s %s" % (pmt_waveforms.shape[1], event_length, event.length(), event.occurrences[1][0][1].shape))
             yield event
             event_number += 1
 
