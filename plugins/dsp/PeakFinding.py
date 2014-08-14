@@ -584,7 +584,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
         else:
             failed = failed_pre or failed_post
         if failed:
-            self.log.debug("        Nope!")
+            self.log.debug("        Failed!")
             return False
         else:
             self.log.debug("        Passed!")

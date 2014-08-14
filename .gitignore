@@ -3,7 +3,8 @@
 # Data
 *.pklz
 *.xed
-*.csv
+*.root
+*.png
 
 # C extensions
 *.so
