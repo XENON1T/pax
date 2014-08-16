@@ -5,8 +5,20 @@ History
 
 
 ----------------
-Upcoming release
+1.0.0 (2014-08-16)
 ----------------
+
+* Completely refactored event datastructure
+
+ * Moved from Python dictionaries to an event class, seen in pax.datastructure
+ * Ported all modules with pax to the new structure
+ * Should open up I/O and C++ binding opportunities
+ * Now Event, Peak, Waveform, and ReconstructedPosition classes
+
+* Improved testing
+
+ * Started testing plugins (this will start including other plugins later in the release)
+ * Extensively testing the event class
 
 * Peak finder now nearly identical to Xerawdp: better than 99.9% agreement on >20000 peaks tested
 
@@ -20,7 +32,7 @@ Upcoming release
  * Simplified but much faster simulation mode used for peaks >1000 pe
 
 * Plotting improvement: largest S1 & S2 in separate subplot
-* Start of SimpleDSP, a faster, simpler peakfinder (not yet functional)
+
 
 
 
