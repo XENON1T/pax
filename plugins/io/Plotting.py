@@ -118,20 +118,26 @@ class PlottingHitPattern(plugin.OutputPlugin):
         """
         plt.figure()
 
-        x = []
-        y = []
-        area = []
+        hit_position = []
+        areas = []
 
-        for pmt, pmt_location in self.topArrayMap.keys():
-            q = np.sum(event.pmt_waveform(pmt))
+        S2 = event.S2s()[0]
+        S1 = event.S1s()[0]
 
-            x.append(pmt_location['x'])
-            y.append(pmt_location['y'])
-            area.append(q)
+        for pmt, pmt_location in self.topArrayMap.items():
+            q = event.pmt_waveforms[pmt].sum()/10
+
+            q_s1 = event.pmt_waveforms[pmt, S1.left:S1.right].sum()/10
+            q_s2 = event.pmt_waveforms[pmt, S2.left:S2.right].sum()/10
+
+            hit_position.append((pmt_location['x'],
+                                 pmt_location['y']))
+
+            areas.append((q, q_s1, q_s2))
 
         area = np.array(area) / 10
 
-        c = plt.scatter(x, y, c='red',
+        c = plt.scatter(*zip(*points), c='red',
                         s=area, cmap=plt.cm.hsv)
         c.set_alpha(0.75)
 

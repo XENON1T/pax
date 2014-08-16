@@ -10,7 +10,10 @@ config_overload = """
 [pax]
 input = 'MongoDB.MongoDBInput'
 my_postprocessing = []
-output = ['Pickle.WriteToPickleFile'] # "PrintToScreen.PrintToScreen"]
+output = ['Pickle.WriteToPickleFile',
+          'Plotting.PlottingWaveform',
+          'Plotting.PlottingHitPattern',
+           ]
 
 [MongoDB.MongoDBInput]
 collection = "dataset"
