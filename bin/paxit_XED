@@ -3,9 +3,10 @@ from pax import pax
 
 config_overload = """
 [pax]
-input = 'XED.XedInput'
-#output = 'Plotting.PlottingWaveform'
-output = 'CSV.WritePeaksCSV'
+#input = 'XED.XedInput'
+input = 'fax.FaX'
+output = 'Plotting.PlottingWaveform'
+#output = 'CSV.WritePeaksCSV'
 
 [XED.XedInput]
 filename = "xe100_120402_2000_000000.xed"

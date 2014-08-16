@@ -3,6 +3,27 @@
 History
 -------
 
+
+----------------
+Upcoming release
+----------------
+
+* Peak finder now nearly identical to Xerawdp: better than 99.9% agreement on >20000 peaks tested
+
+ * Simulation of the Xerawdp convolution bug (filtered waveform mutilation around pulse edges)
+ * Small bugfixes (empty isolation test regions, strange behaviour when max of filtered waveform is negative)
+ * Xerawdp XML file interpretation is off-by one (min_width=10 means: width must be 11 or higher)
+
+* Integration of a waveform simulator (FaX) which can simulate S1s, S2s, and white noise
+
+ * Script to convert from MC/NEST root files to FaX instructions
+ * Simplified but much faster simulation mode used for peaks >1000 pe
+
+* Plotting improvement: largest S1 & S2 in separate subplot
+* Start of SimpleDSP, a faster, simpler peakfinder (not yet functional)
+
+
+
 ------------------
 0.2.1 (2014-08-14)
 ------------------
@@ -16,10 +37,10 @@ History
 * Define static event class data structure
 * Transforms now specified in ini file
 * Can launch small web server for viewing plots
-* Major changes to essentially every part of the peak finding code to better match Xerawdp. Agreement is currently at the 95% level.
+* Major changes to the peak finding to better match Xerawdp. Agreement is currently at the 95% level.
 
  * Two important bugfixes for determining included channels : XED channel mask parsing, 0->1 start
- * Filter impulse response now identical now to Xerawdp
+ * Filter impulse response now identical to Xerawdp
  * Different summed waveforms for s1 and s2 peakfinding
 
 * Transforms have start and stop methods

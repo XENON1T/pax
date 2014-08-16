@@ -65,8 +65,8 @@ class PlottingWaveform(plugin.OutputPlugin):
     def plot_waveform(self, event, left=0, right=None, pad=0, show_peaks=False):
         if right is None:
             right = event.length() - 1
-        lefti = left - pad
-        righti = right + pad
+        lefti = max(0, left - pad)
+        righti = min(right + pad, event.length()-1)
         nsamples = 1 + righti - lefti
         dt = event.sample_duration * units.ns
         xlabels = np.arange(
@@ -86,9 +86,9 @@ class PlottingWaveform(plugin.OutputPlugin):
         plt.plot(xlabels, [0.6241506363] * nsamples,  '--', label='Large S2 threshold')
         plt.plot(xlabels, [0.06241506363] * nsamples,  '--', label='Small S2 threshold')
         plt.plot(xlabels, [0.1872451909] * nsamples,  '--', label='S1 threshold')
-        plt.ylabel('Amplitude (pe/ns)')
+        plt.ylabel('Amplitude (pe/bin)')
         plt.xlabel('Time (us)')
-        if show_peaks:
+        if show_peaks and event.peaks:
             # Plot all peaks
             max_y = max([p.height for p in event.peaks])
 
