@@ -201,9 +201,9 @@
     <span class="c"># Print settings to log</span>
     <span class="n">string_file</span> <span class="o">=</span> <span class="n">StringIO</span><span class="p">()</span>
     <span class="n">config</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">string_file</span><span class="p">)</span>
-    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Dumping INI file&quot;</span><span class="p">)</span>
-    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">string_file</span><span class="o">.</span><span class="n">getvalue</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\n</span><span class="s">&#39;</span><span class="p">):</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">line</span><span class="p">)</span>
+    <span class="c"># log.debug(&quot;Dumping INI file&quot;)</span>
+    <span class="c"># for line in string_file.getvalue().split(&#39;\n&#39;):</span>
+    <span class="c">#     log.debug(line)</span>
 
     <span class="c"># Gather information about plugins</span>
     <span class="n">plugin_source</span> <span class="o">=</span> <span class="n">get_plugin_source</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">log</span><span class="p">)</span>
