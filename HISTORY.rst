@@ -13,8 +13,15 @@ History
  * Moved from Python dictionaries to an event class, seen in pax.datastructure
  * Ported all modules with pax to the new structure
  * Should open up I/O and C++ binding opportunities
- * Now Event, Peak, Waveform, and ReconstructedPosition classes
+ * Now there are Event, Peak, Waveform, and ReconstructedPosition classes
+ * All of this is based on an extensively modified fork of 'micromodels'.
 
+* Input control (See Issue #26)
+
+ * Can now run pax with single events
+ * Run paxit --help to see how one can process events
+
+* Binaries of paxit installed when pax is installed
 * Improved testing
 
  * Started testing plugins (this will start including other plugins later in the release)
@@ -32,6 +39,10 @@ History
  * Simplified but much faster simulation mode used for peaks >1000 pe
 
 * Plotting improvement: largest S1 & S2 in separate subplot
+* Numerous bug fixes:
+
+ * Pickler I/O
+ * Remove dead code (clustering)
 
 
 
