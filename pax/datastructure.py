@@ -161,7 +161,7 @@ class Event(Model):
             if sw.name == name:
                 return sw
 
-        raise RuntimeError("Waveform not found")
+        raise RuntimeError("Waveform %s not found" % name)
 
     def length(self):
         """Number of samples for the sum waveform
@@ -198,6 +198,7 @@ class Event(Model):
                        key=lambda x: getattr(x, sort_key))
 
         return peaks
+
 
 
 def _explain(class_name):

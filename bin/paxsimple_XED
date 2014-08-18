@@ -5,17 +5,26 @@ config_overload = """
 [pax]
 input = 'XED.XedInput'
 
-dsp = ['SimpleDSP.JoinAndConvertWaveforms',
-       'SimpleDSP.SumWaveforms',
+dsp = ['SimpleDSP.BuildWaveforms',
        'SimpleDSP.S2Filter',
-       'SimpleDSP.FindPeaks']
+       'SimpleDSP.FindS2s']
+transform = []
 
 output = 'Plotting.PlottingWaveform'
-#output = 'CSV.WriteCSVPeakwise'
+#output = 'CSV.WritePeaksCSV'
 
 [XED.XedInput]
 filename = "xe100_120402_2000_000000.xed"
 #filename = "xe100_120306_1132_000000.xed"
+
+[SimpleDSP.BuildWaveforms]
+baseline_samples_at_start_of_pulse = 46
+
+[SimpleDSP.S2Filter]
+gauss_filter_fwhm = 0.5 * us
+
+[SimpleDSP.FindS2s]
+s2_threshold = 0.15  # pe/bin
 """
 
 if __name__ == '__main__':

@@ -1,8 +1,8 @@
 import numpy as np
-from pax import plugin, units, datastructure
+from pax import plugin, units, datastructure, dsputils
 
 
-class JoinAndConvertWaveforms(plugin.TransformPlugin):
+class BuildWaveforms(plugin.TransformPlugin):
 
     def startup(self):
         c = self.config
@@ -13,14 +13,23 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
             2 ** (c['digitizer_bits']) * c['pmt_circuit_load_resistor']
             * c['external_amplification'] * units.electron_charge
         )
+        self.channel_groups = {'top': self.config['pmts_top'],
+                               'bottom': self.config['pmts_bottom'],
+                               'veto': self.config['pmts_veto']}
 
     def transform_event(self, event):
-
         pmts = 1 + max(self.config['pmts_veto'])   # TODO: really??
-        event.pmt_waveforms = np.zeros((pmts, event.length()), dtype=np.float32)
+        # Initialize empty waveforms
+        event.pmt_waveforms = np.zeros((pmts, event.length()))
+        for group, members in self.channel_groups.items():
+            event.waveforms.append(datastructure.Waveform({
+                'samples':  np.zeros(event.length()),
+                'name':     group,
+                'pmt_list': self.crazy_type_conversion(members),
+            }))
         # Should these go into event class?
-        baselines = np.zeros(pmts)
-        baseline_stdevs = np.zeros(pmts)
+        object.__setattr__(event, 'baselines', np.zeros(pmts))
+        object.__setattr__(event, 'baseline_stdevs', np.zeros(pmts))
 
         for channel, waveform_occurrences in event.occurrences.items():
 
@@ -44,35 +53,21 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
                     continue
                 baseline_samples.extend(pulse_wave[:self.config['baseline_samples_at_start_of_pulse']])
             # Use the mean of the median 20% for the baseline: ensures outliers don't skew computed baseline
-            baselines[channel] = np.mean(sorted(baseline_samples)[
+            event.baselines[channel] = np.mean(sorted(baseline_samples)[
                 int(0.4 * len(baseline_samples)):int(0.6 * len(baseline_samples))
             ])
-            baseline_stdevs[channel] = np.std(baseline_samples)
+            event.baseline_stdevs[channel] = np.std(baseline_samples)
 
             # Convert and store the PMT waveform in the right place
             for i, (start_index, pulse_wave) in enumerate(waveform_occurrences):
-                event.pmt_waveforms[channel][
-                    start_index:start_index + len(pulse_wave)
-                ] = (baselines[channel] - pulse_wave) * self.conversion_factor / self.gains[channel]
-
-        return event
-
-
-class SumWaveforms(plugin.TransformPlugin):
-
-    def startup(self):
-        self.channel_groups = {'top': self.config['pmts_top'],
-                               'bottom': self.config['pmts_bottom'],
-                               'veto': self.config['pmts_veto']}
-
-    def transform_event(self, event):
-        # Compute summed waveforms
-        for group, members in self.channel_groups.items():
-            event.waveforms.append(datastructure.Waveform({
-                'samples':  np.sum(event.pmt_waveforms[[list(members)]], axis=0),
-                'name':     group,
-                'pmt_list': self.crazy_type_conversion(members),
-            }))
+                end_index = start_index + len(pulse_wave)   # Well, not really index... index-1
+                corrected_pulse = (event.baselines[channel] - pulse_wave) * self.conversion_factor / self.gains[channel]
+                event.pmt_waveforms[channel][start_index:end_index] = corrected_pulse
+                # Add occurrence to all appropriate summed waveforms
+                for group, members in self.channel_groups.items():
+                    if channel in members:
+                        event.get_waveform(group).samples[start_index:end_index] += corrected_pulse
+        # Add the tpc waveform: sum of top and bottom
         event.waveforms.append(datastructure.Waveform({
             'samples':  event.get_waveform('top').samples + event.get_waveform('bottom').samples,
             'name':     'tpc',
@@ -92,14 +87,13 @@ class S2Filter(plugin.TransformPlugin):
         x = np.linspace(-2,2,num=(1+4*filter_sigma/self.config['digitizer_t_resolution']))
         self.filter_ir = 1/(filter_sigma*np.sqrt(2*np.pi)) * np.exp(-x**2 / (2*filter_sigma**2))
         self.filter_ir /= np.sum(self.filter_ir)
-        print(len(self.filter_ir))
 
     def transform_event(self, event):
         input_w = event.get_waveform('tpc')
         event.waveforms.append(datastructure.Waveform({
             'name':     'filtered_for_s2',
             'samples':  np.array(
-                np.convolve(input_w.samples, self.filter_ir, 'same'), dtype=np.float32
+                np.convolve(input_w.samples, self.filter_ir, 'same')
             ),
             'pmt_list': input_w.pmt_list,
         }))
@@ -107,37 +101,22 @@ class S2Filter(plugin.TransformPlugin):
         return event
 
 
-class FindPeaks(plugin.TransformPlugin):
+class FindS2s(plugin.TransformPlugin):
 
     def transform_event(self, event):
         filtered = event.get_waveform('filtered_for_s2').samples
         unfiltered = event.get_waveform('tpc').samples
-        candidates = self.intervals_above_threshold(filtered, self.config['s2_threshold'])
-        for itv_left, itv_right in candidates:
-            self.log.debug("S2 candidate interval %s-%s" % (itv_left, itv_right))
-            max_idx = itv_left + np.argmax(unfiltered[itv_left:itv_right + 1])
-            # TODO: better extent determination
-            left = itv_left
-            right = itv_right
-            self.log.debug("S2 candidate peak %s-%s-%s" % (left, max_idx, right))
-            event.peaks.append(datastructure.Peak({
-                'type':             's2',
-                'area':             np.sum(unfiltered[left:right]),
-                'index_of_maximum': max_idx,
-                'height':           unfiltered[max_idx],
-                'left':             left,
-                'right':            right,
-            }))
+        # Find intervals above threshold in filtered waveform
+        candidate_intervals = dsputils.intervals_above_threshold(filtered, self.config['s2_threshold'])
+        # Find peaks in intervals
+        peaks = dsputils.find_peaks_in_intervals(unfiltered, candidate_intervals, 's2')
+        # Compute peak extents - on FILTERED waveform!
+        for p in peaks:
+            p.left, p.right = dsputils.peak_bounds(filtered, p, 0.01)
+            p.area = np.sum(unfiltered[p.left:p.right+1])
+        # Deal with overlapping peaks, store
+        peaks = dsputils.remove_overlapping_peaks(peaks)
+        event.peaks.extend(peaks)
+        self.log.debug("Peakfinder found %s peaks." % len(event.peaks))
         return event
 
-    @staticmethod
-    def intervals_above_threshold(signal, threshold):
-        """Finds all intervals in signal above threshold"""
-        above0 = np.clip(np.sign(signal - threshold), 0, float('inf'))
-        above0[-1] = 0      # Last sample is always an end. Also prevents edge cases due to rolling it over.
-        above0_next = np.roll(above0, 1)
-        cross_above = np.sort(np.where(above0 - above0_next == 1)[0])
-        cross_below = np.sort(np.where(above0 - above0_next == -1)[0] - 1)
-        # Assuming each interval's left <= right, we can simply split sorted(lefts+rights) in pairs
-        # Todo: come on, there must be a numpy method for this!
-        return list(zip(*[iter(sorted(list(cross_above) + list(cross_below)))] * 2))
