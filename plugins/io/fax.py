@@ -46,7 +46,7 @@ class FaX(plugin.InputPlugin):
             )
         # Temp hack: need 0 in so we can use lists
         self.channels = list({0} | self.config['pmts_top'] | self.config['pmts_bottom'])
-        # Calculate a normalized pmt pulse, for use in convolution later
+        # Calculate a normalized pmt pulse, for use in large peaks later
         self.normalized_pulse = self.pmt_pulse_current(gain=1)
         self.normalized_pulse /= np.sum(self.normalized_pulse)
         # Conversion from pe/bin to ADC counts (1/factor from AssembleSignals.py, with median gain among live channels)
@@ -96,22 +96,26 @@ class FaX(plugin.InputPlugin):
 
             electrons             -   total # of drift electrons generated at the interaction site
             t                     -   Time at which the original energy deposition occurred.
-            z                     -   Depth (in the liquid below the ELR) where the interaction occurs.
-        As usual, all units in the same system used by pax (ns, cm)
+            z                     -   Depth below the GATE mesh where the interaction occurs.
+        As usual, all units in the same system used by pax (if you specify raw values: ns, cm)
         """
         if z < 0:
             self.log.warning("Unphysical depth: %s cm. Not generating S2." % z)
             return []
         self.log.debug("Creating an s2 from %s electrons..." % electrons_generated)
+        # Average drift time, taking faster drift velocity after gate into account
+        drift_time_mean = (self.config['gate_to_anode_distance'] - self.config['elr_gas_gap_length'])\
+                          /self.config['drift_velocity_liquid_above_gate'] \
+                          + z/self.config['drift_velocity_liquid']
         # Diffusion model from Sorensen 2011
-        drift_time_mean  = z/self.config['drift_velocity_liquid']
         drift_time_stdev = math.sqrt(
             2 * self.config['diffusion_constant_liquid'] * drift_time_mean / (self.config['drift_velocity_liquid'])**2
         )
         # Absorb electrons during the drift
         electrons_seen = np.random.binomial(
             n=electrons_generated,
-            p=self.config['electron_extraction_yield']*math.exp(-drift_time_mean/self.config['electron_lifetime_liquid'])
+            p=self.config['electron_extraction_yield']
+            * math.exp(- drift_time_mean / self.config['electron_lifetime_liquid'])
         )
         self.log.debug("    %s electrons survive the drift." % electrons_generated)
         #Calculate electron arrival times in the ELR region
@@ -127,7 +131,7 @@ class FaX(plugin.InputPlugin):
         # How many photons does each electron make?
         # TODO: xy correction!
         photons_produced = np.random.poisson(
-            self.config['s2_secondary_sc_yield_density']*self.config['elr_length'],
+            self.config['s2_secondary_sc_yield_density']*self.config['elr_gas_gap_length'],
             len(electron_arrival_times)
         )
         total_photons = np.sum(photons_produced)
@@ -165,7 +169,7 @@ class FaX(plugin.InputPlugin):
     def get_luminescence_positions(self, n):
         """Sample luminescence positions in the ELR, using a mixed wire-dominated / uniform field"""
         x = np.random.uniform(0, 1, n)
-        l = self.config['elr_length']
+        l = self.config['elr_gas_gap_length']
         wire_par = self.config['wire_field_parameter']
         rm = self.config['anode_mesh_pitch'] * wire_par
         rw = self.config['anode_wire_radius']
@@ -273,7 +277,11 @@ class FaX(plugin.InputPlugin):
                     current_wave[
                            center_index[i] - self.samples_before_pulse_center + 1    # +1 due to np.diff in pmt_pulse_current
                          : center_index[i] + 1 +self.samples_after_pulse_center
-                    ] = self.pmt_pulse_current(gain=self.config['gains'][channel], offset=offsets[i])
+                    ] = self.pmt_pulse_current(
+                        # Really a Poisson (although mean is so high it is very close to a Gauss)
+                        gain=np.random.poisson(self.config['gains'][channel]),
+                        offset=offsets[i]
+                    )
 
             # Convert current to digitizer count (should I trunc, ceil or floor?) and store
             # Don't baseline correct, clip or flip down here, we do that at the very end when all signals are combined
@@ -282,7 +290,6 @@ class FaX(plugin.InputPlugin):
                 current_wave
             )
             pmt_waveforms[channel] = temp.astype(np.int16)
-            #pmt_waveforms[channel] = np.clip(temp.astype(np.uint16), 0, 2**(self.config['digitizer_bits']))
 
         return start_time, pmt_waveforms
 
@@ -319,12 +326,12 @@ class FaX(plugin.InputPlugin):
             signals = []
             for q in instructions:
                 self.log.debug("Simulating %s photons and %s electrons at %s cm depth, at t=%s ns" % (
-                    q['s1_photons'], q['s2_electrons'], q['z'], q['t']
+                    q['s1_photons'], q['s2_electrons'], q['depth'], q['t']
                 ))
                 if int(q['s1_photons']):
                     signals += [self.s1(int(q['s1_photons']), t=float(q['t']))]
                 if int(q['s2_electrons']):
-                    signals += [self.s2(int(q['s2_electrons']), z=float(q['z'])*units.cm, t=float(q['t']))]
+                    signals += [self.s2(int(q['s2_electrons']), z=float(q['depth'])*units.cm, t=float(q['t']))]
 
             # Remove empty signals (None) from signal list
             signals = [s for s in signals if s is not None]
