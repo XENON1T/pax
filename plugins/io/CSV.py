@@ -23,6 +23,9 @@ class WritePeaksCSV(plugin.OutputPlugin):
                 self.csv.writeheader()
             self.csv.writerow({a[0]: a[1] for a in data})
 
+    def shutdown(self):
+        self.output.close()
+
 # class WriteEventsToCSV(plugin.OutputPlugin):
 #
 #     def startup(self):

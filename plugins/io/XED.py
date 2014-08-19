@@ -73,6 +73,9 @@ class XedInput(plugin.InputPlugin):
         self.first_event = self.file_metadata['first_event_number']
         self.last_event = self.file_metadata['events_in_file'] - self.file_metadata['first_event_number'] - 1
 
+    def shutdown(self):
+        self.input.close()
+
     # Temp for old API compatibility
     def get_events(self):
         for event_position_i, event_position in enumerate(self.event_positions):

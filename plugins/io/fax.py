@@ -24,7 +24,8 @@ exp_pulse = np.vectorize(exp_pulse_raw, excluded={1, 2, 3})
 class FaX(plugin.InputPlugin):
 
     def startup(self):
-        self.instructions = csv.DictReader(open(self.config['instruction_file_filename'], 'r'))
+        self.instructions_file = open(self.config['instruction_file_filename'], 'r')
+        self.instructions = csv.DictReader(self.instructions_file)
         self.dt = self.config['digitizer_t_resolution']
         # Determine sensible length of a pmt pulse to simulate
         self.samples_before_pulse_center = math.ceil(self.config['pulse_width_cutoff']*self.config['pmt_rise_time']/self.dt)
@@ -46,20 +47,12 @@ class FaX(plugin.InputPlugin):
             )
         # Temp hack: need 0 in so we can use lists
         self.channels = list({0} | self.config['pmts_top'] | self.config['pmts_bottom'])
-        # Calculate a normalized pmt pulse, for use in large peaks later
+        # Calculate a normalized pmt pulse, for use in convolution later (only for large peaks)
         self.normalized_pulse = self.pmt_pulse_current(gain=1)
         self.normalized_pulse /= np.sum(self.normalized_pulse)
-        # Conversion from pe/bin to ADC counts (1/factor from AssembleSignals.py, with median gain among live channels)
-        median_gain = np.median([x for x in self.config['gains'].values() if x >0])
-        self.pe_bin_to_adc_counts = 1/(
-                self.config['digitizer_t_resolution'] * self.config['digitizer_voltage_range'] / (
-                    2 ** (self.config['digitizer_bits'])
-                    * self.config['pmt_circuit_load_resistor']
-                    * self.config['external_amplification']
-                    * median_gain
-                    * units.electron_charge
-            )
-        )
+
+    def shutdown(self):
+        self.instructions_file.close()
 
     def s1_photons(self, photons, t=0, recombination_time=None, singlet_fraction=None, primary_excimer_fraction=None):
         """
