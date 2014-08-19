@@ -18,8 +18,9 @@ class BuildWaveforms(plugin.TransformPlugin):
                                'veto': self.config['pmts_veto']}
 
     def transform_event(self, event):
-        pmts = 1 + max(self.config['pmts_veto'])   # TODO: really??
+
         # Initialize empty waveforms
+        pmts = 1 + max(self.config['pmts_veto'])   # TODO: really??
         event.pmt_waveforms = np.zeros((pmts, event.length()))
         for group, members in self.channel_groups.items():
             event.waveforms.append(datastructure.Waveform({
@@ -27,7 +28,7 @@ class BuildWaveforms(plugin.TransformPlugin):
                 'name':     group,
                 'pmt_list': self.crazy_type_conversion(members),
             }))
-        # Should these go into event class?
+        # TODO: Should these go into event class?
         object.__setattr__(event, 'baselines', np.zeros(pmts))
         object.__setattr__(event, 'baseline_stdevs', np.zeros(pmts))
 
@@ -60,13 +61,14 @@ class BuildWaveforms(plugin.TransformPlugin):
 
             # Convert and store the PMT waveform in the right place
             for i, (start_index, pulse_wave) in enumerate(waveform_occurrences):
-                end_index = start_index + len(pulse_wave)   # Well, not really index... index-1
+                end_index = start_index + len(pulse_wave)   # Well, not really index... index+1
                 corrected_pulse = (event.baselines[channel] - pulse_wave) * self.conversion_factor / self.gains[channel]
                 event.pmt_waveforms[channel][start_index:end_index] = corrected_pulse
                 # Add occurrence to all appropriate summed waveforms
                 for group, members in self.channel_groups.items():
                     if channel in members:
                         event.get_waveform(group).samples[start_index:end_index] += corrected_pulse
+
         # Add the tpc waveform: sum of top and bottom
         event.waveforms.append(datastructure.Waveform({
             'samples':  event.get_waveform('top').samples + event.get_waveform('bottom').samples,
