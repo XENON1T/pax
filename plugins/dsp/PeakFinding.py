@@ -68,7 +68,11 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
 
             # Delete peaks beyond the 32 with largest area - must do AFTER small s2 peakfinding
             if peak_type == 's1':
-                event.peaks = self.sort_and_prune_by(event.peaks, 'area', 32, reverse=True)
+                event.peaks = sort_and_prune_by(
+                    event.peaks,
+                    key = lambda x: getattr(x, 'area'),
+                    keep_number =32, reverse=True
+                )
 
             ##
             # STAGE 1 - REGION FINDING
@@ -501,14 +505,6 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                                left_boundary=right, right_boundary=right_boundary)  # Not right+1? Who is off by one?
 
     # Helper methods used only in the peakfinding
-    @staticmethod
-    def sort_and_prune_by(peak_list, key, keep_number=float('inf'), reverse=False):
-        peak_list.sort(key=lambda x: getattr(x, key), reverse=reverse)
-        if len(peak_list) > keep_number:
-            return peak_list[:keep_number]
-        else:
-            return peak_list
-
     def nearest_s2_boundary(self, event, peak_position, edge_position, direction):
         """Finds the nearest s2 boundary according to arcane Xerawdp rules"""
         boundaries = []
@@ -591,6 +587,14 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             return True
 
 
+# Sort and prune a peak list - needed in peakfinder and ComputePeakProperties
+def sort_and_prune_by(peak_list, key=lambda x:x, keep_number=float('inf'), reverse=False):
+    peak_list.sort(key=key, reverse=reverse)
+    if len(peak_list) > keep_number:
+        return peak_list[:keep_number]
+    else:
+        return peak_list
+
 class ComputePeakProperties(plugin.TransformPlugin):
 
     """Compute various derived quantities of each peak (full width half maximum, etc.)
@@ -615,6 +619,35 @@ class ComputePeakProperties(plugin.TransformPlugin):
                 areas_per_pmt[channel] = integral
             area_for_xerawdp_matching = sum([area for _, area in areas_per_pmt.items() if area > 0])
             peak.area = area_for_xerawdp_matching
+            """
+            The coincidence level is actually computed twice in Xerawdp: once before and once after gain correction
+            The coincidence computed before gain correction is used for sorting
+                (and saved in the peak data object, but not used (I think/hope so?))
+            The coincidence computed  after gain correction is stored in the root file
+            For now we'll compute only the one before gain correction, so we can implement the sorting
+            TODO: implement the other one too!
+            """
+            if peak.type == 's1':
+                peak.coincidence_level = 0
+                for channel, area in areas_per_pmt.items():
+                    if self.config['gains'][channel] == 0: continue
+                    if channel in self.config['pmts_excluded_for_s1']: continue
+                    if channel in self.config['pmts_veto']: continue
+                    uncorrection_factor = 2 * 10**6 / self.config['gains'][channel]
+                    if area > self.config['coincidence_threshold'] * (2 * 10**6 / self.config['gains'][channel]):
+                        peak.coincidence_level += 1
+                # Hack to
+            else:
+                # Hack to ensure S2s won't get pruned:
+                peak.coincidence_level = 9999
+
+        # Prune excess S1s
+        event.peaks = sort_and_prune_by(
+            event.peaks,
+            key=lambda x: (x.coincidence_level, x.area),
+            keep_number=len(event.peaks) - len(event.S1s()) + 32,
+            reverse=True
+        )
 
         return event
 
