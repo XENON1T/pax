@@ -8,7 +8,7 @@ t = f.Get("t1") # For Xerawdp use T1, for MC t1
 variables = (
     ('x',             'Nest_x',     0.1),
     ('y',             'Nest_y',     0.1),
-    ('z',             'Nest_z',     -0.1),
+    ('depth',         'Nest_z',     -0.1),
     ('s1_photons',    'Nest_nph',   1),
     ('s2_electrons',  'Nest_nel',   1),
     ('t',             'Nest_t',     10**(9)),
@@ -31,15 +31,12 @@ for event_i in range(t.GetEntries()):
         for (variable_name, _, conversion_factor) in variables:
             peaks[-1][variable_name] = values[variable_name][i] * conversion_factor
 
+    # Subtract depth of gate mesh, see xenon:xenon100:mc:roottree, bottom of page
+    for p in peaks:
+        p['depth'] -= 2.15+0.25
+
     # Sort by time
     peaks.sort(key = lambda p:p['t'])
-
-    # Convert units
-    for p in peaks:
-        p['x'] /= 10
-        p['y'] /= 10
-        p['z'] /= 10
-        p['t'] /= 10
 
     # Write to csv
     for peak_i, peak_data in enumerate(peaks):
