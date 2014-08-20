@@ -27,8 +27,9 @@ baseline_samples_at_start_of_pulse = 46
 gauss_filter_fwhm = 0.5 * us
 
 [SimpleDSP.SplitPeaks]
-min_p_v_ratio    = 2.5
-min_p_v_distance = 30
+min_p_v_ratio       = 2
+min_p_v_distance    = 30
+min_p_v_difference  = 0.5 #pe/bin
 
 [SimpleDSP.FindS2s]
 s2_threshold = 0.15  # pe/bin

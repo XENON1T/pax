@@ -20,10 +20,14 @@ def intervals_above_threshold(signal, threshold):
 derivative_kernel = [-0.003059, -0.035187, -0.118739, -0.143928, 0.000000, 0.143928, 0.118739, 0.035187, 0.003059]
 assert len(derivative_kernel) % 2 == 1
 
-def peaks_and_valleys(signal, min_p_v_distance=1, min_p_v_ratio=1):
+def peaks_and_valleys(signal, test_function):
     """Find peaks and valleys based on derivative sign changes
     :param signal: signal to search in
-    :param min_p_v_distance: minimum distance (in samples) between peaks & valleys
+    :param test_function: Function which accepts three args:
+            - signal, signal begin tested
+            - peak, index of peak
+            - valley, index of valley
+        must return True if peak/valley pair is acceptable, else False
     :return: two sorted lists: peaks, valleys
     """
 
@@ -47,6 +51,9 @@ def peaks_and_valleys(signal, min_p_v_distance=1, min_p_v_ratio=1):
         print(valleys - peaks)
         raise RuntimeError("Peak & valley list weird!")
 
+    if len(peaks) < 2:
+        return peaks, valleys
+
     # Remove peaks and valleys which are too close to each other, or have too low a p/v ratio
     # This can't be a for-loop, as we are modifying the lists, and step back to recheck peaks.
     now_at_peak = 0
@@ -65,9 +72,9 @@ def peaks_and_valleys(signal, min_p_v_distance=1, min_p_v_ratio=1):
             fail_left = False
         else:
             valley_left = np.max(valleys[np.where(valleys < peak)[0]])
-            fail_left = peak - valley_left < min_p_v_distance or signal[peak]/signal[valley_left] < min_p_v_ratio
+            fail_left = not test_function(signal, peak, valley_left)
         valley_right = np.min(valleys[np.where(valleys > peak)[0]])
-        fail_right = valley_right < min_p_v_distance or signal[peak]/signal[valley_right] < min_p_v_ratio
+        fail_right = not test_function(signal, peak, valley_right)
         if not (fail_left or fail_right):
             # We're good, move along
             now_at_peak += 1
@@ -85,11 +92,15 @@ def peaks_and_valleys(signal, min_p_v_distance=1, min_p_v_ratio=1):
 
         # Remove the shallowest peak near the valley marked for removal
         left_peak  = max(peaks[np.where(peaks < valley_to_remove)[0]])
-        right_peak = min(peaks[np.where(peaks > valley_to_remove)[0]])
-        if signal[left_peak] < signal[right_peak]:
+        if valley_to_remove > max(peaks):
+            # There is no right peak, so remove the left peak
             peaks = peaks[np.where(peaks != left_peak)[0]]
         else:
-            peaks = peaks[np.where(peaks != right_peak)[0]]
+            right_peak = min(peaks[np.where(peaks > valley_to_remove)[0]])
+            if signal[left_peak] < signal[right_peak]:
+                peaks = peaks[np.where(peaks != left_peak)[0]]
+            else:
+                peaks = peaks[np.where(peaks != right_peak)[0]]
 
         # Jump back a few peaks to be sure we repeat all checks,
         # even if we just removed a peak before the current peak
@@ -140,7 +151,8 @@ def merge_overlapping_peaks(peaks):
                 consumed.type = 'consumed'
     return [p for p in peaks if p.type != 'consumed']
 
-def peak_bounds(signal, peak, fraction_of_max, zero_level=0):
+
+def peak_bounds(signal, max_idx, fraction_of_max, zero_level=0):
     """
     Return (left, right) bounds of the fraction_of_max width of the peak in samples.
     TODO: add interpolation option
@@ -150,15 +162,23 @@ def peak_bounds(signal, peak, fraction_of_max, zero_level=0):
     :param fraction_of_max: Width at this fraction of maximum
     :param zero_level: Always end a peak before it is < this. Default: 0
     """
-    threshold = min(zero_level, peak.height * fraction_of_max)
+    if len(signal) == 0:
+        raise RuntimeError("Empty signal, can't find peak bounds!")
+    height = signal[max_idx]
+    threshold = min(zero_level, height * fraction_of_max)
     threshold_test = np.vectorize(lambda x: x < threshold)
-    max_idx = peak.index_of_maximum
-    if peak.height < threshold:
+    if height < threshold:
         # Peak is always below threshold -> return smallest legal peak.
         return (max_idx, max_idx)
     # First find # of indices we need to move from max, so we can test if it is None
-    right = find_first_fast(signal[max_idx:], threshold_test)
+    # if max_idx == 0:
+    #     left = 0
+    # else:
     left = find_first_fast(signal[max_idx::-1], threshold_test)     # Note reversion acts before indexing!
+    # if max_idx == len(signal)-1:
+    #     right = len(signal)-1
+    # else:
+    right = find_first_fast(signal[max_idx:], threshold_test)
     if left is None: left = 0
     if right is None: right = len(signal)-1
     # Convert to indices in waveform
@@ -178,3 +198,5 @@ def find_first_fast(a, predicate, chunk_size=128):
         for inds in zip(*predicate(chunk).nonzero()):
             return inds[0] + i0
         i0 = i1
+    #HACK: None found... return the last index
+    return len(a)-1

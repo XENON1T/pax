@@ -118,7 +118,7 @@ class FindS2s(plugin.TransformPlugin):
         peaks = self.find_peaks_in_intervals(unfiltered, candidate_intervals)
         # Compute peak extents - on FILTERED waveform!
         for p in peaks:
-            p.left, p.right = dsputils.peak_bounds(filtered, p, 0.01)
+            p.left, p.right = dsputils.peak_bounds(filtered, p.index_of_maximum, 0.01)
             p.area = np.sum(unfiltered[p.left:p.right+1])
         # Merge overlapping peaks, we'll split them later
         peaks = dsputils.merge_overlapping_peaks(peaks)
@@ -140,28 +140,37 @@ class FindS2s(plugin.TransformPlugin):
 
 class SplitPeaks(plugin.TransformPlugin):
 
+    def startup(self):
+        def is_valid_p_v_pair(signal, peak, valley):
+            return (
+                abs(peak - valley) >= self.config['min_p_v_distance'] and
+                signal[peak] / signal[valley] >= self.config['min_p_v_ratio'] and
+                signal[peak] - signal[valley] >= self.config['min_p_v_difference']
+            )
+        self.is_valid_p_v_pair = is_valid_p_v_pair
+
+
     def transform_event(self, event):
         filtered = event.get_waveform('filtered_for_s2').samples
         unfiltered = event.get_waveform('tpc').samples
-        new_peaks = []
+        revised_peaks = []
         for parent in event.peaks:
             ps, vs = dsputils.peaks_and_valleys(
                 filtered[parent.left:parent.right+1],
-                min_p_v_distance=self.config['min_p_v_distance'],
-                min_p_v_ratio=self.config['min_p_v_ratio'],
+                test_function=self.is_valid_p_v_pair
             )
-            # If the peak isn't composite, we're done
+            # If the peak isn't composite, we don't have to do anything
             if len(ps) < 2:
-                new_peaks.append(parent)
+                revised_peaks.append(parent)
                 continue
-            """
-            import matplotlib.pyplot as plt
-            plt.plot(event.get_waveform('tpc').samples[parent.left:parent.right+1])
-            plt.plot(filtered[parent.left:parent.right+1])
-            plt.plot(ps, filtered[parent.left + np.array(ps)], 'or')
-            plt.plot(vs, filtered[parent.left + np.array(vs)], 'ob')
-            plt.show()
-            """
+
+            # import matplotlib.pyplot as plt
+            # plt.plot(event.get_waveform('tpc').samples[parent.left:parent.right+1])
+            # plt.plot(filtered[parent.left:parent.right+1])
+            # plt.plot(ps, filtered[parent.left + np.array(ps)], 'or')
+            # plt.plot(vs, filtered[parent.left + np.array(vs)], 'ob')
+            # plt.show()
+
             ps += parent.left
             vs += parent.left
             self.log.debug("S2 at "+ str(parent.index_of_maximum) +": peaks " + str(ps) + ", valleys "+str(vs))
@@ -169,27 +178,34 @@ class SplitPeaks(plugin.TransformPlugin):
             for i, p in enumerate(ps):
                 l_bound = vs[i-1] if i!=0 else parent.left
                 r_bound = vs[i]
-                print(r_bound - l_bound)
                 max_idx = l_bound + np.argmax(unfiltered[l_bound:r_bound+1])
                 new_peak = datastructure.Peak({
                         'index_of_maximum': max_idx,
                         'height':           unfiltered[max_idx],
                 })
-                new_peak.left, new_peak.right = l_bound, r_bound
-                new_peaks.append(new_peak)
+                # No need to recompute peak bounds: the whole parent peak is <0.01 max of the biggest peak
+                # If we ever need to anyway, this code works:
+                # left, right = dsputils.peak_bounds(filtered[l_bound:r_bound+1], max_idx - l_bound, 0.01)
+                # new_peak.left  = left + l_bound
+                # new_peak.right = right + l_bound
+                new_peak.left = l_bound
+                new_peak.right = r_bound
+                revised_peaks.append(new_peak)
                 new_peak.area = np.sum(unfiltered[new_peak.left:new_peak.right+1])
 
-        event.peaks = new_peaks
+        event.peaks = revised_peaks
         return event
 
 class IdentifyPeaks(plugin.TransformPlugin):
     def transform_event(self, event):
         #PLACEHOLDER:
-        # if area in 5 samples around max is > 50% of total area, christen as S1
+        # if area in 5 samples around max i s > 50% of total area, christen as S1
         unfiltered = event.get_waveform('tpc').samples
         for p in event.peaks:
             if np.sum(unfiltered[p.index_of_maximum -2: p.index_of_maximum + 3]) > 0.5*p.area:
                 p.type = 's1'
+                self.log.debug("%s-%s-%s: S1" % (p.left, p.index_of_maximum, p.right))
             else:
                 p.type = 's2'
+                self.log.debug("%s-%s-%s: S2" % (p.left, p.index_of_maximum, p.right))
         return event
