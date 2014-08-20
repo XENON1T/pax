@@ -7,7 +7,10 @@ input = 'XED.XedInput'
 
 dsp = ['SimpleDSP.BuildWaveforms',
        'SimpleDSP.S2Filter',
-       'SimpleDSP.FindS2s']
+       'SimpleDSP.FindS2s',
+       'SimpleDSP.SplitPeaks',
+       'SimpleDSP.IdentifyPeaks',
+       ]
 transform = []
 
 output = 'Plotting.PlottingWaveform'
@@ -22,6 +25,10 @@ baseline_samples_at_start_of_pulse = 46
 
 [SimpleDSP.S2Filter]
 gauss_filter_fwhm = 0.5 * us
+
+[SimpleDSP.SplitPeaks]
+min_p_v_ratio    = 2.5
+min_p_v_distance = 30
 
 [SimpleDSP.FindS2s]
 s2_threshold = 0.15  # pe/bin

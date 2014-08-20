@@ -83,7 +83,7 @@ class LargeS2Filter(GenericFilter):
         GenericFilter.startup(self)
 
         #self.filter_ir = self.rcosfilter(31, 0.2, 3 * units.MHz * self.config['digitizer_t_resolution'])
-        # Guillaum's raised cosine coeffs:
+        # Guillaume's raised cosine coeffs:
         self.filter_ir = [0.005452,  0.009142,  0.013074,  0.017179,  0.021381,  0.025597,  0.029746,  0.033740,  0.037499,  0.040941,  0.043992,  0.046586,  0.048666,  0.050185,  0.051111,
                           0.051422,  0.051111,  0.050185,  0.048666,  0.046586,  0.043992,  0.040941,  0.037499,  0.033740,  0.029746,  0.025597,  0.021381,  0.017179,  0.013074,  0.009142,  0.005452]
         self.output_name = 'filtered_for_large_s2'

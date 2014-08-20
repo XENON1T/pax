@@ -85,19 +85,23 @@ class BuildWaveforms(plugin.TransformPlugin):
 class S2Filter(plugin.TransformPlugin):
 
     def startup(self):
-        filter_sigma = self.config['gauss_filter_fwhm']/2.35482
-        x = np.linspace(-2,2,num=(1+4*filter_sigma/self.config['digitizer_t_resolution']))
-        self.filter_ir = 1/(filter_sigma*np.sqrt(2*np.pi)) * np.exp(-x**2 / (2*filter_sigma**2))
+        #filter_sigma = self.config['gauss_filter_fwhm']/2.35482
+        #x = np.linspace(-2,2,num=(1+4*filter_sigma/self.config['digitizer_t_resolution']))
+        #self.filter_ir = 1/(filter_sigma*np.sqrt(2*np.pi)) * np.exp(-x**2 / (2*filter_sigma**2))
+        # Guillaume's raised cosine coeffs:
+        self.filter_ir = [0.005452,  0.009142,  0.013074,  0.017179,  0.021381,  0.025597,  0.029746,  0.033740,  0.037499,  0.040941,  0.043992,  0.046586,  0.048666,  0.050185,  0.051111,
+                          0.051422,  0.051111,  0.050185,  0.048666,  0.046586,  0.043992,  0.040941,  0.037499,  0.033740,  0.029746,  0.025597,  0.021381,  0.017179,  0.013074,  0.009142,  0.005452]
         self.filter_ir /= np.sum(self.filter_ir)
 
     def transform_event(self, event):
         input_w = event.get_waveform('tpc')
         event.waveforms.append(datastructure.Waveform({
             'name':     'filtered_for_s2',
-            'samples':  np.array(
-                np.convolve(input_w.samples, self.filter_ir, 'same')
-            ),
-            'pmt_list': input_w.pmt_list,
+            'samples':   #np.convolve(
+                np.convolve(input_w.samples, self.filter_ir, 'same'),
+                #self.filter_ir, 'same'
+            #),
+            'pmt_list':  input_w.pmt_list,
         }))
 
         return event
@@ -111,14 +115,81 @@ class FindS2s(plugin.TransformPlugin):
         # Find intervals above threshold in filtered waveform
         candidate_intervals = dsputils.intervals_above_threshold(filtered, self.config['s2_threshold'])
         # Find peaks in intervals
-        peaks = dsputils.find_peaks_in_intervals(unfiltered, candidate_intervals, 's2')
+        peaks = self.find_peaks_in_intervals(unfiltered, candidate_intervals)
         # Compute peak extents - on FILTERED waveform!
         for p in peaks:
             p.left, p.right = dsputils.peak_bounds(filtered, p, 0.01)
             p.area = np.sum(unfiltered[p.left:p.right+1])
-        # Deal with overlapping peaks, store
-        peaks = dsputils.remove_overlapping_peaks(peaks)
+        # Merge overlapping peaks, we'll split them later
+        peaks = dsputils.merge_overlapping_peaks(peaks)
         event.peaks.extend(peaks)
-        self.log.debug("Peakfinder found %s peaks." % len(event.peaks))
+        self.log.debug("Found %s peaks." % len(event.peaks))
         return event
 
+    @staticmethod
+    def find_peaks_in_intervals(signal, candidate_intervals):
+        peaks = []
+        for itv_left, itv_right in candidate_intervals:
+            max_idx = itv_left + np.argmax(signal[itv_left:itv_right + 1])
+            peaks.append(datastructure.Peak({
+                    'index_of_maximum': max_idx,
+                    'height':           signal[max_idx],
+            }))
+        return peaks
+
+
+class SplitPeaks(plugin.TransformPlugin):
+
+    def transform_event(self, event):
+        filtered = event.get_waveform('filtered_for_s2').samples
+        unfiltered = event.get_waveform('tpc').samples
+        new_peaks = []
+        for parent in event.peaks:
+            ps, vs = dsputils.peaks_and_valleys(
+                filtered[parent.left:parent.right+1],
+                min_p_v_distance=self.config['min_p_v_distance'],
+                min_p_v_ratio=self.config['min_p_v_ratio'],
+            )
+            # If the peak isn't composite, we're done
+            if len(ps) < 2:
+                new_peaks.append(parent)
+                continue
+            """
+            import matplotlib.pyplot as plt
+            plt.plot(event.get_waveform('tpc').samples[parent.left:parent.right+1])
+            plt.plot(filtered[parent.left:parent.right+1])
+            plt.plot(ps, filtered[parent.left + np.array(ps)], 'or')
+            plt.plot(vs, filtered[parent.left + np.array(vs)], 'ob')
+            plt.show()
+            """
+            ps += parent.left
+            vs += parent.left
+            self.log.debug("S2 at "+ str(parent.index_of_maximum) +": peaks " + str(ps) + ", valleys "+str(vs))
+            # Compute basic quantities for the sub-peaks
+            for i, p in enumerate(ps):
+                l_bound = vs[i-1] if i!=0 else parent.left
+                r_bound = vs[i]
+                print(r_bound - l_bound)
+                max_idx = l_bound + np.argmax(unfiltered[l_bound:r_bound+1])
+                new_peak = datastructure.Peak({
+                        'index_of_maximum': max_idx,
+                        'height':           unfiltered[max_idx],
+                })
+                new_peak.left, new_peak.right = l_bound, r_bound
+                new_peaks.append(new_peak)
+                new_peak.area = np.sum(unfiltered[new_peak.left:new_peak.right+1])
+
+        event.peaks = new_peaks
+        return event
+
+class IdentifyPeaks(plugin.TransformPlugin):
+    def transform_event(self, event):
+        #PLACEHOLDER:
+        # if area in 5 samples around max is > 50% of total area, christen as S1
+        unfiltered = event.get_waveform('tpc').samples
+        for p in event.peaks:
+            if np.sum(unfiltered[p.index_of_maximum -2: p.index_of_maximum + 3]) > 0.5*p.area:
+                p.type = 's1'
+            else:
+                p.type = 's2'
+        return event

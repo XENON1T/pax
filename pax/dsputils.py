@@ -4,14 +4,129 @@ Heavily used in SimpleDSP
 
 """
 
-
+import math
 import numpy as np
 from itertools import chain
-from pax import datastructure
 
 
-def remove_overlapping_peaks(peaks):
-    """ Remove overlapping peaks - highest peak consumes lower peak """
+def intervals_above_threshold(signal, threshold):
+    """Return boundary indices of all intervals in signal (strictly) above threshold"""
+    cross_above, cross_below = sign_changes(signal - threshold)
+    # Assuming each interval's left <= right, we can simply split sorted(lefts+rights) in pairs
+    # Todo: come on, there must be a numpy method for this!
+    return list(zip(*[iter(sorted(cross_above + cross_below))] * 2))
+
+# From Xerawdp
+derivative_kernel = [-0.003059, -0.035187, -0.118739, -0.143928, 0.000000, 0.143928, 0.118739, 0.035187, 0.003059]
+assert len(derivative_kernel) % 2 == 1
+
+def peaks_and_valleys(signal, min_p_v_distance=1, min_p_v_ratio=1):
+    """Find peaks and valleys based on derivative sign changes
+    :param signal: signal to search in
+    :param min_p_v_distance: minimum distance (in samples) between peaks & valleys
+    :return: two sorted lists: peaks, valleys
+    """
+
+    if len(signal) < len(derivative_kernel):
+        # Signal is too small, can't calculate derivatives
+        return [],[]
+    slope = np.convolve(signal, derivative_kernel, mode='same')
+    # Chop the invalid parts off - easier than mode='valid' and adding offset to results
+    offset = (len(derivative_kernel)-1)/2
+    slope[0:offset] = np.zeros(offset)
+    slope[len(slope)-offset:] = np.zeros(offset)
+    peaks, valleys = sign_changes(slope, report_first_index='never')
+    peaks = np.array(sorted(peaks))
+    valleys = np.array(sorted(valleys))
+    assert len(peaks) == len(valleys)
+    # Remove coinciding peak&valleys
+    good_indices = np.where(peaks != valleys)[0]
+    peaks = np.array(peaks[good_indices])
+    valleys = np.array(valleys[good_indices])
+    if not all(valleys > peaks):   # Valleys are AFTER the peaks
+        print(valleys - peaks)
+        raise RuntimeError("Peak & valley list weird!")
+
+    # Remove peaks and valleys which are too close to each other, or have too low a p/v ratio
+    # This can't be a for-loop, as we are modifying the lists, and step back to recheck peaks.
+    now_at_peak = 0
+    while 1:
+
+        # Find the next peak, if there is one
+        if now_at_peak > len(peaks)-1:
+            break
+        peak = peaks[now_at_peak]
+        if math.isnan(peak):
+            now_at_peak += 1
+            continue
+
+        # Check the valleys around this peak
+        if peak < min(valleys):
+            fail_left = False
+        else:
+            valley_left = np.max(valleys[np.where(valleys < peak)[0]])
+            fail_left = peak - valley_left < min_p_v_distance or signal[peak]/signal[valley_left] < min_p_v_ratio
+        valley_right = np.min(valleys[np.where(valleys > peak)[0]])
+        fail_right = valley_right < min_p_v_distance or signal[peak]/signal[valley_right] < min_p_v_ratio
+        if not (fail_left or fail_right):
+            # We're good, move along
+            now_at_peak += 1
+            continue
+
+        # Some check failed: we must remove a peak/valley pair.
+        # Which valley should we remove?
+        if fail_left and fail_right:
+            #Both valleys are bad! Remove the most shallow valley.
+            valley_to_remove = valley_left if signal[valley_left] > signal[valley_right] else valley_right
+        elif fail_left:
+            valley_to_remove = valley_left
+        elif fail_right:
+            valley_to_remove = valley_right
+
+        # Remove the shallowest peak near the valley marked for removal
+        left_peak  = max(peaks[np.where(peaks < valley_to_remove)[0]])
+        right_peak = min(peaks[np.where(peaks > valley_to_remove)[0]])
+        if signal[left_peak] < signal[right_peak]:
+            peaks = peaks[np.where(peaks != left_peak)[0]]
+        else:
+            peaks = peaks[np.where(peaks != right_peak)[0]]
+
+        # Jump back a few peaks to be sure we repeat all checks,
+        # even if we just removed a peak before the current peak
+        now_at_peak = max(0, now_at_peak-1)
+        valleys = valleys[np.where(valleys != valley_to_remove)[0]]
+
+    peaks, valleys = [p for p in peaks if not math.isnan(p)], [v for v in valleys if not math.isnan(v)]
+    # Return all remaining peaks & valleys
+    return np.array(peaks), np.array(valleys)
+
+
+def sign_changes(signal, report_first_index='positive'):
+    """Return indices at which signal changes sign.
+    Returns two sorted numpy arrays:
+        - indices at which signal becomes positive (changes from  <=0 to >0)
+        - indices at which signal becomes non-positive (changes from >0 to <=0)
+    Arguments:
+        - signal
+        - report_first_index:    if 'positive', index 0 is reported only if it is positive (default)
+                                 if 'non-positive', index 0 is reported if it is non-positive
+                                 if 'never', index 0 is NEVER reported.
+    """
+    above0 = np.clip(np.sign(signal), 0, float('inf'))
+    if report_first_index == 'positive':
+        above0[-1] = 0
+    elif report_first_index == 'non-positive':
+        above0[-1] = 1
+    else:      # report_first_index ==  'never':
+        above0[-1] = -1234
+    above0_next = np.roll(above0, 1)
+    becomes_positive     = np.sort(np.where(above0 - above0_next == 1)[0])
+    becomes_non_positive = np.sort(np.where(above0 - above0_next == -1)[0] - 1)
+    return list(becomes_positive), list(becomes_non_positive)
+
+
+def merge_overlapping_peaks(peaks):
+    """ Merge overlapping peaks - highest peak consumes lower peak """
     for p in peaks:
         if p.type == 'consumed': continue
         for q in peaks:
@@ -24,30 +139,6 @@ def remove_overlapping_peaks(peaks):
                     consumed, consumer = q,p
                 consumed.type = 'consumed'
     return [p for p in peaks if p.type != 'consumed']
-
-def find_peaks_in_intervals(signal, candidate_intervals, peak_type):
-    peaks = []
-    for itv_left, itv_right in candidate_intervals:
-        max_idx = itv_left + np.argmax(signal[itv_left:itv_right + 1])
-        peaks.append(datastructure.Peak({
-                'index_of_maximum': max_idx,
-                'height':           signal[max_idx],
-                'type':             peak_type
-        }))
-    return peaks
-
-
-def intervals_above_threshold(signal, threshold):
-    """Return boundary indices of all intervals in signal (strictly) above threshold"""
-    above0 = np.clip(np.sign(signal - threshold), 0, float('inf'))
-    above0[-1] = 0      # Last sample is always an end. Also prevents edge cases due to rolling it over.
-    above0_next = np.roll(above0, 1)
-    cross_above = np.sort(np.where(above0 - above0_next == 1)[0])
-    cross_below = np.sort(np.where(above0 - above0_next == -1)[0] - 1)
-    # Assuming each interval's left <= right, we can simply split sorted(lefts+rights) in pairs
-    # Todo: come on, there must be a numpy method for this!
-    return list(zip(*[iter(sorted(list(cross_above) + list(cross_below)))] * 2))
-
 
 def peak_bounds(signal, peak, fraction_of_max, zero_level=0):
     """
@@ -80,57 +171,8 @@ def peak_bounds(signal, peak, fraction_of_max, zero_level=0):
 # Numpy 2.0 may get a builtin to do this
 # TODO: predicate = np.vectorize(predicate)?? Or earlier?
 def find_first_fast(a, predicate, chunk_size=128):
-    """
-    Find the indices of array elements that match the predicate.
-
-    Parameters
-    ----------
-    a : array_like
-        Input data, must be 1D.
-
-    predicate : function
-        A function which operates on sections of the given array, returning
-        element-wise True or False for each data value.
-
-    chunk_size : integer
-        The length of the chunks to use when searching for matching indices.
-        For high probability predicates, a smaller number will make this
-        function quicker, similarly choose a larger number for low
-        probabilities.
-
-    Returns
-    -------
-    index_generator : generator
-        A generator of (indices, data value) tuples which make the predicate
-        True.
-
-    See Also
-    --------
-    where, nonzero
-
-    Notes
-    -----
-    This function is best used for finding the first, or first few, data values
-    which match the predicate.
-
-    Examples
-    --------
-    >>> a = np.sin(np.linspace(0, np.pi, 200))
-    >>> result = find(a, lambda arr: arr > 0.9)
-    >>> next(result)
-    ((71, ), 0.900479032457)
-    >>> np.where(a > 0.9)[0][0]
-    71
-
-
-    """
-    if a.ndim != 1:
-        raise ValueError('The array must be 1D, not {}.'.format(a.ndim))
-
     i0 = 0
-    chunk_inds = chain(range(chunk_size, a.size, chunk_size),
-                 [None])
-
+    chunk_inds = chain(range(chunk_size, a.size, chunk_size),[None])
     for i1 in chunk_inds:
         chunk = a[i0:i1]
         for inds in zip(*predicate(chunk).nonzero()):
