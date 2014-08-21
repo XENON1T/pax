@@ -26,6 +26,8 @@ class FaX(plugin.InputPlugin):
     def startup(self):
         self.instructions_file = open(self.config['instruction_file_filename'], 'r')
         self.instructions = csv.DictReader(self.instructions_file)
+        if not 'event_repetitions' in self.config:
+            self.config['event_repetitions'] = 1
         self.dt = self.config['digitizer_t_resolution']
         # Determine sensible length of a pmt pulse to simulate
         self.samples_before_pulse_center = math.ceil(self.config['pulse_width_cutoff']*self.config['pmt_rise_time']/self.dt)
@@ -79,10 +81,11 @@ class FaX(plugin.InputPlugin):
             recombination_time * (1 / np.random.uniform(0, 1, n_photons-n_primaries) - 1)
         ])
         # Account for singlet/triplet decay times
-        return self.singlet_triplet_delays(
+        timings = self.singlet_triplet_delays(
             photon_times, t1=self.config['singlet_lifetime_liquid'], t3=self.config['triplet_lifetime_liquid'],
             singlet_ratio=singlet_fraction
         )
+        return timings
 
     def s2_electrons(self, electrons_generated=None, z=0., t=0.):
         """Return a list of electron arrival times in the ELR region caused by an S2 process.
@@ -194,6 +197,10 @@ class FaX(plugin.InputPlugin):
         # TEMP - Uniformly distribute photons over all PMTs!
         # TEMP - hack to prevent photons getting into the ghost channel 0
         channels_for_photons = list(set(self.channels) - set([0]))
+        if 'magically_avoid_dead_pmts' in self.config and self.config['magically_avoid_dead_pmts']:
+            channels_for_photons = [ch for ch in channels_for_photons if self.config['gains'][ch] > 0]
+        if 'magically_avoid_s1_excluded_pmts'in self.config and self.config['magically_avoid_dead_pmts']:
+            channels_for_photons = [ch for ch in channels_for_photons if not ch in self.config['pmts_excluded_for_s1']]
         hit_counts =  Counter([
             random.choice(channels_for_photons)
             for _ in photon_timings
@@ -204,6 +211,7 @@ class FaX(plugin.InputPlugin):
         for ch in self.channels:
             hitlist.append( sorted(photon_timings[already_used:already_used+hit_counts[ch]]) )
             already_used += hit_counts[ch]
+        self.log.debug("    %s hits in hitlist" % sum([len(x) for x in hitlist]))
         #TODO: factor in propagation time
         return np.array(hitlist)
 
@@ -270,11 +278,14 @@ class FaX(plugin.InputPlugin):
                     current_wave[
                            center_index[i] - self.samples_before_pulse_center + 1    # +1 due to np.diff in pmt_pulse_current
                          : center_index[i] + 1 +self.samples_after_pulse_center
-                    ] = self.pmt_pulse_current(
+                    ] += self.pmt_pulse_current(
                         # Really a Poisson (although mean is so high it is very close to a Gauss)
                         gain=np.random.poisson(self.config['gains'][channel]),
                         offset=offsets[i]
                     )
+
+            # Add white noise current - only to channels that have seen a photon, only around a peak
+            current_wave += np.random.normal(0, self.config['white_noise_sigma'], len(current_wave))
 
             # Convert current to digitizer count (should I trunc, ceil or floor?) and store
             # Don't baseline correct, clip or flip down here, we do that at the very end when all signals are combined
@@ -315,53 +326,52 @@ class FaX(plugin.InputPlugin):
 
         event_number = 0
         for instructions in self.get_instructions_for_next_event():
-            # Make (start_time, waveform matrix) tuples for every s1/s2 we have to generate
-            signals = []
-            for q in instructions:
-                self.log.debug("Simulating %s photons and %s electrons at %s cm depth, at t=%s ns" % (
-                    q['s1_photons'], q['s2_electrons'], q['depth'], q['t']
-                ))
-                if int(q['s1_photons']):
-                    signals += [self.s1(int(q['s1_photons']), t=float(q['t']))]
-                if int(q['s2_electrons']):
-                    signals += [self.s2(int(q['s2_electrons']), z=float(q['depth'])*units.cm, t=float(q['t']))]
+            for repetition_i in range(self.config['event_repetitions']):
+                # Make (start_time, waveform matrix) tuples for every s1/s2 we have to generate
+                signals = []
+                for q in instructions:
+                    self.log.debug("Simulating %s photons and %s electrons at %s cm depth, at t=%s ns" % (
+                        q['s1_photons'], q['s2_electrons'], q['depth'], q['t']
+                    ))
+                    if int(q['s1_photons']):
+                        signals += [self.s1(int(q['s1_photons']), t=float(q['t']))]
+                    if int(q['s2_electrons']):
+                        signals += [self.s2(int(q['s2_electrons']), z=float(q['depth'])*units.cm, t=float(q['t']))]
 
-            # Remove empty signals (None) from signal list
-            signals = [s for s in signals if s is not None]
+                # Remove empty signals (None) from signal list
+                signals = [s for s in signals if s is not None]
+                if len(signals) == 0:
+                    self.log.warning("Fax simulation returned no signals, can't return an event...")
+                    continue
 
-            # Combine everything into a single waveform matrix
-            # Baseline addition & flipping down is done here
-            self.log.debug("Combining %s signals into a single matrix" % len(signals))
-            start_time_offset = min([s[0] for s in signals])
-            event_length = int((2*self.config['event_padding'] + max([s[0] - start_time_offset for s in signals]))/self.dt + max([s[1].shape[1] for s in signals]))
-            pmt_waveforms = self.config['digitizer_baseline'] * np.ones((len(self.channels), event_length), dtype=np.int16)
-            for s in signals:
-                start_index = int((s[0] - start_time_offset + self.config['event_padding'])/self.dt)
-                pmt_waveforms[:, start_index:start_index+s[1].shape[1]] -= s[1]     #NOTE: MINUS!
-            # Clipping
-            pmt_waveforms = np.clip(pmt_waveforms, 0, 2**(self.config['digitizer_bits']))
+                # Combine everything into a single waveform matrix
+                # Baseline addition & flipping down is done here
+                self.log.debug("Combining %s signals into a single matrix" % len(signals))
+                start_time_offset = min([s[0] for s in signals])
+                event_length = int((2*self.config['event_padding'] + max([s[0] - start_time_offset for s in signals]))/self.dt + max([s[1].shape[1] for s in signals]))
+                pmt_waveforms = self.config['digitizer_baseline'] * np.ones((len(self.channels), event_length), dtype=np.int16)
+                for s in signals:
+                    start_index = int((s[0] - start_time_offset + self.config['event_padding'])/self.dt)
+                    pmt_waveforms[:, start_index:start_index+s[1].shape[1]] -= s[1]     #NOTE: MINUS!
+                # Clipping
+                pmt_waveforms = np.clip(pmt_waveforms, 0, 2**(self.config['digitizer_bits']))
 
-            # Add white noise
-            pmt_waveforms += np.random.normal(
-                0, self.config['pmt_noise_sigma'], pmt_waveforms.shape
-            )
-            self.log.debug("Creating pax event")
-
-            # Create and yield a pax event
-            event = datastructure.Event()
-            event.event_number = event_number
-            now = int(time.time() * units.s)
-            event.event_start = int(now)
-            event.event_stop = event.event_start + int(event_length * self.dt)
-            event.sample_duration = self.dt
-            # Make a single occurrence for the entire event... yeah, this should be changed
-            event.occurrences = {
-                ch: [(0, pmt_waveforms[ch])]
-                for ch in self.channels
-            }
-            self.log.debug("These numbers should be the same: %s %s %s %s" % (pmt_waveforms.shape[1], event_length, event.length(), event.occurrences[1][0][1].shape))
-            yield event
-            event_number += 1
+                # Create and yield a pax event
+                self.log.debug("Creating pax event")
+                event = datastructure.Event()
+                event.event_number = event_number
+                now = int(time.time() * units.s)
+                event.event_start = int(now)
+                event.event_stop = event.event_start + int(event_length * self.dt)
+                event.sample_duration = self.dt
+                # Make a single occurrence for the entire event... yeah, this should be changed
+                event.occurrences = {
+                    ch: [(0, pmt_waveforms[ch])]
+                    for ch in self.channels
+                }
+                self.log.debug("These numbers should be the same: %s %s %s %s" % (pmt_waveforms.shape[1], event_length, event.length(), event.occurrences[1][0][1].shape))
+                yield event
+                event_number += 1
 
     def get_instructions_for_next_event(self):
         this_event = 0
@@ -370,7 +380,10 @@ class FaX(plugin.InputPlugin):
             if int(p['event']) == this_event:
                 this_event_peaks.append(p)
             else:
-                #New event reached!
+                # New event reached!
+                # How often do we need to repeat the old event?
                 yield this_event_peaks
                 this_event = int(p['event'])
                 this_event_peaks = [p]
+        # For the final event...
+        yield this_event_peaks
