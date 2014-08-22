@@ -11,9 +11,8 @@ config_overload = """
 input = 'MongoDB.MongoDBInput'
 my_postprocessing = []
 output = ['Pickle.WriteToPickleFile',
-          'Plotting.PlottingWaveform',
-          'Plotting.PlottingHitPattern',
-           ]
+          'Plotting.PlotWaveform',
+         ]
 
 [MongoDB.MongoDBInput]
 collection = "dataset"

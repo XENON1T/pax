@@ -82,61 +82,76 @@ class BuildWaveforms(plugin.TransformPlugin):
         return np.array(list(x), dtype=np.uint16)
 
 
-class S2Filter(plugin.TransformPlugin):
+class ApplyFilters(plugin.TransformPlugin):
 
     def startup(self):
-        #filter_sigma = self.config['gauss_filter_fwhm']/2.35482
-        #x = np.linspace(-2,2,num=(1+4*filter_sigma/self.config['digitizer_t_resolution']))
-        #self.filter_ir = 1/(filter_sigma*np.sqrt(2*np.pi)) * np.exp(-x**2 / (2*filter_sigma**2))
-        # Guillaume's raised cosine coeffs:
-        self.filter_ir = [0.005452,  0.009142,  0.013074,  0.017179,  0.021381,  0.025597,  0.029746,  0.033740,  0.037499,  0.040941,  0.043992,  0.046586,  0.048666,  0.050185,  0.051111,
-                          0.051422,  0.051111,  0.050185,  0.048666,  0.046586,  0.043992,  0.040941,  0.037499,  0.033740,  0.029746,  0.025597,  0.021381,  0.017179,  0.013074,  0.009142,  0.005452]
-        self.filter_ir /= np.sum(self.filter_ir)
+        for f in self.config['filters']:
+            ir = np.array(f['impulse_response'])
+            if abs(1-np.sum(ir)) > 0.0001:
+                raise ValueError("Filter %s has non-normalized impulse response: %s != 1" % (f['name'], np.sum(ir)))
+            if len(ir)%2 == 0:
+                self.log.warning("Filter %s has an even-length impulse response!" % f['name'])
+            if not np.all(ir - ir[::-1] == 0):
+                self.log.warning("Filter %s has an asymmetric impulse response!" % f['name'])
 
     def transform_event(self, event):
-        input_w = event.get_waveform('tpc')
-        event.waveforms.append(datastructure.Waveform({
-            'name':     'filtered_for_s2',
-            'samples':   #np.convolve(
-                np.convolve(input_w.samples, self.filter_ir, 'same'),
-                #self.filter_ir, 'same'
-            #),
-            'pmt_list':  input_w.pmt_list,
-        }))
-
-        return event
-
-
-class FindS2s(plugin.TransformPlugin):
-
-    def transform_event(self, event):
-        filtered = event.get_waveform('filtered_for_s2').samples
-        unfiltered = event.get_waveform('tpc').samples
-        # Find intervals above threshold in filtered waveform
-        candidate_intervals = dsputils.intervals_above_threshold(filtered, self.config['s2_threshold'])
-        # Find peaks in intervals
-        peaks = self.find_peaks_in_intervals(unfiltered, candidate_intervals)
-        # Compute peak extents - on FILTERED waveform!
-        for p in peaks:
-            p.left, p.right = dsputils.peak_bounds(filtered, p.index_of_maximum, 0.01)
-            p.area = np.sum(unfiltered[p.left:p.right+1])
-        # Merge overlapping peaks, we'll split them later
-        peaks = dsputils.merge_overlapping_peaks(peaks)
-        event.peaks.extend(peaks)
-        self.log.debug("Found %s peaks." % len(event.peaks))
-        return event
-
-    @staticmethod
-    def find_peaks_in_intervals(signal, candidate_intervals):
-        peaks = []
-        for itv_left, itv_right in candidate_intervals:
-            max_idx = itv_left + np.argmax(signal[itv_left:itv_right + 1])
-            peaks.append(datastructure.Peak({
-                    'index_of_maximum': max_idx,
-                    'height':           signal[max_idx],
+        for f in self.config['filters']:
+            input_w = event.get_waveform(f['source'])
+            event.waveforms.append(datastructure.Waveform({
+                'name':      f['name'],
+                'samples':   np.convolve(input_w.samples, f['impulse_response'], 'same'),
+                'pmt_list':  input_w.pmt_list,
             }))
-        return peaks
+        return event
 
+
+class FindPeaks(plugin.TransformPlugin):
+
+    def transform_event(self, event):
+        for pf in self.config['peakfinders']:
+            filtered = event.get_waveform(pf['peakfinding_wave']).samples
+            unfiltered = event.get_waveform(pf['unfiltered_wave']).samples
+            # Find peaks in intervals above threshold in filtered waveform
+            peaks = []
+            # Find regions currently free of peaks
+            if len(event.peaks) == 0 or ('ignore_previous_peaks' in pf and pf['ignore_previous_peaks']):
+                pf_regions = [(0, len(filtered)-1)]
+            else:
+                pf_regions = dsputils.free_regions(event)
+            # Search for peaks in the free regions
+            for region_left, region_right in pf_regions:
+                region_filtered   = filtered[region_left:region_right + 1]
+                region_unfiltered = unfiltered[region_left:region_right + 1]
+                for itv_left, itv_right in dsputils.intervals_above_threshold(region_filtered, pf['threshold']):
+                    p = dsputils.find_peak_in_interval(region_filtered, region_unfiltered, itv_left, itv_right,
+                                                       pf['peak_integration_bound'], region_offset=region_left)
+                    # Should we already label the peak. Dangerous: will skip the peak identifier!
+                    if 'peak_label' in pf:
+                        p.type = pf['peak_label']
+                    if p is not None:   # Currently not used
+                        peaks.append(p)
+            # If peaks overlap, merge them into one.
+            peaks = dsputils.merge_overlapping_peaks(peaks)
+            self.log.debug("Found %s peaks in %s." % (len(peaks), pf['peakfinding_wave']))
+            event.peaks.extend(peaks)
+        return event
+
+class IdentifyPeaks(plugin.TransformPlugin):
+    def transform_event(self, event):
+        #PLACEHOLDER:
+        # if area in 5 samples around max i s > 50% of total area, christen as S1
+        unfiltered = event.get_waveform('tpc').samples
+        for p in event.peaks:
+            if p.type != 'unknown':
+                # Some peakfinder forced the type. Fine, not my problem...
+                continue
+            if np.sum(unfiltered[p.index_of_maximum -2: p.index_of_maximum + 3]) > 0.5*p.area:
+                p.type = 's1'
+                self.log.debug("%s-%s-%s: S1" % (p.left, p.index_of_maximum, p.right))
+            else:
+                p.type = 's2'
+                self.log.debug("%s-%s-%s: S2" % (p.left, p.index_of_maximum, p.right))
+        return event
 
 class SplitPeaks(plugin.TransformPlugin):
 
@@ -149,17 +164,24 @@ class SplitPeaks(plugin.TransformPlugin):
             )
         self.is_valid_p_v_pair = is_valid_p_v_pair
 
-
     def transform_event(self, event):
-        filtered = event.get_waveform('filtered_for_s2').samples
+        # TODO: this works on all peaks, but takes tpc and tpc_s2 as signals...
+        filtered = event.get_waveform('tpc_s2').samples
         unfiltered = event.get_waveform('tpc').samples
         revised_peaks = []
         for parent in event.peaks:
+            # If the peak is not large enough, it will not be split
+            if ('composite_peak_min_width' in self.config and
+                parent.right - parent.left < self.config['composite_peak_min_width']
+               ):
+                revised_peaks.append(parent)
+                continue
+            #Try to split the peak
             ps, vs = dsputils.peaks_and_valleys(
                 filtered[parent.left:parent.right+1],
                 test_function=self.is_valid_p_v_pair
             )
-            # If the peak isn't composite, we don't have to do anything
+            # If the peak wasn't split, we don't have to do anything
             if len(ps) < 2:
                 revised_peaks.append(parent)
                 continue
@@ -185,7 +207,7 @@ class SplitPeaks(plugin.TransformPlugin):
                 })
                 # No need to recompute peak bounds: the whole parent peak is <0.01 max of the biggest peak
                 # If we ever need to anyway, this code works:
-                # left, right = dsputils.peak_bounds(filtered[l_bound:r_bound+1], max_idx - l_bound, 0.01)
+                # left, right = dsputils.peak_bounds(filtered[l_bound:r_bound+1], max_i, 0.01)
                 # new_peak.left  = left + l_bound
                 # new_peak.right = right + l_bound
                 new_peak.left = l_bound
@@ -194,18 +216,4 @@ class SplitPeaks(plugin.TransformPlugin):
                 new_peak.area = np.sum(unfiltered[new_peak.left:new_peak.right+1])
 
         event.peaks = revised_peaks
-        return event
-
-class IdentifyPeaks(plugin.TransformPlugin):
-    def transform_event(self, event):
-        #PLACEHOLDER:
-        # if area in 5 samples around max i s > 50% of total area, christen as S1
-        unfiltered = event.get_waveform('tpc').samples
-        for p in event.peaks:
-            if np.sum(unfiltered[p.index_of_maximum -2: p.index_of_maximum + 3]) > 0.5*p.area:
-                p.type = 's1'
-                self.log.debug("%s-%s-%s: S1" % (p.left, p.index_of_maximum, p.right))
-            else:
-                p.type = 's2'
-                self.log.debug("%s-%s-%s: S2" % (p.left, p.index_of_maximum, p.right))
         return event

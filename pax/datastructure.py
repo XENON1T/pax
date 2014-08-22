@@ -44,7 +44,7 @@ class Peak(Model):
     height = IntegerField()  #: Height of highest point in peak (in pe/bin)
     left = IntegerField()  #: Index of left bound (inclusive) in sum waveform.
     right = IntegerField()  #: Index of right bound (exclusive) in sum waveform.
-    type = StringField(default='s1')  #: Type of peak (e.g., 'S1' or 'S2')
+    type = StringField(default='unknown')  #: Type of peak (e.g., 's1', 's2', 'veto_s1', ...)
     coincidence_level = IntegerField()  #: Number of PMTs that see 'something significant' (depends on peakfinder)
 
     #: Array of PMT numbers included in this peaks.

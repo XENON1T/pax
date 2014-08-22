@@ -8,6 +8,12 @@ import math
 import numpy as np
 from itertools import chain
 
+from pax import datastructure
+
+
+##
+## Peak finding routines
+##
 
 def intervals_above_threshold(signal, threshold):
     """Return boundary indices of all intervals in signal (strictly) above threshold"""
@@ -20,6 +26,139 @@ def intervals_above_threshold(signal, threshold):
 derivative_kernel = [-0.003059, -0.035187, -0.118739, -0.143928, 0.000000, 0.143928, 0.118739, 0.035187, 0.003059]
 assert len(derivative_kernel) % 2 == 1
 
+
+def sign_changes(signal, report_first_index='positive'):
+    """Return indices at which signal changes sign.
+    Returns two sorted numpy arrays:
+        - indices at which signal becomes positive (changes from  <=0 to >0)
+        - indices at which signal becomes non-positive (changes from >0 to <=0)
+    Arguments:
+        - signal
+        - report_first_index:    if 'positive', index 0 is reported only if it is positive (default)
+                                 if 'non-positive', index 0 is reported if it is non-positive
+                                 if 'never', index 0 is NEVER reported.
+    """
+    above0 = np.clip(np.sign(signal), 0, float('inf'))
+    if report_first_index == 'positive':
+        above0[-1] = 0
+    elif report_first_index == 'non-positive':
+        above0[-1] = 1
+    else:      # report_first_index ==  'never':
+        above0[-1] = -1234
+    above0_next = np.roll(above0, 1)
+    becomes_positive     = np.sort(np.where(above0 - above0_next == 1)[0])
+    becomes_non_positive = np.sort(np.where(above0 - above0_next == -1)[0] - 1)
+    return list(becomes_positive), list(becomes_non_positive)
+
+
+def find_peak_in_interval(signal, unfiltered, itv_left, itv_right, integration_bound_fraction, constrain_bounds=False, region_offset=0):
+    """Finds 'the' peak in the candidate interval
+    :param signal: Signal to use for peak finding & extent computation
+    :param unfiltered: Unfiltered waveform (used for max, height, area computation)
+    :param itv_left: Left bound of interval to look in
+    :param itv_right: Right bound of interval to look in
+    :param integration_bound_fraction: Fraction of max where you choose the peak to end.
+    :param constrain_bounds: If True, peak bounds can't extend beyond the interval. Default False.
+    :param region_offset: index in the waveform of the first index of the signal passed. Default 0.
+    :return: a pax datastructure Peak
+    """
+    # Find the peak's maximum and extent using 'signal'
+    max_idx = itv_left + np.argmax(signal[itv_left:itv_right + 1])
+    if constrain_bounds:
+        left, right = peak_bounds(signal[itv_left:itv_right + 1], max_idx, 0.01)
+        left += itv_left
+        right += itv_left
+    else:
+        left, right = peak_bounds(signal, max_idx, 0.01)
+    # Compute properties of this peak using 'unfiltered'
+    area = np.sum(unfiltered[left:right+1])
+    unfiltered_max = left + np.argmax(unfiltered[left:right + 1])
+    return datastructure.Peak({
+        'index_of_maximum': region_offset + unfiltered_max,
+        'height':           unfiltered[unfiltered_max],
+        'left':             region_offset + left,
+        'right':            region_offset + right,
+        'area':             area,
+        # TODO: FWHM etc. On unfiltered wv? both?
+    })
+
+
+def peak_bounds(signal, max_idx, fraction_of_max, zero_level=0):
+    """
+    Return (left, right) bounds of the fraction_of_max width of the peak in samples.
+    TODO: add interpolation option
+
+    :param signal: waveform to look in (numpy array)
+    :param peak: Peak object
+    :param fraction_of_max: Width at this fraction of maximum
+    :param zero_level: Always end a peak before it is < this. Default: 0
+    """
+    if len(signal) == 0:
+        raise RuntimeError("Empty signal, can't find peak bounds!")
+    height = signal[max_idx]
+    threshold = min(zero_level, height * fraction_of_max)
+    threshold_test = np.vectorize(lambda x: x < threshold)
+    if height < threshold:
+        # Peak is always below threshold -> return smallest legal peak.
+        return (max_idx, max_idx)
+    # First find # of indices we need to move from max, so we can test if it is None
+    # if max_idx == 0:
+    #     left = 0
+    # else:
+    left = find_first_fast(signal[max_idx::-1], threshold_test)     # Note reversion acts before indexing!
+    # if max_idx == len(signal)-1:
+    #     right = len(signal)-1
+    # else:
+    right = find_first_fast(signal[max_idx:], threshold_test)
+    if left is None: left = 0
+    if right is None: right = len(signal)-1
+    # Convert to indices in waveform
+    right += max_idx
+    left =  max_idx - left
+    return (left, right)
+
+
+# Stolen from https://github.com/numpy/numpy/issues/2269
+# Numpy 2.0 may get a builtin to do this
+# TODO: predicate = np.vectorize(predicate)?? Or earlier?
+def find_first_fast(a, predicate, chunk_size=128):
+    i0 = 0
+    chunk_inds = chain(range(chunk_size, a.size, chunk_size),[None])
+    for i1 in chunk_inds:
+        chunk = a[i0:i1]
+        for inds in zip(*predicate(chunk).nonzero()):
+            return inds[0] + i0
+        i0 = i1
+    #HACK: None found... return the last index
+    return len(a)-1
+
+##
+## Peak processing routines
+##
+
+def free_regions(event):
+    """Find the free regions in the event's waveform - regions where peaks haven't yet been found"""
+    lefts = sorted([0] + [p.left for p in event.peaks])
+    rights = sorted([p.right for p in event.peaks] + [event.length() - 1])
+    # Assuming each peak's right > left, we can simply split sorted(lefts+rights) in pairs:
+    return list(zip(*[iter(sorted(lefts + rights))] * 2))
+
+def merge_overlapping_peaks(peaks):
+    """ Merge overlapping peaks - highest peak consumes lower peak """
+    for p in peaks:
+        if p.type == 'consumed': continue
+        for q in peaks:
+            if p == q: continue
+            if q.type == 'consumed': continue
+            if q.left <= p.index_of_maximum <= q.right:
+                if q.height > p.height:
+                    consumed, consumer = p, q
+                else:
+                    consumed, consumer = q,p
+                consumed.type = 'consumed'
+    return [p for p in peaks if p.type != 'consumed']
+
+#TODO: maybe move this to the peak splitter? It isn't used by anything else... yet
 def peaks_and_valleys(signal, test_function):
     """Find peaks and valleys based on derivative sign changes
     :param signal: signal to search in
@@ -111,92 +250,3 @@ def peaks_and_valleys(signal, test_function):
     # Return all remaining peaks & valleys
     return np.array(peaks), np.array(valleys)
 
-
-def sign_changes(signal, report_first_index='positive'):
-    """Return indices at which signal changes sign.
-    Returns two sorted numpy arrays:
-        - indices at which signal becomes positive (changes from  <=0 to >0)
-        - indices at which signal becomes non-positive (changes from >0 to <=0)
-    Arguments:
-        - signal
-        - report_first_index:    if 'positive', index 0 is reported only if it is positive (default)
-                                 if 'non-positive', index 0 is reported if it is non-positive
-                                 if 'never', index 0 is NEVER reported.
-    """
-    above0 = np.clip(np.sign(signal), 0, float('inf'))
-    if report_first_index == 'positive':
-        above0[-1] = 0
-    elif report_first_index == 'non-positive':
-        above0[-1] = 1
-    else:      # report_first_index ==  'never':
-        above0[-1] = -1234
-    above0_next = np.roll(above0, 1)
-    becomes_positive     = np.sort(np.where(above0 - above0_next == 1)[0])
-    becomes_non_positive = np.sort(np.where(above0 - above0_next == -1)[0] - 1)
-    return list(becomes_positive), list(becomes_non_positive)
-
-
-def merge_overlapping_peaks(peaks):
-    """ Merge overlapping peaks - highest peak consumes lower peak """
-    for p in peaks:
-        if p.type == 'consumed': continue
-        for q in peaks:
-            if p == q: continue
-            if q.type == 'consumed': continue
-            if q.left <= p.index_of_maximum <= q.right:
-                if q.height > p.height:
-                    consumed, consumer = p, q
-                else:
-                    consumed, consumer = q,p
-                consumed.type = 'consumed'
-    return [p for p in peaks if p.type != 'consumed']
-
-
-def peak_bounds(signal, max_idx, fraction_of_max, zero_level=0):
-    """
-    Return (left, right) bounds of the fraction_of_max width of the peak in samples.
-    TODO: add interpolation option
-
-    :param signal: waveform to look in (numpy array)
-    :param peak: Peak object
-    :param fraction_of_max: Width at this fraction of maximum
-    :param zero_level: Always end a peak before it is < this. Default: 0
-    """
-    if len(signal) == 0:
-        raise RuntimeError("Empty signal, can't find peak bounds!")
-    height = signal[max_idx]
-    threshold = min(zero_level, height * fraction_of_max)
-    threshold_test = np.vectorize(lambda x: x < threshold)
-    if height < threshold:
-        # Peak is always below threshold -> return smallest legal peak.
-        return (max_idx, max_idx)
-    # First find # of indices we need to move from max, so we can test if it is None
-    # if max_idx == 0:
-    #     left = 0
-    # else:
-    left = find_first_fast(signal[max_idx::-1], threshold_test)     # Note reversion acts before indexing!
-    # if max_idx == len(signal)-1:
-    #     right = len(signal)-1
-    # else:
-    right = find_first_fast(signal[max_idx:], threshold_test)
-    if left is None: left = 0
-    if right is None: right = len(signal)-1
-    # Convert to indices in waveform
-    right += max_idx
-    left =  max_idx - left
-    return (left, right)
-
-
-# Stolen from https://github.com/numpy/numpy/issues/2269
-# Numpy 2.0 may get a builtin to do this
-# TODO: predicate = np.vectorize(predicate)?? Or earlier?
-def find_first_fast(a, predicate, chunk_size=128):
-    i0 = 0
-    chunk_inds = chain(range(chunk_size, a.size, chunk_size),[None])
-    for i1 in chunk_inds:
-        chunk = a[i0:i1]
-        for inds in zip(*predicate(chunk).nonzero()):
-            return inds[0] + i0
-        i0 = i1
-    #HACK: None found... return the last index
-    return len(a)-1
