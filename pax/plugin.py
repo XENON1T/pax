@@ -37,7 +37,7 @@ class BasePlugin(object):
             self = args[0]
             ts = time.time()
             result = method(*args, **kw)
-            dt = (time.time() - ts) * 100
+            dt = (time.time() - ts) * 1000
             self.log.debug('Event took %2.2f ms' % dt)
             return result
 
