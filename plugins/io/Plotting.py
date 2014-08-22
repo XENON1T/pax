@@ -6,7 +6,7 @@ import os
 from pax import plugin, units
 
 
-class PlottingWaveform(plugin.OutputPlugin):
+class PlotWaveform(plugin.OutputPlugin):
 
     def startup(self):
         self.plt = plt
@@ -16,12 +16,17 @@ class PlottingWaveform(plugin.OutputPlugin):
                 os.makedirs(self.output_dir)
         else:
             self.output_dir = None
+        self.skip_counter = 0
 
     def write_event(self, event):
         """Plot an event
 
         Will make a fancy plot with lots of arrows etc of a summed waveform
         """
+        # Should we plot or skip?
+        if self.skip_counter:
+            self.skip_counter -= 1
+            return
         self.time_conversion_factor = event.sample_duration * units.ns / units.us
         plt = self.plt
         rows = 2
@@ -61,6 +66,7 @@ class PlottingWaveform(plugin.OutputPlugin):
             self.log.info("Hit enter to continue...")
             input()
             plt.close()
+        self.skip_counter = self.config['plot_every'] - 1
 
     def plot_waveform(self, event, left=0, right=None, pad=0, show_peaks=False):
         if right is None:
@@ -76,16 +82,21 @@ class PlottingWaveform(plugin.OutputPlugin):
         )
         xlabels = xlabels[:nsamples]
         plt.autoscale(True, axis='both', tight=True)
-        # plt.plot(xlabels, event.get_waveform('tpc').samples[lefti:righti + 1],  label='TPC')
-        # plt.plot(xlabels, event.get_waveform('filtered_for_s2').samples[lefti:righti + 1], label='TPC - filtered')
-        # plt.plot(xlabels, event.get_waveform('veto').samples[lefti:righti + 1], label='Veto')
-        plt.plot(xlabels, event.get_waveform('uS1').samples[lefti:righti + 1], label='S1 peakfinding')
-        plt.plot(xlabels, event.get_waveform('uS2').samples[lefti:righti + 1], label='S2 peakfinding')
-        plt.plot(xlabels, event.get_waveform('filtered_for_large_s2').samples[lefti:righti + 1], label='Large s2 filtered')
-        plt.plot(xlabels, event.get_waveform('filtered_for_small_s2').samples[lefti:righti + 1], label='Small s2 filtered')
-        plt.plot(xlabels, [0.6241506363] * nsamples,  '--', label='Large S2 threshold')
-        plt.plot(xlabels, [0.06241506363] * nsamples,  '--', label='Small S2 threshold')
-        plt.plot(xlabels, [0.1872451909] * nsamples,  '--', label='S1 threshold')
+        for w in self.config['waveforms_to_plot']:
+            waveform = event.get_waveform(w['internal_name'])
+            plt.plot(xlabels, waveform.samples[lefti:righti + 1], label=w['plot_label'])
+        # try:
+        #     plt.plot(xlabels, event.get_waveform('tpc').samples[lefti:righti + 1],  label='TPC')
+        #     plt.plot(xlabels, event.get_waveform('filtered_for_s2').samples[lefti:righti + 1], label='TPC - filtered')
+        #     plt.plot(xlabels, event.get_waveform('veto').samples[lefti:righti + 1], label='Veto')
+        # except:
+        #     plt.plot(xlabels, event.get_waveform('uS1').samples[lefti:righti + 1], label='S1 peakfinding')
+        #     plt.plot(xlabels, event.get_waveform('uS2').samples[lefti:righti + 1], label='S2 peakfinding')
+        #     plt.plot(xlabels, event.get_waveform('filtered_for_large_s2').samples[lefti:righti + 1], label='Large s2 filtered')
+        #     plt.plot(xlabels, event.get_waveform('filtered_for_small_s2').samples[lefti:righti + 1], label='Small s2 filtered')
+        #     plt.plot(xlabels, [0.6241506363] * nsamples,  '--', label='Large S2 threshold')
+        #     plt.plot(xlabels, [0.06241506363] * nsamples,  '--', label='Small S2 threshold')
+        #     plt.plot(xlabels, [0.1872451909] * nsamples,  '--', label='S1 threshold')
         plt.ylabel('Amplitude (pe/bin)')
         plt.xlabel('Time (us)')
         if show_peaks and event.peaks:
@@ -106,42 +117,42 @@ class PlottingWaveform(plugin.OutputPlugin):
 
 
 
-class PlottingHitPattern(plugin.OutputPlugin):
-
-    def startup(self):
-        self.topArrayMap = self.config['topArrayMap']
-
-    def write_event(self, event):
-        """Plot an event
-
-        Will make a fancy plot with lots of arrows etc of a summed waveform
-        """
-        plt.figure()
-
-        hit_position = []
-        areas = []
-
-        S2 = event.S2s()[0]
-        S1 = event.S1s()[0]
-
-        for pmt, pmt_location in self.topArrayMap.items():
-            q = event.pmt_waveforms[pmt].sum()/10
-
-            q_s1 = event.pmt_waveforms[pmt, S1.left:S1.right].sum()/10
-            q_s2 = event.pmt_waveforms[pmt, S2.left:S2.right].sum()/10
-
-            hit_position.append((pmt_location['x'],
-                                 pmt_location['y']))
-
-            areas.append((q, q_s1, q_s2))
-
-        area = np.array(area) / 10
-
-        c = plt.scatter(*zip(*points), c='red',
-                        s=area, cmap=plt.cm.hsv)
-        c.set_alpha(0.75)
-
-        plt.show(block=False)
-
-        self.log.info("Hit enter to continue...")
-        input()
+# class PlottingHitPattern(plugin.OutputPlugin):
+#
+#     def startup(self):
+#         self.topArrayMap = self.config['topArrayMap']
+#
+#     def write_event(self, event):
+#         """Plot an event
+#
+#         Will make a fancy plot with lots of arrows etc of a summed waveform
+#         """
+#         plt.figure()
+#
+#         hit_position = []
+#         areas = []
+#
+#         S2 = event.S2s()[0]
+#         S1 = event.S1s()[0]
+#
+#         for pmt, pmt_location in self.topArrayMap.items():
+#             q = event.pmt_waveforms[pmt].sum()/10
+#
+#             q_s1 = event.pmt_waveforms[pmt, S1.left:S1.right].sum()/10
+#             q_s2 = event.pmt_waveforms[pmt, S2.left:S2.right].sum()/10
+#
+#             hit_position.append((pmt_location['x'],
+#                                  pmt_location['y']))
+#
+#             areas.append((q, q_s1, q_s2))
+#
+#         area = np.array(area) / 10
+#
+#         c = plt.scatter(*zip(*points), c='red',
+#                         s=area, cmap=plt.cm.hsv)
+#         c.set_alpha(0.75)
+#
+#         plt.show(block=False)
+#
+#         self.log.info("Hit enter to continue...")
+#         input()
