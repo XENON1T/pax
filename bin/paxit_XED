@@ -5,8 +5,9 @@ config_overload = """
 [pax]
 input = 'XED.XedInput'
 #input = 'fax.FaX'
-output = 'Plotting.PlottingWaveform'
-#output = 'CSV.WritePeaksCSV'
+output = ['Plotting.PlotWaveform']
+          #'CSV.WritePeaksCSV',
+          #'RawWaveformDump.DumpSumWaveformToBinary']
 
 [XED.XedInput]
 filename = "xe100_120402_2000_000000.xed"

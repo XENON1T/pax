@@ -147,10 +147,10 @@ class IdentifyPeaks(plugin.TransformPlugin):
                 continue
             if np.sum(unfiltered[p.index_of_maximum -2: p.index_of_maximum + 3]) > 0.5*p.area:
                 p.type = 's1'
-                self.log.debug("%s-%s-%s: S1" % (p.left, p.index_of_maximum, p.right))
+                #self.log.debug("%s-%s-%s: S1" % (p.left, p.index_of_maximum, p.right))
             else:
                 p.type = 's2'
-                self.log.debug("%s-%s-%s: S2" % (p.left, p.index_of_maximum, p.right))
+                #self.log.debug("%s-%s-%s: S2" % (p.left, p.index_of_maximum, p.right))
         return event
 
 class SplitPeaks(plugin.TransformPlugin):
