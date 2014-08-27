@@ -74,7 +74,7 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
                         len(wave_occurrence) < 2 * baseline_sample_size
                     ):
                         if i != 0:
-                            raise RuntimeError("Occurrence %s in channel %s at %s has event_duration %s, should be at least 2*%s!"
+                            self.log.warning("Occurrence %s in channel %s at %s has event_duration %s, should be at least 2*%s!"
                                                % (i, channel, starting_position, len(wave_occurrence), baseline_sample_size)
                                                )
                         self.log.debug("Short first pulse, computing baseline from its LAST samples")
