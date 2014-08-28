@@ -5,25 +5,36 @@ Plugins
 Intro
 #####
 
-This is a step by step guide to creating a plugin. All source code for a plugin should go in the plugins directory (subdirectories of this directory are searched automatically). You can also define custom plugin search paths in the .ini file.
+This is a step by step guide to creating a plugin. All source code is located in plugin directories, which are found automatically (subdirectories are also searched automatically). You can also define custom plugin search paths using the `plugin_paths` variable to the configuration..
 
 Creating the Class
 ##################
 
-Plugins are always derived from one of the plugin classes. The classes are InputPlugin, OutputPlugin, and TransformPlugin. Intput and output plugins are used to define different methods of data input and output (ex. input via file, mongodb, etc.). Transform plugins are used to define intermediate processing steps on the data.
+Plugins are always derived from one of the plugin base classes. These classes are InputPlugin, OutputPlugin, and TransformPlugin. Intput and output plugins are used to define different methods of data input and output (ex. input via file, MongoDB, etc.). Transform plugins are used to define intermediate processing steps on the data.
 
 Every plugin has two required functions: ::
 
-  __init__(self,config):
-  __del__(self):
+  startup(self)
+  shutdown(self)
 
-Which are the constructor and destructor, repectively. The constructor should be used to initialize any member variables while the destructor can be used to close them cleanly. The different plugin types also have different required functions in addition which are described in the following sections.
 
-In order to run with a plugin it should be added to the bin/paxit.py script (or your custom copy). In this script the plugins are defined as lists in the pax.processor function. Currently this function takes three arguments: ::
-  
-  pax.processor(input=[], transform=[], output=[])
+which are like a constructor and destructor, repectively. The constructor should be used to initialize any member variables while the destructor can be used to close them cleanly. The different plugin types also have different required functions in addition which are described in the following sections.
 
-Your plugin should be added to the proper list. The lists are processed in order so if your plugin depends on data fields that are added to the event by other plugins please make sure your plugin is positioned after.
+The configuration dictionary is available from self.config.
+
+In order to run with a plugin it should be added to your copy of the bin/paxit script. In this script the plugins are defined as lists in the pax.processor function. You do this also via the configuration: ::
+
+  [pax]
+  input = 'class'
+  transform=['class_name']
+  my_postprocessing = ['class_name']
+  output = ['class_name']
+
+
+Your plugin should be added to the proper list. The lists are processed in order so if your plugin depends on data fields that are added to the event by other plugins please make sure your plugin is positioned after.  You do not need to specify each field, such as 'input', but then a default will be used.  In nearly all cases, you will want to redefine only my_postprocessing. ::
+
+  [pax]
+  my_postprocessing = [ 'MyNewClassThatDoesSomethingTransform' ]
 
 Transform Plugins
 -----------------
