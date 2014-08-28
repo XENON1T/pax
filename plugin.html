@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Plugins &mdash; Processor for Analyzing XENON1T 0.2.0 documentation</title>
+    <title>Plugins &mdash; Processor for Analyzing XENON1T 1.0.0 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.2.0',
+        VERSION:     '1.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 0.2.0 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 1.0.0 documentation" href="index.html" />
     <link rel="next" title="Contributing" href="contributing.html" />
     <link rel="prev" title="Event format" href="format.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="format.html" title="Event format"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 0.2.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 1.0.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -56,22 +56,31 @@
 <h1>Plugins<a class="headerlink" href="#plugins" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="intro">
 <h2>Intro<a class="headerlink" href="#intro" title="Permalink to this headline">¶</a></h2>
-<p>This is a step by step guide to creating a plugin. All source code for a plugin should go in the plugins directory (subdirectories of this directory are searched automatically). You can also define custom plugin search paths in the .ini file.</p>
+<p>This is a step by step guide to creating a plugin. All source code is located in plugin directories, which are found automatically (subdirectories are also searched automatically). You can also define custom plugin search paths using the <cite>plugin_paths</cite> variable to the configuration..</p>
 </div>
 <div class="section" id="creating-the-class">
 <h2>Creating the Class<a class="headerlink" href="#creating-the-class" title="Permalink to this headline">¶</a></h2>
-<p>Plugins are always derived from one of the plugin classes. The classes are InputPlugin, OutputPlugin, and TransformPlugin. Intput and output plugins are used to define different methods of data input and output (ex. input via file, mongodb, etc.). Transform plugins are used to define intermediate processing steps on the data.</p>
+<p>Plugins are always derived from one of the plugin base classes. These classes are InputPlugin, OutputPlugin, and TransformPlugin. Intput and output plugins are used to define different methods of data input and output (ex. input via file, MongoDB, etc.). Transform plugins are used to define intermediate processing steps on the data.</p>
 <p>Every plugin has two required functions:</p>
-<div class="highlight-python"><div class="highlight"><pre>__init__(self,config):
-__del__(self):
+<div class="highlight-python"><div class="highlight"><pre><span class="n">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+<span class="n">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>Which are the constructor and destructor, repectively. The constructor should be used to initialize any member variables while the destructor can be used to close them cleanly. The different plugin types also have different required functions in addition which are described in the following sections.</p>
-<p>In order to run with a plugin it should be added to the bin/paxit.py script (or your custom copy). In this script the plugins are defined as lists in the pax.processor function. Currently this function takes three arguments:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">pax</span><span class="o">.</span><span class="n">processor</span><span class="p">(</span><span class="nb">input</span><span class="o">=</span><span class="p">[],</span> <span class="n">transform</span><span class="o">=</span><span class="p">[],</span> <span class="n">output</span><span class="o">=</span><span class="p">[])</span>
+<p>which are like a constructor and destructor, repectively. The constructor should be used to initialize any member variables while the destructor can be used to close them cleanly. The different plugin types also have different required functions in addition which are described in the following sections.</p>
+<p>The configuration dictionary is available from self.config.</p>
+<p>In order to run with a plugin it should be added to your copy of the bin/paxit script. In this script the plugins are defined as lists in the pax.processor function. You do this also via the configuration:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">[</span><span class="n">pax</span><span class="p">]</span>
+<span class="nb">input</span> <span class="o">=</span> <span class="s">&#39;class&#39;</span>
+<span class="n">transform</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;class_name&#39;</span><span class="p">]</span>
+<span class="n">my_postprocessing</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;class_name&#39;</span><span class="p">]</span>
+<span class="n">output</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;class_name&#39;</span><span class="p">]</span>
 </pre></div>
 </div>
-<p>Your plugin should be added to the proper list. The lists are processed in order so if your plugin depends on data fields that are added to the event by other plugins please make sure your plugin is positioned after.</p>
+<p>Your plugin should be added to the proper list. The lists are processed in order so if your plugin depends on data fields that are added to the event by other plugins please make sure your plugin is positioned after.  You do not need to specify each field, such as &#8216;input&#8217;, but then a default will be used.  In nearly all cases, you will want to redefine only my_postprocessing.</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">[</span><span class="n">pax</span><span class="p">]</span>
+<span class="n">my_postprocessing</span> <span class="o">=</span> <span class="p">[</span> <span class="s">&#39;MyNewClassThatDoesSomethingTransform&#39;</span> <span class="p">]</span>
+</pre></div>
+</div>
 <div class="section" id="transform-plugins">
 <h3>Transform Plugins<a class="headerlink" href="#transform-plugins" title="Permalink to this headline">¶</a></h3>
 <p>Most user-defined plugins are probably transform plugins. These are used to perform processing steps on the data. Every transform plugin should override the</p>
@@ -167,7 +176,7 @@ __del__(self):
         <li class="right" >
           <a href="format.html" title="Event format"
              >previous</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 0.2.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 1.0.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

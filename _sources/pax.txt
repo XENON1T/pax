@@ -19,6 +19,14 @@ pax.datastructure module
     :undoc-members:
     :show-inheritance:
 
+pax.dsputils module
+-------------------
+
+.. automodule:: pax.dsputils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pax.format module
 -----------------
 

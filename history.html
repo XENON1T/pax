@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>History &mdash; Processor for Analyzing XENON1T 0.2.0 documentation</title>
+    <title>History &mdash; Processor for Analyzing XENON1T 1.0.0 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.2.0',
+        VERSION:     '1.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 0.2.0 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 1.0.0 documentation" href="index.html" />
     <link rel="prev" title="Credits" href="authors.html" /> 
   </head>
   <body>
@@ -39,7 +39,7 @@
         <li class="right" >
           <a href="authors.html" title="Credits"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 0.2.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 1.0.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -60,10 +60,21 @@
 <li>Moved from Python dictionaries to an event class, seen in pax.datastructure</li>
 <li>Ported all modules with pax to the new structure</li>
 <li>Should open up I/O and C++ binding opportunities</li>
-<li>Now Event, Peak, Waveform, and ReconstructedPosition classes</li>
+<li>Now there are Event, Peak, Waveform, and ReconstructedPosition classes</li>
+<li>All of this is based on an extensively modified fork of &#8216;micromodels&#8217;.</li>
 </ul>
 </div></blockquote>
 <ul class="simple">
+<li>Input control (See Issue #26)</li>
+</ul>
+<blockquote>
+<div><ul class="simple">
+<li>Can now run pax with single events</li>
+<li>Run paxit &#8211;help to see how one can process events</li>
+</ul>
+</div></blockquote>
+<ul class="simple">
+<li>Binaries of paxit installed when pax is installed</li>
 <li>Improved testing</li>
 </ul>
 <blockquote>
@@ -93,7 +104,14 @@
 </div></blockquote>
 <ul class="simple">
 <li>Plotting improvement: largest S1 &amp; S2 in separate subplot</li>
+<li>Numerous bug fixes:</li>
 </ul>
+<blockquote>
+<div><ul class="simple">
+<li>Pickler I/O</li>
+<li>Remove dead code (clustering)</li>
+</ul>
+</div></blockquote>
 </div>
 <div class="section" id="id2">
 <h2>0.2.1 (2014-08-14)<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
@@ -194,7 +212,7 @@
         <li class="right" >
           <a href="authors.html" title="Credits"
              >previous</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 0.2.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 1.0.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

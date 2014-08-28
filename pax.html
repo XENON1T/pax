@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax package &mdash; Processor for Analyzing XENON1T 0.2.0 documentation</title>
+    <title>pax package &mdash; Processor for Analyzing XENON1T 1.0.0 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.2.0',
+        VERSION:     '1.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 0.2.0 documentation" href="index.html" /> 
+    <link rel="top" title="Processor for Analyzing XENON1T 1.0.0 documentation" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -35,7 +35,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 0.2.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 1.0.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -103,22 +103,6 @@ releases.  Patch releases cannot modify this.</p>
 <p>Always positive.</p>
 </dd></dl>
 
-<dl class="attribute">
-<dt id="pax.datastructure.Event.event_start">
-<tt class="descname">event_start</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.event_start" title="Permalink to this definition">¶</a></dt>
-<dd><p>Start time of the event.</p>
-<p>This is a 64-bit number in units of ns that follows the UNIX clock.
-Or rather, it starts from January 1, 1970.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Event.event_stop">
-<tt class="descname">event_stop</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.event_stop" title="Permalink to this definition">¶</a></dt>
-<dd><p>Stop time of the event.</p>
-<p>This is a 64-bit number in units of ns that follows the UNIX clock.
-Or rather, it starts from January 1, 1970.</p>
-</dd></dl>
-
 <dl class="method">
 <dt id="pax.datastructure.Event.get_waveform">
 <tt class="descname">get_waveform</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.get_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.get_waveform" title="Permalink to this definition">¶</a></dt>
@@ -173,6 +157,22 @@ and gain corrected.</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="pax.datastructure.Event.start_time">
+<tt class="descname">start_time</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.start_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start time of the event.</p>
+<p>This is a 64-bit number in units of ns that follows the UNIX clock.
+Or rather, it starts from January 1, 1970.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Event.stop_time">
+<tt class="descname">stop_time</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.stop_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Stop time of the event.</p>
+<p>This is a 64-bit number in units of ns that follows the UNIX clock.
+Or rather, it starts from January 1, 1970.</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="pax.datastructure.Event.waveforms">
 <tt class="descname">waveforms</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Event.waveforms" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a list of sum waveforms</p>
@@ -190,6 +190,12 @@ and gain corrected.</p>
 <dt id="pax.datastructure.Peak.area">
 <tt class="descname">area</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.area" title="Permalink to this definition">¶</a></dt>
 <dd><p>Area of the pulse in photoelectrons</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.coincidence_level">
+<tt class="descname">coincidence_level</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.coincidence_level" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of PMTs that see &#8216;something significant&#8217; (depends on peakfinder)</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -233,7 +239,7 @@ and gain corrected.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.type">
 <tt class="descname">type</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.type" title="Permalink to this definition">¶</a></dt>
-<dd><p>Type of peak (e.g., &#8216;S1&#8217; or &#8216;S2&#8217;)</p>
+<dd><p>Type of peak (e.g., &#8216;s1&#8217;, &#8216;s2&#8217;, &#8216;veto_s1&#8217;, ...)</p>
 </dd></dl>
 
 </dd></dl>
@@ -307,6 +313,123 @@ and gain corrected.</p>
 </dd></dl>
 
 </div>
+<div class="section" id="module-pax.dsputils">
+<span id="pax-dsputils-module"></span><h2>pax.dsputils module<a class="headerlink" href="#module-pax.dsputils" title="Permalink to this headline">¶</a></h2>
+<p>Utilities for peakfinders etc.
+Heavily used in SimpleDSP</p>
+<dl class="function">
+<dt id="pax.dsputils.find_first_fast">
+<tt class="descclassname">pax.dsputils.</tt><tt class="descname">find_first_fast</tt><big>(</big><em>a</em>, <em>predicate</em>, <em>chunk_size=128</em><big>)</big><a class="reference internal" href="_modules/pax/dsputils.html#find_first_fast"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.find_first_fast" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pax.dsputils.find_peak_in_interval">
+<tt class="descclassname">pax.dsputils.</tt><tt class="descname">find_peak_in_interval</tt><big>(</big><em>signal</em>, <em>unfiltered</em>, <em>itv_left</em>, <em>itv_right</em>, <em>integration_bound_fraction</em>, <em>constrain_bounds=False</em>, <em>region_offset=0</em><big>)</big><a class="reference internal" href="_modules/pax/dsputils.html#find_peak_in_interval"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.find_peak_in_interval" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds &#8216;the&#8217; peak in the candidate interval
+:param signal: Signal to use for peak finding &amp; extent computation
+:param unfiltered: Unfiltered waveform (used for max, height, area computation)
+:param itv_left: Left bound of interval to look in
+:param itv_right: Right bound of interval to look in
+:param integration_bound_fraction: Fraction of max where you choose the peak to end.
+:param constrain_bounds: If True, peak bounds can&#8217;t extend beyond the interval. Default False.
+:param region_offset: index in the waveform of the first index of the signal passed. Default 0.
+:return: a pax datastructure Peak</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.dsputils.free_regions">
+<tt class="descclassname">pax.dsputils.</tt><tt class="descname">free_regions</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/dsputils.html#free_regions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.free_regions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find the free regions in the event&#8217;s waveform - regions where peaks haven&#8217;t yet been found</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.dsputils.intervals_above_threshold">
+<tt class="descclassname">pax.dsputils.</tt><tt class="descname">intervals_above_threshold</tt><big>(</big><em>signal</em>, <em>threshold</em><big>)</big><a class="reference internal" href="_modules/pax/dsputils.html#intervals_above_threshold"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.intervals_above_threshold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return boundary indices of all intervals in signal (strictly) above threshold</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.dsputils.merge_overlapping_peaks">
+<tt class="descclassname">pax.dsputils.</tt><tt class="descname">merge_overlapping_peaks</tt><big>(</big><em>peaks</em><big>)</big><a class="reference internal" href="_modules/pax/dsputils.html#merge_overlapping_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.merge_overlapping_peaks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Merge overlapping peaks - highest peak consumes lower peak</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.dsputils.peak_bounds">
+<tt class="descclassname">pax.dsputils.</tt><tt class="descname">peak_bounds</tt><big>(</big><em>signal</em>, <em>max_idx</em>, <em>fraction_of_max</em>, <em>zero_level=0</em><big>)</big><a class="reference internal" href="_modules/pax/dsputils.html#peak_bounds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.peak_bounds" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return (left, right) bounds of the fraction_of_max width of the peak in samples.
+TODO: add interpolation option</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>signal</strong> &#8211; waveform to look in (numpy array)</li>
+<li><strong>peak</strong> &#8211; Peak object</li>
+<li><strong>fraction_of_max</strong> &#8211; Width at this fraction of maximum</li>
+<li><strong>zero_level</strong> &#8211; Always end a peak before it is &lt; this. Default: 0</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.dsputils.peaks_and_valleys">
+<tt class="descclassname">pax.dsputils.</tt><tt class="descname">peaks_and_valleys</tt><big>(</big><em>signal</em>, <em>test_function</em><big>)</big><a class="reference internal" href="_modules/pax/dsputils.html#peaks_and_valleys"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.peaks_and_valleys" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find peaks and valleys based on derivative sign changes
+:param signal: signal to search in
+:param test_function: Function which accepts three args:</p>
+<blockquote>
+<div><blockquote>
+<div><ul class="simple">
+<li>signal, signal begin tested</li>
+<li>peak, index of peak</li>
+<li>valley, index of valley</li>
+</ul>
+</div></blockquote>
+<p>must return True if peak/valley pair is acceptable, else False</p>
+</div></blockquote>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">two sorted lists: peaks, valleys</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.dsputils.sign_changes">
+<tt class="descclassname">pax.dsputils.</tt><tt class="descname">sign_changes</tt><big>(</big><em>signal</em>, <em>report_first_index='positive'</em><big>)</big><a class="reference internal" href="_modules/pax/dsputils.html#sign_changes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.sign_changes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return indices at which signal changes sign.
+Returns two sorted numpy arrays:</p>
+<blockquote>
+<div><ul class="simple">
+<li>indices at which signal becomes positive (changes from  &lt;=0 to &gt;0)</li>
+<li>indices at which signal becomes non-positive (changes from &gt;0 to &lt;=0)</li>
+</ul>
+</div></blockquote>
+<dl class="docutils">
+<dt>Arguments:</dt>
+<dd><ul class="first last">
+<li><p class="first">signal</p>
+</li>
+<li><dl class="first docutils">
+<dt>report_first_index:    if &#8216;positive&#8217;, index 0 is reported only if it is positive (default)</dt>
+<dd><p class="first last">if &#8216;non-positive&#8217;, index 0 is reported if it is non-positive
+if &#8216;never&#8217;, index 0 is NEVER reported.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
 <div class="section" id="module-pax.format">
 <span id="pax-format-module"></span><h2>pax.format module<a class="headerlink" href="#module-pax.format" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
@@ -353,7 +476,7 @@ and gain corrected.</p>
 <dl class="function">
 <dt id="pax.pax.instantiate">
 <tt class="descclassname">pax.pax.</tt><tt class="descname">instantiate</tt><big>(</big><em>name</em>, <em>plugin_source</em>, <em>config_values</em>, <em>log=&lt;module 'logging' from '/opt/local/Library/Frameworks/Python.framework/Versions/3.4/lib/python3.4/logging/__init__.py'&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/pax.html#instantiate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.pax.instantiate" title="Permalink to this definition">¶</a></dt>
-<dd><p>take class name and build class from it</p>
+<dd><p>take plugin class name and build class from it</p>
 </dd></dl>
 
 <dl class="function">
@@ -494,6 +617,7 @@ unit_name(ns,&#8217;s&#8217;) will give &#8216;ns&#8217;</p>
 <li><a class="reference internal" href="#subpackages">Subpackages</a></li>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
 <li><a class="reference internal" href="#module-pax.datastructure">pax.datastructure module</a></li>
+<li><a class="reference internal" href="#module-pax.dsputils">pax.dsputils module</a></li>
 <li><a class="reference internal" href="#module-pax.format">pax.format module</a></li>
 <li><a class="reference internal" href="#module-pax.pax">pax.pax module</a></li>
 <li><a class="reference internal" href="#module-pax.plugin">pax.plugin module</a></li>
@@ -534,7 +658,7 @@ unit_name(ns,&#8217;s&#8217;) will give &#8216;ns&#8217;</p>
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 0.2.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 1.0.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

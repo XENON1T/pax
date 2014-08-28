@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.datastructure &mdash; Processor for Analyzing XENON1T 0.2.0 documentation</title>
+    <title>pax.datastructure &mdash; Processor for Analyzing XENON1T 1.0.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '0.2.0',
+        VERSION:     '1.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 0.2.0 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 1.0.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body>
@@ -36,7 +36,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">Processor for Analyzing XENON1T 0.2.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Processor for Analyzing XENON1T 1.0.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -67,6 +67,7 @@
 
 
 <div class="viewcode-block" id="ReconstructedPosition"><a class="viewcode-back" href="../../pax.html#pax.datastructure.ReconstructedPosition">[docs]</a><span class="k">class</span> <span class="nc">ReconstructedPosition</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+
     <span class="sd">&quot;&quot;&quot;Reconstructed position</span>
 
 <span class="sd">    Each reconstruction algorithm creates one of these.</span>
@@ -78,9 +79,8 @@
     <span class="c">#: Name of algorithm used for computation</span>
     <span class="n">algorithm</span> <span class="o">=</span> <span class="n">StringField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s">&#39;none&#39;</span><span class="p">)</span>
 
-    <span class="c"># #: Errors - currently not used</span>
+    <span class="c"># : Errors - currently not used</span>
     <span class="c"># error_matrix = f.NumpyArrayField(dtype=np.float64)</span>
-
 
 </div>
 <div class="viewcode-block" id="Peak"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak">[docs]</a><span class="k">class</span> <span class="nc">Peak</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
@@ -89,17 +89,21 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">area</span> <span class="o">=</span> <span class="n">FloatField</span><span class="p">()</span>  <span class="c">#: Area of the pulse in photoelectrons</span>
-    <span class="n">index_of_maximum</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>  <span class="c">#: Index of maximum value within sum waveform.</span>
+    <span class="c">#: Index of maximum value within sum waveform.</span>
+    <span class="n">index_of_maximum</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>
     <span class="n">height</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>  <span class="c">#: Height of highest point in peak (in pe/bin)</span>
     <span class="n">left</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>  <span class="c">#: Index of left bound (inclusive) in sum waveform.</span>
-    <span class="n">right</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>  <span class="c">#: Index of right bound (exclusive) in sum waveform.</span>
-    <span class="nb">type</span> <span class="o">=</span> <span class="n">StringField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s">&#39;s1&#39;</span><span class="p">)</span>  <span class="c">#: Type of peak (e.g., &#39;S1&#39; or &#39;S2&#39;)</span>
+    <span class="c">#: Index of right bound (exclusive) in sum waveform.</span>
+    <span class="n">right</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>
+    <span class="c">#: Type of peak (e.g., &#39;s1&#39;, &#39;s2&#39;, &#39;veto_s1&#39;, ...)</span>
+    <span class="nb">type</span> <span class="o">=</span> <span class="n">StringField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s">&#39;unknown&#39;</span><span class="p">)</span>
+    <span class="c">#: Number of PMTs that see &#39;something significant&#39; (depends on peakfinder)</span>
+    <span class="n">coincidence_level</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>
 
     <span class="c">#: Array of PMT numbers included in this peaks.</span>
     <span class="c">#:</span>
     <span class="c">#: This is added by PeakPostProcessing.MakeHitList</span>
     <span class="n">pmt_list</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">NumpyArrayField</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span>
-
 
     <span class="c">#: Returns a list of reconstructed positions</span>
     <span class="c">#:</span>
@@ -147,13 +151,13 @@
     <span class="c">#:</span>
     <span class="c">#: This is a 64-bit number in units of ns that follows the UNIX clock.</span>
     <span class="c">#: Or rather, it starts from January 1, 1970.</span>
-    <span class="n">event_start</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>
+    <span class="n">start_time</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>
 
     <span class="c">#: Stop time of the event.</span>
     <span class="c">#:</span>
     <span class="c">#: This is a 64-bit number in units of ns that follows the UNIX clock.</span>
     <span class="c">#: Or rather, it starts from January 1, 1970.</span>
-    <span class="n">event_stop</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>
+    <span class="n">stop_time</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>
 
     <span class="n">user_float_0</span> <span class="o">=</span> <span class="n">FloatField</span><span class="p">()</span>  <span class="c"># : Unused float (useful for developing)</span>
     <span class="n">user_float_1</span> <span class="o">=</span> <span class="n">FloatField</span><span class="p">()</span>  <span class="c"># : Unused float (useful for developing)</span>
@@ -195,13 +199,15 @@
     <span class="c">#: second element is a numpy array 16-bit signed integers, which represent</span>
     <span class="c">#: the ADC counts.</span>
     <span class="c">#:</span>
+    <span class="c">#:</span>
+    <span class="c">#:</span>
     <span class="c"># : (This may get moved into the Input plugin baseclass, see issue #32)</span>
     <span class="n">occurrences</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">BaseField</span><span class="p">()</span>
 
 <div class="viewcode-block" id="Event.event_duration"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.event_duration">[docs]</a>    <span class="k">def</span> <span class="nf">event_duration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Duration of event window in units of ns</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_stop</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_start</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop_time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span>
 </div>
 <div class="viewcode-block" id="Event.get_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.get_waveform">[docs]</a>    <span class="k">def</span> <span class="nf">get_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get waveform for name</span>
@@ -210,7 +216,7 @@
             <span class="k">if</span> <span class="n">sw</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">name</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">sw</span>
 
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Waveform not found&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Waveform </span><span class="si">%s</span><span class="s"> not found&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="Event.length"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.length">[docs]</a>    <span class="k">def</span> <span class="nf">length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Number of samples for the sum waveform</span>
@@ -295,7 +301,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">Processor for Analyzing XENON1T 0.2.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Processor for Analyzing XENON1T 1.0.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>
