@@ -447,15 +447,24 @@ if &#8216;never&#8217;, index 0 is NEVER reported.</p>
 </div>
 <div class="section" id="module-pax.pax">
 <span id="pax-pax-module"></span><h2>pax.pax module<a class="headerlink" href="#module-pax.pax" title="Permalink to this headline">¶</a></h2>
+<p>The core event processing for pax</p>
 <dl class="function">
 <dt id="pax.pax.evaluate_configuration">
 <tt class="descclassname">pax.pax.</tt><tt class="descname">evaluate_configuration</tt><big>(</big><em>config</em><big>)</big><a class="reference internal" href="_modules/pax/pax.html#evaluate_configuration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.pax.evaluate_configuration" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Converts the ini-style configuration into a dictionary</p>
+<p>This includes eval-ing each value (i.e., 4 * 2 would be equal to 8).  It
+also includes the handling of units.  For example, 4 * mm would evaluate
+the units of mm.</p>
+</dd></dl>
 
 <dl class="function">
 <dt id="pax.pax.get_actions">
-<tt class="descclassname">pax.pax.</tt><tt class="descname">get_actions</tt><big>(</big><em>config</em>, <em>input</em>, <em>list_of_names</em><big>)</big><a class="reference internal" href="_modules/pax/pax.html#get_actions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.pax.get_actions" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<tt class="descclassname">pax.pax.</tt><tt class="descname">get_actions</tt><big>(</big><em>config</em>, <em>input</em>, <em>list_of_names</em>, <em>output</em><big>)</big><a class="reference internal" href="_modules/pax/pax.html#get_actions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.pax.get_actions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the class names associated with action</p>
+<p>An action is either input, transform, postprocessing, or output.  This grabs
+all the classes that need to be instantiated and used for processing events.</p>
+<p>Note that output is a list.</p>
+</dd></dl>
 
 <dl class="function">
 <dt id="pax.pax.get_configuration">
@@ -470,13 +479,13 @@ if &#8216;never&#8217;, index 0 is NEVER reported.</p>
 
 <dl class="function">
 <dt id="pax.pax.get_plugin_source">
-<tt class="descclassname">pax.pax.</tt><tt class="descname">get_plugin_source</tt><big>(</big><em>config</em>, <em>log=&lt;module 'logging' from '/opt/local/Library/Frameworks/Python.framework/Versions/3.4/lib/python3.4/logging/__init__.py'&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/pax.html#get_plugin_source"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.pax.get_plugin_source" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">pax.pax.</tt><tt class="descname">get_plugin_source</tt><big>(</big><em>config</em>, <em>log=&lt;module 'logging' from '/opt/local/Library/Frameworks/Python.framework/Versions/3.4/lib/python3.4/logging/__init__.py'&gt;</em>, <em>ident='blah'</em><big>)</big><a class="reference internal" href="_modules/pax/pax.html#get_plugin_source"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.pax.get_plugin_source" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
 <dt id="pax.pax.instantiate">
 <tt class="descclassname">pax.pax.</tt><tt class="descname">instantiate</tt><big>(</big><em>name</em>, <em>plugin_source</em>, <em>config_values</em>, <em>log=&lt;module 'logging' from '/opt/local/Library/Frameworks/Python.framework/Versions/3.4/lib/python3.4/logging/__init__.py'&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/pax.html#instantiate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.pax.instantiate" title="Permalink to this definition">¶</a></dt>
-<dd><p>take plugin class name and build class from it</p>
+<dd><p>Take plugin class name and build class from it</p>
 </dd></dl>
 
 <dl class="function">
