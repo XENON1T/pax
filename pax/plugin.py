@@ -20,7 +20,7 @@ class BasePlugin(object):
 
         # Please do all config variable fetching in constructor to make
         # changing config easier.
-        #self.log.debug(config_values)
+        # self.log.debug(config_values)
         self.config = config_values
 
         self.startup()
@@ -91,7 +91,8 @@ class TransformPlugin(BasePlugin):
     @BasePlugin._timeit
     def process_event(self, event):
         if event is None:
-            raise RuntimeError("%s transform received a 'None' event." % self.name)
+            raise RuntimeError(
+                "%s transform received a 'None' event." % self.name)
         elif not isinstance(event, Event):
             raise RuntimeError("%s transform received wrongly typed event. %s" % (self.name,
                                                                                   event))
@@ -99,9 +100,11 @@ class TransformPlugin(BasePlugin):
         result = self.transform_event(event)
 
         if result is None:
-            raise RuntimeError("%s transform did not return event." % self.name)
+            raise RuntimeError(
+                "%s transform did not return event." % self.name)
         elif not isinstance(result, (dict, Event)):
-            raise RuntimeError("%s transform returned wrongly typed event." % self.name)
+            raise RuntimeError(
+                "%s transform returned wrongly typed event." % self.name)
 
         return result
 

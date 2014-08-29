@@ -3,10 +3,24 @@
 History
 -------
 
+------------------
+1.1.0 (2014-08-29)
+------------------
 
-----------------
+* HDF5 output
+
+  * We now have a binary output format for peaks and event.
+  * Should also be easily extendible to ROOT output.
+  * Allows bulk comparison with high statistics for things like trigger efficiency
+
+* Bug fixes relating to difference between XENON100 and XENON1T formats (occurences extending past event windows).
+* Starting work on a new SimpleDSP processor
+* Waveform generator
+* General bug fixes and cleanup
+
+------------------
 1.0.0 (2014-08-16)
-----------------
+------------------
 
 * Completely refactored event datastructure
 

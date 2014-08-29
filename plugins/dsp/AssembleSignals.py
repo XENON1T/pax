@@ -61,9 +61,8 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
             wave = np.zeros(event.length(), dtype=np.float64)
 
             for i, (starting_position, wave_occurrence) in enumerate(waveform_occurrences):
-
                 # Check for pulses starting right after previous ones: Xerawdp doesn't recompute baselines
-                if i != 0 and starting_position == waveform_occurrences[i - 1][0] + len(waveform_occurrences[i - 1][1]):
+                if i > 0 and starting_position == waveform_occurrences[i - 1][0] + len(waveform_occurrences[i - 1][1]):
                     pass  # baseline will still have the right value
                 else:
                     # We need to compute the baseline.
@@ -73,10 +72,10 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
                         not (starting_position + len(wave_occurrence) > event.length() - 1) and
                         len(wave_occurrence) < 2 * baseline_sample_size
                     ):
-                        if i != 0:
+                        if i > 0:
                             self.log.warning("Occurrence %s in channel %s at %s has event_duration %s, should be at least 2*%s!"
-                                               % (i, channel, starting_position, len(wave_occurrence), baseline_sample_size)
-                                               )
+                                             % (i, channel, starting_position, len(wave_occurrence), baseline_sample_size)
+                                             )
                         self.log.debug("Short first pulse, computing baseline from its LAST samples")
                         baseline_sample = wave_occurrence[len(wave_occurrence) - baseline_sample_size:]
                     else:
@@ -111,6 +110,7 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
 
                 if skip_channel:
                     continue
+
                 wave[starting_position:starting_position + len(wave_occurrence)] = corrected_pulse
 
             if skip_channel:

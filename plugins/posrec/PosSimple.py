@@ -4,6 +4,7 @@ from pax import plugin
 
 from pax.datastructure import ReconstructedPosition
 
+
 class PosRecWeightedSum(plugin.TransformPlugin):
 
     """Reconstruction using charge-weighted sum.
@@ -16,14 +17,14 @@ class PosRecWeightedSum(plugin.TransformPlugin):
         self.top_array_map = self.config['topArrayMap']
 
     def transform_event(self, event):
-        new_peaks = []
-
         for peak in event.peaks:
             self.log.debug("Left %d, Right: %d" % (peak.left, peak.right))
+
+            # This is an array where every i-th element is how many samples
+            # were seen by the i-th PMT
             hits = event.pmt_waveforms[..., peak.left:peak.right].sum(axis=1)
 
             if hits.sum() != 0:
-                # Would be nice if this could be numpified
                 sum_x = 0
                 sum_y = 0
 
@@ -35,7 +36,6 @@ class PosRecWeightedSum(plugin.TransformPlugin):
                     sum_x += x
                     sum_y += y
 
-
                 scale = hits.sum() * len(self.top_array_map)
 
                 peak_x = sum_x / scale
@@ -43,10 +43,10 @@ class PosRecWeightedSum(plugin.TransformPlugin):
             else:
                 peak_x = peak_y = float('NaN')  # algorithm failed
 
-            rp = ReconstructedPosition({'x' : peak_x,
-                                        'y' : peak_y,
-                                        'z' : float('nan'),
-                                        'algorithm' : self.name})
+            rp = ReconstructedPosition({'x': peak_x,
+                                        'y': peak_y,
+                                        'z': float('nan'),
+                                        'algorithm': self.name})
 
             peak.reconstructed_positions.append(rp)
 

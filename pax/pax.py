@@ -1,8 +1,14 @@
+"""The core event processing for pax
+
+"""
 import logging
 import inspect
 import argparse
 import configparser
 import glob
+import multiprocessing
+
+from itertools import zip_longest
 
 from io import StringIO
 import os
@@ -12,18 +18,26 @@ from pax import units
 
 
 def evaluate_configuration(config):
+    """Converts the ini-style configuration into a dictionary
+
+    This includes eval-ing each value (i.e., 4 * 2 would be equal to 8).  It
+    also includes the handling of units.  For example, 4 * mm would evaluate
+    the units of mm.
+    """
     evaled_config = {}
+
     for key, value in config.items():
         # Eval value with globals = everything from 'units' module...
-        evaled_config[key] = eval(value, {
-            name: getattr(units, name)
-            for name in dir(units)
-        })
+        # TODO: this needs more explaination
+        units_variables = {name: getattr(units, name) for name in dir(units)}
+        evaled_config[key] = eval(value, units_variables)
+
     return evaled_config
 
 
 def instantiate(name, plugin_source, config_values, log=logging):
-    """take class name and build class from it"""
+    """Take plugin class name and build class from it"""
+    log.debug('Instantiating %s' % name)
     name_module, name_class = name.split('.')
     try:
         plugin_module = plugin_source.load_plugin(name_module)
@@ -40,6 +54,8 @@ def instantiate(name, plugin_source, config_values, log=logging):
     this_config = evaluate_configuration(this_config)
 
     instance = getattr(plugin_module, name_class)(this_config)
+
+    log.info('Instantiated: %s' % name)
 
     return instance
 
@@ -66,7 +82,7 @@ def get_configuration(config_overload=""):
     return config
 
 
-def get_plugin_source(config, log=logging):
+def get_plugin_source(config, log=logging, ident='blah'):
     # Setup plugins (which involves finding the plugin directory.
     plugin_base = PluginBase(package='pax.plugins')
     searchpath = ['./plugins'] + config['DEFAULT']['plugin_paths'].split()
@@ -79,15 +95,23 @@ def get_plugin_source(config, log=logging):
     searchpath = [path for path in searchpath if '__pycache__' not in path]
 
     log.debug("Search path for plugins is %s" % str(searchpath))
-    plugin_source = plugin_base.make_plugin_source(searchpath=searchpath)
-    log.info("Found the following plugins:")
+    plugin_source = plugin_base.make_plugin_source(searchpath=searchpath,
+                                                   identifier=ident)
+    log.debug("Found the following plugins:")
     for plugin_name in plugin_source.list_plugins():
-        log.info("\tFound %s" % plugin_name)
+        log.debug("\tFound %s" % plugin_name)
 
     return plugin_source
 
 
-def get_actions(config, input, list_of_names):
+def get_actions(config, input, list_of_names, output):
+    """Get the class names associated with action
+
+    An action is either input, transform, postprocessing, or output.  This grabs
+    all the classes that need to be instantiated and used for processing events.
+
+    Note that output is a list.
+    """
     config = evaluate_configuration(config['pax'])
 
     input = config[input]
@@ -107,7 +131,15 @@ def get_actions(config, input, list_of_names):
 
         actions += value
 
-    return input, actions
+    if not isinstance(output, (str, list)):
+        raise ValueError("Misformatted ini file on key %s" % output)
+
+    output = config[output]
+
+    if not isinstance(output, list):
+        output = [output]
+
+    return input, actions, output
 
 
 def process_single_event(actions, event, log):
@@ -120,10 +152,11 @@ def processor(config_overload=""):
     # Load configuration
     config = get_configuration(config_overload)
 
-    input, actions = get_actions(config,
-                                 'input',
-                                 ['dsp', 'transform',
-                                  'my_postprocessing', 'output'])
+    input, actions, output = get_actions(config,
+                                         'input',
+                                         ['dsp', 'transform',
+                                          'my_postprocessing'],
+                                         'output')
 
     # Deal with command line arguments for the logging level
     parser = argparse.ArgumentParser(description="Process XENON1T data")
@@ -161,6 +194,7 @@ def processor(config_overload=""):
 
     input = instantiate(input, plugin_source, config, log)
     actions = [instantiate(x, plugin_source, config, log) for x in actions]
+    output = [instantiate(x, plugin_source, config, log) for x in output]
 
     if args.single is not None:
         event = input.get_single_event(args.single)
@@ -174,6 +208,6 @@ def processor(config_overload=""):
 
             log.info("Event %d" % i)
 
-            process_single_event(actions, event, log)
+            process_single_event(actions + output, event, log)
 
         log.info("Finished event loop.")

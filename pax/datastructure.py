@@ -18,6 +18,7 @@ from pax.micromodels.fields import IntegerField, FloatField, StringField
 
 
 class ReconstructedPosition(Model):
+
     """Reconstructed position
 
     Each reconstruction algorithm creates one of these.
@@ -29,9 +30,8 @@ class ReconstructedPosition(Model):
     #: Name of algorithm used for computation
     algorithm = StringField(default='none')
 
-    # #: Errors - currently not used
+    # : Errors - currently not used
     # error_matrix = f.NumpyArrayField(dtype=np.float64)
-
 
 
 class Peak(Model):
@@ -40,18 +40,21 @@ class Peak(Model):
 
     """
     area = FloatField()  #: Area of the pulse in photoelectrons
-    index_of_maximum = IntegerField()  #: Index of maximum value within sum waveform.
+    #: Index of maximum value within sum waveform.
+    index_of_maximum = IntegerField()
     height = IntegerField()  #: Height of highest point in peak (in pe/bin)
     left = IntegerField()  #: Index of left bound (inclusive) in sum waveform.
-    right = IntegerField()  #: Index of right bound (exclusive) in sum waveform.
-    type = StringField(default='unknown')  #: Type of peak (e.g., 's1', 's2', 'veto_s1', ...)
-    coincidence_level = IntegerField()  #: Number of PMTs that see 'something significant' (depends on peakfinder)
+    #: Index of right bound (exclusive) in sum waveform.
+    right = IntegerField()
+    #: Type of peak (e.g., 's1', 's2', 'veto_s1', ...)
+    type = StringField(default='unknown')
+    #: Number of PMTs that see 'something significant' (depends on peakfinder)
+    coincidence_level = IntegerField()
 
     #: Array of PMT numbers included in this peaks.
     #:
     #: This is added by PeakPostProcessing.MakeHitList
     pmt_list = f.NumpyArrayField(dtype=np.uint16)
-
 
     #: Returns a list of reconstructed positions
     #:
@@ -99,13 +102,13 @@ class Event(Model):
     #:
     #: This is a 64-bit number in units of ns that follows the UNIX clock.
     #: Or rather, it starts from January 1, 1970.
-    event_start = IntegerField()
+    start_time = IntegerField()
 
     #: Stop time of the event.
     #:
     #: This is a 64-bit number in units of ns that follows the UNIX clock.
     #: Or rather, it starts from January 1, 1970.
-    event_stop = IntegerField()
+    stop_time = IntegerField()
 
     user_float_0 = FloatField()  # : Unused float (useful for developing)
     user_float_1 = FloatField()  # : Unused float (useful for developing)
@@ -147,13 +150,15 @@ class Event(Model):
     #: second element is a numpy array 16-bit signed integers, which represent
     #: the ADC counts.
     #:
+    #:
+    #:
     # : (This may get moved into the Input plugin baseclass, see issue #32)
     occurrences = f.BaseField()
 
     def event_duration(self):
         """Duration of event window in units of ns
         """
-        return self.event_stop - self.event_start
+        return self.stop_time - self.start_time
 
     def get_waveform(self, name):
         """Get waveform for name
@@ -199,7 +204,6 @@ class Event(Model):
                        key=lambda x: getattr(x, sort_key))
 
         return peaks
-
 
 
 def _explain(class_name):

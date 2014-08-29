@@ -16,6 +16,7 @@ from pax.datastructure import Event, Peak, Waveform
 
 
 class TestPosRecWeightedSum(unittest.TestCase):
+
     def setUp(self):
         self.conf = pax.get_configuration("")
         self.plugin_source = pax.get_plugin_source(self.conf)
@@ -25,12 +26,11 @@ class TestPosRecWeightedSum(unittest.TestCase):
 
         self.e = Event()
 
-
-        self.e.peaks.append(Peak({'left' : 5,
-                                  'right' : 9}))
+        self.e.peaks.append(Peak({'left': 5,
+                                  'right': 9}))
 
     def test_something(self):
-        self.e.pmt_waveforms = np.arange(1000).reshape(100,10)
+        self.e.pmt_waveforms = np.arange(1000).reshape(100, 10)
         e2 = self.objy.process_event(self.e)
 
         rps = e2.peaks[0].reconstructed_positions
@@ -40,8 +40,6 @@ class TestPosRecWeightedSum(unittest.TestCase):
         self.assertAlmostEqual(rps[0].x, 0.012204295277433013)
         self.assertEqual(rps[0].y, -0.09300181089384905)
         self.assertNotEqual(rps[0].z, rps[0].z)  # nan
-
-
 
     def tearDown(self):
         pass

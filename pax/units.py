@@ -22,7 +22,8 @@ boltzmannConstant_SI = 1.3806488 * 10 ** (-23)
 base_units = {
     'm': 10 ** 2,  # distances in cm
     's': 10 ** 9,  # times in ns.
-    # Sample size must be an integer multiple of unit time to use our datastructure!
+    # Sample size must be an integer multiple of unit time to use our
+    # datastructure!
     'eV': 1,       # energies in eV
     # charge in number of electrons (so voltage will be in Volts)
     'C': 1 / electron_charge_SI,

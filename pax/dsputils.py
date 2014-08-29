@@ -12,7 +12,7 @@ from pax import datastructure
 
 
 ##
-## Peak finding routines
+# Peak finding routines
 ##
 
 def intervals_above_threshold(signal, threshold):
@@ -46,7 +46,7 @@ def sign_changes(signal, report_first_index='positive'):
     else:      # report_first_index ==  'never':
         above0[-1] = -1234
     above0_next = np.roll(above0, 1)
-    becomes_positive     = np.sort(np.where(above0 - above0_next == 1)[0])
+    becomes_positive = np.sort(np.where(above0 - above0_next == 1)[0])
     becomes_non_positive = np.sort(np.where(above0 - above0_next == -1)[0] - 1)
     return list(becomes_positive), list(becomes_non_positive)
 
@@ -65,13 +65,14 @@ def find_peak_in_interval(signal, unfiltered, itv_left, itv_right, integration_b
     # Find the peak's maximum and extent using 'signal'
     max_idx = itv_left + np.argmax(signal[itv_left:itv_right + 1])
     if constrain_bounds:
-        left, right = peak_bounds(signal[itv_left:itv_right + 1], max_idx, 0.01)
+        left, right = peak_bounds(
+            signal[itv_left:itv_right + 1], max_idx, 0.01)
         left += itv_left
         right += itv_left
     else:
         left, right = peak_bounds(signal, max_idx, 0.01)
     # Compute properties of this peak using 'unfiltered'
-    area = np.sum(unfiltered[left:right+1])
+    area = np.sum(unfiltered[left:right + 1])
     unfiltered_max = left + np.argmax(unfiltered[left:right + 1])
     return datastructure.Peak({
         'index_of_maximum': region_offset + unfiltered_max,
@@ -105,16 +106,19 @@ def peak_bounds(signal, max_idx, fraction_of_max, zero_level=0):
     # if max_idx == 0:
     #     left = 0
     # else:
-    left = find_first_fast(signal[max_idx::-1], threshold_test)     # Note reversion acts before indexing!
+    # Note reversion acts before indexing!
+    left = find_first_fast(signal[max_idx::-1], threshold_test)
     # if max_idx == len(signal)-1:
     #     right = len(signal)-1
     # else:
     right = find_first_fast(signal[max_idx:], threshold_test)
-    if left is None: left = 0
-    if right is None: right = len(signal)-1
+    if left is None:
+        left = 0
+    if right is None:
+        right = len(signal) - 1
     # Convert to indices in waveform
     right += max_idx
-    left =  max_idx - left
+    left = max_idx - left
     return (left, right)
 
 
@@ -123,42 +127,51 @@ def peak_bounds(signal, max_idx, fraction_of_max, zero_level=0):
 # TODO: predicate = np.vectorize(predicate)?? Or earlier?
 def find_first_fast(a, predicate, chunk_size=128):
     i0 = 0
-    chunk_inds = chain(range(chunk_size, a.size, chunk_size),[None])
+    chunk_inds = chain(range(chunk_size, a.size, chunk_size), [None])
     for i1 in chunk_inds:
         chunk = a[i0:i1]
         for inds in zip(*predicate(chunk).nonzero()):
             return inds[0] + i0
         i0 = i1
-    #HACK: None found... return the last index
-    return len(a)-1
+    # HACK: None found... return the last index
+    return len(a) - 1
 
 ##
-## Peak processing routines
+# Peak processing routines
 ##
+
 
 def free_regions(event):
     """Find the free regions in the event's waveform - regions where peaks haven't yet been found"""
     lefts = sorted([0] + [p.left for p in event.peaks])
     rights = sorted([p.right for p in event.peaks] + [event.length() - 1])
-    # Assuming each peak's right > left, we can simply split sorted(lefts+rights) in pairs:
+    # Assuming each peak's right > left, we can simply split
+    # sorted(lefts+rights) in pairs:
     return list(zip(*[iter(sorted(lefts + rights))] * 2))
+
 
 def merge_overlapping_peaks(peaks):
     """ Merge overlapping peaks - highest peak consumes lower peak """
     for p in peaks:
-        if p.type == 'consumed': continue
+        if p.type == 'consumed':
+            continue
         for q in peaks:
-            if p == q: continue
-            if q.type == 'consumed': continue
+            if p == q:
+                continue
+            if q.type == 'consumed':
+                continue
             if q.left <= p.index_of_maximum <= q.right:
                 if q.height > p.height:
                     consumed, consumer = p, q
                 else:
-                    consumed, consumer = q,p
+                    consumed, consumer = q, p
                 consumed.type = 'consumed'
     return [p for p in peaks if p.type != 'consumed']
 
-#TODO: maybe move this to the peak splitter? It isn't used by anything else... yet
+# TODO: maybe move this to the peak splitter? It isn't used by anything
+# else... yet
+
+
 def peaks_and_valleys(signal, test_function):
     """Find peaks and valleys based on derivative sign changes
     :param signal: signal to search in
@@ -172,12 +185,13 @@ def peaks_and_valleys(signal, test_function):
 
     if len(signal) < len(derivative_kernel):
         # Signal is too small, can't calculate derivatives
-        return [],[]
+        return [], []
     slope = np.convolve(signal, derivative_kernel, mode='same')
-    # Chop the invalid parts off - easier than mode='valid' and adding offset to results
-    offset = (len(derivative_kernel)-1)/2
+    # Chop the invalid parts off - easier than mode='valid' and adding offset
+    # to results
+    offset = (len(derivative_kernel) - 1) / 2
     slope[0:offset] = np.zeros(offset)
-    slope[len(slope)-offset:] = np.zeros(offset)
+    slope[len(slope) - offset:] = np.zeros(offset)
     peaks, valleys = sign_changes(slope, report_first_index='never')
     peaks = np.array(sorted(peaks))
     valleys = np.array(sorted(valleys))
@@ -194,12 +208,13 @@ def peaks_and_valleys(signal, test_function):
         return peaks, valleys
 
     # Remove peaks and valleys which are too close to each other, or have too low a p/v ratio
-    # This can't be a for-loop, as we are modifying the lists, and step back to recheck peaks.
+    # This can't be a for-loop, as we are modifying the lists, and step back
+    # to recheck peaks.
     now_at_peak = 0
     while 1:
 
         # Find the next peak, if there is one
-        if now_at_peak > len(peaks)-1:
+        if now_at_peak > len(peaks) - 1:
             break
         peak = peaks[now_at_peak]
         if math.isnan(peak):
@@ -222,15 +237,16 @@ def peaks_and_valleys(signal, test_function):
         # Some check failed: we must remove a peak/valley pair.
         # Which valley should we remove?
         if fail_left and fail_right:
-            #Both valleys are bad! Remove the most shallow valley.
-            valley_to_remove = valley_left if signal[valley_left] > signal[valley_right] else valley_right
+            # Both valleys are bad! Remove the most shallow valley.
+            valley_to_remove = valley_left if signal[
+                valley_left] > signal[valley_right] else valley_right
         elif fail_left:
             valley_to_remove = valley_left
         elif fail_right:
             valley_to_remove = valley_right
 
         # Remove the shallowest peak near the valley marked for removal
-        left_peak  = max(peaks[np.where(peaks < valley_to_remove)[0]])
+        left_peak = max(peaks[np.where(peaks < valley_to_remove)[0]])
         if valley_to_remove > max(peaks):
             # There is no right peak, so remove the left peak
             peaks = peaks[np.where(peaks != left_peak)[0]]
@@ -243,10 +259,10 @@ def peaks_and_valleys(signal, test_function):
 
         # Jump back a few peaks to be sure we repeat all checks,
         # even if we just removed a peak before the current peak
-        now_at_peak = max(0, now_at_peak-1)
+        now_at_peak = max(0, now_at_peak - 1)
         valleys = valleys[np.where(valleys != valley_to_remove)[0]]
 
-    peaks, valleys = [p for p in peaks if not math.isnan(p)], [v for v in valleys if not math.isnan(v)]
+    peaks, valleys = [p for p in peaks if not math.isnan(
+        p)], [v for v in valleys if not math.isnan(v)]
     # Return all remaining peaks & valleys
     return np.array(peaks), np.array(valleys)
-

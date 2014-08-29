@@ -34,7 +34,7 @@
 #     @cherrypy.expose
 #     def getnext(self):
 #         self.rdy = True
-#         # wait until next event received, then reload waveform page
+# wait until next event received, then reload waveform page
 #         while self.rdy is True:
 #             time.sleep(100 / 1000000.0)
 #         raise cherrypy.HTTPRedirect("/")
@@ -85,7 +85,7 @@
 #         peaks = []
 #         for i in range(0, len(self.event.summed_waveform())):
 #             points.append([i, self.event.summed_waveform()[i]])
-#         # now get peaks
+# now get peaks
 #         for i in range(0, len(self.event.S2s())):
 #             peak = self.event.S2s()[i]
 #             x = peak._get_var('top_and_bottom', 'position_of_max_in_waveform')

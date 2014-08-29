@@ -70,8 +70,8 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             if peak_type == 's1':
                 event.peaks = sort_and_prune_by(
                     event.peaks,
-                    key = lambda x: getattr(x, 'area'),
-                    keep_number =32, reverse=True
+                    key=lambda x: getattr(x, 'area'),
+                    keep_number=32, reverse=True
                 )
 
             ##
@@ -588,12 +588,13 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
 
 
 # Sort and prune a peak list - needed in peakfinder and ComputePeakProperties
-def sort_and_prune_by(peak_list, key=lambda x:x, keep_number=float('inf'), reverse=False):
+def sort_and_prune_by(peak_list, key=lambda x: x, keep_number=float('inf'), reverse=False):
     peak_list.sort(key=key, reverse=reverse)
     if len(peak_list) > keep_number:
         return peak_list[:keep_number]
     else:
         return peak_list
+
 
 class ComputePeakProperties(plugin.TransformPlugin):
 
@@ -630,11 +631,14 @@ class ComputePeakProperties(plugin.TransformPlugin):
             if peak.type == 's1':
                 peak.coincidence_level = 0
                 for channel, area in areas_per_pmt.items():
-                    if self.config['gains'][channel] == 0: continue
-                    if channel in self.config['pmts_excluded_for_s1']: continue
-                    if channel in self.config['pmts_veto']: continue
-                    uncorrection_factor = 2 * 10**6 / self.config['gains'][channel]
-                    if area > self.config['coincidence_threshold'] * (2 * 10**6 / self.config['gains'][channel]):
+                    if self.config['gains'][channel] == 0:
+                        continue
+                    if channel in self.config['pmts_excluded_for_s1']:
+                        continue
+                    if channel in self.config['pmts_veto']:
+                        continue
+                    uncorrection_factor = 2 * 10 ** 6 / self.config['gains'][channel]
+                    if area > self.config['coincidence_threshold'] * (2 * 10 ** 6 / self.config['gains'][channel]):
                         peak.coincidence_level += 1
                 # Hack to
             else:

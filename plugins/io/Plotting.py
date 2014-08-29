@@ -1,3 +1,8 @@
+"""Interactive plotting
+
+Use matplotlib to display various things about the event.
+"""
+
 import matplotlib.pyplot as plt
 import random
 import numpy as np
@@ -27,7 +32,8 @@ class PlotWaveform(plugin.OutputPlugin):
         if self.skip_counter:
             self.skip_counter -= 1
             return
-        self.time_conversion_factor = event.sample_duration * units.ns / units.us
+        self.time_conversion_factor = event.sample_duration * \
+            units.ns / units.us
         plt = self.plt
         rows = 2
         cols = 3
@@ -35,19 +41,25 @@ class PlotWaveform(plugin.OutputPlugin):
         # Plot the largest S1 and largest S2 in the event
         if event.S1s():
             ax = plt.subplot2grid((rows, cols), (0, 0))
-            largest_s1 = sorted(event.S1s(), key=lambda x: x.area, reverse=True)[0]
-            self.plot_waveform(event, left=largest_s1.left, right=largest_s1.right, pad=10)
-            plt.title("S1 at %.1f us" % (largest_s1.index_of_maximum * self.time_conversion_factor))
+            largest_s1 = sorted(
+                event.S1s(), key=lambda x: x.area, reverse=True)[0]
+            self.plot_waveform(
+                event, left=largest_s1.left, right=largest_s1.right, pad=10)
+            plt.title("S1 at %.1f us" %
+                      (largest_s1.index_of_maximum * self.time_conversion_factor))
         if event.S2s():
             ax = plt.subplot2grid((rows, cols), (0, 1))
             ax.yaxis.set_label_position("right")
-            largest_s2 = sorted(event.S2s(), key=lambda x: x.area, reverse=True)[0]
+            largest_s2 = sorted(
+                event.S2s(), key=lambda x: x.area, reverse=True)[0]
             pad = 200 if largest_s2.height > 100 else 50
-            self.plot_waveform(event, left=largest_s2.left, right=largest_s2.right, pad=pad)
+            self.plot_waveform(
+                event, left=largest_s2.left, right=largest_s2.right, pad=pad)
             if largest_s2.height:
                 plt.yscale('log', nonposy='clip')
                 plt.ylim(10 ** (-1), plt.ylim()[1])
-            plt.title("S2 at %.1f us" % (largest_s2.index_of_maximum * self.time_conversion_factor))
+            plt.title("S2 at %.1f us" %
+                      (largest_s2.index_of_maximum * self.time_conversion_factor))
 
         #plt.subplot2grid((rows,cols), (0,2))
         #plt.title('Event %s from %s' % (event.event_number, 'mysterious_dataset'))
@@ -60,7 +72,8 @@ class PlotWaveform(plugin.OutputPlugin):
         legend.get_frame().set_alpha(0.5)
         plt.tight_layout()
         if self.output_dir:
-            plt.savefig(self.output_dir + '/' + str(event.event_number) + '.png')
+            plt.savefig(
+                self.output_dir + '/' + str(event.event_number) + '.png')
         else:
             plt.show(block=False)
             self.log.info("Hit enter to continue...")
@@ -72,19 +85,21 @@ class PlotWaveform(plugin.OutputPlugin):
         if right is None:
             right = event.length() - 1
         lefti = max(0, left - pad)
-        righti = min(right + pad, event.length()-1)
+        righti = min(right + pad, event.length() - 1)
         nsamples = 1 + righti - lefti
         dt = event.sample_duration * units.ns
         xlabels = np.arange(
             lefti * dt / units.us,
-            (10 + righti) * dt / units.us,  # 10+ labels will be cut later, prevents off by one errors
+            # 10+ labels will be cut later, prevents off by one errors
+            (10 + righti) * dt / units.us,
             dt / units.us
         )
         xlabels = xlabels[:nsamples]
         plt.autoscale(True, axis='both', tight=True)
         for w in self.config['waveforms_to_plot']:
             waveform = event.get_waveform(w['internal_name'])
-            plt.plot(xlabels, waveform.samples[lefti:righti + 1], label=w['plot_label'])
+            plt.plot(
+                xlabels, waveform.samples[lefti:righti + 1], label=w['plot_label'])
         # try:
         #     plt.plot(xlabels, event.get_waveform('tpc').samples[lefti:righti + 1],  label='TPC')
         #     plt.plot(xlabels, event.get_waveform('filtered_for_s2').samples[lefti:righti + 1], label='TPC - filtered')
@@ -106,15 +121,15 @@ class PlotWaveform(plugin.OutputPlugin):
             for peak in event.peaks:
                 x = peak.index_of_maximum * self.time_conversion_factor
                 y = peak.height
-                plt.hlines(y, peak.left * self.time_conversion_factor, peak.right * self.time_conversion_factor)
+                plt.hlines(y, peak.left * self.time_conversion_factor,
+                           peak.right * self.time_conversion_factor)
                 plt.annotate('%s:%s' % (peak.type, int(peak.area)),
                              xy=(x, y),
-                             xytext=(x, y + (max_y - y) * (0.05 + 0.2 * random.random())),
+                             xytext=(
+                                 x, y + (max_y - y) * (0.05 + 0.2 * random.random())),
                              arrowprops=dict(arrowstyle="fancy",
                                              fc="0.6", ec="none",
                                              connectionstyle="angle3,angleA=0,angleB=-90"))
-
-
 
 
 # class PlottingHitPattern(plugin.OutputPlugin):

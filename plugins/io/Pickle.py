@@ -1,3 +1,8 @@
+"""Pickle events
+
+Write event class to a file.
+"""
+
 from pax import plugin
 
 try:
@@ -9,7 +14,8 @@ except:
 class WriteToPickleFile(plugin.OutputPlugin):
 
     def startup(self):
-        self.log.debug("Writing pickled data to %s" % self.config['picklefile'])
+        self.log.debug("Writing pickled data to %s" %
+                       self.config['picklefile'])
         self.file = open(self.config['picklefile'],
                          'wb')
 

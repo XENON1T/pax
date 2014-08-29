@@ -27,14 +27,6 @@ from pax import plugin, units
 from pax.datastructure import Event
 
 
-def flatten(l):
-    return [item for sublist in l for item in sublist]
-
-
-def ungarble_samplepairs(samples):
-    return flatten([(a, b) for (b, a) in zip(*2 * [iter(samples)])])
-
-
 class XedInput(plugin.InputPlugin):
     file_header = np.dtype([
         ("dataset_name", "S64"),
@@ -55,7 +47,8 @@ class XedInput(plugin.InputPlugin):
         ("type", "S4"),
         ("size", "<u4"),
         ("sample_precision", "<i2"),
-        ("flags", "<u2"),  # indicating compression type.. I'll assume bzip2 always
+        # indicating compression type.. I'll assume bzip2 always
+        ("flags", "<u2"),
         ("samples_in_event", "<u4"),
         ("voltage_range", "<f4"),
         ("sampling_frequency", "<f4"),
@@ -66,12 +59,15 @@ class XedInput(plugin.InputPlugin):
         self.input = open(self.config['filename'], 'rb')
 
         # Read metadata and event positions from the XED file
-        self.file_metadata = np.fromfile(self.input, dtype=XedInput.file_header, count=1)[0]
-        assert self.file_metadata['events_in_file'] == self.file_metadata['event_index_size']
+        self.file_metadata = np.fromfile(
+            self.input, dtype=XedInput.file_header, count=1)[0]
+        assert self.file_metadata[
+            'events_in_file'] == self.file_metadata['event_index_size']
         self.event_positions = np.fromfile(self.input, dtype=np.dtype("<u4"),
                                            count=self.file_metadata['event_index_size'])
         self.first_event = self.file_metadata['first_event_number']
-        self.last_event = self.file_metadata['events_in_file'] - self.file_metadata['first_event_number'] - 1
+        self.last_event = self.file_metadata[
+            'events_in_file'] - self.file_metadata['first_event_number'] - 1
 
     def shutdown(self):
         self.input.close()
@@ -90,7 +86,9 @@ class XedInput(plugin.InputPlugin):
         self.input.seek(self.event_positions[event_number] - self.first_event)
 
         # Read event metadata, check if we can read this.
-        event_layer_metadata = np.fromfile(self.input, dtype=XedInput.event_header, count=1)[0]
+        event_layer_metadata = np.fromfile(self.input,
+                                           dtype=XedInput.event_header,
+                                           count=1)[0]
         if event_layer_metadata['chunks'] != 1:
             raise NotImplementedError(
                 "The day has come: event with %s chunks found!" % event_layer_metadata['chunks'])
@@ -99,18 +97,25 @@ class XedInput(plugin.InputPlugin):
                 "Still have to code grokking for sample type %s..." % event_layer_metadata['type'])
         # Read the channel bitmask to find out which channels are included in this event.
         # Lots of possibilities for errors here: 4-byte groupings, 1-byte groupings, little-endian...
-        # Checked (for 14 events); agrees with channels from LibXDIO->Moxie->MongoDB->MongoDBInput plugin
+        # Checked (for 14 events); agrees with channels from
+        # LibXDIO->Moxie->MongoDB->MongoDBInput plugin
         mask_bytes = 4 * math.ceil(event_layer_metadata['channels'] / 32)
         # This DID NOT WORK, but almost... so very dangerous..
         # mask = np.unpackbits(np.array(list(
         #     np.fromfile(self.input, dtype=np.dtype('<S%s' % mask_bytes), count=1)[0]
         # ), dtype='uint8'))
         # This appears to work... so far...
-        mask_bits = np.unpackbits(np.fromfile(self.input, dtype='uint8', count=mask_bytes))
-        channels_included = [i + 1 for i, bit in enumerate(reversed(mask_bits)) if bit == 1]  # +1 as first pmt is 1 in Xenon100
+        mask_bits = np.unpackbits(
+            np.fromfile(self.input, dtype='uint8', count=mask_bytes))
+        # +1 as first pmt is 1 in Xenon100
+        channels_included = [
+            i + 1 for i, bit in enumerate(reversed(mask_bits)) if bit == 1]
 
-        # Decompress the event data (actually, the data from a single 'chunk') into fake binary file
-        data_to_decompress = self.input.read(event_layer_metadata['size'] - 28 - mask_bytes)  # 28 is the chunk header size.
+        # Decompress the event data (actually, the data from a single 'chunk')
+        # into fake binary file
+        # 28 is the chunk header size.
+        data_to_decompress = self.input.read(
+            event_layer_metadata['size'] - 28 - mask_bytes)
         try:
             chunk_fake_file = io.BytesIO(bz2.decompress(data_to_decompress))
         except OSError:
@@ -123,14 +128,18 @@ class XedInput(plugin.InputPlugin):
         for channel_id in channels_included:
             occurrences[channel_id] = []
 
-            # Read channel size (in 4bit words), subtract header size, convert from 4-byte words to bytes
-            channel_data_size = int(4 * (np.fromstring(chunk_fake_file.read(4), dtype='<u4')[0] - 1))
+            # Read channel size (in 4bit words), subtract header size, convert
+            # from 4-byte words to bytes
+            channel_data_size = int(
+                4 * (np.fromstring(chunk_fake_file.read(4), dtype='<u4')[0] - 1))
 
             # Read the channel data into another fake binary file
-            channel_fake_file = io.BytesIO(chunk_fake_file.read(channel_data_size))
+            channel_fake_file = io.BytesIO(
+                chunk_fake_file.read(channel_data_size))
 
             # Read the channel data control word by control word.
-            # sample_position keeps track of where in the waveform a new occurrence should be placed.
+            # sample_position keeps track of where in the waveform a new
+            # occurrence should be placed.
             sample_position = 0
             while 1:
 
@@ -139,31 +148,27 @@ class XedInput(plugin.InputPlugin):
                 if not control_word_string:
                     break
 
-                # Control words starting with zero indicate a number of sample PAIRS to skip
-                control_word = int(np.fromstring(control_word_string, dtype='<u4')[0])
+                # Control words starting with zero indicate a number of sample
+                # PAIRS to skip
+                control_word = int(
+                    np.fromstring(control_word_string, dtype='<u4')[0])
                 if control_word < 2 ** 31:
                     sample_position += 2 * control_word
                     continue
 
-                # Control words starting with one indicate a number of sample PAIRS follow
+                # Control words starting with one indicate a number of sample
+                # PAIRS follow
                 else:
-                    data_samples = 2 * (control_word - (2 ** 31))  # Subtract the control word flag
-                    samples_occurrence = np.fromstring(channel_fake_file.read(2 * data_samples), dtype="<i2")
+                    # Subtract the control word flag
+                    data_samples = 2 * (control_word - (2 ** 31))
 
-                    occurrences[channel_id].append((
-                        sample_position,
-                        samples_occurrence
-                        # ungarble_samplepairs(samples_occurrence)
-                    ))
+                    # Note endianess
+                    samples_occurrence = np.fromstring(channel_fake_file.read(2 * data_samples),
+                                                       dtype="<i2")
+
+                    occurrences[channel_id].append((sample_position,
+                                                    samples_occurrence))
                     sample_position += len(samples_occurrence)
-                    """
-                    According to Guillaume's thesis, and the FADC manual, samples come in pairs,
-                    with LATER sample first!
-                    This would mean we have to ungarble them (split into pairs, reverse the pairs, join again).
-                    However, if I try this, it makes peaks come out two-headed...
-                    Maybe they were already un-garbled by some previous program??
-                    We won't do any ungarbling for now.
-                    """
 
         # Return the event
         event = Event()
@@ -172,11 +177,14 @@ class XedInput(plugin.InputPlugin):
 
         # TODO: don't hardcode sample size...
         event.sample_duration = int(10 * units.ns)
-        event.event_start = int(
-            event_layer_metadata['utc_time'] * units.s + event_layer_metadata['utc_time_usec'] * units.us
+        event.start_time = int(
+            event_layer_metadata['utc_time'] * units.s +
+            event_layer_metadata['utc_time_usec'] * units.us
         )
-        # Remember event_stop is the stop time of the LAST sample!
-        event.event_stop = event.event_start + int(event_layer_metadata['samples_in_event'] * event.sample_duration)
+        # Remember stop_time is the stop time of the LAST sample!
+        event.stop_time = event.start_time + \
+            int(event_layer_metadata[
+                'samples_in_event'] * event.sample_duration)
         return event
 
     # If we get here, all events have been read

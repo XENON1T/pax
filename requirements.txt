@@ -6,3 +6,4 @@ scikit-learn
 cherrypy
 jinja2
 numpyson
+blosc

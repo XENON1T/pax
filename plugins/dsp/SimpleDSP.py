@@ -87,9 +87,9 @@ class ApplyFilters(plugin.TransformPlugin):
     def startup(self):
         for f in self.config['filters']:
             ir = np.array(f['impulse_response'])
-            if abs(1-np.sum(ir)) > 0.0001:
+            if abs(1 - np.sum(ir)) > 0.0001:
                 raise ValueError("Filter %s has non-normalized impulse response: %s != 1" % (f['name'], np.sum(ir)))
-            if len(ir)%2 == 0:
+            if len(ir) % 2 == 0:
                 self.log.warning("Filter %s has an even-length impulse response!" % f['name'])
             if not np.all(ir - ir[::-1] == 0):
                 self.log.warning("Filter %s has an asymmetric impulse response!" % f['name'])
@@ -115,12 +115,12 @@ class FindPeaks(plugin.TransformPlugin):
             peaks = []
             # Find regions currently free of peaks
             if len(event.peaks) == 0 or ('ignore_previous_peaks' in pf and pf['ignore_previous_peaks']):
-                pf_regions = [(0, len(filtered)-1)]
+                pf_regions = [(0, len(filtered) - 1)]
             else:
                 pf_regions = dsputils.free_regions(event)
             # Search for peaks in the free regions
             for region_left, region_right in pf_regions:
-                region_filtered   = filtered[region_left:region_right + 1]
+                region_filtered = filtered[region_left:region_right + 1]
                 region_unfiltered = unfiltered[region_left:region_right + 1]
                 for itv_left, itv_right in dsputils.intervals_above_threshold(region_filtered, pf['threshold']):
                     p = dsputils.find_peak_in_interval(region_filtered, region_unfiltered, itv_left, itv_right,
@@ -136,22 +136,25 @@ class FindPeaks(plugin.TransformPlugin):
             event.peaks.extend(peaks)
         return event
 
+
 class IdentifyPeaks(plugin.TransformPlugin):
+
     def transform_event(self, event):
-        #PLACEHOLDER:
+        # PLACEHOLDER:
         # if area in 5 samples around max i s > 50% of total area, christen as S1
         unfiltered = event.get_waveform('tpc').samples
         for p in event.peaks:
             if p.type != 'unknown':
                 # Some peakfinder forced the type. Fine, not my problem...
                 continue
-            if np.sum(unfiltered[p.index_of_maximum -2: p.index_of_maximum + 3]) > 0.5*p.area:
+            if np.sum(unfiltered[p.index_of_maximum - 2: p.index_of_maximum + 3]) > 0.5 * p.area:
                 p.type = 's1'
                 #self.log.debug("%s-%s-%s: S1" % (p.left, p.index_of_maximum, p.right))
             else:
                 p.type = 's2'
                 #self.log.debug("%s-%s-%s: S2" % (p.left, p.index_of_maximum, p.right))
         return event
+
 
 class SplitPeaks(plugin.TransformPlugin):
 
@@ -172,13 +175,13 @@ class SplitPeaks(plugin.TransformPlugin):
         for parent in event.peaks:
             # If the peak is not large enough, it will not be split
             if ('composite_peak_min_width' in self.config and
-                parent.right - parent.left < self.config['composite_peak_min_width']
-               ):
+                        parent.right - parent.left < self.config['composite_peak_min_width']
+                    ):
                 revised_peaks.append(parent)
                 continue
-            #Try to split the peak
+            # Try to split the peak
             ps, vs = dsputils.peaks_and_valleys(
-                filtered[parent.left:parent.right+1],
+                filtered[parent.left:parent.right + 1],
                 test_function=self.is_valid_p_v_pair
             )
             # If the peak wasn't split, we don't have to do anything
@@ -195,15 +198,15 @@ class SplitPeaks(plugin.TransformPlugin):
 
             ps += parent.left
             vs += parent.left
-            self.log.debug("S2 at "+ str(parent.index_of_maximum) +": peaks " + str(ps) + ", valleys "+str(vs))
+            self.log.debug("S2 at " + str(parent.index_of_maximum) + ": peaks " + str(ps) + ", valleys " + str(vs))
             # Compute basic quantities for the sub-peaks
             for i, p in enumerate(ps):
-                l_bound = vs[i-1] if i!=0 else parent.left
+                l_bound = vs[i - 1] if i != 0 else parent.left
                 r_bound = vs[i]
-                max_idx = l_bound + np.argmax(unfiltered[l_bound:r_bound+1])
+                max_idx = l_bound + np.argmax(unfiltered[l_bound:r_bound + 1])
                 new_peak = datastructure.Peak({
-                        'index_of_maximum': max_idx,
-                        'height':           unfiltered[max_idx],
+                    'index_of_maximum': max_idx,
+                    'height':           unfiltered[max_idx],
                 })
                 # No need to recompute peak bounds: the whole parent peak is <0.01 max of the biggest peak
                 # If we ever need to anyway, this code works:
@@ -213,7 +216,7 @@ class SplitPeaks(plugin.TransformPlugin):
                 new_peak.left = l_bound
                 new_peak.right = r_bound
                 revised_peaks.append(new_peak)
-                new_peak.area = np.sum(unfiltered[new_peak.left:new_peak.right+1])
+                new_peak.area = np.sum(unfiltered[new_peak.left:new_peak.right + 1])
 
         event.peaks = revised_peaks
         return event
