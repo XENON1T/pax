@@ -7,10 +7,10 @@ History
 1.1.0 (2014-08-29)
 ------------------
 
-* HDF5 output
+* HDF5 output - will be, for now, default output format.
 
   * We now have a binary output format for peaks and event.
-  * Should also be easily extendible to ROOT output.
+  * Should also be easily extendible to ROOT output, which is blocked until ROOT solves some Py3.4 bugs.
   * Allows bulk comparison with high statistics for things like trigger efficiency
 
 * Bug fixes relating to difference between XENON100 and XENON1T formats (occurences extending past event windows).
