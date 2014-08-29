@@ -56,9 +56,10 @@ Features
 
  * MongoDB (used online for DAQ)
  * XED (XENON100 format)
- * ROOT
+ * HDF5 (default output)
  * Pickle
  * Plots
+ * DAQ injector
 
 * Position reconstruction of events
 
