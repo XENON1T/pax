@@ -7,18 +7,10 @@ from pax import plugin, units, datastructure
 from collections import Counter
 
 # This is probably in some standard library...
-
-
 def flatten(l):
     return [item for sublist in l for item in sublist]
 
-# Integrated PMT pulses
-# def delta_pulse_raw(t, q, tr, tf):
-#     """Delta function pulse: all charge in single bin"""
-#     return t>0 and q or 0
-# delta_pulse = np.vectorize(delta_pulse_raw, excluded=[1,2,3])
-
-
+# Integrated ('cumulative') PMT pulse
 def exp_pulse_raw(t, q, tr, tf):
     """Exponential pulse: exponential rise and fall time"""
     c = 0.45512  # 1/(ln(10)-ln(10/9))
@@ -32,24 +24,29 @@ exp_pulse = np.vectorize(exp_pulse_raw, excluded={1, 2, 3})
 class FaX(plugin.InputPlugin):
 
     def startup(self):
-        self.instructions_file = open(
-            self.config['instruction_file_filename'], 'r')
+
+        # Open the instructions file
+        self.instructions_file = open(self.config['instruction_file_filename'], 'r')
         self.instructions = csv.DictReader(self.instructions_file)
+
+        # Should we repeat events?
         if not 'event_repetitions' in self.config:
             self.config['event_repetitions'] = 1
-        self.dt = self.config['digitizer_t_resolution']
+
         # Determine sensible length of a pmt pulse to simulate
+        self.dt = self.config['digitizer_t_resolution']
         self.samples_before_pulse_center = math.ceil(
             self.config['pulse_width_cutoff'] * self.config['pmt_rise_time'] / self.dt)
         self.samples_after_pulse_center = math.ceil(
             self.config['pulse_width_cutoff'] * self.config['pmt_fall_time'] / self.dt)
-        # Padding for event
+
+        # Padding on eiher side of event
         if 'event_padding' not in self.config:
             self.config['event_padding'] = 0
-        # Padding to add before & after a peak
+
+        # Padding before & after each pulse/peak/photon-cluster/whatever-you-call-it
         if not 'pad_after' in self.config:
-            self.config['pad_after'] = 30 * self.dt + \
-                self.samples_after_pulse_center
+            self.config['pad_after'] = 30 * self.dt + self.samples_after_pulse_center
         if not 'pad_before' in self.config:
             self.config['pad_before'] = (
                 # 10 + Baseline bins
@@ -58,26 +55,25 @@ class FaX(plugin.InputPlugin):
                 + self.samples_after_pulse_center
                 # Protection against pulses arriving earlier than expected due
                 # to tail of TTS distribution
-                + 10 * self.config['pmt_transit_time_spread'] -
-                self.config['pmt_transit_time_mean']
+                + 10 * self.config['pmt_transit_time_spread']
+                - self.config['pmt_transit_time_mean']
             )
-        # Temp hack: need 0 in so we can use lists
-        self.channels = list(
-            {0} | self.config['pmts_top'] | self.config['pmts_bottom'])
-        # Calculate a normalized pmt pulse, for use in convolution later (only
-        # for large peaks)
-        self.normalized_pulse = self.pmt_pulse_current(gain=1)
-        self.normalized_pulse /= np.sum(self.normalized_pulse)
+
+        # Temp hack: need 0 in channels so we can use lists... hmmzzz
+        self.channels = list({0} | self.config['pmts_top'] | self.config['pmts_bottom'])
+
 
     def shutdown(self):
         self.instructions_file.close()
+
 
     def s1_photons(self, photons, t=0, recombination_time=None, singlet_fraction=None, primary_excimer_fraction=None):
         """
         Returns a list of photon production times caused by an S1 process.
 
         """
-        # Optional arguments
+
+        # Fill in optional arguments
         if recombination_time is None:
             recombination_time = self.config['s1_default_recombination_time']
         if singlet_fraction is None:
@@ -313,14 +309,16 @@ class FaX(plugin.InputPlugin):
             offsets = pmt_pulse_centers % dt
             center_index = (pmt_pulse_centers - offsets) / dt
             if len(all_photons) > self.config['use_simplified_simulator_from']:
-                # Assume a delta function single photon pulse, then convolve with the actual single-photon pulse
-                # This effectively assumes photons always arrive at the start
-                # of a digitizer t-bin, but is much faster
+                # Start with a delta function single photon pulse, then convolve with one actual single-photon pulse
+                # This effectively assumes photons always arrive at the start of a digitizer t-bin, but is much faster
                 pulse_counts = Counter(center_index)
                 current_wave = np.array([pulse_counts[n] for n in range(
                     n_samples)]) * self.config['gains'][channel] * units.electron_charge / dt
-                current_wave = np.convolve(
-                    current_wave, self.normalized_pulse, mode='same')
+                # Calculate a normalized pmt pulse, for use in convolution later (only
+                # for large peaks)
+                normalized_pulse = self.pmt_pulse_current(gain=1)
+                normalized_pulse /= np.sum(normalized_pulse)
+                current_wave = np.convolve(current_wave, normalized_pulse, mode='same')
             else:
                 # Do the full, slower simulation for each single-photon pulse
                 current_wave = np.zeros(n_samples)
@@ -330,7 +328,8 @@ class FaX(plugin.InputPlugin):
                     # do their diffs/dt
                     current_wave[
                         # +1 due to np.diff in pmt_pulse_current
-                        center_index[i] - self.samples_before_pulse_center + 1: center_index[i] + 1 + self.samples_after_pulse_center
+                        center_index[i] - self.samples_before_pulse_center + 1 :
+                        center_index[i] + 1 + self.samples_after_pulse_center
                     ] += self.pmt_pulse_current(
                         # Really a Poisson (although mean is so high it is very
                         # close to a Gauss)

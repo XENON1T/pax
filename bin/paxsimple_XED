@@ -44,24 +44,24 @@ filters = (
 [SimpleDSP.FindPeaks]
 peakfinders = [
         {
-            'peakfinding_wave' : 'tpc_s2',
-            'unfiltered_wave'  : 'tpc',
-            'threshold' : 0.15, # pe/bin
-            'peak_integration_bound' : 0.01, # of maximum
+            'peakfinding_wave'          : 'tpc_s2',
+            'unfiltered_wave'           : 'tpc',
+            'threshold'                 : 0.15, # pe/bin
+            'peak_integration_bound'    : 0.01, # of maximum
         },
         {
-            'peakfinding_wave' : 'tpc_s1',
-            'unfiltered_wave'  : 'tpc',
-            'threshold' : 0.15, # pe/bin
-            'peak_integration_bound' : 0.01, # of maximum
+            'peakfinding_wave'          : 'tpc_s1',
+            'unfiltered_wave'           : 'tpc',
+            'threshold'                 : 0.15, # pe/bin
+            'peak_integration_bound'    : 0.01, # of maximum
         },
         {
-            'peakfinding_wave' : 'veto_s1',
-            'unfiltered_wave'  : 'veto',
-            'threshold' : 0.15,  # pe/bin
-            'peak_integration_bound' : 0.01, # of maximum
-            'ignore_previous_peaks' : True,
-            'peak_label' : 'veto_s1'
+            'peakfinding_wave'          : 'veto_s1',
+            'unfiltered_wave'           : 'veto',
+            'threshold'                 : 0.15,  # pe/bin
+            'peak_integration_bound'    : 0.01, # of maximum
+            'ignore_previous_peaks'     : True,
+            'peak_label'                : 'veto_s1'
         },
     ]
 
