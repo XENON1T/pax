@@ -5,11 +5,13 @@ config_overload = """
 [pax]
 input = 'XED.XedInput'
 #input = 'fax.FaX'
-output = ['HDF5.HDF5Output',
-          #'Plotting.PlotWaveform',
+#input = 'Pickle.DirWithPickleFiles'
+output = [#'Pickle.WriteToPickleFile',
+          #'HDF5.HDF5Output',
+          'Plotting.PlotWaveform',
           #'CSV.WritePeaksCSV',
           #'RawWaveformDump.DumpSumWaveformToBinary'
-          ]
+    ]
 
 [XED.XedInput]
 filename = "xe100_120402_2000_000000.xed"
@@ -17,6 +19,12 @@ filename = "xe100_120402_2000_000000.xed"
 
 [HDF5.HDF5Output]
 hdf5file = 'output_xed.h5'
+
+[Pickle.WriteToPickleFile]
+output_dir = './pickled'
+
+[Pickle.DirWithPickleFiles]
+input_dir = './pickled'
 
 """
 
