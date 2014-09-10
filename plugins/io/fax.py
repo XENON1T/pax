@@ -10,16 +10,22 @@ from collections import Counter
 def flatten(l):
     return [item for sublist in l for item in sublist]
 
-# Integrated ('cumulative') PMT pulse
 def exp_pulse_raw(t, q, tr, tf):
-    """Exponential pulse: exponential rise and fall time"""
+    """Integrated current (i.e. charge) of a single-pe PMT pulse centered at t=0
+    Assumes an exponential rise and fall waveform model
+    :param t:   Time to integrate up to
+    :param q:   Total charge in the pulse
+    :param tr:  Rise time
+    :param tf:  Fall time
+    :return: Float, charge deposited up to t
+    """
+
     c = 0.45512  # 1/(ln(10)-ln(10/9))
     if t < 0:
         return q / (tr + tf) * (tr * math.exp(t / (c * tr)))
     else:
         return q / (tr + tf) * (tr + tf * (1 - math.exp(-t / (c * tf))))
 exp_pulse = np.vectorize(exp_pulse_raw, excluded={1, 2, 3})
-
 
 class FaX(plugin.InputPlugin):
 
