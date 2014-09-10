@@ -25,7 +25,7 @@ class WritePeaksCSV(plugin.OutputPlugin):
                     p.right,
                     p.area)
 
-            self.csv.writerow(dict(zip(self.keys, data)))
+            self.csv.writerow(dict(zip(self.headers, data)))
 
     def shutdown(self):
         self.output.close()
