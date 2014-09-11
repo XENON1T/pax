@@ -3,12 +3,13 @@ import csv
 from pax import plugin
 
 
+
 class WritePeaksCSV(plugin.OutputPlugin):
     """Write to a human readable CSV file
     """
 
     def startup(self):
-        self.output = open('output.csv', 'w')
+        self.output = open(self.config['output_file'], 'w')
         self.headers = ['event', 'type', 'max', 'left', 'right', 'area']
         self.csv = csv.DictWriter(self.output,
                                   self.headers, lineterminator='\n')

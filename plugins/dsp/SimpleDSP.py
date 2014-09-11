@@ -49,11 +49,13 @@ class BuildWaveforms(plugin.TransformPlugin):
                 # Check for pulses starting right after previous ones: don't use these for baseline computation
                 if i != 0 and start_index == waveform_occurrences[i - 1][0] + len(waveform_occurrences[i - 1][1]):
                     continue
-                # Pulses that start at the very beginning are also off-limits, they may not have
-                if start_index == 0:
-                    continue
+                # Pulses that start at the very beginning are also off-limits
+                #if start_index == 0:
+                #    continue
                 baseline_samples.extend(pulse_wave[:self.config['baseline_samples_at_start_of_pulse']])
             # Use the mean of the median 20% for the baseline: ensures outliers don't skew computed baseline
+            if len(baseline_samples) == 0:
+                self.log.fatal("No samples selected for baseline computation!")
             event.baselines[channel] = np.mean(sorted(baseline_samples)[
                 int(0.4 * len(baseline_samples)):int(0.6 * len(baseline_samples))
             ])
