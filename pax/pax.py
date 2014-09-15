@@ -157,6 +157,7 @@ def processor(config_overload=""):
                                          ['dsp', 'transform',
                                           'my_postprocessing'],
                                          'output')
+    actions += output   # Append output to actions... why are they separate anyway?
 
     # Deal with command line arguments for the logging level
     parser = argparse.ArgumentParser(description="Process XENON1T data")
@@ -194,7 +195,6 @@ def processor(config_overload=""):
 
     input = instantiate(input, plugin_source, config, log)
     actions = [instantiate(x, plugin_source, config, log) for x in actions]
-    output = [instantiate(x, plugin_source, config, log) for x in output]
 
     if args.single is not None:
         event = input.get_single_event(args.single)
@@ -208,6 +208,6 @@ def processor(config_overload=""):
 
             log.info("Event %d" % i)
 
-            process_single_event(actions + output, event, log)
+            process_single_event(actions, event, log)
 
         log.info("Finished event loop.")
