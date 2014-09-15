@@ -22,13 +22,24 @@ class WriteToPickleFile(plugin.OutputPlugin):
 
 class DirWithPickleFiles(plugin.InputPlugin):
 
-    def get_events(self):
+    def startup(self):
         files = glob.glob(self.config['input_dir'] + "/*")
+        self.event_files = {}
         if len(files)==0:
             self.log.fatal("No files found in input directory %s!" % self.config['input_dir'])
         for file in files:
-            if re.search('(\d+)$',file) is None:
+            m = re.search('(\d+)$',file)
+            if m is None:
                 self.log.debug("Invalid file %s" % file)
                 continue
-            with gzip.open(file,'rb') as f:
-                yield pickle.load(f)
+            else:
+                self.event_files[int(m.group(0))] = file
+
+    def get_single_event(self, index):
+        file = self.event_files[index]
+        with gzip.open(file,'rb') as f:
+            return pickle.load(f)
+
+    def get_events(self):
+        for index in sorted(self.event_files.keys()):
+            yield self.get_single_event(index)
