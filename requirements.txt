@@ -7,3 +7,4 @@ cherrypy
 jinja2
 numpyson
 blosc
+tables
