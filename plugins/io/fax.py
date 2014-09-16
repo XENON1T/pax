@@ -127,36 +127,35 @@ class FaX(plugin.InputPlugin):
             z                     -   Depth below the GATE mesh where the interaction occurs.
         As usual, all units in the same system used by pax (if you specify raw values: ns, cm)
         """
+
         if z < 0:
-            self.log.warning("Unphysical depth: %s cm. Not generating S2." % z)
+            self.log.warning("Unphysical depth: %s cm below gate. Not generating S2." % z)
             return []
-        self.log.debug("Creating an s2 from %s electrons..." %
-                       electrons_generated)
-        # Average drift time, taking faster drift velocity after gate into
-        # account
-        drift_time_mean = (self.config['gate_to_anode_distance'] - self.config['elr_gas_gap_length'])\
-            / self.config['drift_velocity_liquid_above_gate'] \
-            + z / self.config['drift_velocity_liquid']
+        self.log.debug("Creating an s2 from %s electrons..." % electrons_generated)
+
+        # Average drift time, taking faster drift velocity after gate into account
+        drift_time_mean = z / self.config['drift_velocity_liquid'] + \
+            (self.config['gate_to_anode_distance'] - self.config['elr_gas_gap_length']) \
+            / self.config['drift_velocity_liquid_above_gate']
+
         # Diffusion model from Sorensen 2011
         drift_time_stdev = math.sqrt(
             2 * self.config['diffusion_constant_liquid'] *
             drift_time_mean / (self.config['drift_velocity_liquid']) ** 2
         )
+
         # Absorb electrons during the drift
         electrons_seen = np.random.binomial(
-            n=electrons_generated,
-            p=self.config['electron_extraction_yield']
-            * math.exp(- drift_time_mean / self.config['electron_lifetime_liquid'])
+            n= electrons_generated,
+            p= self.config['electron_extraction_yield']
+               * math.exp(- drift_time_mean / self.config['electron_lifetime_liquid'])
         )
-        self.log.debug("    %s electrons survive the drift." %
-                       electrons_generated)
+        self.log.debug("    %s electrons survive the drift." % electrons_generated)
+
         # Calculate electron arrival times in the ELR region
-        e_arrival_times = t + \
-            np.random.exponential(
-                self.config['electron_trapping_time'], electrons_seen)
+        e_arrival_times = t + np.random.exponential(self.config['electron_trapping_time'], electrons_seen)
         if drift_time_stdev:
-            e_arrival_times += np.random.normal(
-                drift_time_mean, drift_time_stdev, electrons_seen)
+            e_arrival_times += np.random.normal(drift_time_mean, drift_time_stdev, electrons_seen)
         return e_arrival_times
 
     def s2_scintillation(self, electron_arrival_times):
@@ -370,10 +369,10 @@ class FaX(plugin.InputPlugin):
         electron_times = self.s2_electrons(electrons_generated=electrons, t=t, z=z)
         photon_times = self.s2_scintillation(electron_times)
         self.truth_peaks.append({
-            'peak_type': 's2',
+            'signal_type': 's2',
             'x': x, 'y': y, 'z': z,
             't_interaction': t,
-            'pe': len(photon_times),
+            'photons': len(photon_times),
             't_photons': np.mean(photon_times),
             'electrons': len(electron_times),
             'e_cloud_sigma': np.std(electron_times),
@@ -395,7 +394,7 @@ class FaX(plugin.InputPlugin):
             'peak_type': 's1',
             #'x': x, 'y': y, 'z': z,
             't_interaction': t,
-            'pe': len(photon_times),
+            'photons': len(photon_times),
             't_photons': np.mean(photon_times),
         })
         return self.hitlist_to_waveforms(
