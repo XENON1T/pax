@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from pax import pax
+from pax import core
 
 config_overload = """
 [pax]
@@ -28,4 +28,4 @@ white_noise_sigma =                   0.5 * uA
 """
 
 if __name__ == '__main__':
-    pax.processor(config_overload)
+    core.processor(config_overload)

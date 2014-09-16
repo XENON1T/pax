@@ -5,15 +5,15 @@ import numpy as np
 import unittest
 
 
-from pax import pax
+from pax import core
 from pax.datastructure import Event, Peak, Waveform
 
 
 class TestPrintToScreen(unittest.TestCase):
     def setUp(self):
-        conf = pax.get_configuration()
-        plugin_source = pax.get_plugin_source(conf)
-        self.obj = pax.instantiate('PrintToScreen.PrintToScreen',
+        conf = core.parse_named_configuration('default')
+        plugin_source = core.get_plugin_source(conf)
+        self.obj = core.instantiate('PrintToScreen.PrintToScreen',
                                    plugin_source,
                                    conf)
 
