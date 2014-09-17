@@ -47,7 +47,7 @@ args = parser.parse_args()
 
 if args.config_path is not None:
     config = core.parse_configuration_file(args.config_path)
-else    # args.config is not None:  (useless, has a default)
+else:    # args.config is not None:  (useless, has a default)
     config = core.parse_named_configuration(args.config)
 
 
