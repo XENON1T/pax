@@ -11,6 +11,7 @@ import os
 from io import StringIO
 from pluginbase import PluginBase
 
+import pax
 from pax import units
 
 # Store the directory of pax (i.e. parent dir of this file's directory) as pax_dir
@@ -138,7 +139,7 @@ def instantiate(name, plugin_source, config, log=logging):
 def get_plugin_source(config, log=logging, ident='blah'):
     # Setup plugins (which involves finding the plugin directory).
     plugin_base = PluginBase(package='pax.plugins')
-    searchpath = ['./plugins'] + config['DEFAULT']['plugin_paths']
+    searchpath = ['./plugins'] + config['pax']['plugin_paths']
     # Find the absolute path, then director, then find plugin directory
     global pax_dir
     searchpath += [os.path.join(pax_dir, 'plugins')]
@@ -224,8 +225,9 @@ def processor(config, log_spec, events_to_process=None, stop_after=None):
     log = logging.getLogger('processor')
 
     if config is None:
-        log.warning("No configuration specified: loading default config only!")
-        config = parse_named_configuration('default')
+        log.warning("No configuration specified: loading Xenon100 config!")
+        config = parse_named_configuration('Xenon100')
+    log.info("This is PAX version %s, running with configuration for %s." % (pax.__version__, config['DEFAULT']['tpc_name']))
 
     input, actions, output = get_actions(config,
                                          'input',

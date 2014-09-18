@@ -19,7 +19,7 @@ configuration_control_group = parser.add_mutually_exclusive_group()
 # Pass in a name to use a pre-cooked config from config:
 configuration_control_group.add_argument(
     '--config',
-    default='default',
+    default=None,
     help="Name of the pax configuration to use."
 )
 # ...or pass in a path to your own config file:
@@ -47,8 +47,10 @@ args = parser.parse_args()
 
 if args.config_path is not None:
     config = core.parse_configuration_file(args.config_path)
-else:    # args.config is not None:  (useless, has a default)
+elif args.config is not None:
     config = core.parse_named_configuration(args.config)
+else:
+    config = None   # No config passed, pax will warn user and load a default
 
 
 core.processor(
