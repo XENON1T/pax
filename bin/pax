@@ -20,6 +20,7 @@ configuration_control_group = parser.add_mutually_exclusive_group()
 configuration_control_group.add_argument(
     '--config',
     default=None,
+    choices=core.get_named_configuration_options(),
     help="Name of the pax configuration to use."
 )
 # ...or pass in a path to your own config file:

@@ -6,6 +6,7 @@ import inspect
 
 import configparser
 import glob
+import re
 import os
 
 from io import StringIO
@@ -15,17 +16,33 @@ import pax
 from pax import units
 
 # Store the directory of pax (i.e. parent dir of this file's directory) as pax_dir
-global pax_dir
-absolute_path = os.path.abspath(inspect.getfile(inspect.currentframe()))
-pax_dir = os.path.join(os.path.dirname(absolute_path), os.pardir)
+pax_dir = os.path.join(
+    os.path.dirname(
+        os.path.abspath(inspect.getfile(inspect.currentframe()))
+    ),
+    os.pardir
+)
 
-global pax_logger
 
 ##
 # Configuration handling
 ##
 
-
+def get_named_configuration_options():
+    """ Return the names of all named configurations
+    """
+    config_files =[]
+    for filename in glob.glob(os.path.join(pax_dir, 'config', '*.ini')):
+        filename = os.path.basename(filename)
+        m = re.match(r'(\w+)\.ini', filename)
+        if m is None:
+            print("Weird file in config dir: %s" % filename)
+        filename = m.group(1)
+        # Config files starting with '_' won't work by themselves
+        if filename[0] == '_':
+            continue
+        config_files.append(filename)
+    return config_files
 
 def parse_configuration_string(config_string):
     with StringIO(config_string) as config_fake_file:
@@ -37,7 +54,8 @@ def parse_named_configuration(config_name):
     :param config_name: name of the config (without .ini)
     :return: output of parse_configuration_file
     """
-    return parse_configuration_file(os.path.join(pax_dir, 'config', config_name + '.ini'))
+    config = parse_configuration_file(os.path.join(pax_dir, 'config', config_name + '.ini'))
+    return config
 
 def parse_configuration_file(file_object):
     """ Get pax configuration from a configuration file
@@ -234,28 +252,33 @@ def processor(config, log_spec, events_to_process=None, stop_after=None):
                                          ['dsp', 'transform',
                                           'my_postprocessing'],
                                          'output')
-    actions += output   # Append output to actions... why are they separate anyway?
+    actions += output   # Append output to actions... for now
 
     # Gather information about plugins
     plugin_source = get_plugin_source(config, log)
 
-    input = instantiate(input, plugin_source, config, log)
-    actions = [instantiate(x, plugin_source, config, log) for x in actions]
+    input =    instantiate(input, plugin_source, config, log)
+    actions = [instantiate(x,     plugin_source, config, log) for x in actions]
 
-    # TODO: store different iterators, have one call to process_single_event
+    # How should the events be generated?
     if events_to_process is not None:
-        for event_number in events_to_process:
-            event = input.get_single_event(event_number)
-            process_single_event(actions, event, log)
+        # The user specified which events to process:
+        def get_events():
+            for event_number in events_to_process:
+                yield input.get_single_event(event_number)
     else:
-        # This is the *actual* event loop
-        for i, event in enumerate(input.get_events()):
-            if stop_after is not None:
-                if i >= stop_after:
-                    break
+        # Let the input plugin decide which events to process:
+        get_events = input.get_events
 
-            log.info("Event %d" % i)
+    # This is the actual event loop
+    for i, event in enumerate(get_events()):
+        if stop_after is not None:
+            if i >= stop_after:
+                log.info("User-specified limit of %d events reached: processing stopped." % i)
+                break
 
-            process_single_event(actions, event, log)
+        log.info("Event %d (%d processed)" % (event.event_number, i))
 
-        log.info("Finished event loop.")
+        process_single_event(actions, event, log)
+    else:
+        log.info("All events processed.")
