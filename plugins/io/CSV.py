@@ -18,6 +18,11 @@ class WritePeaksCSV(plugin.OutputPlugin):
 
     def write_event(self, event):
         event.peaks.sort(key=lambda p: p.index_of_maximum)
+
+        # # only write down largest S2:
+        # # if not event.S2s():
+        # #     return
+        # # p = event.S2s()[0]
         for p in event.peaks:
             data = (event.event_number,
                     p.type,
@@ -25,7 +30,6 @@ class WritePeaksCSV(plugin.OutputPlugin):
                     p.left,
                     p.right,
                     p.area)
-
             self.csv.writerow(dict(zip(self.headers, data)))
 
     def shutdown(self):

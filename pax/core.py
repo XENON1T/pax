@@ -103,24 +103,26 @@ def load_file_into_configparser(config, config_file):
         config.read(config_file)
     else:
         config.readfp(config_file)
-    # Determine the path of the base file
+    # Determine the path of the parent config file
     if 'final_ancestor' in config['pax'] and config['pax'] ['final_ancestor']:
         # We've reached the root of the inheritance line, there is no base file
         return
     elif 'parent_configuration' in config['pax'] :
         # This file inherits from another config file in the 'config' directory
         global pax_dir
-        # The [1:-1] removes the parens around the value... could do another eval, but lazy
-        base_file_path = os.path.join(pax_dir, 'config', config['pax']['parent_configuration'][1:-1] + '.ini')
+        # The [1:-1] removes the quotes around the value... could do another eval, but lazy
+        parent_file_path = os.path.join(pax_dir, 'config',
+                                        config['pax']['parent_configuration'][1:-1] + '.ini')
     elif 'parent_configuration_file' in config['pax']:
         # This file inherits from a user-defined config file
-        base_file_path = config['pax']['parent_configuration_file'][1:-1]
+            parent_file_path = config['pax']['parent_configuration_file'][1:-1]
     else:
-        raise RuntimeError('Missing inheritance instructions for config file %s!' % str(config_file))
+        raise RuntimeError('Missing inheritance instructions for config file %s!' %
+                           str(config_file))
     # Unfortunately, configparser can only override settings, not set missing ones.
-    # We have no choice but to load the base file, then reload the original one again.
+    # We have no choice but to load the parent file, then reload the original one again.
     # By doing this in a recursing function, multi-level inheritance is supported.
-    load_file_into_configparser(config, base_file_path)
+    load_file_into_configparser(config, parent_file_path)
     if isinstance(config_file, str):
         config.read(config_file)
     else:
@@ -245,7 +247,9 @@ def processor(config, log_spec, events_to_process=None, stop_after=None):
     if config is None:
         log.warning("No configuration specified: loading Xenon100 config!")
         config = parse_named_configuration('Xenon100')
-    log.info("This is PAX version %s, running with configuration for %s." % (pax.__version__, config['DEFAULT']['tpc_name']))
+    log.info("This is PAX version %s, running with configuration for %s." % (
+        pax.__version__, config['DEFAULT']['tpc_name'])
+    )
 
     input, actions, output = get_actions(config,
                                          'input',
