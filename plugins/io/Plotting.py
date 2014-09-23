@@ -15,7 +15,7 @@ class PlotWaveform(plugin.OutputPlugin):
 
     def startup(self):
         self.plt = plt
-        if 'output_dir' in self.config:
+        if self.config['output_dir'] is not None:
             self.output_dir = self.config['output_dir']
             if not os.path.exists(self.output_dir):
                 os.makedirs(self.output_dir)
@@ -72,8 +72,7 @@ class PlotWaveform(plugin.OutputPlugin):
         legend.get_frame().set_alpha(0.5)
         plt.tight_layout()
         if self.output_dir:
-            plt.savefig(
-                self.output_dir + '/' + str(event.event_number) + '.png')
+            plt.savefig(self.output_dir + '/' + str(event.event_number) + '.png')
         else:
             plt.show(block=False)
             self.log.info("Hit enter to continue...")

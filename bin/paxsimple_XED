@@ -5,12 +5,12 @@ config_overload = """
 [pax]
 input = 'XED.XedInput'
 
-dsp = ['SimpleDSP.BuildWaveforms',
-       'SimpleDSP.ApplyFilters',
-       'SimpleDSP.FindPeaks',
-       'SimpleDSP.SplitPeaks',
-       'SimpleDSP.IdentifyPeaks',
-       ]
+#dsp = ['SimpleDSP.BuildWaveforms',
+#       'SimpleDSP.ApplyFilters',
+#       #'SimpleDSP.FindPeaks',
+#       'SimpleDSP.SplitPeaks',
+#       'SimpleDSP.IdentifyPeaks',
+#       ]
 transform = []
 
 output = [

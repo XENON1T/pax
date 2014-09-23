@@ -10,8 +10,8 @@ config_overload = """
 [pax]
 input = 'MongoDB.MongoDBInput'
 my_postprocessing = []
-output = ['HDF5.HDF5Output',
-          #'Plotting.PlotWaveform',
+output = [#'HDF5.HDF5Output',
+          'Plotting.PlotWaveform',
          ]
 
 [MongoDB.MongoDBInput]

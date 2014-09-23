@@ -4,20 +4,13 @@ from pax import pax
 config_overload = """
 [pax]
 input = 'XED.XedInput'
-#input = 'fax.FaX'
-output = ['HDF5.HDF5Output',
-          #'Plotting.PlotWaveform',
-          #'CSV.WritePeaksCSV',
-          #'RawWaveformDump.DumpSumWaveformToBinary'
-          ]
+output = ['Plotting.PlotWaveform']
 
 [XED.XedInput]
 filename = "xe100_120402_2000_000000.xed"
-#filename = "xe100_120306_1132_000000.xed"
 
-[HDF5.HDF5Output]
-hdf5file = 'output_xed.h5'
-
+[Plotting.PlotWaveform]
+output_dir = './plots'
 """
 
 if __name__ == '__main__':
