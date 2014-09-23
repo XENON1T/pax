@@ -121,6 +121,11 @@ def peak_bounds(signal, max_idx, fraction_of_max, zero_level=0):
     left = max_idx - left
     return (left, right)
 
+def width_at_fraction(peak_wave, fraction_of_max, max_idx):
+    """Returns width of a peak IN SAMPLES at fraction of maximum"""
+    left, right = peak_bounds(peak_wave, max_idx=max_idx, fraction_of_max=fraction_of_max)
+    return right - left + 1
+
 
 # Stolen from https://github.com/numpy/numpy/issues/2269
 # Numpy 2.0 may get a builtin to do this
@@ -136,10 +141,11 @@ def find_first_fast(a, predicate, chunk_size=128):
     # HACK: None found... return the last index
     return len(a) - 1
 
+
+
 ##
 # Peak processing routines
 ##
-
 
 def free_regions(event):
     """Find the free regions in the event's waveform - regions where peaks haven't yet been found"""

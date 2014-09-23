@@ -11,16 +11,16 @@ import numpy as np
 import unittest
 
 
-from pax import pax
-from pax.datastructure import Event, Peak, Waveform
+from pax import core
+from pax.datastructure import Event, Peak
 
 
 class TestPosRecWeightedSum(unittest.TestCase):
 
     def setUp(self):
-        self.conf = pax.get_configuration("")
-        self.plugin_source = pax.get_plugin_source(self.conf)
-        self.objy = pax.instantiate('PosSimple.PosRecWeightedSum',
+        self.conf = core.parse_named_configuration('default')
+        self.plugin_source = core.get_plugin_source(self.conf)
+        self.objy = core.instantiate('PosSimple.PosRecWeightedSum',
                                     self.plugin_source,
                                     self.conf)
 

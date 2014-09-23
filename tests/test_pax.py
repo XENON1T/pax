@@ -11,41 +11,43 @@ Tests for `pax` module.
 import unittest
 
 from pax import units
-from pax import pax
+from pax import core
 
 
 class TestPax(unittest.TestCase):
 
     def setUp(self):
+        self.basic_config_header = "[pax]\nfinal_ancestor = True\n"
         pass
 
     def test_evaluate_configuration_string(self):
-        x = {'test': "\"mystring\""}
-        y = pax.evaluate_configuration(x)
-        self.assertEqual(y['test'], "mystring")
+        x = self.basic_config_header + "test: \"mystring\""
+        y = core.parse_configuration_string(x)
+        self.assertEqual(y['pax']['test'], "mystring")
 
     def test_evaluate_configuration_int(self):
-        x = {'test': "4"}
-        y = pax.evaluate_configuration(x)
-        self.assertEqual(y['test'], 4)
+        x = self.basic_config_header +  "test: 4"
+        y = core.parse_configuration_string(x)
+        self.assertEqual(y['pax']['test'], 4)
 
     def test_evaluate_configuration_float(self):
-        x = {'test': "4.0"}
-        y = pax.evaluate_configuration(x)
-        self.assertEqual(y['test'], 4.0)
+        x = self.basic_config_header +  "test: 4.0"
+        y = core.parse_configuration_string(x)
+        self.assertEqual(y['pax']['test'], 4.0)
 
     def test_evaluate_configuration_add(self):
-        x = {'test': "4.0 + 2.0"}
-        y = pax.evaluate_configuration(x)
-        self.assertEqual(y['test'], 6.0)
+        x = self.basic_config_header +  "test: 4.0 + 2.0"
+        y = core.parse_configuration_string(x)
+        self.assertEqual(y['pax']['test'], 6.0)
 
     def test_evaluate_configuration_units(self):
-        x = {'test': "4.0 * mm"}
-        y = pax.evaluate_configuration(x)
-        self.assertEqual(y['test'], 4.0 * units.mm)
+        x = self.basic_config_header +  "test: 4.0 * mm"
+        y = core.parse_configuration_string(x)
+        self.assertEqual(y['pax']['test'], 4.0 * units.mm)
 
     def tearDown(self):
         pass
+
 
 
 if __name__ == '__main__':

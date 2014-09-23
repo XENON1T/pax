@@ -126,7 +126,7 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
             self.collection.insert(self.control_doc)
 
     def write_event(self, event):
-        self.log.debug('Pickling event')
+        self.log.debug('Writing event')
 
         occurences = []
 

@@ -1,0 +1,63 @@
+#!/usr/bin/env python
+""" Processor for Analyzing Xenon1T - command line interface """
+
+import argparse
+import os
+from pax import core
+
+
+##
+# Parse command line arguments
+##
+parser = argparse.ArgumentParser(description="Process XENON1T data")
+
+# Log level control
+parser.add_argument('--log', default='INFO', help="Set log level, e.g. 'debug'")
+
+# Configuration control
+configuration_control_group = parser.add_mutually_exclusive_group()
+# Pass in a name to use a pre-cooked config from config:
+configuration_control_group.add_argument(
+    '--config',
+    default=None,
+    choices=core.get_named_configuration_options(),
+    help="Name of the pax configuration to use."
+)
+# ...or pass in a path to your own config file:
+configuration_control_group.add_argument(
+    '--config_path',
+    help="Path of the configuration file to use."
+)
+
+# Control events to process
+input_control_group = parser.add_mutually_exclusive_group()
+input_control_group.add_argument('--event',
+                                 type=int,
+                                 nargs='+',
+                                 help="Process particular event(s).")
+input_control_group.add_argument('--stop_after',
+                                 type=int,
+                                 help="Stop after 'n' events processed.")
+
+args = parser.parse_args()
+
+
+##
+# Load configuration and run the processor
+##
+
+if args.config_path is not None:
+    config = core.parse_configuration_file(args.config_path)
+elif args.config is not None:
+    config = core.parse_named_configuration(args.config)
+else:
+    config = None   # No config passed, pax will warn user and load a default
+
+
+core.processor(
+    config = config,
+    # These will be None if the arguments are not present
+    log_spec=args.log,
+    events_to_process=args.event,
+    stop_after=args.stop_after,
+)

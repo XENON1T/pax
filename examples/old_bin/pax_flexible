@@ -1,0 +1,5 @@
+#!/usr/bin/env python
+from pax import core
+
+with open('pax_flexible.ini') as inifile:
+    core.processor(inifile.read())

@@ -1,7 +1,7 @@
 from pax import plugin, units
 
 
-class DumpSumWaveformToBinary(plugin.OutputPlugin):
+class WaveformDumperBase(plugin.OutputPlugin):
 
     def startup(self):
         c = self.config
@@ -14,11 +14,24 @@ class DumpSumWaveformToBinary(plugin.OutputPlugin):
         self.log.debug("Conversion factor %s" % self.conversion_factor)
 
     def write_event(self, event):
-        filename = self.config[
-            'output_dir'] + '/' + str(event.event_number) + '.' + self.config['extension']
-        waveform_to_dump = event.get_waveform(
-            self.config['waveform_to_dump']).samples
-        if self.config['dump_in_units'] == 'voltage':
+        filename = self.config['output_dir'] + '/' + str(event.event_number) + '.' + self.config['extension']
+        waveform_to_dump = self.get_waveform_to_dump(event)
+        if 'dump_in_units' in self.config and self.config['dump_in_units'] == 'voltage':
             waveform_to_dump /= self.conversion_factor
         with open(filename, 'wb') as output:
             waveform_to_dump.tofile(output)
+
+    def get_waveform_to_dump(self, event):
+        raise NotImplementedError
+
+
+class DumpSumWaveformToBinary(WaveformDumperBase):
+
+    def get_waveform_to_dump(self, event):
+        return event.get_waveform(self.config['waveform_to_dump']).samples
+
+
+class DumpPMTWaveformsToBinary(WaveformDumperBase):
+
+    def get_waveform_to_dump(self, event):
+        return event.pmt_waveforms

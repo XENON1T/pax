@@ -7,7 +7,12 @@ Add numpy support and quite a few ways the code operates.
 
 import numpy as np
 import logging
-from tables import Int64Col, Float64Col, StringCol
+try:
+    from tables import Int64Col, Float64Col, StringCol
+except:
+    print("Pytables is not installed, you can't use the HDF5 I/O!!")
+    def dummy(x=None): return None
+    Int64Col = Float64Col = StringCol = dummy
 
 
 class BaseField(object):

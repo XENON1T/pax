@@ -21,6 +21,9 @@ class PlotWaveform(plugin.OutputPlugin):
                 os.makedirs(self.output_dir)
         else:
             self.output_dir = None
+        # If no skipping defined, don't skip any events
+        if not 'plot_every' in self.config:
+            self.config['plot_every'] = 1
         self.skip_counter = 0
 
     def write_event(self, event):
@@ -31,6 +34,9 @@ class PlotWaveform(plugin.OutputPlugin):
         # Should we plot or skip?
         if self.skip_counter:
             self.skip_counter -= 1
+            self.log.debug("Skipping this event due to plot_every = %s. Skip counter at %s" % (
+                self.config['plot_every'], self.skip_counter
+            ))
             return
         self.time_conversion_factor = event.sample_duration * \
             units.ns / units.us
@@ -55,9 +61,9 @@ class PlotWaveform(plugin.OutputPlugin):
             pad = 200 if largest_s2.height > 100 else 50
             self.plot_waveform(
                 event, left=largest_s2.left, right=largest_s2.right, pad=pad)
-            if largest_s2.height:
-                plt.yscale('log', nonposy='clip')
-                plt.ylim(10 ** (-1), plt.ylim()[1])
+            #if largest_s2.height: #Eh.. wa?
+            #    plt.yscale('log', nonposy='clip')
+            #    plt.ylim(10 ** (-1), plt.ylim()[1])
             plt.title("S2 at %.1f us" %
                       (largest_s2.index_of_maximum * self.time_conversion_factor))
 

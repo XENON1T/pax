@@ -1,0 +1,30 @@
+#!/usr/bin/env python
+from pax import core
+
+config_overload = """
+[pax]
+input = 'XED.XedInput'
+#input = 'fax.FaX'
+#input = 'Pickle.DirWithPickleFiles'
+output = [#'Pickle.WriteToPickleFile',
+          #'HDF5.HDF5Output',
+          'Plotting.PlotWaveform',
+          #'CSV.WritePeaksCSV',
+          #'RawWaveformDump.DumpSumWaveformToBinary'
+    ]
+
+[XED.XedInput]
+filename = "xe100_120402_2000_000000.xed"
+
+[Plotting.PlotWaveform]
+output_dir = './plots'
+
+[Pickle.WriteToPickleFile]
+output_dir = './pickled'
+
+[Pickle.DirWithPickleFiles]
+input_dir = './pickled'
+"""
+
+if __name__ == '__main__':
+    core.processor(config_overload)

@@ -62,9 +62,11 @@ class InputPlugin(BasePlugin):
 
     def __init__(self, config_values):
         BasePlugin.__init__(self, config_values)
-        self.i = 0
+        self.i = 0  # What is this??
 
     def get_single_event(self, index):
+        self.log.warning("Single event support not implemented for this input plugin... " +\
+                         "Iterating though events until we find event %s!" % index)
         for event in self.get_events():
             if event.event_number == index:
                 return event

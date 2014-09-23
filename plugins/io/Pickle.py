@@ -1,10 +1,9 @@
-"""Pickle events
-
-Write event class to a file.
+"""Read/write event class from/to gzip-compressed pickle files.
 """
 
 from pax import plugin
 
+import gzip, re, glob
 try:
     import cPickle as pickle
 except:
@@ -13,17 +12,34 @@ except:
 
 class WriteToPickleFile(plugin.OutputPlugin):
 
-    def startup(self):
-        self.log.debug("Writing pickled data to %s" %
-                       self.config['picklefile'])
-        self.file = open(self.config['picklefile'],
-                         'wb')
-
     def write_event(self, event):
-        self.log.debug('Pickling event')
-        pickle.dump(event,
-                    self.file)
+        self.log.debug("Starting pickling...")
+        with gzip.open(self.config['output_dir'] + '/' + str(event.event_number), 'wb', compresslevel=1) as file:
+            pickle.dump(event, file)
+        self.log.debug("Done!")
 
-    def shutdown(self):
-        self.log.debug("Closing %s" % self.config['picklefile'])
-        self.file.close()
+
+
+class DirWithPickleFiles(plugin.InputPlugin):
+
+    def startup(self):
+        files = glob.glob(self.config['input_dir'] + "/*")
+        self.event_files = {}
+        if len(files)==0:
+            self.log.fatal("No files found in input directory %s!" % self.config['input_dir'])
+        for file in files:
+            m = re.search('(\d+)$',file)
+            if m is None:
+                self.log.debug("Invalid file %s" % file)
+                continue
+            else:
+                self.event_files[int(m.group(0))] = file
+
+    def get_single_event(self, index):
+        file = self.event_files[index]
+        with gzip.open(file,'rb') as f:
+            return pickle.load(f)
+
+    def get_events(self):
+        for index in sorted(self.event_files.keys()):
+            yield self.get_single_event(index)

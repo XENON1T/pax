@@ -3,24 +3,27 @@ import math
 import random
 import time
 import csv
+try:
+    import cPickle as pickle
+except:
+    import pickle
 from pax import plugin, units, datastructure
 from collections import Counter
 
 # This is probably in some standard library...
-
-
 def flatten(l):
     return [item for sublist in l for item in sublist]
 
-# Integrated PMT pulses
-# def delta_pulse_raw(t, q, tr, tf):
-#     """Delta function pulse: all charge in single bin"""
-#     return t>0 and q or 0
-# delta_pulse = np.vectorize(delta_pulse_raw, excluded=[1,2,3])
-
-
 def exp_pulse_raw(t, q, tr, tf):
-    """Exponential pulse: exponential rise and fall time"""
+    """Integrated current (i.e. charge) of a single-pe PMT pulse centered at t=0
+    Assumes an exponential rise and fall waveform model
+    :param t:   Time to integrate up to
+    :param q:   Total charge in the pulse
+    :param tr:  Rise time
+    :param tf:  Fall time
+    :return: Float, charge deposited up to t
+    """
+
     c = 0.45512  # 1/(ln(10)-ln(10/9))
     if t < 0:
         return q / (tr + tf) * (tr * math.exp(t / (c * tr)))
@@ -28,28 +31,33 @@ def exp_pulse_raw(t, q, tr, tf):
         return q / (tr + tf) * (tr + tf * (1 - math.exp(-t / (c * tf))))
 exp_pulse = np.vectorize(exp_pulse_raw, excluded={1, 2, 3})
 
-
 class FaX(plugin.InputPlugin):
 
     def startup(self):
-        self.instructions_file = open(
-            self.config['instruction_file_filename'], 'r')
+
+        # Open the instructions file & truth file
+        self.instructions_file = open(self.config['instruction_filename'], 'r')
         self.instructions = csv.DictReader(self.instructions_file)
+        self.truth_file = open(self.config['truth_filename'], 'wb')
+
+        # Should we repeat events?
         if not 'event_repetitions' in self.config:
             self.config['event_repetitions'] = 1
-        self.dt = self.config['digitizer_t_resolution']
+
         # Determine sensible length of a pmt pulse to simulate
+        self.dt = self.config['digitizer_t_resolution']
         self.samples_before_pulse_center = math.ceil(
             self.config['pulse_width_cutoff'] * self.config['pmt_rise_time'] / self.dt)
         self.samples_after_pulse_center = math.ceil(
             self.config['pulse_width_cutoff'] * self.config['pmt_fall_time'] / self.dt)
-        # Padding for event
+
+        # Padding on eiher side of event
         if 'event_padding' not in self.config:
             self.config['event_padding'] = 0
-        # Padding to add before & after a peak
+
+        # Padding before & after each pulse/peak/photon-cluster/whatever-you-call-it
         if not 'pad_after' in self.config:
-            self.config['pad_after'] = 30 * self.dt + \
-                self.samples_after_pulse_center
+            self.config['pad_after'] = 30 * self.dt + self.samples_after_pulse_center
         if not 'pad_before' in self.config:
             self.config['pad_before'] = (
                 # 10 + Baseline bins
@@ -58,26 +66,27 @@ class FaX(plugin.InputPlugin):
                 + self.samples_after_pulse_center
                 # Protection against pulses arriving earlier than expected due
                 # to tail of TTS distribution
-                + 10 * self.config['pmt_transit_time_spread'] -
-                self.config['pmt_transit_time_mean']
+                + 10 * self.config['pmt_transit_time_spread']
+                - self.config['pmt_transit_time_mean']
             )
-        # Temp hack: need 0 in so we can use lists
-        self.channels = list(
-            {0} | self.config['pmts_top'] | self.config['pmts_bottom'])
-        # Calculate a normalized pmt pulse, for use in convolution later (only
-        # for large peaks)
-        self.normalized_pulse = self.pmt_pulse_current(gain=1)
-        self.normalized_pulse /= np.sum(self.normalized_pulse)
+
+        # Temp hack: need 0 in channels so we can use lists... hmmzzz
+        self.channels = list({0} | self.config['pmts_top'] | self.config['pmts_bottom'])
+
 
     def shutdown(self):
         self.instructions_file.close()
+
+    def write_truth(self, stuff):
+        pickle.dump(stuff, self.truth_file)
 
     def s1_photons(self, photons, t=0, recombination_time=None, singlet_fraction=None, primary_excimer_fraction=None):
         """
         Returns a list of photon production times caused by an S1 process.
 
         """
-        # Optional arguments
+
+        # Fill in optional arguments
         if recombination_time is None:
             recombination_time = self.config['s1_default_recombination_time']
         if singlet_fraction is None:
@@ -118,36 +127,35 @@ class FaX(plugin.InputPlugin):
             z                     -   Depth below the GATE mesh where the interaction occurs.
         As usual, all units in the same system used by pax (if you specify raw values: ns, cm)
         """
+
         if z < 0:
-            self.log.warning("Unphysical depth: %s cm. Not generating S2." % z)
+            self.log.warning("Unphysical depth: %s cm below gate. Not generating S2." % z)
             return []
-        self.log.debug("Creating an s2 from %s electrons..." %
-                       electrons_generated)
-        # Average drift time, taking faster drift velocity after gate into
-        # account
-        drift_time_mean = (self.config['gate_to_anode_distance'] - self.config['elr_gas_gap_length'])\
-            / self.config['drift_velocity_liquid_above_gate'] \
-            + z / self.config['drift_velocity_liquid']
+        self.log.debug("Creating an s2 from %s electrons..." % electrons_generated)
+
+        # Average drift time, taking faster drift velocity after gate into account
+        drift_time_mean = z / self.config['drift_velocity_liquid'] + \
+            (self.config['gate_to_anode_distance'] - self.config['elr_gas_gap_length']) \
+            / self.config['drift_velocity_liquid_above_gate']
+
         # Diffusion model from Sorensen 2011
         drift_time_stdev = math.sqrt(
             2 * self.config['diffusion_constant_liquid'] *
             drift_time_mean / (self.config['drift_velocity_liquid']) ** 2
         )
+
         # Absorb electrons during the drift
         electrons_seen = np.random.binomial(
-            n=electrons_generated,
-            p=self.config['electron_extraction_yield']
-            * math.exp(- drift_time_mean / self.config['electron_lifetime_liquid'])
+            n= electrons_generated,
+            p= self.config['electron_extraction_yield']
+               * math.exp(- drift_time_mean / self.config['electron_lifetime_liquid'])
         )
-        self.log.debug("    %s electrons survive the drift." %
-                       electrons_generated)
+        self.log.debug("    %s electrons survive the drift." % electrons_generated)
+
         # Calculate electron arrival times in the ELR region
-        e_arrival_times = t + \
-            np.random.exponential(
-                self.config['electron_trapping_time'], electrons_seen)
+        e_arrival_times = t + np.random.exponential(self.config['electron_trapping_time'], electrons_seen)
         if drift_time_stdev:
-            e_arrival_times += np.random.normal(
-                drift_time_mean, drift_time_stdev, electrons_seen)
+            e_arrival_times += np.random.normal(drift_time_mean, drift_time_stdev, electrons_seen)
         return e_arrival_times
 
     def s2_scintillation(self, electron_arrival_times):
@@ -313,14 +321,16 @@ class FaX(plugin.InputPlugin):
             offsets = pmt_pulse_centers % dt
             center_index = (pmt_pulse_centers - offsets) / dt
             if len(all_photons) > self.config['use_simplified_simulator_from']:
-                # Assume a delta function single photon pulse, then convolve with the actual single-photon pulse
-                # This effectively assumes photons always arrive at the start
-                # of a digitizer t-bin, but is much faster
+                # Start with a delta function single photon pulse, then convolve with one actual single-photon pulse
+                # This effectively assumes photons always arrive at the start of a digitizer t-bin, but is much faster
                 pulse_counts = Counter(center_index)
                 current_wave = np.array([pulse_counts[n] for n in range(
                     n_samples)]) * self.config['gains'][channel] * units.electron_charge / dt
-                current_wave = np.convolve(
-                    current_wave, self.normalized_pulse, mode='same')
+                # Calculate a normalized pmt pulse, for use in convolution later (only
+                # for large peaks)
+                normalized_pulse = self.pmt_pulse_current(gain=1)
+                normalized_pulse /= np.sum(normalized_pulse)
+                current_wave = np.convolve(current_wave, normalized_pulse, mode='same')
             else:
                 # Do the full, slower simulation for each single-photon pulse
                 current_wave = np.zeros(n_samples)
@@ -330,7 +340,8 @@ class FaX(plugin.InputPlugin):
                     # do their diffs/dt
                     current_wave[
                         # +1 due to np.diff in pmt_pulse_current
-                        center_index[i] - self.samples_before_pulse_center + 1: center_index[i] + 1 + self.samples_after_pulse_center
+                        center_index[i] - self.samples_before_pulse_center + 1 :
+                        center_index[i] + 1 + self.samples_after_pulse_center
                     ] += self.pmt_pulse_current(
                         # Really a Poisson (although mean is so high it is very
                         # close to a Gauss)
@@ -354,13 +365,20 @@ class FaX(plugin.InputPlugin):
 
         return start_time, pmt_waveforms
 
-    def s2(self, electrons, t=0., z=0.):
+    def s2(self, electrons, t=0., z=0., x=0., y=0.):
+        electron_times = self.s2_electrons(electrons_generated=electrons, t=t, z=z)
+        photon_times = self.s2_scintillation(electron_times)
+        self.truth_peaks.append({
+            'signal_type': 's2',
+            'x': x, 'y': y, 'z': z,
+            't_interaction': t,
+            'photons': len(photon_times),
+            't_photons': np.mean(photon_times),
+            'electrons': len(electron_times),
+            'e_cloud_sigma': np.std(electron_times),
+        })
         return self.hitlist_to_waveforms(
-            self.photons_to_hitlist(
-                self.s2_scintillation(
-                    self.s2_electrons(electrons_generated=electrons, t=t, z=z)
-                )
-            ),
+            self.photons_to_hitlist(photon_times),
         )
 
     def s1(self, photons, t=0, recombination_time=None, singlet_fraction=None):
@@ -371,12 +389,16 @@ class FaX(plugin.InputPlugin):
         :param singlet_fraction: Recombination time (\tau_r in Nest papers).
         :return: start_time, pmt_waveforms
         """
+        photon_times = self.s1_photons(photons, t, recombination_time, singlet_fraction)
+        self.truth_peaks.append({
+            'peak_type': 's1',
+            #'x': x, 'y': y, 'z': z,
+            't_interaction': t,
+            'photons': len(photon_times),
+            't_photons': np.mean(photon_times),
+        })
         return self.hitlist_to_waveforms(
-            self.photons_to_hitlist(
-                self.s1_photons(
-                    photons, t, recombination_time, singlet_fraction
-                )
-            ),
+            self.photons_to_hitlist(photon_times),
         )
 
     def get_events(self):
@@ -384,19 +406,24 @@ class FaX(plugin.InputPlugin):
         event_number = 0
         for instructions in self.get_instructions_for_next_event():
             for repetition_i in range(self.config['event_repetitions']):
-                # Make (start_time, waveform matrix) tuples for every s1/s2 we
-                # have to generate
+                self.truth_peaks = []
+                # Make (start_time, waveform matrix) tuples for every s1/s2 we have to generate
                 signals = []
                 for q in instructions:
                     self.log.debug("Simulating %s photons and %s electrons at %s cm depth, at t=%s ns" % (
                         q['s1_photons'], q['s2_electrons'], q['depth'], q['t']
                     ))
                     if int(q['s1_photons']):
-                        signals += [self.s1(int(q['s1_photons']),
-                                            t=float(q['t']))]
+                        signals += [self.s1(
+                            int(q['s1_photons']),
+                            t=float(q['t'])
+                        )]
                     if int(q['s2_electrons']):
-                        signals += [self.s2(int(q['s2_electrons']),
-                                            z=float(q['depth']) * units.cm, t=float(q['t']))]
+                        signals += [self.s2(
+                            int(q['s2_electrons']),
+                            z=float(q['depth']) * units.cm,
+                            t=float(q['t'])
+                        )]
 
                 # Remove empty signals (None) from signal list
                 signals = [s for s in signals if s is not None]
@@ -407,22 +434,24 @@ class FaX(plugin.InputPlugin):
 
                 # Combine everything into a single waveform matrix
                 # Baseline addition & flipping down is done here
-                self.log.debug(
-                    "Combining %s signals into a single matrix" % len(signals))
+                self.log.debug("Combining %s signals into a single matrix" % len(signals))
                 start_time_offset = min([s[0] for s in signals])
-                event_length = int((2 * self.config['event_padding'] + max(
-                    [s[0] - start_time_offset for s in signals])) / self.dt + max([s[1].shape[1] for s in signals]))
-                pmt_waveforms = self.config[
-                    'digitizer_baseline'] * np.ones((len(self.channels), event_length), dtype=np.int16)
+                # Compute event length in samples
+                event_length = int(
+                     2 * self.config['event_padding'] / self.dt +
+                     max([s[0] - start_time_offset for s in signals]) / self.dt +
+                     max([s[1].shape[1] for s in signals])
+                )
+                pmt_waveforms = self.config['digitizer_baseline'] *\
+                                np.ones((len(self.channels), event_length), dtype=np.int16)
                 for s in signals:
                     start_index = int(
-                        (s[0] - start_time_offset + self.config['event_padding']) / self.dt)
+                        (s[0] - start_time_offset + self.config['event_padding']) / self.dt
+                    )
                     # NOTE: MINUS!
-                    pmt_waveforms[
-                        :, start_index:start_index + s[1].shape[1]] -= s[1]
+                    pmt_waveforms[:, start_index:start_index + s[1].shape[1]] -= s[1]
                 # Clipping
-                pmt_waveforms = np.clip(
-                    pmt_waveforms, 0, 2 ** (self.config['digitizer_bits']))
+                pmt_waveforms = np.clip(pmt_waveforms, 0, 2 ** (self.config['digitizer_bits']))
 
                 # Create and yield a pax event
                 self.log.debug("Creating pax event")
@@ -430,8 +459,7 @@ class FaX(plugin.InputPlugin):
                 event.event_number = event_number
                 now = int(time.time() * units.s)
                 event.start_time = int(now)
-                event.stop_time = event.start_time + \
-                    int(event_length * self.dt)
+                event.stop_time = event.start_time + int(event_length * self.dt)
                 event.sample_duration = self.dt
                 # Make a single occurrence for the entire event... yeah, this
                 # should be changed
@@ -442,6 +470,17 @@ class FaX(plugin.InputPlugin):
                 self.log.debug("These numbers should be the same: %s %s %s %s" % (
                     pmt_waveforms.shape[1], event_length, event.length(), event.occurrences[1][0][1].shape))
                 yield event
+
+                # Write the truth of the event
+                # Remove start time offset from all times in the peak
+                for p in self.truth_peaks:
+                    p['t_interaction'] -= start_time_offset
+                    p['t_photons'] -= start_time_offset
+                self.write_truth({
+                    'event_number' : event_number,
+                    'peaks' : self.truth_peaks
+                })
+
                 event_number += 1
 
     def get_instructions_for_next_event(self):

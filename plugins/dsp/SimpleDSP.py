@@ -1,4 +1,5 @@
 import numpy as np
+import pax
 from pax import plugin, units, datastructure, dsputils
 
 
@@ -49,13 +50,17 @@ class BuildWaveforms(plugin.TransformPlugin):
                 # Check for pulses starting right after previous ones: don't use these for baseline computation
                 if i != 0 and start_index == waveform_occurrences[i - 1][0] + len(waveform_occurrences[i - 1][1]):
                     continue
-                # Pulses that start at the very beginning are also off-limits, they may not have
-                if start_index == 0:
-                    continue
+                # Can't use this: fax waveforms only have one pulse!
+                # # Pulses that start at the very beginning are also off-limits
+                # # if start_index == 0:
+                # #     continue
                 baseline_samples.extend(pulse_wave[:self.config['baseline_samples_at_start_of_pulse']])
-            # Use the mean of the median 20% for the baseline: ensures outliers don't skew computed baseline
+            # Use the mean of the median (1-toss_outlier_fraction) for the baseline: ensures outliers don't skew computed baseline
+            if len(baseline_samples) == 0:
+                raise RuntimeError("No samples selected for baseline computation!")
             event.baselines[channel] = np.mean(sorted(baseline_samples)[
-                int(0.4 * len(baseline_samples)):int(0.6 * len(baseline_samples))
+                int(   self.config['toss_outlier_fraction']/2  * len(baseline_samples)):
+                int((1-self.config['toss_outlier_fraction']/2) * len(baseline_samples))
             ])
             event.baseline_stdevs[channel] = np.std(baseline_samples)
 
@@ -125,7 +130,7 @@ class FindPeaks(plugin.TransformPlugin):
                 for itv_left, itv_right in dsputils.intervals_above_threshold(region_filtered, pf['threshold']):
                     p = dsputils.find_peak_in_interval(region_filtered, region_unfiltered, itv_left, itv_right,
                                                        pf['peak_integration_bound'], region_offset=region_left)
-                    # Should we already label the peak. Dangerous: will skip the peak identifier!
+                    # Should we already label the peak?
                     if 'peak_label' in pf:
                         p.type = pf['peak_label']
                     if p is not None:   # Currently not used
@@ -135,6 +140,7 @@ class FindPeaks(plugin.TransformPlugin):
             self.log.debug("Found %s peaks in %s." % (len(peaks), pf['peakfinding_wave']))
             event.peaks.extend(peaks)
         return event
+
 
 
 class IdentifyPeaks(plugin.TransformPlugin):
@@ -154,6 +160,39 @@ class IdentifyPeaks(plugin.TransformPlugin):
                 p.type = 's2'
                 #self.log.debug("%s-%s-%s: S2" % (p.left, p.index_of_maximum, p.right))
         return event
+
+
+class ComputePeakProperties(plugin.TransformPlugin):
+
+    def transform_event(self, event):
+        dt = self.config['digitizer_t_resolution']
+        for peak in event.peaks:
+            peak.area_per_pmt = np.sum(event.pmt_waveforms[:, peak.left:peak.right], axis=1)
+            peak.area = np.sum(peak.area_per_pmt)   #Todo: exclude negative area channels if option given
+            peak.coincidence_level = len(np.where(peak.area_per_pmt >= self.config['minimum_area'])[0])
+            if not 'keep_Chris_happy' in self.config or self.config['keep_Chris_happy'] == True:
+                continue
+            # Dynamically set lots of event class attributes
+            for waveform in event.waveforms:
+                peak_wave = waveform.samples[peak.left : peak.right]
+                secretly_set_attribute(peak, waveform.name + '_' + 'area',           np.sum(peak_wave))
+                max_idx = np.argmax(peak_wave)
+                secretly_set_attribute(peak, waveform.name + '_' + 'argmax',         peak.left + max_idx)
+                secretly_set_attribute(peak, waveform.name + '_' + 'height',         peak_wave[max_idx])
+                secretly_set_attribute(peak, waveform.name + '_' + 'inferred_width',
+                                       dt * 2 * getattr(peak, waveform.name + '_' + 'area') / getattr(peak, waveform.name + '_' + 'height')
+                )
+                # Width computations are expensive... comment these out if you're in a rush
+                for name, value in (('fwhm', 0.5), ('fwqm', 0.25), ('fwtm', 0.1)):
+                    secretly_set_attribute(peak, waveform.name + '_' + name,
+                        dsputils.width_at_fraction(peak_wave, fraction_of_max=value,  max_idx=max_idx) * dt
+                    )
+        return event
+
+def secretly_set_attribute(object, name, value):
+    from pax.micromodels.fields import IntegerField, FloatField
+    object.__setattr__(object, name, FloatField())
+    object.__setattr__(object, name, value)
 
 
 class SplitPeaks(plugin.TransformPlugin):

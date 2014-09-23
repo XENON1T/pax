@@ -44,17 +44,16 @@ class Peak(Model):
     index_of_maximum = IntegerField()
     height = IntegerField()  #: Height of highest point in peak (in pe/bin)
     left = IntegerField()  #: Index of left bound (inclusive) in sum waveform.
-    #: Index of right bound (exclusive) in sum waveform.
+    #: Index of right bound (for Xerawdp matching: exclusive; otherwise: inclusive) in sum waveform.
     right = IntegerField()
     #: Type of peak (e.g., 's1', 's2', 'veto_s1', ...)
     type = StringField(default='unknown')
-    #: Number of PMTs that see 'something significant' (depends on peakfinder)
-    coincidence_level = IntegerField()
 
-    #: Array of PMT numbers included in this peaks.
-    #:
-    #: This is added by PeakPostProcessing.MakeHitList
-    pmt_list = f.NumpyArrayField(dtype=np.uint16)
+    #: Array of areas in each PMT.
+    area_per_pmt = f.NumpyArrayField(dtype='float64')
+
+    #: Number of PMTs that see 'something significant' (depends on peakfinder??)
+    coincidence_level = IntegerField()
 
     #: Returns a list of reconstructed positions
     #:
@@ -174,21 +173,21 @@ class Event(Model):
         """
         return int(self.event_duration() / self.sample_duration)
 
-    def S1s(self, sort_key='area'):
+    def S1s(self, sort_key='area', reverse=True):
         """List of S1 (scintillation) signals
 
         Returns an :class:`pax.datastructure.Peak` class.
         """
-        return self._get_peaks_by_type('s1', sort_key)
+        return self._get_peaks_by_type('s1', sort_key, reverse)
 
-    def S2s(self, sort_key='area'):
+    def S2s(self, sort_key='area', reverse=True):
         """List of S2 (ionization) signals
 
         Returns an :class:`pax.datastructure.Peak` class.
         """
-        return self._get_peaks_by_type('s2', sort_key)
+        return self._get_peaks_by_type('s2', sort_key, reverse=reverse)
 
-    def _get_peaks_by_type(self, desired_type, sort_key):
+    def _get_peaks_by_type(self, desired_type, sort_key, reverse):
         """Helper function for retrieving only certain types of peaks
 
         You shouldn't be using this directly.
@@ -201,7 +200,8 @@ class Event(Model):
 
         # Sort the peaks by your sort key
         peaks = sorted(peaks,
-                       key=lambda x: getattr(x, sort_key))
+                       key=lambda x: getattr(x, sort_key),
+                       reverse=reverse)
 
         return peaks
 
