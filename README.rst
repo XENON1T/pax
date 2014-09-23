@@ -19,11 +19,11 @@ You can now install pax, which requires a github account ::
 
     pip install git+git://github.com/XENON1T/pax.git
 
-Now you should be able to run the command 'pax'.  For information on how to setup the code for contributing, please see the `relevant documentation section`_.
+Now you should be able to run the command 'paxer'.  For information on how to setup the code for contributing, please see the `relevant documentation section`_.
 
 .. _relevant documentation section: CONTRIBUTING.rst
 
-See pax --help for more detailed usage information.
+See paxer --help for more detailed usage information.
 
 If you want to do something fancy, you can create your own configuration file like:
 
@@ -33,7 +33,7 @@ If you want to do something fancy, you can create your own configuration file li
    my_extra_transforms = ["PosSimple.PosRecWeightedSum"]
    output = ["Plotting.PlottingWaveform"]
 
-and load it using pax --config_path YOURFILE. We already have a few example configs available in config, which you can load using pax --config NAME (with NAME, for example, XED_example or Mongo_example).
+and load it using paxer --config_path YOURFILE. We already have a few example configs available in config, which you can load using paxer --config NAME (with NAME, for example, XED_example or Mongo_example).
 
 Features
 --------
