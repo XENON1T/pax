@@ -29,7 +29,7 @@ setup(
 		'pax',
 	],
 	package_dir={'pax': 'pax'},
-	scripts = ['bin/pax'],
+	scripts = ['bin/paxer'],
 	include_package_data=True,
 	install_requires=requirements,
 	license="BSD",
