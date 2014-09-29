@@ -4,6 +4,8 @@ The DAQ uses MongoDB for input and output.  The classes defined hear allow the
 user to read data from the DAQ and also inject raw occurences into the DAQ.
 
 """
+import time
+import uuid
 
 import pymongo
 import numpy as np
@@ -31,8 +33,7 @@ class MongoDBInput(plugin.InputPlugin):
         self.number_of_events = self.cursor.count()
 
         if self.number_of_events == 0:
-            raise RuntimeError(
-                "No events found... did you run the event builder?")
+            raise RuntimeError("No events found... did you run the event builder?")
 
     def get_events(self):
         """Generator of events from Mongo
@@ -114,7 +115,7 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
                 raise RuntimeError("More than one control document found in %s." %
                                    self.config['collection'])
             elif len(control_docs) == 0:
-                self.log.error("Preexisting data, but no control document")
+                raise RuntimeError("Preexisting data, but no control document")
 
             self.control_doc = control_docs[0]
         else:
@@ -125,10 +126,10 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
             self.control_doc['starttime'] = None
             self.collection.insert(self.control_doc)
 
+        self.occurences = []
+
     def write_event(self, event):
         self.log.debug('Writing event')
-
-        occurences = []
 
         # We have to divide by the sample duration because the DAQ expects units
         # of 10 ns.  However, note that the division is done with a // operator.
@@ -140,8 +141,7 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
 
         assert isinstance(time, int)
 
-        if self.control_doc['starttime'] is None or\
-                time < self.control_doc['starttime']:
+        if self.control_doc['starttime'] is None or time < self.control_doc['starttime']:
             self.control_doc['starttime'] = time
 
         for pmt_num, payload in event.occurrences.items():
@@ -150,6 +150,7 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
 
                 occurence_doc = {}
 
+                occurence_doc['_id'] = uuid.uuid4()
                 occurence_doc['module'] = pmt_num  # TODO: fix wax
                 occurence_doc['channel'] = pmt_num
 
@@ -160,11 +161,25 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
                                        dtype=np.int16).tostring(),
                               0)
                 occurence_doc['data'] = data
+                for i in range(100):
+                    occurence_doc['data%d' % i] = data
 
-                occurences.append(occurence_doc)
+                self.occurences.append(occurence_doc)
 
-        self.collection.insert(occurences)
+        #self.handle_occurences()
+
+    def handle_occurences(self):
+        t0 = time.time()
+        self.collection.insert(self.occurences, w=0)
+        t1 = time.time()
+
+        self.log.fatal('t1 - t0 %d', t1-t0)
+
+        self.occurences = []
 
     def shutdown(self):
+        self.handle_occurences()
+        
         self.control_doc['data_taking_ended'] = True
-        self.collection.save(self.control_doc)
+        #self.collection.save(self.control_doc)
+

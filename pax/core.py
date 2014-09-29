@@ -16,13 +16,7 @@ import pax
 from pax import units
 
 # Store the directory of pax (i.e. parent dir of this file's directory) as pax_dir
-pax_dir = os.path.join(
-    os.path.dirname(
-        os.path.abspath(inspect.getfile(inspect.currentframe()))
-    ),
-    os.pardir
-)
-
+pax_dir = os.path.join(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))))# , os.pardir)
 
 ##
 # Configuration handling
@@ -32,7 +26,9 @@ def get_named_configuration_options():
     """ Return the names of all named configurations
     """
     config_files =[]
-    for filename in glob.glob(os.path.join(pax_dir, 'config', '*.ini')):
+    for filename in glob.glob(os.path.join(pax_dir,
+                                           'config',
+                                           '*.ini')):
         filename = os.path.basename(filename)
         m = re.match(r'(\w+)\.ini', filename)
         if m is None:
@@ -54,7 +50,9 @@ def parse_named_configuration(config_name):
     :param config_name: name of the config (without .ini)
     :return: output of parse_configuration_file
     """
-    config = parse_configuration_file(os.path.join(pax_dir, 'config', config_name + '.ini'))
+    config = parse_configuration_file(os.path.join(pax_dir,
+                                                   'config',
+                                                   config_name + '.ini'))
     return config
 
 def parse_configuration_file(file_object):
@@ -111,7 +109,8 @@ def load_file_into_configparser(config, config_file):
         # This file inherits from another config file in the 'config' directory
         global pax_dir
         # The [1:-1] removes the quotes around the value... could do another eval, but lazy
-        parent_file_path = os.path.join(pax_dir, 'config',
+        parent_file_path = os.path.join(pax_dir,
+                                        'config',
                                         config['pax']['parent_configuration'][1:-1] + '.ini')
     elif 'parent_configuration_file' in config['pax']:
         # This file inherits from a user-defined config file
