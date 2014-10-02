@@ -16,7 +16,7 @@ import pax
 from pax import units
 
 # Store the directory of pax (i.e. parent dir of this file's directory) as pax_dir
-pax_dir = os.path.join(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))))# , os.pardir)
+pax_dir = os.path.join(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))))
 
 ##
 # Configuration handling

@@ -66,8 +66,7 @@ class XedInput(plugin.InputPlugin):
         self.event_positions = np.fromfile(self.input, dtype=np.dtype("<u4"),
                                            count=self.file_metadata['event_index_size'])
         self.first_event = self.file_metadata['first_event_number']
-        self.last_event = self.file_metadata[
-            'events_in_file'] - self.file_metadata['first_event_number'] - 1
+        self.last_event =  self.file_metadata['first_event_number'] + self.file_metadata['events_in_file'] - 1
 
     def shutdown(self):
         self.input.close()
@@ -75,15 +74,17 @@ class XedInput(plugin.InputPlugin):
     # Temp for old API compatibility
     def get_events(self):
         for event_position_i, event_position in enumerate(self.event_positions):
-            yield self.get_single_event(event_position_i + self.file_metadata['first_event_number'])
+            yield self.get_single_event(self.file_metadata['first_event_number'] + event_position_i)
 
     def get_single_event(self, event_number):
         # Superfluous, Pax should do this check already:
         if not self.first_event <= event_number <= self.last_event:
-            raise RuntimeError("Event number not present in XED file!")
+            raise RuntimeError("Event %s asked, but XED file contains only event %s - %s!" % (
+                event_number, self.first_event, self.last_event
+            ))
 
         # Seek to the requested event
-        self.input.seek(self.event_positions[event_number] - self.first_event)
+        self.input.seek(self.event_positions[event_number - self.first_event])
 
         # Read event metadata, check if we can read this.
         event_layer_metadata = np.fromfile(self.input,
