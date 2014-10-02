@@ -13,7 +13,7 @@ class TestPrintToScreen(unittest.TestCase):
     def setUp(self):
         conf = core.parse_named_configuration('default')
         plugin_source = core.get_plugin_source(conf)
-        self.obj = core.instantiate('PrintToScreen.PrintToScreen',
+        self.obj = core.instantiate_plugin('PrintToScreen.PrintToScreen',
                                    plugin_source,
                                    conf)
 

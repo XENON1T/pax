@@ -131,7 +131,7 @@ def load_file_into_configparser(config, config_file):
 # Plugin handling
 ##
 
-def instantiate(name, plugin_source, config, log=logging):
+def instantiate_plugin(name, plugin_source, config, log=logging):
     """Take plugin class name and build class from it"""
     log.debug('Instantiating %s' % name)
     name_module, name_class = name.split('.')
@@ -226,7 +226,7 @@ def process_single_event(actions, event, log):
         event = block.process_event(event)
 
 
-def processor(config, log_spec, events_to_process=None, stop_after=None):
+def processor(config, log_spec, events_to_process=None, stop_after=None, input_spec=None):
     """Run the processor according to the configuration dictionary
 
     :param config: dictionary with configuration values
@@ -257,11 +257,14 @@ def processor(config, log_spec, events_to_process=None, stop_after=None):
                                          'output')
     actions += output   # Append output to actions... for now
 
+    # Set the input specification to config['DEFAULT']['input_specification']
+    config[input]['input_specification'] = input_spec
+
     # Gather information about plugins
     plugin_source = get_plugin_source(config, log)
 
-    input =    instantiate(input, plugin_source, config, log)
-    actions = [instantiate(x,     plugin_source, config, log) for x in actions]
+    input =    instantiate_plugin(input, plugin_source, config, log)
+    actions = [instantiate_plugin(x,     plugin_source, config, log) for x in actions]
 
     # How should the events be generated?
     if events_to_process is not None:

@@ -56,11 +56,14 @@ class XedInput(plugin.InputPlugin):
     ])
 
     def startup(self):
-        self.input = open(self.config['filename'], 'rb')
+        if self.config['input_specification'] is not None:
+            filename = self.config['input_specification']
+        else:
+            filename = self.config['filename']
+        self.input = open(filename, 'rb')
 
         # Read metadata and event positions from the XED file
-        self.file_metadata = np.fromfile(
-            self.input, dtype=XedInput.file_header, count=1)[0]
+        self.file_metadata = np.fromfile(self.input, dtype=XedInput.file_header, count=1)[0]
         assert self.file_metadata[
             'events_in_file'] == self.file_metadata['event_index_size']
         self.event_positions = np.fromfile(self.input, dtype=np.dtype("<u4"),

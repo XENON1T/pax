@@ -20,7 +20,7 @@ class TestPosRecWeightedSum(unittest.TestCase):
     def setUp(self):
         self.conf = core.parse_named_configuration('default')
         self.plugin_source = core.get_plugin_source(self.conf)
-        self.objy = core.instantiate('PosSimple.PosRecWeightedSum',
+        self.objy = core.instantiate_plugin('PosSimple.PosRecWeightedSum',
                                     self.plugin_source,
                                     self.conf)
 
