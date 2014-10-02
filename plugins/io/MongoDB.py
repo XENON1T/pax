@@ -92,12 +92,21 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
         try:
             self.client = pymongo.MongoClient(self.config['address'])
             self.database = self.client[self.config['database']]
-            self.collection = self.database[self.config['collection']]
         except pymongo.errors.ConnectionFailure as e:
             self.log.fatal("Cannot connect to database")
             self.log.exception(e)
             raise
 
+        if self.config['collection'] in self.database.collection_names():
+            self.collection = self.database[self.config['collection']]
+            if 'capped' not in self.collection.options() or self.collection.options()['capped']:
+                self.log.error("not capped")
+                #raise RuntimeError("Collection exists, but not capped")
+        else:
+            self.database.create_collection(self.config['collection'],
+                                            capped = True,
+                                            size = self.config['collection_size'])
+        self.collection = self.database[self.config['collection']]
         # TODO (tunnell): Sort by event number
         self.cursor = self.collection.find()
         self.number_of_events = self.cursor.count()
@@ -115,9 +124,15 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
                 raise RuntimeError("More than one control document found in %s." %
                                    self.config['collection'])
             elif len(control_docs) == 0:
-                raise RuntimeError("Preexisting data, but no control document")
-
-            self.control_doc = control_docs[0]
+                self.log.error("Preexisting data, but no control document")
+                self.control_doc = {} # temp
+                self.control_doc['compressed'] = False #temp
+                self.control_doc['data_taking_ended'] = False # temp
+                self.control_doc['runtype'] = 'xenon100' # temp
+                self.control_doc['starttime'] = None # temp
+                self.collection.insert(self.control_doc) # temp
+            else:
+                self.control_doc = control_docs[0]
         else:
             self.control_doc = {}
             self.control_doc['compressed'] = False
@@ -161,19 +176,34 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
                                        dtype=np.int16).tostring(),
                               0)
                 occurence_doc['data'] = data
-                for i in range(100):
-                    occurence_doc['data%d' % i] = data
-
+                
                 self.occurences.append(occurence_doc)
 
         #self.handle_occurences()
 
+    @staticmethod
+    def chunks(l, n):
+        """ Yield successive n-sized chunks from l.
+        """
+        for i in range(0, len(l), n):
+            yield l[i:i+n]
+
     def handle_occurences(self):
+        docs = []
+
+        for occurences in list(self.chunks(self.occurences,
+                                           1000)):
+            
+                docs.append({'test' : 0,
+                             'docs' : occurences})
+
         t0 = time.time()
-        self.collection.insert(self.occurences, w=0)
+        while 1:
+            self.collection.insert(docs, #self.occurences,
+                                   w=0)
         t1 = time.time()
 
-        self.log.fatal('t1 - t0 %d', t1-t0)
+        self.log.fatal('dt\t %d', t1-t0)
 
         self.occurences = []
 
