@@ -12,7 +12,7 @@ from pax import core
 parser = argparse.ArgumentParser(description="Process XENON1T data")
 
 # Input specification
-parser.add_argument('input', default=None, help="File or database to input from", nargs='?')
+parser.add_argument('input', default=None, help="File or database to read events from", nargs='?')
 
 # Log level control
 parser.add_argument('--log', default='INFO', help="Set log level, e.g. 'debug'")
@@ -63,4 +63,5 @@ core.processor(
     log_spec=args.log,
     events_to_process=args.event,
     stop_after=args.stop_after,
+    input_spec=args.input
 )
