@@ -19,7 +19,7 @@ test_requirements = requirements + ['flake8',
 
 setup(
 	name='pax',
-	version='1.1.0',
+	version='1.2.0',
 	description='PAX is used for doing digital signal processing and other data processing on the XENON1T raw data',
 	long_description=readme + '\n\n' + history,
 	author='Christopher Tunnell',
