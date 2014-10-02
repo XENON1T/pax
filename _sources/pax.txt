@@ -11,6 +11,14 @@ Subpackages
 Submodules
 ----------
 
+pax.core module
+---------------
+
+.. automodule:: pax.core
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pax.datastructure module
 ------------------------
 
@@ -31,14 +39,6 @@ pax.format module
 -----------------
 
 .. automodule:: pax.format
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pax.pax module
---------------
-
-.. automodule:: pax.pax
     :members:
     :undoc-members:
     :show-inheritance:

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Event format &mdash; Processor for Analyzing XENON1T 1.0.0 documentation</title>
+    <title>Event format &mdash; Processor for Analyzing XENON1T 1.1.0 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.0.0',
+        VERSION:     '1.1.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 1.0.0 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 1.1.0 documentation" href="index.html" />
     <link rel="next" title="Plugins" href="plugin.html" />
     <link rel="prev" title="Usage" href="usage.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="usage.html" title="Usage"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 1.0.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 1.1.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -61,14 +61,14 @@
 <dd><p>Event class</p>
 <dl class="method">
 <dt id="pax.datastructure.Event.S1s">
-<tt class="descname">S1s</tt><big>(</big><em>sort_key='area'</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.S1s"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.S1s" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">S1s</tt><big>(</big><em>sort_key='area'</em>, <em>reverse=True</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.S1s"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.S1s" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of S1 (scintillation) signals</p>
 <p>Returns an <a class="reference internal" href="pax.html#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a> class.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="pax.datastructure.Event.S2s">
-<tt class="descname">S2s</tt><big>(</big><em>sort_key='area'</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.S2s"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.S2s" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">S2s</tt><big>(</big><em>sort_key='area'</em>, <em>reverse=True</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.S2s"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.S2s" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of S2 (ionization) signals</p>
 <p>Returns an <a class="reference internal" href="pax.html#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a> class.</p>
 </dd></dl>
@@ -176,9 +176,15 @@ Or rather, it starts from January 1, 1970.</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="pax.datastructure.Peak.area_per_pmt">
+<tt class="descname">area_per_pmt</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.area_per_pmt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Array of areas in each PMT.</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="pax.datastructure.Peak.coincidence_level">
 <tt class="descname">coincidence_level</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.coincidence_level" title="Permalink to this definition">¶</a></dt>
-<dd><p>Number of PMTs that see &#8216;something significant&#8217; (depends on peakfinder)</p>
+<dd><p>Number of PMTs that see &#8216;something significant&#8217; (depends on peakfinder??)</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -200,13 +206,6 @@ Or rather, it starts from January 1, 1970.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pax.datastructure.Peak.pmt_list">
-<tt class="descname">pmt_list</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.pmt_list" title="Permalink to this definition">¶</a></dt>
-<dd><p>Array of PMT numbers included in this peaks.</p>
-<p>This is added by PeakPostProcessing.MakeHitList</p>
-</dd></dl>
-
-<dl class="attribute">
 <dt id="pax.datastructure.Peak.reconstructed_positions">
 <tt class="descname">reconstructed_positions</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.reconstructed_positions" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a list of reconstructed positions</p>
@@ -216,7 +215,7 @@ Or rather, it starts from January 1, 1970.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.right">
 <tt class="descname">right</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.right" title="Permalink to this definition">¶</a></dt>
-<dd><p>Index of right bound (exclusive) in sum waveform.</p>
+<dd><p>Index of right bound (for Xerawdp matching: exclusive; otherwise: inclusive) in sum waveform.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -345,7 +344,7 @@ Or rather, it starts from January 1, 1970.</p>
         <li class="right" >
           <a href="usage.html" title="Usage"
              >previous</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 1.0.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 1.1.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

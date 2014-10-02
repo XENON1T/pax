@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.dsputils &mdash; Processor for Analyzing XENON1T 1.0.0 documentation</title>
+    <title>pax.dsputils &mdash; Processor for Analyzing XENON1T 1.1.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.0.0',
+        VERSION:     '1.1.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 1.0.0 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 1.1.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body>
@@ -36,7 +36,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">Processor for Analyzing XENON1T 1.0.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Processor for Analyzing XENON1T 1.1.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -169,6 +169,11 @@
     <span class="n">right</span> <span class="o">+=</span> <span class="n">max_idx</span>
     <span class="n">left</span> <span class="o">=</span> <span class="n">max_idx</span> <span class="o">-</span> <span class="n">left</span>
     <span class="k">return</span> <span class="p">(</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="width_at_fraction"><a class="viewcode-back" href="../../pax.html#pax.dsputils.width_at_fraction">[docs]</a><span class="k">def</span> <span class="nf">width_at_fraction</span><span class="p">(</span><span class="n">peak_wave</span><span class="p">,</span> <span class="n">fraction_of_max</span><span class="p">,</span> <span class="n">max_idx</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns width of a peak IN SAMPLES at fraction of maximum&quot;&quot;&quot;</span>
+    <span class="n">left</span><span class="p">,</span> <span class="n">right</span> <span class="o">=</span> <span class="n">peak_bounds</span><span class="p">(</span><span class="n">peak_wave</span><span class="p">,</span> <span class="n">max_idx</span><span class="o">=</span><span class="n">max_idx</span><span class="p">,</span> <span class="n">fraction_of_max</span><span class="o">=</span><span class="n">fraction_of_max</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">right</span> <span class="o">-</span> <span class="n">left</span> <span class="o">+</span> <span class="mi">1</span>
 
 
 <span class="c"># Stolen from https://github.com/numpy/numpy/issues/2269</span>
@@ -185,10 +190,11 @@
     <span class="c"># HACK: None found... return the last index</span>
     <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
 
+
+
 <span class="c">##</span>
 <span class="c"># Peak processing routines</span>
 <span class="c">##</span>
-
 </div>
 <div class="viewcode-block" id="free_regions"><a class="viewcode-back" href="../../pax.html#pax.dsputils.free_regions">[docs]</a><span class="k">def</span> <span class="nf">free_regions</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Find the free regions in the event&#39;s waveform - regions where peaks haven&#39;t yet been found&quot;&quot;&quot;</span>
@@ -348,7 +354,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">Processor for Analyzing XENON1T 1.0.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Processor for Analyzing XENON1T 1.1.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>

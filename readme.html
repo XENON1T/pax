@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Processor for Analyzing XENON1T &mdash; Processor for Analyzing XENON1T 1.0.0 documentation</title>
+    <title>Processor for Analyzing XENON1T &mdash; Processor for Analyzing XENON1T 1.1.0 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.0.0',
+        VERSION:     '1.1.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 1.0.0 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 1.1.0 documentation" href="index.html" />
     <link rel="next" title="Installation" href="installation.html" />
     <link rel="prev" title="Welcome to processor for Analyzing XENON1T’s documentation!" href="index.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="index.html" title="Welcome to processor for Analyzing XENON1T’s documentation!"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 1.0.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 1.1.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -70,23 +70,16 @@ source paxenv/bin/activate
 <div class="highlight-python"><div class="highlight"><pre>pip install git+git://github.com/XENON1T/pax.git
 </pre></div>
 </div>
-<p>Now you should be able to run the command &#8216;paxit&#8217;.  For information on how to setup the code for contributing, please see the <a class="reference external" href="CONTRIBUTING.rst">relevant documentation section</a>.</p>
-<p>If you want to do something fancy, you can create and run your own Python file that could be, for example, the following</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">pax</span>
-
-<span class="c"># Any configuration to overload</span>
-<span class="n">config_overload</span> <span class="o">=</span> <span class="s">&quot;&quot;&quot;</span>
-<span class="s">[pax]</span>
-<span class="s">input = &#39;MongoDB.MongoDBInput&#39;</span>
-<span class="s">my_extra_transforms = [&quot;PosSimple.PosRecWeightedSum&quot;]</span>
-<span class="s">output = [&quot;Plotting.PlottingWaveform&quot;]</span>
-<span class="s">&quot;&quot;&quot;</span>
-
-<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
-   <span class="n">pax</span><span class="o">.</span><span class="n">processor</span><span class="p">(</span><span class="n">config_overload</span><span class="p">)</span>
-</pre></div>
-</div>
-<p>A list of defaults is in pax/defaults.ini.</p>
+<p>Now you should be able to run the command &#8216;paxer&#8217;.  For information on how to setup the code for contributing, please see the <a class="reference external" href="CONTRIBUTING.rst">relevant documentation section</a>.</p>
+<p>See paxer &#8211;help for more detailed usage information.</p>
+<p>If you want to do something fancy, you can create your own configuration file like:</p>
+<blockquote>
+<div>[pax]
+parent_configuration = &#8216;default&#8217;    # Inherit from the default configuration
+input = &#8216;MongoDB.MongoDBInput&#8217;
+my_extra_transforms = [&#8220;PosSimple.PosRecWeightedSum&#8221;]
+output = [&#8220;Plotting.PlottingWaveform&#8221;]</div></blockquote>
+<p>and load it using paxer &#8211;config_path YOURFILE. We already have a few example configs available in config, which you can load using paxer &#8211;config NAME (with NAME, for example, XED_example or Mongo_example).</p>
 </div>
 <div class="section" id="features">
 <h2>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
@@ -107,9 +100,10 @@ source paxenv/bin/activate
 <div><ul class="simple">
 <li>MongoDB (used online for DAQ)</li>
 <li>XED (XENON100 format)</li>
-<li>ROOT</li>
+<li>HDF5 (default output)</li>
 <li>Pickle</li>
 <li>Plots</li>
+<li>DAQ injector</li>
 </ul>
 </div></blockquote>
 <ul class="simple">
@@ -191,7 +185,7 @@ source paxenv/bin/activate
         <li class="right" >
           <a href="index.html" title="Welcome to processor for Analyzing XENON1T’s documentation!"
              >previous</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 1.0.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 1.1.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
