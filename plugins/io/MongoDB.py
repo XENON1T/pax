@@ -8,6 +8,7 @@ import time
 import uuid
 
 import pymongo
+import snappy
 import numpy as np
 from pax.datastructure import Event
 from bson.binary import Binary
@@ -97,15 +98,6 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
             self.log.exception(e)
             raise
 
-        if self.config['collection'] in self.database.collection_names():
-            self.collection = self.database[self.config['collection']]
-            if 'capped' not in self.collection.options() or self.collection.options()['capped']:
-                self.log.error("not capped")
-                #raise RuntimeError("Collection exists, but not capped")
-        else:
-            self.database.create_collection(self.config['collection'],
-                                            capped = True,
-                                            size = self.config['collection_size'])
         self.collection = self.database[self.config['collection']]
         # TODO (tunnell): Sort by event number
         self.cursor = self.collection.find()
@@ -125,17 +117,11 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
                                    self.config['collection'])
             elif len(control_docs) == 0:
                 self.log.error("Preexisting data, but no control document")
-                self.control_doc = {} # temp
-                self.control_doc['compressed'] = False #temp
-                self.control_doc['data_taking_ended'] = False # temp
-                self.control_doc['runtype'] = 'xenon100' # temp
-                self.control_doc['starttime'] = None # temp
-                self.collection.insert(self.control_doc) # temp
             else:
                 self.control_doc = control_docs[0]
         else:
             self.control_doc = {}
-            self.control_doc['compressed'] = False
+            self.control_doc['compressed'] = True
             self.control_doc['data_taking_ended'] = False
             self.control_doc['runtype'] = 'xenon100'
             self.control_doc['starttime'] = None
@@ -171,15 +157,17 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
 
                 occurence_doc['time'] = time + sample_position
 
+                compressed_data = snappy.compress(np.array(samples_occurrence,
+                                                           dtype=np.int16).tostring())
+
                 # Convert raw samples into BSON format
-                data = Binary(np.array(samples_occurrence,
-                                       dtype=np.int16).tostring(),
-                              0)
+                data = Binary(compressed_data, 0)
+
                 occurence_doc['data'] = data
                 
                 self.occurences.append(occurence_doc)
 
-        #self.handle_occurences()
+        self.handle_occurences()
 
     @staticmethod
     def chunks(l, n):
@@ -198,12 +186,11 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
                              'docs' : occurences})
 
         t0 = time.time()
-        while 1:
-            self.collection.insert(docs, #self.occurences,
-                                   w=0)
+        self.collection.insert(docs, #self.occurences,
+                               w=0)
         t1 = time.time()
 
-        self.log.fatal('dt\t %d', t1-t0)
+        self.log.info('dt\t %d', t1-t0)
 
         self.occurences = []
 
