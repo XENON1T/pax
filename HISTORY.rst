@@ -3,6 +3,14 @@
 History
 -------
 
+
+------------------
+1.2.0 (2014-10-02)
+------------------
+
+* DAQ injector - can inject data into DAQs.
+* Nested configurations - better handling of configurations and allows for nesting
+
 ------------------
 1.1.0 (2014-08-29)
 ------------------
