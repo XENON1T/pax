@@ -2,79 +2,76 @@ from tables import openFile
 import matplotlib.pyplot as plt
 import numpy as np
 
-# Open the file for reading
-file_mongo = openFile("output_mongo.h5", mode = "r")
-file_xed = openFile("output_xed.h5", mode = "r")
+import ROOT
 
-# Get the root group
+root_filename = 'data/trim_xe100_run10_AmBe_cuts_run_10.root'
+dataset = 'xe100_110210_1926_00000'
 
-results = []
+root_file = ROOT.TFile(root_filename)
+root_trees = {}
+for i in [1, 2, 3]:
+    key = 'T%d' % i
+    root_trees[key] = root_file.Get(key)
 
-skipped_none_in_xed = []
-good = []
-all = []
+pax_file = None
 
-for event_xed in file_xed.root.event_table:
-    peak_xed = None
-    for peak_xed in file_xed.root.peak_table.where("(event_number == %d) & (type == b's2')" % event_xed['event_number']):
-        break
+assert root_trees['T1'].GetEntries() == root_trees['T2'].GetEntries()
 
-    if peak_xed == None:
-        skipped_none_in_xed.append(event_xed['event_number'])
+variables_to_compare = {'S2[0]' : []}
+
+for i in range(root_trees['T1'].GetEntries()):
+    for val in root_trees.values():
+        val.GetEntry(i)
+
+    # Remove stupid null characters using translate
+    this_dataset = str(root_trees['T1'].Filename)
+    this_dataset = this_dataset.translate(dict.fromkeys(range(32)))
+
+    if dataset not in this_dataset:
         continue
-    start_xed = peak_xed['left'] * event_xed['sample_duration'] + event_xed['start_time']
-    maximum_xed = peak_xed['index_of_maximum'] * event_xed['sample_duration'] + event_xed['start_time']
-    stop_xed = peak_xed['right'] * event_xed['sample_duration'] + event_xed['start_time']
 
-    print('XED says:', peak_xed['type'], '%d pe' % peak_xed['area'], start_xed, maximum_xed, stop_xed)
+    if pax_file is None or this_dataset not in pax_file.filename:
+        if pax_file:
+            pax_file.close()
 
-    found_peak = False
-    for event_mongo in file_mongo.root.event_table.where('(start_time < %d) & (%d < stop_time)' % (start_xed, stop_xed)):
-            
-        for peak_mongo in file_mongo.root.peak_table.where('(event_number == %d)' % event_mongo['event_number']):
-            start_mongo = peak_mongo['left'] * event_mongo['sample_duration'] + event_mongo['start_time']
-            maximum_mongo = peak_mongo['index_of_maximum'] * event_mongo['sample_duration'] + event_mongo['start_time']
-            stop_mongo = peak_mongo['right'] * event_mongo['sample_duration'] + event_mongo['start_time']
-            
-            if start_xed < maximum_mongo < stop_xed:
-                if found_peak:
-                    print('wtf, already found?', event_mongo['event_number'], event_xed['event_number'])
-                found_peak = True
+        filename = 'data/%s.h5' % this_dataset
+        pax_file = openFile(filename, mode='r')
 
-                print('MONGO says:', peak_mongo['type'], '%d pe' % peak_mongo['area'], start_mongo, maximum_mongo, stop_mongo)
-                print('diff',  start_xed - start_mongo, stop_xed - stop_mongo)
+    time = np.uint64(root_trees['T1'].TimeSec) * np.uint64(1e8)
+    time += np.uint64(root_trees['T1'].TimeMicroSec) * np.uint64(100)
+    time += np.uint64(root_trees['T2'].S2sPeak[0])
+    time *= 10
 
-    if found_peak:
-        good.append(peak_xed['area'])
-    else:
-        print('missed', event_xed['event_number'])
-    all.append(peak_xed['area'])
+    # Find event number
+    this_event = None
+    for event in pax_file.root.event_table:
+        if event['start_time'] < time < event['stop_time']:
+            if this_event is None:
+                this_event = event
+            else:
+                raise RuntimeError("Overlapping events?")
 
-print(len(all))
-# Close the file
-file_mongo.close()
-file_xed.close()
+    for peak in pax_file.root.peak_table.where("(event_number == %d) & (type == b's2')" % event['event_number']):
+        start = peak['left'] * event['sample_duration'] + event['start_time']
+        maximum = peak['index_of_maximum'] * event['sample_duration'] + event['start_time']
+        stop = peak['right'] * event['sample_duration'] + event['start_time']
 
-bins = np.linspace(0, 200, 10)
-print(bins)
-a, _, _ = plt.hist(all, bins=bins, label='all')
-b, _, _ = plt.hist(good, bins=bins, label='good')
+        if start < time < stop:
+            print(root_trees['T2'].S2sTot[0],
+                  peak['area'])
+            variables_to_compare['S2[0]'].append((root_trees['T2'].S2sTot[0],
+                                                  peak['area']))
 
-a = np.array(a)
-b = np.array(b)
+print(variables_to_compare['S2[0]'])
 
-plt.legend()
+x, y = zip(*variables_to_compare['S2[0]'])
+print(x,y)
+
+plt.plot(x, y)
+plt.xlabel('root')
+plt.ylabel('pax')
 plt.show()
 
 
-plt.figure()
-plt.plot(0.5 * (bins[:-1] + bins[1:]),
-         b/a, label='trigger eff')
-print(b/a)
-
-print(a,b)
-plt.legend()
-plt.show()
 
 
-print('skipped', skipped_none_in_xed)
