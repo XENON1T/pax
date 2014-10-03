@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.core &mdash; Processor for Analyzing XENON1T 1.1.0 documentation</title>
+    <title>pax.core &mdash; Processor for Analyzing XENON1T 1.2.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.1.0',
+        VERSION:     '1.2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 1.1.0 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 1.2.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body>
@@ -36,7 +36,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">Processor for Analyzing XENON1T 1.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Processor for Analyzing XENON1T 1.2.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -65,7 +65,7 @@
 <span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">units</span>
 
 <span class="c"># Store the directory of pax (i.e. parent dir of this file&#39;s directory) as pax_dir</span>
-<span class="n">pax_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">currentframe</span><span class="p">()))))</span><span class="c"># , os.pardir)</span>
+<span class="n">pax_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">currentframe</span><span class="p">()))))</span>
 
 <span class="c">##</span>
 <span class="c"># Configuration handling</span>
@@ -180,7 +180,7 @@
 <span class="c"># Plugin handling</span>
 <span class="c">##</span>
 </div>
-<div class="viewcode-block" id="instantiate"><a class="viewcode-back" href="../../pax.html#pax.core.instantiate">[docs]</a><span class="k">def</span> <span class="nf">instantiate</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">plugin_source</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="n">logging</span><span class="p">):</span>
+<div class="viewcode-block" id="instantiate_plugin"><a class="viewcode-back" href="../../pax.html#pax.core.instantiate_plugin">[docs]</a><span class="k">def</span> <span class="nf">instantiate_plugin</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">plugin_source</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="n">logging</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Take plugin class name and build class from it&quot;&quot;&quot;</span>
     <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Instantiating </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
     <span class="n">name_module</span><span class="p">,</span> <span class="n">name_class</span> <span class="o">=</span> <span class="n">name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;.&#39;</span><span class="p">)</span>
@@ -275,7 +275,7 @@
         <span class="n">event</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">process_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
 
 </div>
-<div class="viewcode-block" id="processor"><a class="viewcode-back" href="../../pax.html#pax.core.processor">[docs]</a><span class="k">def</span> <span class="nf">processor</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">log_spec</span><span class="p">,</span> <span class="n">events_to_process</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">stop_after</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="processor"><a class="viewcode-back" href="../../pax.html#pax.core.processor">[docs]</a><span class="k">def</span> <span class="nf">processor</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">log_spec</span><span class="p">,</span> <span class="n">events_to_process</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">stop_after</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">input_spec</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Run the processor according to the configuration dictionary</span>
 
 <span class="sd">    :param config: dictionary with configuration values</span>
@@ -306,11 +306,14 @@
                                          <span class="s">&#39;output&#39;</span><span class="p">)</span>
     <span class="n">actions</span> <span class="o">+=</span> <span class="n">output</span>   <span class="c"># Append output to actions... for now</span>
 
+    <span class="c"># Set the input specification to config[&#39;DEFAULT&#39;][&#39;input_specification&#39;]</span>
+    <span class="n">config</span><span class="p">[</span><span class="nb">input</span><span class="p">][</span><span class="s">&#39;input_specification&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_spec</span>
+
     <span class="c"># Gather information about plugins</span>
     <span class="n">plugin_source</span> <span class="o">=</span> <span class="n">get_plugin_source</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">log</span><span class="p">)</span>
 
-    <span class="nb">input</span> <span class="o">=</span>    <span class="n">instantiate</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">plugin_source</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">log</span><span class="p">)</span>
-    <span class="n">actions</span> <span class="o">=</span> <span class="p">[</span><span class="n">instantiate</span><span class="p">(</span><span class="n">x</span><span class="p">,</span>     <span class="n">plugin_source</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">log</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">actions</span><span class="p">]</span>
+    <span class="nb">input</span> <span class="o">=</span>    <span class="n">instantiate_plugin</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">plugin_source</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">log</span><span class="p">)</span>
+    <span class="n">actions</span> <span class="o">=</span> <span class="p">[</span><span class="n">instantiate_plugin</span><span class="p">(</span><span class="n">x</span><span class="p">,</span>     <span class="n">plugin_source</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">log</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">actions</span><span class="p">]</span>
 
     <span class="c"># How should the events be generated?</span>
     <span class="k">if</span> <span class="n">events_to_process</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
@@ -367,7 +370,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">Processor for Analyzing XENON1T 1.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Processor for Analyzing XENON1T 1.2.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>
