@@ -146,13 +146,14 @@ class FindPeaks(plugin.TransformPlugin):
 class IdentifyPeaks(plugin.TransformPlugin):
 
     def transform_event(self, event):
-        # PLACEHOLDER:
-        # if area in 5 samples around max i s > 50% of total area, christen as S1
+
         unfiltered = event.get_waveform('tpc').samples
         for p in event.peaks:
             if p.type != 'unknown':
                 # Some peakfinder forced the type. Fine, not my problem...
                 continue
+            # PLACEHOLDER:
+            # if area in 5 samples around max i s > 50% of total area, christen as S1
             if np.sum(unfiltered[p.index_of_maximum - 2: p.index_of_maximum + 3]) > 0.5 * p.area:
                 p.type = 's1'
                 #self.log.debug("%s-%s-%s: S1" % (p.left, p.index_of_maximum, p.right))
@@ -168,7 +169,12 @@ class ComputePeakProperties(plugin.TransformPlugin):
         dt = self.config['digitizer_t_resolution']
         for peak in event.peaks:
             peak.area_per_pmt = np.sum(event.pmt_waveforms[:, peak.left:peak.right], axis=1)
-            peak.area = np.sum(peak.area_per_pmt)   #Todo: exclude negative area channels if option given
+            veto_area = np.sum(peak.area_per_pmt[list(self.config['pmts_veto'])])
+            if peak.type == 'veto':
+                peak.area = veto_area
+            else:
+                peak.area = np.sum(peak.area_per_pmt) - veto_area
+            #Todo: exclude negative area channels if option given
             peak.coincidence_level = len(np.where(peak.area_per_pmt >= self.config['minimum_area'])[0])
             if not 'keep_Chris_happy' in self.config or self.config['keep_Chris_happy'] == True:
                 continue
