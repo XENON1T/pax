@@ -27,6 +27,9 @@ class ReconstructedPosition(Model):
     y = FloatField()  #: y position (cm)
     z = FloatField()  #: z position (cm)
 
+    #: For this reconstructed peak, index of maximum value within sum waveform.
+    index_of_maximum = IntegerField()
+
     #: Name of algorithm used for computation
     algorithm = StringField(default='none')
 

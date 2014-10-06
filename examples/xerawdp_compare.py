@@ -21,7 +21,7 @@ pax_file = None
 
 assert root_trees['T1'].GetEntries() == root_trees['T2'].GetEntries()
 
-variables_to_compare = {'S2[0]' : []}
+variables_to_compare = {'S2[0]' : [], 'x' : [], 'y' : []}
 
 for i in range(root_trees['T1'].GetEntries()):
     for val in root_trees.values():
@@ -40,6 +40,7 @@ for i in range(root_trees['T1'].GetEntries()):
 
         filename = 'data/%s.h5' % this_dataset
         pax_file = openFile(filename, mode='r')
+        #print(pax_file)
 
     time = np.uint64(root_trees['T1'].TimeSec) * np.uint64(1e8)
     time += np.uint64(root_trees['T1'].TimeMicroSec) * np.uint64(100)
@@ -60,10 +61,18 @@ for i in range(root_trees['T1'].GetEntries()):
         stop = peak['right'] * this_event['sample_duration'] + this_event['start_time']
 
         if start < time < stop:
-            print(root_trees['T2'].S2sTot[0],
-                  peak['area'])
+            #print(root_trees['T2'].S2sTot[0], peak['area'])
             variables_to_compare['S2[0]'].append((root_trees['T2'].S2sTot[0],
                                                   peak['area']))
+
+    found = False
+    for track in pax_file.root.reconstructedposition_table.where("(event_number == %d)" % this_event['event_number']):
+        for i, variable in enumerate(['x', 'y', 'z']):
+            print(variable, track[variable], root_trees['T2'].S2sPosNn[0][i])
+            found = True
+    if not found:
+        print("not found")
+
 
 
 for k, v in variables_to_compare.items():
