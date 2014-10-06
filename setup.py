@@ -27,6 +27,7 @@ setup(
 	url='https://github.com/XENON1T/pax',
 	packages=[
 		'pax',
+		'pax.config',
 		'pax.plugins', 
 		'pax.plugins.io',
 		'pax.plugins.posrec',
