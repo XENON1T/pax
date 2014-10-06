@@ -17,7 +17,9 @@ Currently, we require Python 3.4.  Therefore, it is recommended to first install
 
 You can now install pax, which requires a github account ::
 
-    pip install git+git://github.com/XENON1T/pax.git
+    git clone https://github.com/XENON1T/pax
+    cd pax
+    python setup.py install
 
 Now you should be able to run the command 'paxer'.  For information on how to setup the code for contributing, please see the `relevant documentation section`_.
 
