@@ -29,6 +29,7 @@ class PosRecWeightedSum(plugin.TransformPlugin):
                 scale = 0
 
                 for pmt, value in self.top_array_map.items():
+                    pmt = pmt + 1
                     x, y = value['x'], value['y']
 
                     x, y = hits[pmt] * x, hits[pmt] * y
