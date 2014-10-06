@@ -46,8 +46,9 @@ class PosRecWeightedSum(plugin.TransformPlugin):
             rp = ReconstructedPosition({'x': peak_x,
                                         'y': peak_y,
                                         'z': float('nan'),
-                                        'peak' : peak['index_of_maximum'],
+                                        'peak' : peak.index_of_maximum,
                                         'algorithm': self.name})
+            print('x found', peak_x)
 
             peak.reconstructed_positions.append(rp)
 
