@@ -89,7 +89,7 @@ class HDF5Output(plugin.OutputPlugin):
             self.rows['Peak'].append()
 
         # Construct reconstructed position table
-        for track in event_dict['reconstructedposition']:
+        for track in event_dict['reconstructed_positions']:
             track = track.to_dict()
             for key, val in self.hdf5_fields['ReconstructedPosition'].items():
                 if isinstance(val, tables.Col):

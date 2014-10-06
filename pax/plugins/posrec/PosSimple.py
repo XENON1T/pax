@@ -36,7 +36,7 @@ class PosRecWeightedSum(plugin.TransformPlugin):
                     sum_x += x
                     sum_y += y
 
-                scale = hits.sum() * len(self.top_array_map)
+                scale = hits.sum()
 
                 peak_x = sum_x / scale
                 peak_y = sum_y / scale
