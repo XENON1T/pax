@@ -5,7 +5,7 @@ datadir = '/data'
 
 my_config = """
 [pax]
-parent_configuration = 'XED_example'
+parent_configuration = 'XED'
 
 [XED.XedInput]
 filename = "%s"
