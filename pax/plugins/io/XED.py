@@ -64,10 +64,20 @@ class XedInput(plugin.InputPlugin):
 
         # Read metadata and event positions from the XED file
         self.file_metadata = np.fromfile(self.input, dtype=XedInput.file_header, count=1)[0]
-        assert self.file_metadata[
-            'events_in_file'] == self.file_metadata['event_index_size']
         self.event_positions = np.fromfile(self.input, dtype=np.dtype("<u4"),
                                            count=self.file_metadata['event_index_size'])
+        if self.file_metadata['events_in_file'] > self.file_metadata['event_index_size']:
+            raise RuntimeError(
+                "The XED file claims there are %s events in the file, but the event position index has only %s entries!" %
+                (self.file_metadata['events_in_file'], self.file_metadata['event_index_size'])
+            )
+        if self.file_metadata['events_in_file'] < self.file_metadata['event_index_size']:
+            self.log.debug(
+                ("The XED file claims there are %s events in the file, while the event position index has %s entries. " +
+                "Is this the last XED file of a dataset?" ) %
+                (self.file_metadata['events_in_file'], self.file_metadata['event_index_size'])
+            )
+            self.event_positions = self.event_positions[:self.file_metadata['events_in_file']]
         self.first_event = self.file_metadata['first_event_number']
         self.last_event =  self.file_metadata['first_event_number'] + self.file_metadata['events_in_file'] - 1
 
