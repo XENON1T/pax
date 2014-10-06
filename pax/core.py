@@ -3,17 +3,17 @@
 """
 import logging
 import inspect
-
 import configparser
 import glob
+
 import re
 import os
-
 from io import StringIO
 from pluginbase import PluginBase
 
 import pax
 from pax import units
+
 
 # Store the directory of pax (i.e. parent dir of this file's directory) as pax_dir
 pax_dir = os.path.join(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))))
@@ -245,7 +245,7 @@ def processor(config, log_spec, events_to_process=None, stop_after=None, input_s
 
     if config is None:
         log.warning("No configuration specified: loading Xenon100 config!")
-        config = parse_named_configuration('Xenon100')
+        config = parse_named_configuration('XENON100')
     log.info("This is PAX version %s, running with configuration for %s." % (
         pax.__version__, config['DEFAULT']['tpc_name'])
     )

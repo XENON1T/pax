@@ -2,8 +2,9 @@
 """ Processor for Analyzing Xenon1T - command line interface """
 
 import argparse
-import os
+
 from pax import core
+
 
 
 ##
