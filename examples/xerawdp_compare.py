@@ -9,7 +9,7 @@ import numpy as np
 import ROOT
 
 root_filename = 'data/trim_xe100_run10_AmBe_cuts_run_10.root'
-dataset = 'xe100_110210_1926_00000'
+dataset = 'xe100_110210_1926_000000'
 
 root_file = ROOT.TFile(root_filename)
 root_trees = {}
@@ -61,17 +61,24 @@ for i in range(root_trees['T1'].GetEntries()):
         stop = peak['right'] * this_event['sample_duration'] + this_event['start_time']
 
         if start < time < stop:
-            #print(root_trees['T2'].S2sTot[0], peak['area'])
+            print('s2', root_trees['T2'].S2sTot[0], peak['area'])
             variables_to_compare['S2[0]'].append((root_trees['T2'].S2sTot[0],
                                                   peak['area']))
 
-    found = False
-    for track in pax_file.root.reconstructedposition_table.where("(event_number == %d)" % this_event['event_number']):
-        for i, variable in enumerate(['x', 'y', 'z']):
-            print(variable, track[variable], root_trees['T2'].S2sPosNn[0][i])
-            found = True
-    if not found:
-        print("not found")
+
+        found = False
+        print(pax_file.root.reconstructedposition_table)
+        for track in pax_file.root.reconstructedposition_table.where("(event_number == %d)" % this_event['event_number']):# (index_of_maximum == %d)" % (this_event['event_number'],
+                                                                              #                                            peak['index_of_maximum'])):
+            print('huh?', track['index_of_maximum'], peak['index_of_maximum'])
+            for i, variable in enumerate(['x', 'y', 'z']):
+                print(variable, track[variable], root_trees['T2'].S2sPosNn[0][i])
+                if found:
+                    print('found twice?')
+                found = True
+                
+            if not found:
+                print("not found")
 
 
 

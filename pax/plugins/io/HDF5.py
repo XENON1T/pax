@@ -91,6 +91,7 @@ class HDF5Output(plugin.OutputPlugin):
             # Construct reconstructed position table
             for track in peak['reconstructed_positions']:
                 track = track.to_dict()
+                print('track', track['index_of_maximum'])
                 for key, val in self.hdf5_fields['ReconstructedPosition'].items():
                     if isinstance(val, tables.Col):
                         if key == 'event_number':
