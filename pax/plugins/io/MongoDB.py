@@ -177,20 +177,21 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
             yield l[i:i+n]
 
     def handle_occurences(self):
-        docs = []
+        docs = self.occurences #[]
 
-        for occurences in list(self.chunks(self.occurences,
-                                           1000)):
+        #for occurences in list(self.chunks(self.occurences,
+        #                                   1000)):
             
-                docs.append({'test' : 0,
-                             'docs' : occurences})
+        #docs.append({'test' : 0,
+        #                     'docs' : occurences})
 
-        t0 = time.time()
-        self.collection.insert(docs, #self.occurences,
-                               w=0)
-        t1 = time.time()
+        if len(docs) > 0:
+            t0 = time.time()
+            self.collection.insert(docs,
+                                   w=0)
+            t1 = time.time()
 
-        self.log.info('dt\t %d', t1-t0)
+            self.log.info('dt\t %d %d', t1-t0, len(docs))
 
         self.occurences = []
 

@@ -1,17 +1,20 @@
 import tempfile
 import os
 
-datadir = '/data/xe100_110210_1926'
+datadir = '/data'
 
 my_config = """
 [pax]
-parent_configuration = 'daq_injector'
+parent_configuration = 'XED_example'
 
 [XED.XedInput]
 filename = "%s"
 
 [MongoDB.MongoDBFakeDAQOutput]
 address = 'xedaqtest1:27017'
+
+[HDF5.HDF5Output]
+hdf5file = '%s.h5'
 """
 
 files = [ os.path.join(base, f) 
@@ -22,7 +25,8 @@ for i, filename in enumerate(files):
     outfd, outsock_path = tempfile.mkstemp()
     outsock = os.fdopen(outfd,'w')
 
-    outsock.write(my_config % filename)
+    root = filename.split('/')[-1][:-4]
+    outsock.write(my_config % (filename, root))
     print('paxer --config_path', outsock_path, '&')
     outsock.close()
     

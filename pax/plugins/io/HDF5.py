@@ -31,7 +31,9 @@ class HDF5Output(plugin.OutputPlugin):
         self.hdf5_fields['Peak']['event_number'] = self.hdf5_fields[
             'Event']['event_number']
 
-        filter = tables.Filters(complevel=1, complib='blosc')
+        # Filters are used for compression.  We use the blosc algorithm.
+        compression_filter = tables.Filters(complevel=5,
+                                complib='blosc')
 
         self.tables = {}
         self.rows = {}
@@ -44,7 +46,7 @@ class HDF5Output(plugin.OutputPlugin):
             self.tables[key] = self.h5_file.createTable('/',
                                                         '%s_table' % key.lower(),
                                                         table,
-                                                        filters=filter)
+                                                        filters=compression_filter)
             self.rows[key] = self.tables[key].row
 
     def write_event(self, event):
