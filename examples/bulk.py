@@ -1,7 +1,7 @@
 import tempfile
 import os
 
-datadir = '/data'
+datadir = '/data/xe100_110210_1926'
 
 my_config = """
 [pax]

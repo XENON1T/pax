@@ -98,6 +98,8 @@ class HDF5Output(plugin.OutputPlugin):
                             self.rows['ReconstructedPosition'][key] = event_dict[key]
                         else:
                             self.rows['ReconstructedPosition'][key] = track[key]
+                #self.rows['ReconstructedPosition']['index_of_maximum'] = 3
+                print('wtf', self.rows['ReconstructedPosition']['index_of_maximum'])
                 self.rows['ReconstructedPosition'].append()
 
     def shutdown(self):
