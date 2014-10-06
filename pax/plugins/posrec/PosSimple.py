@@ -12,7 +12,14 @@ class PosRecWeightedSum(plugin.TransformPlugin):
     """
 
     def startup(self):
-        self.top_array_map = self.config['topArrayMap']
+        self.which_pmts = self.config['pmts_to_use_for_reconstruction']
+
+        if self.which_pmts == 'top' or self.which_pmts == 'bottom':
+            self.pmts = self.config['pmts_%s' % self.which_pmts]
+        else:
+            raise RuntimeError("Bad choice 'pmts_to_use_for_reconstruction'")
+
+        self.pmt_locations = self.config['pmt_locations']
 
     def transform_event(self, event):
         for peak in event.peaks:
@@ -23,21 +30,19 @@ class PosRecWeightedSum(plugin.TransformPlugin):
             hits = event.pmt_waveforms[..., peak.left:peak.right].sum(axis=1)
 
             if hits.sum() != 0:
-                sum_x = 0
-                sum_y = 0
+                sum_x = 0  # sum of x positions
+                sum_y = 0  # sum of y positions
 
-                scale = 0
+                scale = 0  # Total q
 
-                for pmt, value in self.top_array_map.items():
-                    pmt = pmt + 1
-                    x, y = value['x'], value['y']
+                for pmt in self.pmts:
+                    value = self.pmt_locations[pmt]
+                    Q = hits[pmt]
 
-                    x, y = hits[pmt] * x, hits[pmt] * y
+                    scale += Q
 
-                    scale += hits[pmt]
-
-                    sum_x += x
-                    sum_y += y
+                    sum_x += Q * value['x']
+                    sum_y += Q * value['y']
 
                 peak_x = sum_x / scale
                 peak_y = sum_y / scale
