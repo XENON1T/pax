@@ -27,6 +27,12 @@ setup(
 	url='https://github.com/XENON1T/pax',
 	packages=[
 		'pax',
+		'pax.plugins', 
+		'pax.plugins.io',
+		'pax.plugins.posrec',
+		'pax.plugins.dsp',
+		'pax.plugins.display',
+		'pax.micromodels'
 	],
 	package_dir={'pax': 'pax'},
 	package_data={'pax': ['config/*.ini']},

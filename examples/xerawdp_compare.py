@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 """Perform a comparison between pax and xerawdp
 
 Please generate a ROOT file using the XeAnalaysiScripts.

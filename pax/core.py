@@ -263,6 +263,9 @@ def processor(config, log_spec, events_to_process=None, stop_after=None, input_s
     # Gather information about plugins
     plugin_source = get_plugin_source(config, log)
 
+    if plugin_source == None:
+        raise RuntimeError("No plugin source found")
+
     input =    instantiate_plugin(input, plugin_source, config, log)
     actions = [instantiate_plugin(x,     plugin_source, config, log) for x in actions]
 
