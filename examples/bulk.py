@@ -27,7 +27,7 @@ for i, filename in enumerate(files):
 
     root = filename.split('/')[-1][:-4]
     outsock.write(my_config % (filename, root))
-    print('paxer --config_path', outsock_path, '&')
+    print('paxer --config_path', outsock_path, '& #', filename)
     outsock.close()
     
     if i % 60 == 60 - 1:
