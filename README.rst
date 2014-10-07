@@ -27,7 +27,7 @@ Now you should be able to run the command 'paxer'.  For information on how to se
 
 See paxer --help for more detailed usage information.
 
-If you want to do something fancy, you can create your own configuration file like:
+If you want to do something fancy, you can create your own configuration file like::
 
    [pax]
    parent_configuration = 'default'    # Inherit from the default configuration
