@@ -1,7 +1,7 @@
 import tempfile
 import os
 
-datadir = '/data/xe100_110210_1926'
+datadir = '/data/'
 
 my_config = """
 [pax]
@@ -15,6 +15,10 @@ address = 'xedaqtest1:27017'
 
 [HDF5.HDF5Output]
 hdf5file = '%s.h5'
+
+[PosSimple.PosRecWeightedSum]
+
+pmts_to_use_for_reconstruction = 'top'
 """
 
 files = [ os.path.join(base, f) 
