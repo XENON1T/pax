@@ -1,17 +1,19 @@
 """Perform a comparison between pax and xerawdp
 
-Please generate a ROOT file using the XeAnalaysiScripts.
+Please generate a ROOT file using the XeAnalaysiScripts.  Be sure to also have
+the file Loader.C whereever you run this file.  Also, you run this file in the
+directory containing all the h5 files.
 """
 from tables import openFile
 import matplotlib.pyplot as plt
 import numpy as np
-
+import os
 import ROOT
 
 ROOT.gROOT.ProcessLine('.L Loader.C')
 
-root_filename = 'data/trim_xe100_run10_AmBe_cuts_run_10.root'
-dataset = 'xe100_110210_1926_0002'
+root_filename = '../trim_xe100_run10_AmBe_cuts_run_10.root'
+dataset = 'xe100'#_110210_1926_0002'
 
 root_file = ROOT.TFile(root_filename)
 t1 = root_file.Get('T1')
@@ -37,8 +39,17 @@ for i in range(t1.GetEntries()):
         if pax_file:
             pax_file.close()
 
-        filename = 'data/%s.h5' % this_dataset
-        pax_file = openFile(filename, mode='r')
+
+        filename = '%s.h5' % this_dataset
+        #filename = 'data/hdf5_data_2/%s.h5' % this_dataset
+        if not os.path.exists(filename):
+            continue
+        try:
+            pax_file = openFile(filename, mode='r')
+        except:
+            print('#Failed to open', filename)
+            print('rm', filename)
+            continue
         #print(pax_file)
 
     time = np.uint64(t1.TimeSec) * np.uint64(1e8)
@@ -83,8 +94,8 @@ for i in range(t1.GetEntries()):
                 raise RuntimeError("found twice")
 
             for i, variable in enumerate(['x', 'y']):
-                print(variable, (t2.S2sPosNn[0][i],
-                                 track[variable]))
+                #print(variable, (t2.S2sPosNn[0][i],
+                #                 track[variable]))
                 variables_to_compare[variable].append((t2.S2sPosNn[0][i],
                                                        track[variable]))
 
