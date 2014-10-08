@@ -199,5 +199,5 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
         self.handle_occurences()
         
         self.control_doc['data_taking_ended'] = True
-        #self.collection.save(self.control_doc)
+        self.collection.save(self.control_doc)
 
