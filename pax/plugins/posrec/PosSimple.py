@@ -27,7 +27,7 @@ class PosRecWeightedSum(plugin.TransformPlugin):
 
             # This is an array where every i-th element is how many samples
             # were seen by the i-th PMT
-            hits = event.pmt_waveforms[..., peak.left:peak.right].sum(axis=1)
+            hits = peak.area_per_pmt
 
             if hits.sum() != 0:
                 sum_x = 0  # sum of x positions

@@ -6,18 +6,18 @@ user to read data from the DAQ and also inject raw occurences into the DAQ.
 """
 import time
 import uuid
+import datetime
 
 import pymongo
 import snappy
 import numpy as np
-from pax.datastructure import Event
 from bson.binary import Binary
 
+from pax.datastructure import Event
 from pax import plugin
 
 
 class MongoDBInput(plugin.InputPlugin):
-
     def startup(self):
         self.log.debug("Connecting to %s" % self.config['address'])
         try:
@@ -34,7 +34,8 @@ class MongoDBInput(plugin.InputPlugin):
         self.number_of_events = self.cursor.count()
 
         if self.number_of_events == 0:
-            raise RuntimeError("No events found... did you run the event builder?")
+            raise RuntimeError(
+                "No events found... did you run the event builder?")
 
     def get_events(self):
         """Generator of events from Mongo
@@ -44,7 +45,8 @@ class MongoDBInput(plugin.InputPlugin):
         for i, doc_event in enumerate(self.collection.find()):
             self.log.debug("Fetching document %s" % repr(doc_event['_id']))
 
-            # Store channel waveform-occurrences by iterating over all occurrences.
+            # Store channel waveform-occurrences by iterating over all
+            # occurrences.
             # This involves parsing MongoDB documents using WAX output format
             event = Event()
             event.event_number = i  # TODO: should come from Mongo
@@ -87,47 +89,83 @@ class MongoDBInput(plugin.InputPlugin):
 
 
 class MongoDBFakeDAQOutput(plugin.OutputPlugin):
+    """Inject PMT pulses into DAQ to test trigger.
+
+    This plugin aims to emulate the DAQReader by creating run control documents
+    and feeding raw data into the DAQ's MongoDB format.  Consult here for more
+    on formats:
+
+    https://docs.google.com/drawings/d/1dytKBmMARsZtuyUmLbzm9IbXM1hre-knkEIU4X3Ot8U/edit
+
+    Note: write run document after output collection created.
+    """
 
     def startup(self):
+        """Setup"""
         self.log.debug("Connecting to %s" % self.config['address'])
         try:
             self.client = pymongo.MongoClient(self.config['address'])
-            self.database = self.client[self.config['database']]
+
+            # Used for coordinating which runs to analyze
+            self.run_database = self.client[self.config['run_database']]
+
+            # Used for storing the binary output from digitizers
+            self.raw_database = self.client[self.config['raw_database']]
+
         except pymongo.errors.ConnectionFailure as e:
             self.log.fatal("Cannot connect to database")
             self.log.exception(e)
             raise
 
-        self.collection = self.database[self.config['collection']]
-        # TODO (tunnell): Sort by event number
-        self.cursor = self.collection.find()
-        self.number_of_events = self.cursor.count()
 
-        if self.number_of_events != 0:
-            self.log.warning("Database collection not empty")
-            cursor = self.collection.find({"runtype": {'$exists': True},
-                                           "starttime": {'$exists': True},
-                                           "compressed": {'$exists': True},
-                                           "data_taking_ended": {'$exists': True},
-                                           "data": {'$exists': False}})
-            control_docs = list(cursor)
+        self.raw_collection = self.database[self.config['collection']]
+        if self.config['collection'] in self.database.collection_names():
+            self.error("Data already exists at output location... deleting")
+            self.database.drop_collection(self.config['collection'])
 
-            if len(control_docs) > 1:
-                raise RuntimeError("More than one control document found in %s." %
-                                   self.config['collection'])
-            elif len(control_docs) == 0:
-                self.log.error("Preexisting data, but no control document")
-            else:
-                self.control_doc = control_docs[0]
-        else:
-            self.control_doc = {}
-            self.control_doc['compressed'] = True
-            self.control_doc['data_taking_ended'] = False
-            self.control_doc['runtype'] = 'xenon100'
-            self.control_doc['starttime'] = None
-            self.collection.insert(self.control_doc)
+        self.run_collection = self.database[self.config['collection']]
+
+        # Send run doc
+        self.query = {"name": self.config['name'],
+                 "starttimestamp": str(datetime.now()),
+                 "runmode": "calibration",
+                 "reader": {
+                     "compressed": True,
+                     "starttimestamp": str(datetime.now()),
+                     "data_taking_ended": False,
+                     "options": self.config,
+                     "storage_buffer": {
+                         "dbaddr": self.config['address'],
+                         "dbname": self.config['raw_database'],
+                         "dbcollection": self.config['collection'],
+                     },
+                 },
+                 "trigger": {
+                     "mode": "calibration",
+                 },
+                 "processor": {"mode": "something"},
+                 "comments": [],
+                }
+        self.run_collection.insert(self.query)
 
         self.occurences = []
+
+    def shutdown(self):
+        """Notify run database that datataking stopped
+        """
+        self.handle_occurences()  # write remaining data
+
+        # Update runs DB
+        self.query['reader']['stoptimestamp'] = str(datetime.now())
+        self.query['reader']['data_taking_ended'] = True
+        self.run_collection.save(self.query)
+
+    @staticmethod
+    def chunks(l, n):
+        """ Yield successive n-sized chunks from l.
+        """
+        for i in range(0, len(l), n):
+            yield l[i:i + n]
 
     def write_event(self, event):
         self.log.debug('Writing event')
@@ -142,7 +180,9 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
 
         assert isinstance(time, int)
 
-        if self.control_doc['starttime'] is None or time < self.control_doc['starttime']:
+        if self.control_doc['starttime'] is None:
+            self.control_doc['starttime'] = time
+        elif time < self.control_doc['starttime']:
             self.control_doc['starttime'] = time
 
         for pmt_num, payload in event.occurrences.items():
@@ -157,31 +197,22 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
 
                 occurence_doc['time'] = time + sample_position
 
-                compressed_data = snappy.compress(np.array(samples_occurrence,
-                                                           dtype=np.int16).tostring())
+                data = snappy.compress(np.array(samples_occurrence,
+                                                dtype=np.int16).tostring())
 
                 # Convert raw samples into BSON format
-                data = Binary(compressed_data, 0)
+                occurence_doc['data'] = Binary(data, 0)
 
-                occurence_doc['data'] = data
-                
                 self.occurences.append(occurence_doc)
 
         self.handle_occurences()
 
-    @staticmethod
-    def chunks(l, n):
-        """ Yield successive n-sized chunks from l.
-        """
-        for i in range(0, len(l), n):
-            yield l[i:i+n]
-
     def handle_occurences(self):
-        docs = self.occurences #[]
+        docs = self.occurences  # []
 
-        #for occurences in list(self.chunks(self.occurences,
+        # for occurences in list(self.chunks(self.occurences,
         #                                   1000)):
-            
+
         #docs.append({'test' : 0,
         #                     'docs' : occurences})
 
@@ -191,13 +222,8 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
                                    w=0)
             t1 = time.time()
 
-            self.log.info('dt\t %d %d', t1-t0, len(docs))
+            self.log.info('dt\t %d %d', t1 - t0, len(docs))
 
         self.occurences = []
 
-    def shutdown(self):
-        self.handle_occurences()
-        
-        self.control_doc['data_taking_ended'] = True
-        self.collection.save(self.control_doc)
 

@@ -3,7 +3,7 @@
 """
 import logging
 import inspect
-import configparser
+from configparser import ConfigParser, ExtendedInterpolation
 import glob
 
 import re
@@ -67,7 +67,9 @@ def parse_configuration_file(file_object):
     :param file_object: Path to the ini file to read, or opened file object to read
     :return: nested dictionary of evaluated configuration values, use as: config[section][key].
     """
-    config = configparser.ConfigParser(inline_comment_prefixes='#', strict=True)
+    config = ConfigParser(inline_comment_prefixes='#',
+                          interpolation=ExtendedInterpolation(),
+                          strict=True)
 
     # Allow for case-sensitive configuration keys
     config.optionxform = str
