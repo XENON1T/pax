@@ -129,8 +129,7 @@ class XedInput(plugin.InputPlugin):
         # Decompress the event data (actually, the data from a single 'chunk')
         # into fake binary file
         # 28 is the chunk header size.
-        data_to_decompress = self.input.read(
-            event_layer_metadata['size'] - 28 - mask_bytes)
+        data_to_decompress = self.input.read(event_layer_metadata['size'] - 28 - mask_bytes)
         try:
             chunk_fake_file = io.BytesIO(bz2.decompress(data_to_decompress))
         except OSError:

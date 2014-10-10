@@ -143,6 +143,7 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
                  },
                  "trigger": {
                      "mode": "calibration",
+                     "status" : "waiting_to_be_processed",
                  },
                  "processor": {"mode": "something"},
                  "comments": [],
@@ -181,8 +182,6 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
 
         assert isinstance(time, int)
 
-
-        
         if self.query['starttimestamp'] is None:
             self.query['starttimestamp'] = time
             self.query['reader']['starttimestamp'] = time
