@@ -202,4 +202,3 @@ class XedInput(plugin.InputPlugin):
         return event
 
     # If we get here, all events have been read
-    # self.input.close()
