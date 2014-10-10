@@ -110,17 +110,19 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
 
             # Used for coordinating which runs to analyze
             self.log.debug("Connecting to %s" % self.config['run_address'])
-            self.run_database = self.get_connection(self.config['run_database'])
+            self.run_client = self.get_connection(self.config['run_address'])
 
             # Used for storing the binary output from digitizers
             self.log.debug("Connecting to %s" % self.config['raw_address'])
-            self.raw_database = self.get_connection(self.config['raw_database'])
+            self.raw_client = self.get_connection(self.config['raw_address'])
 
         except pymongo.errors.ConnectionFailure as e:
             self.log.fatal("Cannot connect to database")
             self.log.exception(e)
             raise
 
+        self.run_database = self.run_client[self.config['run_database']]
+        self.raw_database = self.raw_client[self.config['raw_database']]
 
         self.run_collection = self.run_database[self.config['run_collection']]
 
