@@ -7,6 +7,13 @@ class CutOverhangingPulses(plugin.TransformPlugin):
     def transform_event(self, event):
         for channel, waveform_occurrences in event.occurrences.items():
             for i, (starting_position, wave_occurrence) in enumerate(waveform_occurrences):
+                # Cut off pulses starting too early
+                if starting_position < 0:
+                    self.log.warning('Occurence %s in channel %s starts %s samples before event start: cutting off.' % (
+                        i, channel, -starting_position
+                    ))
+                    event.occurrences[channel][i] = (0, wave_occurrence[-starting_position:])
+                # Cut off pulses taking too long
                 overhang_length = len(wave_occurrence) - 1 + starting_position - event.length()
                 if overhang_length > 0:
                     self.log.warning('Occurence %s in channel %s has overhang of %s samples: cutting off.' % (
