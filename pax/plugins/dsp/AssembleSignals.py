@@ -3,6 +3,25 @@ from pax import plugin, units
 
 from pax.datastructure import Waveform
 
+class CutOverhangingPulses(plugin.TransformPlugin):
+    def transform_event(self, event):
+        for channel, waveform_occurrences in event.occurrences.items():
+            for i, (starting_position, wave_occurrence) in enumerate(waveform_occurrences):
+                # Cut off pulses starting too early
+                if starting_position < 0:
+                    self.log.warning('Occurence %s in channel %s starts %s samples before event start: cutting off.' % (
+                        i, channel, -starting_position
+                    ))
+                    event.occurrences[channel][i] = (0, wave_occurrence[-starting_position:])
+                # Cut off pulses taking too long
+                overhang_length = len(wave_occurrence) - 1 + starting_position - event.length()
+                if overhang_length > 0:
+                    self.log.warning('Occurence %s in channel %s has overhang of %s samples: cutting off.' % (
+                        i, channel, overhang_length
+                    ))
+                    event.occurrences[channel][i][1] = wave_occurrence[:len(wave_occurrence)-overhang_length]
+        return event
+
 
 class JoinAndConvertWaveforms(plugin.TransformPlugin):
 
@@ -61,6 +80,7 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
             wave = np.zeros(event.length(), dtype=np.float64)
 
             for i, (starting_position, wave_occurrence) in enumerate(waveform_occurrences):
+
                 # Check for pulses starting right after previous ones: Xerawdp doesn't recompute baselines
                 if i > 0 and starting_position == waveform_occurrences[i - 1][0] + len(waveform_occurrences[i - 1][1]):
                     pass  # baseline will still have the right value
@@ -73,7 +93,7 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
                         len(wave_occurrence) < 2 * baseline_sample_size
                     ):
                         if i > 0:
-                            self.log.warning("Occurrence %s in channel %s at %s has event_duration %s, should be at least 2*%s!"
+                            self.log.warning("Occurrence %s in channel %s at %s is %s samples long, should be at least 2*%s!"
                                              % (i, channel, starting_position, len(wave_occurrence), baseline_sample_size)
                                              )
                         self.log.debug("Short first pulse, computing baseline from its LAST samples")
