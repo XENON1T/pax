@@ -119,11 +119,12 @@ class XedInput(plugin.InputPlugin):
         #     np.fromfile(self.input, dtype=np.dtype('<S%s' % mask_bytes), count=1)[0]
         # ), dtype='uint8'))
         # This appears to work... so far...
-        mask_bits = np.unpackbits(
-            np.fromfile(self.input, dtype='uint8', count=mask_bytes))
+        mask_bits = np.unpackbits(np.fromfile(self.input,
+                                              dtype='uint8',
+                                              count=mask_bytes))
         # +1 as first pmt is 1 in Xenon100
-        channels_included = [
-            i + 1 for i, bit in enumerate(reversed(mask_bits)) if bit == 1]
+        channels_included = [i + 1 for i, bit in enumerate(reversed(mask_bits))
+                             if bit == 1]
 
         # Decompress the event data (actually, the data from a single 'chunk')
         # into fake binary file
@@ -144,8 +145,8 @@ class XedInput(plugin.InputPlugin):
 
             # Read channel size (in 4bit words), subtract header size, convert
             # from 4-byte words to bytes
-            channel_data_size = int(
-                4 * (np.fromstring(chunk_fake_file.read(4), dtype='<u4')[0] - 1))
+            channel_data_size = int(4 * (np.fromstring(chunk_fake_file.read(4),
+                                                       dtype='<u4')[0] - 1))
 
             # Read the channel data into another fake binary file
             channel_fake_file = io.BytesIO(
@@ -195,10 +196,13 @@ class XedInput(plugin.InputPlugin):
             event_layer_metadata['utc_time'] * units.s +
             event_layer_metadata['utc_time_usec'] * units.us
         )
+
         # Remember stop_time is the stop time of the LAST sample!
-        event.stop_time = event.start_time + \
-            int(event_layer_metadata[
-                'samples_in_event'] * event.sample_duration)
+        event.stop_time = event_layer_metadata['samples_in_event']
+        event.stop_time *= event.sample_duration
+        event.stop_time = int(event.stop_time)
+        event.stop_time += event.start_time
+
         return event
 
     # If we get here, all events have been read
