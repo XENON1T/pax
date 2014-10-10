@@ -102,15 +102,19 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
 
     def startup(self):
         """Setup"""
-        self.log.debug("Connecting to %s" % self.config['address'])
+        self.connections = {}
+
+
         try:
-            self.client = pymongo.MongoClient(self.config['address'])
+            self.client = pymongo.MongoClient(self.config['run_address'])
 
             # Used for coordinating which runs to analyze
-            self.run_database = self.client[self.config['run_database']]
+            self.log.debug("Connecting to %s" % self.config['run_address'])
+            self.run_database = self.get_connection(self.config['run_database'])
 
             # Used for storing the binary output from digitizers
-            self.raw_database = self.client[self.config['raw_database']]
+            self.log.debug("Connecting to %s" % self.config['raw_address'])
+            self.raw_database = self.get_connection(self.config['raw_database'])
 
         except pymongo.errors.ConnectionFailure as e:
             self.log.fatal("Cannot connect to database")
@@ -136,9 +140,9 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
                      "data_taking_ended": False,
                      "options": {},
                      "storage_buffer": {
-                         "dbaddr": self.config['address'],
+                         "dbaddr": self.config['raw_address'],
                          "dbname": self.config['raw_database'],
-                         "dbcollection": self.config['collection'],
+                         "dbcollection": self.config['raw_collection'],
                      },
                  },
                  "trigger": {
@@ -156,6 +160,16 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
         self.starttime = None
 
         self.occurences = []
+
+    def get_connection(self, hostname):
+        if hostname not in self.connections:
+            try:
+                self.connections[hostname] = pymongo.Connection(hostname)
+
+            except pymongo.errors.ConnectionFailure as e:
+                self.log.fatal("Cannot connect to mongo at %s" % hostname)
+
+        return self.connections[hostname]
 
     def shutdown(self):
         """Notify run database that datataking stopped
