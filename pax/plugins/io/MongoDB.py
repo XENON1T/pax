@@ -6,7 +6,7 @@ user to read data from the DAQ and also inject raw occurences into the DAQ.
 """
 import time
 import uuid
-import datetime
+from datetime import datetime
 
 import pymongo
 import snappy
@@ -118,22 +118,23 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
             raise
 
 
-        self.raw_collection = self.database[self.config['collection']]
-        if self.config['collection'] in self.database.collection_names():
-            self.error("Data already exists at output location... deleting")
-            self.database.drop_collection(self.config['collection'])
+        self.run_collection = self.run_database[self.config['run_collection']]
 
-        self.run_collection = self.database[self.config['collection']]
+        if self.config['raw_collection'] in self.raw_database.collection_names():
+            self.log.error("Data already exists at output location... deleting")
+            self.raw_database.drop_collection(self.config['raw_collection'])
+
+        self.raw_collection = self.raw_database[self.config['raw_collection']]
 
         # Send run doc
         self.query = {"name": self.config['name'],
-                 "starttimestamp": str(datetime.now()),
+                 "starttimestamp": None, # Updated when first event read  
                  "runmode": "calibration",
                  "reader": {
                      "compressed": True,
-                     "starttimestamp": str(datetime.now()),
+                     "starttimestamp": None, # Updated when first event read
                      "data_taking_ended": False,
-                     "options": self.config,
+                     "options": {},
                      "storage_buffer": {
                          "dbaddr": self.config['address'],
                          "dbname": self.config['raw_database'],
@@ -146,7 +147,7 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
                  "processor": {"mode": "something"},
                  "comments": [],
                 }
-        self.run_collection.insert(self.query)
+        # This is injected on first event in write_event
 
         self.occurences = []
 
@@ -180,10 +181,18 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
 
         assert isinstance(time, int)
 
-        if self.control_doc['starttime'] is None:
-            self.control_doc['starttime'] = time
-        elif time < self.control_doc['starttime']:
-            self.control_doc['starttime'] = time
+
+        
+        if self.query['starttimestamp'] is None:
+            self.query['starttimestamp'] = time
+            self.query['reader']['starttimestamp'] = time
+
+            self.log.info("Injecting run control document")
+            self.run_collection.insert(self.query)
+        elif time < self.query['starttimestamp']:
+            error = "Found events before start of run"
+            self.log.fatal(error)
+            raise RuntimeError(error)
 
         for pmt_num, payload in event.occurrences.items():
             for sample_position, samples_occurrence in payload:
@@ -218,11 +227,9 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
 
         if len(docs) > 0:
             t0 = time.time()
-            self.collection.insert(docs,
-                                   w=0)
+            self.raw_collection.insert(docs,
+                                       w=0)
             t1 = time.time()
-
-            self.log.info('dt\t %d %d', t1 - t0, len(docs))
 
         self.occurences = []
 
