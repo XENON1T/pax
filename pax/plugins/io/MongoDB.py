@@ -128,11 +128,11 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
 
         # Send run doc
         self.query = {"name": self.config['name'],
-                 "starttimestamp": None, # Updated when first event read  
+                 "starttimestamp": str(datetime.now()),
                  "runmode": "calibration",
                  "reader": {
                      "compressed": True,
-                     "starttimestamp": None, # Updated when first event read
+                     "starttimestamp": 0,
                      "data_taking_ended": False,
                      "options": {},
                      "storage_buffer": {
@@ -148,7 +148,12 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
                  "processor": {"mode": "something"},
                  "comments": [],
                 }
-        # This is injected on first event in write_event
+
+        self.log.info("Injecting run control document")
+        self.run_collection.insert(self.query)
+
+        # Used for computing offsets so reader starts from zero time
+        self.starttime = None
 
         self.occurences = []
 
@@ -182,13 +187,9 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
 
         assert isinstance(time, int)
 
-        if self.query['starttimestamp'] is None:
-            self.query['starttimestamp'] = time
-            self.query['reader']['starttimestamp'] = time
-
-            self.log.info("Injecting run control document")
-            self.run_collection.insert(self.query)
-        elif time < self.query['starttimestamp']:
+        if self.starttime is None:
+            self.starttime = time
+        elif time < self.starttime:
             error = "Found events before start of run"
             self.log.fatal(error)
             raise RuntimeError(error)
@@ -203,7 +204,7 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
                 occurence_doc['module'] = pmt_num  # TODO: fix wax
                 occurence_doc['channel'] = pmt_num
 
-                occurence_doc['time'] = time + sample_position
+                occurence_doc['time'] = time + sample_position - self.starttime
 
                 data = snappy.compress(np.array(samples_occurrence,
                                                 dtype=np.int16).tostring())
