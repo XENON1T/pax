@@ -95,7 +95,8 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
     and feeding raw data into the DAQ's MongoDB format.  Consult here for more
     on formats:
 
-    https://docs.google.com/drawings/d/1dytKBmMARsZtuyUmLbzm9IbXM1hre-knkEIU4X3Ot8U/edit
+    https://docs.google.com/drawings/d/1dytKBmMARsZtuyUmLbzm9IbXM1hre
+    -knkEIU4X3Ot8U/edit
 
     Note: write run document after output collection created.
     """
@@ -103,7 +104,6 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
     def startup(self):
         """Setup"""
         self.connections = {}
-
 
         try:
             self.client = pymongo.MongoClient(self.config['run_address'])
@@ -126,7 +126,8 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
 
         self.run_collection = self.run_database[self.config['run_collection']]
 
-        if self.config['raw_collection'] in self.raw_database.collection_names():
+        if self.config[
+            'raw_collection'] in self.raw_database.collection_names():
             self.log.error("Data already exists at output location... deleting")
             self.raw_database.drop_collection(self.config['raw_collection'])
 
@@ -134,26 +135,26 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
 
         # Send run doc
         self.query = {"name": self.config['name'],
-                 "starttimestamp": str(datetime.now()),
-                 "runmode": "calibration",
-                 "reader": {
-                     "compressed": True,
-                     "starttimestamp": 0,
-                     "data_taking_ended": False,
-                     "options": {},
-                     "storage_buffer": {
-                         "dbaddr": self.config['raw_address'],
-                         "dbname": self.config['raw_database'],
-                         "dbcollection": self.config['raw_collection'],
-                     },
-                 },
-                 "trigger": {
-                     "mode": "calibration",
-                     "status" : "waiting_to_be_processed",
-                 },
-                 "processor": {"mode": "something"},
-                 "comments": [],
-                }
+                      "starttimestamp": str(datetime.now()),
+                      "runmode": "calibration",
+                      "reader": {
+                          "compressed": True,
+                          "starttimestamp": 0,
+                          "data_taking_ended": False,
+                          "options": {},
+                          "storage_buffer": {
+                              "dbaddr": self.config['raw_address'],
+                              "dbname": self.config['raw_database'],
+                              "dbcollection": self.config['raw_collection'],
+                          },
+                      },
+                      "trigger": {
+                          "mode": "calibration",
+                          "status": "waiting_to_be_processed",
+                      },
+                      "processor": {"mode": "something"},
+                      "comments": [],
+        }
 
         self.log.info("Injecting run control document")
         self.run_collection.insert(self.query)
@@ -236,7 +237,7 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
         docs = self.occurences  # []
 
         # for occurences in list(self.chunks(self.occurences,
-        #                                   1000)):
+        # 1000)):
 
         #docs.append({'test' : 0,
         #                     'docs' : occurences})
