@@ -10,26 +10,23 @@ import os
 
 from pax import plugin, units
 
-
-class PlotWaveform(plugin.OutputPlugin):
+class PlotBase(plugin.OutputPlugin):
     def startup(self):
-        self.plt = plt
         if self.config['output_dir'] is not None:
             self.output_dir = self.config['output_dir']
             if not os.path.exists(self.output_dir):
                 os.makedirs(self.output_dir)
         else:
             self.output_dir = None
-        # If no skipping defined, don't skip any events
-        if not 'plot_every' in self.config:
-            self.config['plot_every'] = 1
+
         self.skip_counter = 0
 
-    def write_event(self, event):
-        """Plot an event
+        self.substartup()
 
-        Will make a fancy plot with lots of arrows etc of a summed waveform
-        """
+    def substartup(self):
+        pass
+
+    def write_event(self, event):
         # Should we plot or skip?
         if self.skip_counter:
             self.skip_counter -= 1
@@ -39,12 +36,43 @@ class PlotWaveform(plugin.OutputPlugin):
                     self.config['plot_every'], self.skip_counter
                 ))
             return
-        self.time_conversion_factor = event.sample_duration * \
-                                      units.ns / units.us
-        plt = self.plt
+
+        self.plot_event(event)
+
+        self.finalize_plot(event.event_number)
+
+    def plot_event(self, event):
+        raise NotImplementedError()
+
+    def finalize_plot(self, num = 0):
+        """Finalize plotting and send to screen/file
+
+        Call this instead of plt.show()
+        """
+        if self.output_dir:
+            plt.savefig(self.output_dir + '/' + str(num) + '.png')
+        else:
+            plt.show(block=False)
+            self.log.info("Hit enter to continue...")
+            input()
+            plt.close()
+        self.skip_counter = self.config['plot_every'] - 1
+
+
+class PlotWaveform(PlotBase):
+    def plot_event(self, event):
+        """Plot an event
+
+        Will make a fancy plot with lots of arrows etc of a summed waveform
+        """
+
+        self.time_conversion_factor = event.sample_duration * units.ns / units.us
+
         rows = 2
         cols = 3
+
         plt.figure(figsize=(6 * cols, 4 * rows))
+
         # Plot the largest S1 and largest S2 in the event
         if event.S1s():
             ax = plt.subplot2grid((rows, cols), (0, 0))
@@ -52,31 +80,27 @@ class PlotWaveform(plugin.OutputPlugin):
                 event.S1s(), key=lambda x: x.area, reverse=True)[0]
             self.plot_waveform(
                 event, left=largest_s1.left, right=largest_s1.right, pad=10)
-            plt.title("S1 at %.1f us" %
-                      (
-                      largest_s1.index_of_maximum *
-                      self.time_conversion_factor))
+
+            time = largest_s1.index_of_maximum * self.time_conversion_factor
+
+            plt.title("S1 at %.1f us" % time)
+
         if event.S2s():
             ax = plt.subplot2grid((rows, cols), (0, 1))
             ax.yaxis.set_label_position("right")
-            largest_s2 = sorted(
-                event.S2s(), key=lambda x: x.area, reverse=True)[0]
+
+            largest_s2 = sorted(event.S2s(), key=lambda x: x.area,
+                                reverse=True)[0]
+
             pad = 200 if largest_s2.height > 100 else 50
-            self.plot_waveform(
-                event, left=largest_s2.left, right=largest_s2.right, pad=pad)
-            # if largest_s2.height: #Eh.. wa?
-            #    plt.yscale('log', nonposy='clip')
-            #    plt.ylim(10 ** (-1), plt.ylim()[1])
-            plt.title("S2 at %.1f us" %
-                      (
-                      largest_s2.index_of_maximum *
-                      self.time_conversion_factor))
 
+            self.plot_waveform(event, left=largest_s2.left,
+                               right=largest_s2.right, pad=pad)
 
-        # plt.subplot2grid((rows,cols), (0,2))
-        #plt.title('Event %s from %s' % (event.event_number,
-        # 'mysterious_dataset'))
-        # Todo: plot hitmap of s2
+            time = largest_s2.index_of_maximum * self.time_conversion_factor
+
+            plt.title("S2 at %.1f us" % time)
+
 
         # Plot the total waveform
         plt.subplot2grid((rows, cols), (rows - 1, 0), colspan=cols)
@@ -84,15 +108,6 @@ class PlotWaveform(plugin.OutputPlugin):
         legend = plt.legend(loc='upper left', prop={'size': 10})
         legend.get_frame().set_alpha(0.5)
         plt.tight_layout()
-        if self.output_dir:
-            plt.savefig(
-                self.output_dir + '/' + str(event.event_number) + '.png')
-        else:
-            plt.show(block=False)
-            self.log.info("Hit enter to continue...")
-            input()
-            plt.close()
-        self.skip_counter = self.config['plot_every'] - 1
 
     def plot_waveform(self, event, left=0, right=None, pad=0, show_peaks=False):
         if right is None:
@@ -111,35 +126,13 @@ class PlotWaveform(plugin.OutputPlugin):
         plt.autoscale(True, axis='both', tight=True)
         for w in self.config['waveforms_to_plot']:
             waveform = event.get_waveform(w['internal_name'])
-            plt.plot(
-                xlabels, waveform.samples[lefti:righti + 1],
-                label=w['plot_label'])
-        # try:
-        # plt.plot(xlabels, event.get_waveform('tpc').samples[lefti:righti +
-        # 1],  label='TPC')
-        #     plt.plot(xlabels, event.get_waveform(
-        # 'filtered_for_s2').samples[lefti:righti + 1], label='TPC - filtered')
-        #     plt.plot(xlabels, event.get_waveform('veto').samples[
-        # lefti:righti + 1], label='Veto')
-        # except:
-        #     plt.plot(xlabels, event.get_waveform('uS1').samples[
-        # lefti:righti + 1], label='S1 peakfinding')
-        #     plt.plot(xlabels, event.get_waveform('uS2').samples[
-        # lefti:righti + 1], label='S2 peakfinding')
-        #     plt.plot(xlabels, event.get_waveform(
-        # 'filtered_for_large_s2').samples[lefti:righti + 1], label='Large s2
-        #  filtered')
-        #     plt.plot(xlabels, event.get_waveform(
-        # 'filtered_for_small_s2').samples[lefti:righti + 1], label='Small s2
-        #  filtered')
-        #     plt.plot(xlabels, [0.6241506363] * nsamples,  '--',
-        # label='Large S2 threshold')
-        #     plt.plot(xlabels, [0.06241506363] * nsamples,  '--',
-        # label='Small S2 threshold')
-        #     plt.plot(xlabels, [0.1872451909] * nsamples,  '--', label='S1
-        # threshold')
+            plt.plot(xlabels,
+                     waveform.samples[lefti:righti + 1],
+                     label=w['plot_label'])
+
         plt.ylabel('Amplitude (pe/bin)')
         plt.xlabel('Time (us)')
+
         if show_peaks and event.peaks:
             # Plot all peaks
             max_y = max([p.height for p in event.peaks])
@@ -161,8 +154,8 @@ class PlotWaveform(plugin.OutputPlugin):
                                                              "angleB=-90"))
 
 
-class PlottingHitPattern(plugin.OutputPlugin):
-    def startup(self):
+class PlottingHitPattern(PlotBase):
+    def substartup(self):
         self.pmts_top = self.config['pmts_top']
         self.pmts_bottom = self.config['pmts_bottom']
         self.pmt_locations = self.config['pmt_locations']
@@ -181,18 +174,16 @@ class PlottingHitPattern(plugin.OutputPlugin):
                         s=area, cmap=plt.cm.hsv)
         c.set_alpha(0.75)
 
-
-    def write_event(self, event):
-        f, (ax1, ax2) = plt.subplots(2, 1, sharex='col', sharey='row')
+    def plot_event(self, event):
+        f, ((ax1, ax2), (ax1, ax2)) = plt.subplots(2, 2, sharex='col', sharey='row')
 
         S2 = event.S2s()[0]
+        S1 = event.S1s()[0]
 
         self.log.fatal(S2.area_per_pmt)
 
+        ax1.set_title('top (from above?)')
         self._plot(S2, ax1, self.pmts_top)
+        ax2.set_title('bottom (from above?)')
         self._plot(S2, ax2, self.pmts_bottom)
 
-        plt.show(block=False)
-
-        self.log.info("Hit enter to continue...")
-        input()
