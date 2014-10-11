@@ -609,17 +609,15 @@ class ComputePeakProperties(plugin.TransformPlugin):
 
         # Compute relevant peak quantities for each pmt's peak: height, FWHM, FWTM, area, ..
         for peak in event.peaks:
-            # Hack for Xerawdp matching: we need to compute the area of EVERY CHANNEL in EVERY PEAK
-            # The only reason we do this is because channels with negative area don't get contribute to a peak's area...
-            areas_per_pmt = {}
+            peak.area_per_pmt = np.zeros(len(event.pmt_waveforms), dtype='float64')
             for channel, wave_data in enumerate(event.pmt_waveforms):
                 if channel in self.config['pmts_veto'] or \
                    peak.type == 's1' and channel in self.config['pmts_excluded_for_s1']:
                     continue
-                integral = np.sum(wave_data[peak.left:peak.right])    # No +1, Xerawdp forgets the right edge also
-                areas_per_pmt[channel] = integral
-            area_for_xerawdp_matching = sum([area for _, area in areas_per_pmt.items() if area > 0])
-            peak.area = area_for_xerawdp_matching
+                # No +1, Xerawdp forgets the right edge also:
+                peak.area_per_pmt[channel] = np.sum(wave_data[peak.left:peak.right])
+            # Exclude negative areas
+            peak.area = sum([area for _, area in enumerate(peak.area_per_pmt) if area > 0])
             """
             The coincidence level is actually computed twice in Xerawdp: once before and once after gain correction
             The coincidence computed before gain correction is used for sorting
@@ -630,7 +628,7 @@ class ComputePeakProperties(plugin.TransformPlugin):
             """
             if peak.type == 's1':
                 peak.coincidence_level = 0
-                for channel, area in areas_per_pmt.items():
+                for channel, area in enumerate(peak.area_per_pmt):
                     if self.config['gains'][channel] == 0:
                         continue
                     if channel in self.config['pmts_excluded_for_s1']:
