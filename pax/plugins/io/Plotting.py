@@ -175,15 +175,18 @@ class PlottingHitPattern(PlotBase):
         c.set_alpha(0.75)
 
     def plot_event(self, event):
-        f, ((ax1, ax2), (ax1, ax2)) = plt.subplots(2, 2, sharex='col', sharey='row')
+        f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, sharex='col', sharey='row')
 
-        S2 = event.S2s()[0]
-        S1 = event.S1s()[0]
+        if event.S2s() and len(event.S2s()) >= 1:
+            S2 = event.S2s()[0]
+            ax1.set_title('S2 top (from above?)')
+            self._plot(S2, ax1, self.pmts_top)
+            ax2.set_title('S2 bottom (from above?)')
+            self._plot(S2, ax2, self.pmts_bottom)
 
-        self.log.fatal(S2.area_per_pmt)
-
-        ax1.set_title('top (from above?)')
-        self._plot(S2, ax1, self.pmts_top)
-        ax2.set_title('bottom (from above?)')
-        self._plot(S2, ax2, self.pmts_bottom)
-
+        if event.S1s() and len(event.S1s()) >= 1:
+            S1 = event.S1s()[0]
+            ax3.set_title('S1 top (from above?)')
+            self._plot(S1, ax3, self.pmts_top)
+            ax4.set_title('S1 bottom (from above?)')
+            self._plot(S1, ax4, self.pmts_bottom)

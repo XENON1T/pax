@@ -44,8 +44,7 @@ class HDF5Output(plugin.OutputPlugin):
         self.hdf5_fields['ReconstructedPosition']['event_number'] = self.hdf5_fields['Event']['event_number']
 
         # Filters are used for compression.  We use the blosc algorithm.
-        compression_filter = tables.Filters(complevel=5,
-                                complib='blosc')
+        compression_filter = tables.Filters(complevel=9, complib='blosc')
 
         self.tables = {}
         self.rows = {}

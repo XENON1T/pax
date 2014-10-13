@@ -129,6 +129,13 @@ for k, v in variables_to_compare.items():
     plt.xlabel('root - pax')
     plt.savefig('%s_hist.eps' % k)
 
+    plt.figure()
+    plt.title(k)
+    plt.hexbin(x, y, bins=40)
+    plt.xlabel('root')
+    plt.ylabel('pax')
+    plt.savefig('%s_2dhist.eps' % k)
+
 x0, x = zip(*variables_to_compare['x'])
 x0, x = np.array(x0), np.array(x)
 dx = x - x0
@@ -145,4 +152,4 @@ plt.ylabel('dy [mm]')
 plt.savefig('dx_dy.eps')
 
 
-plt.show()
+#plt.show()
