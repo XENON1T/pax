@@ -103,6 +103,11 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
 
     def startup(self):
         """Setup"""
+
+        # Collect all events in a buffer, then inject them at the end.
+        self.collect_then_dump = self.config['collect_then_dump']
+
+
         self.connections = {}
 
         try:
@@ -231,7 +236,8 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
 
                 self.occurences.append(occurence_doc)
 
-        self.handle_occurences()
+        if not self.collect_then_dump:
+            self.handle_occurences()
 
     def handle_occurences(self):
         docs = self.occurences  # []
