@@ -106,7 +106,7 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
 
         # Collect all events in a buffer, then inject them at the end.
         self.collect_then_dump = self.config['collect_then_dump']
-
+        self.repeater = int(self.config['repeater'])
 
         self.connections = {}
 
@@ -255,7 +255,26 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
         #docs.append({'test' : 0,
         #                     'docs' : occurences})
 
-        if len(docs) > 0:
+        i = 0
+        t0 = time.time()
+        dt = time.time() - t0
+        if self.repeater > 0:
+            while dt < self.runtime:
+                n = dt * self.repeater
+
+                modified_docs = []
+                doc = self.occurences[0]
+                for _ in range(n):
+                    i += 1
+                    doc['time'] += i * dt / self.repeater
+                    modified_docs.append(doc.copy())
+
+                self.raw_collection.insert(modified_docs,
+                                           w=0)
+
+                dt = time.time -t0
+
+        elif len(docs) > 0:
             t0 = time.time()
             self.raw_collection.insert(docs,
                                        w=0)
