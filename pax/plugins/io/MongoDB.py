@@ -268,11 +268,13 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
                 doc = self.occurences[0]
                 for _ in range(n):
                     i += 1
-                    doc['time'] += i * dt / self.repeater
-                    modified_docs.append(doc.copy())
+                    for doc in self.occurences:
+                        doc['time'] += i * dt / self.repeater
+                        doc['_id'] = uuid.uuid4()
+                        modified_docs.append(doc.copy())
 
-                self.raw_collection.insert(modified_docs,
-                                           w=0)
+                    self.raw_collection.insert(modified_docs,
+                                               w=0)
 
                 dt = time.time -t0
 
