@@ -1,10 +1,12 @@
-wheel==0.23.0
-numpy
+wheel>=0.23.0
+numpy>=1.9.0
 pluginbase
 pymongo
 scikit-learn
 cherrypy
 jinja2
 numpyson
-tables
+tables>=3.1.1
 blosc
+matplotlib>=1.4.0
+scipy>=0.14.0
