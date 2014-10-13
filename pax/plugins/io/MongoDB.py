@@ -106,7 +106,9 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
 
         # Collect all events in a buffer, then inject them at the end.
         self.collect_then_dump = self.config['collect_then_dump']
-        self.repeater = int(self.config['repeater'])
+        self.repeater = int(self.config['repeater']) # Hz repeater
+        self.runtime = int(self.config['runtime']) # How long run repeater
+
 
         self.connections = {}
 
