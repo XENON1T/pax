@@ -272,17 +272,18 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
                 self.log.fatal('times %d', n)
 
                 modified_docs = []
-                doc = self.occurences[0]
+
                 for _ in range(n):
                     i += 1
-                    doc['_id'] = uuid.uuid4()
-                    doc['time'] += i * (t1 - t0) / self.repeater
-                    modified_docs.append(doc.copy())
+                    for doc in self.occurences:
+                        doc['_id'] = uuid.uuid4()
+                        doc['time'] += i * (t1 - t0) / self.repeater
+                        modified_docs.append(doc.copy())
 
-                if len(modified_docs) > 0:
-                    self.log.fatal('size %d', len(modified_docs))
-                    self.raw_collection.insert(modified_docs,
-                                               w=0)
+                    if len(modified_docs) > 0:
+                        self.log.fatal('size %d', len(modified_docs))
+                        self.raw_collection.insert(modified_docs,
+                                                   w=0)
 
 
         elif len(docs) > 0:
