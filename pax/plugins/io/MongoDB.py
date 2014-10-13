@@ -131,12 +131,19 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
 
         self.run_collection = self.run_database[self.config['run_collection']]
 
-        if self.config[
-            'raw_collection'] in self.raw_database.collection_names():
+        if self.config['raw_collection'] in self.raw_database.collection_names():
             self.log.error("Data already exists at output location... deleting")
             self.raw_database.drop_collection(self.config['raw_collection'])
 
         self.raw_collection = self.raw_database[self.config['raw_collection']]
+
+        self.raw_collection.ensure_index([('time', -1),
+                                          ('module', -1),
+                                          ('_id', -1)])
+        self.raw_collection.ensure_index([('time', 1),
+                                          ('module', 1),
+                                          ('_id', 1)])
+
 
         # Send run doc
         self.query = {"name": self.config['name'],
