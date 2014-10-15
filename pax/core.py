@@ -144,6 +144,9 @@ def load_file_into_configparser(config, config_file):
         if not isinstance(parent_files, list):
             parent_files = [parent_files]
         parent_file_paths.extend(parent_files)
+    if len(parent_file_paths) == 0:
+        # This file has no parents...
+        return
     # Unfortunately, configparser can only override settings, not set missing ones.
     # We have no choice but to load the parent file(s), then reload the original one again.
     # By doing this in a recursing function, multi-level inheritance is supported.
