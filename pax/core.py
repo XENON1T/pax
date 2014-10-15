@@ -21,44 +21,34 @@ pax_dir = os.path.join(os.path.dirname(os.path.abspath(inspect.getfile(inspect.c
 ##
 # Configuration handling
 ##
+global config_files_read
+config_files_read = []
 
 def get_named_configuration_options():
     """ Return the names of all named configurations
     """
     config_files =[]
-    for filename in glob.glob(os.path.join(pax_dir,
-                                           'config',
-                                           '*.ini')):
+    for filename in glob.glob(os.path.join(pax_dir, 'config', '*.ini')):
         filename = os.path.basename(filename)
         m = re.match(r'(\w+)\.ini', filename)
         if m is None:
             print("Weird file in config dir: %s" % filename)
         filename = m.group(1)
-        # Config files starting with '_' won't work by themselves
+        # Config files starting with '_' won't appear in the usage list (they won't work by themselves)
         if filename[0] == '_':
             continue
         config_files.append(filename)
     return config_files
 
-def parse_configuration_string(config_string):
-    with StringIO(config_string) as config_fake_file:
-        config = parse_configuration_file(config_fake_file)
-    return config
+def init_configuration(config_names=(), config_paths=(), config_string=None):
+    """ Get pax configuration from configuration files and config_string
+      - config_names: List of named configurations to load (sequentially)
+      - configuration: List of config file paths to load (sequentially)
+      - config_string: A final config override string
+    Files from config_paths will be loaded after config_names, and can thus override their settings.
+    The config_string is loaded last of all.
 
-def parse_named_configuration(config_name):
-    """ Get pax configuration from a pre-cooked configuration in 'config'
-    :param config_name: name of the config (without .ini)
-    :return: output of parse_configuration_file
-    """
-    config = parse_configuration_file(os.path.join(pax_dir,
-                                                   'config',
-                                                   config_name + '.ini'))
-    return config
-
-def parse_configuration_file(file_object):
-    """ Get pax configuration from a configuration file
-
-    Configuration files can inherit from each other using parent_configuration.
+    Configuration files can inherit from others using parent_configuration and parent_configuration_files.
 
     Each value in the ini file is eval()'ed in a context with physical unit variables:
         4 * 2 -> 8
@@ -67,6 +57,16 @@ def parse_configuration_file(file_object):
     :param file_object: Path to the ini file to read, or opened file object to read
     :return: nested dictionary of evaluated configuration values, use as: config[section][key].
     """
+    global config_files_read
+    config_files_read = []      # Need to clean this here so tests can re-load the config
+
+    # Support for string arguments
+    if isinstance(config_names, str):
+        config_names = [config_names]
+    if isinstance(config_paths, str):
+        config_paths = [config_paths]
+
+
     config = ConfigParser(inline_comment_prefixes='#',
                           interpolation=ExtendedInterpolation(),
                           strict=True)
@@ -74,8 +74,23 @@ def parse_configuration_file(file_object):
     # Allow for case-sensitive configuration keys
     config.optionxform = str
 
-    # Loads the file into configparser, also takes care of inheritance.
-    load_file_into_configparser(config, file_object)
+    # Make a list of all config paths / file objects to load
+    config_files = []
+    for config_name in config_names:
+        config_files.append(os.path.join(pax_dir, 'config', config_name + '.ini'))
+    for config_path in config_paths:
+        config_files.append(config_path)
+    if config_string is not None:
+        config_files.append(StringIO(config_string))
+    if len(config_files) == 0:
+        #raise ValueError('init_configuration: No configuration specified!')
+        return None # The processor will load a default
+
+
+    # Loads the files into configparser, also takes care of inheritance.
+    for config_file_thing in config_files:
+        load_file_into_configparser(config, config_file_thing)
+
 
     # Get a dict with all variables from the units submodule
     units_variables = {name: getattr(units, name) for name in dir(units)}
@@ -98,36 +113,46 @@ def load_file_into_configparser(config, config_file):
     :return: None
     """
     if isinstance(config_file, str):
+        print("Loading %s" % config_file)
         if not os.path.isfile(config_file):
             raise ValueError("Configuration file %s does not exist!" % config_file)
+        global config_files_read
+        if config_file in config_files_read:
+            # This file has already been loaded: don't load it again
+            # If we did, it would cause problems with inheritance diamonds
+            print("Skipping config file %s: don't load it a second time" % config_file)
+            return
         config.read(config_file)
+        config_files_read.append(config_file)
     else:
-        config.readfp(config_file)
-    # Determine the path of the parent config file
-    if 'final_ancestor' in config['pax'] and config['pax'] ['final_ancestor']:
-        # We've reached the root of the inheritance line, there is no base file
-        return
-    elif 'parent_configuration' in config['pax'] :
-        # This file inherits from another config file in the 'config' directory
+        config.read_file(config_file)
+    # Determine the path(s) of the parent config file(s)
+    parent_file_paths = []
+    if 'parent_configuration' in config['pax']:
+        # This file inherits from other config file(s) in the 'config' directory
         global pax_dir
-        # The [1:-1] removes the quotes around the value... could do another eval, but lazy
-        parent_file_path = os.path.join(pax_dir,
-                                        'config',
-                                        config['pax']['parent_configuration'][1:-1] + '.ini')
-    elif 'parent_configuration_file' in config['pax']:
-        # This file inherits from a user-defined config file
-            parent_file_path = config['pax']['parent_configuration_file'][1:-1]
-    else:
-        raise RuntimeError('Missing inheritance instructions for config file %s!' %
-                           str(config_file))
+        parent_files = eval(config['pax']['parent_configuration'])
+        if not isinstance(parent_files, list):
+            parent_files = [parent_files]
+        parent_file_paths.extend([
+            os.path.join(pax_dir, 'config', pf + '.ini')
+            for pf in parent_files
+        ])
+    if 'parent_configuration_file' in config['pax']:
+        # This file inherits from user-defined config file(s)
+        parent_files = eval(config['pax']['parent_configuration_file'])
+        if not isinstance(parent_files, list):
+            parent_files = [parent_files]
+        parent_file_paths.extend(parent_files)
     # Unfortunately, configparser can only override settings, not set missing ones.
-    # We have no choice but to load the parent file, then reload the original one again.
+    # We have no choice but to load the parent file(s), then reload the original one again.
     # By doing this in a recursing function, multi-level inheritance is supported.
-    load_file_into_configparser(config, parent_file_path)
+    for pfp in parent_file_paths:
+        load_file_into_configparser(config, pfp)
     if isinstance(config_file, str):
         config.read(config_file)
     else:
-        config.readfp(config_file)
+        config.read_file(config_file)
 
 ##
 # Plugin handling
@@ -247,7 +272,7 @@ def processor(config, log_spec, events_to_process=None, stop_after=None, input_s
 
     if config is None:
         log.warning("No configuration specified: loading Xenon100 config!")
-        config = parse_named_configuration('XENON100')
+        config = init_configuration(config_names=['XENON100'])
     log.info("This is PAX version %s, running with configuration for %s." % (
         pax.__version__, config['DEFAULT']['tpc_name'])
     )
