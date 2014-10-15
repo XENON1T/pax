@@ -16,7 +16,6 @@ from bson.binary import Binary
 from pax.datastructure import Event
 from pax import plugin
 
-
 class MongoDBInput(plugin.InputPlugin):
     def startup(self):
         self.log.debug("Connecting to %s" % self.config['address'])
@@ -132,11 +131,6 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
         self.raw_database = self.raw_client[self.config['raw_database']]
 
         self.run_collection = self.run_database[self.config['run_collection']]
-
-        if self.config['raw_collection'] in self.raw_database.collection_names():
-            self.log.error("Data already exists at output location... deleting")
-            self.raw_database.drop_collection(self.config['raw_collection'])
-
         self.raw_collection = self.raw_database[self.config['raw_collection']]
 
         self.raw_collection.ensure_index([('time', -1),
@@ -145,7 +139,16 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
         self.raw_collection.ensure_index([('time', 1),
                                           ('module', 1),
                                           ('_id', 1)])
+        self.raw_collection.ensure_index([('_id', pymongo.HASHED)])
+            
+        c = self.raw_collection.options()
+        if 'capped' not in c or c['capped'] is False:
+            self.raw_collection.ensure_index([('_id', pymongo.HASHED)])
 
+            self.log.info("Sharding %s" % str(c))
+            #self.raw_client.admin.command('shardCollection',
+            #                              '%s.%s' % (self.config['raw_database'], self.config['raw_collection']),
+            #                              key = {'_id': pymongo.HASHED})
 
         # Send run doc
         self.query = {"name": self.config['name'],
@@ -231,7 +234,7 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
 
                 occurence_doc = {}
 
-                occurence_doc['_id'] = uuid.uuid4()
+                #occurence_doc['_id'] = uuid.uuid4()
                 occurence_doc['module'] = pmt_num  # TODO: fix wax
                 occurence_doc['channel'] = pmt_num
 
@@ -272,19 +275,30 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
                 self.log.fatal('times %d', n)
 
                 modified_docs = []
+                min_time = None
+                max_time = None
 
                 for _ in range(n):
                     i += 1
                     for doc in self.occurences:
-                        doc['_id'] = uuid.uuid4()
+                        #doc['_id'] = uuid.uuid4()
                         doc['time'] += i * (t1 - t0) / self.repeater
+
+                        if min_time is None or doc['time'] < min_time:
+                            min_time = doc['time']
+                        if max_time is None or doc['time'] > max_time:
+                            max_time = doc['time']
+
                         modified_docs.append(doc.copy())
 
-                    if len(modified_docs) > 0:
-                        self.log.fatal('size %d', len(modified_docs))
-                        self.raw_collection.insert(modified_docs,
-                                                   w=0)
-
+                        if len(modified_docs) > 1000:
+                            self.raw_collection.insert({'min' : min_time,
+                                                        'max' : max_time,
+                                                        'bulk' : modified_docs},
+                                                       w=0)
+                            modified_docs = []
+                            min_time = None
+                            max_time = None
 
         elif len(docs) > 0:
             t0 = time.time()
