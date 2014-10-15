@@ -113,14 +113,14 @@ def load_file_into_configparser(config, config_file):
     :return: None
     """
     if isinstance(config_file, str):
-        print("Loading %s" % config_file)
+        # print("Loading %s" % config_file)
         if not os.path.isfile(config_file):
             raise ValueError("Configuration file %s does not exist!" % config_file)
         global config_files_read
         if config_file in config_files_read:
             # This file has already been loaded: don't load it again
             # If we did, it would cause problems with inheritance diamonds
-            print("Skipping config file %s: don't load it a second time" % config_file)
+            # print("Skipping config file %s: don't load it a second time" % config_file)
             return
         config.read(config_file)
         config_files_read.append(config_file)
