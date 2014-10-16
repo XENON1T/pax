@@ -1,3 +1,11 @@
+"""
+Convert a Monte Carlo Root file generate with GEANT + Nest to fax CSV instructions
+Useful if your pyRoot doesn't work with python 3.
+(If it does work, you can more easily use the WaveformSimulatorFromNEST plugin.)
+"""
+
+
+
 import ROOT
 import csv
 
@@ -41,7 +49,7 @@ for event_i in range(t.GetEntries()):
     # Write to csv
     for peak_i, peak_data in enumerate(peaks):
         if event_i == 0 and peak_i == 0:
-            headers = ['event'] + [q[0] for q in variables]
+            headers = ['instruction'] + [q[0] for q in variables]
             output = open('fax_instructions.csv', 'wb')
             csvwriter = csv.DictWriter(output, headers)
             print(headers)

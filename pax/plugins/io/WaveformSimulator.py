@@ -8,6 +8,7 @@ except:
 
 from pax import plugin, units, datastructure, simulation
 
+
 class WaveformSimulator(plugin.InputPlugin):
     """ Common I/O for waveform simulator: truth file writing, pax event creation, etc.
     There is no physics here: all that is in pax.simulation
@@ -191,7 +192,6 @@ class WaveformSimulator(plugin.InputPlugin):
 
 
 
-
 class WaveformSimulatorFromCSV(WaveformSimulator):
     def startup(self):
         # Open the instructions file
@@ -216,3 +216,49 @@ class WaveformSimulatorFromCSV(WaveformSimulator):
                 this_instruction_peaks = [p]
         # For the final event...
         yield this_instruction_peaks
+
+
+class WaveformSimulatorFromNEST(WaveformSimulator):
+
+    variables = (
+             #Fax name        #Root name    #Conversion factor (multiplicative)
+            ('x',             'Nest_x',     0.1),
+            ('y',             'Nest_y',     0.1),
+            ('depth',         'Nest_z',     -0.1),
+            ('s1_photons',    'Nest_nph',   1),
+            ('s2_electrons',  'Nest_nel',   1),
+            ('t',             'Nest_t',     10**9),
+    )
+
+    def startup(self):
+        self.log.warning('This plugin is completely untested and will probably crash!')
+        import ROOT
+        f = ROOT.TFile(self.config['input_file'])
+        self.t = f.Get("t1") # For Xerawdp use T1, for MC t1
+        WaveformSimulator.startup(self)
+
+    def get_instructions_for_next_event(self):
+        for event_i in range(self.t.GetEntries()):
+            self.t.GetEntry(event_i)
+
+            # Get stuff from root files
+            values = {}
+            for (variable_name, root_thing_name, _) in self.variables:
+                values[variable_name] = getattr(self.t, root_thing_name)
+
+            # Convert to peaks dictionary
+            npeaks = len(values[self.variables[0][0]])
+            peaks = []
+            for i in range(npeaks):
+                peaks.append({'event' : event_i})
+                for (variable_name, _, conversion_factor) in self.variables:
+                    peaks[-1][variable_name] = values[variable_name][i] * conversion_factor
+
+            # Subtract depth of gate mesh, see xenon:xenon100:mc:roottree, bottom of page
+            for p in peaks:
+                p['depth'] -= 2.15+0.25
+
+            # Sort by time
+            peaks.sort(key = lambda p:p['t'])
+
+            yield peaks
