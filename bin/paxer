@@ -22,7 +22,7 @@ parser.add_argument('--log', default='INFO', help="Set log level, e.g. 'debug'")
 # Pass in a name to use a pre-cooked config from config:
 parser.add_argument(
     '--config',
-    default=[],
+    default='XENON100',
     choices=core.get_named_configuration_options(),
     nargs='+',
     help="Name(s) of the pax configuration(s) to use."

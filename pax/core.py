@@ -86,7 +86,6 @@ def init_configuration(config_names=(), config_paths=(), config_string=None):
         #raise ValueError('init_configuration: No configuration specified!')
         return None # The processor will load a default
 
-
     # Loads the files into configparser, also takes care of inheritance.
     for config_file_thing in config_files:
         load_file_into_configparser(config, config_file_thing)
@@ -125,6 +124,7 @@ def load_file_into_configparser(config, config_file):
         config.read(config_file)
         config_files_read.append(config_file)
     else:
+        # print("Loading config from file object")
         config.read_file(config_file)
     # Determine the path(s) of the parent config file(s)
     parent_file_paths = []
@@ -172,11 +172,14 @@ def instantiate_plugin(name, plugin_source, config, log=logging):
         log.exception(e)
         raise
 
+    # First load the default settings
+    this_plugin_config = config['DEFAULT']
+    # Then override with module-level settings
+    if name_module in config:
+        this_plugin_config.update(config[name_module])
+    # Then override with plugin-level settings
     if name in config:
-        this_plugin_config = config[name]
-    else:
-        log.debug('Plugin %s has no configuration!' % name)
-        this_plugin_config = config['DEFAULT']
+        this_plugin_config.update(config[name])
 
     instance = getattr(plugin_module, name_class)(this_plugin_config)
 
