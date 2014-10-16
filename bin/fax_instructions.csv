@@ -1,4 +1,4 @@
-event,x,y,depth,s1_photons,s2_electrons,t
+instruction,x,y,depth,s1_photons,s2_electrons,t
 1,0,0,0,10,0,0
 1,0,0,0,20,0,5000
 1,0,0,0,30,0,10000
