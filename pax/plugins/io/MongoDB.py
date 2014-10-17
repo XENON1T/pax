@@ -145,6 +145,8 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
         self.raw_collection.ensure_index([('time', 1),
                                           ('module', 1),
                                           ('_id', 1)])
+        self.raw_collection.ensure_index(("_id", "hashed"))
+
 
 
         # Send run doc
