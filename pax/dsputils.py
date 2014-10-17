@@ -279,7 +279,7 @@ def peaks_and_valleys(signal, test_function):
 ##
 # Correction map class
 ##
-class CorrectionMap(object):
+class InterpolatingDetectorMap(object):
 
     def __init__(self, filename):
         self.data = json.load(open(filename))
@@ -316,6 +316,6 @@ class CorrectionMap(object):
         else:
             raise RuntimeError("Can't use  a %s-dimensional correction map!" % self.dimensions)
 
-    def get_correction(self, position):
+    def get_value_at(self, position):
         # Todo: handle polar coordinate attributes by @property's in event class
         return self.interpolator(*[getattr(position, q[0]) for q in self.coordinate_system])
