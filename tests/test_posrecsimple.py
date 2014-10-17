@@ -18,7 +18,7 @@ from pax.datastructure import Event, Peak
 class TestPosRecWeightedSum(unittest.TestCase):
 
     def setUp(self):
-        self.conf = core.parse_named_configuration('default')
+        self.conf = core.init_configuration(config_names='XENON100')
         self.plugin_source = core.get_plugin_source(self.conf)
         self.objy = core.instantiate_plugin('PosSimple.PosRecWeightedSum',
                                     self.plugin_source,

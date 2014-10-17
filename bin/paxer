@@ -19,19 +19,40 @@ parser.add_argument('input', default=None, help="File or database to read events
 parser.add_argument('--log', default='INFO', help="Set log level, e.g. 'debug'")
 
 # Configuration control
-configuration_control_group = parser.add_mutually_exclusive_group()
 # Pass in a name to use a pre-cooked config from config:
-configuration_control_group.add_argument(
+parser.add_argument(
     '--config',
-    default=None,
+    default='XENON100',
     choices=core.get_named_configuration_options(),
-    help="Name of the pax configuration to use."
+    nargs='+',
+    help="Name(s) of the pax configuration(s) to use."
 )
 # ...or pass in a path to your own config file:
-configuration_control_group.add_argument(
+parser.add_argument(
     '--config_path',
-    help="Path of the configuration file to use."
+    default=[],
+    nargs='+',
+    help="Path(s) of the configuration file(s) to use."
 )
+
+# Plotting override
+plotting_control_group = parser.add_mutually_exclusive_group()
+plotting_control_group.add_argument(
+    '--plot',
+    action='store_const',
+    const=True,
+    help='Plot summed waveforms on screen',
+)
+plotting_control_group.add_argument(
+    '--plot_to_dir',
+    help='Save summed waveform plots in directory',
+)
+parser.add_argument(
+    '--plot_every',
+    default=1,
+    help='Plot only every PLOT_EVERY waveform',
+)
+
 
 # Control events to process
 input_control_group = parser.add_mutually_exclusive_group()
@@ -41,22 +62,30 @@ input_control_group.add_argument('--event',
                                  help="Process particular event(s).")
 input_control_group.add_argument('--stop_after',
                                  type=int,
-                                 help="Stop after 'n' events processed.")
+                                 help="Stop after STOP_AFTER events have been processed.")
 
 args = parser.parse_args()
+
+# Construct plotting override string
+override_string = ''
+if args.plot_to_dir or args.plot :
+    override_string += '[pax]\noutput="Plotting.PlotWaveform"\n'
+    if args.plot_to_dir or args.plot_every:
+        override_string += '\n[Plotting.PlotWaveform]\n'
+        if args.plot_to_dir:
+            override_string += 'output_dir = %s\n' % args.plot_to_dir
+        if args.plot_every:
+            override_string += 'plot_every = %s\n' % args.plot_every
 
 
 ##
 # Load configuration and run the processor
 ##
-
-if args.config_path is not None:
-    config = core.parse_configuration_file(args.config_path)
-elif args.config is not None:
-    config = core.parse_named_configuration(args.config)
-else:
-    config = None   # No config passed, pax will warn user and load a default
-
+config = core.init_configuration(
+    config_names=args.config,
+    config_paths=args.config_path,
+    config_string=override_string
+)
 
 core.processor(
     config = config,

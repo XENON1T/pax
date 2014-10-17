@@ -3,9 +3,9 @@ This plug-in reads raw waveform data from a Xenon100 XED file.
 The XED file format is documented in Guillaume Plante's PhD thesis.
 This is code does not use the libxdio C-library though.
 
-At the moment this plugin only supports:
-    - sequential reading, not searching for a particular event;
-    - reading a single XED file, not an entire dataset;
+At the moment this plugin supports:
+    - sequential reading as well as searching for a particular event;
+    - reading a single XED file or an entire dataset (in a directory);
     - one 'chunk' per event, it raises an exception if it sees more than one chunk;
     - zle0 sample encoding, not raw;
     - bzip2 or uncompressed chunk data compression, not any other compression scheme.
@@ -17,6 +17,7 @@ Some metadata from the XED file is stored in event['metadata'], see the end of t
 code for details.
 """
 
+import glob
 import math
 import bz2
 
@@ -56,21 +57,64 @@ class XedInput(plugin.InputPlugin):
     ])
 
     def startup(self):
+        self.xedfiles = []
+        self.input = None
         if self.config['input_specification'] is not None:
+            self.log.debug('User-defined input file/dir: %s' % self.config['input_specification'])
             filename = self.config['input_specification']
         else:
             filename = self.config['filename']
-        self.input = open(filename, 'rb')
+        if filename[-4:] == '.xed':
+            self.log.debug("Single file mode")
+            self.init_xedfile(filename)
+        else:
+            self.log.debug("Directory mode")
+            xedfiles = glob.glob(filename + "/*.xed")
+            if len(xedfiles)==0:
+                raise ValueError("No XED files found in input directory %s!" % self.config['filename'])
+            for xf in xedfiles:
+                self.init_xedfile(xf)
+        # Select the first XED file
+        self.select_xedfile(0)
+
+    def init_xedfile(self, filename):
+        """Loads in an XED file header, so we can look up which events are in it"""
+        input = open(filename, 'rb')
+        self.xedfiles.append({
+            'filename' : filename,
+        })
+        fmd = np.fromfile(input, dtype=XedInput.file_header, count=1)[0]
+        self.xedfiles[-1]['first_event'] = fmd['first_event_number']
+        self.xedfiles[-1]['last_event'] =  fmd['first_event_number'] + \
+                                           fmd['events_in_file'] - 1
 
         # Read metadata and event positions from the XED file
+
+        self.event_positions = np.fromfile(input, dtype=np.dtype("<u4"),
+                                           count=fmd['event_index_size'])
+        if fmd['events_in_file'] > fmd['event_index_size']:
+            raise RuntimeError(
+                "The XED file claims there are %s events in the file, but the event position index has only %s entries!" %
+                (fmd['events_in_file'], fmd['event_index_size'])
+            )
+        self.log.debug('Found XED file %s containing events %s-%s' % (
+            filename, self.xedfiles[-1]['first_event'], self.xedfiles[-1]['last_event']
+        ))
+
+    def select_xedfile(self, i):
+        """Selects an XED file previously loaded by init_xedfile, so we can start reading events"""
+        if self.input is not None:
+            self.input.close()
+        try:
+            xedfile = self.xedfiles[i]
+        except IndexError:
+            raise RuntimeError("Invalid XED file index %s: %s XED files loaded" % (i, len(self.xedfiles)))
+        self.input = open(xedfile['filename'], 'rb')
+        # We already read in file metadata in init_xedfile, but didn't store it
+        # We have to read it in here again anyway to get input in the right position...
         self.file_metadata = np.fromfile(self.input, dtype=XedInput.file_header, count=1)[0]
         self.event_positions = np.fromfile(self.input, dtype=np.dtype("<u4"),
                                            count=self.file_metadata['event_index_size'])
-        if self.file_metadata['events_in_file'] > self.file_metadata['event_index_size']:
-            raise RuntimeError(
-                "The XED file claims there are %s events in the file, but the event position index has only %s entries!" %
-                (self.file_metadata['events_in_file'], self.file_metadata['event_index_size'])
-            )
         if self.file_metadata['events_in_file'] < self.file_metadata['event_index_size']:
             self.log.debug(
                 ("The XED file claims there are %s events in the file, while the event position index has %s entries. " +
@@ -78,8 +122,8 @@ class XedInput(plugin.InputPlugin):
                 (self.file_metadata['events_in_file'], self.file_metadata['event_index_size'])
             )
             self.event_positions = self.event_positions[:self.file_metadata['events_in_file']]
-        self.first_event = self.file_metadata['first_event_number']
-        self.last_event =  self.file_metadata['first_event_number'] + self.file_metadata['events_in_file'] - 1
+        self.first_event = xedfile['first_event']
+        self.last_event = xedfile['last_event']
 
     def shutdown(self):
         self.input.close()
@@ -90,11 +134,15 @@ class XedInput(plugin.InputPlugin):
             yield self.get_single_event(self.file_metadata['first_event_number'] + event_position_i)
 
     def get_single_event(self, event_number):
-        # Superfluous, Pax should do this check already:
+
         if not self.first_event <= event_number <= self.last_event:
-            raise RuntimeError("Event %s asked, but XED file contains only event %s - %s!" % (
-                event_number, self.first_event, self.last_event
-            ))
+            #Time to open a new XED file!
+            for i, xedfile in enumerate(self.xedfiles):
+                if xedfile['first_event'] <= event_number <= xedfile['last_event']:
+                    self.select_xedfile(i)
+                    break
+            else:
+                raise ValueError("None of the loaded XED-files contains event %s!" % event_number)
 
         # Seek to the requested event
         self.input.seek(self.event_positions[event_number - self.first_event])
