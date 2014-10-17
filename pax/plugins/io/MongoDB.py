@@ -248,7 +248,7 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
 
                 self.occurences.append(occurence_doc)
 
-        if not self.collect_then_dump:
+        if not self.collect_then_dump and self.repeater == 0:
             self.handle_occurences()
 
     def handle_occurences(self):
@@ -265,7 +265,9 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
         t1 = time.time() # last time
 
         if self.repeater > 0:
+            modified_docs = []
             while (t1 - t0) < self.runtime:
+                #print((t1 - t0), t1, t0, self.runtime)
                 this_time = time.time()
                 n = int((this_time - t1) * self.repeater)
                 if n == 0:
@@ -274,7 +276,6 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
                 t1 = this_time
                 self.log.fatal('times %d', n)
 
-                modified_docs = []
                 min_time = None
                 max_time = None
 
@@ -292,10 +293,13 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
                         modified_docs.append(doc.copy())
 
                         if len(modified_docs) > 1000:
-                            self.raw_collection.insert({'min' : min_time,
-                                                        'max' : max_time,
-                                                        'bulk' : modified_docs},
-                                                       w=0)
+                            self.raw_collection.insert(modified_docs)
+                            #{'min' : min_time,
+                             #                           'max' : max_time,
+                              #                          'bulk' : modified_docs},
+                               #                        w=0)
+                             
+
                             modified_docs = []
                             min_time = None
                             max_time = None
