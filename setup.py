@@ -33,6 +33,7 @@ setup(
 		'pax.plugins.posrec',
 		'pax.plugins.dsp',
 		'pax.plugins.display',
+		'pax.plugins.corrections',
 		'pax.micromodels'
 	],
 	package_dir={'pax': 'pax'},
