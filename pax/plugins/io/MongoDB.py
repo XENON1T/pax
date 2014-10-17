@@ -139,16 +139,13 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
         self.raw_collection.ensure_index([('time', 1),
                                           ('module', 1),
                                           ('_id', 1)])
+
         self.raw_collection.ensure_index([('_id', pymongo.HASHED)])
             
-        c = self.raw_collection.options()
-        if 'capped' not in c or c['capped'] is False:
-            self.raw_collection.ensure_index([('_id', pymongo.HASHED)])
-
-            self.log.info("Sharding %s" % str(c))
-            #self.raw_client.admin.command('shardCollection',
-            #                              '%s.%s' % (self.config['raw_database'], self.config['raw_collection']),
-            #                              key = {'_id': pymongo.HASHED})
+        #self.log.info("Sharding %s" % str(c))
+        #self.raw_client.admin.command('shardCollection',
+        #                              '%s.%s' % (self.config['raw_database'], self.config['raw_collection']),
+        #                              key = {'_id': pymongo.HASHED})
 
         # Send run doc
         self.query = {"name": self.config['name'],
