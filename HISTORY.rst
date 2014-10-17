@@ -20,7 +20,13 @@ History
   * Multiple inheritance
 
 * DAQInjector
-* Run database stuff? (Chris expand?)
+
+  * New run-database format
+  * Repeat single events
+  * Create shard index
+  * Further debugging and maturing
+  
+* Implement run database interface in MongoDB IO for DAQ injector
 * WaveformSimulator (Fax) cleanup:
 
   * Several truth file & instruction file formats
@@ -28,15 +34,14 @@ History
   * ER/NR S1s
   
 * Cut overhanging pulses
-* Several PosSimple improvements (Chris expand?)
+* Several PosSimple improvements 
 * Interpolating detector maps (for position-dependent signal corrections)
+* Plot 2D hit patterns
 
 
 ------------------
 1.2.0 (2014-10-02)
 ------------------
-
-This release is bugged, it won't run.
 
 * DAQ injector - can inject data into DAQs.
 * Nested configurations - better handling of configurations and allows for nesting
