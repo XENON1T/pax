@@ -9,18 +9,24 @@ History
 
 * Plugin directory moved (fix bug in previous release)
 * Bulk processing enhancements
+
   * Scripts for parallelization
   * XED: read in entire datasets, not just single files
+
 * More command line arguments: input, plotting
 * Configuration enhancements
+
   * Module-level settings
   * Multiple inheritance
+
 * DAQInjector
 * Run database stuff? (Chris expand?)
 * WaveformSimulator (Fax) cleanup:
+
   * Several truth file & instruction file formats
   * Better-motivated settings
   * ER/NR S1s
+  
 * Cut overhanging pulses
 * Several PosSimple improvements (Chris expand?)
 * Interpolating detector maps (for position-dependent signal corrections)
