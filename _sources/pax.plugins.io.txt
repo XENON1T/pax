@@ -1,0 +1,102 @@
+pax.plugins.io package
+======================
+
+Submodules
+----------
+
+pax.plugins.io.CSV module
+-------------------------
+
+.. automodule:: pax.plugins.io.CSV
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.plugins.io.HDF5 module
+--------------------------
+
+.. automodule:: pax.plugins.io.HDF5
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.plugins.io.MongoDB module
+-----------------------------
+
+.. automodule:: pax.plugins.io.MongoDB
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.plugins.io.OnlineMonitor module
+-----------------------------------
+
+.. automodule:: pax.plugins.io.OnlineMonitor
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.plugins.io.Pickle module
+----------------------------
+
+.. automodule:: pax.plugins.io.Pickle
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.plugins.io.Plotting module
+------------------------------
+
+.. automodule:: pax.plugins.io.Plotting
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.plugins.io.PrintToScreen module
+-----------------------------------
+
+.. automodule:: pax.plugins.io.PrintToScreen
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.plugins.io.RawWaveformDump module
+-------------------------------------
+
+.. automodule:: pax.plugins.io.RawWaveformDump
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.plugins.io.WaveformSimulator module
+---------------------------------------
+
+.. automodule:: pax.plugins.io.WaveformSimulator
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.plugins.io.XAMS module
+--------------------------
+
+.. automodule:: pax.plugins.io.XAMS
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.plugins.io.XED module
+-------------------------
+
+.. automodule:: pax.plugins.io.XED
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: pax.plugins.io
+    :members:
+    :undoc-members:
+    :show-inheritance:

@@ -57,6 +57,41 @@
 <li class="toctree-l2"><a class="reference internal" href="pax.micromodels.html#module-pax.micromodels">Module contents</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="pax.plugins.html">pax.plugins package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pax.plugins.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pax.plugins.display.html">pax.plugins.display package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.display.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.display.html#module-pax.plugins.display.Display">pax.plugins.display.Display module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.display.html#module-pax.plugins.display">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pax.plugins.io.html">pax.plugins.io package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.CSV">pax.plugins.io.CSV module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.HDF5">pax.plugins.io.HDF5 module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.MongoDB">pax.plugins.io.MongoDB module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.OnlineMonitor">pax.plugins.io.OnlineMonitor module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.Pickle">pax.plugins.io.Pickle module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.Plotting">pax.plugins.io.Plotting module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.PrintToScreen">pax.plugins.io.PrintToScreen module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.RawWaveformDump">pax.plugins.io.RawWaveformDump module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.WaveformSimulator">pax.plugins.io.WaveformSimulator module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.XAMS">pax.plugins.io.XAMS module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.XED">pax.plugins.io.XED module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="pax.plugins.posrec.html">pax.plugins.posrec package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.posrec.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.posrec.html#module-pax.plugins.posrec.PosSimple">pax.plugins.posrec.PosSimple module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.posrec.html#module-pax.plugins.posrec">Module contents</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="pax.plugins.html#module-pax.plugins">Module contents</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </div>
@@ -87,6 +122,38 @@ all the classes that need to be instantiated and used for processing events.</p>
 <dd></dd></dl>
 
 <dl class="function">
+<dt id="pax.core.init_configuration">
+<tt class="descclassname">pax.core.</tt><tt class="descname">init_configuration</tt><big>(</big><em>config_names=()</em>, <em>config_paths=()</em>, <em>config_string=None</em><big>)</big><a class="reference internal" href="_modules/pax/core.html#init_configuration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.init_configuration" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Get pax configuration from configuration files and config_string</dt>
+<dd><ul class="first last simple">
+<li>config_names: List of named configurations to load (sequentially)</li>
+<li>configuration: List of config file paths to load (sequentially)</li>
+<li>config_string: A final config override string</li>
+</ul>
+</dd>
+</dl>
+<p>Files from config_paths will be loaded after config_names, and can thus override their settings.
+The config_string is loaded last of all.</p>
+<p>Configuration files can inherit from others using parent_configuration and parent_configuration_files.</p>
+<dl class="docutils">
+<dt>Each value in the ini file is eval()&#8217;ed in a context with physical unit variables:</dt>
+<dd>4 * 2 -&gt; 8
+4 * cm**(2)/s -&gt; correctly interpreted as a physical value with units of cm^2/s</dd>
+</dl>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>file_object</strong> &#8211; Path to the ini file to read, or opened file object to read</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">nested dictionary of evaluated configuration values, use as: config[section][key].</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
 <dt id="pax.core.instantiate_plugin">
 <tt class="descclassname">pax.core.</tt><tt class="descname">instantiate_plugin</tt><big>(</big><em>name</em>, <em>plugin_source</em>, <em>config</em>, <em>log=&lt;module 'logging' from '/opt/local/Library/Frameworks/Python.framework/Versions/3.4/lib/python3.4/logging/__init__.py'&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/core.html#instantiate_plugin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.instantiate_plugin" title="Permalink to this definition">¶</a></dt>
 <dd><p>Take plugin class name and build class from it</p>
@@ -111,41 +178,6 @@ all the classes that need to be instantiated and used for processing events.</p>
 </tr>
 </tbody>
 </table>
-</dd></dl>
-
-<dl class="function">
-<dt id="pax.core.parse_configuration_file">
-<tt class="descclassname">pax.core.</tt><tt class="descname">parse_configuration_file</tt><big>(</big><em>file_object</em><big>)</big><a class="reference internal" href="_modules/pax/core.html#parse_configuration_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.parse_configuration_file" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get pax configuration from a configuration file</p>
-<p>Configuration files can inherit from each other using parent_configuration.</p>
-<dl class="docutils">
-<dt>Each value in the ini file is eval()&#8217;ed in a context with physical unit variables:</dt>
-<dd>4 * 2 -&gt; 8
-4 * cm**(2)/s -&gt; correctly interpreted as a physical value with units of cm^2/s</dd>
-</dl>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>file_object</strong> &#8211; Path to the ini file to read, or opened file object to read</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">nested dictionary of evaluated configuration values, use as: config[section][key].</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
-<dt id="pax.core.parse_configuration_string">
-<tt class="descclassname">pax.core.</tt><tt class="descname">parse_configuration_string</tt><big>(</big><em>config_string</em><big>)</big><a class="reference internal" href="_modules/pax/core.html#parse_configuration_string"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.parse_configuration_string" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="pax.core.parse_named_configuration">
-<tt class="descclassname">pax.core.</tt><tt class="descname">parse_named_configuration</tt><big>(</big><em>config_name</em><big>)</big><a class="reference internal" href="_modules/pax/core.html#parse_named_configuration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.parse_named_configuration" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get pax configuration from a pre-cooked configuration in &#8216;config&#8217;
-:param config_name: name of the config (without .ini)
-:return: output of parse_configuration_file</p>
 </dd></dl>
 
 <dl class="function">
@@ -368,6 +400,22 @@ Or rather, it starts from January 1, 1970.</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="pax.datastructure.ReconstructedPosition.index_of_maximum">
+<tt class="descname">index_of_maximum</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.ReconstructedPosition.index_of_maximum" title="Permalink to this definition">¶</a></dt>
+<dd><p>For this reconstructed peak, index of maximum value within sum waveform.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.ReconstructedPosition.phi">
+<tt class="descname">phi</tt><a class="reference internal" href="_modules/pax/datastructure.html#ReconstructedPosition.phi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.ReconstructedPosition.phi" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.ReconstructedPosition.r">
+<tt class="descname">r</tt><a class="reference internal" href="_modules/pax/datastructure.html#ReconstructedPosition.r"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.ReconstructedPosition.r" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
 <dt id="pax.datastructure.ReconstructedPosition.x">
 <tt class="descname">x</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.ReconstructedPosition.x" title="Permalink to this definition">¶</a></dt>
 <dd><p>x position (cm)</p>
@@ -428,6 +476,17 @@ Or rather, it starts from January 1, 1970.</p>
 <span id="pax-dsputils-module"></span><h2>pax.dsputils module<a class="headerlink" href="#module-pax.dsputils" title="Permalink to this headline">¶</a></h2>
 <p>Utilities for peakfinders etc.
 Heavily used in SimpleDSP</p>
+<dl class="class">
+<dt id="pax.dsputils.InterpolatingDetectorMap">
+<em class="property">class </em><tt class="descclassname">pax.dsputils.</tt><tt class="descname">InterpolatingDetectorMap</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/pax/dsputils.html#InterpolatingDetectorMap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.InterpolatingDetectorMap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
+<dl class="method">
+<dt id="pax.dsputils.InterpolatingDetectorMap.get_value_at">
+<tt class="descname">get_value_at</tt><big>(</big><em>position</em><big>)</big><a class="reference internal" href="_modules/pax/dsputils.html#InterpolatingDetectorMap.get_value_at"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.InterpolatingDetectorMap.get_value_at" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 <dl class="function">
 <dt id="pax.dsputils.find_first_fast">
 <tt class="descclassname">pax.dsputils.</tt><tt class="descname">find_first_fast</tt><big>(</big><em>a</em>, <em>predicate</em>, <em>chunk_size=128</em><big>)</big><a class="reference internal" href="_modules/pax/dsputils.html#find_first_fast"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.find_first_fast" title="Permalink to this definition">¶</a></dt>
@@ -562,6 +621,9 @@ if &#8216;never&#8217;, index 0 is NEVER reported.</p>
 </dd></dl>
 
 </div>
+<div class="section" id="module-pax.generate_pmts">
+<span id="pax-generate-pmts-module"></span><h2>pax.generate_pmts module<a class="headerlink" href="#module-pax.generate_pmts" title="Permalink to this headline">¶</a></h2>
+</div>
 <div class="section" id="module-pax.plugin">
 <span id="pax-plugin-module"></span><h2>pax.plugin module<a class="headerlink" href="#module-pax.plugin" title="Permalink to this headline">¶</a></h2>
 <p>Definition of base classes for plugins</p>
@@ -647,6 +709,99 @@ transform would modify the event object.</p>
 </dd></dl>
 
 </div>
+<div class="section" id="module-pax.simulation">
+<span id="pax-simulation-module"></span><h2>pax.simulation module<a class="headerlink" href="#module-pax.simulation" title="Permalink to this headline">¶</a></h2>
+<p>Waveform simulator (&#8220;FaX&#8221;) - physics backend
+There is no I/O stuff here, all that is in the WaveformSimulator plugins</p>
+<dl class="function">
+<dt id="pax.simulation.flatten">
+<tt class="descclassname">pax.simulation.</tt><tt class="descname">flatten</tt><big>(</big><em>l</em><big>)</big><a class="reference internal" href="_modules/pax/simulation.html#flatten"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.flatten" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pax.simulation.get_luminescence_positions">
+<tt class="descclassname">pax.simulation.</tt><tt class="descname">get_luminescence_positions</tt><big>(</big><em>n</em><big>)</big><a class="reference internal" href="_modules/pax/simulation.html#get_luminescence_positions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.get_luminescence_positions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sample luminescence positions in the ELR, using a mixed wire-dominated / uniform field</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.simulation.hitlist_to_waveforms">
+<tt class="descclassname">pax.simulation.</tt><tt class="descname">hitlist_to_waveforms</tt><big>(</big><em>hitlist</em><big>)</big><a class="reference internal" href="_modules/pax/simulation.html#hitlist_to_waveforms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.hitlist_to_waveforms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simulate PMT response to incoming photons
+Returns None if you pass a hitlist without any hits</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.simulation.init_config">
+<tt class="descclassname">pax.simulation.</tt><tt class="descname">init_config</tt><big>(</big><em>config_to_init</em><big>)</big><a class="reference internal" href="_modules/pax/simulation.html#init_config"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.init_config" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pax.simulation.photons_to_hitlist">
+<tt class="descclassname">pax.simulation.</tt><tt class="descname">photons_to_hitlist</tt><big>(</big><em>photon_timings</em>, <em>x=0.0</em>, <em>y=0.0</em>, <em>z=0.0</em><big>)</big><a class="reference internal" href="_modules/pax/simulation.html#photons_to_hitlist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.photons_to_hitlist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute photon arrival time list (&#8216;hitlist&#8217;) from photon production times</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>photon_timings</strong> &#8211; list of times at which photons are produced at this position</li>
+<li><strong>x</strong> &#8211; x-coordinate of photon production site</li>
+<li><strong>y</strong> &#8211; y-coordinate of photon production site</li>
+<li><strong>z</strong> &#8211; z-coordinate of photon production site</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">numpy array, indexed by pmt number, of numpy arrays of photon arrival times</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.simulation.pmt_pulse_current">
+<tt class="descclassname">pax.simulation.</tt><tt class="descname">pmt_pulse_current</tt><big>(</big><em>gain</em>, <em>offset=0</em><big>)</big><a class="reference internal" href="_modules/pax/simulation.html#pmt_pulse_current"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.pmt_pulse_current" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pax.simulation.s1_photons">
+<tt class="descclassname">pax.simulation.</tt><tt class="descname">s1_photons</tt><big>(</big><em>n_photons</em>, <em>recoil_type</em>, <em>t=0.0</em><big>)</big><a class="reference internal" href="_modules/pax/simulation.html#s1_photons"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.s1_photons" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of photon production times caused by an S1 process.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.simulation.s2_electrons">
+<tt class="descclassname">pax.simulation.</tt><tt class="descname">s2_electrons</tt><big>(</big><em>electrons_generated=None</em>, <em>z=0.0</em>, <em>t=0.0</em><big>)</big><a class="reference internal" href="_modules/pax/simulation.html#s2_electrons"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.s2_electrons" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of electron arrival times in the ELR region caused by an S2 process.</p>
+<blockquote>
+<div>electrons             -   total # of drift electrons generated at the interaction site
+t                     -   Time at which the original energy deposition occurred.
+z                     -   Depth below the GATE mesh where the interaction occurs.</div></blockquote>
+<p>As usual, all units in the same system used by pax (if you specify raw values: ns, cm)</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.simulation.s2_scintillation">
+<tt class="descclassname">pax.simulation.</tt><tt class="descname">s2_scintillation</tt><big>(</big><em>electron_arrival_times</em><big>)</big><a class="reference internal" href="_modules/pax/simulation.html#s2_scintillation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.s2_scintillation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a list of electron arrival times, returns photon production times</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.simulation.singlet_triplet_delays">
+<tt class="descclassname">pax.simulation.</tt><tt class="descname">singlet_triplet_delays</tt><big>(</big><em>times</em>, <em>t1</em>, <em>t3</em>, <em>singlet_ratio</em><big>)</big><a class="reference internal" href="_modules/pax/simulation.html#singlet_triplet_delays"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.singlet_triplet_delays" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Given a list of eximer formation times, returns excimer decay times.</dt>
+<dd><p class="first">t1            - singlet state lifetime
+t3            - triplet state lifetime
+singlet_ratio - fraction of excimers that become singlets</p>
+<blockquote class="last">
+<div>(NOT the ratio of singlets/triplets!)</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
 <div class="section" id="module-pax.units">
 <span id="pax-units-module"></span><h2>pax.units module<a class="headerlink" href="#module-pax.units" title="Permalink to this headline">¶</a></h2>
 <p>This sets up variables for the various unit abbreviations, ensuring we always
@@ -692,7 +847,9 @@ unit_name(ns,&#8217;s&#8217;) will give &#8216;ns&#8217;</p>
 <li><a class="reference internal" href="#module-pax.datastructure">pax.datastructure module</a></li>
 <li><a class="reference internal" href="#module-pax.dsputils">pax.dsputils module</a></li>
 <li><a class="reference internal" href="#module-pax.format">pax.format module</a></li>
+<li><a class="reference internal" href="#module-pax.generate_pmts">pax.generate_pmts module</a></li>
 <li><a class="reference internal" href="#module-pax.plugin">pax.plugin module</a></li>
+<li><a class="reference internal" href="#module-pax.simulation">pax.simulation module</a></li>
 <li><a class="reference internal" href="#module-pax.units">pax.units module</a></li>
 <li><a class="reference internal" href="#module-pax">Module contents</a></li>
 </ul>

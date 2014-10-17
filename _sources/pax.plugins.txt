@@ -1,0 +1,19 @@
+pax.plugins package
+===================
+
+Subpackages
+-----------
+
+.. toctree::
+
+    pax.plugins.display
+    pax.plugins.io
+    pax.plugins.posrec
+
+Module contents
+---------------
+
+.. automodule:: pax.plugins
+    :members:
+    :undoc-members:
+    :show-inheritance:

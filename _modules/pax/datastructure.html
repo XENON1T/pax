@@ -60,6 +60,7 @@
 <span class="kn">import</span> <span class="nn">inspect</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">math</span>
 
 <span class="kn">from</span> <span class="nn">pax.micromodels.models</span> <span class="kn">import</span> <span class="n">Model</span>
 <span class="kn">from</span> <span class="nn">pax.micromodels</span> <span class="kn">import</span> <span class="n">fields</span> <span class="k">as</span> <span class="n">f</span>
@@ -76,13 +77,26 @@
     <span class="n">y</span> <span class="o">=</span> <span class="n">FloatField</span><span class="p">()</span>  <span class="c">#: y position (cm)</span>
     <span class="n">z</span> <span class="o">=</span> <span class="n">FloatField</span><span class="p">()</span>  <span class="c">#: z position (cm)</span>
 
+    <span class="c">#: For this reconstructed peak, index of maximum value within sum waveform.</span>
+    <span class="n">index_of_maximum</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>
+
     <span class="c">#: Name of algorithm used for computation</span>
     <span class="n">algorithm</span> <span class="o">=</span> <span class="n">StringField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s">&#39;none&#39;</span><span class="p">)</span>
 
     <span class="c"># : Errors - currently not used</span>
     <span class="c"># error_matrix = f.NumpyArrayField(dtype=np.float64)</span>
 
+    <span class="c"># For convenience: cylindrical coordinates</span>
+    <span class="c"># Must be properties so InterpolatingDetectorMap can transparently use cylindrical coordinates</span>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="ReconstructedPosition.r"><a class="viewcode-back" href="../../pax.html#pax.datastructure.ReconstructedPosition.r">[docs]</a>    <span class="k">def</span> <span class="nf">r</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
 </div>
+    <span class="nd">@property</span>
+<div class="viewcode-block" id="ReconstructedPosition.phi"><a class="viewcode-back" href="../../pax.html#pax.datastructure.ReconstructedPosition.phi">[docs]</a>    <span class="k">def</span> <span class="nf">phi</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">atan2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+
+</div></div>
 <div class="viewcode-block" id="Peak"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak">[docs]</a><span class="k">class</span> <span class="nc">Peak</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;Peak object</span>

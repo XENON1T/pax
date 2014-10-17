@@ -6,7 +6,9 @@ Subpackages
 
 .. toctree::
 
+    pax.config
     pax.micromodels
+    pax.plugins
 
 Submodules
 ----------
@@ -43,10 +45,26 @@ pax.format module
     :undoc-members:
     :show-inheritance:
 
+pax.generate_pmts module
+------------------------
+
+.. automodule:: pax.generate_pmts
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pax.plugin module
 -----------------
 
 .. automodule:: pax.plugin
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.simulation module
+---------------------
+
+.. automodule:: pax.simulation
     :members:
     :undoc-members:
     :show-inheritance:

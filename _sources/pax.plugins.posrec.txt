@@ -1,0 +1,22 @@
+pax.plugins.posrec package
+==========================
+
+Submodules
+----------
+
+pax.plugins.posrec.PosSimple module
+-----------------------------------
+
+.. automodule:: pax.plugins.posrec.PosSimple
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: pax.plugins.posrec
+    :members:
+    :undoc-members:
+    :show-inheritance:

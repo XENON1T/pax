@@ -51,14 +51,49 @@
   <div class="section" id="history">
 <h1>History<a class="headerlink" href="#history" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="id1">
-<h2>1.2.0 (2014-10-02)<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<h2>1.3.0 (2014-10-17)<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<ul class="simple">
+<li>Plugin directory moved (fix bug in previous release)</li>
+<li>Bulk processing enhancements<ul>
+<li>Scripts for parallelization</li>
+<li>XED: read in entire datasets, not just single files</li>
+</ul>
+</li>
+<li>More command line arguments: input, plotting</li>
+<li>Configuration enhancements<ul>
+<li>Module-level settings</li>
+<li>Multiple inheritance</li>
+</ul>
+</li>
+<li>DAQInjector<ul>
+<li>New run-database format</li>
+<li>Repeat single events</li>
+<li>Create shard index</li>
+<li>Further debugging and maturing</li>
+</ul>
+</li>
+<li>Implement run database interface in MongoDB IO for DAQ injector</li>
+<li>WaveformSimulator (Fax) cleanup:<ul>
+<li>Several truth file &amp; instruction file formats</li>
+<li>Better-motivated settings</li>
+<li>ER/NR S1s</li>
+</ul>
+</li>
+<li>Cut overhanging pulses</li>
+<li>Several PosSimple improvements</li>
+<li>Interpolating detector maps (for position-dependent signal corrections)</li>
+<li>Plot 2D hit patterns</li>
+</ul>
+</div>
+<div class="section" id="id2">
+<h2>1.2.0 (2014-10-02)<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>DAQ injector - can inject data into DAQs.</li>
 <li>Nested configurations - better handling of configurations and allows for nesting</li>
 </ul>
 </div>
-<div class="section" id="id2">
-<h2>1.1.0 (2014-08-29)<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id3">
+<h2>1.1.0 (2014-08-29)<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>HDF5 output - will be, for now, default output format.<ul>
 <li>We now have a binary output format for peaks and event.</li>
@@ -72,8 +107,8 @@
 <li>General bug fixes and cleanup</li>
 </ul>
 </div>
-<div class="section" id="id3">
-<h2>1.0.0 (2014-08-16)<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id4">
+<h2>1.0.0 (2014-08-16)<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Completely refactored event datastructure</li>
 </ul>
@@ -135,14 +170,14 @@
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id4">
-<h2>0.2.1 (2014-08-14)<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id5">
+<h2>0.2.1 (2014-08-14)<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>paxit binaries installed by default to allow working out of source</li>
 </ul>
 </div>
-<div class="section" id="id5">
-<h2>0.2.0 (2014-08-04)<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id6">
+<h2>0.2.0 (2014-08-04)<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Define static event class data structure</li>
 <li>Transforms now specified in ini file</li>
@@ -160,8 +195,8 @@
 <li>Transforms have start and stop methods</li>
 </ul>
 </div>
-<div class="section" id="id6">
-<h2>0.1.0 (2014-07-18)<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id7">
+<h2>0.1.0 (2014-07-18)<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>First release of software framework</li>
 <li>Functional but not complete digital signal processing
@@ -189,12 +224,13 @@
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">History</a><ul>
-<li><a class="reference internal" href="#id1">1.2.0 (2014-10-02)</a></li>
-<li><a class="reference internal" href="#id2">1.1.0 (2014-08-29)</a></li>
-<li><a class="reference internal" href="#id3">1.0.0 (2014-08-16)</a></li>
-<li><a class="reference internal" href="#id4">0.2.1 (2014-08-14)</a></li>
-<li><a class="reference internal" href="#id5">0.2.0 (2014-08-04)</a></li>
-<li><a class="reference internal" href="#id6">0.1.0 (2014-07-18)</a></li>
+<li><a class="reference internal" href="#id1">1.3.0 (2014-10-17)</a></li>
+<li><a class="reference internal" href="#id2">1.2.0 (2014-10-02)</a></li>
+<li><a class="reference internal" href="#id3">1.1.0 (2014-08-29)</a></li>
+<li><a class="reference internal" href="#id4">1.0.0 (2014-08-16)</a></li>
+<li><a class="reference internal" href="#id5">0.2.1 (2014-08-14)</a></li>
+<li><a class="reference internal" href="#id6">0.2.0 (2014-08-04)</a></li>
+<li><a class="reference internal" href="#id7">0.1.0 (2014-07-18)</a></li>
 </ul>
 </li>
 </ul>

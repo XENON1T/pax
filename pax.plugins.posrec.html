@@ -1,0 +1,135 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pax.plugins.posrec package &mdash; Processor for Analyzing XENON1T 1.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Processor for Analyzing XENON1T 1.2.0 documentation" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">Processor for Analyzing XENON1T 1.2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="pax-plugins-posrec-package">
+<h1>pax.plugins.posrec package<a class="headerlink" href="#pax-plugins-posrec-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-pax.plugins.posrec.PosSimple">
+<span id="pax-plugins-posrec-possimple-module"></span><h2>pax.plugins.posrec.PosSimple module<a class="headerlink" href="#module-pax.plugins.posrec.PosSimple" title="Permalink to this headline">¶</a></h2>
+<p>Very simple position reconstruction algorithms</p>
+<dl class="class">
+<dt id="pax.plugins.posrec.PosSimple.PosRecWeightedSum">
+<em class="property">class </em><tt class="descclassname">pax.plugins.posrec.PosSimple.</tt><tt class="descname">PosRecWeightedSum</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/posrec/PosSimple.html#PosRecWeightedSum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.posrec.PosSimple.PosRecWeightedSum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></tt></a></p>
+<p>Reconstruction using charge-weighted sum.</p>
+<p>Charge-weighted average of PMT positions.  Class to reconstruct s2 x, y
+positions using the weighted sum of PMTs in the top array.</p>
+<dl class="method">
+<dt id="pax.plugins.posrec.PosSimple.PosRecWeightedSum.startup">
+<tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/posrec/PosSimple.html#PosRecWeightedSum.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.posrec.PosSimple.PosRecWeightedSum.startup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.posrec.PosSimple.PosRecWeightedSum.transform_event">
+<tt class="descname">transform_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/posrec/PosSimple.html#PosRecWeightedSum.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.posrec.PosSimple.PosRecWeightedSum.transform_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-pax.plugins.posrec">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pax.plugins.posrec" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">pax.plugins.posrec package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-pax.plugins.posrec.PosSimple">pax.plugins.posrec.PosSimple module</a></li>
+<li><a class="reference internal" href="#module-pax.plugins.posrec">Module contents</a></li>
+</ul>
+</li>
+</ul>
+
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/pax.plugins.posrec.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">Processor for Analyzing XENON1T 1.2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Christopher Tunnell.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

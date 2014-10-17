@@ -1,0 +1,22 @@
+pax.plugins.display package
+===========================
+
+Submodules
+----------
+
+pax.plugins.display.Display module
+----------------------------------
+
+.. automodule:: pax.plugins.display.Display
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: pax.plugins.display
+    :members:
+    :undoc-members:
+    :show-inheritance:

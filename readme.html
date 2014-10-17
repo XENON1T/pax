@@ -54,32 +54,42 @@
             
   <div class="section" id="processor-for-analyzing-xenon1t">
 <h1>Processor for Analyzing XENON1T<a class="headerlink" href="#processor-for-analyzing-xenon1t" title="Permalink to this headline">¶</a></h1>
-<p>The Processor for Analyzing XENON1T (PAX) is used for doing digital signal processing and other data processing on the XENON1T raw data.</p>
+<p>The Processor for Analyzing XENON1T (PAX) is used for doing digital signal
+processing and other data processing on the XENON1T raw data.</p>
 <ul class="simple">
 <li>Free software: BSD license</li>
 <li>Documentation: <a class="reference external" href="http://xenon1t.github.io/pax/">http://xenon1t.github.io/pax/</a>.</li>
 </ul>
 <div class="section" id="quick-installation">
 <h2>Quick Installation<a class="headerlink" href="#quick-installation" title="Permalink to this headline">¶</a></h2>
-<p>Currently, we require Python 3.4.  Therefore, it is recommended to first install a Python virtual environment and specify where your Python binary is located.</p>
-<div class="highlight-python"><div class="highlight"><pre>virtualenv -p python3.4 paxenv
-source paxenv/bin/activate
+<p>Currently, we require Python 3.4.  Therefore, it is recommended to first install
+<a class="reference external" href="https://store.continuum.io/cshop/anaconda/">Anaconda</a>, which is a bundle of
+scientific software.  Install anaconda with Python3.4:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ wget http://repo.continuum.io/anaconda3/Anaconda3-2.1.0-Linux-x86_64.sh
+$ bash Anaconda3-2.1.0-Linux-x86_64.sh
+$ export PATH=~/anaconda3/bin:$PATH  # If installed in default location
 </pre></div>
 </div>
 <p>You can now install pax, which requires a github account</p>
-<div class="highlight-python"><div class="highlight"><pre>pip install git+git://github.com/XENON1T/pax.git
+<div class="highlight-python"><div class="highlight"><pre>pip install git+https://github.com/XENON1T/pax.git
 </pre></div>
 </div>
-<p>Now you should be able to run the command &#8216;paxer&#8217;.  For information on how to setup the code for contributing, please see the <a class="reference external" href="CONTRIBUTING.rst">relevant documentation section</a>.</p>
+<p>Now you should be able to run the command &#8216;paxer&#8217;.  For information on how to
+setup the code for contributing, please see the
+<a class="reference external" href="CONTRIBUTING.rst">relevant documentation section</a>.</p>
 <p>See paxer &#8211;help for more detailed usage information.</p>
-<p>If you want to do something fancy, you can create your own configuration file like:</p>
-<blockquote>
-<div>[pax]
-parent_configuration = &#8216;default&#8217;    # Inherit from the default configuration
-input = &#8216;MongoDB.MongoDBInput&#8217;
-my_extra_transforms = [&#8220;PosSimple.PosRecWeightedSum&#8221;]
-output = [&#8220;Plotting.PlottingWaveform&#8221;]</div></blockquote>
-<p>and load it using paxer &#8211;config_path YOURFILE. We already have a few example configs available in config, which you can load using paxer &#8211;config NAME (with NAME, for example, XED_example or Mongo_example).</p>
+<p>If you want to do something fancy, you can create your own configuration file
+like:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="p">[</span><span class="n">pax</span><span class="p">]</span>
+<span class="n">parent_configuration</span> <span class="o">=</span> <span class="s">&#39;default&#39;</span>    <span class="c"># Inherit from the default configuration</span>
+<span class="nb">input</span> <span class="o">=</span> <span class="s">&#39;MongoDB.MongoDBInput&#39;</span>
+<span class="n">my_extra_transforms</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;PosSimple.PosRecWeightedSum&quot;</span><span class="p">]</span>
+<span class="n">output</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;Plotting.PlottingWaveform&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>and load it using paxer &#8211;config_path YOURFILE. We already have a few example
+configs available in config, which you can load using paxer &#8211;config NAME (with
+NAME, for example, XED_example or Mongo_example).</p>
 </div>
 <div class="section" id="features">
 <h2>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
