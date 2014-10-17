@@ -84,15 +84,14 @@ class WaveformSimulator(plugin.InputPlugin):
             simulation.photons_to_hitlist(photon_times),
         )
 
-    def s1(self, photons, t=0, recombination_time=None, singlet_fraction=None, x=0., y=0., z=0.):
+    def s1(self, photons, recoil_type, t=0., x=0., y=0., z=0.):
         """
         :param photons: total # of photons generated in the S1
+        :param recoil_type: 'ER' for electronic recoil, 'NR' for nuclear recoil
         :param t: Time at which the interaction occurs, i.e. offset for arrival times. Defaults to s1_default_recombination_time
-        :param recombination_time: Fraction of recombining eximers that decay as singlets. Defaults to s1_default_eximer_fraction
-        :param singlet_fraction: Recombination time (\tau_r in Nest papers).
         :return: start_time, pmt_waveforms
         """
-        photon_times = simulation.s1_photons(photons, t, recombination_time, singlet_fraction)
+        photon_times = simulation.s1_photons(photons, recoil_type, t)
         self.store_true_peak('s1', t, x, y, z, photon_times)
         return simulation.hitlist_to_waveforms(
             simulation.photons_to_hitlist(photon_times),
@@ -120,7 +119,7 @@ class WaveformSimulator(plugin.InputPlugin):
                     ))
                     if int(q['s1_photons']):
                         signals.append(
-                            self.s1( photons=int(q['s1_photons']), t=float(q['t']))
+                            self.s1( photons=int(q['s1_photons']), recoil_type=q['recoil_type'], t=float(q['t']) )
                         )
                     if int(q['s2_electrons']):
                         signals.append(
@@ -128,7 +127,7 @@ class WaveformSimulator(plugin.InputPlugin):
                                 electrons=int(q['s2_electrons']),
                                 z=float(q['depth']) * units.cm,
                                 t=float(q['t'])
-                             )
+                            )
                         )
 
                 # Remove empty signals (None) from signal list
@@ -228,6 +227,7 @@ class WaveformSimulatorFromNEST(WaveformSimulator):
             ('s1_photons',    'Nest_nph',   1),
             ('s2_electrons',  'Nest_nel',   1),
             ('t',             'Nest_t',     10**9),
+            ('recoil_type',   'Nest_nr',    1),
     )
 
     def startup(self):
@@ -250,14 +250,18 @@ class WaveformSimulatorFromNEST(WaveformSimulator):
             npeaks = len(values[self.variables[0][0]])
             peaks = []
             for i in range(npeaks):
-                peaks.append({'event' : event_i})
+                peaks.append({'instruction' : event_i})
                 for (variable_name, _, conversion_factor) in self.variables:
                     peaks[-1][variable_name] = values[variable_name][i] * conversion_factor
 
-            # Subtract depth of gate mesh, see xenon:xenon100:mc:roottree, bottom of page
             for p in peaks:
+                # Subtract depth of gate mesh, see xenon:xenon100:mc:roottree, bottom of page
                 p['depth'] -= 2.15+0.25
-
+                # Fix ER / NR label
+                if p['recoil_type'] != 0:
+                    p['recoil_type'] = 'NR'
+                else:
+                    p['recoil_type'] = 'ER'
             # Sort by time
             peaks.sort(key = lambda p:p['t'])
 

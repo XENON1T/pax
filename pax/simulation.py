@@ -113,20 +113,11 @@ def s2_electrons(electrons_generated=None, z=0., t=0.):
     return e_arrival_times
 
 
-def s1_photons(n_photons, t=0, recombination_time=None, singlet_fraction=None, primary_excimer_fraction=None):
+def s1_photons(n_photons, recoil_type, t=0.):
     """
     Returns a list of photon production times caused by an S1 process.
 
     """
-
-    # Fill in optional arguments
-    if recombination_time is None:
-        recombination_time = config['s1_default_recombination_time']
-    if singlet_fraction is None:
-        singlet_fraction = config['s1_default_singlet_fraction']
-    if primary_excimer_fraction is None:
-        primary_excimer_fraction = config['s1_default_primary_excimer_fraction']
-
     # Apply detection efficiency
     log.debug("Creating an s1 from %s photons..." % n_photons)
     n_photons = np.random.binomial(n=n_photons, p=config['s1_detection_efficiency'])
@@ -134,24 +125,47 @@ def s1_photons(n_photons, t=0, recombination_time=None, singlet_fraction=None, p
     if n_photons == 0:
         return np.array([])
 
-    # How many of these are primary excimers? Others arise through recombination.
-    n_primaries = np.random.binomial(n=n_photons, p=primary_excimer_fraction)
+    if recoil_type == 'ER':
 
-    # Handle recombination delays
-    photon_times = t + np.concatenate([
-        np.zeros(n_primaries),
-        recombination_time * (1 / np.random.uniform(0, 1, n_photons - n_primaries) - 1)
-    ])
+        # How many of these are primary excimers? Others arise through recombination.
+        n_primaries = np.random.binomial(n=n_photons, p=1-config['s1_ER_recombination_fraction'])
 
-    # Account for singlet/triplet decay times
-    timings = singlet_triplet_delays(
-        photon_times,
-        t1=config['singlet_lifetime_liquid'],
-        t3=config['triplet_lifetime_liquid'],
-        singlet_ratio=singlet_fraction
-    )
+        primary_timings = singlet_triplet_delays(
+            np.zeros(n_primaries),  # No recombination delay for primary excimers
+            t1=config['singlet_lifetime_liquid'],
+            t3=config['triplet_lifetime_liquid'],
+            singlet_ratio=config['s1_ER_primary_singlet_fraction']
+        )
 
-    return timings
+        # Is there a recombination time to correct for?
+        if config['s1_ER_recombination_time'] > 0:
+            secondary_timings = np.random.exponential(config['s1_ER_recombination_time'], n_photons - n_primaries)
+        else:
+            secondary_timings = np.zeros(n_photons - n_primaries)
+        # Handle singlet/ triplet decays as before
+        secondary_timings += singlet_triplet_delays(
+            secondary_timings,
+            t1=config['singlet_lifetime_liquid'],
+            t3=config['triplet_lifetime_liquid'],
+            singlet_ratio=config['s1_ER_secondary_singlet_fraction']
+        )
+
+        timings =  np.concatenate((primary_timings, secondary_timings))
+
+    elif recoil_type == 'NR':
+
+        # Account for singlet/triplet decay times
+        timings = singlet_triplet_delays(
+            np.zeros(n_photons),
+            t1=config['singlet_lifetime_liquid'],
+            t3=config['triplet_lifetime_liquid'],
+            singlet_ratio=config['s1_NR_singlet_fraction']
+        )
+
+    else:
+        raise ValueError('Recoil type must be ER or NR, not %s' % type)
+
+    return timings + t * np.ones(len(timings))
 
 
 def s2_scintillation(electron_arrival_times):
@@ -162,7 +176,7 @@ def s2_scintillation(electron_arrival_times):
     # How many photons does each electron make?
     # TODO: xy correction!
     photons_produced = np.random.poisson(
-        config['s2_secondary_sc_yield_density'] * config['elr_gas_gap_length'],
+        config['s2_secondary_sc_gain_density'] * config['elr_gas_gap_length'],
         len(electron_arrival_times)
     )
     total_photons = np.sum(photons_produced)
