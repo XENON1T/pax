@@ -26,7 +26,7 @@ History
   * Create shard index
   * Further debugging and maturing
   
-* Implement run database interface in MongoDB IO for DAQ injector
+* Implement run database interface
 * WaveformSimulator (Fax) cleanup:
 
   * Several truth file & instruction file formats
