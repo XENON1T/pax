@@ -9,11 +9,12 @@ processing and other data processing on the XENON100/XENON1T raw data.
 * Documentation: http://xenon1t.github.io/pax/.
 
 Installation
-==================
+=============
 
 
 Installing requirements
-------------------------------------
+-----------------------
+
 We require Python 3.4 and several python modules. The easiest way to install these 
 is to get a scientific python distribution such as `Anaconda <https://store.continuum.io/cshop/anaconda/>`_.
 For Linux/Mac, use your package manager, or run::
@@ -25,13 +26,14 @@ For Linux/Mac, use your package manager, or run::
 For Windows, download the installer from their webpage (if nagged for an email, 
 enter your favourite fictional email adress).
 
-Alternatively, you can install python 3.4 from the `python webpage <https://www.python.org/>`_ 
+Alternatively, you can install Python 3.4 from the `python webpage <https://www.python.org/>`_ 
 or your OS's package management system. You may have to install some additional modules manually.
 (for Windows, download binaries `here <http://www.lfd.uci.edu/~gohlke/pythonlibs/>`_). 
 
 
 Installing pax
-----------------------------------
+--------------
+
 The code of pax is in a private github repository. Once you have access, run::
 
     pip install git+https://github.com/XENON1T/pax.git
@@ -47,7 +49,7 @@ For information on how to setup the code for contributing, please see the
 
 
 Usage
-===================
+=====
 
 See paxer --help for a list of command line arguments.
 
@@ -66,7 +68,7 @@ NAME, for example, XED_example or Mongo_example).
 
 
 Features
-==================
+========
 
 * Digital signal processing
 
