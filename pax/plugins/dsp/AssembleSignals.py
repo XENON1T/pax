@@ -4,6 +4,7 @@ from pax import plugin, units
 from pax.datastructure import Waveform
 
 class CutOverhangingPulses(plugin.TransformPlugin):
+    # Assumes pulses are not entirely outside event boundary: input plugin has to ensure this
     def transform_event(self, event):
         for channel, waveform_occurrences in event.occurrences.items():
             for i, (starting_position, wave_occurrence) in enumerate(waveform_occurrences):
@@ -38,23 +39,13 @@ class JoinAndConvertWaveforms(plugin.TransformPlugin):
         c = self.config
         self.gains = self.config['gains']
 
-        # Conversion factor from converting from ADC counts -> pe/bin
+        # Conversion factor from converting from ADC counts -> pe/bin; still needs to be divided by PMT gain
         self.conversion_factor = c['digitizer_t_resolution'] * c['digitizer_voltage_range'] / (
             2 ** (c['digitizer_bits']) * c['pmt_circuit_load_resistor']
             * c['external_amplification'] * units.electron_charge
         )
 
     def transform_event(self, event):
-        # Check if voltage range same as reported by input plugin
-        # TODO: do the same for dt
-        # TODO: move to XED input plugin
-        # if 'metadata' in event and 'voltage_range' in event['metadata']:
-        #     if event['metadata']['voltage_range'] != self.config['digitizer_voltage_range']:
-        #         raise RuntimeError(
-        #             'Voltage range from event metadata (%s) is different from ini file setting (%s)!'
-        #             % (event['metadata']['voltage_range'], self.config['digitizer_voltage_range'])
-        #         )
-
         # Build the channel waveforms from occurrences
         pmts = 1 + max(self.config['pmts_veto'])   # TODO: really??
         uncorrected_sum_wave_for_s1 = np.zeros(event.length(), dtype=np.float64)

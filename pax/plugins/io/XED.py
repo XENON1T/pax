@@ -147,16 +147,32 @@ class XedInput(plugin.InputPlugin):
         # Seek to the requested event
         self.input.seek(self.event_positions[event_number - self.first_event])
 
-        # Read event metadata, check if we can read this.
+        # Read event metadata, check if we can read this event type.
         event_layer_metadata = np.fromfile(self.input,
                                            dtype=XedInput.event_header,
                                            count=1)[0]
         if event_layer_metadata['chunks'] != 1:
-            raise NotImplementedError(
-                "The day has come: event with %s chunks found!" % event_layer_metadata['chunks'])
+            raise NotImplementedError("Can't read this XED file: event with %s chunks found!"
+                                      % event_layer_metadata['chunks'])
         if event_layer_metadata['type'] != b'zle0':
-            raise NotImplementedError(
-                "Still have to code grokking for sample type %s..." % event_layer_metadata['type'])
+            raise NotImplementedError("Still have to code grokking for sample type %s..."
+                                      % event_layer_metadata['type'])
+
+        # Check if voltage range and digitizer dt are the same as in the settings
+        # If not, raise error. Would be simple matter to change settings dynamically, but that's weird.
+        values_to_check = (
+            ('Voltage range',   self.config['digitizer_voltage_range'],
+                                event_layer_metadata['voltage_range']),
+            ('Digitizer dt',    self.config['digitizer_t_resolution'],
+                                1/(event_layer_metadata['sampling_frequency'] * units.Hz)),
+        )
+        for name, ini_value, xed_value in values_to_check:
+            if ini_value != xed_value:
+                raise RuntimeError(
+                    '%s from XED event metadata (%s) is different from ini file setting (%s)!'
+                    % (name, xed_value, ini_value)
+                )
+
         # Read the channel bitmask to find out which channels are included in this event.
         # Lots of possibilities for errors here: 4-byte groupings, 1-byte groupings, little-endian...
         # Checked (for 14 events); agrees with channels from
