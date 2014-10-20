@@ -5,10 +5,13 @@ Heavily used in SimpleDSP
 """
 
 import math
+import json
 import numpy as np
 from scipy import interpolate
-import json
 from itertools import chain
+
+import logging
+log = logging.getLogger('dsputils')
 
 from pax import datastructure
 
@@ -53,34 +56,25 @@ def sign_changes(signal, report_first_index='positive'):
     return list(becomes_positive), list(becomes_non_positive)
 
 
-def find_peak_in_interval(signal, unfiltered, itv_left, itv_right, integration_bound_fraction, constrain_bounds=False, region_offset=0):
+def find_peak_in_signal(signal, unfiltered, integration_bound_fraction, offset=0):
     """Finds 'the' peak in the candidate interval
     :param signal: Signal to use for peak finding & extent computation
     :param unfiltered: Unfiltered waveform (used for max, height, area computation)
-    :param itv_left: Left bound of interval to look in
-    :param itv_right: Right bound of interval to look in
     :param integration_bound_fraction: Fraction of max where you choose the peak to end.
-    :param constrain_bounds: If True, peak bounds can't extend beyond the interval. Default False.
-    :param region_offset: index in the waveform of the first index of the signal passed. Default 0.
+    :param offset: index in the waveform of the first index of the signal passed. Default 0.
     :return: a pax datastructure Peak
     """
     # Find the peak's maximum and extent using 'signal'
-    max_idx = itv_left + np.argmax(signal[itv_left:itv_right + 1])
-    if constrain_bounds:
-        left, right = peak_bounds(
-            signal[itv_left:itv_right + 1], max_idx, 0.01)
-        left += itv_left
-        right += itv_left
-    else:
-        left, right = peak_bounds(signal, max_idx, 0.01)
+    max_idx = np.argmax(signal)
+    left, right = peak_bounds(signal, max_idx, integration_bound_fraction)
     # Compute properties of this peak using 'unfiltered'
     area = np.sum(unfiltered[left:right + 1])
-    unfiltered_max = left + np.argmax(unfiltered[left:right + 1])
+    unfiltered_max = np.argmax(unfiltered[left:right + 1])
     return datastructure.Peak({
-        'index_of_maximum': region_offset + unfiltered_max,
+        'index_of_maximum': offset + unfiltered_max,
         'height':           unfiltered[unfiltered_max],
-        'left':             region_offset + left,
-        'right':            region_offset + right,
+        'left':             offset + left,
+        'right':            offset + right,
         'area':             area,
         # TODO: FWHM etc. On unfiltered wv? both?
     })
@@ -157,24 +151,6 @@ def free_regions(event):
     # sorted(lefts+rights) in pairs:
     return list(zip(*[iter(sorted(lefts + rights))] * 2))
 
-
-def merge_overlapping_peaks(peaks):
-    """ Merge overlapping peaks - highest peak consumes lower peak """
-    for p in peaks:
-        if p.type == 'consumed':
-            continue
-        for q in peaks:
-            if p == q:
-                continue
-            if q.type == 'consumed':
-                continue
-            if q.left <= p.index_of_maximum <= q.right:
-                if q.height > p.height:
-                    consumed, consumer = p, q
-                else:
-                    consumed, consumer = q, p
-                consumed.type = 'consumed'
-    return [p for p in peaks if p.type != 'consumed']
 
 # TODO: maybe move this to the peak splitter? It isn't used by anything
 # else... yet
@@ -343,3 +319,22 @@ class InterpolatingDetectorMap(object):
 #             )
 #
 #     return h_rc / h_rc.sum()
+
+# def merge_overlapping_peaks(peaks):
+#     """ Merge overlapping peaks - highest peak consumes lower peak """
+#     for p in peaks:
+#         if p.type == 'consumed':
+#             continue
+#         for q in peaks:
+#             if p == q:
+#                 continue
+#             if q.type == 'consumed':
+#                 continue
+#             if q.left <= p.index_of_maximum <= q.right:
+#                 log.debug('Peak at %s overlaps wit peak at %s' % (p.index_of_maximum, q.index_of_maximum))
+#                 if q.height > p.height:
+#                     consumed, consumer = p, q
+#                 else:
+#                     consumed, consumer = q, p
+#                 consumed.type = 'consumed'
+#     return [p for p in peaks if p.type != 'consumed']

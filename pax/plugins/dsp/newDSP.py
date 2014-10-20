@@ -1,34 +1,43 @@
 import numpy as np
-from pax import plugin, units, datastructure, dsputils
+from pax import plugin, datastructure, dsputils
 
 
 class FindPeaks(plugin.TransformPlugin):
+    # Find peaks in intervals above threshold in filtered waveform
 
     def transform_event(self, event):
         for pf in self.config['peakfinders']:
             filtered = event.get_waveform(pf['peakfinding_wave']).samples
             unfiltered = event.get_waveform(pf['unfiltered_wave']).samples
-            # Find peaks in intervals above threshold in filtered waveform
             peaks = []
+
             # Find regions currently free of peaks
             if len(event.peaks) == 0 or ('ignore_previous_peaks' in pf and pf['ignore_previous_peaks']):
                 pf_regions = [(0, len(filtered) - 1)]
             else:
                 pf_regions = dsputils.free_regions(event)
+
             # Search for peaks in the free regions
             for region_left, region_right in pf_regions:
                 region_filtered = filtered[region_left:region_right + 1]
                 region_unfiltered = unfiltered[region_left:region_right + 1]
                 for itv_left, itv_right in dsputils.intervals_above_threshold(region_filtered, pf['threshold']):
-                    p = dsputils.find_peak_in_interval(region_filtered, region_unfiltered, itv_left, itv_right,
-                                                       pf['peak_integration_bound'], region_offset=region_left)
+                    p = dsputils.find_peak_in_signal(
+                        signal=region_filtered[itv_left : itv_right + 1],
+                        unfiltered=region_unfiltered[itv_left : itv_right + 1],
+                        integration_bound_fraction=pf['peak_integration_bound'],
+                        offset=region_left + itv_left,
+                    )
+                    # Reursion on leftover intervals is not worth it: peaks 100x as small are boring.
+                    # Well... double scatters? No, can't distinguish from photo-ionizations when they're this low
+
                     # Should we already label the peak?
-                    if 'peak_label' in pf:
-                        p.type = pf['peak_label']
-                    if p is not None:   # Currently not used
-                        peaks.append(p)
-            # If peaks overlap, merge them into one.
-            peaks = dsputils.merge_overlapping_peaks(peaks)
+                    if 'force_peak_label' in pf:
+                        p.type = pf['force_peak_label']
+                    peaks.append(p)
+
+            # Peaks no longer overlap now that we've enabled constrain_bounds.
+
             self.log.debug("Found %s peaks in %s." % (len(peaks), pf['peakfinding_wave']))
             event.peaks.extend(peaks)
         return event
@@ -45,7 +54,7 @@ class IdentifyPeaks(plugin.TransformPlugin):
                 # Some peakfinder forced the type. Fine, not my problem...
                 continue
             # PLACEHOLDER:
-            # if area in 5 samples around max i s > 50% of total area, christen as S1
+            # if area in 5 samples around max i s > 50% of total area, christen as S1 candidate
             if np.sum(unfiltered[p.index_of_maximum - 2: p.index_of_maximum + 3]) > 0.5 * p.area:
                 p.type = 's1'
                 #self.log.debug("%s-%s-%s: S1" % (p.left, p.index_of_maximum, p.right))

@@ -55,10 +55,14 @@ class BuildWaveforms(plugin.TransformPlugin):
             # Warn about unknown gains and undead channels
             if channel not in self.config['gains']:
                 raise ValueError('Gain for channel %s is not specified!' % channel)
-            if self.config['gains'][channel] == 0 and channel not in self.undead_channels:
-                self.log.warning('Undead channel %s: gain is set to 0, but it has a signal in this event!'  % channel)
-                self.log.warning('Further undead channel warnings for this channel will be suppressed.')
-                self.undead_channels.append(channel)
+            if self.config['gains'][channel] == 0:
+                if channel not in self.undead_channels:
+                    self.log.warning('Undead channel %s: gain is set to 0, but it has a signal in this event!'  % channel)
+                    self.log.warning('Further undead channel warnings for this channel will be suppressed.')
+                    self.undead_channels.append(channel)
+                if not self.config['build_nominally_gain_corrected_waveforms']:
+                    # This channel won't add anything, so:
+                    continue
 
             # Convert and store every occurrence in the right place
             baseline_sample = None
@@ -128,9 +132,14 @@ class BuildWaveforms(plugin.TransformPlugin):
 
                 end_index = start_index + len(occurrence_wave)   # Well, not really index... index+1
 
+                # Compute corrected pulse
+                if self.config['build_nominally_gain_corrected_waveforms']:
+                    nominally_corrected_pulse = (baseline - occurrence_wave) * self.conversion_factor / self.config['nominal_pmt_gain']
+                    corrected_pulse = nominally_corrected_pulse * self.config['nominal_pmt_gain'] / self.config['gains'][channel]
+                else:
+                    corrected_pulse = (baseline - occurrence_wave) * self.conversion_factor / self.config['gains'][channel]
+
                 # Add corrected pulse to pmt_waveforms and all appropriate summed waveforms
-                nominally_corrected_pulse = (baseline - occurrence_wave) * self.conversion_factor / self.config['nominal_pmt_gain']
-                corrected_pulse = nominally_corrected_pulse * self.config['nominal_pmt_gain'] / self.config['gains'][channel]
                 event.pmt_waveforms[channel][start_index:end_index] = corrected_pulse
                 for group, members in self.channel_groups.items():
                     if channel in members:
