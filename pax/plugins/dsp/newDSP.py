@@ -1,142 +1,43 @@
 import numpy as np
-import pax
-from pax import plugin, units, datastructure, dsputils
-
-
-class BuildWaveforms(plugin.TransformPlugin):
-
-    def startup(self):
-        c = self.config
-        self.gains = c['gains']
-        # Conversion factor from converting from ADC counts -> pmt-electrons/bin
-        # Still has to be divided by PMT gain to get pe/bin
-        self.conversion_factor = c['digitizer_t_resolution'] * c['digitizer_voltage_range'] / (
-            2 ** (c['digitizer_bits']) * c['pmt_circuit_load_resistor']
-            * c['external_amplification'] * units.electron_charge
-        )
-        self.channel_groups = {'top': self.config['pmts_top'],
-                               'bottom': self.config['pmts_bottom'],
-                               'veto': self.config['pmts_veto']}
-
-    def transform_event(self, event):
-
-        # Initialize empty waveforms
-        pmts = 1 + max(self.config['pmts_veto'])   # TODO: really??
-        event.pmt_waveforms = np.zeros((pmts, event.length()))
-        for group, members in self.channel_groups.items():
-            event.waveforms.append(datastructure.Waveform({
-                'samples':  np.zeros(event.length()),
-                'name':     group,
-                'pmt_list': self.crazy_type_conversion(members),
-            }))
-        # TODO: Should these go into event class?
-        object.__setattr__(event, 'baselines', np.zeros(pmts))
-        object.__setattr__(event, 'baseline_stdevs', np.zeros(pmts))
-
-        for channel, waveform_occurrences in event.occurrences.items():
-
-            # Deal with unknown and dead channels
-            if channel not in self.gains:
-                self.log.error('Gain for channel %s is not specified!' % channel)
-                continue
-            if self.gains[channel] == 0:
-                self.log.debug('Gain for channel %s is 0, assuming it is dead.' % channel)
-                continue
-
-            # Compute the baseline
-            # Get all samples we can use for baseline computation
-            baseline_samples = []
-            for i, (start_index, pulse_wave) in enumerate(waveform_occurrences):
-                # Check for pulses starting right after previous ones: don't use these for baseline computation
-                if i != 0 and start_index == waveform_occurrences[i - 1][0] + len(waveform_occurrences[i - 1][1]):
-                    continue
-                # Can't use this: fax waveforms only have one pulse!
-                # # Pulses that start at the very beginning are also off-limits
-                # # if start_index == 0:
-                # #     continue
-                baseline_samples.extend(pulse_wave[:self.config['baseline_samples_at_start_of_pulse']])
-            # Use the mean of the median (1-toss_outlier_fraction) for the baseline: ensures outliers don't skew computed baseline
-            if len(baseline_samples) == 0:
-                raise RuntimeError("No samples selected for baseline computation!")
-            event.baselines[channel] = np.mean(sorted(baseline_samples)[
-                int(   self.config['toss_outlier_fraction']/2  * len(baseline_samples)):
-                int((1-self.config['toss_outlier_fraction']/2) * len(baseline_samples))
-            ])
-            event.baseline_stdevs[channel] = np.std(baseline_samples)
-
-            # Convert and store the PMT waveform in the right place
-            for i, (start_index, pulse_wave) in enumerate(waveform_occurrences):
-                end_index = start_index + len(pulse_wave)   # Well, not really index... index+1
-                corrected_pulse = (event.baselines[channel] - pulse_wave) * self.conversion_factor / self.gains[channel]
-                event.pmt_waveforms[channel][start_index:end_index] = corrected_pulse
-                # Add occurrence to all appropriate summed waveforms
-                for group, members in self.channel_groups.items():
-                    if channel in members:
-                        event.get_waveform(group).samples[start_index:end_index] += corrected_pulse
-
-        # Add the tpc waveform: sum of top and bottom
-        event.waveforms.append(datastructure.Waveform({
-            'samples':  event.get_waveform('top').samples + event.get_waveform('bottom').samples,
-            'name':     'tpc',
-            'pmt_list': self.crazy_type_conversion(self.channel_groups['top'] | self.channel_groups['bottom'])
-        }))
-        return event
-
-    @staticmethod
-    def crazy_type_conversion(x):
-        return np.array(list(x), dtype=np.uint16)
-
-
-class ApplyFilters(plugin.TransformPlugin):
-
-    def startup(self):
-        for f in self.config['filters']:
-            ir = np.array(f['impulse_response'])
-            if abs(1 - np.sum(ir)) > 0.0001:
-                raise ValueError("Filter %s has non-normalized impulse response: %s != 1" % (f['name'], np.sum(ir)))
-            if len(ir) % 2 == 0:
-                self.log.warning("Filter %s has an even-length impulse response!" % f['name'])
-            if not np.all(ir - ir[::-1] == 0):
-                self.log.warning("Filter %s has an asymmetric impulse response!" % f['name'])
-
-    def transform_event(self, event):
-        for f in self.config['filters']:
-            input_w = event.get_waveform(f['source'])
-            event.waveforms.append(datastructure.Waveform({
-                'name':      f['name'],
-                'samples':   np.convolve(input_w.samples, f['impulse_response'], 'same'),
-                'pmt_list':  input_w.pmt_list,
-            }))
-        return event
+from pax import plugin, datastructure, dsputils
 
 
 class FindPeaks(plugin.TransformPlugin):
+    # Find peaks in intervals above threshold in filtered waveform
 
     def transform_event(self, event):
         for pf in self.config['peakfinders']:
             filtered = event.get_waveform(pf['peakfinding_wave']).samples
             unfiltered = event.get_waveform(pf['unfiltered_wave']).samples
-            # Find peaks in intervals above threshold in filtered waveform
             peaks = []
+
             # Find regions currently free of peaks
             if len(event.peaks) == 0 or ('ignore_previous_peaks' in pf and pf['ignore_previous_peaks']):
                 pf_regions = [(0, len(filtered) - 1)]
             else:
                 pf_regions = dsputils.free_regions(event)
+
             # Search for peaks in the free regions
             for region_left, region_right in pf_regions:
                 region_filtered = filtered[region_left:region_right + 1]
                 region_unfiltered = unfiltered[region_left:region_right + 1]
                 for itv_left, itv_right in dsputils.intervals_above_threshold(region_filtered, pf['threshold']):
-                    p = dsputils.find_peak_in_interval(region_filtered, region_unfiltered, itv_left, itv_right,
-                                                       pf['peak_integration_bound'], region_offset=region_left)
+                    p = dsputils.find_peak_in_signal(
+                        signal=region_filtered[itv_left : itv_right + 1],
+                        unfiltered=region_unfiltered[itv_left : itv_right + 1],
+                        integration_bound_fraction=pf['peak_integration_bound'],
+                        offset=region_left + itv_left,
+                    )
+                    # Reursion on leftover intervals is not worth it: peaks 100x as small are boring.
+                    # Well... double scatters? No, can't distinguish from photo-ionizations when they're this low
+
                     # Should we already label the peak?
-                    if 'peak_label' in pf:
-                        p.type = pf['peak_label']
-                    if p is not None:   # Currently not used
-                        peaks.append(p)
-            # If peaks overlap, merge them into one.
-            peaks = dsputils.merge_overlapping_peaks(peaks)
+                    if 'force_peak_label' in pf:
+                        p.type = pf['force_peak_label']
+                    peaks.append(p)
+
+            # Peaks no longer overlap now that we've enabled constrain_bounds.
+
             self.log.debug("Found %s peaks in %s." % (len(peaks), pf['peakfinding_wave']))
             event.peaks.extend(peaks)
         return event
@@ -153,7 +54,7 @@ class IdentifyPeaks(plugin.TransformPlugin):
                 # Some peakfinder forced the type. Fine, not my problem...
                 continue
             # PLACEHOLDER:
-            # if area in 5 samples around max i s > 50% of total area, christen as S1
+            # if area in 5 samples around max i s > 50% of total area, christen as S1 candidate
             if np.sum(unfiltered[p.index_of_maximum - 2: p.index_of_maximum + 3]) > 0.5 * p.area:
                 p.type = 's1'
                 #self.log.debug("%s-%s-%s: S1" % (p.left, p.index_of_maximum, p.right))

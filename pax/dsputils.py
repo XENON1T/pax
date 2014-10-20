@@ -5,10 +5,13 @@ Heavily used in SimpleDSP
 """
 
 import math
+import json
 import numpy as np
 from scipy import interpolate
-import json
 from itertools import chain
+
+import logging
+log = logging.getLogger('dsputils')
 
 from pax import datastructure
 
@@ -53,34 +56,25 @@ def sign_changes(signal, report_first_index='positive'):
     return list(becomes_positive), list(becomes_non_positive)
 
 
-def find_peak_in_interval(signal, unfiltered, itv_left, itv_right, integration_bound_fraction, constrain_bounds=False, region_offset=0):
+def find_peak_in_signal(signal, unfiltered, integration_bound_fraction, offset=0):
     """Finds 'the' peak in the candidate interval
     :param signal: Signal to use for peak finding & extent computation
     :param unfiltered: Unfiltered waveform (used for max, height, area computation)
-    :param itv_left: Left bound of interval to look in
-    :param itv_right: Right bound of interval to look in
     :param integration_bound_fraction: Fraction of max where you choose the peak to end.
-    :param constrain_bounds: If True, peak bounds can't extend beyond the interval. Default False.
-    :param region_offset: index in the waveform of the first index of the signal passed. Default 0.
+    :param offset: index in the waveform of the first index of the signal passed. Default 0.
     :return: a pax datastructure Peak
     """
     # Find the peak's maximum and extent using 'signal'
-    max_idx = itv_left + np.argmax(signal[itv_left:itv_right + 1])
-    if constrain_bounds:
-        left, right = peak_bounds(
-            signal[itv_left:itv_right + 1], max_idx, 0.01)
-        left += itv_left
-        right += itv_left
-    else:
-        left, right = peak_bounds(signal, max_idx, 0.01)
+    max_idx = np.argmax(signal)
+    left, right = peak_bounds(signal, max_idx, integration_bound_fraction)
     # Compute properties of this peak using 'unfiltered'
     area = np.sum(unfiltered[left:right + 1])
-    unfiltered_max = left + np.argmax(unfiltered[left:right + 1])
+    unfiltered_max = np.argmax(unfiltered[left:right + 1])
     return datastructure.Peak({
-        'index_of_maximum': region_offset + unfiltered_max,
+        'index_of_maximum': offset + unfiltered_max,
         'height':           unfiltered[unfiltered_max],
-        'left':             region_offset + left,
-        'right':            region_offset + right,
+        'left':             offset + left,
+        'right':            offset + right,
         'area':             area,
         # TODO: FWHM etc. On unfiltered wv? both?
     })
@@ -157,24 +151,6 @@ def free_regions(event):
     # sorted(lefts+rights) in pairs:
     return list(zip(*[iter(sorted(lefts + rights))] * 2))
 
-
-def merge_overlapping_peaks(peaks):
-    """ Merge overlapping peaks - highest peak consumes lower peak """
-    for p in peaks:
-        if p.type == 'consumed':
-            continue
-        for q in peaks:
-            if p == q:
-                continue
-            if q.type == 'consumed':
-                continue
-            if q.left <= p.index_of_maximum <= q.right:
-                if q.height > p.height:
-                    consumed, consumer = p, q
-                else:
-                    consumed, consumer = q, p
-                consumed.type = 'consumed'
-    return [p for p in peaks if p.type != 'consumed']
 
 # TODO: maybe move this to the peak splitter? It isn't used by anything
 # else... yet
@@ -313,3 +289,52 @@ class InterpolatingDetectorMap(object):
     def get_value_at(self, position):
         # Todo: handle polar coordinate attributes by @property's in event class
         return self.interpolator(*[getattr(position, q[0]) for q in self.coordinate_system])
+
+
+
+
+# def rcosfilter(filter_length, rolloff, cutoff_freq, sampling_freq=1):
+#     """
+#     Returns a nd(float)-array describing a raised cosine (RC) filter (FIR) impulse response. Arguments:
+#         - filter_length:    filter event_duration in samples
+#         - rolloff:          roll-off factor
+#         - cutoff_freq:      cutoff frequency = 1/(2*symbol period)
+#         - sampling_freq:    sampling rate (in same units as cutoff_freq)
+#     """
+#     symbol_period = 1 / (2 * cutoff_freq)
+#     h_rc = np.zeros(filter_length, dtype=float)
+#
+#     for x in np.arange(filter_length):
+#         t = (x - filter_length / 2) / float(sampling_freq)
+#         phase = np.pi * t / symbol_period
+#         if t == 0.0:
+#             h_rc[x] = 1.0
+#         elif rolloff != 0 and abs(t) == symbol_period / (2 * rolloff):
+#             h_rc[x] = (np.pi / 4) * (np.sin(phase) / phase)
+#         else:
+#             h_rc[x] = (np.sin(phase) / phase) * (
+#                 np.cos(phase * rolloff) / (
+#                     1 - (((2 * rolloff * t) / symbol_period) * ((2 * rolloff * t) / symbol_period))
+#                 )
+#             )
+#
+#     return h_rc / h_rc.sum()
+
+# def merge_overlapping_peaks(peaks):
+#     """ Merge overlapping peaks - highest peak consumes lower peak """
+#     for p in peaks:
+#         if p.type == 'consumed':
+#             continue
+#         for q in peaks:
+#             if p == q:
+#                 continue
+#             if q.type == 'consumed':
+#                 continue
+#             if q.left <= p.index_of_maximum <= q.right:
+#                 log.debug('Peak at %s overlaps wit peak at %s' % (p.index_of_maximum, q.index_of_maximum))
+#                 if q.height > p.height:
+#                     consumed, consumer = p, q
+#                 else:
+#                     consumed, consumer = q, p
+#                 consumed.type = 'consumed'
+#     return [p for p in peaks if p.type != 'consumed']

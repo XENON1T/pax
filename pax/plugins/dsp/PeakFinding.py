@@ -627,7 +627,7 @@ class ComputePeakProperties(plugin.TransformPlugin):
             TODO: implement the other one too!
             """
             if peak.type == 's1':
-                peak.coincidence_level = 0
+                contributing_pmts = []
                 for channel, area in enumerate(peak.area_per_pmt):
                     if self.config['gains'][channel] == 0:
                         continue
@@ -635,13 +635,12 @@ class ComputePeakProperties(plugin.TransformPlugin):
                         continue
                     if channel in self.config['pmts_veto']:
                         continue
-                    uncorrection_factor = 2 * 10 ** 6 / self.config['gains'][channel]
                     if area > self.config['coincidence_threshold'] * (2 * 10 ** 6 / self.config['gains'][channel]):
-                        peak.coincidence_level += 1
-                # Hack to
+                        contributing_pmts.append(channel)
+                peak.contributing_pmts = np.array(contributing_pmts)
             else:
                 # Hack to ensure S2s won't get pruned:
-                peak.coincidence_level = 9999
+                peak.contributing_pmts = np.array(list(range(len(peak.area_per_pmt))))
 
         # Prune excess S1s
         event.peaks = sort_and_prune_by(
