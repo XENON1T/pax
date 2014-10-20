@@ -1,3 +1,11 @@
+"""
+Convert a Monte Carlo Root file generate with GEANT + Nest to fax CSV instructions
+Useful if your pyRoot doesn't work with python 3.
+(If it does work, you can more easily use the WaveformSimulatorFromNEST plugin.)
+"""
+
+
+
 import ROOT
 import csv
 
@@ -12,6 +20,7 @@ variables = (
     ('s1_photons',    'Nest_nph',   1),
     ('s2_electrons',  'Nest_nel',   1),
     ('t',             'Nest_t',     10**(9)),
+    ('recoil_type',   'Nest_nr',    1),
 )
 
 for event_i in range(t.GetEntries()):
@@ -27,13 +36,18 @@ for event_i in range(t.GetEntries()):
     npeaks = len(values[variables[0][0]])
     peaks = []
     for i in range(npeaks):
-        peaks.append({'event' : event_i})
+        peaks.append({'instruction' : event_i})
         for (variable_name, _, conversion_factor) in variables:
             peaks[-1][variable_name] = values[variable_name][i] * conversion_factor
 
-    # Subtract depth of gate mesh, see xenon:xenon100:mc:roottree, bottom of page
     for p in peaks:
+        # Subtract depth of gate mesh, see xenon:xenon100:mc:roottree, bottom of page
         p['depth'] -= 2.15+0.25
+        # Fix ER / NR label
+        if p['recoil_type'] != 0:
+            p['recoil_type'] = 'NR'
+        else:
+            p['recoil_type'] = 'ER'
 
     # Sort by time
     peaks.sort(key = lambda p:p['t'])
@@ -41,7 +55,7 @@ for event_i in range(t.GetEntries()):
     # Write to csv
     for peak_i, peak_data in enumerate(peaks):
         if event_i == 0 and peak_i == 0:
-            headers = ['event'] + [q[0] for q in variables]
+            headers = ['instruction'] + [q[0] for q in variables]
             output = open('fax_instructions.csv', 'wb')
             csvwriter = csv.DictWriter(output, headers)
             print(headers)

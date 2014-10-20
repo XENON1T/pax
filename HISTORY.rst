@@ -3,6 +3,41 @@
 History
 -------
 
+------------------
+1.3.0 (2014-10-17)
+------------------
+
+* Plugin directory moved (fix bug in previous release)
+* Bulk processing enhancements
+
+  * Scripts for parallelization
+  * XED: read in entire datasets, not just single files
+
+* More command line arguments: input, plotting
+* Configuration enhancements
+
+  * Module-level settings
+  * Multiple inheritance
+
+* DAQInjector
+
+  * New run-database format
+  * Repeat single events
+  * Create shard index
+  * Further debugging and maturing
+  
+* Implement run database interface
+* WaveformSimulator (Fax) cleanup:
+
+  * Several truth file & instruction file formats
+  * Better-motivated settings
+  * ER/NR S1s
+  
+* Cut overhanging pulses
+* Several PosSimple improvements 
+* Interpolating detector maps (for position-dependent signal corrections)
+* Plot 2D hit patterns
+
 
 ------------------
 1.2.0 (2014-10-02)
@@ -10,6 +45,7 @@ History
 
 * DAQ injector - can inject data into DAQs.
 * Nested configurations - better handling of configurations and allows for nesting
+
 
 ------------------
 1.1.0 (2014-08-29)

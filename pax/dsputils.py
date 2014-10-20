@@ -6,6 +6,8 @@ Heavily used in SimpleDSP
 
 import math
 import numpy as np
+from scipy import interpolate
+import json
 from itertools import chain
 
 from pax import datastructure
@@ -272,3 +274,42 @@ def peaks_and_valleys(signal, test_function):
         p)], [v for v in valleys if not math.isnan(v)]
     # Return all remaining peaks & valleys
     return np.array(peaks), np.array(valleys)
+
+
+##
+# Correction map class
+##
+class InterpolatingDetectorMap(object):
+
+    def __init__(self, filename):
+        self.data = json.load(open(filename))
+        self.coordinate_system = cs = self.data['coordinate_system']
+        self.dimensions = len(cs)
+
+        # 1 D interpolation
+        if self.dimensions == 1:
+            self.interpolator = interpolate.interp1d(x = np.linspace(*(cs[0][1])),
+                                                     y = self.data['correction_map'])
+
+        # 2D interpolation
+        elif self.dimensions == 2:
+            self.interpolator = interpolate.interp2d(x = np.linspace(*(cs[0][1])),
+                                                     y = np.linspace(*(cs[1][1])),
+                                                     z = self.data['correction_map'])
+
+        # 3D interpolation
+        elif self.dimensions == 3:
+            # LinearNDInterpolator wants points as [(x1,y1,z1), (x2, y2, z2), ...]
+            all_x, all_y, all_z = np.meshgrid(np.linspace(*(cs[0][1])),
+                                              np.linspace(*(cs[1][1])),
+                                              np.linspace(*(cs[2][1])))
+            points = np.array([np.ravel(all_x), np.ravel(all_y), np.ravel(all_z)]).T
+            values = np.ravel(self.data['correction_map'])
+            self.interpolator =  interpolate.LinearNDInterpolator(points, values)
+
+        else:
+            raise RuntimeError("Can't use  a %s-dimensional correction map!" % self.dimensions)
+
+    def get_value_at(self, position):
+        # Todo: handle polar coordinate attributes by @property's in event class
+        return self.interpolator(*[getattr(position, q[0]) for q in self.coordinate_system])

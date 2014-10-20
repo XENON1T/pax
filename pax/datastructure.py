@@ -11,6 +11,7 @@ releases.  Patch releases cannot modify this.
 import inspect
 
 import numpy as np
+import math
 
 from pax.micromodels.models import Model
 from pax.micromodels import fields as f
@@ -35,6 +36,16 @@ class ReconstructedPosition(Model):
 
     # : Errors - currently not used
     # error_matrix = f.NumpyArrayField(dtype=np.float64)
+
+    # For convenience: cylindrical coordinates
+    # Must be properties so InterpolatingDetectorMap can transparently use cylindrical coordinates
+    @property
+    def r(self):
+        return math.sqrt(self.x**2 + self.y**2)
+
+    @property
+    def phi(self):
+        return math.atan2(self.y, self.x)
 
 
 class Peak(Model):
