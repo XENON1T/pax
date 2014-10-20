@@ -54,9 +54,9 @@ class WavOutput(plugin.OutputPlugin):
         for key, value in self.all_data.items():
             key -= start
             key = int(key // R)
-            self.log.info(key)
+
             if value > 0:
-                data[key] = np.min([value, 2**14])
+                data[key] = np.min([value, 2**15 -1])
 
         # Output
         write(self.filename,
