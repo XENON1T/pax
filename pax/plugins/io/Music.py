@@ -1,6 +1,5 @@
 from scipy.io.wavfile import write
 import numpy as np
-import scipy
 
 import math
 from pax import plugin
@@ -20,7 +19,7 @@ class WavOutput(plugin.OutputPlugin):
 
         self.start_time = None
         self.n = None
-        self.rate = 44100
+        self.rate = 40000
         self.single_events = False
 
     def write_event(self, event):
@@ -31,7 +30,7 @@ class WavOutput(plugin.OutputPlugin):
         self.n = len(data)
 
         # Note that // is an integer divide
-        self.all_data[event.start_time//event.sample_duration] = data.copy()
+        self.all_data[event.start_time] = event.pmt_waveforms.sum()
 
         if self.single_events:
             # Write a file
@@ -42,25 +41,21 @@ class WavOutput(plugin.OutputPlugin):
 
     def shutdown(self):
         # Determine how long dataset music should be
-        start = min(self.all_data.keys())
-        end = max(self.all_data.keys())
+        start = min(self.all_data)
+        end = max(self.all_data)
 
         if self.n == None:
             self.log.error("Not known how many samples per event!")
 
-        data = np.zeros(end - start + self.n, dtype=np.int16)
-        for key, value in self.all_data.items():
-            key -= start
-            key = int(key)
-            data[key : key + len(value)] += value
-
-
         # Resample such that data plays at live speed
-        R = 10**8 // self.rate
-        end = math.floor(float(data.size)/R) * R
-        data = data[:end]
-        data = scipy.nanmean(data.reshape(-1,R),
-                             axis=1)
+        R = 10**9 // self.rate
+
+        n = math.ceil((end - start) / R)
+        data = np.zeros(n, dtype=np.int16)
+        for key, value in self.all_data.items():
+            key = int(key // R)
+            if value > 0:
+                data[key] = math.min(value, 2**14)
 
         # Output
         write(self.filename,
