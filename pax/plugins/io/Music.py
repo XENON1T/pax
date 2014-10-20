@@ -9,59 +9,56 @@ from pax.datastructure import Event
 from pax import plugin
 
 class WavOutput(plugin.OutputPlugin):
-    def note(freq, len, amp=1, rate=44100):
-        # tone synthesis  
-        t = linspace(0,len,len*rate)
-        data = sin(2*pi*freq*t)*amp
-        return data.astype(int16) # two byte integers
+    """Convert sum waveforms of event and dataset to WAV file
+
+    """
 
     def startup(self):
+        # Used for building waveform for entire dataset
         self.all_data = {}
 
         self.start_time = None
-        
+        self.n = None
+        self.rate = 44100
 
     def write_event(self, event):
         self.log.debug('Writing event')
 
-
+        # Make sum waveform without PMT info
         data = event.pmt_waveforms.sum(0)
+        self.n = len(data)
 
+        # Note that // is an integer divide
         self.all_data[event.start_time//event.sample_duration] = data.copy()
 
-        # A tone, 2 seconds, 44100 samples per second                                                                                                                                       
-        #tone = note(440,2,amp=10000)
-
-        #write('440hzAtone.wav',44100,tone) # writing the sound to a file                                                                                                                    
-
-        #plot(linspace(0,2,2*44100),tone)
-        #axis([0,0.4,15000,-15000])
-        #show()
-
+        # Write a file
         write('song_%d.wav' % event.event_number,
-              44100,
+              self.rate, # Frequency
               data)
 
+
     def shutdown(self):
+        # Determine how long dataset music should be
         start = min(self.all_data.keys())
         end = max(self.all_data.keys())
 
-        print(start, end)
+        if self.n == None:
+            self.log.error("Not known how many samples per event!")
 
-        data = np.zeros(end - start + 40000, dtype=np.int16)
+        data = np.zeros(end - start + self.n, dtype=np.int16)
         for key, value in self.all_data.items():
             key -= start
             key = int(key)
             data[key : key + len(value)] += value
-            print(key, value)
 
-        write('all.wav', 10**8, data)
-        
-        R = 10**8 // 44100
+
+        # Resample such that data plays at live speed
+        R = 10**8 // self.rate
         pad_size = math.ceil(float(data.size)/R)*R - data.size
         b_padded = np.append(data, np.zeros(pad_size)*np.NaN)
         new_data = scipy.nanmean(b_padded.reshape(-1,R), axis=1)
-        
-        write('all2.wav', 44100, new_data)
+
+        # Output
+        write('all.wav', self.rate, new_data)
         
         
