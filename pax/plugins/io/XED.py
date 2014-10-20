@@ -178,11 +178,6 @@ class XedInput(plugin.InputPlugin):
         # Checked (for 14 events); agrees with channels from
         # LibXDIO->Moxie->MongoDB->MongoDBInput plugin
         mask_bytes = 4 * math.ceil(event_layer_metadata['channels'] / 32)
-        # This DID NOT WORK, but almost... so very dangerous..
-        # mask = np.unpackbits(np.array(list(
-        #     np.fromfile(self.input, dtype=np.dtype('<S%s' % mask_bytes), count=1)[0]
-        # ), dtype='uint8'))
-        # This appears to work... so far...
         mask_bits = np.unpackbits(np.fromfile(self.input,
                                               dtype='uint8',
                                               count=mask_bytes))
@@ -253,8 +248,7 @@ class XedInput(plugin.InputPlugin):
         event.event_number = int(event_layer_metadata['event_number'])
         event.occurrences = occurrences
 
-        # TODO: don't hardcode sample size...
-        event.sample_duration = int(10 * units.ns)
+        event.sample_duration = int(self.config['digitizer_t_resolution'])
         event.start_time = int(
             event_layer_metadata['utc_time'] * units.s +
             event_layer_metadata['utc_time_usec'] * units.us
@@ -267,5 +261,3 @@ class XedInput(plugin.InputPlugin):
         event.stop_time += event.start_time
 
         return event
-
-    # If we get here, all events have been read
