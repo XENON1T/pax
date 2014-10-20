@@ -62,10 +62,10 @@ class Peak(Model):
 
     type = StringField(default='unknown') #: Type of peak (e.g., 's1', 's2', 'veto_s1', ...)
 
-    fwhm = FloatField()                   #: Full width at half maximum in samples
-    fwtm = FloatField()                   #: Full width at tenth of maximum in samples
-    fwhm_filtered = FloatField()          #: Full width at half of maximum in samples, in filtered waveform
-    fwtm_filtered = FloatField()          #: Full width at tenth of maximum in samples, in filtered waveform
+    full_width_half_max = FloatField()             #: Full width at half maximum in samples
+    full_width_tenth_max = FloatField()            #: Full width at tenth of maximum in samples
+    full_width_half_max_filtered = FloatField()    #: Full width at half of maximum in samples, in filtered waveform
+    full_width_tenth_max_filtered = FloatField()   #: Full width at tenth of maximum in samples, in filtered waveform
 
     #: Array of areas in each PMT.
     area_per_pmt = f.NumpyArrayField(dtype='float64')
