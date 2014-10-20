@@ -19,7 +19,7 @@ class WavOutput(plugin.OutputPlugin):
 
         self.n = None
         self.rate = 40000
-        self.single_events = False
+        self.single_events = True
 
     def write_event(self, event):
         self.log.debug('Writing event')
@@ -31,17 +31,41 @@ class WavOutput(plugin.OutputPlugin):
         # Note that // is an integer divide
         self.all_data[event.start_time] = event.pmt_waveforms.sum()
 
+
+
         if self.single_events:
             # Write a file
+            s1 = event.get_waveform('s1_peakfinding').samples
+            s2 = event.get_waveform('filtered_for_large_s2').samples
+
+            duration = 0.01 # seconds
+            n = s1.size
+
+            f1 = 1046.50 # Hz
+            f2 = 130.813 # Hz
+
+            s1 = np.repeat(s1, duration * self.rate)
+            s2 = np.repeat(s2, duration * self.rate)
+
+            t = np.linspace(0,
+                            duration * n,
+                            duration * self.rate * n)
+
+            d1 = np.sin(2 * np.pi * f1 * t) * s1
+            d2 = np.sin(2 * np.pi * f2 * t) * s2
+            data = (d1 + d2).astype(np.int16)
+
             write('song_%d.wav' % event.event_number,
                   self.rate, # Frequency
                   data)
 
 
     def shutdown(self):
-        # Determine how long dataset music should be
         start = min(self.all_data)
         end = max(self.all_data)
+
+        # Determine how long dataset music should be
+        self.log.info(end - start)
 
         if self.n == None:
             self.log.error("Not known how many samples per event!")
