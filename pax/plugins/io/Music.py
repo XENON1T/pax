@@ -17,7 +17,6 @@ class WavOutput(plugin.OutputPlugin):
         # Used for building waveform for entire dataset
         self.all_data = {}
 
-        self.start_time = None
         self.n = None
         self.rate = 40000
         self.single_events = False
@@ -53,7 +52,9 @@ class WavOutput(plugin.OutputPlugin):
         n = math.ceil((end - start) / R)
         data = np.zeros(n, dtype=np.int16)
         for key, value in self.all_data.items():
+            key -= start
             key = int(key // R)
+            self.log.info(key)
             if value > 0:
                 data[key] = np.min([value, 2**14])
 
