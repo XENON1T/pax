@@ -50,30 +50,39 @@ class ReconstructedPosition(Model):
 
 class Peak(Model):
 
-    """Peak object
+    """Peak object"""
 
-    """
-    area = FloatField()  #: Area of the pulse in photoelectrons
-    #: Index of maximum value within sum waveform.
-    index_of_maximum = IntegerField()
-    height = IntegerField()  #: Height of highest point in peak (in pe/bin)
-    left = IntegerField()  #: Index of left bound (inclusive) in sum waveform.
-    #: Index of right bound (for Xerawdp matching: exclusive; otherwise: inclusive) in sum waveform.
-    right = IntegerField()
-    #: Type of peak (e.g., 's1', 's2', 'veto_s1', ...)
-    type = StringField(default='unknown')
+    index_of_maximum = IntegerField()     #: Index of maximum value within sum waveform.
+    left = IntegerField()                 #: Index of left bound (inclusive) in sum waveform.
+    right = IntegerField() #: Index of right bound (for Xdp matching: exclusive; otherwise: inclusive) in sum waveform.
+
+    area = FloatField()                   #: Area of the pulse in photoelectrons
+    height = FloatField()                 #: Height of highest point in peak (in pe/bin)
+    height_filtered = FloatField()        #: Height of highest point in filtered waveform of peak (in pe/bin)
+
+    type = StringField(default='unknown') #: Type of peak (e.g., 's1', 's2', 'veto_s1', ...)
+
+    fwhm = FloatField()                   #: Full width at half maximum in samples
+    fwtm = FloatField()                   #: Full width at tenth of maximum in samples
+    fwhm_filtered = FloatField()          #: Full width at half of maximum in samples, in filtered waveform
+    fwtm_filtered = FloatField()          #: Full width at tenth of maximum in samples, in filtered waveform
 
     #: Array of areas in each PMT.
     area_per_pmt = f.NumpyArrayField(dtype='float64')
 
-    #: Number of PMTs that see 'something significant' (depends on peakfinder??)
-    coincidence_level = IntegerField()
+    #: PMTs which see 'something significant' (depends on settings)
+    contributing_pmts = f.NumpyArrayField(dtype=np.uint16)
 
     #: Returns a list of reconstructed positions
     #:
     #: Returns an :class:`pax.datastructure.ReconstructedPosition` class.
     reconstructed_positions = f.ModelCollectionField(default=[],
                                                      wrapped_class=ReconstructedPosition)
+
+    @property
+    def coincidence_level(self):
+        """ Number of PMTS which see something significant (depends on settings) """
+        return len(self.contributing_pmts)
 
 
 class Waveform(Model):
