@@ -57,13 +57,14 @@ class WavOutput(plugin.OutputPlugin):
 
         # Resample such that data plays at live speed
         R = 10**8 // self.rate
-        pad_size = math.ceil(float(data.size)/R)*R - data.size
-        b_padded = np.append(data, np.zeros(pad_size)*np.NaN)
-        new_data = scipy.nanmean(b_padded.reshape(-1,R), axis=1)
+        end = math.floor(float(data.size)/R) * R
+        data = data[:end]
+        data = scipy.nanmean(data.reshape(-1,R),
+                             axis=1)
 
         # Output
         write(self.filename,
               self.rate,
-              new_data)
+              data)
         
         
