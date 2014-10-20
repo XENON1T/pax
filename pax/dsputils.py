@@ -313,3 +313,33 @@ class InterpolatingDetectorMap(object):
     def get_value_at(self, position):
         # Todo: handle polar coordinate attributes by @property's in event class
         return self.interpolator(*[getattr(position, q[0]) for q in self.coordinate_system])
+
+
+
+
+# def rcosfilter(filter_length, rolloff, cutoff_freq, sampling_freq=1):
+#     """
+#     Returns a nd(float)-array describing a raised cosine (RC) filter (FIR) impulse response. Arguments:
+#         - filter_length:    filter event_duration in samples
+#         - rolloff:          roll-off factor
+#         - cutoff_freq:      cutoff frequency = 1/(2*symbol period)
+#         - sampling_freq:    sampling rate (in same units as cutoff_freq)
+#     """
+#     symbol_period = 1 / (2 * cutoff_freq)
+#     h_rc = np.zeros(filter_length, dtype=float)
+#
+#     for x in np.arange(filter_length):
+#         t = (x - filter_length / 2) / float(sampling_freq)
+#         phase = np.pi * t / symbol_period
+#         if t == 0.0:
+#             h_rc[x] = 1.0
+#         elif rolloff != 0 and abs(t) == symbol_period / (2 * rolloff):
+#             h_rc[x] = (np.pi / 4) * (np.sin(phase) / phase)
+#         else:
+#             h_rc[x] = (np.sin(phase) / phase) * (
+#                 np.cos(phase * rolloff) / (
+#                     1 - (((2 * rolloff * t) / symbol_period) * ((2 * rolloff * t) / symbol_period))
+#                 )
+#             )
+#
+#     return h_rc / h_rc.sum()

@@ -2,31 +2,6 @@ import numpy as np
 from pax import plugin, units, datastructure, dsputils
 
 
-
-
-class ApplyFilters(plugin.TransformPlugin):
-
-    def startup(self):
-        for f in self.config['filters']:
-            ir = np.array(f['impulse_response'])
-            if abs(1 - np.sum(ir)) > 0.0001:
-                raise ValueError("Filter %s has non-normalized impulse response: %s != 1" % (f['name'], np.sum(ir)))
-            if len(ir) % 2 == 0:
-                self.log.warning("Filter %s has an even-length impulse response!" % f['name'])
-            if not np.all(ir - ir[::-1] == 0):
-                self.log.warning("Filter %s has an asymmetric impulse response!" % f['name'])
-
-    def transform_event(self, event):
-        for f in self.config['filters']:
-            input_w = event.get_waveform(f['source'])
-            event.waveforms.append(datastructure.Waveform({
-                'name':      f['name'],
-                'samples':   np.convolve(input_w.samples, f['impulse_response'], 'same'),
-                'pmt_list':  input_w.pmt_list,
-            }))
-        return event
-
-
 class FindPeaks(plugin.TransformPlugin):
 
     def transform_event(self, event):

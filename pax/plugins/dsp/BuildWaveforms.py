@@ -29,7 +29,7 @@ class BuildWaveforms(plugin.TransformPlugin):
             's1_peakfinding':   (c['pmts_top'] | c['pmts_bottom']) - c['pmts_excluded_for_s1']
             # The 'tpc' wave will be added by summing 'top' and 'bottom'
         }
-        if self.config['Xerawdp_matching_mode']:
+        if self.config['build_nominally_gain_corrected_waveforms']:
             # Also store nominal-gain corrected waveforms
             self.channel_groups.update({
                 'uS1':  (c['pmts_top'] | c['pmts_bottom']) - c['pmts_excluded_for_s1'],
