@@ -70,6 +70,8 @@ class XedInput(plugin.InputPlugin):
         else:
             self.log.debug("Directory mode")
             xedfiles = glob.glob(filename + "/*.xed")
+            xedfiles.sort()
+            self.log.debug("Found these files: %s", str(xedfiles))
             if len(xedfiles)==0:
                 raise ValueError("No XED files found in input directory %s!" % self.config['filename'])
             for xf in xedfiles:
@@ -79,6 +81,7 @@ class XedInput(plugin.InputPlugin):
 
     def init_xedfile(self, filename):
         """Loads in an XED file header, so we can look up which events are in it"""
+        self.log.info("Opening %s", filename)
         input = open(filename, 'rb')
         self.xedfiles.append({
             'filename' : filename,
