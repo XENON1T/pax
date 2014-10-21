@@ -3,13 +3,6 @@ from pax import plugin, units, datastructure
 
 
 class BuildWaveforms(plugin.TransformPlugin):
-    """Take channel_occurrences, builds channel_waveforms
-
-    Between occurrence waveforms (i.e. pulses...), zeroes are added.
-    The waveforms returned will be converted to pe/ns and baseline-corrected.
-    If a channel is absent from channel_occurrences, it wil be absent from channel_waveforms.
-
-    """
 
     def startup(self):
         c = self.config
@@ -94,9 +87,8 @@ class BuildWaveforms(plugin.TransformPlugin):
                     if i > 0:
                         self.log.warning("Unexpected short occurrence %s in channel %s at %s (%s samples long)"
                                          % (i, channel, start_index, len(occurrence_wave)))
-                    else:
-                        self.log.debug("Short pulse, using rear-baselining")
-                        baseline_sample = occurrence_wave[len(occurrence_wave) - self.config['baseline_sample_length']:]
+                    self.log.debug("Short pulse, using rear-baselining")
+                    baseline_sample = occurrence_wave[len(occurrence_wave) - self.config['baseline_sample_length']:]
 
                 # Finally, the usual baselining case:
                 else:
@@ -112,8 +104,6 @@ class BuildWaveforms(plugin.TransformPlugin):
                     baseline = self.config['digitizer_baseline']
                 else:
                     baseline = np.mean(baseline_sample)  # No floor, Xerawdp uses float arithmetic too. Good.
-
-                corrected_pulse = baseline - occurrence_wave   # Note: flips up!
 
                 # Truncate pulses starting too early
                 if start_index < 0:
