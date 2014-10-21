@@ -31,8 +31,6 @@ class WavOutput(plugin.OutputPlugin):
         # Note that // is an integer divide
         self.all_data[event.start_time] = event.pmt_waveforms.sum()
 
-
-
         if self.single_events:
             # Write a file
             s1 = event.get_waveform('s1_peakfinding').samples
@@ -53,14 +51,18 @@ class WavOutput(plugin.OutputPlugin):
 
             d1 = np.sin(2 * np.pi * f1 * t) * s1
             d2 = np.sin(2 * np.pi * f2 * t) * s2
-            data = (d1 + d2).astype(np.int16)
+            data = (d1 + d2)
 
+            print(data.sum())
             write('song_%d.wav' % event.event_number,
                   self.rate, # Frequency
                   data)
 
 
     def shutdown(self):
+        if self.single_events:
+            return
+        
         start = min(self.all_data)
         end = max(self.all_data)
 

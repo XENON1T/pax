@@ -182,6 +182,11 @@ class Event(Model):
         """
         return self.stop_time - self.start_time
 
+    def get_waveform_names(self):
+        """Get list of the names of waveforms
+        """
+        return [sw.name for sw in self.waveforms]
+
     def get_waveform(self, name):
         """Get waveform for name
         """

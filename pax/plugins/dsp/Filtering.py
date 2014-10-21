@@ -9,20 +9,26 @@ class Filtering(plugin.TransformPlugin):
         for f in self.config['filters']:
             # Check if the impulse response is sane
             ir = np.array(f['impulse_response'])
+
             if abs(1 - np.sum(ir)) > 0.0001:
                 self.log.warning("Filter %s has non-normalized impulse response: %s != 1. Normalizing for you..." % (
                     f['name'], np.sum(ir))
                 )
                 ir /= np.sum(ir)
+
             if len(ir) % 2 == 0:
                 self.log.warning("Filter %s has an even-length impulse response!" % f['name'])
+
             if not np.all(ir - ir[::-1] == 0):
                 self.log.warning("Filter %s has an asymmetric impulse response!" % f['name'])
 
     def transform_event(self, event):
         for f in self.config['filters']:
             input_w = event.get_waveform(f['source'])
-            output = np.convolve(input_w.samples, f['impulse_response'], 'same')
+
+            output = np.convolve(input_w.samples,
+                                 f['impulse_response'],
+                                 'same')
 
             if self.config['simulate_Xerawdp_convolution_bug']:
                 ##
@@ -31,9 +37,12 @@ class Filtering(plugin.TransformPlugin):
                 ##
                 signal = input_w.samples
                 filter_length = len(f['impulse_response'])
+
                 # Determine the pulse boundaries
                 y = np.abs(np.sign(signal))
-                pbs = np.concatenate((np.where(np.roll(y, 1) - y == -1)[0], np.where(np.roll(y, -1) - y == -1)[0]))
+                pbs = np.concatenate((np.where(np.roll(y, 1) - y == -1)[0],
+                                      np.where(np.roll(y, -1) - y == -1)[0]))
+
                 # Check if these are real pulse boundaries: at least three samples before or after must be zero
                 real_pbs = []
                 for q in pbs:
@@ -41,6 +50,7 @@ class Filtering(plugin.TransformPlugin):
                         continue  # So these tests don't fail
                     if signal[q - 1] == signal[q - 2] == signal[q - 3] == 0 or signal[q + 1] == signal[q + 2] == signal[q + 3] == 0:
                         real_pbs.append(q)
+
                 # Mutilate the waveform
                 # First mutilate the edges, which are always pulse boundaries
                 output[:int(filter_length / 2)] = np.zeros(int(filter_length / 2))
