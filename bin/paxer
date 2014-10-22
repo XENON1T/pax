@@ -62,20 +62,21 @@ input_control_group.add_argument('--stop_after',
 args = parser.parse_args()
 
 # Override pax main options
-pax_option_names = (
-    ('input',      'input_override'),
-    ('output',     'output_override'),
-    ('stop_after', 'stop_after'),
-    ('event',      'events_to_process'),
-    ('log',        'logging_level'),
-)
 override_string =       '[pax]\n'
-for argname, configname in pax_option_names:
+for argname, configname, isString in (
+        ('input',      'input_override',    True),
+        ('output',     'output_override',   True),
+        ('log',        'logging_level',     True),
+        ('stop_after', 'stop_after',        False),
+        ('event',      'events_to_process', False),
+    ):
     value = getattr(args, argname)
     if value is not None:
-        override_string +=  '%s = "%s"\n'  % (configname, value)
+        if isString:
+            value = '"' + value + '"'
+        override_string +=  '%s = %s\n'  % (configname, value)
 
-# Override for plottings
+# Overrides for plotting
 if args.plot_to_dir or args.plot :
     override_string += 'output="Plotting.PlotWaveform"\n'
     if args.plot_to_dir or args.plot_every:
