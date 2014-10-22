@@ -53,7 +53,7 @@ class WaveformSimulator(plugin.InputPlugin):
         """ Saves the truth information about a peak (s1 or s2)
         """
         true_peak = {
-            'type': 's2',
+            'type': type,
             'x': x, 'y': y, 'z': z,
             't_interaction':     t,
         }
