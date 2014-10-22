@@ -259,23 +259,27 @@ def process_single_event(actions, event, log):
         event = block.process_event(event)
 
 
-def processor(config, log_spec, events_to_process=None, stop_after=None, input_spec=None):
+def processor(config):
     """Run the processor according to the configuration dictionary
 
     :param config: dictionary with configuration values
-    :param log_spec: loglevel specification (string)
     :return: None
     """
 
     # Setup logging
-    numeric_level = getattr(logging, log_spec.upper(), None)
+    try:
+        log_spec = config['pax']['logging_level'].upper()
+    except:
+        log_spec = 'INFO'
+    numeric_level = getattr(logging, log_spec, None)
     if not isinstance(numeric_level, int):
-        raise ValueError('Invalid log level: %s' % log_spec.log.upper())
+        raise ValueError('Invalid log level: %s' % log_spec)
 
     logging.basicConfig(level=numeric_level,
                         format='%(name)s L%(lineno)s %(levelname)s %(message)s')
     log = logging.getLogger('processor')
 
+    # Complain if we didn't get a configuration, then load a default
     if config is None:
         log.warning("No configuration specified: loading Xenon100 config!")
         config = init_configuration(config_names=['XENON100'])
@@ -290,8 +294,11 @@ def processor(config, log_spec, events_to_process=None, stop_after=None, input_s
                                          'output')
     actions += output   # Append output to actions... for now
 
-    # Set the input specification to config['DEFAULT']['input_specification']
-    config[input]['input_specification'] = input_spec
+    # Hand out input & output override instructions
+    if 'input_override' in config['pax']:
+        config[input]['input_override']   = config['pax']['input_override']
+    if 'output_override' in config['pax']:
+        config[output]['output_override'] = config['pax']['output_override']
 
     # Gather information about plugins
     plugin_source = get_plugin_source(config, log)
@@ -303,10 +310,10 @@ def processor(config, log_spec, events_to_process=None, stop_after=None, input_s
     actions = [instantiate_plugin(x,     plugin_source, config, log) for x in actions]
 
     # How should the events be generated?
-    if events_to_process is not None:
+    if 'events_to_process' in config['pax'] and config['pax']['events_to_process'] is not None:
         # The user specified which events to process:
         def get_events():
-            for event_number in events_to_process:
+            for event_number in config['pax']['events_to_process']:
                 yield input.get_single_event(event_number)
     else:
         # Let the input plugin decide which events to process:
@@ -314,8 +321,8 @@ def processor(config, log_spec, events_to_process=None, stop_after=None, input_s
 
     # This is the actual event loop
     for i, event in enumerate(get_events()):
-        if stop_after is not None:
-            if i >= stop_after:
+        if 'stop_after' in config['pax'] and config['pax']['stop_after'] is not None:
+            if i >= config['pax']['stop_after']:
                 log.info("User-specified limit of %d events reached: processing stopped." % i)
                 break
 
