@@ -29,7 +29,7 @@ parser.add_argument(
 )
 # ...or pass in a path to your own config file:
 parser.add_argument(
-    '--config_path',
+    '--config-path',
     default=[],
     nargs='+',
     help="Path(s) of the configuration file(s) to use."
@@ -44,11 +44,11 @@ plotting_control_group.add_argument(
     help='Plot summed waveforms on screen',
 )
 plotting_control_group.add_argument(
-    '--plot_to_dir',
+    '--plot-to-dir',
     help='Save summed waveform plots in directory',
 )
 parser.add_argument(
-    '--plot_every',
+    '--plot-every',
     default=1,
     help='Plot only every PLOT_EVERY waveform',
 )
@@ -60,7 +60,7 @@ input_control_group.add_argument('--event',
                                  type=int,
                                  nargs='+',
                                  help="Process particular event(s).")
-input_control_group.add_argument('--stop_after',
+input_control_group.add_argument('--stop-after',
                                  type=int,
                                  help="Stop after STOP_AFTER events have been processed.")
 
