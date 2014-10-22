@@ -12,8 +12,9 @@ from pax import core
 ##
 parser = argparse.ArgumentParser(description="Process XENON1 data")
 
-# Input specification
-parser.add_argument('input', default=None, help="File or database to read events from", nargs='?')
+# Input and output overrides
+parser.add_argument('--input',  default=None, help="File, database or directory to read events from", nargs='?')
+parser.add_argument('--output', default=None, help="File, database or directory to write events to",  nargs='?')
 
 # Log level control
 parser.add_argument('--log', default='INFO', help="Set log level, e.g. 'debug'")
@@ -29,7 +30,7 @@ parser.add_argument(
 )
 # ...or pass in a path to your own config file:
 parser.add_argument(
-    '--config-path',
+    '--config_path',
     default=[],
     nargs='+',
     help="Path(s) of the configuration file(s) to use."
@@ -44,15 +45,9 @@ plotting_control_group.add_argument(
     help='Plot summed waveforms on screen',
 )
 plotting_control_group.add_argument(
-    '--plot-to-dir',
+    '--plot_to_dir',
     help='Save summed waveform plots in directory',
 )
-parser.add_argument(
-    '--plot-every',
-    default=1,
-    help='Plot only every PLOT_EVERY waveform',
-)
-
 
 # Control events to process
 input_control_group = parser.add_mutually_exclusive_group()
@@ -60,23 +55,35 @@ input_control_group.add_argument('--event',
                                  type=int,
                                  nargs='+',
                                  help="Process particular event(s).")
-input_control_group.add_argument('--stop-after',
+input_control_group.add_argument('--stop_after',
                                  type=int,
                                  help="Stop after STOP_AFTER events have been processed.")
 
 args = parser.parse_args()
 
-# Construct plotting override string
-override_string = ''
+# Override pax main options
+pax_option_names = (
+    ('input',      'input_override'),
+    ('output',     'output_override'),
+    ('stop_after', 'stop_after'),
+    ('event',      'events_to_process'),
+    ('log',        'logging_level'),
+)
+override_string =       '[pax]\n'
+for argname, configname in pax_option_names:
+    value = getattr(args, argname)
+    if value is not None:
+        override_string +=  '%s = "%s"\n'  % (configname, value)
+
+# Override for plottings
 if args.plot_to_dir or args.plot :
-    override_string += '[pax]\noutput="Plotting.PlotWaveform"\n'
+    override_string += 'output="Plotting.PlotWaveform"\n'
     if args.plot_to_dir or args.plot_every:
         override_string += '\n[Plotting.PlotWaveform]\n'
         if args.plot_to_dir:
-            override_string += 'output_dir = %s\n' % args.plot_to_dir
+            override_string += 'output_dir = "%s"\n' % args.plot_to_dir
         if args.plot_every:
             override_string += 'plot_every = %s\n' % args.plot_every
-
 
 ##
 # Load configuration and run the processor
@@ -87,11 +94,4 @@ config = core.init_configuration(
     config_string=override_string
 )
 
-core.processor(
-    config = config,
-    # These will be None if the arguments are not present
-    log_spec=args.log,
-    events_to_process=args.event,
-    stop_after=args.stop_after,
-    input_spec=args.input
-)
+core.processor(config)
