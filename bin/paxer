@@ -79,12 +79,9 @@ for argname, configname, isString in (
 # Overrides for plotting
 if args.plot_to_dir or args.plot :
     override_string += 'output="Plotting.PlotWaveform"\n'
-    if args.plot_to_dir or args.plot_every:
+    if args.plot_to_dir:
         override_string += '\n[Plotting.PlotWaveform]\n'
-        if args.plot_to_dir:
-            override_string += 'output_dir = "%s"\n' % args.plot_to_dir
-        if args.plot_every:
-            override_string += 'plot_every = %s\n' % args.plot_every
+        override_string += 'output_dir = "%s"\n' % args.plot_to_dir
 
 ##
 # Load configuration and run the processor
