@@ -16,8 +16,8 @@ class PosRecWeightedSum(plugin.TransformPlugin):
 
         Determine which PMTs to use for reconstruction.
         """
-        
-        # This can either be 'top' or 'bottom'.  
+
+        # This can either be 'top' or 'bottom'.
         self.which_pmts = 'pmts_%s' % self.config['pmts_to_use_for_reconstruction']
         if self.which_pmts not in self.config.keys():
             raise RuntimeError("Bad choice 'pmts_to_use_for_reconstruction'")
@@ -39,9 +39,6 @@ class PosRecWeightedSum(plugin.TransformPlugin):
 
         # For every S2 peak found in the event
         for peak in event.S2s():
-            # Print out the left and right boundaries of a peak
-            self.log.debug("Left %d, Right: %d" % (peak.left, peak.right))
-
             # This is an array where every i-th element is how many pe
             # were seen by the i-th PMT
             hits = peak.area_per_pmt
@@ -55,7 +52,7 @@ class PosRecWeightedSum(plugin.TransformPlugin):
             for pmt in self.pmts:  # 'pmt' is a PMT ID
                 value = self.pmt_locations[pmt]  # Dictionary {'x' : int, etc.}
                 Q = hits[pmt] # Area of this S2 for this PMT
-                
+
                 # Add this 'Q' to total Q 'scale'
                 scale += Q
 
