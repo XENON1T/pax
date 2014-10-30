@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.io.XAMS &mdash; Processor for Analyzing XENON1T 1.2.0 documentation</title>
+    <title>pax.plugins.io.XAMS &mdash; Processor for Analyzing XENON1T 1.3.0 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '1.2.0',
+        VERSION:     '1.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 1.2.0 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 1.3.0 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" /> 
   </head>
   <body>
@@ -36,7 +36,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 1.2.0 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 1.3.0 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -85,6 +85,11 @@
         <span class="c">#????? self.get_next_event()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">first_event</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">events</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">last_event</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">events</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Found events </span><span class="si">%s</span><span class="s"> to </span><span class="si">%s</span><span class="s"> in input directory&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">first_event</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_event</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="DirWithWaveformFiles.get_events"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XAMS.DirWithWaveformFiles.get_events">[docs]</a>    <span class="k">def</span> <span class="nf">get_events</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">events</span><span class="p">:</span>
+             <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_single_event</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="DirWithWaveformFiles.get_single_event"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XAMS.DirWithWaveformFiles.get_single_event">[docs]</a>    <span class="k">def</span> <span class="nf">get_single_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
 
@@ -95,15 +100,15 @@
         <span class="c">#Get the event data</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">current_event_channels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">events</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
         <span class="n">event</span><span class="o">.</span><span class="n">occurrences</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">channel</span> <span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_channel_data</span><span class="p">(</span><span class="n">channel</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">))</span>
+            <span class="nb">int</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span> <span class="p">:</span> <span class="p">[(</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_channel_data</span><span class="p">(</span><span class="n">channel</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">))]</span>
             <span class="k">for</span> <span class="n">channel</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">events</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
         <span class="p">}</span>
-        <span class="n">event_length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">occurrences</span><span class="p">[</span><span class="n">event</span><span class="o">.</span><span class="n">occurrences</span><span class="o">.</span><span class="n">keys</span><span class="p">()[</span><span class="mi">0</span><span class="p">]][</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">event_length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">occurrences</span><span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">occurrences</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]][</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
 
         <span class="c"># Set all the other stuff</span>
         <span class="n">event</span><span class="o">.</span><span class="n">event_number</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
         <span class="n">event</span><span class="o">.</span><span class="n">sample_duration</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">1</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">ns</span><span class="p">)</span>    <span class="c"># TODO: don&#39;t hardcode sample size...</span>
-        <span class="n">now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>    <span class="c"># TODO: read file creation time?</span>
+        <span class="n">now</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>    <span class="c"># TODO: read file creation time?</span>
         <span class="n">event</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span> <span class="o">+</span> <span class="n">now</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">s</span><span class="p">)</span>
         <span class="c"># Remember stop_time is the stop time of the LAST sample!</span>
         <span class="n">event</span><span class="o">.</span><span class="n">stop_time</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">start_time</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">event_length</span> <span class="o">*</span> <span class="n">event</span><span class="o">.</span><span class="n">sample_duration</span><span class="p">)</span>
@@ -123,21 +128,22 @@
 
 <div class="viewcode-block" id="XAMSBinary.get_channel_data"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XAMS.XAMSBinary.get_channel_data">[docs]</a>    <span class="k">def</span> <span class="nf">get_channel_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">):</span>
         <span class="n">filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_channel_filename</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span>
-        <span class="c">#Open the file</span>
-        <span class="nb">input</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&#39;rb&#39;</span><span class="p">)</span>
-        <span class="nb">input</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">167</span><span class="p">)</span>
-        <span class="c">#Set metadata (ideally we&#39;d read this from some other file... but oh well)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dV</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s">&#39;&lt;f&#39;</span><span class="p">,</span> <span class="nb">input</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">4</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span><span class="n">units</span><span class="o">.</span><span class="n">V</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">dV</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;digitizer_voltage_range&#39;</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;digitizer_bits&#39;</span><span class="p">]):</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;This file reports a digitizer dV of </span><span class="si">%s</span><span class="s"> mV, your settings imply something else!!&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">dV</span><span class="o">/</span><span class="n">units</span><span class="o">.</span><span class="n">mV</span><span class="p">)</span>
-        <span class="nb">input</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">187</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s">&#39;&lt;f&#39;</span><span class="p">,</span> <span class="nb">input</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">4</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span><span class="n">units</span><span class="o">.</span><span class="n">s</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;digitizer_time_resolution&#39;</span><span class="p">]:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;This file reports a digitizer dt of </span><span class="si">%s</span><span class="s"> ns, your settings say </span><span class="si">%s</span><span class="s"> ns!!&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="o">/</span><span class="n">units</span><span class="o">.</span><span class="n">ns</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;digitizer_time_resolution&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">units</span><span class="o">.</span><span class="n">ns</span><span class="p">))</span>
-        <span class="nb">input</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">357</span><span class="p">)</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span>
-        <span class="nb">input</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>   <span class="c">#I know about with... but do you know about python 2.3?</span>
-        <span class="k">return</span> <span class="n">data</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="nb">input</span><span class="p">:</span>
+            <span class="nb">input</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">167</span><span class="p">)</span>
+            <span class="c">#Set metadata (ideally we&#39;d read this from some other file... but oh well)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dV</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s">&#39;&lt;f&#39;</span><span class="p">,</span> <span class="nb">input</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">4</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">mV</span>
+            <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dV</span><span class="p">,</span> <span class="n">units</span><span class="o">.</span><span class="n">mV</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dV</span><span class="p">))</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">dV</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;digitizer_voltage_range&#39;</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;digitizer_bits&#39;</span><span class="p">]):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;This file reports a digitizer dV of </span><span class="si">%s</span><span class="s"> mV, your settings imply </span><span class="si">%s</span><span class="s"> mv!!&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">dV</span><span class="o">/</span><span class="n">units</span><span class="o">.</span><span class="n">mV</span><span class="p">,</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;digitizer_voltage_range&#39;</span><span class="p">]</span><span class="o">/</span><span class="mi">2</span><span class="o">**</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;digitizer_bits&#39;</span><span class="p">]))</span>
+                <span class="p">)</span>
+            <span class="nb">input</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">187</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="o">=</span> <span class="n">struct</span><span class="o">.</span><span class="n">unpack</span><span class="p">(</span><span class="s">&#39;&lt;f&#39;</span><span class="p">,</span> <span class="nb">input</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">4</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span><span class="n">units</span><span class="o">.</span><span class="n">s</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;digitizer_t_resolution&#39;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;This file reports a digitizer dt of </span><span class="si">%s</span><span class="s"> ns, your settings say </span><span class="si">%s</span><span class="s"> ns!!&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="o">/</span><span class="n">units</span><span class="o">.</span><span class="n">ns</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;digitizer_t_resolution&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">units</span><span class="o">.</span><span class="n">ns</span><span class="p">))</span>
+            <span class="nb">input</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">357</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int8</span><span class="p">)</span>
 
 
 </div></div>
@@ -153,10 +159,8 @@
 
 <div class="viewcode-block" id="LecroyScopeTxt.get_channel_data"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XAMS.LecroyScopeTxt.get_channel_data">[docs]</a>    <span class="k">def</span> <span class="nf">get_channel_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">):</span>
         <span class="n">filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_channel_filename</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span>
-        <span class="nb">input</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">input</span><span class="p">])</span>
-        <span class="nb">input</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>   <span class="c">#I know about with... but do you know about python 2.3?</span>
-        <span class="k">return</span> <span class="n">data</span></div></div>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="nb">input</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="nb">input</span><span class="p">])</span></div></div>
 </pre></div>
 
           </div>
@@ -190,7 +194,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 1.2.0 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 1.3.0 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>

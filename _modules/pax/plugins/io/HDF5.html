@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.io.HDF5 &mdash; Processor for Analyzing XENON1T 1.2.0 documentation</title>
+    <title>pax.plugins.io.HDF5 &mdash; Processor for Analyzing XENON1T 1.3.0 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '1.2.0',
+        VERSION:     '1.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 1.2.0 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 1.3.0 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" /> 
   </head>
   <body>
@@ -36,7 +36,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 1.2.0 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 1.3.0 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -139,15 +139,14 @@
             <span class="c"># Construct reconstructed position table</span>
             <span class="k">for</span> <span class="n">track</span> <span class="ow">in</span> <span class="n">peak</span><span class="p">[</span><span class="s">&#39;reconstructed_positions&#39;</span><span class="p">]:</span>
                 <span class="n">track</span> <span class="o">=</span> <span class="n">track</span><span class="o">.</span><span class="n">to_dict</span><span class="p">()</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;track&#39;</span><span class="p">,</span> <span class="n">track</span><span class="p">[</span><span class="s">&#39;index_of_maximum&#39;</span><span class="p">])</span>
+
                 <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">hdf5_fields</span><span class="p">[</span><span class="s">&#39;ReconstructedPosition&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">tables</span><span class="o">.</span><span class="n">Col</span><span class="p">):</span>
                         <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="s">&#39;event_number&#39;</span><span class="p">:</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">rows</span><span class="p">[</span><span class="s">&#39;ReconstructedPosition&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">event_dict</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
                         <span class="k">else</span><span class="p">:</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">rows</span><span class="p">[</span><span class="s">&#39;ReconstructedPosition&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">track</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
-                <span class="c">#self.rows[&#39;ReconstructedPosition&#39;][&#39;index_of_maximum&#39;] = 3</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;wtf&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">rows</span><span class="p">[</span><span class="s">&#39;ReconstructedPosition&#39;</span><span class="p">][</span><span class="s">&#39;index_of_maximum&#39;</span><span class="p">])</span>
+
                 <span class="bp">self</span><span class="o">.</span><span class="n">rows</span><span class="p">[</span><span class="s">&#39;ReconstructedPosition&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">()</span>
 </div>
 <div class="viewcode-block" id="HDF5Output.shutdown"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.HDF5.HDF5Output.shutdown">[docs]</a>    <span class="k">def</span> <span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -188,7 +187,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 1.2.0 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 1.3.0 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>

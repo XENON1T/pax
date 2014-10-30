@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.core &mdash; Processor for Analyzing XENON1T 1.2.0 documentation</title>
+    <title>pax.core &mdash; Processor for Analyzing XENON1T 1.3.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '1.2.0',
+        VERSION:     '1.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 1.2.0 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 1.3.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body>
@@ -36,7 +36,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">Processor for Analyzing XENON1T 1.2.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Processor for Analyzing XENON1T 1.3.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -308,23 +308,27 @@
         <span class="n">event</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">process_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
 
 </div>
-<div class="viewcode-block" id="processor"><a class="viewcode-back" href="../../pax.html#pax.core.processor">[docs]</a><span class="k">def</span> <span class="nf">processor</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">log_spec</span><span class="p">,</span> <span class="n">events_to_process</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">stop_after</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">input_spec</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="processor"><a class="viewcode-back" href="../../pax.html#pax.core.processor">[docs]</a><span class="k">def</span> <span class="nf">processor</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Run the processor according to the configuration dictionary</span>
 
 <span class="sd">    :param config: dictionary with configuration values</span>
-<span class="sd">    :param log_spec: loglevel specification (string)</span>
 <span class="sd">    :return: None</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c"># Setup logging</span>
-    <span class="n">numeric_level</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">logging</span><span class="p">,</span> <span class="n">log_spec</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span> <span class="bp">None</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">log_spec</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s">&#39;pax&#39;</span><span class="p">][</span><span class="s">&#39;logging_level&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">log_spec</span> <span class="o">=</span> <span class="s">&#39;INFO&#39;</span>
+    <span class="n">numeric_level</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">logging</span><span class="p">,</span> <span class="n">log_spec</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">numeric_level</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Invalid log level: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">log_spec</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">upper</span><span class="p">())</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Invalid log level: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">log_spec</span><span class="p">)</span>
 
     <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">numeric_level</span><span class="p">,</span>
                         <span class="n">format</span><span class="o">=</span><span class="s">&#39;</span><span class="si">%(name)s</span><span class="s"> L</span><span class="si">%(lineno)s</span><span class="s"> </span><span class="si">%(levelname)s</span><span class="s"> </span><span class="si">%(message)s</span><span class="s">&#39;</span><span class="p">)</span>
     <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;processor&#39;</span><span class="p">)</span>
 
+    <span class="c"># Complain if we didn&#39;t get a configuration, then load a default</span>
     <span class="k">if</span> <span class="n">config</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
         <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;No configuration specified: loading Xenon100 config!&quot;</span><span class="p">)</span>
         <span class="n">config</span> <span class="o">=</span> <span class="n">init_configuration</span><span class="p">(</span><span class="n">config_names</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;XENON100&#39;</span><span class="p">])</span>
@@ -339,8 +343,11 @@
                                          <span class="s">&#39;output&#39;</span><span class="p">)</span>
     <span class="n">actions</span> <span class="o">+=</span> <span class="n">output</span>   <span class="c"># Append output to actions... for now</span>
 
-    <span class="c"># Set the input specification to config[&#39;DEFAULT&#39;][&#39;input_specification&#39;]</span>
-    <span class="n">config</span><span class="p">[</span><span class="nb">input</span><span class="p">][</span><span class="s">&#39;input_specification&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">input_spec</span>
+    <span class="c"># Hand out input &amp; output override instructions</span>
+    <span class="k">if</span> <span class="s">&#39;input_override&#39;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="s">&#39;pax&#39;</span><span class="p">]:</span>
+        <span class="n">config</span><span class="p">[</span><span class="nb">input</span><span class="p">][</span><span class="s">&#39;input_override&#39;</span><span class="p">]</span>   <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s">&#39;pax&#39;</span><span class="p">][</span><span class="s">&#39;input_override&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="s">&#39;output_override&#39;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="s">&#39;pax&#39;</span><span class="p">]:</span>
+        <span class="n">config</span><span class="p">[</span><span class="n">output</span><span class="p">][</span><span class="s">&#39;output_override&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s">&#39;pax&#39;</span><span class="p">][</span><span class="s">&#39;output_override&#39;</span><span class="p">]</span>
 
     <span class="c"># Gather information about plugins</span>
     <span class="n">plugin_source</span> <span class="o">=</span> <span class="n">get_plugin_source</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">log</span><span class="p">)</span>
@@ -352,10 +359,10 @@
     <span class="n">actions</span> <span class="o">=</span> <span class="p">[</span><span class="n">instantiate_plugin</span><span class="p">(</span><span class="n">x</span><span class="p">,</span>     <span class="n">plugin_source</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">log</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">actions</span><span class="p">]</span>
 
     <span class="c"># How should the events be generated?</span>
-    <span class="k">if</span> <span class="n">events_to_process</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+    <span class="k">if</span> <span class="s">&#39;events_to_process&#39;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="s">&#39;pax&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">config</span><span class="p">[</span><span class="s">&#39;pax&#39;</span><span class="p">][</span><span class="s">&#39;events_to_process&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
         <span class="c"># The user specified which events to process:</span>
         <span class="k">def</span> <span class="nf">get_events</span><span class="p">():</span>
-            <span class="k">for</span> <span class="n">event_number</span> <span class="ow">in</span> <span class="n">events_to_process</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">event_number</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="s">&#39;pax&#39;</span><span class="p">][</span><span class="s">&#39;events_to_process&#39;</span><span class="p">]:</span>
                 <span class="k">yield</span> <span class="nb">input</span><span class="o">.</span><span class="n">get_single_event</span><span class="p">(</span><span class="n">event_number</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="c"># Let the input plugin decide which events to process:</span>
@@ -363,8 +370,8 @@
 
     <span class="c"># This is the actual event loop</span>
     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">event</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">get_events</span><span class="p">()):</span>
-        <span class="k">if</span> <span class="n">stop_after</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="n">stop_after</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s">&#39;stop_after&#39;</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="s">&#39;pax&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">config</span><span class="p">[</span><span class="s">&#39;pax&#39;</span><span class="p">][</span><span class="s">&#39;stop_after&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="n">config</span><span class="p">[</span><span class="s">&#39;pax&#39;</span><span class="p">][</span><span class="s">&#39;stop_after&#39;</span><span class="p">]:</span>
                 <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;User-specified limit of </span><span class="si">%d</span><span class="s"> events reached: processing stopped.&quot;</span> <span class="o">%</span> <span class="n">i</span><span class="p">)</span>
                 <span class="k">break</span>
 
@@ -406,7 +413,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">Processor for Analyzing XENON1T 1.2.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Processor for Analyzing XENON1T 1.3.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>

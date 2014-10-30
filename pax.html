@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax package &mdash; Processor for Analyzing XENON1T 1.2.0 documentation</title>
+    <title>pax package &mdash; Processor for Analyzing XENON1T 1.3.0 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.2.0',
+        VERSION:     '1.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 1.2.0 documentation" href="index.html" /> 
+    <link rel="top" title="Processor for Analyzing XENON1T 1.3.0 documentation" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -35,7 +35,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 1.2.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 1.3.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -187,20 +187,15 @@ The config_string is loaded last of all.</p>
 
 <dl class="function">
 <dt id="pax.core.processor">
-<tt class="descclassname">pax.core.</tt><tt class="descname">processor</tt><big>(</big><em>config</em>, <em>log_spec</em>, <em>events_to_process=None</em>, <em>stop_after=None</em>, <em>input_spec=None</em><big>)</big><a class="reference internal" href="_modules/pax/core.html#processor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.processor" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">pax.core.</tt><tt class="descname">processor</tt><big>(</big><em>config</em><big>)</big><a class="reference internal" href="_modules/pax/core.html#processor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.processor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Run the processor according to the configuration dictionary</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>config</strong> &#8211; dictionary with configuration values</li>
-<li><strong>log_spec</strong> &#8211; loglevel specification (string)</li>
-</ul>
-</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>config</strong> &#8211; dictionary with configuration values</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">None</p>
-</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">None</td>
 </tr>
 </tbody>
 </table>
@@ -251,6 +246,12 @@ releases.  Patch releases cannot modify this.</p>
 <dt id="pax.datastructure.Event.get_waveform">
 <tt class="descname">get_waveform</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.get_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.get_waveform" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get waveform for name</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.Event.get_waveform_names">
+<tt class="descname">get_waveform_names</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.get_waveform_names"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.get_waveform_names" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get list of the names of waveforms</p>
 </dd></dl>
 
 <dl class="method">
@@ -344,14 +345,50 @@ Or rather, it starts from January 1, 1970.</p>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.coincidence_level">
-<tt class="descname">coincidence_level</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.coincidence_level" title="Permalink to this definition">¶</a></dt>
-<dd><p>Number of PMTs that see &#8216;something significant&#8217; (depends on peakfinder??)</p>
+<tt class="descname">coincidence_level</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.coincidence_level"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.coincidence_level" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of PMTS which see something significant (depends on settings)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.contributing_pmts">
+<tt class="descname">contributing_pmts</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.contributing_pmts" title="Permalink to this definition">¶</a></dt>
+<dd><p>PMTs which see &#8216;something significant&#8217; (depends on settings)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.full_width_half_max">
+<tt class="descname">full_width_half_max</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.full_width_half_max" title="Permalink to this definition">¶</a></dt>
+<dd><p>Full width at half maximum in samples</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.full_width_half_max_filtered">
+<tt class="descname">full_width_half_max_filtered</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.full_width_half_max_filtered" title="Permalink to this definition">¶</a></dt>
+<dd><p>Full width at half of maximum in samples, in filtered waveform</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.full_width_tenth_max">
+<tt class="descname">full_width_tenth_max</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.full_width_tenth_max" title="Permalink to this definition">¶</a></dt>
+<dd><p>Full width at tenth of maximum in samples</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.full_width_tenth_max_filtered">
+<tt class="descname">full_width_tenth_max_filtered</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.full_width_tenth_max_filtered" title="Permalink to this definition">¶</a></dt>
+<dd><p>Full width at tenth of maximum in samples, in filtered waveform</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.height">
 <tt class="descname">height</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.height" title="Permalink to this definition">¶</a></dt>
 <dd><p>Height of highest point in peak (in pe/bin)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.height_filtered">
+<tt class="descname">height_filtered</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.height_filtered" title="Permalink to this definition">¶</a></dt>
+<dd><p>Height of highest point in filtered waveform of peak (in pe/bin)</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -376,7 +413,7 @@ Or rather, it starts from January 1, 1970.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.right">
 <tt class="descname">right</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.right" title="Permalink to this definition">¶</a></dt>
-<dd><p>Index of right bound (for Xerawdp matching: exclusive; otherwise: inclusive) in sum waveform.</p>
+<dd><p>Index of right bound (for Xdp matching: exclusive; otherwise: inclusive) in sum waveform.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -493,16 +530,13 @@ Heavily used in SimpleDSP</p>
 <dd></dd></dl>
 
 <dl class="function">
-<dt id="pax.dsputils.find_peak_in_interval">
-<tt class="descclassname">pax.dsputils.</tt><tt class="descname">find_peak_in_interval</tt><big>(</big><em>signal</em>, <em>unfiltered</em>, <em>itv_left</em>, <em>itv_right</em>, <em>integration_bound_fraction</em>, <em>constrain_bounds=False</em>, <em>region_offset=0</em><big>)</big><a class="reference internal" href="_modules/pax/dsputils.html#find_peak_in_interval"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.find_peak_in_interval" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.dsputils.find_peak_in_signal">
+<tt class="descclassname">pax.dsputils.</tt><tt class="descname">find_peak_in_signal</tt><big>(</big><em>signal</em>, <em>unfiltered</em>, <em>integration_bound_fraction</em>, <em>offset=0</em><big>)</big><a class="reference internal" href="_modules/pax/dsputils.html#find_peak_in_signal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.find_peak_in_signal" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finds &#8216;the&#8217; peak in the candidate interval
 :param signal: Signal to use for peak finding &amp; extent computation
 :param unfiltered: Unfiltered waveform (used for max, height, area computation)
-:param itv_left: Left bound of interval to look in
-:param itv_right: Right bound of interval to look in
 :param integration_bound_fraction: Fraction of max where you choose the peak to end.
-:param constrain_bounds: If True, peak bounds can&#8217;t extend beyond the interval. Default False.
-:param region_offset: index in the waveform of the first index of the signal passed. Default 0.
+:param offset: index in the waveform of the first index of the signal passed. Default 0.
 :return: a pax datastructure Peak</p>
 </dd></dl>
 
@@ -516,12 +550,6 @@ Heavily used in SimpleDSP</p>
 <dt id="pax.dsputils.intervals_above_threshold">
 <tt class="descclassname">pax.dsputils.</tt><tt class="descname">intervals_above_threshold</tt><big>(</big><em>signal</em>, <em>threshold</em><big>)</big><a class="reference internal" href="_modules/pax/dsputils.html#intervals_above_threshold"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.intervals_above_threshold" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return boundary indices of all intervals in signal (strictly) above threshold</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pax.dsputils.merge_overlapping_peaks">
-<tt class="descclassname">pax.dsputils.</tt><tt class="descname">merge_overlapping_peaks</tt><big>(</big><em>peaks</em><big>)</big><a class="reference internal" href="_modules/pax/dsputils.html#merge_overlapping_peaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.merge_overlapping_peaks" title="Permalink to this definition">¶</a></dt>
-<dd><p>Merge overlapping peaks - highest peak consumes lower peak</p>
 </dd></dl>
 
 <dl class="function">
@@ -887,7 +915,7 @@ unit_name(ns,&#8217;s&#8217;) will give &#8216;ns&#8217;</p>
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 1.2.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 1.3.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

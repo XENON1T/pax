@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.io.MongoDB &mdash; Processor for Analyzing XENON1T 1.2.0 documentation</title>
+    <title>pax.plugins.io.MongoDB &mdash; Processor for Analyzing XENON1T 1.3.0 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '1.2.0',
+        VERSION:     '1.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 1.2.0 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 1.3.0 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" /> 
   </head>
   <body>
@@ -36,7 +36,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 1.2.0 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 1.3.0 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -157,6 +157,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">repeater</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;repeater&#39;</span><span class="p">])</span> <span class="c"># Hz repeater</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">runtime</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;runtime&#39;</span><span class="p">])</span> <span class="c"># How long run repeater</span>
 
+        <span class="c"># Schema for input collection</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_time_key</span> <span class="o">=</span> <span class="s">&#39;time_min&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stop_time_key</span> <span class="o">=</span> <span class="s">&#39;time_max&#39;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bulk_key</span> <span class="o">=</span> <span class="s">&#39;bulk&#39;</span>
+        
 
         <span class="bp">self</span><span class="o">.</span><span class="n">connections</span> <span class="o">=</span> <span class="p">{}</span>
 
@@ -299,7 +304,6 @@
 </div>
 <div class="viewcode-block" id="MongoDBFakeDAQOutput.handle_occurences"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.handle_occurences">[docs]</a>    <span class="k">def</span> <span class="nf">handle_occurences</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">docs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">occurences</span>  <span class="c"># []</span>
-
         <span class="c"># for occurences in list(self.chunks(self.occurences,</span>
         <span class="c"># 1000)):</span>
 
@@ -318,7 +322,7 @@
                     <span class="k">continue</span>
 
                 <span class="n">t1</span> <span class="o">=</span> <span class="n">this_time</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">fatal</span><span class="p">(</span><span class="s">&#39;times </span><span class="si">%d</span><span class="s">&#39;</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">fatal</span><span class="p">(</span><span class="s">&#39;How many events to inject </span><span class="si">%d</span><span class="s">&#39;</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
 
                 <span class="n">modified_docs</span> <span class="o">=</span> <span class="p">[]</span>
                 <span class="n">min_time</span> <span class="o">=</span> <span class="bp">None</span>
@@ -338,18 +342,26 @@
                         <span class="n">modified_docs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">doc</span><span class="o">.</span><span class="n">copy</span><span class="p">())</span>
 
                         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">modified_docs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1000</span><span class="p">:</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">raw_collection</span><span class="o">.</span><span class="n">insert</span><span class="p">({</span><span class="s">&#39;min&#39;</span> <span class="p">:</span> <span class="n">min_time</span><span class="p">,</span>
-                                                        <span class="s">&#39;max&#39;</span> <span class="p">:</span> <span class="n">max_time</span><span class="p">,</span>
-                                                        <span class="s">&#39;bulk&#39;</span> <span class="p">:</span> <span class="n">modified_docs</span><span class="p">},</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">raw_collection</span><span class="o">.</span><span class="n">insert</span><span class="p">({</span><span class="bp">self</span><span class="o">.</span><span class="n">start_time_key</span> <span class="p">:</span> <span class="n">min_time</span><span class="p">,</span>
+                                                        <span class="bp">self</span><span class="o">.</span><span class="n">stop_time_key</span> <span class="p">:</span> <span class="n">max_time</span><span class="p">,</span>
+                                                        <span class="bp">self</span><span class="o">.</span><span class="n">bulk_key</span> <span class="p">:</span> <span class="n">modified_docs</span><span class="p">},</span>
                                                        <span class="n">w</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
                             <span class="n">modified_docs</span> <span class="o">=</span> <span class="p">[]</span>
                             <span class="n">min_time</span> <span class="o">=</span> <span class="bp">None</span>
                             <span class="n">max_time</span> <span class="o">=</span> <span class="bp">None</span>
 
         <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">docs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">times</span> <span class="o">=</span> <span class="p">[</span><span class="n">doc</span><span class="p">[</span><span class="s">&#39;time&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">docs</span><span class="p">]</span>
+            <span class="n">min_time</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+            <span class="n">max_time</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+
             <span class="n">t0</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">raw_collection</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">docs</span><span class="p">,</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">raw_collection</span><span class="o">.</span><span class="n">insert</span><span class="p">({</span><span class="bp">self</span><span class="o">.</span><span class="n">start_time_key</span> <span class="p">:</span> <span class="n">min_time</span><span class="p">,</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">stop_time_key</span> <span class="p">:</span> <span class="n">max_time</span><span class="p">,</span>
+                                        <span class="bp">self</span><span class="o">.</span><span class="n">bulk_key</span> <span class="p">:</span> <span class="n">docs</span><span class="p">},</span>
                                        <span class="n">w</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
             <span class="n">t1</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">occurences</span> <span class="o">=</span> <span class="p">[]</span>
@@ -386,7 +398,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 1.2.0 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 1.3.0 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>
