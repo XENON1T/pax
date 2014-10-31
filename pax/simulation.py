@@ -111,10 +111,8 @@ def s2_electrons(electrons_generated=None, z=0., t=0.):
         / config['drift_velocity_liquid_above_gate']
 
     # Diffusion model from Sorensen 2011
-    drift_time_stdev = math.sqrt(
-        2 * config['diffusion_constant_liquid'] *
-        drift_time_mean / (config['drift_velocity_liquid']) ** 2
-    )
+    drift_time_stdev = math.sqrt(2 * config['diffusion_constant_liquid'] * drift_time_mean)
+    drift_time_stdev /= config['drift_velocity_liquid']
 
     # Absorb electrons during the drift
     electrons_seen = np.random.binomial(
