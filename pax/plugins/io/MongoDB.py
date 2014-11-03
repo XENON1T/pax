@@ -240,8 +240,9 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
 
                 occurence_doc['time'] = time + sample_position - self.starttime
 
-                data = snappy.compress(np.array(samples_occurrence,
-                                                dtype=np.int16).tostring())
+                data = np.array(samples_occurrence, dtype=np.int16).tostring()
+                if self.query['reader']['compressed']:
+                    data = snappy.compress(data)
 
                 # Convert raw samples into BSON format
                 occurence_doc['data'] = Binary(data, 0)
