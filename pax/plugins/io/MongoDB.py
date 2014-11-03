@@ -138,12 +138,10 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
         self.run_collection = self.run_database[self.config['run_collection']]
         self.raw_collection = self.raw_database[self.config['raw_collection']]
 
-        self.raw_collection.ensure_index([('time', -1),
-                                          ('module', -1),
-                                          ('_id', -1)])
-        self.raw_collection.ensure_index([('time', 1),
-                                          ('module', 1),
-                                          ('_id', 1)])
+        self.raw_collection.ensure_index([(self.start_time_key, -1)])
+        self.raw_collection.ensure_index([(self.start_time_key, 1)])
+        self.raw_collection.ensure_index([(self.stop_time_key, -1)])
+        self.raw_collection.ensure_index([(self.stop_time_key, 1)])
 
         self.raw_collection.ensure_index([('_id', pymongo.HASHED)])
             
