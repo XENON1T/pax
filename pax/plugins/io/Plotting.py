@@ -190,3 +190,39 @@ class PlottingHitPattern(PlotBase):
             self._plot(S1, ax3, self.pmts_top)
             ax4.set_title('S1 bottom (from above?)')
             self._plot(S1, ax4, self.pmts_bottom)
+
+            
+            
+class LUX_3D_plot(PlotBase): # user sets variables xlim, ylim for 3D plot
+
+    def plot_event(self, event):
+        YLIM_CHANNEL_START = 1
+        YLIM_CHANNEL_END  = 190
+        XLIM_START_TIME = 0
+        XLIM_START_END = 40000
+        from mpl_toolkits.mplot3d import Axes3D
+        fig = plt.figure()
+        ax = fig.gca(projection='3d')
+        print ('Hello world')
+        print ('event number:',event.event_number)
+        
+        def set_y_values(value,n_times):
+            y = []
+            for int_i in range(0,n_times):
+                y.append(value)
+            return y
+        
+        for channel, occurrences in event.occurrences.items(): # is dictionary
+            print ('channel number:', channel, ' has this number of occurrences',  len(occurrences))           
+            for start_index, waveform in occurrences: # is list
+                if channel > YLIM_CHANNEL_START and channel < YLIM_CHANNEL_END:
+                    x = np.array(np.linspace(start_index,start_index+len(waveform)-1, len(waveform)))
+                    ax.plot(x, set_y_values(channel,len(waveform)), zs=-1*waveform, zdir='z', label=str(channel))
+        ax.set_xlabel('Time [10ns]')
+        ax.set_xlim3d(XLIM_START_TIME, XLIM_START_END)
+        ax.set_ylabel('Channel number')
+        ax.set_ylim3d(YLIM_CHANNEL_START, YLIM_CHANNEL_END)
+        ax.set_zlabel('Pulse height')
+        #ax.set_zlim3d(0, 1)
+        #plt.legend()
+        plt.show()
