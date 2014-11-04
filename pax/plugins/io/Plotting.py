@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 import random
 import numpy as np
 import os
+from mpl_toolkits.mplot3d import Axes3D
 
 from pax import plugin, units
 
@@ -193,36 +194,42 @@ class PlottingHitPattern(PlotBase):
 
             
             
-class LUX_3D_plot(PlotBase): # user sets variables xlim, ylim for 3D plot
+class PlotChannelWaveforms(PlotBase): # user sets variables xlim, ylim for 3D plot
+    """Plot an event
+
+    Will make a fancy plot with lots of arrows etc of a summed waveform
+    """
+
+    def set_y_values(self, value, n_times):
+        y = []
+        
+        for int_i in range(0,n_times):
+            y.append(value)
+            
+        return y
 
     def plot_event(self, event):
-        YLIM_CHANNEL_START = 1
-        YLIM_CHANNEL_END  = 190
-        XLIM_START_TIME = 0
-        XLIM_START_END = 40000
-        from mpl_toolkits.mplot3d import Axes3D
+        ylim_channel_start = 1
+        ylim_channel_end  = 190
+        xlim_time_start = 0
+        xlim_time_end = 40000
+
         fig = plt.figure()
         ax = fig.gca(projection='3d')
-        print ('Hello world')
-        print ('event number:',event.event_number)
-        
-        def set_y_values(value,n_times):
-            y = []
-            for int_i in range(0,n_times):
-                y.append(value)
-            return y
         
         for channel, occurrences in event.occurrences.items(): # is dictionary
             print ('channel number:', channel, ' has this number of occurrences',  len(occurrences))           
             for start_index, waveform in occurrences: # is list
-                if channel > YLIM_CHANNEL_START and channel < YLIM_CHANNEL_END:
-                    x = np.array(np.linspace(start_index,start_index+len(waveform)-1, len(waveform)))
-                    ax.plot(x, set_y_values(channel,len(waveform)), zs=-1*waveform, zdir='z', label=str(channel))
+                if channel > ylim_channel_start and channel < ylim_channel_end:
+                    x = np.array(np.linspace(start_index,start_index+len(waveform)-1,
+                                             len(waveform)))
+                    ax.plot(x, self.set_y_values(channel,len(waveform)),
+                            zs=-1*waveform, zdir='z', label=str(channel))
+                    
         ax.set_xlabel('Time [10ns]')
-        ax.set_xlim3d(XLIM_START_TIME, XLIM_START_END)
+        ax.set_xlim3d(xlim_time_start, xlim_time_end)
+        
         ax.set_ylabel('Channel number')
-        ax.set_ylim3d(YLIM_CHANNEL_START, YLIM_CHANNEL_END)
+        ax.set_ylim3d(ylim_channel_start, ylim_channel_end)
+        
         ax.set_zlabel('Pulse height')
-        #ax.set_zlim3d(0, 1)
-        #plt.legend()
-        plt.show()
