@@ -33,8 +33,13 @@ class BuildWaveforms(plugin.TransformPlugin):
 
     def transform_event(self, event):
 
+        # Find the last PMT index
+        if len(self.config['pmts_veto']) != 0:
+            pmts = 1 + max(self.config['pmts_veto'])   # TODO: really??
+        else:
+            pmts = 1 + max(max(self.config['pmts_top']), max(self.config['pmts_bottom']))
+
         # Initialize empty waveforms
-        pmts = 1 + max(self.config['pmts_veto'])   # TODO: really??
         event.pmt_waveforms = np.zeros((pmts, event.length()))
         for group, members in self.channel_groups.items():
             event.waveforms.append(datastructure.Waveform({

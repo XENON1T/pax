@@ -14,7 +14,7 @@ class Filtering(plugin.TransformPlugin):
                 self.log.warning("Filter %s has non-normalized impulse response: %s != 1. Normalizing for you..." % (
                     f['name'], np.sum(ir))
                 )
-                ir /= np.sum(ir)
+                f['impulse_response'] = ir/np.sum(ir)
 
             if len(ir) % 2 == 0:
                 self.log.warning("Filter %s has an even-length impulse response!" % f['name'])

@@ -11,7 +11,6 @@ processing and other data processing on the XENON100/XENON1T raw data.
 Installation
 =============
 
-
 Installing requirements
 -----------------------
 

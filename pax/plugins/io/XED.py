@@ -60,9 +60,9 @@ class XedInput(plugin.InputPlugin):
         self.xedfiles = []
         self.input = None
 
-        if self.config['input_specification'] is not None:
-            self.log.debug('User-defined input file/dir: %s' % self.config['input_specification'])
-            filename = self.config['input_specification']
+        if 'input_override' in self.config and self.config['input_override'] is not None:
+            self.log.debug('User-defined input file/dir: %s' % self.config['input_override'])
+            filename = self.config['input_override']
         else:
             filename = self.config['filename']
 
@@ -78,7 +78,7 @@ class XedInput(plugin.InputPlugin):
             self.log.debug("Found these files: %s", str(xed_file_names))
 
             if len(xed_file_names)==0:
-                raise ValueError("No XED files found in input directory %s!" % self.config['filename'])
+                raise ValueError("No XED files found in input directory %s!" % filename)
 
             for xf in xed_file_names:
                 self.log.debug("Initiailizing %s" % xf)
@@ -112,6 +112,8 @@ class XedInput(plugin.InputPlugin):
         self.log.debug('Found XED file %s containing events %s-%s' % (
             filename, self.xedfiles[-1]['first_event'], self.xedfiles[-1]['last_event']
         ))
+
+        input.close()
 
     def select_xedfile(self, i):
         """Selects an XED file previously loaded by init_xedfile, so we can start reading events"""
@@ -150,7 +152,7 @@ class XedInput(plugin.InputPlugin):
     def get_single_event(self, event_number):
 
         if not self.first_event <= event_number <= self.last_event:
-            #Time to open a new XED file!
+            # Time to open a new XED file!
             for i, xedfile in enumerate(self.xedfiles):
                 if xedfile['first_event'] <= event_number <= xedfile['last_event']:
                     self.select_xedfile(i)

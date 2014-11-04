@@ -1,3 +1,4 @@
+numexpr
 wheel>=0.23.0
 numpy
 pluginbase

@@ -22,6 +22,22 @@ def init_config(config_to_init):
     if not 'event_repetitions' in config:
         config['event_repetitions'] = 1
 
+    efield = (config['drift_field']/(units.V/units.cm))
+
+    # Primary excimer fraction from Nest Version 098
+    # See G4S1Light.cc line 298
+    density = config['liquid_density'] / (units.g / units.cm**3)
+    excfrac = 0.4-0.11131*density-0.0026651*density**2                   # primary / secondary excimers
+    excfrac = 1/(1+excfrac)                                              # primary / all excimers
+    excfrac /= 1-(1-excfrac)*(1-config['s1_ER_recombination_fraction'])  # primary / all excimers that produce a photon
+    config['s1_ER_primary_excimer_fraction'] = excfrac
+    log.debug('Inferred s1_ER_primary_excimer_fraction %s' % excfrac)
+
+    # Recombination time from NEST 2014
+    # 3.5 seems fishy, they fit an exponential to data, but in the code they use a non-exponential distribution...
+    config['s1_ER_recombination_time'] = 3.5/0.18 * (1/20 + 0.41) * math.exp(-0.009*efield)
+    log.debug('Inferred s1_ER_recombination_time %s ns' % config['s1_ER_recombination_time'])
+
     # Determine sensible length of a pmt pulse to simulate
     dt = config['digitizer_t_resolution']
     config['samples_before_pulse_center'] = math.ceil(
@@ -30,6 +46,7 @@ def init_config(config_to_init):
     config['samples_after_pulse_center'] = math.ceil(
         config['pulse_width_cutoff'] * config['pmt_fall_time'] / dt
     )
+    log.debug('Simulating %s samples before and %s samples after PMT pulse centers.')
 
     # Padding on eiher side of event
     if 'event_padding' not in config:
@@ -49,6 +66,7 @@ def init_config(config_to_init):
             + 10 * config['pmt_transit_time_spread']
             - config['pmt_transit_time_mean']
         )
+        log.debug('Determined padding at %s ns' % config['pad_before'])
 
     # Temp hack: need 0 in channels so we can use lists... hmmzzz
     config['channels'] = list({0} | config['pmts_top'] | config['pmts_bottom'])
@@ -93,10 +111,8 @@ def s2_electrons(electrons_generated=None, z=0., t=0.):
         / config['drift_velocity_liquid_above_gate']
 
     # Diffusion model from Sorensen 2011
-    drift_time_stdev = math.sqrt(
-        2 * config['diffusion_constant_liquid'] *
-        drift_time_mean / (config['drift_velocity_liquid']) ** 2
-    )
+    drift_time_stdev = math.sqrt(2 * config['diffusion_constant_liquid'] * drift_time_mean)
+    drift_time_stdev /= config['drift_velocity_liquid']
 
     # Absorb electrons during the drift
     electrons_seen = np.random.binomial(
@@ -128,7 +144,7 @@ def s1_photons(n_photons, recoil_type, t=0.):
     if recoil_type == 'ER':
 
         # How many of these are primary excimers? Others arise through recombination.
-        n_primaries = np.random.binomial(n=n_photons, p=1-config['s1_ER_recombination_fraction'])
+        n_primaries = np.random.binomial(n=n_photons, p=config['s1_ER_primary_excimer_fraction'])
 
         primary_timings = singlet_triplet_delays(
             np.zeros(n_primaries),  # No recombination delay for primary excimers
@@ -137,11 +153,12 @@ def s1_photons(n_photons, recoil_type, t=0.):
             singlet_ratio=config['s1_ER_primary_singlet_fraction']
         )
 
-        # Is there a recombination time to correct for?
-        if config['s1_ER_recombination_time'] > 0:
-            secondary_timings = np.random.exponential(config['s1_ER_recombination_time'], n_photons - n_primaries)
-        else:
-            secondary_timings = np.zeros(n_photons - n_primaries)
+        # Correct for the recombination time
+        # For the non-exponential distribution: see Kubota 1979, solve eqn 2 for n/n0.
+        # Alternatively, see Nest V098 source code G4S1Light.cc line 948
+        secondary_timings = config['s1_ER_recombination_time']\
+                            * (-1 + 1/np.random.uniform(0, 1, n_photons-n_primaries))
+        secondary_timings = np.clip(secondary_timings, 0, config['maximum_recombination_time'])
         # Handle singlet/ triplet decays as before
         secondary_timings += singlet_triplet_delays(
             secondary_timings,
@@ -150,11 +167,12 @@ def s1_photons(n_photons, recoil_type, t=0.):
             singlet_ratio=config['s1_ER_secondary_singlet_fraction']
         )
 
-        timings =  np.concatenate((primary_timings, secondary_timings))
+        timings = np.concatenate((primary_timings, secondary_timings))
 
     elif recoil_type == 'NR':
 
-        # Account for singlet/triplet decay times
+        # Neglible recombination time, same singlet/triplet ratio for primary & secondary excimers
+        # Hence, we don't care about primary & secondary excimers at all:
         timings = singlet_triplet_delays(
             np.zeros(n_photons),
             t1=config['singlet_lifetime_liquid'],

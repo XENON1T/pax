@@ -108,6 +108,11 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
         self.repeater = int(self.config['repeater']) # Hz repeater
         self.runtime = int(self.config['runtime']) # How long run repeater
 
+        # Schema for input collection
+        self.start_time_key = 'time_min'
+        self.stop_time_key = 'time_max'
+        self.bulk_key = 'bulk'
+        
 
         self.connections = {}
 
@@ -133,12 +138,10 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
         self.run_collection = self.run_database[self.config['run_collection']]
         self.raw_collection = self.raw_database[self.config['raw_collection']]
 
-        self.raw_collection.ensure_index([('time', -1),
-                                          ('module', -1),
-                                          ('_id', -1)])
-        self.raw_collection.ensure_index([('time', 1),
-                                          ('module', 1),
-                                          ('_id', 1)])
+        self.raw_collection.ensure_index([(self.start_time_key, -1)])
+        self.raw_collection.ensure_index([(self.start_time_key, 1)])
+        self.raw_collection.ensure_index([(self.stop_time_key, -1)])
+        self.raw_collection.ensure_index([(self.stop_time_key, 1)])
 
         self.raw_collection.ensure_index([('_id', pymongo.HASHED)])
             
@@ -237,8 +240,9 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
 
                 occurence_doc['time'] = time + sample_position - self.starttime
 
-                data = snappy.compress(np.array(samples_occurrence,
-                                                dtype=np.int16).tostring())
+                data = np.array(samples_occurrence, dtype=np.int16).tostring()
+                if self.query['reader']['compressed']:
+                    data = snappy.compress(data)
 
                 # Convert raw samples into BSON format
                 occurence_doc['data'] = Binary(data, 0)
@@ -250,7 +254,6 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
 
     def handle_occurences(self):
         docs = self.occurences  # []
-
         # for occurences in list(self.chunks(self.occurences,
         # 1000)):
 
@@ -269,7 +272,7 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
                     continue
 
                 t1 = this_time
-                self.log.fatal('times %d', n)
+                self.log.fatal('How many events to inject %d', n)
 
                 modified_docs = []
                 min_time = None
@@ -289,18 +292,26 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
                         modified_docs.append(doc.copy())
 
                         if len(modified_docs) > 1000:
-                            self.raw_collection.insert({'min' : min_time,
-                                                        'max' : max_time,
-                                                        'bulk' : modified_docs},
+                            self.raw_collection.insert({self.start_time_key : min_time,
+                                                        self.stop_time_key : max_time,
+                                                        self.bulk_key : modified_docs},
                                                        w=0)
                             modified_docs = []
                             min_time = None
                             max_time = None
 
         elif len(docs) > 0:
+            times = [doc['time'] for doc in docs]
+            min_time = min(times)
+            max_time = max(times)
+
             t0 = time.time()
-            self.raw_collection.insert(docs,
+
+            self.raw_collection.insert({self.start_time_key : min_time,
+                                        self.stop_time_key : max_time,
+                                        self.bulk_key : docs},
                                        w=0)
+
             t1 = time.time()
 
         self.occurences = []
