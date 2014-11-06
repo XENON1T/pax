@@ -31,11 +31,8 @@ class PlotBase(plugin.OutputPlugin):
         # Should we plot or skip?
         if self.skip_counter:
             self.skip_counter -= 1
-            self.log.debug(
-                "Skipping this event due to plot_every = %s. Skip counter at "
-                "%s" % (
-                    self.config['plot_every'], self.skip_counter
-                ))
+            self.log.debug("Skipping this event due to plot_every = %s. Skip counter at %s" % (self.config['plot_every'],
+                                                                                               self.skip_counter))
             return
 
         self.plot_event(event)
@@ -79,8 +76,8 @@ class PlotWaveform(PlotBase):
             ax = plt.subplot2grid((rows, cols), (0, 0))
             largest_s1 = sorted(
                 event.S1s(), key=lambda x: x.area, reverse=True)[0]
-            self.plot_waveform(
-                event, left=largest_s1.left, right=largest_s1.right, pad=10)
+            self.plot_waveform(event, left=largest_s1.left,
+                               right=largest_s1.right, pad=10)
 
             time = largest_s1.index_of_maximum * self.time_conversion_factor
 
@@ -107,7 +104,8 @@ class PlotWaveform(PlotBase):
         plt.subplot2grid((rows, cols), (rows - 1, 0), colspan=cols)
         self.plot_waveform(event, show_peaks=True)
         legend = plt.legend(loc='upper left', prop={'size': 10})
-        legend.get_frame().set_alpha(0.5)
+        if legend and legend.get_frame():
+            legend.get_frame().set_alpha(0.5)
         plt.tight_layout()
 
     def plot_waveform(self, event, left=0, right=None, pad=0, show_peaks=False):
@@ -117,12 +115,9 @@ class PlotWaveform(PlotBase):
         righti = min(right + pad, event.length() - 1)
         nsamples = 1 + righti - lefti
         dt = event.sample_duration * units.ns
-        xlabels = np.arange(
-            lefti * dt / units.us,
-            # 10+ labels will be cut later, prevents off by one errors
-            (10 + righti) * dt / units.us,
-            dt / units.us
-        )
+        xlabels = np.arange(lefti * dt / units.us, # 10+ labels will be cut later, prevents off by one errors     
+                            (10 + righti) * dt / units.us,
+                            dt / units.us)
         xlabels = xlabels[:nsamples]
         plt.autoscale(True, axis='both', tight=True)
         for w in self.config['waveforms_to_plot']:
