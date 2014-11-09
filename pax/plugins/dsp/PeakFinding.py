@@ -735,7 +735,7 @@ def find_next_crossing(signal, threshold,
         return stop
     if not min_length <= abs(start - stop):
         # This is probably ok, can happen, remove warning later on
-        log.warning("Minimum crossing event_duration %s will never happen in a region %s samples in size!" % (
+        log.warning("We'll never cross the threshold for %s samples in a region %s samples in size!" % (
             min_length, abs(start - stop)
         ))
         return stop
