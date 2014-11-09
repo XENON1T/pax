@@ -7,6 +7,12 @@ class BuildWaveforms(plugin.TransformPlugin):
     def startup(self):
         c = self.config
 
+        # Extract the number of PMTs from the configuration
+        all_pmts = self.config['pmts_top'] | self.config['pmts_bottom'] | self.config['pmts_veto']
+        self.n_pmts = len(all_pmts)
+        if not max(all_pmts) == self.n_pmts-1:
+            raise ValueError("PMT numbers should be an uninterrupted sequence starting from zero.")
+
         # Conversion factor from converting from ADC counts -> pmt-electrons/bin
         # Still has to be divided by PMT gain to get pe/bin
         self.conversion_factor = c['digitizer_t_resolution'] * c['digitizer_voltage_range'] / (
@@ -33,14 +39,13 @@ class BuildWaveforms(plugin.TransformPlugin):
 
     def transform_event(self, event):
 
-        # Find the last PMT index
-        if len(self.config['pmts_veto']) != 0:
-            pmts = 1 + max(self.config['pmts_veto'])   # TODO: really??
-        else:
-            pmts = 1 + max(max(self.config['pmts_top']), max(self.config['pmts_bottom']))
+        # Sanity check
+        if not self.config['digitizer_t_resolution'] == event.sample_duration:
+            raise ValueError('Event %s quotes sample duration = %s ns, but digitizer_t_resolution is set to %s!' % (
+                              event.event_number, event.sample_duration, self.config['digitizer_t_resolution']))
 
         # Initialize empty waveforms
-        event.pmt_waveforms = np.zeros((pmts, event.length()))
+        event.pmt_waveforms = np.zeros((self.n_pmts, event.length()))
         for group, members in self.channel_groups.items():
             event.waveforms.append(datastructure.Waveform({
                 'samples':  np.zeros(event.length()),
