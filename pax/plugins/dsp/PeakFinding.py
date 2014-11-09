@@ -654,6 +654,10 @@ class ComputePeakProperties(plugin.TransformPlugin):
         return event
 
 
+
+import logging
+log = logging.getLogger('XerawdpImitationPeakfindingHelperSubs')
+
 # Helper functions for peakfinding
 # Can't yet put them in the peakfinding class, because extent_until_threshold is used by computequantities also...
 
@@ -697,16 +701,16 @@ def find_next_crossing(signal, threshold,
     # Check for errors in arguments
     # TEMP HACK, these should become errors... or at least stern warnings!
     if stop < 0:
-        print("!!!!!!!!!!!!! Invalid crossing search stop point: %s" % stop)
+        log.warning("!!!!!!!!!!!!! Invalid crossing search stop point: %s" % stop)
         stop = 0
     if stop > len(signal) - 1:
-        print("!!!!!!!!!!!!! Invalid crossing search stop point: %s (signal has %s samples)" % (stop, len(signal)))
+        log.warning("!!!!!!!!!!!!! Invalid crossing search stop point: %s (signal has %s samples)" % (stop, len(signal)))
         stop = len(signal) - 1
     if start < 0:
-        print("!!!!!!!!!!!!! Invalid crossing search start point: %s" % start)
+        log.warning("!!!!!!!!!!!!! Invalid crossing search start point: %s" % start)
         start = 0
     if start > len(signal) - 1:
-        print("!!!!!!!!!!!!! Invalid crossing search start point: %s (signal has %s samples)" % (start, len(signal)))
+        log.warning("!!!!!!!!!!!!! Invalid crossing search start point: %s (signal has %s samples)" % (start, len(signal)))
         start = len(signal) - 1
     # These are already errors
     if direction not in ('left', 'right'):
@@ -725,13 +729,13 @@ def find_next_crossing(signal, threshold,
     if stop == start:
         return stop
     if signal[start] == threshold:
-        print("Threshold %s equals value in start position %s: crossing will never happen!" % (
+        log.warning("Threshold %s equals value in start position %s: crossing will never happen!" % (
             threshold, start
         ))
         return stop
     if not min_length <= abs(start - stop):
         # This is probably ok, can happen, remove warning later on
-        print("Minimum crossing event_duration %s will never happen in a region %s samples in size!" % (
+        log.warning("Minimum crossing event_duration %s will never happen in a region %s samples in size!" % (
             min_length, abs(start - stop)
         ))
         return stop
@@ -804,7 +808,7 @@ def find_next_crossing(signal, threshold,
                         # log_slope %s > %s. started from %s" % (i, log_slope, log_slope_threshold, start))
                         return start + np.argmin(signal[start:i + 1])
                 except ValueError:
-                    print("! Slope test crashed, you should check if you have enough samples... really.. ")
+                    log.warning("! Slope test crashed, you should check if you have enough samples... really.. ")
         # Increment the search position in the right direction
         i += -1 if direction == 'left' else 1
 
