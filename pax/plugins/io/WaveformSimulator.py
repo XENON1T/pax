@@ -1,4 +1,5 @@
 import numpy as np
+import os
 import time
 import csv
 try:
@@ -163,6 +164,8 @@ class WaveformSimulator(plugin.InputPlugin):
                 # Setup the pax event 'header'
                 self.log.debug("Creating pax event")
                 event = datastructure.Event()
+                if hasattr(self, 'dataset_name'):
+                    event.dataset_name = self.dataset_name
                 event.event_number = event_number
                 event.start_time = int(time.time() * units.s)
                 event.stop_time = event.start_time + int(event_length * dt)
@@ -194,7 +197,12 @@ class WaveformSimulator(plugin.InputPlugin):
 class WaveformSimulatorFromCSV(WaveformSimulator):
     def startup(self):
         # Open the instructions file
-        self.instructions_file = open(self.config['instruction_filename'], 'r')
+        if 'input_override' in self.config and self.config['input_override'] is not None:
+            filename = self.config['input_override']
+        else:
+            filename = self.config['instruction_filename']
+        self.dataset_name = os.path.basename(filename)
+        self.instructions_file = open(filename, 'r')
         self.instructions = csv.DictReader(self.instructions_file)
         WaveformSimulator.startup(self)
 
@@ -232,8 +240,12 @@ class WaveformSimulatorFromNEST(WaveformSimulator):
 
     def startup(self):
         self.log.warning('This plugin is completely untested and will probably crash!')
+        if 'input_override' in self.config and self.config['input_override'] is not None:
+            filename = self.config['input_override']
+        else:
+            filename = self.config['input_file']
         import ROOT
-        f = ROOT.TFile(self.config['input_file'])
+        f = ROOT.TFile(filename)
         self.t = f.Get("t1") # For Xerawdp use T1, for MC t1
         WaveformSimulator.startup(self)
 
