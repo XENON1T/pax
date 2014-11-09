@@ -261,6 +261,7 @@ class XedInput(plugin.InputPlugin):
 
         # Return the event
         event = Event()
+        event.dataset_name = self.file_metadata['dataset_name'].decode("utf-8")
         event.event_number = int(event_layer_metadata['event_number'])
         event.occurrences = occurrences
 

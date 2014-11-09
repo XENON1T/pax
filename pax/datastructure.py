@@ -13,6 +13,7 @@ import inspect
 import numpy as np
 import math
 
+from pax import units
 from pax.micromodels.models import Model
 from pax.micromodels import fields as f
 from pax.micromodels.fields import IntegerField, FloatField, StringField
@@ -112,13 +113,11 @@ class Event(Model):
     """Event class
     """
 
-    event_number = IntegerField()
-    """An integer number that uniquely identifies the event within the dataset.
-
-    Always positive."""
+    dataset_name = StringField(default='Unknown')  # The name of the dataset this event belongs to
+    event_number = IntegerField()    # A nonnegative integer that uniquely identifies the event within the dataset.
 
     #: Time duration of a sample in units of ns
-    sample_duration = IntegerField(default=10)
+    sample_duration = IntegerField(default=10*units.ns)
 
     #: Start time of the event.
     #:
