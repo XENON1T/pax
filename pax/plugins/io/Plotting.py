@@ -100,10 +100,8 @@ class PlotBase(plugin.OutputPlugin):
             for peak in event.peaks:
                 x = peak.index_of_maximum * self.samples_to_us
                 y = peak.height
-                plt.hlines(y, peak.left * self.samples_to_us,
-                           peak.right * self.samples_to_us)
                 if log_y_axis:
-                    ytext = y + (1-y/max_y)
+                    ytext = y * (3-2*y/max_y)
                     arrowprops = None
                 else:
                     ytext =  y + (max_y - y) * (
@@ -114,6 +112,8 @@ class PlotBase(plugin.OutputPlugin):
                                       connectionstyle="angle3,"
                                                       "angleA=0,"
                                                       "angleB=-90")
+                plt.hlines(ytext, peak.left * self.samples_to_us,
+                           peak.right * self.samples_to_us)
                 plt.annotate('%s:%s' % (peak.type, int(peak.area)),
                              xy=(x, y),
                              xytext=(x, ytext),
@@ -178,7 +178,7 @@ class PlottingHitPattern(PlotBase):
         self.pmts_bottom = self.config['pmts_bottom']
         self.pmt_locations = self.config['pmt_locations']
 
-    def _plot(self, peak, ax, pmts, size_multiplication_factor=1):
+    def _plot(self, peak, ax, pmts):
         area = []
         points = []
         for pmt in pmts:
@@ -186,8 +186,8 @@ class PlottingHitPattern(PlotBase):
             points.append((self.pmt_locations[pmt]['x'],
                            self.pmt_locations[pmt]['y']))
 
-        area = np.array(area)*size_multiplication_factor
-        total_area = np.sum(area)
+        area = np.array(area)
+        total_area = np.sum(area[area >0])
         c = ax.scatter(*zip(*points), s=5000*area/total_area, c=area, cmap=plt.cm.hot)
         c.set_alpha(0.75)
         ax.set_xticklabels([])
