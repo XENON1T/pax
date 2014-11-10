@@ -524,7 +524,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                     # The = case actually happens!
                     boundaries.append(p.left)  # TODO: Was this a Xerawdp bug? or should you now redo the matching?
             return min(boundaries)
-        raise RuntimeError("direction %s isn't left or right" % direction)
+        raise RuntimeError("Direction %s isn't left or right" % direction)
 
     def isolation_test(
         self,
@@ -655,11 +655,12 @@ class ComputePeakProperties(plugin.TransformPlugin):
 
 
 
-import logging
-log = logging.getLogger('XerawdpImitationPeakfindingHelperSubs')
 
 # Helper functions for peakfinding
 # Can't yet put them in the peakfinding class, because extent_until_threshold is used by computequantities also...
+
+import logging
+log = logging.getLogger('PeakFinding_find_next_crossing')
 
 def find_next_crossing(signal, threshold,
                        start=0, direction='right', min_length=1,
@@ -700,44 +701,41 @@ def find_next_crossing(signal, threshold,
 
     # Check for errors in arguments
     # TEMP HACK, these should become errors... or at least stern warnings!
+    warninghead = ("Strange error during Xerawdp-imitation peakfinding: find_next_crossing was asked to search for " +
+                  "a threshold crossing for >= %s samples in the %s direction starting from sample %s and stopping " +
+                  "at sample %s in a signal %s samples in size.\n") % (min_length, direction, start, stop, len(signal))
     if stop < 0:
-        log.warning("!!!!!!!!!!!!! Invalid crossing search stop point: %s" % stop)
+        log.warning(warninghead + "A negative stop point makes no sense, setting it to 0 instead.")
         stop = 0
     if stop > len(signal) - 1:
-        log.warning("!!!!!!!!!!!!! Invalid crossing search stop point: %s (signal has %s samples)" % (stop, len(signal)))
         stop = len(signal) - 1
+        log.warning(warninghead + "A stop point beyond the signal extent makes no sense, setting %s instead." % stop)
     if start < 0:
-        log.warning("!!!!!!!!!!!!! Invalid crossing search start point: %s" % start)
+        log.warning(warninghead + "A negative start point makes no sense, setting %s instead." % stop)
         start = 0
     if start > len(signal) - 1:
-        log.warning("!!!!!!!!!!!!! Invalid crossing search start point: %s (signal has %s samples)" % (start, len(signal)))
         start = len(signal) - 1
+        log.warning(warninghead + "A start point beyond the signal extent makes no sense, setting %s instead." % start)
     # These are already errors
     if direction not in ('left', 'right'):
-        raise ValueError("Direction %s is not left or right" % direction)
+        raise ValueError(warninghead + "Direction %s is not left or right" % direction)
     if not 1 <= min_length:
-        raise ValueError("min_length must be at least 1, %s specified." % min_length)
+        raise ValueError(warninghead + "Crossing for %s samples makes no sense, should be >= 1." % min_length)
     if (direction == 'left' and start < stop) or (direction == 'right' and stop < start):
-        # When Xerawdp matching is done, this should become a runtime error
-        raise RuntimeError("Search region (start: %s, stop: %s, direction: %s) has negative event_duration!" % (
-            start, stop, direction
-        ))
-        # return stop #I hope this is what the Xerawdp algorithm does in this case...
+        raise RuntimeError("Start and stop points are not in right order for search direction.")
 
     # Check for pathological cases which can arise, not serious enough to throw an exception
     # Can't raise a warning from here, as I don't have self.log...
     if stop == start:
         return stop
     if signal[start] == threshold:
-        log.warning("Threshold %s equals value in start position %s: crossing will never happen!" % (
-            threshold, start
-        ))
+        log.warning((warninghead + 'However, the signal is EXACTLY equal to the threshold at the start position, so ' +
+                     "the very idea of 'crossing' is ambiguous. Will return %s as the crossing position") % stop)
         return stop
     if not min_length <= abs(start - stop):
         # This is probably ok, can happen, remove warning later on
-        log.warning("We'll never cross the threshold for %s samples in a region %s samples in size!" % (
-            min_length, abs(start - stop)
-        ))
+        log.warning((warninghead + "The search region is too small for a threshold crossing of this length " +
+                     "to occur in it. Will return %s as the crossing position. See issue #68.") % stop)
         return stop
 
     # Do the search
@@ -808,7 +806,8 @@ def find_next_crossing(signal, threshold,
                         # log_slope %s > %s. started from %s" % (i, log_slope, log_slope_threshold, start))
                         return start + np.argmin(signal[start:i + 1])
                 except ValueError:
-                    log.warning("! Slope test crashed, you should check if you have enough samples... really.. ")
+                    log.warning("The slope inversion test crashed, tell Jelle he should not be lazy and check if "+
+                                "there are enough samples to use the derivative kernel.")
         # Increment the search position in the right direction
         i += -1 if direction == 'left' else 1
 
