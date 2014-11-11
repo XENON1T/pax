@@ -5,6 +5,9 @@
 *.xed
 *.root
 *.png
+*.h5
+fax_truth.csv
+
 
 # C extensions
 *.so
