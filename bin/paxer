@@ -78,9 +78,9 @@ for argname, configname, isString in (
 
 # Overrides for plotting
 if args.plot_to_dir or args.plot :
-    override_string += 'output="Plotting.PlotWaveform"\n'
+    override_string += 'output="Plotting.PlotEventSummary"\n'
     if args.plot_to_dir:
-        override_string += '\n[Plotting.PlotWaveform]\n'
+        override_string += '\n[Plotting.PlotEventSummary]\n'
         override_string += 'output_dir = "%s"\n' % args.plot_to_dir
 
 ##
