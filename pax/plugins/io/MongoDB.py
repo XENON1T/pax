@@ -16,7 +16,11 @@ from bson.binary import Binary
 from pax.datastructure import Event
 from pax import plugin
 
+START_TIME_KEY = 'time_min'
+
 class MongoDBInput(plugin.InputPlugin):
+    """Read data from DAQ database
+    """
     def startup(self):
         self.log.debug("Connecting to %s" % self.config['address'])
         try:
@@ -72,11 +76,14 @@ class MongoDBInput(plugin.InputPlugin):
                 assert isinstance(doc_occurrence['time'], int)
                 assert isinstance(doc_event['range'][0], int)
 
+                
+                data = snappy.compress(doc_occurrence['data'])
+                
                 occurrences[channel].append((
                     # Start sample index
                     doc_occurrence['time'] - doc_event['range'][0],
                     # SumWaveform occurrence data
-                    np.fromstring(doc_occurrence['data'], dtype="<i2"),
+                    np.fromstring(data, dtype="<i2"),
                 ))
 
             event.occurrences = occurrences
@@ -109,7 +116,7 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
         self.runtime = int(self.config['runtime']) # How long run repeater
 
         # Schema for input collection
-        self.start_time_key = 'time_min'
+        self.start_time_key = START_TIME_KEY
         self.stop_time_key = 'time_max'
         self.bulk_key = 'bulk'
         
