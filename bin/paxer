@@ -5,7 +5,6 @@ import argparse
 
 from pax import core
 import matplotlib
-matplotlib.use('Agg')
 
 ##
 # Parse command line arguments
