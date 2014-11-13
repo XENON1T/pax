@@ -4,7 +4,6 @@
 import argparse
 
 from pax import core
-import matplotlib
 
 ##
 # Parse command line arguments
