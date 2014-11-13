@@ -5,8 +5,6 @@ import argparse
 
 from pax import core
 
-
-
 ##
 # Parse command line arguments
 ##

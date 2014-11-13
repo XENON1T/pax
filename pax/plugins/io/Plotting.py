@@ -57,7 +57,7 @@ class PlotBase(plugin.OutputPlugin):
         self.skip_counter = self.config['plot_every'] - 1
 
 
-    def plot_waveform(self, event, left=0, right=None, pad=0, show_peaks=False, show_legend=True, log_y_axis=False):
+    def plot_waveform(self, event, left=0, right=None, pad=0, show_peaks=False, show_legend=True, log_y_axis=False,scale=1):
         """
         Plot part of an event's sum waveform. Defined in base class to ensure a uniform style
         """
@@ -88,7 +88,7 @@ class PlotBase(plugin.OutputPlugin):
         for w in self.config['waveforms_to_plot']:
             waveform = event.get_waveform(w['internal_name'])
             plt.plot(xlabels,
-                     waveform.samples[lefti:righti + 1] + y_offset,
+                     (waveform.samples[lefti:righti + 1] + y_offset)*scale,
                      label=w['plot_label'])
         if log_y_axis:
             plt.ylim((0.9,plt.ylim()[1]))
@@ -214,11 +214,10 @@ class PlottingHitPattern(PlotBase):
                     self._plot(peak, ax, getattr(self, 'pmts_%s'%array))
 
             
-            
 class PlotChannelWaveforms(PlotBase): # user sets variables xlim, ylim for 3D plot
     """Plot an event
 
-    Will make a fancy plot with lots of arrows etc of a summed waveform
+    Will make a fancy '3D' plot with different y positions for all channels. User sets variables for plot.
     """
 
     def set_y_values(self, value, n_times):
@@ -230,30 +229,50 @@ class PlotChannelWaveforms(PlotBase): # user sets variables xlim, ylim for 3D pl
         return y
 
     def plot_event(self, event):
-        ylim_channel_start = 1
-        ylim_channel_end  = 190
-        xlim_time_start = 0
-        xlim_time_end = 40000
+        ylim_channel_start = 0 # top : 1-98, bottom : 99-178, Top Shield Array: PMTs 179..210, Bottom Shield Array: PMTs 211..242
+        ylim_channel_end  = 241 # if set to 242 then no sum channel possible
+        xlim_time_start = 0 # s1: 205.5 , s2: 260
+        xlim_time_end = 400 # [us] S1: 206.5, s2: 270
+        baseline = 16000 # [adc counts]
+        adc_voltage_range = 2.25 # [V]
+        adc_bits = np.power(2,14) # 14 bit
+        pe_binV = 10*1e-9 / (50 * 2*1e6 * 10 * 1.602* 1e-19 )
+        #[pe/(bin*V)] = time_resolution [s/bin] / ( resistor [V*s/C] * gain [] * amplification [] * electric_charge [C/pe] )
+        #For Xenon100 (gain 2e6, amplification 10, resistor 50, time resolution 10ns/bin), this gives 62.4 pe/(bin*V), so 1 pe/bin is 16.0 mV; 1 mV is 0.0624 pe/bin.         
+        
+        volt_per_bit = adc_voltage_range/adc_bits
 
         fig = plt.figure()
         ax = fig.gca(projection='3d')
+        lefti = xlim_time_start*100
+        righti = xlim_time_end*100
+        scale = 0.2
         
         for channel, occurrences in event.occurrences.items(): # is dictionary
-            print ('channel number:', channel, ' has this number of occurrences',  len(occurrences))           
             for start_index, waveform in occurrences: # is list
-                if channel > ylim_channel_start and channel < ylim_channel_end:
-                    x = np.array(np.linspace(start_index,start_index+len(waveform)-1,
-                                             len(waveform)))
-                    ax.plot(x, self.set_y_values(channel,len(waveform)),
-                            zs=-1*waveform, zdir='z', label=str(channel))
+                if channel > ylim_channel_start and channel < ylim_channel_end: # takes only the range of channels to plot
+                    if start_index > xlim_time_start*100 and start_index < xlim_time_end*100: # Only plot occurrences that start in time window
+                        time = np.array(np.linspace(start_index,start_index+len(waveform)-1,
+                                                 len(waveform)))
+                        corrected_waveform = -1*(waveform-baseline)*volt_per_bit*pe_binV # subtract baseline and make positive
+                        ax.plot(time/100, self.set_y_values(channel,len(corrected_waveform)), # time to micro sec
+                                zs=corrected_waveform, zdir='z', label=str(channel))
+            if channel == ylim_channel_end+1: # make sum waveform
+                waveform = event.get_waveform('uS2')   
+                time = np.array(np.linspace(lefti,righti,righti-lefti))
+                ax.plot(time/100, self.set_y_values(channel,len(waveform.samples[lefti:righti])), # time to micro sec
+                            zs=waveform.samples[lefti:righti]*scale, zdir='z', label=str(channel))
                     
-        ax.set_xlabel('Time [10ns]')
+        ax.set_xlabel('Time [$\mu$s]')
         ax.set_xlim3d(xlim_time_start, xlim_time_end)
         
         ax.set_ylabel('Channel number')
-        ax.set_ylim3d(ylim_channel_start, ylim_channel_end)
+        ax.set_ylim3d(ylim_channel_start, ylim_channel_end+1)
         
-        ax.set_zlabel('Pulse height')
+        ax.set_zlabel('Pulse height [pe/10ns]')
+        ax.set_zlim3d(0, 20)
+        
+        
 
 
 class PlotEventSummary(PlotBase):
