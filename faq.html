@@ -75,9 +75,10 @@ error.</p>
 </pre></div>
 </div>
 <p>The machines have old certificates, therefore you cannot run <cite>git</cite> in secure
-mode.</p>
-<blockquote>
-<div>export GIT_SSL_NO_VERIFY=true</div></blockquote>
+mode.  Running the command is a workaround:</p>
+<div class="highlight-python"><div class="highlight"><pre>export GIT_SSL_NO_VERIFY=true
+</pre></div>
+</div>
 <p>These two export commands can be added to your <cite>.bashrc</cite> to be run automatically
 when you login.</p>
 </div>
