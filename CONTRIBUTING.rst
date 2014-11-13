@@ -60,9 +60,10 @@ Ready to contribute? Here's how to set up `pax` for local development.  If you g
 
     $ git clone git@github.com:your_name_here/pax.git
 
-3. Install your local copy into a virtualenv. Assuming you have virtualenvwrapper installed, this is how you set up your fork for local development::
+3. Install your local copy.  (If you chose not to use Anaconda, you may want to
+install in a virtual environment.)  This is how you set up your fork for local
+development::
 
-    $ mkvirtualenv pax
     $ cd pax/
     $ python setup.py develop
 
