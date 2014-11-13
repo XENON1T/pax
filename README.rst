@@ -33,7 +33,12 @@ or your OS's package management system. You may have to install some additional 
 Installing pax
 --------------
 
-The code of pax is in a private github repository. Once you have access, run::
+The code of pax is in a private github repository. You must first have `git`
+installed, which you can test by running at the command line::
+
+  git
+
+Once you have access to the GitHub repository and `git` installed, run::
 
     pip install git+https://github.com/XENON1T/pax.git
 
