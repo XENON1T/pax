@@ -27,7 +27,7 @@ You can get `git` running by doing the following at the command line::
   export PATH=/home/kaminsky/software/bin:$PATH
 
 The machines have old certificates, therefore you cannot run `git` in secure
-mode.
+mode.  Running the command is a workaround::
 
   export GIT_SSL_NO_VERIFY=true
 
