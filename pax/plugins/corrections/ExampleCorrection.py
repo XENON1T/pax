@@ -1,9 +1,10 @@
-from pax import plugin, dsputils
+from pax import core, plugin, dsputils
 
 class ExampleCorrection(plugin.TransformPlugin):
 
     def startup(self):
-        self.correction_map = dsputils.InterpolatingDetectorMap('example_3d_correction_map.json')
+        self.correction_map = dsputils.InterpolatingDetectorMap(
+            core.data_file_name('example_3d_correction_map.json'))
 
     def transform_event(self, event):
 

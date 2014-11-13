@@ -15,8 +15,17 @@ import pax
 from pax import units
 
 
-# Store the directory of pax (i.e. parent dir of this file's directory) as pax_dir
+# Store the directory of pax (i.e. this file's directory) as pax_dir
 pax_dir = os.path.join(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))))
+def data_file_name(filename):
+    """Returns filename if a file exists there, else returns pax_dir/data/filename"""
+    if os.path.exists(filename):
+        return filename
+    new_filename = os.path.join(pax_dir, 'data', filename)
+    if os.path.exists(new_filename):
+        return new_filename
+    else:
+        raise ValueError('File name or path %s not found! % filename')
 
 ##
 # Configuration handling

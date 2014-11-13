@@ -7,7 +7,7 @@ try:
 except:
     import pickle
 
-from pax import plugin, units, datastructure, simulation
+from pax import core, plugin, units, datastructure, simulation
 
 
 class WaveformSimulator(plugin.InputPlugin):
@@ -202,7 +202,7 @@ class WaveformSimulatorFromCSV(WaveformSimulator):
         else:
             filename = self.config['instruction_filename']
         self.dataset_name = os.path.basename(filename)
-        self.instructions_file = open(filename, 'r')
+        self.instructions_file = open(core.data_file_name(filename), 'r')
         self.instructions = csv.DictReader(self.instructions_file)
         WaveformSimulator.startup(self)
 
@@ -245,7 +245,7 @@ class WaveformSimulatorFromNEST(WaveformSimulator):
         else:
             filename = self.config['input_file']
         import ROOT
-        f = ROOT.TFile(filename)
+        f = ROOT.TFile(core.data_file_name(filename))
         self.t = f.Get("t1") # For Xerawdp use T1, for MC t1
         WaveformSimulator.startup(self)
 

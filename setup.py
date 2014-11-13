@@ -37,7 +37,7 @@ setup(
 		'pax.micromodels'
 	],
 	package_dir={'pax': 'pax'},
-	package_data={'pax': ['config/*.ini']},
+	package_data={'pax': ['config/*.ini', 'data/*.*']},
 	scripts = ['bin/paxer'],
 	install_requires=requirements,
 	license="BSD",
