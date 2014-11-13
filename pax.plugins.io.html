@@ -162,6 +162,7 @@ on formats:</p>
 <dt id="pax.plugins.io.MongoDB.MongoDBInput">
 <em class="property">class </em><tt class="descclassname">pax.plugins.io.MongoDB.</tt><tt class="descname">MongoDBInput</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInput" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.InputPlugin" title="pax.plugin.InputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.InputPlugin</span></tt></a></p>
+<p>Read data from DAQ database</p>
 <dl class="method">
 <dt id="pax.plugins.io.MongoDB.MongoDBInput.get_events">
 <tt class="descname">get_events</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInput.get_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInput.get_events" title="Permalink to this definition">¶</a></dt>
@@ -227,14 +228,19 @@ on formats:</p>
 <dl class="method">
 <dt id="pax.plugins.io.Plotting.PlotBase.finalize_plot">
 <tt class="descname">finalize_plot</tt><big>(</big><em>num=0</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotBase.finalize_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotBase.finalize_plot" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finalize plotting and send to screen/file</p>
-<p>Call this instead of plt.show()</p>
+<dd><p>Finalize plotting, send to screen/file, then closes plot properly (avoids runtimewarning / memory leak).</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="pax.plugins.io.Plotting.PlotBase.plot_event">
 <tt class="descname">plot_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotBase.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotBase.plot_event" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.Plotting.PlotBase.plot_waveform">
+<tt class="descname">plot_waveform</tt><big>(</big><em>event</em>, <em>left=0</em>, <em>right=None</em>, <em>pad=0</em>, <em>show_peaks=False</em>, <em>show_legend=True</em>, <em>log_y_axis=False</em>, <em>scale=1</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotBase.plot_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotBase.plot_waveform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot part of an event&#8217;s sum waveform. Defined in base class to ensure a uniform style</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="pax.plugins.io.Plotting.PlotBase.startup">
@@ -254,19 +260,64 @@ on formats:</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="pax.plugins.io.Plotting.PlotWaveform">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlotWaveform</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotWaveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotWaveform" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.plugins.io.Plotting.PlotChannelWaveforms">
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlotChannelWaveforms</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotChannelWaveforms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotChannelWaveforms" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.Plotting.PlotBase" title="pax.plugins.io.Plotting.PlotBase"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.Plotting.PlotBase</span></tt></a></p>
+<p>Plot an event</p>
+<p>Will make a fancy &#8216;3D&#8217; plot with different y positions for all channels. User sets variables for plot.</p>
 <dl class="method">
-<dt id="pax.plugins.io.Plotting.PlotWaveform.plot_event">
-<tt class="descname">plot_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotWaveform.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotWaveform.plot_event" title="Permalink to this definition">¶</a></dt>
-<dd><p>Plot an event</p>
-<p>Will make a fancy plot with lots of arrows etc of a summed waveform</p>
-</dd></dl>
+<dt id="pax.plugins.io.Plotting.PlotChannelWaveforms.plot_event">
+<tt class="descname">plot_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotChannelWaveforms.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotChannelWaveforms.plot_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="method">
-<dt id="pax.plugins.io.Plotting.PlotWaveform.plot_waveform">
-<tt class="descname">plot_waveform</tt><big>(</big><em>event</em>, <em>left=0</em>, <em>right=None</em>, <em>pad=0</em>, <em>show_peaks=False</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotWaveform.plot_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotWaveform.plot_waveform" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.plugins.io.Plotting.PlotChannelWaveforms.set_y_values">
+<tt class="descname">set_y_values</tt><big>(</big><em>value</em>, <em>n_times</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotChannelWaveforms.set_y_values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotChannelWaveforms.set_y_values" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.plugins.io.Plotting.PlotEventSummary">
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlotEventSummary</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotEventSummary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotEventSummary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.Plotting.PlotBase" title="pax.plugins.io.Plotting.PlotBase"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.Plotting.PlotBase</span></tt></a></p>
+<dl class="method">
+<dt id="pax.plugins.io.Plotting.PlotEventSummary.plot_event">
+<tt class="descname">plot_event</tt><big>(</big><em>event</em>, <em>plt=&lt;module 'matplotlib.pyplot' from '/opt/local/Library/Frameworks/Python.framework/Versions/3.4/lib/python3.4/site-packages/matplotlib/pyplot.py'&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotEventSummary.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotEventSummary.plot_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Combines several plots into a nice summary plot</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.plugins.io.Plotting.PlotSumWaveformEntireEvent">
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlotSumWaveformEntireEvent</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotSumWaveformEntireEvent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotSumWaveformEntireEvent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.Plotting.PlotBase" title="pax.plugins.io.Plotting.PlotBase"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.Plotting.PlotBase</span></tt></a></p>
+<dl class="method">
+<dt id="pax.plugins.io.Plotting.PlotSumWaveformEntireEvent.plot_event">
+<tt class="descname">plot_event</tt><big>(</big><em>event</em>, <em>show_legend=True</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotSumWaveformEntireEvent.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotSumWaveformEntireEvent.plot_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.plugins.io.Plotting.PlotSumWaveformLargestS1">
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlotSumWaveformLargestS1</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotSumWaveformLargestS1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotSumWaveformLargestS1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.Plotting.PlotBase" title="pax.plugins.io.Plotting.PlotBase"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.Plotting.PlotBase</span></tt></a></p>
+<dl class="method">
+<dt id="pax.plugins.io.Plotting.PlotSumWaveformLargestS1.plot_event">
+<tt class="descname">plot_event</tt><big>(</big><em>event</em>, <em>show_legend=False</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotSumWaveformLargestS1.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotSumWaveformLargestS1.plot_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.plugins.io.Plotting.PlotSumWaveformLargestS2">
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlotSumWaveformLargestS2</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotSumWaveformLargestS2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotSumWaveformLargestS2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.Plotting.PlotBase" title="pax.plugins.io.Plotting.PlotBase"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.Plotting.PlotBase</span></tt></a></p>
+<dl class="method">
+<dt id="pax.plugins.io.Plotting.PlotSumWaveformLargestS2.plot_event">
+<tt class="descname">plot_event</tt><big>(</big><em>event</em>, <em>show_legend=False</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotSumWaveformLargestS2.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotSumWaveformLargestS2.plot_event" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -277,7 +328,7 @@ on formats:</p>
 <dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.Plotting.PlotBase" title="pax.plugins.io.Plotting.PlotBase"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.Plotting.PlotBase</span></tt></a></p>
 <dl class="method">
 <dt id="pax.plugins.io.Plotting.PlottingHitPattern.plot_event">
-<tt class="descname">plot_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlottingHitPattern.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlottingHitPattern.plot_event" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">plot_event</tt><big>(</big><em>event, show=['S1', 'S2'], show_dominant_array_only=True, subplots_to_use=None</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlottingHitPattern.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlottingHitPattern.plot_event" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">

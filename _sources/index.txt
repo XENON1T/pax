@@ -11,6 +11,7 @@ Contents:
    format
    plugin
    contributing
+   faq
    authors
    history
 

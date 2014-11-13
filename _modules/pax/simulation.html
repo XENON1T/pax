@@ -160,10 +160,8 @@
         <span class="o">/</span> <span class="n">config</span><span class="p">[</span><span class="s">&#39;drift_velocity_liquid_above_gate&#39;</span><span class="p">]</span>
 
     <span class="c"># Diffusion model from Sorensen 2011</span>
-    <span class="n">drift_time_stdev</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span>
-        <span class="mi">2</span> <span class="o">*</span> <span class="n">config</span><span class="p">[</span><span class="s">&#39;diffusion_constant_liquid&#39;</span><span class="p">]</span> <span class="o">*</span>
-        <span class="n">drift_time_mean</span> <span class="o">/</span> <span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;drift_velocity_liquid&#39;</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span>
-    <span class="p">)</span>
+    <span class="n">drift_time_stdev</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">config</span><span class="p">[</span><span class="s">&#39;diffusion_constant_liquid&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">drift_time_mean</span><span class="p">)</span>
+    <span class="n">drift_time_stdev</span> <span class="o">/=</span> <span class="n">config</span><span class="p">[</span><span class="s">&#39;drift_velocity_liquid&#39;</span><span class="p">]</span>
 
     <span class="c"># Absorb electrons during the drift</span>
     <span class="n">electrons_seen</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span>

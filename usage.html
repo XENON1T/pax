@@ -54,10 +54,70 @@
             
   <div class="section" id="usage">
 <h1>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h1>
-<p>To use processor for Analyzing XENON1T in a project:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">pax</span>
-</pre></div>
-</div>
+<p>To use processor for Analyzing XENON1T, see /bin/paxer &#8211;help for available options:</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>usage: paxer [-h] [&#8211;input [INPUT]] [&#8211;output [OUTPUT]] [&#8211;log LOG]</dt>
+<dd>[&#8211;config {3d_plotter,bern,daq_injector,Mongo,newDSP,XAMS,XED,XENON100,XENON1T} [{3d_pl</dd>
+<dt>otter,bern,daq_injector,Mongo,newDSP,XAMS,XED,XENON100,XENON1T} ...]]</dt>
+<dd>[&#8211;config_path CONFIG_PATH [CONFIG_PATH ...]]
+[&#8211;plot | &#8211;plot_to_dir PLOT_TO_DIR] [&#8211;event EVENT [EVENT ...] |
+&#8211;stop_after STOP_AFTER]</dd>
+</dl>
+<p>Process XENON1 data</p>
+<dl class="docutils">
+<dt>optional arguments:</dt>
+<dd><table class="first docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">-h</span>, <span class="option">--help</span></kbd></td>
+<td>show this help message and exit</td></tr>
+</tbody>
+</table>
+<p>&#8211;input [INPUT]       File, database or directory to read events from
+&#8211;output [OUTPUT]     File, database or directory to write events to
+&#8211;log LOG             Set log level, e.g. &#8216;debug&#8217;
+&#8211;config {3d_plotter,bern,daq_injector,Mongo,newDSP,XAMS,XED,XENON100,XENON1T} [{3d_plotter,bern,daq_injector,Mongo,newDSP,XAMS,XED,XENON100,XENON1T} ...]</p>
+<blockquote>
+<div>Name(s) of the pax configuration(s) to use.</div></blockquote>
+<dl class="docutils">
+<dt>&#8211;config_path CONFIG_PATH [CONFIG_PATH ...]</dt>
+<dd>Path(s) of the configuration file(s) to use.</dd>
+</dl>
+<table class="docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group">
+<kbd><span class="option">--plot</span></kbd></td>
+<td>Plot summed waveforms on screen</td></tr>
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--plot_to_dir <var>PLOT_TO_DIR</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Save summed waveform plots in directory</td></tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt>&#8211;event EVENT [EVENT ...]</dt>
+<dd>Process particular event(s).</dd>
+</dl>
+<table class="last docutils option-list" frame="void" rules="none">
+<col class="option" />
+<col class="description" />
+<tbody valign="top">
+<tr><td class="option-group" colspan="2">
+<kbd><span class="option">--stop_after <var>STOP_AFTER</var></span></kbd></td>
+</tr>
+<tr><td>&nbsp;</td><td>Stop after STOP_AFTER events have been processed.</td></tr>
+</tbody>
+</table>
+</dd>
+</dl>
+</div></blockquote>
+<p>For more advanced usage you would want to change the configuration: you can make your own configuration file.
+For a description of the settings you can use, see the comments in _base.ini and XENON100.ini.</p>
 </div>
 
 

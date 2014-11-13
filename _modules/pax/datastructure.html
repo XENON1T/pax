@@ -62,6 +62,7 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">math</span>
 
+<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">units</span>
 <span class="kn">from</span> <span class="nn">pax.micromodels.models</span> <span class="kn">import</span> <span class="n">Model</span>
 <span class="kn">from</span> <span class="nn">pax.micromodels</span> <span class="kn">import</span> <span class="n">fields</span> <span class="k">as</span> <span class="n">f</span>
 <span class="kn">from</span> <span class="nn">pax.micromodels.fields</span> <span class="kn">import</span> <span class="n">IntegerField</span><span class="p">,</span> <span class="n">FloatField</span><span class="p">,</span> <span class="n">StringField</span>
@@ -161,13 +162,11 @@
     <span class="sd">&quot;&quot;&quot;Event class</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">event_number</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>
-    <span class="sd">&quot;&quot;&quot;An integer number that uniquely identifies the event within the dataset.</span>
-
-<span class="sd">    Always positive.&quot;&quot;&quot;</span>
+    <span class="n">dataset_name</span> <span class="o">=</span> <span class="n">StringField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s">&#39;Unknown&#39;</span><span class="p">)</span>  <span class="c"># The name of the dataset this event belongs to</span>
+    <span class="n">event_number</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>    <span class="c"># A nonnegative integer that uniquely identifies the event within the dataset.</span>
 
     <span class="c">#: Time duration of a sample in units of ns</span>
-    <span class="n">sample_duration</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">sample_duration</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="mi">10</span><span class="o">*</span><span class="n">units</span><span class="o">.</span><span class="n">ns</span><span class="p">)</span>
 
     <span class="c">#: Start time of the event.</span>
     <span class="c">#:</span>

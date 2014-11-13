@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Credits &mdash; Processor for Analyzing XENON1T 1.3.0 documentation</title>
+    <title>Frequently Asked Questions &mdash; Processor for Analyzing XENON1T 1.3.0 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -24,8 +24,8 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="Processor for Analyzing XENON1T 1.3.0 documentation" href="index.html" />
-    <link rel="next" title="History" href="history.html" />
-    <link rel="prev" title="Frequently Asked Questions" href="faq.html" /> 
+    <link rel="next" title="Credits" href="authors.html" />
+    <link rel="prev" title="Contributing" href="contributing.html" /> 
   </head>
   <body>
     <div class="related">
@@ -38,10 +38,10 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="history.html" title="History"
+          <a href="authors.html" title="Credits"
              accesskey="N">next</a> |</li>
         <li class="right" >
-          <a href="faq.html" title="Frequently Asked Questions"
+          <a href="contributing.html" title="Contributing"
              accesskey="P">previous</a> |</li>
         <li><a href="index.html">Processor for Analyzing XENON1T 1.3.0 documentation</a> &raquo;</li> 
       </ul>
@@ -52,21 +52,34 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="credits">
-<h1>Credits<a class="headerlink" href="#credits" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="development-lead">
-<h2>Development Lead<a class="headerlink" href="#development-lead" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li>Jelle Aalbers &lt;<a class="reference external" href="mailto:jaalbers&#37;&#52;&#48;nikhef&#46;nl">jaalbers<span>&#64;</span>nikhef<span>&#46;</span>nl</a></li>
-<li>Daniel Coderre &lt;<a class="reference external" href="mailto:daniel&#46;coderre&#37;&#52;&#48;lhep&#46;unibe&#46;ch">daniel<span>&#46;</span>coderre<span>&#64;</span>lhep<span>&#46;</span>unibe<span>&#46;</span>ch</a>&gt;</li>
-<li>Christopher Tunnell &lt;<a class="reference external" href="mailto:ctunnell&#37;&#52;&#48;nikhef&#46;nl">ctunnell<span>&#64;</span>nikhef<span>&#46;</span>nl</a>&gt;</li>
-</ul>
+  <div class="section" id="frequently-asked-questions">
+<h1>Frequently Asked Questions<a class="headerlink" href="#frequently-asked-questions" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="how-do-i-run-pax-at-lngs-on-xecluster">
+<h2>How do I run <cite>pax</cite> at LNGS on xecluster?<a class="headerlink" href="#how-do-i-run-pax-at-lngs-on-xecluster" title="Permalink to this headline">¶</a></h2>
+<p>You should be able to run <cite>pax</cite> running at the shell the following command:</p>
+<div class="highlight-python"><div class="highlight"><pre>export PATH=/home/tunnell/anaconda3/bin:$PATH
+</pre></div>
 </div>
-<div class="section" id="contributors">
-<h2>Contributors<a class="headerlink" href="#contributors" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li>Alper Topçuoğlu &lt;<a class="reference external" href="mailto:alper&#46;topcuoglu&#37;&#52;&#48;student&#46;uva&#46;nl">alper<span>&#46;</span>topcuoglu<span>&#64;</span>student<span>&#46;</span>uva<span>&#46;</span>nl</a>&gt;</li>
-</ul>
+<p>This can be added to your <cite>.bashrc</cite> to be run automatically when you login.  You
+can check that it worked by running <cite>python</cite> then:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">import</span> <span class="nn">pax</span>
+</pre></div>
+</div>
+<p>Which should result in version 3 of Python being used and you should not get an
+error.</p>
+</div>
+<div class="section" id="how-do-i-run-git-at-lngs-on-xecluster">
+<h2>How do I run <cite>git</cite> at LNGS on xecluster<a class="headerlink" href="#how-do-i-run-git-at-lngs-on-xecluster" title="Permalink to this headline">¶</a></h2>
+<p>You can get <cite>git</cite> running by doing the following at the command line:</p>
+<div class="highlight-python"><div class="highlight"><pre>export PATH=/home/kaminsky/software/bin:$PATH
+</pre></div>
+</div>
+<p>The machines have old certificates, therefore you cannot run <cite>git</cite> in secure
+mode.</p>
+<blockquote>
+<div>export GIT_SSL_NO_VERIFY=true</div></blockquote>
+<p>These two export commands can be added to your <cite>.bashrc</cite> to be run automatically
+when you login.</p>
 </div>
 </div>
 
@@ -78,22 +91,22 @@
         <div class="sphinxsidebarwrapper">
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Credits</a><ul>
-<li><a class="reference internal" href="#development-lead">Development Lead</a></li>
-<li><a class="reference internal" href="#contributors">Contributors</a></li>
+<li><a class="reference internal" href="#">Frequently Asked Questions</a><ul>
+<li><a class="reference internal" href="#how-do-i-run-pax-at-lngs-on-xecluster">How do I run <cite>pax</cite> at LNGS on xecluster?</a></li>
+<li><a class="reference internal" href="#how-do-i-run-git-at-lngs-on-xecluster">How do I run <cite>git</cite> at LNGS on xecluster</a></li>
 </ul>
 </li>
 </ul>
 
   <h4>Previous topic</h4>
-  <p class="topless"><a href="faq.html"
-                        title="previous chapter">Frequently Asked Questions</a></p>
+  <p class="topless"><a href="contributing.html"
+                        title="previous chapter">Contributing</a></p>
   <h4>Next topic</h4>
-  <p class="topless"><a href="history.html"
-                        title="next chapter">History</a></p>
+  <p class="topless"><a href="authors.html"
+                        title="next chapter">Credits</a></p>
   <h3>This Page</h3>
   <ul class="this-page-menu">
-    <li><a href="_sources/authors.txt"
+    <li><a href="_sources/faq.txt"
            rel="nofollow">Show Source</a></li>
   </ul>
 <div id="searchbox" style="display: none">
@@ -123,10 +136,10 @@
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
         <li class="right" >
-          <a href="history.html" title="History"
+          <a href="authors.html" title="Credits"
              >next</a> |</li>
         <li class="right" >
-          <a href="faq.html" title="Frequently Asked Questions"
+          <a href="contributing.html" title="Contributing"
              >previous</a> |</li>
         <li><a href="index.html">Processor for Analyzing XENON1T 1.3.0 documentation</a> &raquo;</li> 
       </ul>

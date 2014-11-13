@@ -310,6 +310,7 @@
 
         <span class="c"># Return the event</span>
         <span class="n">event</span> <span class="o">=</span> <span class="n">Event</span><span class="p">()</span>
+        <span class="n">event</span><span class="o">.</span><span class="n">dataset_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_metadata</span><span class="p">[</span><span class="s">&#39;dataset_name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s">&quot;utf-8&quot;</span><span class="p">)</span>
         <span class="n">event</span><span class="o">.</span><span class="n">event_number</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">event_layer_metadata</span><span class="p">[</span><span class="s">&#39;event_number&#39;</span><span class="p">])</span>
         <span class="n">event</span><span class="o">.</span><span class="n">occurrences</span> <span class="o">=</span> <span class="n">occurrences</span>
 
