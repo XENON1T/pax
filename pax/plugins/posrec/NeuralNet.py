@@ -5,10 +5,19 @@ from pax.datastructure import ReconstructedPosition
 
 
 class PosRecNeuralNet(plugin.TransformPlugin):
-    """Summary
+    """Please write one sentence here
 
-    Charge-weighted average of PMT positions.  Class to reconstruct S2's x, y
-    positions using the weighted sum of PMTs in the top array.
+    Please write on 3 paragraphs here here here here here here here 
+    here here here here here here here here here here here here here
+    here 
+    
+    and here here here here here here here here here here here here
+    here here here here here here here here here here here here here
+    here 
+    
+    and here here here here here here here here here here here here
+    here here here here here here here here here here here here here
+    here 
     """
 
     def startup(self):
