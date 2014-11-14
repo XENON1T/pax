@@ -79,8 +79,11 @@ class ComputePeakProperties(plugin.TransformPlugin):
             else:
                 peak.area = np.sum(peak.area_per_pmt) - veto_area
             #Todo: exclude negative area channels if option given
-            peak.contributing_pmts = np.where(peak.area_per_pmt >= self.config['minimum_area'])[0]
-            return event
+            peak.contributing_pmts = np.array(
+                np.where(peak.area_per_pmt >= self.config['minimum_area'])[0],
+                dtype=np.uint16)
+
+        return event
 
             # if not 'keep_Chris_happy' in self.config or self.config['keep_Chris_happy'] == True:
             #     continue

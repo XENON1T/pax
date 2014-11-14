@@ -119,20 +119,24 @@ def load_file_into_configparser(config, config_file):
     :param config_file: path or file object of configuration file to read
     :return: None
     """
+
+    # This code has some commented print statements, because it can't yet use logging:
+    # The loglevel is specified in the configuration, which isn't loaded at this point
+
     if isinstance(config_file, str):
-        # print("Loading %s" % config_file)
+        #print("Loading %s" % config_file)
         if not os.path.isfile(config_file):
             raise ValueError("Configuration file %s does not exist!" % config_file)
         global config_files_read
         if config_file in config_files_read:
             # This file has already been loaded: don't load it again
             # If we did, it would cause problems with inheritance diamonds
-            # print("Skipping config file %s: don't load it a second time" % config_file)
+            #print("Skipping config file %s: don't load it a second time" % config_file)
             return
         config.read(config_file)
         config_files_read.append(config_file)
     else:
-        # print("Loading config from file object")
+        #print("Loading config from file object")
         config.read_file(config_file)
 
     # Determine the path(s) of the parent config file(s)
@@ -162,6 +166,7 @@ def load_file_into_configparser(config, config_file):
     # By doing this in a recursing function, multi-level inheritance is supported.
     for pfp in parent_file_paths:
         load_file_into_configparser(config, pfp)
+    #print("Reloading %s for override" % config_file)
     if isinstance(config_file, str):
         config.read(config_file)
     else:
