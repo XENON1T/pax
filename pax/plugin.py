@@ -60,10 +60,6 @@ class InputPlugin(BasePlugin):
     This class cannot be parallelized since events are read in a specific order
     """
 
-    def __init__(self, config_values):
-        BasePlugin.__init__(self, config_values)
-        self.i = 0  # What is this??
-
     def get_single_event(self, index):
         self.log.warning("Single event support not implemented for this input plugin... " +\
                          "Iterating though events until we find event %s!" % index)
