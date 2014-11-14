@@ -3,6 +3,24 @@
 History
 -------
 
+
+------------------
+Upcoming release
+------------------
+
+ * Peak width fields added to datastructure
+ * Updated docs, comments, logging
+ * 3D channel waveforms plot
+ * Event summary plot
+ * Music output
+ * DSP plugins cleaned up and reorganized (except old peak finder)
+ * Separate directory for example data files
+ * Configurations for XAMS, Bern test setup
+ * --input and --output override settings for most plugins
+ * WaveformSimulator: improved defaults
+
+
+
 ------------------
 1.3.0 (2014-10-17)
 ------------------

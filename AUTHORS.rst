@@ -12,4 +12,5 @@ Development Lead
 Contributors
 ------------
 
+* Sander Breur <sanderb@nikhef.nl>
 * Alper Topçuoğlu <alper.topcuoglu@student.uva.nl>
