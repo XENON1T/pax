@@ -12,7 +12,7 @@ class WavOutput(plugin.OutputPlugin):
     """
 
     def startup(self):
-        self.filename = self.config['wav_file']
+        self.filename = self.config['output_name']
 
         # Used for building waveform for entire dataset
         self.all_data = {}

@@ -22,7 +22,7 @@ class HDF5Output(plugin.OutputPlugin):
 
 
     def startup(self):
-        self.h5_file = tables.open_file(self.config['hdf5file'], 'w')
+        self.h5_file = tables.open_file(self.config['output_name'], 'w')
 
         self.hdf5_fields = {}
 

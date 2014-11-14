@@ -24,7 +24,7 @@ import bz2
 import io
 import numpy as np
 
-from pax import plugin, units
+from pax import core, plugin, units
 from pax.datastructure import Event
 
 
@@ -59,12 +59,7 @@ class XedInput(plugin.InputPlugin):
     def startup(self):
         self.xedfiles = []
         self.input = None
-
-        if 'input_override' in self.config and self.config['input_override'] is not None:
-            self.log.debug('User-defined input file/dir: %s' % self.config['input_override'])
-            filename = self.config['input_override']
-        else:
-            filename = self.config['filename']
+        filename = core.data_file_name(self.config['input_name'])
 
         if filename[-4:] == '.xed':
             self.log.debug("Single file mode")

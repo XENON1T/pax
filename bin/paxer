@@ -62,8 +62,8 @@ args = parser.parse_args()
 # Override pax main options
 override_string =       '[pax]\n'
 for argname, configname, isString in (
-        ('input',      'input_override',    True),
-        ('output',     'output_override',   True),
+        ('input',      'input_name',        True),
+        ('output',     'output_name',       True),
         ('log',        'logging_level',     True),
         ('stop_after', 'stop_after',        False),
         ('event',      'events_to_process', False),

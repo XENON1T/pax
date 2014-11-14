@@ -1,3 +1,7 @@
+"""
+Dumps event waveforms to file using numpy.tofile
+"""
+
 from pax import plugin, units
 
 
@@ -14,7 +18,7 @@ class WaveformDumperBase(plugin.OutputPlugin):
         self.log.debug("Conversion factor %s" % self.conversion_factor)
 
     def write_event(self, event):
-        filename = self.config['output_dir'] + '/' + str(event.event_number) + '.' + self.config['extension']
+        filename = self.config['output_name'] + '/' + str(event.event_number) + '.' + self.config['extension']
         waveform_to_dump = self.get_waveform_to_dump(event)
         if 'dump_in_units' in self.config and self.config['dump_in_units'] == 'voltage':
             waveform_to_dump /= self.conversion_factor

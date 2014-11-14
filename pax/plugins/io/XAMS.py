@@ -1,6 +1,5 @@
 """
-This plug-in reads raw waveform data from the XAMS scope binary & text files.
-
+This plug-in reads raw waveform data from the Old XAMS Lecroy scope binary & text files.
 
 """
 import glob, re, struct, time
@@ -13,11 +12,11 @@ from pax.datastructure import Event
 class DirWithWaveformFiles(plugin.InputPlugin):
 
     def startup(self):
-        #self.config['input_dir'],
         # Assumes self.filename_regexp is set by child class
-        files = glob.glob(self.config['input_dir'] + "/*.*")
+        self.input_dirname = self.config['input_name']
+        files = glob.glob(input_dirname + "/*.*")
         if len(files)==0:
-            self.log.fatal("No files found in input directory %s!" % self.config['input_dir'])
+            self.log.fatal("No files found in input directory %s!" % self.input_dirname)
         #Load all events... ugly code
         self.events = {}
         for file in files:
@@ -31,7 +30,7 @@ class DirWithWaveformFiles(plugin.InputPlugin):
             # Store all regex fields, so we can find the file later
             self.events[idx][channel] = gd
         if len(self.events) == 0:
-            self.log.fatal("No valid event files found in input directory %s!" % self.config['input_dir'])
+            self.log.fatal("No valid event files found in input directory %s!" % self.input_dirname)
         #Maybe sort self.events by event index?
         #????? self.get_next_event()
         self.first_event = min(self.events.keys())
@@ -70,7 +69,7 @@ class DirWithWaveformFiles(plugin.InputPlugin):
         temp = self.filename_regexp
         for key, value in self.current_event_channels[str(channel)].items():
             temp = re.sub('\(\?P\<%s\>[^\)]*\)'%key, value, temp)
-        return self.config['input_dir'] +'/'+ temp
+        return self.input_dirname +'/'+ temp
 
 
 

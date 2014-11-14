@@ -25,7 +25,7 @@ def data_file_name(filename):
     if os.path.exists(new_filename):
         return new_filename
     else:
-        raise ValueError('File name or path %s not found! % filename')
+        raise ValueError('File name or path %s not found!' % filename)
 
 ##
 # Configuration handling
@@ -50,9 +50,9 @@ def get_named_configuration_options():
     return config_files
 
 def init_configuration(config_names=(), config_paths=(), config_string=None):
-    """ Get pax configuration from configuration files and config_string
+    """ Get pax configuration from three configuration sources:
       - config_names: List of named configurations to load (sequentially)
-      - configuration: List of config file paths to load (sequentially)
+      - config_paths: List of config file paths to load (sequentially)
       - config_string: A final config override string
     Files from config_paths will be loaded after config_names, and can thus override their settings.
     The config_string is loaded last of all.
@@ -63,8 +63,8 @@ def init_configuration(config_names=(), config_paths=(), config_string=None):
         4 * 2 -> 8
         4 * cm**(2)/s -> correctly interpreted as a physical value with units of cm^2/s
 
-    :param file_object: Path to the ini file to read, or opened file object to read
     :return: nested dictionary of evaluated configuration values, use as: config[section][key].
+    Will return None if no configuration sources are specified at all.
     """
     global config_files_read
     config_files_read = []      # Need to clean this here so tests can re-load the config
@@ -92,7 +92,6 @@ def init_configuration(config_names=(), config_paths=(), config_string=None):
     if config_string is not None:
         config_files.append(StringIO(config_string))
     if len(config_files) == 0:
-        #raise ValueError('init_configuration: No configuration specified!')
         return None # The processor will load a default
 
     # Loads the files into configparser, also takes care of inheritance.
@@ -135,6 +134,7 @@ def load_file_into_configparser(config, config_file):
     else:
         # print("Loading config from file object")
         config.read_file(config_file)
+
     # Determine the path(s) of the parent config file(s)
     parent_file_paths = []
     if 'parent_configuration' in config['pax']:
@@ -156,6 +156,7 @@ def load_file_into_configparser(config, config_file):
     if len(parent_file_paths) == 0:
         # This file has no parents...
         return
+
     # Unfortunately, configparser can only override settings, not set missing ones.
     # We have no choice but to load the parent file(s), then reload the original one again.
     # By doing this in a recursing function, multi-level inheritance is supported.
@@ -165,6 +166,7 @@ def load_file_into_configparser(config, config_file):
         config.read(config_file)
     else:
         config.read_file(config_file)
+
 
 ##
 # Plugin handling
@@ -276,10 +278,7 @@ def processor(config):
     """
 
     # Setup logging
-    try:
-        log_spec = config['pax']['logging_level'].upper()
-    except:
-        log_spec = 'INFO'
+    log_spec = config['pax']['logging_level'].upper()
     numeric_level = getattr(logging, log_spec, None)
     if not isinstance(numeric_level, int):
         raise ValueError('Invalid log level: %s' % log_spec)
@@ -298,16 +297,21 @@ def processor(config):
 
     input, actions, output = get_actions(config,
                                          'input',
-                                         ['dsp', 'transform',
-                                          'my_postprocessing'],
+                                         ['dsp', 'transform', 'my_postprocessing'],
                                          'output')
     actions += output   # Append output to actions... for now
 
     # Hand out input & output override instructions
-    if 'input_override' in config['pax']:
-        config[input]['input_override']   = config['pax']['input_override']
-    if 'output_override' in config['pax']:
-        config[output]['output_override'] = config['pax']['output_override']
+    if 'input_name' in config['pax']:
+        log.debug('User-defined input override: %s' % config['pax']['input_name'])
+        config[input]['input_name'] = config['pax']['input_name']
+    if 'output_name' in config['pax']:
+        log.debug('User-defined output override: %s' % config['pax']['output_name'])
+        # Hmmz, there can be several output plugins, some don't have a configuration...
+        for o in output:
+            if not o in config:
+                config[o] = {}
+            config[o]['output_name'] = config['pax']['output_name']
 
     # Gather information about plugins
     plugin_source = get_plugin_source(config, log)
@@ -332,11 +336,12 @@ def processor(config):
     for i, event in enumerate(get_events()):
         if 'stop_after' in config['pax'] and config['pax']['stop_after'] is not None:
             if i >= config['pax']['stop_after']:
-                log.info("User-specified limit of %d events reached: processing stopped." % i)
+                log.info("User-defined limit of %d events reached: processing stopped." % i)
                 break
 
         log.info("Event %d (%d processed)" % (event.event_number, i))
 
         process_single_event(actions, event, log)
+
     else:
-        log.info("All events processed.")
+        log.info("All events from input source have been processed.")

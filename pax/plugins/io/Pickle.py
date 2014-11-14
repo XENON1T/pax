@@ -14,7 +14,7 @@ class WriteToPickleFile(plugin.OutputPlugin):
 
     def write_event(self, event):
         self.log.debug("Starting pickling...")
-        with gzip.open(self.config['output_dir'] + '/' + str(event.event_number), 'wb', compresslevel=1) as file:
+        with gzip.open(self.config['output_name'] + '/' + str(event.event_number), 'wb', compresslevel=1) as file:
             pickle.dump(event, file)
         self.log.debug("Done!")
 
@@ -23,10 +23,10 @@ class WriteToPickleFile(plugin.OutputPlugin):
 class DirWithPickleFiles(plugin.InputPlugin):
 
     def startup(self):
-        files = glob.glob(self.config['input_dir'] + "/*")
+        files = glob.glob(self.config['input_name'] + "/*")
         self.event_files = {}
-        if len(files)==0:
-            self.log.fatal("No files found in input directory %s!" % self.config['input_dir'])
+        if len(files) == 0:
+            self.log.fatal("No files found in input directory %s!" % self.config['input_name'])
         for file in files:
             m = re.search('(\d+)$',file)
             if m is None:

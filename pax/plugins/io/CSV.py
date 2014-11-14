@@ -9,7 +9,7 @@ class WritePeaksCSV(plugin.OutputPlugin):
     """
 
     def startup(self):
-        self.output = open(self.config['output_file'], 'w')
+        self.output = open(self.config['output_name'], 'w')
         self.headers = ['event', 'type', 'max', 'left', 'right', 'area']
         self.csv = csv.DictWriter(self.output,
                                   self.headers, lineterminator='\n')

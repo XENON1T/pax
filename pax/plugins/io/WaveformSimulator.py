@@ -1,3 +1,10 @@
+"""
+Plugins to interface with the integrated waveform simulator (FaX)
+This is I/O stuff only: truth file writing, pax event creation, etc.
+There is no physics here, all that is in pax.simulation.
+"""
+
+
 import numpy as np
 import os
 import time
@@ -11,8 +18,7 @@ from pax import core, plugin, units, datastructure, simulation
 
 
 class WaveformSimulator(plugin.InputPlugin):
-    """ Common I/O for waveform simulator: truth file writing, pax event creation, etc.
-    There is no physics here: all that is in pax.simulation
+    """ Common I/O for waveform simulator plugins
     """
     def startup(self):
         self.truth_file = None
@@ -197,10 +203,7 @@ class WaveformSimulator(plugin.InputPlugin):
 class WaveformSimulatorFromCSV(WaveformSimulator):
     def startup(self):
         # Open the instructions file
-        if 'input_override' in self.config and self.config['input_override'] is not None:
-            filename = self.config['input_override']
-        else:
-            filename = self.config['instruction_filename']
+        filename = self.config['input_name']
         self.dataset_name = os.path.basename(filename)
         self.instructions_file = open(core.data_file_name(filename), 'r')
         self.instructions = csv.DictReader(self.instructions_file)
@@ -240,10 +243,7 @@ class WaveformSimulatorFromNEST(WaveformSimulator):
 
     def startup(self):
         self.log.warning('This plugin is completely untested and will probably crash!')
-        if 'input_override' in self.config and self.config['input_override'] is not None:
-            filename = self.config['input_override']
-        else:
-            filename = self.config['input_file']
+        filename = self.config['input_name']
         import ROOT
         f = ROOT.TFile(core.data_file_name(filename))
         self.t = f.Get("t1") # For Xerawdp use T1, for MC t1
