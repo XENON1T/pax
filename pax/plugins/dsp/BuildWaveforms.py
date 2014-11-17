@@ -55,13 +55,14 @@ class BuildWaveforms(plugin.TransformPlugin):
 
         for channel, waveform_occurrences in event.occurrences.items():
 
-            # Warn about unknown gains and undead channels
+            # Check for unknown gains and undead channels
             if channel not in self.config['gains']:
                 raise ValueError('Gain for channel %s is not specified!' % channel)
             if self.config['gains'][channel] == 0:
                 if channel not in self.undead_channels:
-                    self.log.warning('Undead channel %s: gain is set to 0, but it has a signal in this event!'  % channel)
-                    self.log.warning('Further undead channel warnings for this channel will be suppressed.')
+                    if self.config['zombie_paranoia']:
+                        self.log.warning('Undead channel %s: gain is set to 0, but it has a signal in this event!'  % channel)
+                        self.log.warning('Further undead channel warnings for this channel will be suppressed.')
                     self.undead_channels.append(channel)
                 if not self.config['build_nominally_gain_corrected_waveforms']:
                     # This channel won't add anything, so:
