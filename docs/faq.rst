@@ -41,16 +41,16 @@ Can I set up pax on my windows machine?
 
 Yes, in fact several of the developers do this, much to the sadness of the other developers...
 
-    1) Unless you want to install lots of binary modules from `Christoph Gohlke's page <http://www.lfd.uci.edu/~gohlke/pythonlibs/>`_,
-       start by installing a good scientific python distribution such as Anaconda or PythonXY.
-       (if the Anaconda website nags you for an email, enter your favourite fictional email address)
-    2) Get pax using Github's nice point-and-click Github For Windows application.
-       Ignore the haters who insist on doing everything by command line.
-    3) Run python setup.py develop. It will probably complain about some failed module installations, ignore that,
-       there are lots of arcane modules you'll almost never need (e.g. HTML templating for online monitor etc).
-    4) Go to bin, run python paxer --plot. If it shows a waveform, you are done.
-       If it complains about a missing module, I guess you shouldn't have ignored those warnings in step 3,
-       install the missing module using easy_install, or Gohlke's page mentioned above.
+1. Unless you want to install lots of binary modules from `Christoph Gohlke's page <http://www.lfd.uci.edu/~gohlke/pythonlibs/>`_,
+   start by installing a good scientific python 3 distribution such as Anaconda or PythonXY.
+   (if the Anaconda website nags you for an email, enter your favourite fictional email address)
+2. Get pax using Github's nice point-and-click Github For Windows application.
+   Ignore the haters who insist on doing everything by command line.
+3. Run ``python setup.py develop``. It will probably complain about some failed module installations, ignore that,
+   there are lots of arcane modules you'll almost never need (e.g. HTML templating for online monitor etc).
+4. Go to bin, run ``python paxer --plot``. If it shows a waveform, you are done.
+   If it complains about a missing module, I guess you shouldn't have ignored those warnings in step 3,
+   install the missing module using easy_install, or Gohlke's page mentioned above.
 
 Unfortunately, Windows + Python3 + Root is not exactly a winning team; if you use windows you'll be stuck
 with the other 433 output formats we have.
