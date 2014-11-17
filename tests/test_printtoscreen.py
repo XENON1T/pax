@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import numpy as np
 import unittest
 
 
@@ -11,12 +10,7 @@ from pax.datastructure import Event, Peak, Waveform
 
 class TestPrintToScreen(unittest.TestCase):
     def setUp(self):
-        conf = core.init_configuration(config_names='XENON100')
-        plugin_source = core.get_plugin_source(conf)
-        self.obj = core.instantiate_plugin('PrintToScreen.PrintToScreen',
-                                   plugin_source,
-                                   conf)
-
+        self.obj = core.instantiate_plugin('PrintToScreen.PrintToScreen', for_testing=True)
         self.e = Event()
 
     def test_something(self):

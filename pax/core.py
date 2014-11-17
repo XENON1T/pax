@@ -16,6 +16,8 @@ from configparser import ConfigParser, ExtendedInterpolation
 import pax
 from pax import units
 
+fallback_configuration = 'XENON100' # Configuration to use when none is specified
+
 
 # Store the directory of pax (i.e. this file's directory) as pax_dir
 pax_dir = os.path.join(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))))
@@ -180,8 +182,37 @@ def load_file_into_configparser(config, config_file):
 # Plugin handling
 ##
 
-def instantiate_plugin(name, plugin_search_paths, config, log=logging):
+def make_plugin_search_paths(config=None):
+
+    global pax_dir
+    plugin_search_paths = ['./plugins', os.path.join(pax_dir, 'plugins')]
+
+    if config is not None:
+        plugin_search_paths += config['pax']['plugin_paths']
+
+    # Look in all subdirectories
+    for entry in plugin_search_paths:
+        plugin_search_paths.extend(glob.glob(os.path.join(entry, '*/')))
+
+    # Don't look in __pychache__ folders
+    plugin_search_paths = [path for path in plugin_search_paths if '__pycache__' not in path]
+
+    return plugin_search_paths
+
+
+def instantiate_plugin(name, plugin_search_paths=None, config=None, log=logging, for_testing=False):
     """Take plugin class name and build class from it"""
+
+    # Shortcut for tests
+    if for_testing:
+        if plugin_search_paths is None:
+            plugin_search_paths = make_plugin_search_paths(None)
+        if config is None:
+            config = init_configuration(config_names=fallback_configuration)
+    else:
+        assert config is not None and plugin_search_paths is not None
+
+
     log.debug('Instantiating %s' % name)
     name_module, name_class = name.split('.')
 
@@ -234,8 +265,8 @@ def processor(config):
 
     # Complain if we didn't get a configuration, then load a default
     if config is None:
-        log.warning("No configuration specified: loading Xenon100 config!")
-        config = init_configuration(config_names=['XENON100'])
+        log.warning("No configuration specified: loading %s config!" % fallback_configuration)
+        config = init_configuration(config_names=[fallback_configuration])
     log.info("This is PAX version %s, running with configuration for %s." % (
         pax.__version__, config['DEFAULT']['tpc_name'])
     )
@@ -284,18 +315,8 @@ def processor(config):
                 config[o] = {}
             config[o]['output_name'] = config['pax']['output_name']
 
-
     # Construct the plugin search path
-    global pax_dir
-    plugin_search_paths = ['./plugins', os.path.join(pax_dir, 'plugins')] + config['pax']['plugin_paths']
-
-    # Look in all subdirectories
-    for entry in plugin_search_paths:
-        plugin_search_paths.extend(glob.glob(os.path.join(entry, '*/')))
-
-    # Filter out __pychache__ folders
-    plugin_search_paths = [path for path in plugin_search_paths if '__pycache__' not in path]
-
+    plugin_search_paths = make_plugin_search_paths(config)
     log.debug("Search path for plugins is %s" % str(plugin_search_paths))
 
     # Load all the plugins
