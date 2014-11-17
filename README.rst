@@ -26,7 +26,7 @@ Use your package manager, or run::
 Alternatively, you can install Python 3.4 from the `python webpage <https://www.python.org/>`_ 
 or your OS's package management system. You may have to install some additional modules manually.
 
-For installation on windows, see `the FAQ <https://github.com/XENON1T/pax/blob/master/docs/faq.rst>`.
+For installation on windows, see `the FAQ <https://github.com/XENON1T/pax/blob/master/docs/faq.rst>`_.
 
 
 Installing pax
