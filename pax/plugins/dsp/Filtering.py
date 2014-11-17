@@ -1,7 +1,7 @@
 import numpy as np
 
 from pax import plugin, datastructure, units
-from scipy.signal import butter, lfilter
+from scipy.signal import butter, lfilter, filtfilt
 from scipy.signal import freqz
 
 
@@ -84,7 +84,7 @@ class Filtering(plugin.TransformPlugin):
             if 'impulse_response' in f:
                 output = np.convolve(signal, f['impulse_response'], 'same')
             else:
-                output = lfilter(f['filter_parameters'][0], f['filter_parameters'][1], signal)
+                output = filtfilt(f['filter_parameters'][0], f['filter_parameters'][1], signal)
 
             if self.config['simulate_Xerawdp_convolution_bug'] and 'impulse_response' in f:
                 ##
