@@ -16,18 +16,17 @@ Installing requirements
 
 We require Python 3.4 and several python modules. The easiest way to install these 
 is to get a scientific python distribution such as `Anaconda <https://store.continuum.io/cshop/anaconda/>`_.
-For Linux/Mac, use your package manager, or run::
+Use your package manager, or run::
 
   $ wget http://repo.continuum.io/anaconda3/Anaconda3-2.1.0-Linux-x86_64.sh
   $ bash Anaconda3-2.1.0-Linux-x86_64.sh
   $ export PATH=~/anaconda3/bin:$PATH  # If installed in default location
 
-For Windows, download the installer from their webpage (if nagged for an email, 
-enter your favourite fictional email adress).
 
 Alternatively, you can install Python 3.4 from the `python webpage <https://www.python.org/>`_ 
 or your OS's package management system. You may have to install some additional modules manually.
-(for Windows, download binaries `here <http://www.lfd.uci.edu/~gohlke/pythonlibs/>`_). 
+
+For installation on windows, see `the FAQ <https://github.com/XENON1T/pax/blob/master/docs/faq.rst>`.
 
 
 Installing pax
