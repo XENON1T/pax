@@ -31,7 +31,7 @@ class WaveformSimulator(plugin.InputPlugin):
 
         if tff == 'stacked_pickles':
             if self.truth_file is None:
-                self.truth_file = open(self.config['truth_filename'], 'wb')
+                self.truth_file = open(self.config['truth_file_name'], 'wb')
             pickle.dump({'event_number' : event_number, 'peaks' : peaks}, self.truth_file)
 
         elif tff == 'csv_peaklist':
@@ -140,8 +140,7 @@ class WaveformSimulator(plugin.InputPlugin):
                 # Remove empty signals (None) from signal list
                 signals = [s for s in signals if s is not None]
                 if len(signals) == 0:
-                    self.log.warning(
-                        "Fax simulation returned no signals, can't return an event...")
+                    self.log.warning("Fax simulation returned no signals, can't return an event...")
                     continue
 
                 # Compute start time and event length in samples)
