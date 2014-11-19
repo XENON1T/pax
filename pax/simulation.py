@@ -13,6 +13,10 @@ import logging
 log = logging.getLogger('SimulationCore')
 from pax import units
 
+
+##
+#  Configuration handling
+##
 global config
 
 def init_config(config_to_init):

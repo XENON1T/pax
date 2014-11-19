@@ -15,7 +15,7 @@ import matplotlib.pyplot as plt
 import logging
 log = logging.getLogger('dsputils')
 
-from pax import datastructure
+from pax import datastructure, units
 
 
 ##
@@ -276,14 +276,14 @@ class InterpolatingMap(object):
     def __init__(self, filename):
         self.log = logging.getLogger('InterpolatingMap')
         self.log.debug('Loading JSON map %s' % filename)
+
         self.data = json.load(open(filename))
         self.coordinate_system = cs = self.data['coordinate_system']
         self.dimensions = len(cs)
         self.interpolators = {}
+        self.map_names = sorted([k for k in self.data.keys() if k not in ['coordinate_system', 'name']])
 
-        for map_name in self.data.keys():
-            if map_name in ['coordinate_system', 'name']:
-                continue
+        for map_name in self.map_names:
 
             # 1 D interpolation
             if self.dimensions == 1:
@@ -322,32 +322,37 @@ class InterpolatingMap(object):
     def get_value(self, *coordinates, map_name='map'):
         """Returns the value of the map at the position given by coordinates"""
         result = self.interpolators[map_name](*coordinates)
-        return float(result)    # We don't want a 0d numpy array, which the 1d and 2d interpolators seem to give
+        try:
+            return float(result[0])
+        except TypeError:
+            return float(result)    # We don't want a 0d numpy array, which the 1d and 2d interpolators seem to give
 
-    def plot(self, map_name='map'):
+    def plot(self, map_name='map', to_file=None):
         """Plots the map map_name"""
         if self.dimensions == 2:
             cs = self.coordinate_system
-            #all_x, all_y = np.meshgrid(np.linspace(*(cs[0][1])),
-            #                           np.linspace(*(cs[1][1])))
-            #all_z = np.array(self.data[map_name]).ravel()
-            #plt.scatter(all_x, all_y, c=all_z)
-            plt.pcolor(np.linspace(*cs[0][1]), np.linspace(*cs[1][1]), np.array(self.data[map_name]))
-            #plt.xticks(np.linspace(*cs[0][1]))
-            #plt.yticks(np.linspace(*cs[1][1]))
-            #contourplot = plt.contour(np.linspace(*cs[0][1]), np.linspace(*cs[1][1]), self.data[map_name], 30)
-            #plt.clabel(contourplot, inline=1, fontsize=10, fmt='%1.1f')
-            plt.xlabel(self.coordinate_system[0][0])
-            plt.ylabel(self.coordinate_system[1][0])
+            x = np.linspace(*cs[0][1])
+            y = np.linspace(*cs[1][1])
+            plt.pcolor(x, y, np.array(self.data[map_name]))
+            plt.xlabel("%s (cm)" % cs[0][0])
+            plt.ylabel("%s (cm)" % cs[1][0])
+            plt.axis([x.min(), x.max(), y.min(), y.max()])
             plt.colorbar()
-            plt.show()
+            plt.title(map_name)
+            # Plot the TPC radius for reference
+            # TODO: this hardcodes a XENON100 geometry value!
+            # But I don't have the config here...
+            if cs[0][0] == 'x' and cs[1][0] == 'y':
+                r = 0.5 * 30.6 *units.cm
+                theta = np.linspace(0, 2*np.pi, 200)
+                plt.plot(r*np.cos(theta), r*np.sin(theta), c='white')
+            if to_file is not None:
+                plt.savefig(to_file)
+            else:
+                plt.show()
+            plt.close()
         else:
             raise NotImplementedError("Still have to implement plotting for %s-dimensional maps" % self.dimensions)
-
-
-        
-
-
 
 # def rcosfilter(filter_length, rolloff, cutoff_freq, sampling_freq=1):
 #     """
