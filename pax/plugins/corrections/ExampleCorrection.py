@@ -24,7 +24,6 @@ class ExampleCorrection(plugin.TransformPlugin):
 
             # Get the correction's value
             value = self.correction_map.get_value_at(pos)
-            print(type(value))
 
             # Print it to the debug log
             self.log.debug("Correction value at (%s, %s, %s): %s" % (pos.x, pos.y, pos.z, value))
