@@ -20,6 +20,6 @@ for dim in (1,2,3):
     data = {
         'name'  :                 'Example %sd correction map' % dim,
         'coordinate_system'  :    this_coord_system,
-        'correction_map' :        funny_correction,
+        'map' :                   funny_correction,
     }
     json.dump(data, open(output_file, 'w'))

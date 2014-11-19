@@ -10,6 +10,8 @@ import numpy as np
 from scipy import interpolate
 from itertools import chain
 
+import matplotlib.pyplot as plt
+
 import logging
 log = logging.getLogger('dsputils')
 
@@ -255,41 +257,95 @@ def peaks_and_valleys(signal, test_function):
 ##
 # Correction map class
 ##
-class InterpolatingDetectorMap(object):
+class InterpolatingMap(object):
+    """
+    Builds a scalar function of space using interpolation from sampling points on a regular grid.
+
+    All interpolation is done linearly.
+    Cartesian coordinates are supported and tested, cylindrical coordinates (z, r, phi) may also work...
+
+    The map must be specified as a json containing a dictionary with keys
+        'coordinate_system' : [['x', x_min, x_max, n_x], ['y',...
+        'your_map_name' : [[valuex1y1, valuex1y2, ..], [valuex2y1, valuex2y2, ..], ...
+        'another_map_name' : idem
+    with the straightforward generalization to 1d and 3d.
+
+    See also examples/generate_mock_correction_map.py
+    """
 
     def __init__(self, filename):
+        self.log = logging.getLogger('InterpolatingMap')
+        self.log.debug('Loading JSON map %s' % filename)
         self.data = json.load(open(filename))
         self.coordinate_system = cs = self.data['coordinate_system']
         self.dimensions = len(cs)
+        self.interpolators = {}
 
-        # 1 D interpolation
-        if self.dimensions == 1:
-            self.interpolator = interpolate.interp1d(x = np.linspace(*(cs[0][1])),
-                                                     y = self.data['correction_map'])
+        for map_name in self.data.keys():
+            if map_name in ['coordinate_system', 'name']:
+                continue
 
-        # 2D interpolation
-        elif self.dimensions == 2:
-            self.interpolator = interpolate.interp2d(x = np.linspace(*(cs[0][1])),
-                                                     y = np.linspace(*(cs[1][1])),
-                                                     z = self.data['correction_map'])
+            # 1 D interpolation
+            if self.dimensions == 1:
+                itp_fun = interpolate.interp1d(x = np.linspace(*(cs[0][1])),
+                                                         y = self.data[map_name])
 
-        # 3D interpolation
-        elif self.dimensions == 3:
-            # LinearNDInterpolator wants points as [(x1,y1,z1), (x2, y2, z2), ...]
-            all_x, all_y, all_z = np.meshgrid(np.linspace(*(cs[0][1])),
-                                              np.linspace(*(cs[1][1])),
-                                              np.linspace(*(cs[2][1])))
-            points = np.array([np.ravel(all_x), np.ravel(all_y), np.ravel(all_z)]).T
-            values = np.ravel(self.data['correction_map'])
-            self.interpolator =  interpolate.LinearNDInterpolator(points, values)
+            # 2D interpolation
+            elif self.dimensions == 2:
+                itp_fun = interpolate.interp2d(x = np.linspace(*(cs[0][1])),
+                                                         y = np.linspace(*(cs[1][1])),
+                                                         z = self.data[map_name])
 
+            # 3D interpolation
+            elif self.dimensions == 3:
+                # LinearNDInterpolator wants points as [(x1,y1,z1), (x2, y2, z2), ...]
+                all_x, all_y, all_z = np.meshgrid(np.linspace(*(cs[0][1])),
+                                                  np.linspace(*(cs[1][1])),
+                                                  np.linspace(*(cs[2][1])))
+                points = np.array([np.ravel(all_x), np.ravel(all_y), np.ravel(all_z)]).T
+                values = np.ravel(self.data[map_name])
+                itp_fun = interpolate.LinearNDInterpolator(points, values)
+
+            else:
+                raise RuntimeError("Can't use a %s-dimensional correction map!" % self.dimensions)
+
+            self.interpolators[map_name] = itp_fun
+
+        self.log.debug("Map names found: %s" % self.interpolators.keys())
+
+    def get_value_at(self, position, map_name='map'):
+        """Returns the value of the map map_name at a ReconstructedPosition
+         position - pax.datastructure.ReconstructedPosition instance
+        """
+        return self.get_value(*[getattr(position, q[0]) for q in self.coordinate_system], map_name=map_name)
+        
+    def get_value(self, *coordinates, map_name='map'):
+        """Returns the value of the map at the position given by coordinates"""
+        result = self.interpolators[map_name](*coordinates)
+        return float(result)    # We don't want a 0d numpy array, which the 1d and 2d interpolators seem to give
+
+    def plot(self, map_name='map'):
+        """Plots the map map_name"""
+        if self.dimensions == 2:
+            cs = self.coordinate_system
+            #all_x, all_y = np.meshgrid(np.linspace(*(cs[0][1])),
+            #                           np.linspace(*(cs[1][1])))
+            #all_z = np.array(self.data[map_name]).ravel()
+            #plt.scatter(all_x, all_y, c=all_z)
+            plt.pcolor(np.linspace(*cs[0][1]), np.linspace(*cs[1][1]), np.array(self.data[map_name]))
+            #plt.xticks(np.linspace(*cs[0][1]))
+            #plt.yticks(np.linspace(*cs[1][1]))
+            #contourplot = plt.contour(np.linspace(*cs[0][1]), np.linspace(*cs[1][1]), self.data[map_name], 30)
+            #plt.clabel(contourplot, inline=1, fontsize=10, fmt='%1.1f')
+            plt.xlabel(self.coordinate_system[0][0])
+            plt.ylabel(self.coordinate_system[1][0])
+            plt.colorbar()
+            plt.show()
         else:
-            raise RuntimeError("Can't use  a %s-dimensional correction map!" % self.dimensions)
+            raise NotImplementedError("Still have to implement plotting for %s-dimensional maps" % self.dimensions)
 
-    def get_value_at(self, position):
-        # Todo: handle polar coordinate attributes by @property's in event class
-        return self.interpolator(*[getattr(position, q[0]) for q in self.coordinate_system])
 
+        
 
 
 
