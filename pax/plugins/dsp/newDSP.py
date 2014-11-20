@@ -94,8 +94,13 @@ class ComputePeakProperties(plugin.TransformPlugin):
                 np.where(peak.area_per_pmt >= self.config['minimum_pe_area'])[0],
                 dtype=np.uint16)
 
-            # Compute the widths
-            # This is quite expensive...
+            # Compute the widths. This is quite expensive...
+
+            if peak.index_of_maximum < peak.left:
+                self.log.debug("Insane peak %s-%s-%s, can't compute widths!" % (
+                    peak.left, peak.index_of_maximum, peak.right))
+                continue
+
             peak.full_width_half_max = dsputils.width_at_fraction(
                 peak_wave=unfiltered,
                 fraction_of_max=0.5,

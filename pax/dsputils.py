@@ -73,7 +73,7 @@ def find_peak_in_signal(signal, unfiltered, integration_bound_fraction, offset=0
     left, right = peak_bounds(signal, max_idx, integration_bound_fraction)
     # Compute properties of this peak using 'unfiltered'
     area = np.sum(unfiltered[left:right + 1])
-    unfiltered_max = np.argmax(unfiltered[left:right + 1])
+    unfiltered_max = left + np.argmax(unfiltered[left:right + 1])
     return datastructure.Peak({
         'index_of_maximum': offset + unfiltered_max,
         'height':           unfiltered[unfiltered_max],
@@ -95,6 +95,10 @@ def peak_bounds(signal, max_idx, fraction_of_max, zero_level=0):
     """
     if len(signal) == 0:
         raise RuntimeError("Empty signal, can't find peak bounds!")
+    if max_idx > len(signal)-1:
+        raise RuntimeError("Can't compute bounds: max at %s, peak wave is %s long" % (max_idx, len(signal)))
+    if max_idx < 0:
+        raise RuntimeError("Peak maximum index is negative (%s)... what are you smoking?" % max_idx )
 
     height = signal[max_idx]
     threshold = max(zero_level, height * fraction_of_max)
