@@ -343,6 +343,7 @@ def processor(config):
 
     # This is the actual event loop.  'tqdm' is a progress bar.
     for i, event in enumerate(tqdm(get_events(),
+                                   desc='Event',
                                    total=total_number_events)):
         if 'stop_after' in config['pax'] and \
                         config['pax']['stop_after'] is not None:
