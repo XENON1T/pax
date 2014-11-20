@@ -9,6 +9,7 @@ See format for more information on the event object.
 """
 import logging
 import time
+
 from pax.datastructure import Event
 
 
@@ -76,6 +77,11 @@ class InputPlugin(BasePlugin):
         Raise a StopIteration when done
         """
         raise NotImplementedError()
+
+    def number_events(self):
+        """Return total number of events (or None if not known)
+        """
+        return None
 
     def process_event(self, event=None):
         raise RuntimeError('Input plugins cannot process data.')

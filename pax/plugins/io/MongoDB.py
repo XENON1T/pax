@@ -5,7 +5,6 @@ user to read data from the DAQ and also inject raw occurences into the DAQ.
 
 """
 import time
-import uuid
 from datetime import datetime
 
 import pymongo
@@ -15,6 +14,7 @@ from bson.binary import Binary
 
 from pax.datastructure import Event
 from pax import plugin
+
 
 START_TIME_KEY = 'time_min'
 
@@ -39,6 +39,9 @@ class MongoDBInput(plugin.InputPlugin):
         if self.number_of_events == 0:
             raise RuntimeError(
                 "No events found... did you run the event builder?")
+
+    def number_events(self):
+        return self.number_of_events
 
     def get_events(self):
         """Generator of events from Mongo

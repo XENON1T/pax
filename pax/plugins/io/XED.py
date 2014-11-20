@@ -59,6 +59,7 @@ class XedInput(plugin.InputPlugin):
     def startup(self):
         self.xedfiles = []
         self.input = None
+        self.number_of_events = 0 # Updated by init_xedfile
         filename = core.data_file_name(self.config['input_name'])
 
         if filename[-4:] == '.xed':
@@ -82,6 +83,10 @@ class XedInput(plugin.InputPlugin):
         # Select the first XED file
         self.select_xedfile(0)
 
+
+    def number_events(self):
+        return self.number_of_events
+
     def init_xedfile(self, filename):
         """Loads in an XED file header, so we can look up which events are in it"""
         self.log.info("Opening %s", filename)
@@ -89,6 +94,7 @@ class XedInput(plugin.InputPlugin):
 
         self.xedfiles.append({ 'filename' : filename })
 
+        # File meta data
         fmd = np.fromfile(input, dtype=XedInput.file_header, count=1)[0]
 
         self.xedfiles[-1]['first_event'] = fmd['first_event_number']
@@ -99,13 +105,11 @@ class XedInput(plugin.InputPlugin):
         self.event_positions = np.fromfile(input, dtype=np.dtype("<u4"),
                                            count=fmd['event_index_size'])
         if fmd['events_in_file'] > fmd['event_index_size']:
-            raise RuntimeError(
-                "The XED file claims there are %s events in the file, but the event position index has only %s entries!" %
-                (fmd['events_in_file'], fmd['event_index_size'])
-            )
+            raise RuntimeError("The XED file claims there are %s events in the file, but the event position index has only %s entries!" % (fmd['events_in_file'], fmd['event_index_size']))
 
         self.log.debug('Found XED file %s containing events %s-%s' % (
-            filename, self.xedfiles[-1]['first_event'], self.xedfiles[-1]['last_event']
+            filename, self.xedfiles[-1]['first_event'],
+            self.xedfiles[-1]['last_event']
         ))
 
         input.close()

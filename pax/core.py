@@ -1,20 +1,21 @@
 """The backbone of pax
 
 """
-import re
 import glob
-import os
 import itertools
-from io import StringIO
-import importlib
-
 import logging
 import inspect
-
 from configparser import ConfigParser, ExtendedInterpolation
+
+import re
+import os
+from io import StringIO
+import importlib
+from tqdm import tqdm # Progress bar
 
 import pax
 from pax import units
+
 
 FALLBACK_CONFIGURATION = 'XENON100' # Configuration to use when none is specified
 
@@ -71,7 +72,6 @@ def init_configuration(config_names=(), config_paths=(), config_string=None):
     :return: nested dictionary of evaluated configuration values, use as: config[section][key].
     Will return None if no configuration sources are specified at all.
     """
-    global CONFIG_FILES_READ
     CONFIG_FILES_READ = []      # Need to clean this here so tests can re-load the config
 
     # Support for string arguments
@@ -325,12 +325,18 @@ def processor(config):
     log.debug("Search path for plugins is %s" % str(plugin_search_paths))
 
     # Load all the plugins
-    input_plugin =    instantiate_plugin(input_plugin_name, plugin_search_paths, config, log)
-    action_plugins = [instantiate_plugin(x,                 plugin_search_paths, config, log) for x in action_plugin_names]
+    input_plugin =    instantiate_plugin(input_plugin_name, plugin_search_paths,
+                                         config, log)
+    action_plugins = [instantiate_plugin(x, plugin_search_paths, config,
+                                         log) for x in action_plugin_names]
+
+    total_number_events = input_plugin.number_events()
 
     # How should the events be generated?
-    if 'events_to_process' in config['pax'] and config['pax']['events_to_process'] is not None:
+    if 'events_to_process' in config['pax'] and \
+                    config['pax']['events_to_process'] is not None:
         # The user specified which events to process:
+        total_number_events = len(config['pax']['events_to_process'])
         def get_events():
             for event_number in config['pax']['events_to_process']:
                 yield input_plugin.get_single_event(event_number)
@@ -338,13 +344,17 @@ def processor(config):
         # Let the input plugin decide which events to process:
         get_events = input_plugin.get_events
 
+    event_iterator = lambda x: x
+    if total_number_events is not None:
+        event_iterator = lambda x: tqdm(x, total=total_number_events)
 
-    # This is the actual event loop
-    for i, event in enumerate(get_events()):
-        if 'stop_after' in config['pax'] and config['pax']['stop_after'] is not None:
-            if i >= config['pax']['stop_after']:
-                log.info("User-defined limit of %d events reached: processing stopped." % i)
-                break
+    # This is the actual event loop.  'tqdm' is a progress bar.
+    for i, event in enumerate(event_iterator(get_events())):
+        if 'stop_after' in config['pax'] and \
+                        config['pax']['stop_after'] is not None:
+                if i >= config['pax']['stop_after']:
+                    log.info("User-defined limit of %d events reached." % i)
+                    break
 
         log.info("Event %d (%d processed)" % (event.event_number, i))
 
