@@ -604,7 +604,7 @@ def sort_and_prune_by(peak_list, key=lambda x: x, keep_number=float('inf'), reve
         return peak_list
 
 
-class ComputePeakPropertiesXerawdpStyle(plugin.TransformPlugin):
+class ComputePeakPropertiesXdpStyle(plugin.TransformPlugin):
 
     """Compute various derived quantities of each peak (full width half maximum, etc.)
 

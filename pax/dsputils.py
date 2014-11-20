@@ -102,19 +102,19 @@ def peak_bounds(signal, max_idx, fraction_of_max, zero_level=0):
 
     height = signal[max_idx]
     threshold = max(zero_level, height * fraction_of_max)
-    threshold_test = np.vectorize(lambda x: x < threshold)
 
     if height < threshold:
         # Peak is always below threshold -> return smallest legal peak.
         return (max_idx, max_idx)
 
     # Note reversion acts before indexing!
-    left = find_first_fast(signal[max_idx::-1], threshold_test)
+    bla = np.where(signal[max_idx::-1] < threshold)
+    left = find_first_fast(signal[max_idx::-1], threshold)
     if left is None:
         left = 0
     else:
         left = max_idx - left
-    right = find_first_fast(signal[max_idx:], threshold_test)
+    right = find_first_fast(signal[max_idx:], threshold)
     if right is None:
         right = len(signal) - 1
     else:
@@ -162,19 +162,32 @@ def width_at_fraction(peak_wave, fraction_of_max, max_idx, interpolate=False):
     return right - left + 1
 
 
-# Stolen from https://github.com/numpy/numpy/issues/2269
-# Numpy 2.0 may get a builtin to do this
-# TODO: predicate = np.vectorize(predicate)?? Or earlier?
-def find_first_fast(a, predicate, chunk_size=128):
-    i0 = 0
-    chunk_inds = chain(range(chunk_size, a.size, chunk_size), [None])
-    for i1 in chunk_inds:
-        chunk = a[i0:i1]
-        for inds in zip(*predicate(chunk).nonzero()):
-            return inds[0] + i0
-        i0 = i1
-    # HACK: None found... return the last index
-    return len(a) - 1
+
+
+def find_first_fast(a, threshold, chunk_size=128):
+    """Returns the first index in a below threshold.
+    If a never goes below threshold, returns the last index in a."""
+    # Numpy 2.0 may get a builtin to do this.
+    # I don't know of anything beter than the below for now:
+    indices = np.where(a < threshold)[0]
+    if len(indices) > 0:
+        return indices[0]
+    else:
+        #None found, return last index
+        return len(a)-1
+    # This was recommended by https://github.com/numpy/numpy/issues/2269
+    # It actually performs significantly worse in our case...
+    # Maybe I'm messing something up?
+    # threshold_test = np.vectorize(lambda x: x < threshold)
+    # i0 = 0
+    # chunk_inds = chain(range(chunk_size, a.size, chunk_size), [None])
+    # for i1 in chunk_inds:
+    #     chunk = a[i0:i1]
+    #     for inds in zip(*threshold_test(chunk).nonzero()):
+    #         return inds[0] + i0
+    #     i0 = i1
+    # # HACK: None found... return the last index
+    # return len(a) - 1
 
 
 
