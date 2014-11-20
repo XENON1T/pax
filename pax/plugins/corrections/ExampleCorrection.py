@@ -4,7 +4,7 @@ class ExampleCorrection(plugin.TransformPlugin):
 
     def startup(self):
         self.correction_map = dsputils.InterpolatingMap(
-             core.data_file_name('example_3d_correction_map.json'))
+             core.data_file_name('s2_xy_lce_map_XENON100_Xerawdp0.4.5.json.gz'))
         # self.correction_map = dsputils.InterpolatingMap(
         #     core.data_file_name('s2_xy_lce_map_XENON100_Xerawdp0.4.5.json'))
         # self.correction_map.plot(map_name='60')
@@ -22,11 +22,11 @@ class ExampleCorrection(plugin.TransformPlugin):
                 # Also, all posrec algorithms may be disabled
                 continue
 
-            # Get the correction's value
-            value = self.correction_map.get_value_at(pos)
+            # Get the map's value
+            value = self.correction_map.get_value_at(pos, map_name='total_LCE')
 
             # Print it to the debug log
-            self.log.debug("Correction value at (%s, %s, %s): %s" % (pos.x, pos.y, pos.z, value))
+            self.log.debug("Map value at (%s, %s, %s): %s" % (pos.x, pos.y, pos.z, value))
 
         return event
 

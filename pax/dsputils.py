@@ -5,11 +5,13 @@ Heavily used in SimpleDSP
 """
 
 import math
+import re
 import json
-import numpy as np
-from scipy import interpolate
+import gzip
 from itertools import chain
 
+import numpy as np
+from scipy import interpolate
 import matplotlib.pyplot as plt
 
 import logging
@@ -265,23 +267,34 @@ class InterpolatingMap(object):
     Cartesian coordinates are supported and tested, cylindrical coordinates (z, r, phi) may also work...
 
     The map must be specified as a json containing a dictionary with keys
-        'coordinate_system' : [['x', x_min, x_max, n_x], ['y',...
-        'your_map_name' : [[valuex1y1, valuex1y2, ..], [valuex2y1, valuex2y2, ..], ...
-        'another_map_name' : idem
+        'coordinate_system' :   [['x', x_min, x_max, n_x], ['y',...
+        'your_map_name' :       [[valuex1y1, valuex1y2, ..], [valuex2y1, valuex2y2, ..], ...
+        'another_map_name' :    idem
+        'name':                 'Nice file with maps',
+        'description':          'Say what the maps are and who you are',
+        'timestamp':            unix timestamp
     with the straightforward generalization to 1d and 3d.
 
     See also examples/generate_mock_correction_map.py
     """
+    data_field_names = ['timestamp', 'description', 'coordinate_system', 'name']
 
     def __init__(self, filename):
         self.log = logging.getLogger('InterpolatingMap')
         self.log.debug('Loading JSON map %s' % filename)
 
-        self.data = json.load(open(filename))
+        if filename[-3:] == '.gz':
+            bla = gzip.open(filename).read()
+            self.data = json.loads(bla.decode())
+        else:
+            self.data = json.load(open(filename))
         self.coordinate_system = cs = self.data['coordinate_system']
         self.dimensions = len(cs)
         self.interpolators = {}
-        self.map_names = sorted([k for k in self.data.keys() if k not in ['coordinate_system', 'name']])
+        self.map_names = sorted([k for k in self.data.keys() if k not in self.data_field_names])
+        self.log.debug('Map name: %s' % self.data['name'])
+        self.log.debug('Map description:\n    ' + re.sub(r'\n', r'\n    ', self.data['description']))
+        self.log.debug("Map names found: %s" % self.map_names)
 
         for map_name in self.map_names:
 
@@ -311,7 +324,6 @@ class InterpolatingMap(object):
 
             self.interpolators[map_name] = itp_fun
 
-        self.log.debug("Map names found: %s" % self.interpolators.keys())
 
     def get_value_at(self, position, map_name='map'):
         """Returns the value of the map map_name at a ReconstructedPosition
@@ -328,9 +340,10 @@ class InterpolatingMap(object):
             return float(result)    # We don't want a 0d numpy array, which the 1d and 2d interpolators seem to give
 
     def plot(self, map_name='map', to_file=None):
-        """Plots the map map_name"""
+        """Make a quick plot of the map map_name, for diagnostic purposes only"""
+        cs = self.coordinate_system
+
         if self.dimensions == 2:
-            cs = self.coordinate_system
             x = np.linspace(*cs[0][1])
             y = np.linspace(*cs[1][1])
             plt.pcolor(x, y, np.array(self.data[map_name]))
@@ -338,21 +351,20 @@ class InterpolatingMap(object):
             plt.ylabel("%s (cm)" % cs[1][0])
             plt.axis([x.min(), x.max(), y.min(), y.max()])
             plt.colorbar()
-            plt.title(map_name)
             # Plot the TPC radius for reference
             # TODO: this hardcodes a XENON100 geometry value!
             # But I don't have the config here...
-            if cs[0][0] == 'x' and cs[1][0] == 'y':
-                r = 0.5 * 30.6 *units.cm
-                theta = np.linspace(0, 2*np.pi, 200)
-                plt.plot(r*np.cos(theta), r*np.sin(theta), c='white')
-            if to_file is not None:
-                plt.savefig(to_file)
-            else:
-                plt.show()
-            plt.close()
+            # if cs[0][0] == 'x' and cs[1][0] == 'y':
+
         else:
             raise NotImplementedError("Still have to implement plotting for %s-dimensional maps" % self.dimensions)
+
+        plt.title(map_name)
+        if to_file is not None:
+            plt.savefig(to_file)
+        else:
+            plt.show()
+        plt.close()
 
 # def rcosfilter(filter_length, rolloff, cutoff_freq, sampling_freq=1):
 #     """

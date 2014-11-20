@@ -1,11 +1,11 @@
 import os
+from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
-from tqdm import tqdm
 
-import pax
 from pax.dsputils import InterpolatingMap
 from pax.core import data_file_name
+from pax import units
 
 map_file = 's2_xy_lce_map_XENON100_Xerawdp0.4.5'
 
@@ -15,15 +15,25 @@ except FileExistsError:
     pass
 
 print("Reading map...")
-maps = InterpolatingMap(data_file_name(map_file+'.json'))
-
+maps = InterpolatingMap(data_file_name(map_file+'.json.gz'))
    
 print("Plotting individual LCE maps")   
 for m in tqdm(maps.map_names):
+    # Reference plot of the XENON100 tpc radius
+    r = 0.5 * 30.6 * units.cm
+    theta = np.linspace(0, 2*np.pi, 200)
+    plt.plot(r*np.cos(theta), r*np.sin(theta), c='white')
+
+    # Plot the LCE map
     maps.plot(map_name=m, to_file=os.path.join(map_file, m + '.png'))
 
 
+
 # This is just to test the interpolation routines are working: you can skip it
+#
+# import numpy as np
+# import matplotlib.pyplot as plt
+#
 # print("Calculating & plotting overall LCE map")
 # r = 15.3
 # d = 0.2
