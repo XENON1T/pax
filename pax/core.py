@@ -16,17 +16,17 @@ from configparser import ConfigParser, ExtendedInterpolation
 import pax
 from pax import units
 
-fallback_configuration = 'XENON100' # Configuration to use when none is specified
+FALLBACK_CONFIGURATION = 'XENON100' # Configuration to use when none is specified
 
 
-# Store the directory of pax (i.e. this file's directory) as pax_dir
-pax_dir = os.path.join(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))))
+# Store the directory of pax (i.e. this file's directory) as PAX_DIR
+PAX_DIR = os.path.join(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))))
 
 def data_file_name(filename):
-    """Returns filename if a file exists there, else returns pax_dir/data/filename"""
+    """Returns filename if a file exists there, else returns PAX_DIR/data/filename"""
     if os.path.exists(filename):
         return filename
-    new_filename = os.path.join(pax_dir, 'data', filename)
+    new_filename = os.path.join(PAX_DIR, 'data', filename)
     if os.path.exists(new_filename):
         return new_filename
     else:
@@ -36,13 +36,13 @@ def data_file_name(filename):
 ##
 # Configuration handling
 ##
-config_files_read = []
+CONFIG_FILES_READ = []
 
 def get_named_configuration_options():
     """ Return the names of all named configurations
     """
     config_files =[]
-    for filename in glob.glob(os.path.join(pax_dir, 'config', '*.ini')):
+    for filename in glob.glob(os.path.join(PAX_DIR, 'config', '*.ini')):
         filename = os.path.basename(filename)
         m = re.match(r'(\w+)\.ini', filename)
         if m is None:
@@ -71,8 +71,8 @@ def init_configuration(config_names=(), config_paths=(), config_string=None):
     :return: nested dictionary of evaluated configuration values, use as: config[section][key].
     Will return None if no configuration sources are specified at all.
     """
-    global config_files_read
-    config_files_read = []      # Need to clean this here so tests can re-load the config
+    global CONFIG_FILES_READ
+    CONFIG_FILES_READ = []      # Need to clean this here so tests can re-load the config
 
     # Support for string arguments
     if isinstance(config_names, str):
@@ -91,7 +91,7 @@ def init_configuration(config_names=(), config_paths=(), config_string=None):
     # Make a list of all config paths / file objects to load
     config_files = []
     for config_name in config_names:
-        config_files.append(os.path.join(pax_dir, 'config', config_name + '.ini'))
+        config_files.append(os.path.join(PAX_DIR, 'config', config_name + '.ini'))
     for config_path in config_paths:
         config_files.append(config_path)
     if config_string is not None:
@@ -132,14 +132,14 @@ def load_file_into_configparser(config, config_file):
         #print("Loading %s" % config_file)
         if not os.path.isfile(config_file):
             raise ValueError("Configuration file %s does not exist!" % config_file)
-        global config_files_read
-        if config_file in config_files_read:
+        global CONFIG_FILES_READ
+        if config_file in CONFIG_FILES_READ:
             # This file has already been loaded: don't load it again
             # If we did, it would cause problems with inheritance diamonds
             #print("Skipping config file %s: don't load it a second time" % config_file)
             return
         config.read(config_file)
-        config_files_read.append(config_file)
+        CONFIG_FILES_READ.append(config_file)
     else:
         #print("Loading config from file object")
         config.read_file(config_file)
@@ -148,12 +148,12 @@ def load_file_into_configparser(config, config_file):
     parent_file_paths = []
     if 'parent_configuration' in config['pax']:
         # This file inherits from other config file(s) in the 'config' directory
-        global pax_dir
+        global PAX_DIR
         parent_files = eval(config['pax']['parent_configuration'])
         if not isinstance(parent_files, list):
             parent_files = [parent_files]
         parent_file_paths.extend([
-            os.path.join(pax_dir, 'config', pf + '.ini')
+            os.path.join(PAX_DIR, 'config', pf + '.ini')
             for pf in parent_files
         ])
     if 'parent_configuration_file' in config['pax']:
@@ -184,8 +184,8 @@ def load_file_into_configparser(config, config_file):
 
 def make_plugin_search_paths(config=None):
 
-    global pax_dir
-    plugin_search_paths = ['./plugins', os.path.join(pax_dir, 'plugins')]
+    global PAX_DIR
+    plugin_search_paths = ['./plugins', os.path.join(PAX_DIR, 'plugins')]
 
     if config is not None:
         plugin_search_paths += config['pax']['plugin_paths']
@@ -201,14 +201,17 @@ def make_plugin_search_paths(config=None):
 
 
 def instantiate_plugin(name, plugin_search_paths=None, config=None, log=logging, for_testing=False):
-    """Take plugin class name and build class from it"""
+    """Take plugin class name and build class from it
+
+    The python default module locations are also searched... I think.. so don't name your module 'glob'...
+    """
 
     # Shortcut for tests
     if for_testing:
         if plugin_search_paths is None:
             plugin_search_paths = make_plugin_search_paths(None)
         if config is None:
-            config = init_configuration(config_names=fallback_configuration)
+            config = init_configuration(config_names=FALLBACK_CONFIGURATION)
     else:
         assert config is not None and plugin_search_paths is not None
 
@@ -265,8 +268,8 @@ def processor(config):
 
     # Complain if we didn't get a configuration, then load a default
     if config is None:
-        log.warning("No configuration specified: loading %s config!" % fallback_configuration)
-        config = init_configuration(config_names=[fallback_configuration])
+        log.warning("No configuration specified: loading %s config!" % FALLBACK_CONFIGURATION)
+        config = init_configuration(config_names=[FALLBACK_CONFIGURATION])
     log.info("This is PAX version %s, running with configuration for %s." % (
         pax.__version__, config['DEFAULT']['tpc_name'])
     )
@@ -274,6 +277,7 @@ def processor(config):
 
     # Get the list of plugins from the configuration file
     plugin_groups = ('input', 'dsp', 'transform', 'my_postprocessing', 'output')
+    # plugin_names[group] is a list of all plugins we have to initialize in the group 'group'
     plugin_names = {}
 
     for plugin_group_name in plugin_groups:
@@ -298,6 +302,7 @@ def processor(config):
     # Separate input and actions (which for now includes output).
     input_plugin_name = plugin_names['input'][0]
 
+    # For the plugin groups which are action plugins, get all names, flatten them
     action_plugin_names = itertools.chain(*[plugin_names[g]
                                             for g in plugin_groups
                                             if g != 'input'])
