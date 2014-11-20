@@ -150,6 +150,7 @@ class XedInput(plugin.InputPlugin):
             for event_position_i, event_position in enumerate(self.event_positions):
                 yield self.get_single_event(self.file_metadata['first_event_number'] + event_position_i)
 
+    @plugin.BasePlugin._timeit
     def get_single_event(self, event_number):
 
         if not self.first_event <= event_number <= self.last_event:

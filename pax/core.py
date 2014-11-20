@@ -11,7 +11,8 @@ import re
 import os
 from io import StringIO
 import importlib
-from tqdm import tqdm # Progress bar
+from tqdm import tqdm     # Progress bar
+from prettytable import PrettyTable     # Timing report
 
 import pax
 from pax import units
@@ -327,11 +328,10 @@ def processor(config):
     action_plugins = [instantiate_plugin(x, plugin_search_paths, config,
                                          log) for x in action_plugin_names]
 
-    total_number_events = input_plugin.number_events()
+    total_number_events = min(input_plugin.number_events(), config['pax']['stop_after'])
 
     # How should the events be generated?
-    if 'events_to_process' in config['pax'] and \
-                    config['pax']['events_to_process'] is not None:
+    if 'events_to_process' in config['pax'] and config['pax']['events_to_process'] is not None:
         # The user specified which events to process:
         total_number_events = len(config['pax']['events_to_process'])
         def get_events():
@@ -345,11 +345,10 @@ def processor(config):
     for i, event in enumerate(tqdm(get_events(),
                                    desc='Event',
                                    total=total_number_events)):
-        if 'stop_after' in config['pax'] and \
-                        config['pax']['stop_after'] is not None:
-                if i >= config['pax']['stop_after']:
-                    log.info("User-defined limit of %d events reached." % i)
-                    break
+        if 'stop_after' in config['pax'] and config['pax']['stop_after'] is not None:
+            if i >= config['pax']['stop_after']:
+                log.info("User-defined limit of %d events reached." % i)
+                break
 
         log.debug("Event %d (%d processed)" % (event.event_number, i))
 
@@ -359,3 +358,25 @@ def processor(config):
 
     else:
         log.info("All events from input source have been processed.")
+
+    if config['pax']['print_timing_report']:
+        all_plugins = [input_plugin] + action_plugins
+        timing_report = PrettyTable(['Plugin', '%', 'Per event (ms)', 'Total (s)',])
+        timing_report.align = "r"
+        timing_report.align["Plugin"] = "l"
+        total_time = sum([plugin.total_time_taken for plugin in all_plugins])
+        for plugin in all_plugins:
+            t = plugin.total_time_taken
+            timing_report.add_row([
+                plugin.__class__.__name__,
+                round(100*t/total_time,1),
+                round(t/total_number_events,1),
+                round(t/1000, 1),
+            ])
+        timing_report.add_row([
+            'TOTAL',
+            round(100.,1),
+            round(total_time/total_number_events,1),
+            round(total_time/1000, 1),
+        ])
+        print(timing_report)
