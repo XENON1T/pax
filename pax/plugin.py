@@ -79,9 +79,9 @@ class InputPlugin(BasePlugin):
         raise NotImplementedError()
 
     def number_events(self):
-        """Return total number of events (or None if not known)
+        """Return total number of events (or 0 if not known)
         """
-        return None
+        return 0
 
     def process_event(self, event=None):
         raise RuntimeError('Input plugins cannot process data.')

@@ -341,19 +341,16 @@ def processor(config):
         # Let the input plugin decide which events to process:
         get_events = input_plugin.get_events
 
-    event_iterator = lambda x: x
-    if total_number_events is not None:
-        event_iterator = lambda x: tqdm(x, total=total_number_events)
-
     # This is the actual event loop.  'tqdm' is a progress bar.
-    for i, event in enumerate(event_iterator(get_events())):
+    for i, event in enumerate(tqdm(get_events(),
+                                   total=total_number_events)):
         if 'stop_after' in config['pax'] and \
                         config['pax']['stop_after'] is not None:
                 if i >= config['pax']['stop_after']:
                     log.info("User-defined limit of %d events reached." % i)
                     break
 
-        log.info("Event %d (%d processed)" % (event.event_number, i))
+        log.debug("Event %d (%d processed)" % (event.event_number, i))
 
         for j, plugin in enumerate(action_plugins):
             log.debug("Step %d with %s", j, plugin.__class__.__name__)
