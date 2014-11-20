@@ -112,6 +112,8 @@ class XedInput(plugin.InputPlugin):
             self.xedfiles[-1]['last_event']
         ))
 
+        self.number_of_events += int(fmd['events_in_file'])
+
         input.close()
 
     def select_xedfile(self, i):
