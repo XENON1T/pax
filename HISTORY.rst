@@ -13,8 +13,10 @@ Upcoming release
  * 3D channel waveforms plot
  * Event summary plot
  * Music output
- * DSP plugins cleaned up and reorganized (except old peak finder)
  * Separate directory for example data files
+ * DSP plugins cleaned up and reorganized (except old peak finder)
+ * newDSP: Interpolated peak width computations
+ * Frequency bandpass filtering support
  * Configurations for XAMS, Bern test setup
  * --input and --output override settings for most plugins
  * WaveformSimulator: improved defaults
