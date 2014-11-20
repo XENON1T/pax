@@ -11,8 +11,6 @@ import importlib
 import logging
 import inspect
 
-from configparser import ConfigParser, ExtendedInterpolation
-
 import pax
 from pax import units
 
@@ -71,7 +69,6 @@ def init_configuration(config_names=(), config_paths=(), config_string=None):
     :return: nested dictionary of evaluated configuration values, use as: config[section][key].
     Will return None if no configuration sources are specified at all.
     """
-    global CONFIG_FILES_READ
     CONFIG_FILES_READ = []      # Need to clean this here so tests can re-load the config
 
     # Support for string arguments
@@ -132,7 +129,6 @@ def load_file_into_configparser(config, config_file):
         #print("Loading %s" % config_file)
         if not os.path.isfile(config_file):
             raise ValueError("Configuration file %s does not exist!" % config_file)
-        global CONFIG_FILES_READ
         if config_file in CONFIG_FILES_READ:
             # This file has already been loaded: don't load it again
             # If we did, it would cause problems with inheritance diamonds
@@ -148,7 +144,6 @@ def load_file_into_configparser(config, config_file):
     parent_file_paths = []
     if 'parent_configuration' in config['pax']:
         # This file inherits from other config file(s) in the 'config' directory
-        global PAX_DIR
         parent_files = eval(config['pax']['parent_configuration'])
         if not isinstance(parent_files, list):
             parent_files = [parent_files]
@@ -184,7 +179,6 @@ def load_file_into_configparser(config, config_file):
 
 def make_plugin_search_paths(config=None):
 
-    global PAX_DIR
     plugin_search_paths = ['./plugins', os.path.join(PAX_DIR, 'plugins')]
 
     if config is not None:

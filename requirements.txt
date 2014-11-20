@@ -1,7 +1,6 @@
 numexpr
 wheel>=0.23.0
 numpy
-pluginbase
 pymongo
 scikit-learn
 cherrypy
