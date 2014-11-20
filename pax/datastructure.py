@@ -53,8 +53,9 @@ class Peak(Model):
 
     """Peak object"""
 
-    index_of_maximum = IntegerField()     #: Index of maximum value within sum waveform.
-    left = IntegerField()                 #: Index of left bound (inclusive) in sum waveform.
+    index_of_maximum = IntegerField()           #: Index in the event's sum waveform at which this peak has its maximum.
+    index_of_filtered_maximum = IntegerField()  #: same, but maximum in filtered sum waveform
+    left = IntegerField()                       #: Index of left bound (inclusive) in sum waveform.
     right = IntegerField() #: Index of right bound (for Xdp matching: exclusive; otherwise: inclusive) in sum waveform.
 
     area = FloatField()                   #: Area of the pulse in photoelectrons

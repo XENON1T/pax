@@ -5,6 +5,7 @@ from pax import plugin, datastructure, dsputils
 
 class FindPeaks(plugin.TransformPlugin):
     # Find peaks in intervals above threshold in filtered waveform
+    # TODO: finds some 'half-peaks' where max = bound ...???
 
     def transform_event(self, event):
         for pf in self.config['peakfinders']:
@@ -72,44 +73,57 @@ class ComputePeakProperties(plugin.TransformPlugin):
     def transform_event(self, event):
         dt = self.config['digitizer_t_resolution']
         for peak in event.peaks:
-            peak.area_per_pmt = np.sum(event.pmt_waveforms[:, peak.left:peak.right], axis=1)
+            # TODO: let config say which waveforms to use for width computation
+            unfiltered = event.get_waveform('tpc').samples[ peak.left : peak.right+1]
+            filtered = event.get_waveform('tpc_s2').samples[peak.left : peak.right+1]
+
+            # Compute the filtered maximum
+            peak.index_of_filtered_maximum = peak.left + np.argmax(filtered)
+
+            # Compute the peak's areas
+            peak.area_per_pmt = np.sum(event.pmt_waveforms[:, peak.left:peak.right+1], axis=1)
             veto_area = np.sum(peak.area_per_pmt[list(self.config['pmts_veto'])])
             if peak.type == 'veto':
                 peak.area = veto_area
             else:
                 peak.area = np.sum(peak.area_per_pmt) - veto_area
-            #Todo: exclude negative area channels if option given
+
+            # Determine which PMTs contribute to the area
+            # Todo: exclude negative area channels if option given
             peak.contributing_pmts = np.array(
                 np.where(peak.area_per_pmt >= self.config['minimum_area'])[0],
                 dtype=np.uint16)
 
+            # Compute the widths
+            # This is quite expensive...
+            peak.full_width_half_max = dsputils.width_at_fraction(
+                peak_wave=unfiltered,
+                fraction_of_max=0.5,
+                max_idx=peak.index_of_maximum - peak.left,
+                interpolate=True)
+
+            peak.full_width_tenth_max = dsputils.width_at_fraction(
+                peak_wave=unfiltered,
+                fraction_of_max=0.1,
+                max_idx=peak.index_of_maximum - peak.left,
+                interpolate=True)
+
+            peak.full_width_half_max_filtered = dsputils.width_at_fraction(
+                peak_wave=filtered,
+                fraction_of_max=0.5,
+                max_idx=peak.index_of_filtered_maximum - peak.left,
+                interpolate=True)
+
+            peak.full_width_tenth_max_filtered = dsputils.width_at_fraction(
+                peak_wave=filtered,
+                fraction_of_max=0.1,
+                max_idx=peak.index_of_filtered_maximum - peak.left,
+                interpolate=True)
+
         return event
 
-            # if not 'keep_Chris_happy' in self.config or self.config['keep_Chris_happy'] == True:
-            #     continue
-            # # Dynamically set lots of event class attributes
-            # for waveform in event.waveforms:
-            #     peak_wave = waveform.samples[peak.left : peak.right]
-            #     secretly_set_attribute(peak, waveform.name + '_' + 'area',           np.sum(peak_wave))
-            #     max_idx = np.argmax(peak_wave)
-            #     secretly_set_attribute(peak, waveform.name + '_' + 'argmax',         peak.left + max_idx)
-            #     secretly_set_attribute(peak, waveform.name + '_' + 'height',         peak_wave[max_idx])
-            #     secretly_set_attribute(peak, waveform.name + '_' + 'inferred_width',
-            #                            dt * 2 * getattr(peak, waveform.name + '_' + 'area') / getattr(peak, waveform.name + '_' + 'height')
-            #     )
-            #     # Width computations are expensive... comment these out if you're in a rush
-            #     for name, value in (('fwhm', 0.5), ('fwqm', 0.25), ('fwtm', 0.1)):
-            #         secretly_set_attribute(peak, waveform.name + '_' + name,
-            #             dsputils.width_at_fraction(peak_wave, fraction_of_max=value,  max_idx=max_idx) * dt
-            #         )
 
-
-# def secretly_set_attribute(object, name, value):
-#     from pax.micromodels.fields import IntegerField, FloatField
-#     object.__setattr__(object, name, FloatField())
-#     object.__setattr__(object, name, value)
-
-
+#TODO: move to separate module
 class SplitPeaks(plugin.TransformPlugin):
 
     def startup(self):

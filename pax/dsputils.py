@@ -86,8 +86,7 @@ def find_peak_in_signal(signal, unfiltered, integration_bound_fraction, offset=0
 
 def peak_bounds(signal, max_idx, fraction_of_max, zero_level=0):
     """
-    Return (left, right) bounds of the fraction_of_max width of the peak in samples.
-    TODO: add interpolation option
+    Return (left, right) indices closest to max_idx where signal drops below signal[max_idx]*fraction_of_max.
 
     :param signal: waveform to look in (numpy array)
     :param peak: Peak object
@@ -96,34 +95,66 @@ def peak_bounds(signal, max_idx, fraction_of_max, zero_level=0):
     """
     if len(signal) == 0:
         raise RuntimeError("Empty signal, can't find peak bounds!")
+
     height = signal[max_idx]
-    threshold = min(zero_level, height * fraction_of_max)
+    threshold = max(zero_level, height * fraction_of_max)
     threshold_test = np.vectorize(lambda x: x < threshold)
+
     if height < threshold:
         # Peak is always below threshold -> return smallest legal peak.
         return (max_idx, max_idx)
-    # First find # of indices we need to move from max, so we can test if it is None
-    # if max_idx == 0:
-    #     left = 0
-    # else:
+
     # Note reversion acts before indexing!
     left = find_first_fast(signal[max_idx::-1], threshold_test)
-    # if max_idx == len(signal)-1:
-    #     right = len(signal)-1
-    # else:
-    right = find_first_fast(signal[max_idx:], threshold_test)
     if left is None:
         left = 0
+    else:
+        left = max_idx - left
+    right = find_first_fast(signal[max_idx:], threshold_test)
     if right is None:
         right = len(signal) - 1
-    # Convert to indices in waveform
-    right += max_idx
-    left = max_idx - left
+    else:
+        right += max_idx
+
     return (left, right)
 
-def width_at_fraction(peak_wave, fraction_of_max, max_idx):
+
+def width_at_fraction(peak_wave, fraction_of_max, max_idx, interpolate=False):
     """Returns width of a peak IN SAMPLES at fraction of maximum"""
     left, right = peak_bounds(peak_wave, max_idx=max_idx, fraction_of_max=fraction_of_max)
+    # Try to do sub-sample width determination
+
+    threshold = peak_wave[max_idx]*fraction_of_max
+
+    if interpolate:     # Need at least 3 points to interpolate
+        if left+1 in peak_wave and peak_wave[left] < threshold < peak_wave[left+1]:
+            correction = (peak_wave[left] - threshold) / (peak_wave[left] - peak_wave[left+1])
+            assert 0 <= correction <= 1
+            left += correction
+        else:
+            # Weird peak, can't interpolate
+            # Should not happen once peakfinder works well
+            pass
+
+        if right-1 in peak_wave and peak_wave[right] < threshold < peak_wave[right-1]:
+            correction = (threshold - peak_wave[right]) / (peak_wave[right-1] - peak_wave[right])
+            assert 0 <= correction <= 1
+            right -= correction
+        else:
+            # Weird peak, can't interpolate
+            # Should not happen once peakfinder works well
+            pass
+
+    # If you want to test this code, uncomment this:
+    # plt.plot(peak_wave, 'bo-')
+    # plt.plot([threshold for i in range(len(peak_wave))], '--', label='Threshold')
+    # plt.plot([left, left], [0, threshold], '--', label='Left width bound')
+    # plt.plot([right, right], [0, threshold], '--', label='Right width bound')
+    # plt.scatter([max_idx], [peak_wave[max_idx]], marker='*', s=100, label='Maximum', color='purple')
+    # plt.title('Peak bounds at %s of max' % fraction_of_max)
+    # plt.legend()
+    # plt.show()
+
     return right - left + 1
 
 
