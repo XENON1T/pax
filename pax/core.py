@@ -11,6 +11,8 @@ import importlib
 import logging
 import inspect
 
+from configparser import ConfigParser, ExtendedInterpolation
+
 import pax
 from pax import units
 
