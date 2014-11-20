@@ -74,8 +74,8 @@ class ComputePeakProperties(plugin.TransformPlugin):
         dt = self.config['digitizer_t_resolution']
         for peak in event.peaks:
             # TODO: let config say which waveforms to use for width computation
-            unfiltered = event.get_waveform('tpc').samples[ peak.left : peak.right+1]
-            filtered = event.get_waveform('tpc_s2').samples[peak.left : peak.right+1]
+            unfiltered = event.get_waveform(self.config['unfiltered_waveform_name']).samples[peak.left : peak.right+1]
+            filtered = event.get_waveform(self.config['filtered_waveform_name']).samples[peak.left : peak.right+1]
 
             # Compute the filtered maximum
             peak.index_of_filtered_maximum = peak.left + np.argmax(filtered)
@@ -91,7 +91,7 @@ class ComputePeakProperties(plugin.TransformPlugin):
             # Determine which PMTs contribute to the area
             # Todo: exclude negative area channels if option given
             peak.contributing_pmts = np.array(
-                np.where(peak.area_per_pmt >= self.config['minimum_area'])[0],
+                np.where(peak.area_per_pmt >= self.config['minimum_pe_area'])[0],
                 dtype=np.uint16)
 
             # Compute the widths
