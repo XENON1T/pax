@@ -94,7 +94,8 @@ class TestDatastructure(unittest.TestCase):
         s2s = e.S2s()
         self.assertEqual(len(s2s), len(areas))
 
-        areas = sorted(areas)
+        # Please note the areas should come out in reverse order (largest first)
+        areas = sorted(areas, reverse=True)
 
         for i, area in enumerate(areas):
             self.assertIsInstance(s2s[i], Peak)
