@@ -328,7 +328,11 @@ def processor(config):
     action_plugins = [instantiate_plugin(x, plugin_search_paths, config,
                                          log) for x in action_plugin_names]
 
-    total_number_events = min(input_plugin.number_events(), config['pax']['stop_after'])
+    stop_after = float('inf')
+    if 'stop_after' in config['pax'] and config['pax']['stop_after'] is not None:
+        stop_after = config['pax']['stop_after']
+
+    total_number_events = min(input_plugin.number_events(), stop_after)
 
     # How should the events be generated?
     if 'events_to_process' in config['pax'] and config['pax']['events_to_process'] is not None:
@@ -345,10 +349,9 @@ def processor(config):
     for i, event in enumerate(tqdm(get_events(),
                                    desc='Event',
                                    total=total_number_events)):
-        if 'stop_after' in config['pax'] and config['pax']['stop_after'] is not None:
-            if i >= config['pax']['stop_after']:
-                log.info("User-defined limit of %d events reached." % i)
-                break
+        if i >= stop_after:
+            log.info("User-defined limit of %d events reached." % i)
+            break
 
         log.debug("Event %d (%d processed)" % (event.event_number, i))
 
