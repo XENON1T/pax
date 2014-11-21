@@ -220,59 +220,77 @@ class PlotChannelWaveforms(PlotBase): # user sets variables xlim, ylim for 3D pl
     Will make a fancy '3D' plot with different y positions for all channels. User sets variables for plot.
     """
 
-    def set_y_values(self, value, n_times):
-        y = []
-        
-        for int_i in range(0,n_times):
-            y.append(value)
-            
-        return y
-
     def plot_event(self, event):
+        dt = self.config['digitizer_t_resolution']
         ylim_channel_start = 0 # top : 1-98, bottom : 99-178, Top Shield Array: PMTs 179..210, Bottom Shield Array: PMTs 211..242
-        ylim_channel_end  = 241 # if set to 242 then no sum channel possible
+        ylim_channel_end = 242
         xlim_time_start = 0 # s1: 205.5 , s2: 260
         xlim_time_end = 400 # [us] S1: 206.5, s2: 270
-        baseline = 16000 # [adc counts]
-        adc_voltage_range = 2.25 # [V]
-        adc_bits = np.power(2,14) # 14 bit
-        pe_binV = 10*1e-9 / (50 * 2*1e6 * 10 * 1.602* 1e-19 )
-        #[pe/(bin*V)] = time_resolution [s/bin] / ( resistor [V*s/C] * gain [] * amplification [] * electric_charge [C/pe] )
-        #For Xenon100 (gain 2e6, amplification 10, resistor 50, time resolution 10ns/bin), this gives 62.4 pe/(bin*V), so 1 pe/bin is 16.0 mV; 1 mV is 0.0624 pe/bin.         
-        
-        volt_per_bit = adc_voltage_range/adc_bits
 
-        fig = plt.figure()
+        #[pe/(bin*V)] = time_resolution [s/bin] / ( resistor [V*s/C] * gain [] * amplification [] * electric_charge [C/pe] )
+        #For Xenon100 (gain 2e6, amplification 10, resistor 50, time resolution 10ns/bin), this gives 62.4 pe/(bin*V), so 1 pe/bin is 16.0 mV; 1 mV is 0.0624 pe/bin.
+
+        fig = plt.figure(figsize=(4 * 4, 4 * 2))
         ax = fig.gca(projection='3d')
+
+        # Plot each individual occurrence
+        global_max_amplitude = 0
+        for channel, occurrences in event.occurrences.items(): # is dictionary, so need .items()...
+
+            for start_index, occurrence_waveform in occurrences: # is list of tuples, so don't need .items()...
+
+                # Takes only channels in the range we want to plot
+                if not ylim_channel_start <= channel <= ylim_channel_end:
+                    continue
+
+                # Take only occurrences that start in the time window
+                # -- But don't you also want occurrences which start outside, but end inside the window?
+                if not xlim_time_start*100 <= start_index <= xlim_time_end*100:
+                    continue
+
+                waveform = event.pmt_waveforms[channel, start_index : start_index + len(occurrence_waveform)]
+                if self.config['log_scale']:
+                    # TODO: this will still give nan's if waveform drops below 1 pe_nominal / bin...
+                    waveform = np.log10(1 + waveform)
+
+                # We need to keep track of this, apparently gca can't scale itself?
+                global_max_amplitude = max(np.max(waveform), global_max_amplitude)
+
+                ax.plot(
+                    np.linspace(start_index, start_index+len(waveform)-1, len(waveform)) * dt/units.us,
+                    channel * np.ones(len(waveform)),
+                    zs=waveform,
+                    zdir='z',
+                    label=str(channel)
+                )
+
+        # Plot the sum waveform
         lefti = xlim_time_start*100
         righti = xlim_time_end*100
-        scale = 0.2
-        
-        for channel, occurrences in event.occurrences.items(): # is dictionary
-            for start_index, waveform in occurrences: # is list
-                if channel > ylim_channel_start and channel < ylim_channel_end: # takes only the range of channels to plot
-                    if start_index > xlim_time_start*100 and start_index < xlim_time_end*100: # Only plot occurrences that start in time window
-                        time = np.array(np.linspace(start_index,start_index+len(waveform)-1,
-                                                 len(waveform)))
-                        corrected_waveform = -1*(waveform-baseline)*volt_per_bit*pe_binV # subtract baseline and make positive
-                        ax.plot(time/100, self.set_y_values(channel,len(corrected_waveform)), # time to micro sec
-                                zs=corrected_waveform, zdir='z', label=str(channel))
-            if channel == ylim_channel_end+1: # make sum waveform
-                waveform = event.get_waveform('uS2')   
-                time = np.array(np.linspace(lefti,righti,righti-lefti))
-                ax.plot(time/100, self.set_y_values(channel,len(waveform.samples[lefti:righti])), # time to micro sec
-                            zs=waveform.samples[lefti:righti]*scale, zdir='z', label=str(channel))
-                    
+        waveform = event.get_waveform('uS2').samples[lefti:righti]
+        scale = global_max_amplitude/np.max(waveform)
+        time = np.array(np.linspace(lefti, righti, righti-lefti))
+        ax.plot(
+            time/100,
+            (ylim_channel_end + 1) * np.ones(len(waveform)), # time to micro sec
+            zs=waveform * scale,
+            zdir='z',
+            label=str(channel)
+        )
+
         ax.set_xlabel('Time [$\mu$s]')
         ax.set_xlim3d(xlim_time_start, xlim_time_end)
         
         ax.set_ylabel('Channel number')
-        ax.set_ylim3d(ylim_channel_start, ylim_channel_end+1)
+        ax.set_ylim3d(ylim_channel_start, ylim_channel_end)
+
+        zlabel = 'Pulse height [pe_nominal / %d ns]' % (self.config['digitizer_t_resolution']/units.ns)
+        if self.config['log_scale']:
+            zlabel = 'Log10 1 + ' + zlabel
+        ax.set_zlabel(zlabel)
+        ax.set_zlim3d(0, global_max_amplitude)
         
-        ax.set_zlabel('Pulse height [pe/10ns]')
-        ax.set_zlim3d(0, 20)
-        
-        
+        plt.tight_layout()
 
 
 class PlotEventSummary(PlotBase):
