@@ -9,6 +9,7 @@ See format for more information on the event object.
 """
 import logging
 import time
+
 from pax.datastructure import Event
 
 
@@ -17,6 +18,7 @@ class BasePlugin(object):
     def __init__(self, config_values):
         self.name = self.__class__.__name__
         self.log = logging.getLogger(self.name)
+        self.total_time_taken = 0   # Total time in usec spent in this plugin
 
         # Please do all config variable fetching in constructor to make
         # changing config easier.
@@ -31,13 +33,14 @@ class BasePlugin(object):
     @staticmethod
     def _timeit(method):
         """Decorator for measuring class method speeds
+        Should be wrapped about each plugin's main method
         """
-
         def timed(*args, **kw):
             self = args[0]
             ts = time.time()
             result = method(*args, **kw)
             dt = (time.time() - ts) * 1000
+            self.total_time_taken += dt
             self.log.debug('Event took %2.2f ms' % dt)
             return result
 
@@ -76,6 +79,11 @@ class InputPlugin(BasePlugin):
         Raise a StopIteration when done
         """
         raise NotImplementedError()
+
+    def number_events(self):
+        """Return total number of events (or 0 if not known)
+        """
+        return 0
 
     def process_event(self, event=None):
         raise RuntimeError('Input plugins cannot process data.')
