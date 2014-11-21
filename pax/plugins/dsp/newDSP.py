@@ -36,7 +36,6 @@ class FindPeaks(plugin.TransformPlugin):
                         'height':           unfiltered[unfiltered_max_idx],
                         'left':             region_left + itv_left + left,
                         'right':            region_left + itv_left + right,
-                        'area':             np.sum(unfiltered_signal),
                     })
                     # Should we already label the peak?
                     if 'force_peak_label' in pf:
@@ -54,29 +53,56 @@ class FindPeaks(plugin.TransformPlugin):
 
         return event
 
-    @staticmethod
-    def find_peak_in_signal(signal, unfiltered, integration_bound_fraction, offset=0):
-        """Finds 'the' peak in the candidate interval
-        :param signal: Signal to use for peak finding & extent computation
-        :param unfiltered: Unfiltered waveform (used for max, height, area computation)
-        :param integration_bound_fraction: Fraction of max where you choose the peak to end.
-        :param offset: index in the waveform of the first index of the signal passed. Default 0.
-        :return: a pax datastructure Peak
-        """
-        # Find the peak's maximum and extent using 'signal'
+
+class ComputePeakWidths(plugin.TransformPlugin):
+    """Does what it says on the tin"""
+
+    def transform_event(self, event):
+        for peak in event.peaks:
+
+            # Check if peak is sane
+            if peak.index_of_maximum < peak.left:
+                self.log.debug("Insane peak %s-%s-%s, can't compute widths!" % (
+                    peak.left, peak.index_of_maximum, peak.right))
+                continue
+
+            for width_name, conf in self.config['width_computations'].items():
+
+                peak[width_name] = dsputils.width_at_fraction(
+                    peak_wave=event.get_waveform(conf['waveform_to_use']).samples[peak.left : peak.right+1],
+                    fraction_of_max=conf['fraction_of_max'],
+                    max_idx=peak.index_of_maximum - peak.left,
+                    interpolate=conf['interpolate'])
+
+        return event
 
 
-        # Compute properties of this peak using 'unfiltered'
 
-        return datastructure.Peak({
-            'index_of_maximum': offset + unfiltered_max,
-            'height':           unfiltered[unfiltered_max],
-            'left':             offset + left,
-            'right':            offset + right,
-            'area':             area,
-            # TODO: FWHM etc. On unfiltered wv? both?
-        })
 
+class ComputePeakAreas(plugin.TransformPlugin):
+
+    def transform_event(self, event):
+        for peak in event.peaks:
+
+            # Compute area in each channel
+            peak.area_per_pmt = np.sum(event.pmt_waveforms[:, peak.left:peak.right+1], axis=1)
+
+            # Determine which channels contribute to the peak's total area
+            peak.contributing_pmts = np.array(
+                np.where(peak.area_per_pmt >= self.config['minimum_area'])[0],
+                dtype=np.uint16)
+
+            # Compute the peak's areas
+            # TODO: make excluding non-contributing pmts optional
+            if peak.type == 'veto':
+                peak.area = np.sum(peak.area_per_pmt[list(self.config['pmts_veto'])])
+            else:
+                if self.config['exlude_non_contributing_channels_from_area']:
+                    peak.area = np.sum(peak.area_per_pmt[peak.contributing_pmts])
+                else:
+                    peak.area = np.sum(peak.area_per_pmt[peak.contributing_pmts])
+
+        return event
 
 
 
@@ -99,62 +125,4 @@ class IdentifyPeaks(plugin.TransformPlugin):
             else:
                 p.type = 's2'
                 #self.log.debug("%s-%s-%s: S2" % (p.left, p.index_of_maximum, p.right))
-        return event
-
-
-class ComputePeakProperties(plugin.TransformPlugin):
-
-    def transform_event(self, event):
-        dt = self.config['digitizer_t_resolution']
-        for peak in event.peaks:
-            # TODO: let config say which waveforms to use for width computation
-            unfiltered = event.get_waveform(self.config['unfiltered_waveform_name']).samples[peak.left : peak.right+1]
-            filtered = event.get_waveform(self.config['filtered_waveform_name']).samples[peak.left : peak.right+1]
-
-            # Compute the filtered maximum
-            peak.index_of_filtered_maximum = peak.left + np.argmax(filtered)
-
-            # Compute the peak's areas
-            peak.area_per_pmt = np.sum(event.pmt_waveforms[:, peak.left:peak.right+1], axis=1)
-            veto_area = np.sum(peak.area_per_pmt[list(self.config['pmts_veto'])])
-            if peak.type == 'veto':
-                peak.area = veto_area
-            else:
-                peak.area = np.sum(peak.area_per_pmt) - veto_area
-
-            # Determine which PMTs contribute to the area
-            # Todo: exclude negative area channels if option given
-            peak.contributing_pmts = np.array(
-                np.where(peak.area_per_pmt >= self.config['minimum_pe_area'])[0],
-                dtype=np.uint16)
-
-            if peak.index_of_maximum < peak.left:
-                self.log.debug("Insane peak %s-%s-%s, can't compute widths!" % (
-                    peak.left, peak.index_of_maximum, peak.right))
-                continue
-
-            peak.full_width_half_max = dsputils.width_at_fraction(
-                peak_wave=unfiltered,
-                fraction_of_max=0.5,
-                max_idx=peak.index_of_maximum - peak.left,
-                interpolate=True)
-
-            peak.full_width_tenth_max = dsputils.width_at_fraction(
-                peak_wave=unfiltered,
-                fraction_of_max=0.1,
-                max_idx=peak.index_of_maximum - peak.left,
-                interpolate=True)
-
-            peak.full_width_half_max_filtered = dsputils.width_at_fraction(
-                peak_wave=filtered,
-                fraction_of_max=0.5,
-                max_idx=peak.index_of_filtered_maximum - peak.left,
-                interpolate=True)
-
-            peak.full_width_tenth_max_filtered = dsputils.width_at_fraction(
-                peak_wave=filtered,
-                fraction_of_max=0.1,
-                max_idx=peak.index_of_filtered_maximum - peak.left,
-                interpolate=True)
-
         return event
