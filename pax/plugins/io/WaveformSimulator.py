@@ -226,7 +226,6 @@ class WaveformSimulatorFromCSV(WaveformSimulator):
             else:
                 # New deposition reached!
                 if instruction:
-                    #yield instruction
                     self.instructions.append(instruction)
                 instruction_number = int(p['instruction'])
                 instruction = [p]

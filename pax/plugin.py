@@ -24,11 +24,18 @@ class BasePlugin(object):
         # changing config easier.
         # self.log.debug(config_values)
         self.config = config_values
+        y = self.startup()
+        if y is not None:
+            raise RuntimeError('Startup of %s returned a %s instead of None.' % (
+                self.name, type(y)))
 
-        self.startup()
+
 
     def __del__(self):
-        self.shutdown()
+        y = self.shutdown()
+        if y is not None:
+            raise RuntimeError('Shutdown of %s returned a %s instead of None.' % (
+                self.name, type(y)))
 
     @staticmethod
     def _timeit(method):
