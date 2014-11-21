@@ -97,7 +97,7 @@ class ComputePeakAreas(plugin.TransformPlugin):
             if peak.type == 'veto':
                 peak.area = np.sum(peak.area_per_pmt[list(self.config['pmts_veto'])])
             else:
-                if self.config['exlude_non_contributing_channels_from_area']:
+                if self.config['exclude_non_contributing_channels_from_area']:
                     peak.area = np.sum(peak.area_per_pmt[peak.contributing_pmts])
                 else:
                     peak.area = np.sum(peak.area_per_pmt[peak.contributing_pmts])
