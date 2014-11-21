@@ -9,40 +9,74 @@ class FindPeaks(plugin.TransformPlugin):
 
     def transform_event(self, event):
         for pf in self.config['peakfinders']:
-            filtered = event.get_waveform(pf['peakfinding_wave']).samples
+            peakfinding_wave = event.get_waveform(pf['peakfinding_wave']).samples
             unfiltered = event.get_waveform(pf['unfiltered_wave']).samples
             peaks = []
 
             # Find regions currently free of peaks
             if len(event.peaks) == 0 or ('ignore_previous_peaks' in pf and pf['ignore_previous_peaks']):
-                pf_regions = [(0, len(filtered) - 1)]
+                pf_regions = [(0, len(peakfinding_wave) - 1)]
             else:
                 pf_regions = dsputils.free_regions(event)
 
             # Search for peaks in the free regions
             for region_left, region_right in pf_regions:
-                region_filtered = filtered[region_left:region_right + 1]
-                region_unfiltered = unfiltered[region_left:region_right + 1]
-                for itv_left, itv_right in dsputils.intervals_above_threshold(region_filtered, pf['threshold']):
-                    p = dsputils.find_peak_in_signal(
-                        signal=region_filtered[itv_left : itv_right + 1],
-                        unfiltered=region_unfiltered[itv_left : itv_right + 1],
-                        integration_bound_fraction=pf['peak_integration_bound'],
-                        offset=region_left + itv_left,
-                    )
-                    # Reursion on leftover intervals is not worth it: peaks 100x as small are boring.
-                    # Well... double scatters? No, can't distinguish from photo-ionizations when they're this low
+                for itv_left, itv_right in dsputils.intervals_above_threshold(
+                        peakfinding_wave[region_left:region_right + 1], pf['threshold']):
+                    
+                    # Find the left & right peak bounds in the peakfinding wave
+                    signal = peakfinding_wave[region_left + itv_left : region_left + itv_right + 1]
+                    left, right = dsputils.peak_bounds(signal, np.argmax(signal), pf['peak_integration_bound'])
 
+                    # Find the index of maximum and height in the unfiltered wave
+                    unfiltered_signal = unfiltered[region_left + itv_left + left : region_left + itv_left + right + 1]
+                    unfiltered_max_idx = region_left + itv_left + left + np.argmax(unfiltered_signal)
+                    p = datastructure.Peak({
+                        'index_of_maximum': unfiltered_max_idx,
+                        'height':           unfiltered[unfiltered_max_idx],
+                        'left':             region_left + itv_left + left,
+                        'right':            region_left + itv_left + right,
+                        'area':             np.sum(unfiltered_signal),
+                    })
                     # Should we already label the peak?
                     if 'force_peak_label' in pf:
                         p.type = pf['force_peak_label']
                     peaks.append(p)
 
+                    # Recursion on leftover intervals is not worth it: peaks 100x as small are boring.
+                    # TODO: this was wrong, but can't remember why.. think!
+                    # Well... double scatters? No, can't distinguish from photo-ionizations when they're this low
+
             # Peaks no longer overlap now that we've enabled constrain_bounds.
 
             self.log.debug("Found %s peaks in %s." % (len(peaks), pf['peakfinding_wave']))
             event.peaks.extend(peaks)
+
         return event
+
+    @staticmethod
+    def find_peak_in_signal(signal, unfiltered, integration_bound_fraction, offset=0):
+        """Finds 'the' peak in the candidate interval
+        :param signal: Signal to use for peak finding & extent computation
+        :param unfiltered: Unfiltered waveform (used for max, height, area computation)
+        :param integration_bound_fraction: Fraction of max where you choose the peak to end.
+        :param offset: index in the waveform of the first index of the signal passed. Default 0.
+        :return: a pax datastructure Peak
+        """
+        # Find the peak's maximum and extent using 'signal'
+
+
+        # Compute properties of this peak using 'unfiltered'
+
+        return datastructure.Peak({
+            'index_of_maximum': offset + unfiltered_max,
+            'height':           unfiltered[unfiltered_max],
+            'left':             offset + left,
+            'right':            offset + right,
+            'area':             area,
+            # TODO: FWHM etc. On unfiltered wv? both?
+        })
+
 
 
 
@@ -123,71 +157,4 @@ class ComputePeakProperties(plugin.TransformPlugin):
                 max_idx=peak.index_of_filtered_maximum - peak.left,
                 interpolate=True)
 
-        return event
-
-
-#TODO: move to separate module
-class SplitPeaks(plugin.TransformPlugin):
-
-    def startup(self):
-        def is_valid_p_v_pair(signal, peak, valley):
-            return (
-                abs(peak - valley) >= self.config['min_p_v_distance'] and
-                signal[peak] / signal[valley] >= self.config['min_p_v_ratio'] and
-                signal[peak] - signal[valley] >= self.config['min_p_v_difference']
-            )
-        self.is_valid_p_v_pair = is_valid_p_v_pair
-
-    def transform_event(self, event):
-        # TODO: this works on all peaks, but takes tpc and tpc_s2 as signals...
-        filtered = event.get_waveform('tpc_s2').samples
-        unfiltered = event.get_waveform('tpc').samples
-        revised_peaks = []
-        for parent in event.peaks:
-            # If the peak is not large enough, it will not be split
-            if ('composite_peak_min_width' in self.config and
-                        parent.right - parent.left < self.config['composite_peak_min_width']
-                    ):
-                revised_peaks.append(parent)
-                continue
-            # Try to split the peak
-            ps, vs = dsputils.peaks_and_valleys(
-                filtered[parent.left:parent.right + 1],
-                test_function=self.is_valid_p_v_pair
-            )
-            # If the peak wasn't split, we don't have to do anything
-            if len(ps) < 2:
-                revised_peaks.append(parent)
-                continue
-
-            # import matplotlib.pyplot as plt
-            # plt.plot(event.get_waveform('tpc').samples[parent.left:parent.right+1])
-            # plt.plot(filtered[parent.left:parent.right+1])
-            # plt.plot(ps, filtered[parent.left + np.array(ps)], 'or')
-            # plt.plot(vs, filtered[parent.left + np.array(vs)], 'ob')
-            # plt.show()
-
-            ps += parent.left
-            vs += parent.left
-            self.log.debug("S2 at " + str(parent.index_of_maximum) + ": peaks " + str(ps) + ", valleys " + str(vs))
-            # Compute basic quantities for the sub-peaks
-            for i, p in enumerate(ps):
-                l_bound = vs[i - 1] if i != 0 else parent.left
-                r_bound = vs[i]
-                max_idx = l_bound + np.argmax(unfiltered[l_bound:r_bound + 1])
-                new_peak = datastructure.Peak({
-                    'index_of_maximum': max_idx,
-                    'height':           unfiltered[max_idx],
-                })
-                # No need to recompute peak bounds: the whole parent peak is <0.01 max of the biggest peak
-                # If we ever need to anyway, this code works:
-                # left, right = dsputils.peak_bounds(filtered[l_bound:r_bound+1], max_i, 0.01)
-                # new_peak.left  = left + l_bound
-                # new_peak.right = right + l_bound
-                new_peak.left = l_bound
-                new_peak.right = r_bound
-                revised_peaks.append(new_peak)
-                new_peak.area = np.sum(unfiltered[new_peak.left:new_peak.right + 1])
-
-        event.peaks = revised_peaks
         return event

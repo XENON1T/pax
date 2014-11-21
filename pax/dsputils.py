@@ -31,10 +31,6 @@ def intervals_above_threshold(signal, threshold):
     # Todo: come on, there must be a numpy method for this!
     return list(zip(*[iter(sorted(cross_above + cross_below))] * 2))
 
-# From Xerawdp
-derivative_kernel = [-0.003059, -0.035187, -0.118739, -0.143928, 0.000000, 0.143928, 0.118739, 0.035187, 0.003059]
-assert len(derivative_kernel) % 2 == 1
-
 
 def sign_changes(signal, report_first_index='positive'):
     """Return indices at which signal changes sign.
@@ -58,30 +54,6 @@ def sign_changes(signal, report_first_index='positive'):
     becomes_positive = np.sort(np.where(above0 - above0_next == 1)[0])
     becomes_non_positive = np.sort(np.where(above0 - above0_next == -1)[0] - 1)
     return list(becomes_positive), list(becomes_non_positive)
-
-
-def find_peak_in_signal(signal, unfiltered, integration_bound_fraction, offset=0):
-    """Finds 'the' peak in the candidate interval
-    :param signal: Signal to use for peak finding & extent computation
-    :param unfiltered: Unfiltered waveform (used for max, height, area computation)
-    :param integration_bound_fraction: Fraction of max where you choose the peak to end.
-    :param offset: index in the waveform of the first index of the signal passed. Default 0.
-    :return: a pax datastructure Peak
-    """
-    # Find the peak's maximum and extent using 'signal'
-    max_idx = np.argmax(signal)
-    left, right = peak_bounds(signal, max_idx, integration_bound_fraction)
-    # Compute properties of this peak using 'unfiltered'
-    area = np.sum(unfiltered[left:right + 1])
-    unfiltered_max = left + np.argmax(unfiltered[left:right + 1])
-    return datastructure.Peak({
-        'index_of_maximum': offset + unfiltered_max,
-        'height':           unfiltered[unfiltered_max],
-        'left':             offset + left,
-        'right':            offset + right,
-        'area':             area,
-        # TODO: FWHM etc. On unfiltered wv? both?
-    })
 
 
 def peak_bounds(signal, max_idx, fraction_of_max, zero_level=0):
@@ -207,101 +179,6 @@ def free_regions(event):
 # TODO: maybe move this to the peak splitter? It isn't used by anything
 # else... yet
 
-
-def peaks_and_valleys(signal, test_function):
-    """Find peaks and valleys based on derivative sign changes
-    :param signal: signal to search in
-    :param test_function: Function which accepts three args:
-            - signal, signal begin tested
-            - peak, index of peak
-            - valley, index of valley
-        must return True if peak/valley pair is acceptable, else False
-    :return: two sorted lists: peaks, valleys
-    """
-
-    if len(signal) < len(derivative_kernel):
-        # Signal is too small, can't calculate derivatives
-        return [], []
-    slope = np.convolve(signal, derivative_kernel, mode='same')
-    # Chop the invalid parts off - easier than mode='valid' and adding offset
-    # to results
-    offset = (len(derivative_kernel) - 1) / 2
-    slope[0:offset] = np.zeros(offset)
-    slope[len(slope) - offset:] = np.zeros(offset)
-    peaks, valleys = sign_changes(slope, report_first_index='never')
-    peaks = np.array(sorted(peaks))
-    valleys = np.array(sorted(valleys))
-    assert len(peaks) == len(valleys)
-    # Remove coinciding peak&valleys
-    good_indices = np.where(peaks != valleys)[0]
-    peaks = np.array(peaks[good_indices])
-    valleys = np.array(valleys[good_indices])
-    if not all(valleys > peaks):   # Valleys are AFTER the peaks
-        print(valleys - peaks)
-        raise RuntimeError("Peak & valley list weird!")
-
-    if len(peaks) < 2:
-        return peaks, valleys
-
-    # Remove peaks and valleys which are too close to each other, or have too low a p/v ratio
-    # This can't be a for-loop, as we are modifying the lists, and step back
-    # to recheck peaks.
-    now_at_peak = 0
-    while 1:
-
-        # Find the next peak, if there is one
-        if now_at_peak > len(peaks) - 1:
-            break
-        peak = peaks[now_at_peak]
-        if math.isnan(peak):
-            now_at_peak += 1
-            continue
-
-        # Check the valleys around this peak
-        if peak < min(valleys):
-            fail_left = False
-        else:
-            valley_left = np.max(valleys[np.where(valleys < peak)[0]])
-            fail_left = not test_function(signal, peak, valley_left)
-        valley_right = np.min(valleys[np.where(valleys > peak)[0]])
-        fail_right = not test_function(signal, peak, valley_right)
-        if not (fail_left or fail_right):
-            # We're good, move along
-            now_at_peak += 1
-            continue
-
-        # Some check failed: we must remove a peak/valley pair.
-        # Which valley should we remove?
-        if fail_left and fail_right:
-            # Both valleys are bad! Remove the most shallow valley.
-            valley_to_remove = valley_left if signal[
-                valley_left] > signal[valley_right] else valley_right
-        elif fail_left:
-            valley_to_remove = valley_left
-        elif fail_right:
-            valley_to_remove = valley_right
-
-        # Remove the shallowest peak near the valley marked for removal
-        left_peak = max(peaks[np.where(peaks < valley_to_remove)[0]])
-        if valley_to_remove > max(peaks):
-            # There is no right peak, so remove the left peak
-            peaks = peaks[np.where(peaks != left_peak)[0]]
-        else:
-            right_peak = min(peaks[np.where(peaks > valley_to_remove)[0]])
-            if signal[left_peak] < signal[right_peak]:
-                peaks = peaks[np.where(peaks != left_peak)[0]]
-            else:
-                peaks = peaks[np.where(peaks != right_peak)[0]]
-
-        # Jump back a few peaks to be sure we repeat all checks,
-        # even if we just removed a peak before the current peak
-        now_at_peak = max(0, now_at_peak - 1)
-        valleys = valleys[np.where(valleys != valley_to_remove)[0]]
-
-    peaks, valleys = [p for p in peaks if not math.isnan(
-        p)], [v for v in valleys if not math.isnan(v)]
-    # Return all remaining peaks & valleys
-    return np.array(peaks), np.array(valleys)
 
 
 ##
