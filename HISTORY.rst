@@ -5,22 +5,29 @@ History
 
 
 ------------------
-Upcoming release
+1.4.0 (2014-11-21)
 ------------------
 
- * Peak width fields added to datastructure
+ * DSP
+   
+   * Peak width fields added to datastructure
+   * newDSP: Interpolated peak width computations
+   * DSP plugins cleaned up and reorganized (except old peak finder) 
+   * Frequency bandpass filtering support
+ 
  * Updated docs, comments, logging
- * 3D channel waveforms plot
- * Event summary plot
- * Music output
+ * Plots
+   
+   * 3D channel waveforms plot
+   * Event summary plot
+ 
+ * Music output (fun side project)
  * Separate directory for example data files
- * DSP plugins cleaned up and reorganized (except old peak finder)
- * newDSP: Interpolated peak width computations
- * Frequency bandpass filtering support
  * Configurations for XAMS, Bern test setup
  * --input and --output override settings for most plugins
  * WaveformSimulator: improved defaults
-
+ * Stable DAQ injector
+ * Various bug fixes and cleanups that polish
 
 
 ------------------
