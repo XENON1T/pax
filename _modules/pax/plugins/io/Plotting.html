@@ -269,59 +269,77 @@
 <span class="sd">    Will make a fancy &#39;3D&#39; plot with different y positions for all channels. User sets variables for plot.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-<div class="viewcode-block" id="PlotChannelWaveforms.set_y_values"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.Plotting.PlotChannelWaveforms.set_y_values">[docs]</a>    <span class="k">def</span> <span class="nf">set_y_values</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">n_times</span><span class="p">):</span>
-        <span class="n">y</span> <span class="o">=</span> <span class="p">[]</span>
-        
-        <span class="k">for</span> <span class="n">int_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="n">n_times</span><span class="p">):</span>
-            <span class="n">y</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
-            
-        <span class="k">return</span> <span class="n">y</span>
-</div>
 <div class="viewcode-block" id="PlotChannelWaveforms.plot_event"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.Plotting.PlotChannelWaveforms.plot_event">[docs]</a>    <span class="k">def</span> <span class="nf">plot_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;digitizer_t_resolution&#39;</span><span class="p">]</span>
         <span class="n">ylim_channel_start</span> <span class="o">=</span> <span class="mi">0</span> <span class="c"># top : 1-98, bottom : 99-178, Top Shield Array: PMTs 179..210, Bottom Shield Array: PMTs 211..242</span>
-        <span class="n">ylim_channel_end</span>  <span class="o">=</span> <span class="mi">241</span> <span class="c"># if set to 242 then no sum channel possible</span>
+        <span class="n">ylim_channel_end</span> <span class="o">=</span> <span class="mi">242</span>
         <span class="n">xlim_time_start</span> <span class="o">=</span> <span class="mi">0</span> <span class="c"># s1: 205.5 , s2: 260</span>
         <span class="n">xlim_time_end</span> <span class="o">=</span> <span class="mi">400</span> <span class="c"># [us] S1: 206.5, s2: 270</span>
-        <span class="n">baseline</span> <span class="o">=</span> <span class="mi">16000</span> <span class="c"># [adc counts]</span>
-        <span class="n">adc_voltage_range</span> <span class="o">=</span> <span class="mf">2.25</span> <span class="c"># [V]</span>
-        <span class="n">adc_bits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span><span class="mi">14</span><span class="p">)</span> <span class="c"># 14 bit</span>
-        <span class="n">pe_binV</span> <span class="o">=</span> <span class="mi">10</span><span class="o">*</span><span class="mf">1e-9</span> <span class="o">/</span> <span class="p">(</span><span class="mi">50</span> <span class="o">*</span> <span class="mi">2</span><span class="o">*</span><span class="mf">1e6</span> <span class="o">*</span> <span class="mi">10</span> <span class="o">*</span> <span class="mf">1.602</span><span class="o">*</span> <span class="mf">1e-19</span> <span class="p">)</span>
-        <span class="c">#[pe/(bin*V)] = time_resolution [s/bin] / ( resistor [V*s/C] * gain [] * amplification [] * electric_charge [C/pe] )</span>
-        <span class="c">#For Xenon100 (gain 2e6, amplification 10, resistor 50, time resolution 10ns/bin), this gives 62.4 pe/(bin*V), so 1 pe/bin is 16.0 mV; 1 mV is 0.0624 pe/bin.         </span>
-        
-        <span class="n">volt_per_bit</span> <span class="o">=</span> <span class="n">adc_voltage_range</span><span class="o">/</span><span class="n">adc_bits</span>
 
-        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="c">#[pe/(bin*V)] = time_resolution [s/bin] / ( resistor [V*s/C] * gain [] * amplification [] * electric_charge [C/pe] )</span>
+        <span class="c">#For Xenon100 (gain 2e6, amplification 10, resistor 50, time resolution 10ns/bin), this gives 62.4 pe/(bin*V), so 1 pe/bin is 16.0 mV; 1 mV is 0.0624 pe/bin.</span>
+
+        <span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span> <span class="o">*</span> <span class="mi">2</span><span class="p">))</span>
         <span class="n">ax</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">gca</span><span class="p">(</span><span class="n">projection</span><span class="o">=</span><span class="s">&#39;3d&#39;</span><span class="p">)</span>
+
+        <span class="c"># Plot each individual occurrence</span>
+        <span class="n">global_max_amplitude</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">channel</span><span class="p">,</span> <span class="n">occurrences</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">occurrences</span><span class="o">.</span><span class="n">items</span><span class="p">():</span> <span class="c"># is dictionary, so need .items()...</span>
+
+            <span class="k">for</span> <span class="n">start_index</span><span class="p">,</span> <span class="n">occurrence_waveform</span> <span class="ow">in</span> <span class="n">occurrences</span><span class="p">:</span> <span class="c"># is list of tuples, so don&#39;t need .items()...</span>
+
+                <span class="c"># Takes only channels in the range we want to plot</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">ylim_channel_start</span> <span class="o">&lt;=</span> <span class="n">channel</span> <span class="o">&lt;=</span> <span class="n">ylim_channel_end</span><span class="p">:</span>
+                    <span class="k">continue</span>
+
+                <span class="c"># Take only occurrences that start in the time window</span>
+                <span class="c"># -- But don&#39;t you also want occurrences which start outside, but end inside the window?</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">xlim_time_start</span><span class="o">*</span><span class="mi">100</span> <span class="o">&lt;=</span> <span class="n">start_index</span> <span class="o">&lt;=</span> <span class="n">xlim_time_end</span><span class="o">*</span><span class="mi">100</span><span class="p">:</span>
+                    <span class="k">continue</span>
+
+                <span class="n">waveform</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">pmt_waveforms</span><span class="p">[</span><span class="n">channel</span><span class="p">,</span> <span class="n">start_index</span> <span class="p">:</span> <span class="n">start_index</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">occurrence_waveform</span><span class="p">)]</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;log_scale&#39;</span><span class="p">]:</span>
+                    <span class="c"># TODO: this will still give nan&#39;s if waveform drops below 1 pe_nominal / bin...</span>
+                    <span class="n">waveform</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">waveform</span><span class="p">)</span>
+
+                <span class="c"># We need to keep track of this, apparently gca can&#39;t scale itself?</span>
+                <span class="n">global_max_amplitude</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">waveform</span><span class="p">),</span> <span class="n">global_max_amplitude</span><span class="p">)</span>
+
+                <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">start_index</span><span class="p">,</span> <span class="n">start_index</span><span class="o">+</span><span class="nb">len</span><span class="p">(</span><span class="n">waveform</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">waveform</span><span class="p">))</span> <span class="o">*</span> <span class="n">dt</span><span class="o">/</span><span class="n">units</span><span class="o">.</span><span class="n">us</span><span class="p">,</span>
+                    <span class="n">channel</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">waveform</span><span class="p">)),</span>
+                    <span class="n">zs</span><span class="o">=</span><span class="n">waveform</span><span class="p">,</span>
+                    <span class="n">zdir</span><span class="o">=</span><span class="s">&#39;z&#39;</span><span class="p">,</span>
+                    <span class="n">label</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span>
+                <span class="p">)</span>
+
+        <span class="c"># Plot the sum waveform</span>
         <span class="n">lefti</span> <span class="o">=</span> <span class="n">xlim_time_start</span><span class="o">*</span><span class="mi">100</span>
         <span class="n">righti</span> <span class="o">=</span> <span class="n">xlim_time_end</span><span class="o">*</span><span class="mi">100</span>
-        <span class="n">scale</span> <span class="o">=</span> <span class="mf">0.2</span>
-        
-        <span class="k">for</span> <span class="n">channel</span><span class="p">,</span> <span class="n">occurrences</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">occurrences</span><span class="o">.</span><span class="n">items</span><span class="p">():</span> <span class="c"># is dictionary</span>
-            <span class="k">for</span> <span class="n">start_index</span><span class="p">,</span> <span class="n">waveform</span> <span class="ow">in</span> <span class="n">occurrences</span><span class="p">:</span> <span class="c"># is list</span>
-                <span class="k">if</span> <span class="n">channel</span> <span class="o">&gt;</span> <span class="n">ylim_channel_start</span> <span class="ow">and</span> <span class="n">channel</span> <span class="o">&lt;</span> <span class="n">ylim_channel_end</span><span class="p">:</span> <span class="c"># takes only the range of channels to plot</span>
-                    <span class="k">if</span> <span class="n">start_index</span> <span class="o">&gt;</span> <span class="n">xlim_time_start</span><span class="o">*</span><span class="mi">100</span> <span class="ow">and</span> <span class="n">start_index</span> <span class="o">&lt;</span> <span class="n">xlim_time_end</span><span class="o">*</span><span class="mi">100</span><span class="p">:</span> <span class="c"># Only plot occurrences that start in time window</span>
-                        <span class="n">time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">start_index</span><span class="p">,</span><span class="n">start_index</span><span class="o">+</span><span class="nb">len</span><span class="p">(</span><span class="n">waveform</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span>
-                                                 <span class="nb">len</span><span class="p">(</span><span class="n">waveform</span><span class="p">)))</span>
-                        <span class="n">corrected_waveform</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="o">*</span><span class="p">(</span><span class="n">waveform</span><span class="o">-</span><span class="n">baseline</span><span class="p">)</span><span class="o">*</span><span class="n">volt_per_bit</span><span class="o">*</span><span class="n">pe_binV</span> <span class="c"># subtract baseline and make positive</span>
-                        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">time</span><span class="o">/</span><span class="mi">100</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_y_values</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">corrected_waveform</span><span class="p">)),</span> <span class="c"># time to micro sec</span>
-                                <span class="n">zs</span><span class="o">=</span><span class="n">corrected_waveform</span><span class="p">,</span> <span class="n">zdir</span><span class="o">=</span><span class="s">&#39;z&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">channel</span><span class="p">))</span>
-            <span class="k">if</span> <span class="n">channel</span> <span class="o">==</span> <span class="n">ylim_channel_end</span><span class="o">+</span><span class="mi">1</span><span class="p">:</span> <span class="c"># make sum waveform</span>
-                <span class="n">waveform</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">get_waveform</span><span class="p">(</span><span class="s">&#39;uS2&#39;</span><span class="p">)</span>   
-                <span class="n">time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">lefti</span><span class="p">,</span><span class="n">righti</span><span class="p">,</span><span class="n">righti</span><span class="o">-</span><span class="n">lefti</span><span class="p">))</span>
-                <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">time</span><span class="o">/</span><span class="mi">100</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">set_y_values</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">waveform</span><span class="o">.</span><span class="n">samples</span><span class="p">[</span><span class="n">lefti</span><span class="p">:</span><span class="n">righti</span><span class="p">])),</span> <span class="c"># time to micro sec</span>
-                            <span class="n">zs</span><span class="o">=</span><span class="n">waveform</span><span class="o">.</span><span class="n">samples</span><span class="p">[</span><span class="n">lefti</span><span class="p">:</span><span class="n">righti</span><span class="p">]</span><span class="o">*</span><span class="n">scale</span><span class="p">,</span> <span class="n">zdir</span><span class="o">=</span><span class="s">&#39;z&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">channel</span><span class="p">))</span>
-                    
+        <span class="n">waveform</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">get_waveform</span><span class="p">(</span><span class="s">&#39;uS2&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">samples</span><span class="p">[</span><span class="n">lefti</span><span class="p">:</span><span class="n">righti</span><span class="p">]</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="n">global_max_amplitude</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">waveform</span><span class="p">)</span>
+        <span class="n">time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">lefti</span><span class="p">,</span> <span class="n">righti</span><span class="p">,</span> <span class="n">righti</span><span class="o">-</span><span class="n">lefti</span><span class="p">))</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+            <span class="n">time</span><span class="o">/</span><span class="mi">100</span><span class="p">,</span>
+            <span class="p">(</span><span class="n">ylim_channel_end</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">waveform</span><span class="p">)),</span> <span class="c"># time to micro sec</span>
+            <span class="n">zs</span><span class="o">=</span><span class="n">waveform</span> <span class="o">*</span> <span class="n">scale</span><span class="p">,</span>
+            <span class="n">zdir</span><span class="o">=</span><span class="s">&#39;z&#39;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span>
+        <span class="p">)</span>
+
         <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s">&#39;Time [$\mu$s]&#39;</span><span class="p">)</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim3d</span><span class="p">(</span><span class="n">xlim_time_start</span><span class="p">,</span> <span class="n">xlim_time_end</span><span class="p">)</span>
         
         <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s">&#39;Channel number&#39;</span><span class="p">)</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim3d</span><span class="p">(</span><span class="n">ylim_channel_start</span><span class="p">,</span> <span class="n">ylim_channel_end</span><span class="o">+</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim3d</span><span class="p">(</span><span class="n">ylim_channel_start</span><span class="p">,</span> <span class="n">ylim_channel_end</span><span class="p">)</span>
+
+        <span class="n">zlabel</span> <span class="o">=</span> <span class="s">&#39;Pulse height [pe_nominal / </span><span class="si">%d</span><span class="s"> ns]&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;digitizer_t_resolution&#39;</span><span class="p">]</span><span class="o">/</span><span class="n">units</span><span class="o">.</span><span class="n">ns</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;log_scale&#39;</span><span class="p">]:</span>
+            <span class="n">zlabel</span> <span class="o">=</span> <span class="s">&#39;Log10 1 + &#39;</span> <span class="o">+</span> <span class="n">zlabel</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_zlabel</span><span class="p">(</span><span class="n">zlabel</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_zlim3d</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">global_max_amplitude</span><span class="p">)</span>
         
-        <span class="n">ax</span><span class="o">.</span><span class="n">set_zlabel</span><span class="p">(</span><span class="s">&#39;Pulse height [pe/10ns]&#39;</span><span class="p">)</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">set_zlim3d</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">20</span><span class="p">)</span>
-        
-        
+        <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
 
 </div></div>
 <div class="viewcode-block" id="PlotEventSummary"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.Plotting.PlotEventSummary">[docs]</a><span class="k">class</span> <span class="nc">PlotEventSummary</span><span class="p">(</span><span class="n">PlotBase</span><span class="p">):</span>

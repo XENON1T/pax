@@ -102,8 +102,10 @@
 
     <span class="sd">&quot;&quot;&quot;Peak object&quot;&quot;&quot;</span>
 
-    <span class="n">index_of_maximum</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>     <span class="c">#: Index of maximum value within sum waveform.</span>
-    <span class="n">left</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>                 <span class="c">#: Index of left bound (inclusive) in sum waveform.</span>
+    <span class="n">index_of_maximum</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>           <span class="c">#: Index in the event&#39;s sum waveform at which this peak has its maximum.</span>
+    <span class="c"># What waveform is &#39;filtered&#39;? Do we actually need this? In which plugin should we compute this?</span>
+    <span class="c"># index_of_filtered_maximum = IntegerField()  #: same, but maximum in filtered sum waveform</span>
+    <span class="n">left</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>                       <span class="c">#: Index of left bound (inclusive) in sum waveform.</span>
     <span class="n">right</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span> <span class="c">#: Index of right bound (for Xdp matching: exclusive; otherwise: inclusive) in sum waveform.</span>
 
     <span class="n">area</span> <span class="o">=</span> <span class="n">FloatField</span><span class="p">()</span>                   <span class="c">#: Area of the pulse in photoelectrons</span>
@@ -119,6 +121,9 @@
 
     <span class="c">#: Array of areas in each PMT.</span>
     <span class="n">area_per_pmt</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">NumpyArrayField</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s">&#39;float64&#39;</span><span class="p">)</span>
+
+    <span class="c">#: Array of squared signal entropies in each PMT.</span>
+    <span class="n">entropy_per_pmt</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">NumpyArrayField</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="s">&#39;float64&#39;</span><span class="p">)</span>
 
     <span class="c">#: PMTs which see &#39;something significant&#39; (depends on settings)</span>
     <span class="n">contributing_pmts</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">NumpyArrayField</span><span class="p">(</span><span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span>

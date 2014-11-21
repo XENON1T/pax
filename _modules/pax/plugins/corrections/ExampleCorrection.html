@@ -47,12 +47,16 @@
           <div class="body">
             
   <h1>Source code for pax.plugins.corrections.ExampleCorrection</h1><div class="highlight"><pre>
-<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">dsputils</span>
+<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">core</span><span class="p">,</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">dsputils</span>
 
 <div class="viewcode-block" id="ExampleCorrection"><a class="viewcode-back" href="../../../../pax.plugins.corrections.html#pax.plugins.corrections.ExampleCorrection.ExampleCorrection">[docs]</a><span class="k">class</span> <span class="nc">ExampleCorrection</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
 
 <div class="viewcode-block" id="ExampleCorrection.startup"><a class="viewcode-back" href="../../../../pax.plugins.corrections.html#pax.plugins.corrections.ExampleCorrection.ExampleCorrection.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">correction_map</span> <span class="o">=</span> <span class="n">dsputils</span><span class="o">.</span><span class="n">InterpolatingDetectorMap</span><span class="p">(</span><span class="s">&#39;example_3d_correction_map.json&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">correction_map</span> <span class="o">=</span> <span class="n">dsputils</span><span class="o">.</span><span class="n">InterpolatingMap</span><span class="p">(</span>
+             <span class="n">core</span><span class="o">.</span><span class="n">data_file_name</span><span class="p">(</span><span class="s">&#39;s2_xy_lce_map_XENON100_Xerawdp0.4.5.json.gz&#39;</span><span class="p">))</span>
+        <span class="c"># self.correction_map = dsputils.InterpolatingMap(</span>
+        <span class="c">#     core.data_file_name(&#39;s2_xy_lce_map_XENON100_Xerawdp0.4.5.json&#39;))</span>
+        <span class="c"># self.correction_map.plot(map_name=&#39;60&#39;)</span>
 </div>
 <div class="viewcode-block" id="ExampleCorrection.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.corrections.html#pax.plugins.corrections.ExampleCorrection.ExampleCorrection.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
 
@@ -60,13 +64,18 @@
         <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">:</span>
             <span class="c"># Take the first reconstructed position</span>
             <span class="c"># (In real life you may want to select the position from a specific algorithm instead)</span>
-            <span class="n">pos</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">reconstructed_positions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">pos</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">reconstructed_positions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+                <span class="c"># S1s don&#39;t have a reconstructed position</span>
+                <span class="c"># Also, all posrec algorithms may be disabled</span>
+                <span class="k">continue</span>
 
-            <span class="c"># Get the correction&#39;s value</span>
-            <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">correction_map</span><span class="o">.</span><span class="n">get_value_at</span><span class="p">(</span><span class="n">pos</span><span class="p">)</span>
+            <span class="c"># Get the map&#39;s value</span>
+            <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">correction_map</span><span class="o">.</span><span class="n">get_value_at</span><span class="p">(</span><span class="n">pos</span><span class="p">,</span> <span class="n">map_name</span><span class="o">=</span><span class="s">&#39;total_LCE&#39;</span><span class="p">)</span>
 
             <span class="c"># Print it to the debug log</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Correction value at (</span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s">): </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">pos</span><span class="o">.</span><span class="n">z</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Map value at (</span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s">, </span><span class="si">%s</span><span class="s">): </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">pos</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">pos</span><span class="o">.</span><span class="n">z</span><span class="p">,</span> <span class="n">value</span><span class="p">))</span>
 
         <span class="k">return</span> <span class="n">event</span>
 </pre></div></div></div>

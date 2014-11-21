@@ -37,14 +37,6 @@ pax.dsputils module
     :undoc-members:
     :show-inheritance:
 
-pax.format module
------------------
-
-.. automodule:: pax.format
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 pax.generate_pmts module
 ------------------------
 

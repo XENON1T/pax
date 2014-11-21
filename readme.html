@@ -66,21 +66,24 @@ processing and other data processing on the XENON100/XENON1T raw data.</p>
 <h3>Installing requirements<a class="headerlink" href="#installing-requirements" title="Permalink to this headline">¶</a></h3>
 <p>We require Python 3.4 and several python modules. The easiest way to install these
 is to get a scientific python distribution such as <a class="reference external" href="https://store.continuum.io/cshop/anaconda/">Anaconda</a>.
-For Linux/Mac, use your package manager, or run:</p>
+Use your package manager, or run:</p>
 <div class="highlight-python"><div class="highlight"><pre>$ wget http://repo.continuum.io/anaconda3/Anaconda3-2.1.0-Linux-x86_64.sh
 $ bash Anaconda3-2.1.0-Linux-x86_64.sh
 $ export PATH=~/anaconda3/bin:$PATH  # If installed in default location
 </pre></div>
 </div>
-<p>For Windows, download the installer from their webpage (if nagged for an email,
-enter your favourite fictional email adress).</p>
 <p>Alternatively, you can install Python 3.4 from the <a class="reference external" href="https://www.python.org/">python webpage</a>
-or your OS&#8217;s package management system. You may have to install some additional modules manually.
-(for Windows, download binaries <a class="reference external" href="http://www.lfd.uci.edu/~gohlke/pythonlibs/">here</a>).</p>
+or your OS&#8217;s package management system. You may have to install some additional modules manually.</p>
+<p>For installation on windows, see <a class="reference external" href="https://github.com/XENON1T/pax/blob/master/docs/faq.rst">the FAQ</a>.</p>
 </div>
 <div class="section" id="installing-pax">
 <h3>Installing pax<a class="headerlink" href="#installing-pax" title="Permalink to this headline">¶</a></h3>
-<p>The code of pax is in a private github repository. Once you have access, run:</p>
+<p>The code of pax is in a private github repository. You must first have <cite>git</cite>
+installed, which you can test by running at the command line:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">git</span>
+</pre></div>
+</div>
+<p>Once you have access to the GitHub repository and <cite>git</cite> installed, run:</p>
 <div class="highlight-python"><div class="highlight"><pre>pip install git+https://github.com/XENON1T/pax.git
 </pre></div>
 </div>

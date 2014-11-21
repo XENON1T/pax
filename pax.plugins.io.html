@@ -171,6 +171,11 @@ on formats:</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="pax.plugins.io.MongoDB.MongoDBInput.number_events">
+<tt class="descname">number_events</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInput.number_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInput.number_events" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="pax.plugins.io.MongoDB.MongoDBInput.startup">
 <tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInput.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInput.startup" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -270,11 +275,6 @@ on formats:</p>
 <tt class="descname">plot_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotChannelWaveforms.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotChannelWaveforms.plot_event" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="method">
-<dt id="pax.plugins.io.Plotting.PlotChannelWaveforms.set_y_values">
-<tt class="descname">set_y_values</tt><big>(</big><em>value</em>, <em>n_times</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotChannelWaveforms.set_y_values"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotChannelWaveforms.set_y_values" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 <dl class="class">
@@ -355,6 +355,7 @@ on formats:</p>
 </div>
 <div class="section" id="module-pax.plugins.io.RawWaveformDump">
 <span id="pax-plugins-io-rawwaveformdump-module"></span><h2>pax.plugins.io.RawWaveformDump module<a class="headerlink" href="#module-pax.plugins.io.RawWaveformDump" title="Permalink to this headline">¶</a></h2>
+<p>Dumps event waveforms to file using numpy.tofile</p>
 <dl class="class">
 <dt id="pax.plugins.io.RawWaveformDump.DumpPMTWaveformsToBinary">
 <em class="property">class </em><tt class="descclassname">pax.plugins.io.RawWaveformDump.</tt><tt class="descname">DumpPMTWaveformsToBinary</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/RawWaveformDump.html#DumpPMTWaveformsToBinary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.RawWaveformDump.DumpPMTWaveformsToBinary" title="Permalink to this definition">¶</a></dt>
@@ -401,12 +402,14 @@ on formats:</p>
 </div>
 <div class="section" id="module-pax.plugins.io.WaveformSimulator">
 <span id="pax-plugins-io-waveformsimulator-module"></span><h2>pax.plugins.io.WaveformSimulator module<a class="headerlink" href="#module-pax.plugins.io.WaveformSimulator" title="Permalink to this headline">¶</a></h2>
+<p>Plugins to interface with the integrated waveform simulator (FaX)
+This is I/O stuff only: truth file writing, pax event creation, etc.
+There is no physics here, all that is in pax.simulation.</p>
 <dl class="class">
 <dt id="pax.plugins.io.WaveformSimulator.WaveformSimulator">
 <em class="property">class </em><tt class="descclassname">pax.plugins.io.WaveformSimulator.</tt><tt class="descname">WaveformSimulator</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.InputPlugin" title="pax.plugin.InputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.InputPlugin</span></tt></a></p>
-<p>Common I/O for waveform simulator: truth file writing, pax event creation, etc.
-There is no physics here: all that is in pax.simulation</p>
+<p>Common I/O for waveform simulator plugins</p>
 <dl class="method">
 <dt id="pax.plugins.io.WaveformSimulator.WaveformSimulator.get_events">
 <tt class="descname">get_events</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulator.get_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulator.get_events" title="Permalink to this definition">¶</a></dt>
@@ -450,7 +453,7 @@ There is no physics here: all that is in pax.simulation</p>
 
 <dl class="method">
 <dt id="pax.plugins.io.WaveformSimulator.WaveformSimulator.store_true_peak">
-<tt class="descname">store_true_peak</tt><big>(</big><em>type</em>, <em>t</em>, <em>x</em>, <em>y</em>, <em>z</em>, <em>photon_times</em>, <em>electron_times=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulator.store_true_peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulator.store_true_peak" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">store_true_peak</tt><big>(</big><em>peak_type</em>, <em>t</em>, <em>x</em>, <em>y</em>, <em>z</em>, <em>photon_times</em>, <em>electron_times=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulator.store_true_peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulator.store_true_peak" title="Permalink to this definition">¶</a></dt>
 <dd><p>Saves the truth information about a peak (s1 or s2)</p>
 </dd></dl>
 
@@ -479,7 +482,8 @@ There is no physics here: all that is in pax.simulation</p>
 <dl class="method">
 <dt id="pax.plugins.io.WaveformSimulator.WaveformSimulatorFromCSV.startup">
 <tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulatorFromCSV.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromCSV.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>The startup routine of the WaveformSimulatorFromCSV plugin</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -507,7 +511,7 @@ There is no physics here: all that is in pax.simulation</p>
 </div>
 <div class="section" id="module-pax.plugins.io.XAMS">
 <span id="pax-plugins-io-xams-module"></span><h2>pax.plugins.io.XAMS module<a class="headerlink" href="#module-pax.plugins.io.XAMS" title="Permalink to this headline">¶</a></h2>
-<p>This plug-in reads raw waveform data from the XAMS scope binary &amp; text files.</p>
+<p>This plug-in reads raw waveform data from the Old XAMS Lecroy scope binary &amp; text files.</p>
 <dl class="class">
 <dt id="pax.plugins.io.XAMS.DirWithWaveformFiles">
 <em class="property">class </em><tt class="descclassname">pax.plugins.io.XAMS.</tt><tt class="descname">DirWithWaveformFiles</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/XAMS.html#DirWithWaveformFiles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.XAMS.DirWithWaveformFiles" title="Permalink to this definition">¶</a></dt>
@@ -608,7 +612,7 @@ code for details.</p>
 
 <dl class="method">
 <dt id="pax.plugins.io.XED.XedInput.get_single_event">
-<tt class="descname">get_single_event</tt><big>(</big><em>event_number</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/XED.html#XedInput.get_single_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.XED.XedInput.get_single_event" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">get_single_event</tt><big>(</big><em>*args</em>, <em>**kw</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/XED.html#XedInput.get_single_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.XED.XedInput.get_single_event" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">

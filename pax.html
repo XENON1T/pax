@@ -102,12 +102,9 @@
 <span id="pax-core-module"></span><h2>pax.core module<a class="headerlink" href="#module-pax.core" title="Permalink to this headline">¶</a></h2>
 <p>The backbone of pax</p>
 <dl class="function">
-<dt id="pax.core.get_actions">
-<tt class="descclassname">pax.core.</tt><tt class="descname">get_actions</tt><big>(</big><em>config</em>, <em>input</em>, <em>list_of_names</em>, <em>output</em><big>)</big><a class="reference internal" href="_modules/pax/core.html#get_actions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.get_actions" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get the class names associated with action</p>
-<p>An action is either input, transform, postprocessing, or output.  This grabs
-all the classes that need to be instantiated and used for processing events.</p>
-<p>Note that output is a list.</p>
+<dt id="pax.core.data_file_name">
+<tt class="descclassname">pax.core.</tt><tt class="descname">data_file_name</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/pax/core.html#data_file_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.data_file_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns filename if a file exists there, else returns PAX_DIR/data/filename</p>
 </dd></dl>
 
 <dl class="function">
@@ -117,18 +114,13 @@ all the classes that need to be instantiated and used for processing events.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="pax.core.get_plugin_source">
-<tt class="descclassname">pax.core.</tt><tt class="descname">get_plugin_source</tt><big>(</big><em>config</em>, <em>log=&lt;module 'logging' from '/opt/local/Library/Frameworks/Python.framework/Versions/3.4/lib/python3.4/logging/__init__.py'&gt;</em>, <em>ident='blah'</em><big>)</big><a class="reference internal" href="_modules/pax/core.html#get_plugin_source"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.get_plugin_source" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
 <dt id="pax.core.init_configuration">
 <tt class="descclassname">pax.core.</tt><tt class="descname">init_configuration</tt><big>(</big><em>config_names=()</em>, <em>config_paths=()</em>, <em>config_string=None</em><big>)</big><a class="reference internal" href="_modules/pax/core.html#init_configuration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.init_configuration" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="docutils">
-<dt>Get pax configuration from configuration files and config_string</dt>
+<dt>Get pax configuration from three configuration sources:</dt>
 <dd><ul class="first last simple">
 <li>config_names: List of named configurations to load (sequentially)</li>
-<li>configuration: List of config file paths to load (sequentially)</li>
+<li>config_paths: List of config file paths to load (sequentially)</li>
 <li>config_string: A final config override string</li>
 </ul>
 </dd>
@@ -145,18 +137,18 @@ The config_string is loaded last of all.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>file_object</strong> &#8211; Path to the ini file to read, or opened file object to read</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">nested dictionary of evaluated configuration values, use as: config[section][key].</td>
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">nested dictionary of evaluated configuration values, use as: config[section][key].</td>
 </tr>
 </tbody>
 </table>
+<p>Will return None if no configuration sources are specified at all.</p>
 </dd></dl>
 
 <dl class="function">
 <dt id="pax.core.instantiate_plugin">
-<tt class="descclassname">pax.core.</tt><tt class="descname">instantiate_plugin</tt><big>(</big><em>name</em>, <em>plugin_source</em>, <em>config</em>, <em>log=&lt;module 'logging' from '/opt/local/Library/Frameworks/Python.framework/Versions/3.4/lib/python3.4/logging/__init__.py'&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/core.html#instantiate_plugin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.instantiate_plugin" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">pax.core.</tt><tt class="descname">instantiate_plugin</tt><big>(</big><em>name</em>, <em>plugin_search_paths=None</em>, <em>config=None</em>, <em>log=&lt;module 'logging' from '/opt/local/Library/Frameworks/Python.framework/Versions/3.4/lib/python3.4/logging/__init__.py'&gt;</em>, <em>for_testing=False</em><big>)</big><a class="reference internal" href="_modules/pax/core.html#instantiate_plugin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.instantiate_plugin" title="Permalink to this definition">¶</a></dt>
 <dd><p>Take plugin class name and build class from it</p>
+<p>The python default module locations are also searched... I think.. so don&#8217;t name your module &#8216;glob&#8217;...</p>
 </dd></dl>
 
 <dl class="function">
@@ -181,8 +173,8 @@ The config_string is loaded last of all.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="pax.core.process_single_event">
-<tt class="descclassname">pax.core.</tt><tt class="descname">process_single_event</tt><big>(</big><em>actions</em>, <em>event</em>, <em>log</em><big>)</big><a class="reference internal" href="_modules/pax/core.html#process_single_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.process_single_event" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.core.make_plugin_search_paths">
+<tt class="descclassname">pax.core.</tt><tt class="descname">make_plugin_search_paths</tt><big>(</big><em>config=None</em><big>)</big><a class="reference internal" href="_modules/pax/core.html#make_plugin_search_paths"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.make_plugin_search_paths" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="function">
@@ -349,6 +341,12 @@ Or rather, it starts from January 1, 1970.</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="pax.datastructure.Peak.entropy_per_pmt">
+<tt class="descname">entropy_per_pmt</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.entropy_per_pmt" title="Permalink to this definition">¶</a></dt>
+<dd><p>Array of squared signal entropies in each PMT.</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="pax.datastructure.Peak.full_width_half_max">
 <tt class="descname">full_width_half_max</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.full_width_half_max" title="Permalink to this definition">¶</a></dt>
 <dd><p>Full width at half maximum in samples</p>
@@ -387,7 +385,7 @@ Or rather, it starts from January 1, 1970.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.index_of_maximum">
 <tt class="descname">index_of_maximum</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.index_of_maximum" title="Permalink to this definition">¶</a></dt>
-<dd><p>Index of maximum value within sum waveform.</p>
+<dd><p>Index in the event&#8217;s sum waveform at which this peak has its maximum.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -507,30 +505,54 @@ Or rather, it starts from January 1, 1970.</p>
 <p>Utilities for peakfinders etc.
 Heavily used in SimpleDSP</p>
 <dl class="class">
-<dt id="pax.dsputils.InterpolatingDetectorMap">
-<em class="property">class </em><tt class="descclassname">pax.dsputils.</tt><tt class="descname">InterpolatingDetectorMap</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/pax/dsputils.html#InterpolatingDetectorMap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.InterpolatingDetectorMap" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.dsputils.InterpolatingMap">
+<em class="property">class </em><tt class="descclassname">pax.dsputils.</tt><tt class="descname">InterpolatingMap</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/pax/dsputils.html#InterpolatingMap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.InterpolatingMap" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
-<dl class="method">
-<dt id="pax.dsputils.InterpolatingDetectorMap.get_value_at">
-<tt class="descname">get_value_at</tt><big>(</big><em>position</em><big>)</big><a class="reference internal" href="_modules/pax/dsputils.html#InterpolatingDetectorMap.get_value_at"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.InterpolatingDetectorMap.get_value_at" title="Permalink to this definition">¶</a></dt>
+<p>Builds a scalar function of space using interpolation from sampling points on a regular grid.</p>
+<p>All interpolation is done linearly.
+Cartesian coordinates are supported and tested, cylindrical coordinates (z, r, phi) may also work...</p>
+<dl class="docutils">
+<dt>The map must be specified as a json containing a dictionary with keys</dt>
+<dd>&#8216;coordinate_system&#8217; :   [[&#8216;x&#8217;, x_min, x_max, n_x], [&#8216;y&#8217;,...
+&#8216;your_map_name&#8217; :       [[valuex1y1, valuex1y2, ..], [valuex2y1, valuex2y2, ..], ...
+&#8216;another_map_name&#8217; :    idem
+&#8216;name&#8217;:                 &#8216;Nice file with maps&#8217;,
+&#8216;description&#8217;:          &#8216;Say what the maps are and who you are&#8217;,
+&#8216;timestamp&#8217;:            unix timestamp</dd>
+</dl>
+<p>with the straightforward generalization to 1d and 3d.</p>
+<p>See also examples/generate_mock_correction_map.py</p>
+<dl class="attribute">
+<dt id="pax.dsputils.InterpolatingMap.data_field_names">
+<tt class="descname">data_field_names</tt><em class="property"> = ['timestamp', 'description', 'coordinate_system', 'name']</em><a class="headerlink" href="#pax.dsputils.InterpolatingMap.data_field_names" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.dsputils.InterpolatingMap.get_value">
+<tt class="descname">get_value</tt><big>(</big><em>*coordinates</em>, <em>map_name='map'</em><big>)</big><a class="reference internal" href="_modules/pax/dsputils.html#InterpolatingMap.get_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.InterpolatingMap.get_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the value of the map at the position given by coordinates</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.dsputils.InterpolatingMap.get_value_at">
+<tt class="descname">get_value_at</tt><big>(</big><em>position</em>, <em>map_name='map'</em><big>)</big><a class="reference internal" href="_modules/pax/dsputils.html#InterpolatingMap.get_value_at"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.InterpolatingMap.get_value_at" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the value of the map map_name at a ReconstructedPosition
+position - pax.datastructure.ReconstructedPosition instance</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.dsputils.InterpolatingMap.plot">
+<tt class="descname">plot</tt><big>(</big><em>map_name='map'</em>, <em>to_file=None</em><big>)</big><a class="reference internal" href="_modules/pax/dsputils.html#InterpolatingMap.plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.InterpolatingMap.plot" title="Permalink to this definition">¶</a></dt>
+<dd><p>Make a quick plot of the map map_name, for diagnostic purposes only</p>
+</dd></dl>
 
 </dd></dl>
 
 <dl class="function">
 <dt id="pax.dsputils.find_first_fast">
-<tt class="descclassname">pax.dsputils.</tt><tt class="descname">find_first_fast</tt><big>(</big><em>a</em>, <em>predicate</em>, <em>chunk_size=128</em><big>)</big><a class="reference internal" href="_modules/pax/dsputils.html#find_first_fast"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.find_first_fast" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="pax.dsputils.find_peak_in_signal">
-<tt class="descclassname">pax.dsputils.</tt><tt class="descname">find_peak_in_signal</tt><big>(</big><em>signal</em>, <em>unfiltered</em>, <em>integration_bound_fraction</em>, <em>offset=0</em><big>)</big><a class="reference internal" href="_modules/pax/dsputils.html#find_peak_in_signal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.find_peak_in_signal" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds &#8216;the&#8217; peak in the candidate interval
-:param signal: Signal to use for peak finding &amp; extent computation
-:param unfiltered: Unfiltered waveform (used for max, height, area computation)
-:param integration_bound_fraction: Fraction of max where you choose the peak to end.
-:param offset: index in the waveform of the first index of the signal passed. Default 0.
-:return: a pax datastructure Peak</p>
+<tt class="descclassname">pax.dsputils.</tt><tt class="descname">find_first_fast</tt><big>(</big><em>a</em>, <em>threshold</em>, <em>chunk_size=128</em><big>)</big><a class="reference internal" href="_modules/pax/dsputils.html#find_first_fast"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.find_first_fast" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the first index in a below threshold.
+If a never goes below threshold, returns the last index in a.</p>
 </dd></dl>
 
 <dl class="function">
@@ -548,8 +570,7 @@ Heavily used in SimpleDSP</p>
 <dl class="function">
 <dt id="pax.dsputils.peak_bounds">
 <tt class="descclassname">pax.dsputils.</tt><tt class="descname">peak_bounds</tt><big>(</big><em>signal</em>, <em>max_idx</em>, <em>fraction_of_max</em>, <em>zero_level=0</em><big>)</big><a class="reference internal" href="_modules/pax/dsputils.html#peak_bounds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.peak_bounds" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return (left, right) bounds of the fraction_of_max width of the peak in samples.
-TODO: add interpolation option</p>
+<dd><p>Return (left, right) indices closest to max_idx where signal drops below signal[max_idx]*fraction_of_max.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -561,32 +582,6 @@ TODO: add interpolation option</p>
 <li><strong>zero_level</strong> &#8211; Always end a peak before it is &lt; this. Default: 0</li>
 </ul>
 </td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
-<dt id="pax.dsputils.peaks_and_valleys">
-<tt class="descclassname">pax.dsputils.</tt><tt class="descname">peaks_and_valleys</tt><big>(</big><em>signal</em>, <em>test_function</em><big>)</big><a class="reference internal" href="_modules/pax/dsputils.html#peaks_and_valleys"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.peaks_and_valleys" title="Permalink to this definition">¶</a></dt>
-<dd><p>Find peaks and valleys based on derivative sign changes
-:param signal: signal to search in
-:param test_function: Function which accepts three args:</p>
-<blockquote>
-<div><blockquote>
-<div><ul class="simple">
-<li>signal, signal begin tested</li>
-<li>peak, index of peak</li>
-<li>valley, index of valley</li>
-</ul>
-</div></blockquote>
-<p>must return True if peak/valley pair is acceptable, else False</p>
-</div></blockquote>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">two sorted lists: peaks, valleys</td>
 </tr>
 </tbody>
 </table>
@@ -622,23 +617,8 @@ if &#8216;never&#8217;, index 0 is NEVER reported.</p>
 
 <dl class="function">
 <dt id="pax.dsputils.width_at_fraction">
-<tt class="descclassname">pax.dsputils.</tt><tt class="descname">width_at_fraction</tt><big>(</big><em>peak_wave</em>, <em>fraction_of_max</em>, <em>max_idx</em><big>)</big><a class="reference internal" href="_modules/pax/dsputils.html#width_at_fraction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.width_at_fraction" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">pax.dsputils.</tt><tt class="descname">width_at_fraction</tt><big>(</big><em>peak_wave</em>, <em>fraction_of_max</em>, <em>max_idx</em>, <em>interpolate=False</em><big>)</big><a class="reference internal" href="_modules/pax/dsputils.html#width_at_fraction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.width_at_fraction" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns width of a peak IN SAMPLES at fraction of maximum</p>
-</dd></dl>
-
-</div>
-<div class="section" id="module-pax.format">
-<span id="pax-format-module"></span><h2>pax.format module<a class="headerlink" href="#module-pax.format" title="Permalink to this headline">¶</a></h2>
-<dl class="function">
-<dt id="pax.format.sampletime_fmt">
-<tt class="descclassname">pax.format.</tt><tt class="descname">sampletime_fmt</tt><big>(</big><em>num</em><big>)</big><a class="reference internal" href="_modules/pax/format.html#sampletime_fmt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.format.sampletime_fmt" title="Permalink to this definition">¶</a></dt>
-<dd><p>num is in 10s of ns</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pax.format.sizeof_fmt">
-<tt class="descclassname">pax.format.</tt><tt class="descname">sizeof_fmt</tt><big>(</big><em>num</em><big>)</big><a class="reference internal" href="_modules/pax/format.html#sizeof_fmt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.format.sizeof_fmt" title="Permalink to this definition">¶</a></dt>
-<dd><p>input is bytes</p>
 </dd></dl>
 
 </div>
@@ -688,6 +668,11 @@ transform would modify the event object.</p>
 <dl class="method">
 <dt id="pax.plugin.InputPlugin.get_single_event">
 <tt class="descname">get_single_event</tt><big>(</big><em>index</em><big>)</big><a class="reference internal" href="_modules/pax/plugin.html#InputPlugin.get_single_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.InputPlugin.get_single_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pax.plugin.InputPlugin.number_of_events">
+<tt class="descname">number_of_events</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.plugin.InputPlugin.number_of_events" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -867,7 +852,6 @@ unit_name(ns,&#8217;s&#8217;) will give &#8216;ns&#8217;</p>
 <li><a class="reference internal" href="#module-pax.core">pax.core module</a></li>
 <li><a class="reference internal" href="#module-pax.datastructure">pax.datastructure module</a></li>
 <li><a class="reference internal" href="#module-pax.dsputils">pax.dsputils module</a></li>
-<li><a class="reference internal" href="#module-pax.format">pax.format module</a></li>
 <li><a class="reference internal" href="#module-pax.generate_pmts">pax.generate_pmts module</a></li>
 <li><a class="reference internal" href="#module-pax.plugin">pax.plugin module</a></li>
 <li><a class="reference internal" href="#module-pax.simulation">pax.simulation module</a></li>

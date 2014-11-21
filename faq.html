@@ -82,6 +82,24 @@ mode.  Running the command is a workaround:</p>
 <p>These two export commands can be added to your <cite>.bashrc</cite> to be run automatically
 when you login.</p>
 </div>
+<div class="section" id="can-i-set-up-pax-on-my-windows-machine">
+<h2>Can I set up pax on my windows machine?<a class="headerlink" href="#can-i-set-up-pax-on-my-windows-machine" title="Permalink to this headline">¶</a></h2>
+<p>Yes, in fact several of the developers do this, much to the sadness of the other developers...</p>
+<ol class="arabic simple">
+<li>Unless you want to install lots of binary modules from <a class="reference external" href="http://www.lfd.uci.edu/~gohlke/pythonlibs/">Christoph Gohlke&#8217;s page</a>,
+start by installing a good scientific python 3 distribution such as Anaconda or PythonXY.
+(if the Anaconda website nags you for an email, enter your favourite fictional email address)</li>
+<li>Get pax using Github&#8217;s nice point-and-click Github For Windows application.
+Ignore the haters who insist on doing everything by command line.</li>
+<li>Run <tt class="docutils literal"><span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">develop</span></tt>. It will probably complain about some failed module installations, ignore that,
+there are lots of arcane modules you&#8217;ll almost never need (e.g. HTML templating for online monitor etc).</li>
+<li>Go to bin, run <tt class="docutils literal"><span class="pre">python</span> <span class="pre">paxer</span> <span class="pre">--plot</span></tt>. If it shows a waveform, you are done.
+If it complains about a missing module, I guess you shouldn&#8217;t have ignored those warnings in step 3,
+install the missing module using easy_install, or Gohlke&#8217;s page mentioned above.</li>
+</ol>
+<p>Unfortunately, Windows + Python3 + Root is not exactly a winning team; if you use windows you&#8217;ll be stuck
+with the other 433 output formats we have.</p>
+</div>
 </div>
 
 
@@ -95,6 +113,7 @@ when you login.</p>
 <li><a class="reference internal" href="#">Frequently Asked Questions</a><ul>
 <li><a class="reference internal" href="#how-do-i-run-pax-at-lngs-on-xecluster">How do I run <cite>pax</cite> at LNGS on xecluster?</a></li>
 <li><a class="reference internal" href="#how-do-i-run-git-at-lngs-on-xecluster">How do I run <cite>git</cite> at LNGS on xecluster</a></li>
+<li><a class="reference internal" href="#can-i-set-up-pax-on-my-windows-machine">Can I set up pax on my windows machine?</a></li>
 </ul>
 </li>
 </ul>

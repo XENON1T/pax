@@ -54,7 +54,6 @@
 
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">time</span>
-<span class="kn">import</span> <span class="nn">uuid</span>
 <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">import</span> <span class="nn">pymongo</span>
@@ -64,6 +63,7 @@
 
 <span class="kn">from</span> <span class="nn">pax.datastructure</span> <span class="kn">import</span> <span class="n">Event</span>
 <span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span>
+
 
 <span class="n">START_TIME_KEY</span> <span class="o">=</span> <span class="s">&#39;time_min&#39;</span>
 
@@ -88,6 +88,9 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">number_of_events</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
                 <span class="s">&quot;No events found... did you run the event builder?&quot;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="MongoDBInput.number_events"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBInput.number_events">[docs]</a>    <span class="k">def</span> <span class="nf">number_events</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">number_of_events</span>
 </div>
 <div class="viewcode-block" id="MongoDBInput.get_events"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBInput.get_events">[docs]</a>    <span class="k">def</span> <span class="nf">get_events</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Generator of events from Mongo</span>
