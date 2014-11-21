@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>History &mdash; Processor for Analyzing XENON1T 1.3.0 documentation</title>
+    <title>History &mdash; Processor for Analyzing XENON1T 1.4.0 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '1.3.0',
+        VERSION:     '1.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 1.3.0 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 1.4.0 documentation" href="index.html" />
     <link rel="prev" title="Credits" href="authors.html" /> 
   </head>
   <body>
@@ -39,7 +39,7 @@
         <li class="right" >
           <a href="authors.html" title="Credits"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 1.3.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 1.4.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -50,27 +50,35 @@
             
   <div class="section" id="history">
 <h1>History<a class="headerlink" href="#history" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="upcoming-release">
-<h2>Upcoming release<a class="headerlink" href="#upcoming-release" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id1">
+<h2>1.4.0 (2014-11-21)<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
+<li>DSP<ul>
 <li>Peak width fields added to datastructure</li>
+<li>newDSP: Interpolated peak width computations</li>
+<li>DSP plugins cleaned up and reorganized (except old peak finder)</li>
+<li>Frequency bandpass filtering support</li>
+</ul>
+</li>
 <li>Updated docs, comments, logging</li>
+<li>Plots<ul>
 <li>3D channel waveforms plot</li>
 <li>Event summary plot</li>
-<li>Music output</li>
+</ul>
+</li>
+<li>Music output (fun side project)</li>
 <li>Separate directory for example data files</li>
-<li>DSP plugins cleaned up and reorganized (except old peak finder)</li>
-<li>newDSP: Interpolated peak width computations</li>
-<li>Frequency bandpass filtering support</li>
 <li>Configurations for XAMS, Bern test setup</li>
 <li>&#8211;input and &#8211;output override settings for most plugins</li>
 <li>WaveformSimulator: improved defaults</li>
+<li>Stable DAQ injector</li>
+<li>Various bug fixes and cleanups that polish</li>
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id1">
-<h2>1.3.0 (2014-10-17)<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id2">
+<h2>1.3.0 (2014-10-17)<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Plugin directory moved (fix bug in previous release)</li>
 <li>Bulk processing enhancements<ul>
@@ -104,15 +112,15 @@
 <li>Plot 2D hit patterns</li>
 </ul>
 </div>
-<div class="section" id="id2">
-<h2>1.2.0 (2014-10-02)<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id3">
+<h2>1.2.0 (2014-10-02)<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>DAQ injector - can inject data into DAQs.</li>
 <li>Nested configurations - better handling of configurations and allows for nesting</li>
 </ul>
 </div>
-<div class="section" id="id3">
-<h2>1.1.0 (2014-08-29)<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id4">
+<h2>1.1.0 (2014-08-29)<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>HDF5 output - will be, for now, default output format.<ul>
 <li>We now have a binary output format for peaks and event.</li>
@@ -126,8 +134,8 @@
 <li>General bug fixes and cleanup</li>
 </ul>
 </div>
-<div class="section" id="id4">
-<h2>1.0.0 (2014-08-16)<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id5">
+<h2>1.0.0 (2014-08-16)<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Completely refactored event datastructure</li>
 </ul>
@@ -189,14 +197,14 @@
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id5">
-<h2>0.2.1 (2014-08-14)<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id6">
+<h2>0.2.1 (2014-08-14)<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>paxit binaries installed by default to allow working out of source</li>
 </ul>
 </div>
-<div class="section" id="id6">
-<h2>0.2.0 (2014-08-04)<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id7">
+<h2>0.2.0 (2014-08-04)<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Define static event class data structure</li>
 <li>Transforms now specified in ini file</li>
@@ -214,8 +222,8 @@
 <li>Transforms have start and stop methods</li>
 </ul>
 </div>
-<div class="section" id="id7">
-<h2>0.1.0 (2014-07-18)<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id8">
+<h2>0.1.0 (2014-07-18)<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>First release of software framework</li>
 <li>Functional but not complete digital signal processing
@@ -243,14 +251,14 @@
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">History</a><ul>
-<li><a class="reference internal" href="#upcoming-release">Upcoming release</a></li>
-<li><a class="reference internal" href="#id1">1.3.0 (2014-10-17)</a></li>
-<li><a class="reference internal" href="#id2">1.2.0 (2014-10-02)</a></li>
-<li><a class="reference internal" href="#id3">1.1.0 (2014-08-29)</a></li>
-<li><a class="reference internal" href="#id4">1.0.0 (2014-08-16)</a></li>
-<li><a class="reference internal" href="#id5">0.2.1 (2014-08-14)</a></li>
-<li><a class="reference internal" href="#id6">0.2.0 (2014-08-04)</a></li>
-<li><a class="reference internal" href="#id7">0.1.0 (2014-07-18)</a></li>
+<li><a class="reference internal" href="#id1">1.4.0 (2014-11-21)</a></li>
+<li><a class="reference internal" href="#id2">1.3.0 (2014-10-17)</a></li>
+<li><a class="reference internal" href="#id3">1.2.0 (2014-10-02)</a></li>
+<li><a class="reference internal" href="#id4">1.1.0 (2014-08-29)</a></li>
+<li><a class="reference internal" href="#id5">1.0.0 (2014-08-16)</a></li>
+<li><a class="reference internal" href="#id6">0.2.1 (2014-08-14)</a></li>
+<li><a class="reference internal" href="#id7">0.2.0 (2014-08-04)</a></li>
+<li><a class="reference internal" href="#id8">0.1.0 (2014-07-18)</a></li>
 </ul>
 </li>
 </ul>
@@ -292,7 +300,7 @@
         <li class="right" >
           <a href="authors.html" title="Credits"
              >previous</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 1.3.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 1.4.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
