@@ -214,7 +214,7 @@ class PlottingHitPattern(PlotBase):
                     self._plot(peak, ax, getattr(self, 'pmts_%s'%array))
 
             
-class PlotChannelWaveforms(PlotBase): # user sets variables xlim, ylim for 3D plot
+class PlotChannelWaveforms3D(PlotBase): # user sets variables xlim, ylim for 3D plot
     """Plot an event
 
     Will make a fancy '3D' plot with different y positions for all channels. User sets variables for plot.
@@ -293,13 +293,59 @@ class PlotChannelWaveforms(PlotBase): # user sets variables xlim, ylim for 3D pl
         plt.tight_layout()
 
 
+class PlotChannelWaveforms2D(PlotBase):
+    """ Makes a plot of all the occurencences in the event
+    Just like PlotChannelWaveforms3D, but seen from above (or below ;-)
+    """
+
+    def plot_event(self, event):
+        time_scale = self.config['digitizer_t_resolution'] / units.us
+
+        for channel, occurrences in event.occurrences.items():
+            for start_index, occurrence_waveform in occurrences:
+
+                # Take the waveform from pmt_waveforms, it is already gain & baseline corrected
+                waveform = event.pmt_waveforms[channel, start_index : start_index + len(occurrence_waveform)]
+
+                # Choose a color for this occurrence based on amplitude
+                color_factor = np.clip(np.log10(np.max(waveform))/2, 0, 1)
+
+                plt.plot(
+                    np.linspace(start_index, start_index + len(waveform), len(waveform)) * time_scale,
+                    channel * np.ones(len(waveform)),
+                    color=(color_factor, 0, 1-color_factor))
+
+        # Plot the bottom/top/veto boundaries
+        for boundary_location in (min(self.config['pmts_bottom'])-0.5, min(self.config['pmts_veto'])-0.5):
+            plt.plot(
+                [0,event.length()*time_scale],
+                [boundary_location, boundary_location],
+                color='gray')
+
+        # Annotate the channel groups
+        for group in ('Bottom', 'Top', 'Veto'):
+            plt.text(
+                0.03*event.length()*time_scale,
+                np.mean(np.array(list(self.config['pmts_' + group.lower()]))),
+                group)
+
+        # Make sure we always see all channels , even if there are few occurrences
+        plt.ylim((0,len(event.pmt_waveforms)))
+
+        plt.xlabel('Time (us)')
+        plt.ylabel('PMT channel')
+        plt.tight_layout()
+
+
+
+
 class PlotEventSummary(PlotBase):
-    def plot_event(self, event, plt=plt):
+    def plot_event(self, event):
         """
         Combines several plots into a nice summary plot
         """
 
-        rows = 2
+        rows = 3
         cols = 4
 
         plt.figure(figsize=(4 * cols, 4 * rows))
@@ -325,9 +371,13 @@ class PlotEventSummary(PlotBase):
                 plt.subplot2grid((rows, cols), (0, 2))
             ])
 
-        plt.subplot2grid((rows, cols), (rows - 1, 0), colspan=cols)
+        plt.subplot2grid((rows, cols), (1, 0), colspan=cols)
         q = PlotSumWaveformEntireEvent(self.config)
         q.plot_event(event, show_legend=True)
+
+        plt.subplot2grid((rows, cols), (2, 0), colspan=cols)
+        q = PlotChannelWaveforms2D(self.config)
+        q.plot_event(event)
 
         plt.tight_layout()
         plt.subplots_adjust(top=0.88)
