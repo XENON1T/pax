@@ -106,6 +106,41 @@ class ComputePeakAreas(plugin.TransformPlugin):
 
 
 
+class ComputePeakEntropies(plugin.TransformPlugin):
+    #TODO: write tests
+
+    def transform_event(self, event):
+        for peak in event.peaks:
+
+            peak_waveforms = event.pmt_waveforms[:, peak.left:peak.right+1]
+
+            if self.config['normalization_mode'] is 'abs':
+                normalized = np.abs(peak_waveforms)
+            elif self.config['normalization_mode'] is 'square':
+                normalized = peak_waveforms**2
+            else:
+                raise ValueError(
+                    'Invalid Configuration for ComputePeakEntropies: normalization_mode must be abs or square')
+
+            # In the case of abs, we could re-use peak.area_per_pmt to normalize
+            # This gains only a little bit of performance, and 'square' is what we use in Xenon100 anyway.
+            # Note the use of np.newaxis to enable numpy broadcasting of the division
+            normalized /= peak.area_per_pmt[:, np.newaxis]
+
+            if self.config['only_for_contributing_pmts']:
+                # Could this be vectorized better?
+                # There is probably little use in restricting to a set of pmts before here,
+                # the logarithm contains most of the work.
+                peak.entropy_per_pmt = np.zeros(len(peak_waveforms))
+                for pmt in peak.contributing_pmts:
+                    peak.entropy_per_pmt[pmt] = -np.sum(normalized[pmt]*np.log(normalized[pmt]))
+            else:
+                peak.entropy_per_pmt = -np.sum(normalized*np.log(normalized), axis=1)
+
+        return event
+
+
+
 class IdentifyPeaks(plugin.TransformPlugin):
 
     def transform_event(self, event):

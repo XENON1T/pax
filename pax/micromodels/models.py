@@ -116,6 +116,9 @@ class Model(object, metaclass=ModelMeta):
         else:
             raise AttributeError("Field '%s' not found." % key)
 
+    def __setitem__(self, key, value):
+        self.__setattr__(key, value)
+
     @property
     def _fields(self):
         return dict(self._clsfields, **self._extra)

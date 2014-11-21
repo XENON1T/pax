@@ -54,7 +54,8 @@ class Peak(Model):
     """Peak object"""
 
     index_of_maximum = IntegerField()           #: Index in the event's sum waveform at which this peak has its maximum.
-    index_of_filtered_maximum = IntegerField()  #: same, but maximum in filtered sum waveform
+    # What waveform is 'filtered'? Do we actually need this? In which plugin should we compute this?
+    # index_of_filtered_maximum = IntegerField()  #: same, but maximum in filtered sum waveform
     left = IntegerField()                       #: Index of left bound (inclusive) in sum waveform.
     right = IntegerField() #: Index of right bound (for Xdp matching: exclusive; otherwise: inclusive) in sum waveform.
 
@@ -71,6 +72,9 @@ class Peak(Model):
 
     #: Array of areas in each PMT.
     area_per_pmt = f.NumpyArrayField(dtype='float64')
+
+    #: Array of squared signal entropies in each PMT.
+    entropy_per_pmt = f.NumpyArrayField(dtype='float64')
 
     #: PMTs which see 'something significant' (depends on settings)
     contributing_pmts = f.NumpyArrayField(dtype=np.uint16)
