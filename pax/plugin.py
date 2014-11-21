@@ -47,6 +47,7 @@ class BasePlugin(object):
         return timed
 
     def startup(self):
+        self.log.debug("%s does not define a startup" % self.__class__.__name__)
         pass
 
     def process_event(self):
@@ -62,6 +63,8 @@ class InputPlugin(BasePlugin):
 
     This class cannot be parallelized since events are read in a specific order
     """
+    # The plugin should update this to the number of events which get_events will eventually return
+    number_of_events = 0
 
     def get_single_event(self, index):
         self.log.warning("Single event support not implemented for this input plugin... " +\
@@ -79,11 +82,6 @@ class InputPlugin(BasePlugin):
         Raise a StopIteration when done
         """
         raise NotImplementedError()
-
-    def number_events(self):
-        """Return total number of events (or 0 if not known)
-        """
-        return 0
 
     def process_event(self, event=None):
         raise RuntimeError('Input plugins cannot process data.')

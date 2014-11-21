@@ -21,6 +21,7 @@ class WaveformSimulator(plugin.InputPlugin):
     """ Common I/O for waveform simulator plugins
     """
     def startup(self):
+        print("Running WaveformSimulator startup")
         self.truth_file = None
         self.config = simulation.init_config(self.config)
 
@@ -38,7 +39,7 @@ class WaveformSimulator(plugin.InputPlugin):
             if self.truth_file is None:
 
                 headers = [
-                    'event_number', 'type',
+                    'event_number', 'peak_type',
                     'x', 'y', 'z',
                     't_interaction',
                     'n_photons', 't_mean_photons', 't_first_photon', 't_last_photon', 't_sigma_photons',
@@ -56,11 +57,11 @@ class WaveformSimulator(plugin.InputPlugin):
         else:
             raise ValueError('Unsupported waveform simulator truth file format %s' % tff)
 
-    def store_true_peak(self, type, t, x, y, z, photon_times, electron_times=[]):
+    def store_true_peak(self, peak_type, t, x, y, z, photon_times, electron_times=[]):
         """ Saves the truth information about a peak (s1 or s2)
         """
         true_peak = {
-            'type': type,
+            'peak_type': peak_type,
             'x': x, 'y': y, 'z': z,
             't_interaction':     t,
         }
@@ -200,31 +201,47 @@ class WaveformSimulator(plugin.InputPlugin):
 
 
 class WaveformSimulatorFromCSV(WaveformSimulator):
+
     def startup(self):
+        """
+        The startup routine of the WaveformSimulatorFromCSV plugin
+        """
+
         # Open the instructions file
         filename = self.config['input_name']
         self.dataset_name = os.path.basename(filename)
         self.instructions_file = open(core.data_file_name(filename), 'r')
-        self.instructions = csv.DictReader(self.instructions_file)
+        #
+        # # Slurp the entire instructions file, so we know the number of events
+        self.instruction_reader = csv.DictReader(self.instructions_file)
+        self.instructions = []
+        #
+        # # Loop over lines, make instructions
+        instruction_number = 0
+        instruction = []
+        for p in self.instruction_reader:
+            if int(p['instruction']) == instruction_number:
+                # Deposition is part of the previous instruction
+                instruction.append(p)
+            else:
+                # New deposition reached!
+                if instruction:
+                    #yield instruction
+                    self.instructions.append(instruction)
+                instruction_number = int(p['instruction'])
+                instruction = [p]
+        # For the final instruction
+        self.instructions.append(instruction)
+
+        self.number_of_events = len(self.instructions)
         WaveformSimulator.startup(self)
 
     def shutdown(self):
         self.instructions_file.close()
 
     def get_instructions_for_next_event(self):
-        this_instruction = None
-        this_instruction_peaks = []
-        for p in self.instructions:
-            if int(p['instruction']) == this_instruction:
-                this_instruction_peaks.append(p)
-            else:
-                # New event reached!
-                if this_instruction_peaks:
-                    yield this_instruction_peaks
-                this_instruction = int(p['instruction'])
-                this_instruction_peaks = [p]
-        # For the final event...
-        yield this_instruction_peaks
+        for instr in self.instructions:
+            yield instr
 
 
 class WaveformSimulatorFromNEST(WaveformSimulator):
@@ -247,9 +264,10 @@ class WaveformSimulatorFromNEST(WaveformSimulator):
         f = ROOT.TFile(core.data_file_name(filename))
         self.t = f.Get("t1") # For Xerawdp use T1, for MC t1
         WaveformSimulator.startup(self)
+        self.number_of_events = self.t.GetEntries()
 
     def get_instructions_for_next_event(self):
-        for event_i in range(self.t.GetEntries()):
+        for event_i in range(self.number_of_events):
             self.t.GetEntry(event_i)
 
             # Get stuff from root files

@@ -332,7 +332,7 @@ def processor(config):
     if 'stop_after' in config['pax'] and config['pax']['stop_after'] is not None:
         stop_after = config['pax']['stop_after']
 
-    total_number_events = min(input_plugin.number_events(), stop_after)
+    total_number_events = min(input_plugin.number_of_events, stop_after)
 
     # How should the events be generated?
     if 'events_to_process' in config['pax'] and config['pax']['events_to_process'] is not None:
