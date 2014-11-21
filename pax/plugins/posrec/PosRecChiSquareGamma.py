@@ -1,6 +1,7 @@
 """Position reconstruction algorithm using chi square gamma distribution"""
 import numpy as np
 from scipy.optimize import minimize
+from scipy.misc import derivative
 
 from pax import plugin
 
@@ -27,6 +28,15 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
 		Load LCE maps, gains and QE's
         """
 
+        #Set mode for algorithm, this can be:
+        #    -'no_reconstruct', to only append a chi square gamma to existing reconstructed positions
+        #    -'only_reconstruct', to add the reconstructed position object for this algorithm but leave others alone
+        #    -'full', to do both
+        self.mode = self.config['mode']
+        print(self.mode)
+        if not self.mode == 'no_reconstruct' and not self.mode == 'only_reconstruct' and not self.mode == 'full':
+            raise RuntimeError("Bad choice 'mode', using mode = 'full'")
+
         # This can either be 'top' or 'bottom'.
         self.which_pmts = 'pmts_%s' % self.config['pmts_to_use_for_reconstruction']
         if self.which_pmts not in self.config.keys():
@@ -48,16 +58,16 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
         self.gain_errors = [0.5 for i in range(99)]
 
         #Load QE (for now use arbitrary values)
-        self.qes = [0.5 for i in range(99)]
-        self.qe_errors = [0.01 for i in range(99)]
+        self.qes = [0.3 for i in range(99)]
+        self.qe_errors = [0.0 for i in range(99)] #test with 0 uncertainty (as was also done in libchi)
 
     def function_chi_square_gamma(self, position):
         """Return Chi Square Gamma value for position x,y"""
 
         #apparently coordinates are in cm (why), the lce map uses mm
-        #convert to mm
-        x = position[0] * 10
-        y = position[1] * 10
+        #convert to mm, also lce map uses a different pmt numbering effectively rotating 90deg anti-clockwise, rotate back 90deg  yes/no?
+        x = position[1] * 10  #position[0] * 10 * cos(-90) - position[1] * 10 * sin(-90)
+        y = position[0] * -10  #position[0] * 10 * sin(-90) + position[1] * 10 * cos(-90)
 
         function_value = 0
 
@@ -80,6 +90,21 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
             function_value += term_numerator / term_denominator
 
         return function_value
+
+    def jac_chi_square_gamma(self, position):
+        """Gradient of chi_square_gamma function at position (x,y)
+        returns numpy array with derivatives"""
+
+        #first, very crude implementation, just to be able to use newton-CG as minimizer
+
+        x = position[0]
+        y = position[1]
+        delta = 0.01 #0.1mm
+
+        dfdx = (self.function_chi_square_gamma([x - delta/2, y])-self.function_chi_square_gamma([x + delta/2, y]))/delta
+        dfdy = (self.function_chi_square_gamma([x, y - delta/2])-self.function_chi_square_gamma([x, y + delta/2]))/delta
+
+        return np.array([dfdx, dfdy])
 
     def transform_event(self, event):
         """Reconstruct the position of S2s in an event.
@@ -113,12 +138,18 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
 
                 self.area_photons += self.hits[pmt] / self.qes[pmt]
 
-            #check for reconstructed positions by other algorithms, if found, calculate chi_square_gamma for those
-            for position in peak.reconstructed_positions:
-                if position.algorithm == self.name:
-                    continue
-                print("found reconstructed position by other algorithm, appending chi square")
-                position.chi_square_gamma = self.function_chi_square_gamma([position.x, position.y])
+            if not self.mode == 'only_reconstruct':
+                #check for reconstructed positions by other algorithms, if found, calculate chi_square_gamma for those
+                for position in peak.reconstructed_positions:
+                    if position.algorithm == self.name:
+                        continue
+                    print(position.x, position.y) # what units are these? cm probably
+                    position.chi_square_gamma = self.function_chi_square_gamma([position.x, position.y])
+                    print("found reconstructed position by other algorithm, appending chi square gamma", position.chi_square_gamma)
+
+
+            if self.mode == 'no_reconstruct':
+                return event
 
             #Start reconstruction
             print("start own reconstruction")
@@ -132,9 +163,9 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
             start_x = self.pmt_locations[max_pmt_id]['x']
             start_y = self.pmt_locations[max_pmt_id]['y']
 
-            #Minimize chi_square_gamma function, using Powell for now (since it doesn't require computing a jacobian)
-            minimize_result = minimize(self.function_chi_square_gamma, [start_x, start_y], method='Powell')
-
+            #Minimize chi_square_gamma function
+            minimize_result = minimize(self.function_chi_square_gamma, [start_x, start_y], method='Newton-CG', jac=self.jac_chi_square_gamma, options={'xtol' : 0.5, 'eps': [0.1,0.1], 'disp' : True})
+            
             print("Minimization success: ", minimize_result.success)
             if not minimize_result.success:
                 print(minimize_result.message)
@@ -148,7 +179,7 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
             print("reconstructed_y", y)
             print("chi square gamma", chi_square_gamma)
 
-            # Create a reconstructed position object (add chi_square_gamma variable to this micromodel)
+            # Create a reconstructed position object
             rp = ReconstructedPosition({'x': x,
                                         'y': y,
                                         'z': 42,
@@ -159,7 +190,7 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
             # Append our reconstructed position object to the peak
             peak.reconstructed_positions.append(rp)
 
-        # Return the event such that the next processor can work on it
+        # Return the event such that the next plugin can work on it
         return event
 
     def shutdown(self):
