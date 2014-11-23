@@ -6,11 +6,11 @@ Development Lead
 ----------------
 
 * Jelle Aalbers <jaalbers@nikhef.nl
-* Daniel Coderre <daniel.coderre@lhep.unibe.ch>
 * Christopher Tunnell <ctunnell@nikhef.nl>
 
 Contributors
 ------------
 
 * Sander Breur <sanderb@nikhef.nl>
+* Daniel Coderre <daniel.coderre@lhep.unibe.ch>
 * Alper Topçuoğlu <alper.topcuoglu@student.uva.nl>
