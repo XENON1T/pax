@@ -12,11 +12,19 @@ import unittest
 from pax import core
 from pax.datastructure import Event, Peak
 
+override_config = \
+"""
+[pax]
+plugin_group_names = ['test']
+test = 'PrintToScreen.PrintToScreen
+"""
+
 
 class TestPosRecWeightedSum(unittest.TestCase):
 
     def setUp(self):
-        self.posrec_plugin = core.instantiate_plugin('PosSimple.PosRecWeightedSum', for_testing=True)
+        self.pax = core.Processor()
+        self.posrec_plugin = self.pax.action_plugins[0]
 
         self.e = Event()
 

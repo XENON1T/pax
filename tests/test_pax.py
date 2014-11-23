@@ -16,34 +16,29 @@ from pax import core
 
 class TestPax(unittest.TestCase):
 
+
     def setUp(self):
-        self.basic_config_header = "[pax]\nfinal_ancestor = True\n"
         pass
 
+    def _do_config_eval_test(self, test_value, must_become):
+        self.assertEqual(
+            core.Processor(config_string="[pax]\ntest: %s" % test_value, just_testing=True).config['pax']['test'],
+            must_become)
+
     def test_evaluate_configuration_string(self):
-        x = self.basic_config_header + "test: \"mystring\""
-        y = core.init_configuration(config_string=x)
-        self.assertEqual(y['pax']['test'], "mystring")
+        self._do_config_eval_test('"mystring"', 'mystring')
 
     def test_evaluate_configuration_int(self):
-        x = self.basic_config_header +  "test: 4"
-        y = core.init_configuration(config_string=x)
-        self.assertEqual(y['pax']['test'], 4)
+        self._do_config_eval_test('4', 4)
 
     def test_evaluate_configuration_float(self):
-        x = self.basic_config_header +  "test: 4.0"
-        y = core.init_configuration(config_string=x)
-        self.assertEqual(y['pax']['test'], 4.0)
+        self._do_config_eval_test('4.0', 4.0)
 
     def test_evaluate_configuration_add(self):
-        x = self.basic_config_header +  "test: 4.0 + 2.0"
-        y = core.init_configuration(config_string=x)
-        self.assertEqual(y['pax']['test'], 6.0)
+        self._do_config_eval_test('4.0 + 2.0', 6.0)
 
-    def test_evaluate_configuration_units(self):
-        x = self.basic_config_header +  "test: 4.0 * mm"
-        y = core.init_configuration(config_string=x)
-        self.assertEqual(y['pax']['test'], 4.0 * units.mm)
+    def test_evaluate_configuration_add(self):
+        self._do_config_eval_test('4.0 * mm', 4.0 * units.mm)
 
     def tearDown(self):
         pass
