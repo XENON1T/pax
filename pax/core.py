@@ -20,6 +20,7 @@ from pax import units
 # Store the directory of pax (i.e. this file's directory) as PAX_DIR
 PAX_DIR = os.path.join(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))))
 
+
 def data_file_name(filename):
     """Returns filename if a file exists there, else returns PAX_DIR/data/filename"""
     if os.path.exists(filename):
@@ -34,7 +35,7 @@ def data_file_name(filename):
 def get_named_configuration_options():
     """ Return the names of all named configurations
     """
-    config_files =[]
+    config_files = []
     for filename in glob.glob(os.path.join(PAX_DIR, 'config', '*.ini')):
         filename = os.path.basename(filename)
         m = re.match(r'(\w+)\.ini', filename)
@@ -53,7 +54,7 @@ def get_named_configuration_options():
 ##
 class Processor:
 
-    fallback_configuration = 'XENON100' # Configuration to use when none is specified
+    fallback_configuration = 'XENON100'    # Configuration to use when none is specified
 
     def __init__(self, config_names=(), config_paths=(), config_string=None, just_testing=False):
         """Setup pax using configuration data from three sources:
@@ -74,76 +75,21 @@ class Processor:
         Setting just_testing disables some warnings about not specifying any plugins or plugin groups in the config.
         Use only if, for some reason, you don't want to load a full configuration file.
         """
-
-        self.config_files_read = []      # Need to clean this here so tests can re-load the config
-
-        # Support for string arguments
-        if isinstance(config_names, str):
-            config_names = [config_names]
-        if isinstance(config_paths, str):
-            config_paths = [config_paths]
-
-        self.configp = ConfigParser(inline_comment_prefixes='#',
-                               interpolation=ExtendedInterpolation(),
-                               strict=True)
-
-        # Allow for case-sensitive configuration keys
-        self.configp.optionxform = str
-
-        # Make a list of all config paths / file objects to load
-        config_files = []
-        for config_name in config_names:
-            config_files.append(os.path.join(PAX_DIR, 'config', config_name + '.ini'))
-        for config_path in config_paths:
-            config_files.append(config_path)
-        if config_string is not None:
-            config_files.append(StringIO(config_string))
-        if len(config_files) == 0:
-            # Load the fallback configuration
-            print("WARNING: no configuration specified: loading %s config!" % self.fallback_configuration)
-            config_files.append(os.path.join(PAX_DIR, 'config', self.fallback_configuration + '.ini'))
-
-        # Loads the files into configparser, also takes care of inheritance.
-        for config_file_thing in config_files:
-            self._load_file_into_configparser(config_file_thing)
-
-        # Get a dict with all variables from the units submodule
-        units_variables = {name: getattr(units, name) for name in dir(units)}
-        # Evaluate the values in the ini file
-        evaled_config = {}
-        for section_name, section_dict in self.configp.items():
-            evaled_config[section_name] = {}
-            for key, value in section_dict.items():
-                # Eval value in a context where all units are defined
-                evaled_config[section_name][key] = eval(value, units_variables)
-
-        # WE NOW HAVE THE CONFIGURATION!
-        self.config = evaled_config
+        self.config_files_read = []
+        self.configp = None    # load_configuration will use this to store the ConfigParser
+        self.config = self.load_configuration(config_names, config_paths, config_string)
+        self.log = self.setup_logging()
         pc = self.config['pax']
-
-        # Setup logging
-        try:
-            log_spec = pc['logging_level'].upper()
-        except KeyError:
-            log_spec = 'INFO'
-        numeric_level = getattr(logging, log_spec, None)
-        if not isinstance(numeric_level, int):
-            raise ValueError('Invalid log level: %s' % log_spec)
-
-        logging.basicConfig(level=numeric_level,
-                            format='%(name)s L%(lineno)s %(levelname)s %(message)s')
-        self.log = logging.getLogger('processor')
 
         self.log.info("This is PAX version %s, running with configuration for %s." % (
             pax.__version__, self.config['DEFAULT'].get('tpc_name', 'UNSPECIFIED TPC NAME')))
-
 
         # Get the list of plugins from the configuration file
         # plugin_names[group] is a list of all plugins we have to initialize in the group 'group'
         plugin_names = {}
         if not 'plugin_group_names' in pc:
             if not just_testing:
-                self.log.warning('You did not specify any plugin groups to load: are you ')
+                self.log.warning('You did not specify any plugin groups to load: are you testing me?')
             pc['plugin_group_names'] = []
 
         for plugin_group_name in pc['plugin_group_names']:
@@ -179,20 +125,9 @@ class Processor:
                     self.config[o] = {}
                 self.config[o]['output_name'] = pc['output_name']
 
-        # Search for plugins in  ./plugins, PAX_DIR/plugins, any directories in config['plugin_paths']
-        # Search in all subdirs of the above, except for __pycache__ dirs
-        plugin_search_paths = ['./plugins', os.path.join(PAX_DIR, 'plugins')]
-        if 'plugin_paths' in pc:
-            plugin_search_paths += pc['plugin_paths']
+        self.plugin_search_paths = self.get_plugin_search_paths(pc.get('plugin_paths', None))
 
-        # Look in all subdirectories
-        for entry in plugin_search_paths:
-            plugin_search_paths.extend(glob.glob(os.path.join(entry, '*/')))
-
-        # Don't look in __pychache__ folders
-        self.plugin_search_paths = [path for path in plugin_search_paths if '__pycache__' not in path]
-
-        self.log.debug("Search path for plugins is %s" % str(plugin_search_paths))
+        self.log.debug("Search path for plugins is %s" % str(self.plugin_search_paths))
 
         # Load input plugin & setup the get_events generator
         if 'input' in pc['plugin_group_names']:
@@ -213,9 +148,11 @@ class Processor:
             if 'events_to_process' in pc and pc['events_to_process'] is not None:
                 # The user specified which events to process:
                 self.total_number_events = len(pc['events_to_process'])
+
                 def get_events():
                     for event_number in pc['events_to_process']:
                         yield self.input_plugin.get_single_event(event_number)
+
             else:
                 # Let the input plugin decide which events to process:
                 get_events = self.input_plugin.get_events
@@ -234,11 +171,55 @@ class Processor:
         elif not just_testing:
             self.log.warning("No action plugins specified: this will be a pretty boring processing run...")
 
+    def load_configuration(self, config_names, config_paths, config_string):
+        """Load a configuration -- see init's docstring"""
+        self.config_files_read = []      # Need to clean this here so tests can re-load the config
+
+        # Support for string arguments
+        if isinstance(config_names, str):
+            config_names = [config_names]
+        if isinstance(config_paths, str):
+            config_paths = [config_paths]
+
+        self.configp = ConfigParser(inline_comment_prefixes='#',
+                                    interpolation=ExtendedInterpolation(),
+                                    strict=True)
+
+        # Allow for case-sensitive configuration keys
+        self.configp.optionxform = str
+
+        # Make a list of all config paths / file objects to load
+        config_files = []
+        for config_name in config_names:
+            config_files.append(os.path.join(PAX_DIR, 'config', config_name + '.ini'))
+        for config_path in config_paths:
+            config_files.append(config_path)
+        if config_string is not None:
+            config_files.append(StringIO(config_string))
+        if len(config_files) == 0:
+            # Load the fallback configuration
+            print("WARNING: no configuration specified: loading %s config!" % self.fallback_configuration)
+            config_files.append(os.path.join(PAX_DIR, 'config', self.fallback_configuration + '.ini'))
+
+        # Loads the files into configparser, also takes care of inheritance.
+        for config_file_thing in config_files:
+            self._load_file_into_configparser(config_file_thing)
+
+        # Get a dict with all variables from the units submodule
+        units_variables = {name: getattr(units, name) for name in dir(units)}
+        # Evaluate the values in the ini file
+        evaled_config = {}
+        for section_name, section_dict in self.configp.items():
+            evaled_config[section_name] = {}
+            for key, value in section_dict.items():
+                # Eval value in a context where all units are defined
+                evaled_config[section_name][key] = eval(value, units_variables)
+
+        return evaled_config
 
     def _load_file_into_configparser(self, config_file):
         """Loads a configuration file into our config parser, with support for inheritance.
 
-        :param config: configparser instance
         :param config_file: path or file object of configuration file to read
         :return: None
         """
@@ -263,6 +244,7 @@ class Processor:
 
         # Determine the path(s) of the parent config file(s)
         parent_file_paths = []
+
         if 'parent_configuration' in self.configp['pax']:
             # This file inherits from other config file(s) in the 'config' directory
             parent_files = eval(self.configp['pax']['parent_configuration'])
@@ -270,14 +252,15 @@ class Processor:
                 parent_files = [parent_files]
             parent_file_paths.extend([
                 os.path.join(PAX_DIR, 'config', pf + '.ini')
-                for pf in parent_files
-            ])
+                for pf in parent_files])
+
         if 'parent_configuration_file' in self.configp['pax']:
             # This file inherits from user-defined config file(s)
             parent_files = eval(self.configp['pax']['parent_configuration_file'])
             if not isinstance(parent_files, list):
                 parent_files = [parent_files]
             parent_file_paths.extend(parent_files)
+
         if len(parent_file_paths) == 0:
             # This file has no parents...
             return
@@ -293,6 +276,39 @@ class Processor:
         else:
             self.configp.read_file(config_file)
 
+    def setup_logging(self):
+        """Sets up logging. Must have loaded config first."""
+        pc = self.config['pax']
+        # Setup logging
+        try:
+            log_spec = pc['logging_level'].upper()
+        except KeyError:
+            log_spec = 'INFO'
+        numeric_level = getattr(logging, log_spec, None)
+        if not isinstance(numeric_level, int):
+            raise ValueError('Invalid log level: %s' % log_spec)
+
+        logging.basicConfig(level=numeric_level,
+                            format='%(name)s L%(lineno)s %(levelname)s %(message)s')
+        return logging.getLogger('processor')
+
+    @staticmethod
+    def get_plugin_search_paths(extra_paths=None):
+        """Returns paths where we should search for plugins
+        Search for plugins in  ./plugins, PAX_DIR/plugins, any directories in config['plugin_paths']
+        Search in all subdirs of the above, except for __pycache__ dirs
+        """
+        plugin_search_paths = ['./plugins', os.path.join(PAX_DIR, 'plugins')]
+        if extra_paths is not None:
+            plugin_search_paths += extra_paths
+
+        # Look in all subdirectories
+        for entry in plugin_search_paths:
+            plugin_search_paths.extend(glob.glob(os.path.join(entry, '*/')))
+
+        # Don't look in __pychache__ folders
+        plugin_search_paths = [path for path in plugin_search_paths if '__pycache__' not in path]
+        return plugin_search_paths
 
     def instantiate_plugin(self, name):
         """Take plugin class name and build class from it
@@ -327,6 +343,15 @@ class Processor:
 
         return instance
 
+    def get_plugin_by_name(self, name):
+        """Return plugin by class name. Use for testing."""
+        plugins_by_name = {p.__class__.__name__: p for p in self.action_plugins}
+        if self.input_plugin is not None:
+            plugins_by_name[self.input_plugin.__name__] = self.input_plugin
+        if name in plugins_by_name:
+            return plugins_by_name[name]
+        else:
+            raise ValueError("No plugin named %s has been initialized." % name)
 
     def process_event(self, event):
         """Process one event with all action plugins. Returns processed event."""
@@ -337,7 +362,6 @@ class Processor:
             event = plugin.process_event(event)
 
         return event
-
 
     def run(self):
         """Run the processor over all events
@@ -360,7 +384,7 @@ class Processor:
 
         if self.config['pax']['print_timing_report']:
             all_plugins = [self.input_plugin] + self.action_plugins
-            timing_report = PrettyTable(['Plugin', '%', 'Per event (ms)', 'Total (s)',])
+            timing_report = PrettyTable(['Plugin', '%', 'Per event (ms)', 'Total (s)'])
             timing_report.align = "r"
             timing_report.align["Plugin"] = "l"
             total_time = sum([plugin.total_time_taken for plugin in all_plugins])
@@ -368,14 +392,12 @@ class Processor:
                 t = plugin.total_time_taken
                 timing_report.add_row([
                     plugin.__class__.__name__,
-                    round(100*t/total_time,1),
-                    round(t/self.total_number_events,1),
-                    round(t/1000, 1),
-                ])
+                    round(100*t/total_time, 1),
+                    round(t/self.total_number_events, 1),
+                    round(t/1000, 1)])
             timing_report.add_row([
                 'TOTAL',
-                round(100.,1),
-                round(total_time/self.total_number_events,1),
-                round(total_time/1000, 1),
-            ])
+                round(100., 1),
+                round(total_time/self.total_number_events, 1),
+                round(total_time/1000, 1)])
             print(timing_report)
