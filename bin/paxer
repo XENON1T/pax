@@ -1,134 +1,70 @@
 #!/usr/bin/env python
 """ Processor for Analyzing XENON - command line interface """
 
-import argparse
 from pax import core
-import threading
 import multiprocessing
-from queue import Queue
-import time
-
-##
-# Parse command line arguments
-##
-parser = argparse.ArgumentParser(description="Process XENON1 data")
-
-# Input and output overrides
-parser.add_argument('--input',  default=None,
-                    help="File, database or directory to read events from",
-                    nargs='?')
-parser.add_argument('--output', default=None,
-                    help="File, database or directory to write events to",
-                    nargs='?')
-
-# Log level control
-parser.add_argument('--log', default='INFO',
-                    help="Set log level, e.g. 'debug'")
-
-# Configuration control
-# Pass in a name to use a pre-cooked config from config:
-parser.add_argument('--config',
-                    default='XENON100',
-                    choices=core.get_named_configuration_options(),
-                    nargs='+',
-                    help="Name(s) of the pax configuration(s) to use.")
-
-# ...or pass in a path to your own config file:
-parser.add_argument('--config_path',
-                    default=[],
-                    nargs='+',
-                    help="Path(s) of the configuration file(s) to use.")
-
-# Plotting override
-plotting_control_group = parser.add_mutually_exclusive_group()
-plotting_control_group.add_argument('--plot',
-                                    action='store_const',
-                                    const=True,
-                                    help='Plot summed waveforms on screen')
-plotting_control_group.add_argument('--plot_to_dir',
-                                    help='Save waveform to directory.')
-
-# Control events to process
-input_control_group = parser.add_mutually_exclusive_group()
-input_control_group.add_argument('--event',
-                                 type=int,
-                                 nargs='+',
-                                 help="Process particular event(s).")
-input_control_group.add_argument('--stop_after',
-                                 type=int,
-                                 help="Stop after this many events.")
-
-args = parser.parse_args()
-
-# Override pax main options
-override_string =       '[pax]\n'
-for argname, configname, isString in (  #TODO cleanup
-        ('input',      'input_name',        True),
-        ('output',     'output_name',       True),
-        ('log',        'logging_level',     True),
-        ('stop_after', 'stop_after',        False),
-        ('event',      'events_to_process', False),
-    ):
-    value = getattr(args, argname)
-    if value is not None:
-        if isString:
-            value = '"' + value + '"'
-        override_string +=  '%s = %s\n'  % (configname, value)
-
-# Overrides for plotting
-if args.plot_to_dir or args.plot :
-    override_string += 'output="Plotting.PlotEventSummary"\n'
-    if args.plot_to_dir:
-        override_string += '\n[Plotting.PlotEventSummary]\n'
-        override_string += 'output_dir = "%s"\n' % args.plot_to_dir
-
-##
-# Load configuration and run the processor
-##
-from multiprocessing import Process, JoinableQueue
-
+import logging
+import queue
 
 if __name__ == '__main__':
-    # TODO: add another queue to catch output, then feed into
-    # p.output or something
+    args, override_string = core.get_user_configuration()
     p2 = core.Processor(config_names=args.config,
                         config_paths=args.config_path,
                         config_string=override_string)
 
-    queue = JoinableQueue()
-
-    # lock to serialize console output
-    lock = threading.Lock()
+    events_input = multiprocessing.Queue(100)
+    events_output = multiprocessing.Queue()
 
     # The worker thread pulls an item from the queue and processes it
-    def worker(queue, write_function, lock):
-        p = core.Processor(config_names=args.config,
-                           config_paths=args.config_path,
-                           config_string=override_string,
-                           output=False)
+    def worker(events_input, events_output):
+        my_p = core.Processor(config_names=args.config,
+                              config_paths=args.config_path,
+                              config_string=override_string,
+                              output=False)
         while True:
-            item = queue.get()
-            p.process_event(item)
-            lock.acquire()
-            try:
-                write_function(item)
-                print('hello world', item)
-            finally:
-                lock.release()
-            queue.task_done()
+            event = events_input.get()
+            event = my_p.process_event(event)
+            events_output.put(event)
+
+
 
     # Create the queue and thread pool.
     for i in range(4):
-         t = Process(target=worker, args=(queue, p2.write_event, lock))
+         t = multiprocessing.Process(target=worker,
+                                     args=(events_input, events_output))
          t.daemon = True  # thread dies when main thread (only non-daemon thread) exits.
          t.start()
 
-    # stuff work items on the queue (in this case, just a number).
-    start = time.perf_counter()
 
-    #p2.write_event()
-    for i, item in enumerate(p2.get_events()):
-        queue.put(item)
+    event_generator = p2.get_events()
+    i = 0
+    j = 0
+    while True:
+        try:
+            event = next(event_generator)
+        except StopIteration:
+            break
 
-    queue.join()       # block until all tasks are done
+        try:
+            logging.info("Feeding event %d to input queue" % i)
+            events_input.put_nowait(event)
+            i += 1
+            event = next(event_generator)
+        except queue.Empty:
+            print('except')
+
+        try:
+            logging.info("Retrieving %dth event from output queue" % j)
+            event = events_output.get_nowait()
+            j += 1
+            p2.write_event(event)
+        except queue.Empty:
+            logging.info("except")
+    else:
+        while (not events_input.empty()) or (not events_output.empty()):
+            logging.info("Retrieving %dth event from output queue" % i)
+            event = events_output.get()
+            j += 1
+            p2.write_event(event)
+
 

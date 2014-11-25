@@ -5,6 +5,7 @@ import glob
 import itertools
 import logging
 import inspect
+import argparse
 from configparser import ConfigParser, ExtendedInterpolation
 
 import re
@@ -45,6 +46,78 @@ def get_named_configuration_options():
         config_files.append(filename)
     return config_files
 
+def get_user_configuration():
+    parser = argparse.ArgumentParser(description="Process XENON1T data")
+
+    # Input and output overrides
+    parser.add_argument('--input',  default=None,
+                        help="File, database or directory to read events from",
+                        nargs='?')
+    parser.add_argument('--output', default=None,
+                        help="File, database or directory to write events to",
+                        nargs='?')
+
+    # Log level control
+    parser.add_argument('--log', default='INFO',
+                        help="Set log level, e.g. 'debug'")
+
+    # Configuration control
+    # Pass in a name to use a pre-cooked config from config:
+    parser.add_argument('--config',
+                        default='XENON100',
+                        choices=get_named_configuration_options(),
+                        nargs='+',
+                        help="Name(s) of the pax configuration(s) to use.")
+
+    # ...or pass in a path to your own config file:
+    parser.add_argument('--config_path',
+                        default=[],
+                        nargs='+',
+                        help="Path(s) of the configuration file(s) to use.")
+
+    # Plotting override
+    plotting_control_group = parser.add_mutually_exclusive_group()
+    plotting_control_group.add_argument('--plot',
+                                        action='store_const',
+                                        const=True,
+                                        help='Plot summed waveforms on screen')
+    plotting_control_group.add_argument('--plot_to_dir',
+                                        help='Save waveform to directory.')
+
+    # Control events to process
+    input_control_group = parser.add_mutually_exclusive_group()
+    input_control_group.add_argument('--event',
+                                     type=int,
+                                     nargs='+',
+                                     help="Process particular event(s).")
+    input_control_group.add_argument('--stop_after',
+                                     type=int,
+                                     help="Stop after this many events.")
+
+    args = parser.parse_args()
+
+    override_string =       '[pax]\n'
+    for argname, configname, isString in (  #TODO cleanup
+            ('input',      'input_name',        True),
+            ('output',     'output_name',       True),
+            ('log',        'logging_level',     True),
+            ('stop_after', 'stop_after',        False),
+            ('event',      'events_to_process', False),
+        ):
+        value = getattr(args, argname)
+        if value is not None:
+            if isString:
+                value = '"' + value + '"'
+            override_string +=  '%s = %s\n'  % (configname, value)
+
+    # Overrides for plotting
+    if args.plot_to_dir or args.plot :
+        override_string += 'output="Plotting.PlotEventSummary"\n'
+        if args.plot_to_dir:
+            override_string += '\n[Plotting.PlotEventSummary]\n'
+            override_string += 'output_dir = "%s"\n' % args.plot_to_dir
+
+    return args, override_string
 
 ##
 # Processor class
@@ -79,8 +152,8 @@ class Processor:
         self.log = self.setup_logging()
         pc = self.config['pax']
 
-        self.log.info("This is PAX version %s, running with configuration for %s." % (
-            pax.__version__, self.config['DEFAULT'].get('tpc_name', 'UNSPECIFIED TPC NAME')))
+        self.log.info("This is PAX version %s, running with configuration for %s." % (pax.__version__,
+                                                                                      self.config['DEFAULT'].get('tpc_name', 'UNSPECIFIED TPC NAME')))
 
         # Get the list of plugins from the configuration file
         # plugin_names[group] is a list of all plugins we have to initialize in the group 'group'
@@ -140,11 +213,14 @@ class Processor:
             if 'stop_after' in pc and pc['stop_after'] is not None:
                 self.stop_after = pc['stop_after']
 
-            self.total_number_events = min(self.input_plugin.number_of_events, self.stop_after)
+            self.total_number_events = min(self.input_plugin.number_of_events,
+                                           self.stop_after)
 
             # How should the events be generated?
             if 'events_to_process' in pc and pc['events_to_process'] is not None:
                 # The user specified which events to process:
+                self.total_number_events = len(pc['events_to_process'])
+
                 def get_events():
                     for event_number in pc['events_to_process']:
                         yield self.input_plugin.get_single_event(event_number)
@@ -163,8 +239,14 @@ class Processor:
         elif not just_testing: # During tests of input plugins there is often no action plugin
             self.log.warning("No action plugins specified: this will be a pretty boring processing run...")
 
-        if output:
-            self.output_plugins = [self.instantiate_plugin(x) for x in plugin_names['output']]
+        if not output:
+            plugin_names['output'] = []
+
+        self.output_plugins = [self.instantiate_plugin(x) for x in plugin_names['output']]
+
+        self.log.info("Input singleton: %s", str(plugin_names['input'][0]))
+        self.log.info("Processing chain: %s", str(action_plugin_names))
+        self.log.info("Output chain: %s", plugin_names['output'])
 
 
     def load_configuration(self, config_names, config_paths, config_string):
