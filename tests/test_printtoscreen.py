@@ -8,9 +8,18 @@ from pax import core
 from pax.datastructure import Event, Peak, Waveform
 
 
+override_config = \
+"""
+[pax]
+plugin_group_names = ['output']
+output = 'PrintToScreen.PrintToScreen'
+"""
+
 class TestPrintToScreen(unittest.TestCase):
     def setUp(self):
-        self.obj = core.instantiate_plugin('PrintToScreen.PrintToScreen', for_testing=True)
+        self.obj = override_config
+        self.pax = core.Processor(config_names='XENON100', config_string=override_config, just_testing=True)
+        self.obj = self.pax.action_plugins[-1]
         self.e = Event()
 
     def test_something(self):

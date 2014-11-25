@@ -2,7 +2,6 @@
 """ Processor for Analyzing XENON - command line interface """
 
 import argparse
-
 from pax import core
 
 ##
@@ -84,10 +83,8 @@ if args.plot_to_dir or args.plot :
 ##
 # Load configuration and run the processor
 ##
-config = core.init_configuration(
+core.Processor(
     config_names=args.config,
     config_paths=args.config_path,
     config_string=override_string
-)
-
-core.processor(config)
+).run()
