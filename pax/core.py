@@ -20,7 +20,6 @@ from pax import units
 # Store the directory of pax (i.e. this file's directory) as PAX_DIR
 PAX_DIR = os.path.join(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))))
 
-
 def data_file_name(filename):
     """Returns filename if a file exists there, else returns PAX_DIR/data/filename"""
     if os.path.exists(filename):
@@ -363,41 +362,4 @@ class Processor:
 
         return event
 
-    def run(self):
-        """Run the processor over all events
-        """
 
-        # This is the actual event loop.  'tqdm' is a progress bar.
-        for i, event in enumerate(tqdm(self.get_events(),
-                                       desc='Event',
-                                       total=self.total_number_events)):
-            if i >= self.stop_after:
-                self.log.info("User-defined limit of %d events reached." % i)
-                break
-
-            _ = self.process_event(event)
-
-            self.log.debug("Event %d (%d processed)" % (event.event_number, i))
-
-        else:   # If no break occurred:
-            self.log.info("All events from input source have been processed.")
-
-        if self.config['pax']['print_timing_report']:
-            all_plugins = [self.input_plugin] + self.action_plugins
-            timing_report = PrettyTable(['Plugin', '%', 'Per event (ms)', 'Total (s)'])
-            timing_report.align = "r"
-            timing_report.align["Plugin"] = "l"
-            total_time = sum([plugin.total_time_taken for plugin in all_plugins])
-            for plugin in all_plugins:
-                t = plugin.total_time_taken
-                timing_report.add_row([
-                    plugin.__class__.__name__,
-                    round(100*t/total_time, 1),
-                    round(t/self.total_number_events, 1),
-                    round(t/1000, 1)])
-            timing_report.add_row([
-                'TOTAL',
-                round(100., 1),
-                round(total_time/self.total_number_events, 1),
-                round(total_time/1000, 1)])
-            print(timing_report)

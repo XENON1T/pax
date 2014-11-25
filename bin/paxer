@@ -3,6 +3,10 @@
 
 import argparse
 from pax import core
+import threading
+import multiprocessing
+from queue import Queue
+import time
 
 ##
 # Parse command line arguments
@@ -10,41 +14,39 @@ from pax import core
 parser = argparse.ArgumentParser(description="Process XENON1 data")
 
 # Input and output overrides
-parser.add_argument('--input',  default=None, help="File, database or directory to read events from", nargs='?')
-parser.add_argument('--output', default=None, help="File, database or directory to write events to",  nargs='?')
+parser.add_argument('--input',  default=None,
+                    help="File, database or directory to read events from",
+                    nargs='?')
+parser.add_argument('--output', default=None,
+                    help="File, database or directory to write events to",
+                    nargs='?')
 
 # Log level control
-parser.add_argument('--log', default='INFO', help="Set log level, e.g. 'debug'")
+parser.add_argument('--log', default='INFO',
+                    help="Set log level, e.g. 'debug'")
 
 # Configuration control
 # Pass in a name to use a pre-cooked config from config:
-parser.add_argument(
-    '--config',
-    default='XENON100',
-    choices=core.get_named_configuration_options(),
-    nargs='+',
-    help="Name(s) of the pax configuration(s) to use."
-)
+parser.add_argument('--config',
+                    default='XENON100',
+                    choices=core.get_named_configuration_options(),
+                    nargs='+',
+                    help="Name(s) of the pax configuration(s) to use.")
+
 # ...or pass in a path to your own config file:
-parser.add_argument(
-    '--config_path',
-    default=[],
-    nargs='+',
-    help="Path(s) of the configuration file(s) to use."
-)
+parser.add_argument('--config_path',
+                    default=[],
+                    nargs='+',
+                    help="Path(s) of the configuration file(s) to use.")
 
 # Plotting override
 plotting_control_group = parser.add_mutually_exclusive_group()
-plotting_control_group.add_argument(
-    '--plot',
-    action='store_const',
-    const=True,
-    help='Plot summed waveforms on screen',
-)
-plotting_control_group.add_argument(
-    '--plot_to_dir',
-    help='Save summed waveform plots in directory',
-)
+plotting_control_group.add_argument('--plot',
+                                    action='store_const',
+                                    const=True,
+                                    help='Plot summed waveforms on screen')
+plotting_control_group.add_argument('--plot_to_dir',
+                                    help='Save waveform to directory.')
 
 # Control events to process
 input_control_group = parser.add_mutually_exclusive_group()
@@ -54,13 +56,13 @@ input_control_group.add_argument('--event',
                                  help="Process particular event(s).")
 input_control_group.add_argument('--stop_after',
                                  type=int,
-                                 help="Stop after STOP_AFTER events have been processed.")
+                                 help="Stop after this many events.")
 
 args = parser.parse_args()
 
 # Override pax main options
 override_string =       '[pax]\n'
-for argname, configname, isString in (
+for argname, configname, isString in (  #TODO cleanup
         ('input',      'input_name',        True),
         ('output',     'output_name',       True),
         ('log',        'logging_level',     True),
@@ -83,8 +85,52 @@ if args.plot_to_dir or args.plot :
 ##
 # Load configuration and run the processor
 ##
-core.Processor(
-    config_names=args.config,
-    config_paths=args.config_path,
-    config_string=override_string
-).run()
+from multiprocessing import Process, JoinableQueue
+
+def f(q):
+    q.put('X' * 1000000)
+
+if __name__ == '__main__':
+    queue = JoinableQueue()
+    #p = Process(target=f, args=(queue,))
+    #p.start()
+    #p.join()                    # this deadlocks
+    #obj = queue.get()
+
+    # lock to serialize console output
+    lock = threading.Lock()
+
+    # The worker thread pulls an item from the queue and processes it
+    def worker(queue):
+        p = core.Processor(config_names=args.config,
+                           config_paths=args.config_path,
+                           config_string=override_string)
+        while True:
+            item = queue.get()
+            p.process_event(item)
+            queue.task_done()
+
+    # Create the queue and thread pool.
+    for i in range(4):
+         t = Process(target=worker, args=(queue,))
+         t.daemon = True  # thread dies when main thread (only non-daemon thread) exits.
+         t.start()
+
+    # stuff work items on the queue (in this case, just a number).
+    start = time.perf_counter()
+    p2 = core.Processor(config_names=args.config,
+                        config_paths=args.config_path,
+                        config_string=override_string)
+
+    for i, item in enumerate(p2.get_events()):
+        #if i > 100:
+        #    break
+        queue.put(item)
+
+    queue.join()       # block until all tasks are done
+
+    # "Work" took .1 seconds per task.
+    # 20 tasks serially would be 2 seconds.
+    # With 4 threads should be about .5 seconds (contrived because non-CPU intensive "work")
+    print('time:',time.perf_counter() - start)
+
