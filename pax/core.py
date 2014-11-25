@@ -11,8 +11,6 @@ import re
 import os
 from io import StringIO
 import importlib
-from tqdm import tqdm     # Progress bar
-from prettytable import PrettyTable     # Timing report
 
 import pax
 from pax import units
@@ -55,7 +53,8 @@ class Processor:
 
     fallback_configuration = 'XENON100'    # Configuration to use when none is specified
 
-    def __init__(self, config_names=(), config_paths=(), config_string=None, just_testing=False):
+    def __init__(self, config_names=(), config_paths=(), config_string=None,
+                 just_testing=False, output=True):
         """Setup pax using configuration data from three sources:
           - config_names: List of named configurations to load (sequentially)
           - config_paths: List of config file paths to load (sequentially)
@@ -109,7 +108,7 @@ class Processor:
         # For the plugin groups which are action plugins, get all names, flatten them
         action_plugin_names = list(itertools.chain(*[plugin_names[g]
                                                    for g in pc['plugin_group_names']
-                                                   if g != 'input']))
+                                                   if (g != 'input' and g != 'output')]))
 
         # Hand out input & output override instructions
         if 'input_name' in pc and 'input' in pc['plugin_group_names']:
@@ -146,8 +145,6 @@ class Processor:
             # How should the events be generated?
             if 'events_to_process' in pc and pc['events_to_process'] is not None:
                 # The user specified which events to process:
-                self.total_number_events = len(pc['events_to_process'])
-
                 def get_events():
                     for event_number in pc['events_to_process']:
                         yield self.input_plugin.get_single_event(event_number)
@@ -157,18 +154,18 @@ class Processor:
                 get_events = self.input_plugin.get_events
 
             self.get_events = get_events
-
-        # During tests there is often no input plugin, events are added manually
-        elif not just_testing:
+        elif not just_testing: # During tests there is often no input plugin, events are added manually
             self.log.warning("No input plugin specified: how are you planning to get any events?")
 
         # Load the action plugins
         if len(action_plugin_names) > 0:
             self.action_plugins = [self.instantiate_plugin(x) for x in action_plugin_names]
-
-        # During tests of input plugins there is often no action plugin
-        elif not just_testing:
+        elif not just_testing: # During tests of input plugins there is often no action plugin
             self.log.warning("No action plugins specified: this will be a pretty boring processing run...")
+
+        if output:
+            self.output_plugins = [self.instantiate_plugin(x) for x in plugin_names['output']]
+
 
     def load_configuration(self, config_names, config_paths, config_string):
         """Load a configuration -- see init's docstring"""
@@ -352,11 +349,17 @@ class Processor:
         else:
             raise ValueError("No plugin named %s has been initialized." % name)
 
-    def process_event(self, event):
-        """Process one event with all action plugins. Returns processed event."""
-        total_plugins = len(self.action_plugins)
+    def write_event(self, event):
+        self.process_event(event, self.output_plugins)
 
-        for j, plugin in enumerate(self.action_plugins):
+    def process_event(self, event, actions=None):
+        """Process one event with all action plugins. Returns processed event."""
+        if actions == None:
+            actions = self.action_plugins
+
+        total_plugins = len(actions)
+
+        for j, plugin in enumerate(actions):
             self.log.debug("%s (step %d/$d)", plugin.__class__.__name__, j, total_plugins)
             event = plugin.process_event(event)
 

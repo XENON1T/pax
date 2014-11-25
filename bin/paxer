@@ -87,50 +87,48 @@ if args.plot_to_dir or args.plot :
 ##
 from multiprocessing import Process, JoinableQueue
 
-def f(q):
-    q.put('X' * 1000000)
 
 if __name__ == '__main__':
+    # TODO: add another queue to catch output, then feed into
+    # p.output or something
+    p2 = core.Processor(config_names=args.config,
+                        config_paths=args.config_path,
+                        config_string=override_string)
+
     queue = JoinableQueue()
-    #p = Process(target=f, args=(queue,))
-    #p.start()
-    #p.join()                    # this deadlocks
-    #obj = queue.get()
 
     # lock to serialize console output
     lock = threading.Lock()
 
     # The worker thread pulls an item from the queue and processes it
-    def worker(queue):
+    def worker(queue, write_function, lock):
         p = core.Processor(config_names=args.config,
                            config_paths=args.config_path,
-                           config_string=override_string)
+                           config_string=override_string,
+                           output=False)
         while True:
             item = queue.get()
             p.process_event(item)
+            lock.acquire()
+            try:
+                write_function(item)
+                print('hello world', item)
+            finally:
+                lock.release()
             queue.task_done()
 
     # Create the queue and thread pool.
     for i in range(4):
-         t = Process(target=worker, args=(queue,))
+         t = Process(target=worker, args=(queue, p2.write_event, lock))
          t.daemon = True  # thread dies when main thread (only non-daemon thread) exits.
          t.start()
 
     # stuff work items on the queue (in this case, just a number).
     start = time.perf_counter()
-    p2 = core.Processor(config_names=args.config,
-                        config_paths=args.config_path,
-                        config_string=override_string)
 
+    #p2.write_event()
     for i, item in enumerate(p2.get_events()):
-        #if i > 100:
-        #    break
         queue.put(item)
 
     queue.join()       # block until all tasks are done
-
-    # "Work" took .1 seconds per task.
-    # 20 tasks serially would be 2 seconds.
-    # With 4 threads should be about .5 seconds (contrived because non-CPU intensive "work")
-    print('time:',time.perf_counter() - start)
 
