@@ -400,4 +400,4 @@ class Processor:
                 round(100., 1),
                 round(total_time/self.total_number_events, 1),
                 round(total_time/1000, 1)])
-            print(timing_report)
+            self.log.info("Timing report:\n"+str(timing_report))
