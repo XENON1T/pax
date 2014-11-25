@@ -160,16 +160,20 @@ class Processor:
             self.get_events = get_events
 
         # During tests there is often no input plugin, events are added manually
-        elif not just_testing:
-            self.log.warning("No input plugin specified: how are you planning to get any events?")
+        else:
+            self.input_plugin = None
+            if not just_testing:
+                self.log.warning("No input plugin specified: how are you planning to get any events?")
 
         # Load the action plugins
         if len(action_plugin_names) > 0:
             self.action_plugins = [self.instantiate_plugin(x) for x in action_plugin_names]
 
         # During tests of input plugins there is often no action plugin
-        elif not just_testing:
-            self.log.warning("No action plugins specified: this will be a pretty boring processing run...")
+        else:
+            self.action_plugins = []
+            if not just_testing:
+                self.log.warning("No action plugins specified: this will be a pretty boring processing run...")
 
     def load_configuration(self, config_names, config_paths, config_string):
         """Load a configuration -- see init's docstring"""
