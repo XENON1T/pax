@@ -1,0 +1,47 @@
+#!/usr/bin/env python
+""" Processor for Analyzing XENON - command line interface """
+
+from pax import core
+from tqdm import tqdm
+from prettytable import PrettyTable     # Timing report
+
+args, override_string = core.get_user_configuration()
+
+if __name__ == '__main__':
+    p = core.Processor(config_names=args.config,
+                        config_paths=args.config_path,
+                        config_string=override_string)
+
+    # This is the actual event loop.  'tqdm' is a progress bar.
+    for i, event in enumerate(tqdm(p.get_events(),
+                                   desc='Event',
+                                   total=p.total_number_events)):
+        if i >= p.stop_after:
+            p.log.info("User-defined limit of %d events reached." % i)
+            break
+
+        _ = p.process_event(event)
+
+        p.log.debug("Event %d (%d processed)" % (event.event_number, i))
+
+    else:   # If no break occurred:
+        p.log.info("All events from input source have been processed.")
+
+    if p.config['pax']['print_timing_report']:
+        all_plugins = [p.input_plugin] + p.action_plugins
+        timing_report = PrettyTable(['Plugin', '%', 'Per event (ms)', 'Total (s)'])
+        timing_report.align = "r"
+        timing_report.align["Plugin"] = "l"
+        total_time = sum([plugin.total_time_taken for plugin in all_plugins])
+        for plugin in all_plugins:
+            t = plugin.total_time_taken
+            timing_report.add_row([plugin.__class__.__name__,
+                                   round(100*t/total_time, 1),
+                                   round(t/p.total_number_events, 1),
+                                   round(t/1000, 1)])
+        timing_report.add_row([
+            'TOTAL',
+            round(100., 1),
+            round(total_time/p.total_number_events, 1),
+            round(total_time/1000, 1)])
+        p.log.info("Timing report:\n"+str(timing_report))

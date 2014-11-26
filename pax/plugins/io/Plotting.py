@@ -89,7 +89,8 @@ class PlotBase(plugin.OutputPlugin):
             waveform = event.get_waveform(w['internal_name'])
             plt.plot(xlabels,
                      (waveform.samples[lefti:righti + 1] + y_offset)*scale,
-                     label=w['plot_label'])
+                     label=w['plot_label'],
+                     drawstyle=w.get('drawstyle'))
         if log_y_axis:
             plt.ylim((0.9,plt.ylim()[1]))
 
