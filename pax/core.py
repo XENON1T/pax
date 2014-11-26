@@ -201,8 +201,9 @@ class Processor:
             config_files.append(config_path)
         if config_string is not None:
             config_files.append(StringIO(config_string))
-        if len(config_files) == 0:
+        if len(config_files) == 0 and config_dict == {}:
             # Load the fallback configuration
+            # Have to use print, logging is not yet setup...
             print("WARNING: no configuration specified: loading %s config!" % self.fallback_configuration)
             config_files.append(os.path.join(PAX_DIR, 'config', self.fallback_configuration + '.ini'))
 
@@ -222,7 +223,10 @@ class Processor:
 
         # Apply the config_dict
         for section_name in config_dict.keys():
-            evaled_config[section_name].update(config_dict[section_name])
+            if section_name in evaled_config:
+                evaled_config[section_name].update(config_dict[section_name])
+            else:
+                evaled_config[section_name] = config_dict[section_name]
 
         return evaled_config
 

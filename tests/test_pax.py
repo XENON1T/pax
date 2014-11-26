@@ -27,11 +27,17 @@ class TestPax(unittest.TestCase):
         """
         mypax = core.Processor(config_dict={'pax':{}}, just_testing=True)
         self.assertIsInstance(mypax, core.Processor)
+        # Make sure the configuration is actually empty, and a default config did not sneakily get loaded...
+        # Note plugin_group_names gets autoset during config init
+        self.assertEqual(mypax.config, {'DEFAULT': {}, 'pax': {'plugin_group_names': []}})
 
     def test_pax_config_string(self):
         """ Similar, but using an almost-empty config string """
         mypax = core.Processor(config_string="[pax]", just_testing=True)
         self.assertIsInstance(mypax, core.Processor)
+        # Make sure the configuration is actually empty, and a default config did not sneakily get loaded...
+        # Note plugin_group_names gets autoset during config init
+        self.assertEqual(mypax.config, {'DEFAULT': {}, 'pax': {'plugin_group_names': []}})
 
     ##
     ## Test for configuration evaluation
@@ -71,7 +77,7 @@ class TestPax(unittest.TestCase):
 
     def test_dummy_output_plugin(self):
         mypax = core.Processor(config_dict = {'pax' : {'plugin_group_names':   ['output'],
-                                                       'input':                'Dummy.DummyOutput'}},
+                                                       'output':                'Dummy.DummyOutput'}},
                                just_testing=True)
         self.assertIsInstance(mypax, core.Processor)
         self.assertIsInstance(mypax.action_plugins[0], plugin.OutputPlugin)
