@@ -8,18 +8,13 @@ from pax import core
 from pax.datastructure import Event, Peak, Waveform
 
 
-override_config = \
-"""
-[pax]
-plugin_group_names = ['output']
-output = 'PrintToScreen.PrintToScreen'
-"""
 
 class TestPrintToScreen(unittest.TestCase):
     def setUp(self):
-        self.obj = override_config
-        self.pax = core.Processor(config_names='XENON100', config_string=override_config, just_testing=True)
-        self.obj = self.pax.action_plugins[-1]
+        self.pax = core.Processor(config_names='XENON100', just_testing=True, config_dict={'pax': {
+            'plugin_group_names': ['output'],
+            'output':              'PrintToScreen.PrintToScreen'}})
+        self.obj = self.pax.get_plugin_by_name('PrintToScreen')
         self.e = Event()
 
     def test_something(self):

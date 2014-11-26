@@ -11,3 +11,9 @@ class DummyOutput(plugin.OutputPlugin):
 
 class DummyTransform(plugin.TransformPlugin):
     pass
+
+class DummyTransform2(plugin.TransformPlugin):
+    pass
+
+class DummyTransform3(plugin.TransformPlugin):
+    pass
