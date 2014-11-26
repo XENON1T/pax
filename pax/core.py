@@ -56,19 +56,20 @@ class Processor:
 
     fallback_configuration = 'XENON100'    # Configuration to use when none is specified
 
-    def __init__(self, config_names=(), config_paths=(), config_string=None, just_testing=False):
+    def __init__(self, config_names=(), config_paths=(), config_string=None, config_dict={}, just_testing=False):
         """Setup pax using configuration data from three sources:
           - config_names: List of named configurations to load (sequentially)
           - config_paths: List of config file paths to load (sequentially)
-          - config_string: A final config override string
+          - config_string: A config string (overrides all config from files)
+          - config_dict: A final config ovveride dict: {'section' : {'setting' : 17, ...
+
         Files from config_paths will be loaded after config_names, and can thus override their settings.
-        The config_string is loaded last of all.
-
         Configuration files can inherit from others using parent_configuration and parent_configuration_files.
-
-        Each value in the ini file is eval()'ed in a context with physical unit variables:
+        Each value in the ini files (and the config_string) is eval()'ed in a context with physical unit variables:
             4 * 2 -> 8
             4 * cm**(2)/s -> correctly interpreted as a physical value with units of cm^2/s
+
+        The config_dict's settings are not evaluated.
 
         :return: nested dictionary of evaluated configuration values, use as: config[section][key].
 
@@ -77,7 +78,7 @@ class Processor:
         """
         self.config_files_read = []
         self.configp = None    # load_configuration will use this to store the ConfigParser
-        self.config = self.load_configuration(config_names, config_paths, config_string)
+        self.config = self.load_configuration(config_names, config_paths, config_string, config_dict)
         self.log = self.setup_logging()
         pc = self.config['pax']
 
@@ -175,7 +176,7 @@ class Processor:
             if not just_testing:
                 self.log.warning("No action plugins specified: this will be a pretty boring processing run...")
 
-    def load_configuration(self, config_names, config_paths, config_string):
+    def load_configuration(self, config_names, config_paths, config_string, config_dict):
         """Load a configuration -- see init's docstring"""
         self.config_files_read = []      # Need to clean this here so tests can re-load the config
 
@@ -218,6 +219,10 @@ class Processor:
             for key, value in section_dict.items():
                 # Eval value in a context where all units are defined
                 evaled_config[section_name][key] = eval(value, units_variables)
+
+        # Apply the config_dict
+        for section_name in config_dict.keys():
+            evaled_config[section_name].update(config_dict[section_name])
 
         return evaled_config
 
