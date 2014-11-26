@@ -60,9 +60,6 @@ class TestPax(unittest.TestCase):
     def test_evaluate_configuration_add(self):
         self._do_config_eval_test('4.0 + 2.0', 6.0)
 
-    def test_evaluate_configuration_add(self):
-        self._do_config_eval_test('4.0 * mm', 4.0 * units.mm)
-
 
     ##
     ## Tests for plugin instantiation
@@ -91,10 +88,14 @@ class TestPax(unittest.TestCase):
 
     def test_get_plugin_by_name(self):
         mypax = core.Processor(config_dict = {'pax' : {'plugin_group_names':   ['bla'],
-                                                       'bla':                'Dummy.DummyTransform'}},
+                                                       'bla':                  ['Dummy.DummyTransform',
+                                                                                'Dummy.DummyTransform2',
+                                                                                'Dummy.DummyTransform3']}},
                                just_testing=True)
         self.assertIsInstance(mypax, core.Processor)
-        self.assertIsInstance(mypax.get_plugin_by_name('DummyTransform'), plugin.TransformPlugin)
+        pl = mypax.get_plugin_by_name('DummyTransform2')
+        self.assertIsInstance(pl, plugin.TransformPlugin)
+        self.assertEqual(pl.__class__.__name__, 'DummyTransform2')
 
     def test_evaluate_default_configuration(self):
         """ Test loading the entire default configuration & all its plugins"""
