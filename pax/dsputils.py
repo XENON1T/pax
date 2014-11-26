@@ -56,7 +56,7 @@ def sign_changes(signal, report_first_index='positive'):
     return list(becomes_positive), list(becomes_non_positive)
 
 
-def peak_bounds(signal, max_idx, fraction_of_max, zero_level=0):
+def peak_bounds(signal, max_idx, fraction_of_max, zero_level=0, inclusive=True):
     """
     Return (left, right) indices closest to max_idx where signal drops below signal[max_idx]*fraction_of_max.
 
@@ -64,6 +64,8 @@ def peak_bounds(signal, max_idx, fraction_of_max, zero_level=0):
     :param peak: Peak object
     :param fraction_of_max: Width at this fraction of maximum
     :param zero_level: Always end a peak before it is < this. Default: 0
+    :param inclusive: Include endpoints (first points where signal drops below), default True.
+    TODO: proper support for inclusive (don't just subtract 1)
     """
     if len(signal) == 0:
         raise RuntimeError("Empty signal, can't find peak bounds!")
@@ -92,6 +94,11 @@ def peak_bounds(signal, max_idx, fraction_of_max, zero_level=0):
     else:
         right += max_idx
 
+    if not inclusive:
+        if signal[left] < threshold and left != len(signal) - 1:
+            left += 1
+        if signal[right] < threshold and right != 0:
+            right -= 1
     return (left, right)
 
 

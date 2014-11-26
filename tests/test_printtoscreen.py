@@ -8,9 +8,13 @@ from pax import core
 from pax.datastructure import Event, Peak, Waveform
 
 
+
 class TestPrintToScreen(unittest.TestCase):
     def setUp(self):
-        self.obj = core.instantiate_plugin('PrintToScreen.PrintToScreen', for_testing=True)
+        self.pax = core.Processor(config_names='XENON100', just_testing=True, config_dict={'pax': {
+            'plugin_group_names': ['output'],
+            'output':              'PrintToScreen.PrintToScreen'}})
+        self.obj = self.pax.get_plugin_by_name('PrintToScreen')
         self.e = Event()
 
     def test_something(self):
