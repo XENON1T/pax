@@ -56,17 +56,19 @@ def sign_changes(signal, report_first_index='positive'):
     return list(becomes_positive), list(becomes_non_positive)
 
 
-def peak_bounds(signal, max_idx, fraction_of_max, zero_level=0, inclusive=True):
+def peak_bounds(signal, fraction_of_max, max_idx=None, zero_level=0, inclusive=True):
     """
     Return (left, right) indices closest to max_idx where signal drops below signal[max_idx]*fraction_of_max.
 
     :param signal: waveform to look in (numpy array)
-    :param peak: Peak object
     :param fraction_of_max: Width at this fraction of maximum
+    :param max_idx: Index in signal of the maximum of the peak. Fefault None, will be determined by np.argmax(signal)
     :param zero_level: Always end a peak before it is < this. Default: 0
     :param inclusive: Include endpoints (first points where signal drops below), default True.
     TODO: proper support for inclusive (don't just subtract 1)
     """
+    if max_idx is None:
+        max_idx = np.argmax(signal)
     if len(signal) == 0:
         raise RuntimeError("Empty signal, can't find peak bounds!")
     if max_idx > len(signal)-1:
@@ -100,7 +102,6 @@ def peak_bounds(signal, max_idx, fraction_of_max, zero_level=0, inclusive=True):
         if signal[right] < threshold and right != 0:
             right -= 1
     return (left, right)
-
 
 def width_at_fraction(peak_wave, fraction_of_max, max_idx, interpolate=False):
     """Returns width of a peak IN SAMPLES at fraction of maximum"""
@@ -139,8 +140,6 @@ def width_at_fraction(peak_wave, fraction_of_max, max_idx, interpolate=False):
     # plt.show()
 
     return right - left + 1
-
-
 
 
 def find_first_fast(a, threshold, chunk_size=128):
@@ -185,6 +184,8 @@ def free_regions(event):
 
 # TODO: maybe move this to the peak splitter? It isn't used by anything
 # else... yet
+
+
 
 
 

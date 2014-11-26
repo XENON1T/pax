@@ -102,6 +102,7 @@ class PlotBase(plugin.OutputPlugin):
                 x = peak.index_of_maximum * self.samples_to_us
                 y = peak.height
                 if log_y_axis:
+                    y += 1
                     ytext = y * (3-2*y/max_y)
                     arrowprops = None
                 else:
