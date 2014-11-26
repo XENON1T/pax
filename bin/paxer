@@ -59,7 +59,7 @@ input_control_group.add_argument('--stop_after',
 args = parser.parse_args()
 
 # Override pax main options
-override_string =       '[pax]\n'
+override_dict = {'pax': {}}
 for argname, configname, isString in (
         ('input',      'input_name',        True),
         ('output',     'output_name',       True),
@@ -69,16 +69,13 @@ for argname, configname, isString in (
     ):
     value = getattr(args, argname)
     if value is not None:
-        if isString:
-            value = '"' + value + '"'
-        override_string +=  '%s = %s\n'  % (configname, value)
+        override_dict['pax'][configname] = value
 
 # Overrides for plotting
 if args.plot_to_dir or args.plot :
-    override_string += 'output="Plotting.PlotEventSummary"\n'
+    override_dict['pax']['output'] = 'Plotting.PlotEventSummary'
     if args.plot_to_dir:
-        override_string += '\n[Plotting.PlotEventSummary]\n'
-        override_string += 'output_dir = "%s"\n' % args.plot_to_dir
+        override_dict['Plotting.PlotEventSummary'] = {'output_dir': args.plot_to_dir}
 
 ##
 # Load configuration and run the processor
@@ -86,5 +83,5 @@ if args.plot_to_dir or args.plot :
 core.Processor(
     config_names=args.config,
     config_paths=args.config_path,
-    config_string=override_string
+    config_dict=override_dict
 ).run()
