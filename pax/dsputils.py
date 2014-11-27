@@ -27,9 +27,12 @@ from pax import datastructure, units
 def intervals_above_threshold(signal, threshold):
     """Return boundary indices of all intervals in signal (strictly) above threshold"""
     cross_above, cross_below = sign_changes(signal - threshold)
-    # Assuming each interval's left <= right, we can simply split sorted(lefts+rights) in pairs
-    # Todo: come on, there must be a numpy method for this!
-    return list(zip(*[iter(sorted(cross_above + cross_below))] * 2))
+    # Assuming each interval's left <= right, we can split sorted(cross_above+cross_below) into pairs to get our result
+    return list(zip(*[iter(sorted(list(cross_above) + list(cross_below)))] * 2))
+    # I've been looking for a proper numpy solution. It should be:
+    # return np.vstack((cross_above, cross_below)).T
+    # But it appears to make the processor run slower! (a tiny bit)
+    # Maybe because we're dealing with many small arrays rather than big ones?
 
 
 def sign_changes(signal, report_first_index='positive'):
@@ -55,7 +58,7 @@ def sign_changes(signal, report_first_index='positive'):
     above0_next = np.roll(above0, 1)
     becomes_positive = np.sort(np.where(above0 - above0_next == 1)[0])
     becomes_non_positive = np.sort(np.where(above0 - above0_next == -1)[0] - 1)
-    return list(becomes_positive), list(becomes_non_positive)
+    return becomes_positive, becomes_non_positive
 
 
 def peak_bounds(signal, fraction_of_max=None, max_idx=None, zero_level=0, inclusive=True):

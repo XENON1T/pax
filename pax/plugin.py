@@ -39,7 +39,7 @@ class BasePlugin(object):
 
     @staticmethod
     def _timeit(method):
-        """Decorator for measuring class method speeds
+        """Decorator for measuring method speeds
         Should be wrapped about each plugin's main method
         """
         def timed(*args, **kw):

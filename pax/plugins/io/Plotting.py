@@ -331,6 +331,7 @@ class PlotChannelWaveforms2D(PlotBase):
                     color=(color_factor, 0, 1-color_factor))
 
         # Plot the channel peaks as dots
+        # All these for loops are slow -- hope we get by-column access some time
         plt.scatter(  [p.index_of_maximum * time_scale     for p in event.channel_peaks],
                       [p.channel              for p in event.channel_peaks],
                     c=[p.height/p.noise_sigma for p in event.channel_peaks],
