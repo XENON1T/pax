@@ -1,7 +1,9 @@
 import numpy as np
 import math
 from pax import plugin, datastructure, dsputils
+import pandas
 
+import matplotlib.pyplot as plt
 
 class FindBigPeaks(plugin.TransformPlugin):
     """Find peaks in intervals above threshold in the sum waveform
@@ -47,7 +49,8 @@ class FindBigPeaks(plugin.TransformPlugin):
                         continue
 
                     if np.sum(peak_wave) < pf.get('area_threshold', 0):
-                        # Let the low-energy peakfinder take care of this one
+                        # Let the low-energy peakfinder take care of this one...
+                        # TODO: no good to compute area here, then again in computepeakareas... decide!
                         continue
 
                     # We've found an interval above threshold: should we split it?
@@ -193,161 +196,172 @@ class FindBigPeaks(plugin.TransformPlugin):
         return np.array(peaks), np.array(valleys)
 
 
-# class PruneSmallPeaksNearLargePeaks(plugin.TransformPlugin):
-#     """Delete small peaks too close to a large peak
-#     Large peaks turn on many channels so the noise in the sum waveform noise becomes large
-#     (if the noise is gaussian, it scales as ~sqrt(nchannels).
-#     The low-energy peakfinder should take care of fake peaks in these regions just fine,
-#     but it is expensive, so if we are certain a peak can't be real, might as well delete it already.
-#     """
-#
-#     def transform_event(self, event):
-#         large_peaks = [p for p in event.peaks if p.area >= self.config['large_peaks_start_from']]
-#         small_peaks = [p for p in event.peaks if p.area < self.config['always_keep_peaks_larger_than']]
-#         print(large_peaks)
-#         for p in small_peaks:
-#             if p.type in self.config['never_prune_peak_types']:
-#                 continue
-#
-#             largepeakstoleft = [q for q in large_peaks if q.left < p.left]
-#             if len(largepeakstoleft) > 0:
-#                 leftlargepeak = max(largepeakstoleft, key=lambda x : x.left)
-#                 if p.left - leftlargepeak.right < self.config['min_distance_to_large_peak']:
-#                     self.log.warning("Prune %s at %s-%s-%s: too close to large peak on the left" % (
-#                         p.type, p.left, p.index_of_maximum, p.right))
-#                     p.type = 'X'
-#                     continue
-#
-#             largepeakstoright = [q for q in large_peaks if q.right > p.right]
-#             if len(largepeakstoright) > 0:
-#                 rightlargepeak = min(largepeakstoright, key=lambda x : x.right)
-#                 if rightlargepeak.left - p.right < self.config['min_distance_to_large_peak']:
-#                     self.log.warning("Prune %s at %s-%s-%s: too close to large peak on the right" % (
-#                         p.type, p.left, p.index_of_maximum, p.right))
-#                     p.type = 'X'
-#                     continue
-#
-#         #event.peaks = [p for p in event.peaks if p.type != 'X']
-#         return event
+
+# TODO: do low-E peakfinding in veto even if we see a high-E peak in TPC (and vice versa, although less important)
+# Needs more proper separation of veto & tpc peaks than just ignore_previous_peaks option in peakfinder
 
 
+class FindSmallPeaks(plugin.TransformPlugin):
 
-class ComputePeakWidths(plugin.TransformPlugin):
-    """Does what it says on the tin"""
+    def startup(self):
+        # Using .get can be a useful tip during plugin development...
+        self.min_sigma = self.config.get('peak_minimum_sigma', 5)
+        self.initial_noise_sigma = self.config.get('noise_sigma_guess', 0.02)
+        self.give_up_after = self.config.get('give_up_after_peak_of_size', 10000)
+        self.look_in_large_peak_tails = self.config.get('also_look_in_tails_of_large_peaks', False)
 
     def transform_event(self, event):
-        for peak in event.peaks:
+        # ocs is shorthand for occurrences
 
-            # Check if peak is sane
-            if peak.index_of_maximum < peak.left:
-                self.log.debug("Insane peak %s-%s-%s, can't compute widths!" % (
-                    peak.left, peak.index_of_maximum, peak.right))
+        # Convert occurrences to pandas dataframe
+        # Maybe we should have used this from the start...
+
+        ocs_flat = []
+        for channel, channel_occurrences in event.occurrences.items():
+            for start_index, occurrence_waveform in channel_occurrences:
+                end_index = start_index + len(occurrence_waveform) - 1
+                w = event.pmt_waveforms[channel, start_index:end_index +1]
+                ocs_flat.append({
+                    'channel' : channel,
+                    'start_index' : start_index,
+                    'end_index' : end_index,
+                    'waveform' : w,
+                    'n_peaks' : float('nan'),   # Will be set later
+                })
+        all_ocs = pandas.DataFrame(ocs_flat)
+
+        # Any ultra-large peaks after which we can give up?
+        large_peak_start_points = [p.left for p in event.peaks if p.area > self.give_up_after]
+        if len(large_peak_start_points) > 0:
+            give_up_after = min(large_peak_start_points)
+        else:
+            give_up_after = float('inf')
+
+        # Find regions free of peaks (found previously by the large peak finder)
+        # Then search for small peaks in each of these regions
+        for region_left, region_right in dsputils.free_regions(event):
+
+            # Can we give up yet?
+            if region_left >= give_up_after:
+                self.log.debug("Giving up small-peak finding due to a peak > %s pe starting at %s" %
+                               (self.give_up_after, give_up_after))
+                break
+
+            # Determine which occurrences to search in
+            if self.look_in_large_peak_tails:
+                # Which occurrences are partially in the free region?
+                ocs = all_ocs[(all_ocs['start_index'] < region_right) & (all_ocs['end_index'] > region_left)]
+            else:
+                # Which occurrences are completely in the free region?
+                ocs = all_ocs[(all_ocs['start_index'] >= region_left) & (all_ocs['end_index'] <= region_right)]
+
+            if len(ocs) == 0:
                 continue
+            self.log.debug("Free region %s-%s: process %s occurrences" % (region_left, region_right, len(ocs)))
 
-            for width_name, conf in self.config['width_computations'].items():
+            for index, oc in ocs.iterrows():
 
-                peak[width_name] = dsputils.width_at_fraction(
-                    peak_wave=event.get_waveform(conf['waveform_to_use']).samples[peak.left : peak.right+1],
-                    fraction_of_max=conf['fraction_of_max'],
-                    max_idx=peak.index_of_maximum - peak.left,
-                    interpolate=conf['interpolate'])
-
-        return event
-
-
-
-
-class ComputePeakAreas(plugin.TransformPlugin):
-
-    def transform_event(self, event):
-        for peak in event.peaks:
-
-            # Compute area in each channel
-            peak.area_per_pmt = np.sum(event.pmt_waveforms[:, peak.left:peak.right+1], axis=1)
-
-            # Determine which channels contribute to the peak's total area
-            peak.contributing_pmts = np.array(
-                np.where(peak.area_per_pmt >= self.config['minimum_area'])[0],
-                dtype=np.uint16)
-
-            # Compute the peak's areas
-            # TODO: make excluding non-contributing pmts optional
-            if peak.type == 'veto':
-                peak.area = np.sum(peak.area_per_pmt[list(self.config['pmts_veto'])])
-            else:
-                if self.config['exclude_non_contributing_channels_from_area']:
-                    peak.area = np.sum(peak.area_per_pmt[peak.contributing_pmts])
+                # In case we search occurrences only partially in free regions, we need to slice them
+                if self.look_in_large_peak_tails:
+                    # substract oc['start_index'] to give an index in the occurrence waveform
+                    start = max(region_left,  oc['start_index']) - oc['start_index']
+                    stop  = min(region_right, oc['end_index']  ) - oc['start_index']
+                    w = oc['waveform'][start:stop+1]
                 else:
-                    peak.area = np.sum(peak.area_per_pmt[peak.contributing_pmts])
+                    # No need to slice the occurrence
+                    w = oc['waveform']
+                    start = 0
+                    stop = len(w)
+
+                # Use three passes to separate noise / peaks, see description in .... TODO
+                noise_sigma = self.initial_noise_sigma
+                for _ in range(3):
+                    #TODO: use sliding window integral over 2 samples
+                    raw_peaks = self.find_peaks(w[start:stop+1], noise_sigma)
+                    noise_sigma = self.gimme_noise(w, raw_peaks)
+                # plt.figure()
+                # self.show_wv(w, noise_sigma, raw_peaks)
+                # bla = (event.event_number, oc['start_index'], oc['end_index'], oc['channel'],)
+                # plt.title('Event %s, occurrence %d-%d, Channel %d' % bla)
+                # plt.savefig('./diagnostic_plots/event%s_occ%s-%s_ch%s.png' % bla)
+                # plt.close()
+
+                # Store the found peaks in the datastructure
+                # ocs.loc[index,'n_peaks'] = len(raw_peaks)
+                event.channel_peaks.extend([datastructure.ChannelPeak({
+                    'channel':             oc['channel'],
+                    'left':                oc['start_index'] + start + p[0],
+                    'index_of_maximum':    oc['start_index'] + start + p[1],
+                    'right':               oc['start_index'] + start + p[2],
+                    'area':                np.sum(w[p[0]:p[2]+1]),
+                    'height':              w[p[1]],
+                    'noise_sigma':         noise_sigma,
+                }) for p in raw_peaks])
 
         return event
 
-
-class ComputePeakEntropies(plugin.TransformPlugin):
-    #TODO: write tests
+        # TODO: Store this somewhere in the event class...
 
 
-    def transform_event(self, event):
-        for peak in event.peaks:
+    def find_peaks(self, w, noise_sigma):
+        """
+        Find all peaks at least self.min_sigma * noise_sigma above baseline.
+        Peak boundaries are last samples above noise_sigma
+        :param w: waveform to check for peaks
+        :param noise_sigma: stdev of the noise
+        :return: list of (left_index, max_index, right_index) tuples
+        """
+        peaks = []
 
-            peak_waveforms = event.pmt_waveforms[:, peak.left:peak.right+1]
-
-            # Switching from entropy to kurtosis doesn't make it faster...
-            # At head put:
-            # import scipy
-            # from scipy import stats
-            # Here put:
-            # peak.entropy_per_pmt = scipy.stats.kurtosis(peak_waveforms, axis=1)
-            # continue
-
-            if self.config['normalization_mode'] is 'abs':
-                normalized = np.abs(peak_waveforms)
-            elif self.config['normalization_mode'] is 'square':
-                normalized = peak_waveforms**2
-            else:
-                raise ValueError(
-                    'Invalid Configuration for ComputePeakEntropies: normalization_mode must be abs or square')
-
-            # In the case of abs, we could re-use peak.area_per_pmt to normalize
-            # This gains only a little bit of performance, and 'square' is what we use in Xenon100 anyway.
-            # Note the use of np.newaxis to enable numpy broadcasting of the division
-            normalized /= peak.area_per_pmt[:, np.newaxis]
-
-            if self.config['only_for_contributing_pmts']:
-                # Could this be vectorized better?
-                # There is probably little use in restricting to a set of pmts before here,
-                # the logarithm contains most of the work.
-                peak.entropy_per_pmt = np.zeros(len(peak_waveforms))
-                for pmt in peak.contributing_pmts:
-                    peak.entropy_per_pmt[pmt] = -np.sum(normalized[pmt]*np.log(normalized[pmt]))
-            else:
-                peak.entropy_per_pmt = -np.sum(normalized*np.log(normalized), axis=1)
-
-        return event
-
-
-
-class IdentifyPeaks(plugin.TransformPlugin):
-
-    def transform_event(self, event):
-
-        unfiltered = event.get_waveform('tpc').samples
-        for p in event.peaks:
-            if p.type != 'unknown':
-                # Some peakfinder forced the type. Fine, not my problem...
+        for left, right in dsputils.intervals_above_threshold(w, noise_sigma):
+            max_idx = left + np.argmax(w[left:right + 1])
+            height = w[max_idx]
+            if height < noise_sigma * self.min_sigma:
                 continue
-            # PLACEHOLDER:
-            # if area in s1_half_area_in samples around max is > 50% of total area, christen as S1 candidate
-            # if peak is smaller than s1_half_area_in, it is certainly an s1
-            if p.right - p.left < self.config['s1_half_area_in']:
-                p.type = 's1'
+            peaks.append((left, max_idx, right))
+
+        """
+        # Find all peaks above self.min_sigma*noise_sigma
+        # First look for all intervals above threshold, then store the max in those intervals
+        peak_indices = [left + np.argmax(w[left:right + 1])
+                        for left, right in dsputils.intervals_above_threshold(w, self.min_sigma*noise_sigma)]
+
+        # Sort by height: largest peak first
+        peak_indices = sorted(peak_indices, key=lambda i: w[i], reverse=True)
+
+        # Compute the extent of each peak
+        for pi in peak_indices:
+
+            # Did a previous peak extend to cover this peak? If so, skip it.
+            already_covered = False
+            for p in peaks:
+                if p[0] < pi < p[2]:
+                    already_covered = True
+
+            if already_covered:
+                continue
             else:
-                left_samples = math.floor(self.config['s1_half_area_in']/2)
-                right_samples = math.ceil(self.config['s1_half_area_in']/2)
-                if np.sum(unfiltered[p.index_of_maximum - left_samples: p.index_of_maximum + right_samples]) > 0.5 * p.area:
-                    p.type = 's1'
-                    #self.log.debug("%s-%s-%s: S1" % (p.left, p.index_of_maximum, p.right))
-                else:
-                    p.type = 's2'
-                    #self.log.debug("%s-%s-%s: S2" % (p.left, p.index_of_maximum, p.right))
-        return event
+                peaks.append([None, pi, None])
+                peaks[-1][0], peaks[-1][2] = dsputils.peak_bounds(w, pi, zero_level=noise_sigma, inclusive=True)
+        """
+        return peaks
+
+
+    def show_wv(self, w, noise_sigma, peaks):
+        plt.plot(w, drawstyle='steps', label='data')
+        for p in peaks:
+            plt.axvspan(p[0]-1, p[2], color='red', alpha=0.5)
+        plt.plot(noise_sigma * np.ones(len(w)), '--', label='1 sigma')
+        plt.plot(self.min_sigma * noise_sigma * np.ones(len(w)), '--', label='%s sigma' % self.min_sigma)
+        plt.legend()
+
+
+    def gimme_noise(self, w, peaks):
+        return w[self.samples_without_peaks(w, peaks)].std()
+
+    def samples_without_peaks(self, w, peaks):
+        not_in_peak = np.ones(len(w), dtype=np.bool)
+        for p in peaks:
+            not_in_peak[p[0]:p[1] + 1] = False
+        return not_in_peak
+

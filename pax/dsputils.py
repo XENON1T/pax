@@ -43,6 +43,8 @@ def sign_changes(signal, report_first_index='positive'):
                                  if 'non-positive', index 0 is reported if it is non-positive
                                  if 'never', index 0 is NEVER reported.
     """
+    if len(signal) == 0:
+        return [], []
     above0 = np.clip(np.sign(signal), 0, float('inf'))
     if report_first_index == 'positive':
         above0[-1] = 0
@@ -56,14 +58,14 @@ def sign_changes(signal, report_first_index='positive'):
     return list(becomes_positive), list(becomes_non_positive)
 
 
-def peak_bounds(signal, fraction_of_max, max_idx=None, zero_level=0, inclusive=True):
+def peak_bounds(signal, fraction_of_max=None, max_idx=None, zero_level=0, inclusive=True):
     """
     Return (left, right) indices closest to max_idx where signal drops below signal[max_idx]*fraction_of_max.
 
     :param signal: waveform to look in (numpy array)
-    :param fraction_of_max: Width at this fraction of maximum
-    :param max_idx: Index in signal of the maximum of the peak. Fefault None, will be determined by np.argmax(signal)
-    :param zero_level: Always end a peak before it is < this. Default: 0
+    :param fraction_of_max: Width at this fraction of maximum. If None, peaks will extend until zero_level.
+    :param max_idx: Index in signal of the maximum of the peak. Default None, will be determined by np.argmax(signal)
+    :param zero_level: Always end a peak when it drops below this level. Default: 0
     :param inclusive: Include endpoints (first points where signal drops below), default True.
     TODO: proper support for inclusive (don't just subtract 1)
     """
@@ -77,14 +79,16 @@ def peak_bounds(signal, fraction_of_max, max_idx=None, zero_level=0, inclusive=T
         raise RuntimeError("Peak maximum index is negative (%s)... what are you smoking?" % max_idx )
 
     height = signal[max_idx]
-    threshold = max(zero_level, height * fraction_of_max)
+    if fraction_of_max is None:
+        threshold = zero_level
+    else:
+        threshold = max(zero_level, height * fraction_of_max)
 
     if height < threshold:
         # Peak is always below threshold -> return smallest legal peak.
         return (max_idx, max_idx)
 
-    # Note reversion acts before indexing!
-    bla = np.where(signal[max_idx::-1] < threshold)
+    # Note reversion acts before indexing in numpy!
     left = find_first_fast(signal[max_idx::-1], threshold)
     if left is None:
         left = 0
@@ -103,6 +107,8 @@ def peak_bounds(signal, fraction_of_max, max_idx=None, zero_level=0, inclusive=T
             right -= 1
     return (left, right)
 
+
+#TODO: interpolate argument shadows interpolate imported from scipy
 def width_at_fraction(peak_wave, fraction_of_max, max_idx, interpolate=False):
     """Returns width of a peak IN SAMPLES at fraction of maximum"""
     left, right = peak_bounds(peak_wave, max_idx=max_idx, fraction_of_max=fraction_of_max)
@@ -169,22 +175,16 @@ def find_first_fast(a, threshold, chunk_size=128):
 
 
 
-##
-# Peak processing routines
-##
-
-def free_regions(event):
-    """Find the free regions in the event's waveform - regions where peaks haven't yet been found"""
-    lefts = sorted([0] + [p.left for p in event.peaks])
-    rights = sorted([p.right for p in event.peaks] + [event.length() - 1])
+def free_regions(event, ignore_peak_types=()):
+    """Find the free regions in the event's waveform - regions where peaks haven't yet been found
+        ignore_peak_types: list of names of peak.type's which will be ignored for the computation
+    :returns list of 2-tuples (left index, right index) of regions where no peaks have been found
+    """
+    lefts = sorted([0] + [p.left for p in event.peaks if p.type not in ignore_peak_types])
+    rights = sorted([p.right for p in event.peaks if p.type not in ignore_peak_types] + [event.length() - 1])
     # Assuming each peak's right > left, we can simply split
     # sorted(lefts+rights) in pairs:
     return list(zip(*[iter(sorted(lefts + rights))] * 2))
-
-
-# TODO: maybe move this to the peak splitter? It isn't used by anything
-# else... yet
-
 
 
 
@@ -240,7 +240,7 @@ class InterpolatingMap(object):
             elif self.dimensions == 2:
                 itp_fun = interpolate.interp2d(x = np.linspace(*(cs[0][1])),
                                                          y = np.linspace(*(cs[1][1])),
-                                                         z = self.data[map_name])
+                                                         z = self.data[map_name],)
 
             # 3D interpolation
             elif self.dimensions == 3:
