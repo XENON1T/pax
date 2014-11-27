@@ -25,6 +25,11 @@ class PlotBase(plugin.OutputPlugin):
         # Convert times in samples to times in us: need to know how many samples / us
         self.samples_to_us = self.config['digitizer_t_resolution'] / units.us
 
+        self.peak_colors = {
+            's1':   'blue',
+            's2':   'green',
+        }
+
         self.substartup()
 
     def substartup(self):
@@ -96,6 +101,7 @@ class PlotBase(plugin.OutputPlugin):
 
 
         if show_peaks and event.peaks:
+            self.color_peak_ranges(event)
             max_y = max([p.height for p in event.peaks])
 
             for peak in event.peaks:
@@ -124,6 +130,13 @@ class PlotBase(plugin.OutputPlugin):
             legend = plt.legend(loc='upper left', prop={'size': 10})
             if legend and legend.get_frame():
                 legend.get_frame().set_alpha(0.5)
+
+    def color_peak_ranges(self, event):
+        for peak in event.peaks:
+            plt.axvspan(peak.left  * self.samples_to_us,
+                        peak.right * self.samples_to_us,
+                        color=self.peak_colors.get(peak.type,'gray'),
+                        alpha=0.2)
 
 
 
@@ -317,6 +330,12 @@ class PlotChannelWaveforms2D(PlotBase):
                     channel * np.ones(len(waveform)),
                     color=(color_factor, 0, 1-color_factor))
 
+        # Plot the channel peaks as dots
+        plt.scatter(  [p.index_of_maximum * time_scale     for p in event.channel_peaks],
+                      [p.channel              for p in event.channel_peaks],
+                    c=[p.height/p.noise_sigma for p in event.channel_peaks],
+                    s=[10*p.area              for p in event.channel_peaks])
+
         # Plot the bottom/top/veto boundaries
         for boundary_location in (min(self.config['pmts_bottom'])-0.5, min(self.config['pmts_veto'])-0.5):
             plt.plot(
@@ -331,7 +350,11 @@ class PlotChannelWaveforms2D(PlotBase):
                 np.mean(np.array(list(self.config['pmts_' + group.lower()]))),
                 group)
 
+        # Color the peak ranges
+        self.color_peak_ranges(event)
+
         # Make sure we always see all channels , even if there are few occurrences
+        plt.xlim((0,event.length() * time_scale))
         plt.ylim((0,len(event.pmt_waveforms)))
 
         plt.xlabel('Time (us)')

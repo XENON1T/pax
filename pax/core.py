@@ -371,7 +371,7 @@ class Processor:
         total_plugins = len(self.action_plugins)
 
         for j, plugin in enumerate(self.action_plugins):
-            self.log.debug("%s (step %d/$d)", plugin.__class__.__name__, j, total_plugins)
+            self.log.debug("%s (step %d/%d)" % (plugin.__class__.__name__, j, total_plugins))
             event = plugin.process_event(event)
 
         return event
