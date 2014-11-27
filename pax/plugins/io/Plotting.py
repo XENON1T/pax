@@ -116,15 +116,14 @@ class PlotBase(plugin.OutputPlugin):
                     ytext = max(y, y * (3-2*y/max_y))
                     arrowprops = None
                 else:
-                    ytext =  max(y, y + (max_y - y) * (0.05 + 0.2 * random.random()))
+                    ytext = max(y, y + (max_y - y) * (0.05 + 0.2 * random.random()))
                     arrowprops = dict(arrowstyle="fancy",
                                       fc="0.6", ec="none",
                                       connectionstyle="angle3,"
                                                       "angleA=0,"
                                                       "angleB=-90")
-                print(x, y, ytext, peak.left, peak.right)
-                plt.hlines(ytext, peak.left * self.samples_to_us,
-                           peak.right * self.samples_to_us)
+                plt.hlines(y, peak.left * self.samples_to_us,
+                              peak.right * self.samples_to_us)
                 plt.annotate('%s:%s' % (peak.type, int(peak.area)),
                              xy=(x, y),
                              xytext=(x, ytext),
