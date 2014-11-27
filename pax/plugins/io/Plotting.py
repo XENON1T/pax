@@ -102,6 +102,8 @@ class PlotBase(plugin.OutputPlugin):
 
         if show_peaks and event.peaks:
             self.color_peak_ranges(event)
+            # Don't rely on max_y to actually be the max height,
+            # Possibly the waveform is highest outside a peak.
             max_y = max([p.height for p in event.peaks])
 
             for peak in event.peaks:
@@ -109,23 +111,25 @@ class PlotBase(plugin.OutputPlugin):
                 y = peak.height
                 if log_y_axis:
                     y += 1
-                    ytext = y * (3-2*y/max_y)
+                    # max ensures ytext comes out positive (well, if y is)
+                    # and that the text is never below the peak
+                    ytext = max(y, y * (3-2*y/max_y))
                     arrowprops = None
                 else:
-                    ytext =  y + (max_y - y) * (
-                                0.05 + 0.2 * random.random()
-                             )
+                    ytext =  max(y, y + (max_y - y) * (0.05 + 0.2 * random.random()))
                     arrowprops = dict(arrowstyle="fancy",
                                       fc="0.6", ec="none",
                                       connectionstyle="angle3,"
                                                       "angleA=0,"
                                                       "angleB=-90")
+                print(x, y, ytext, peak.left, peak.right)
                 plt.hlines(ytext, peak.left * self.samples_to_us,
                            peak.right * self.samples_to_us)
                 plt.annotate('%s:%s' % (peak.type, int(peak.area)),
                              xy=(x, y),
                              xytext=(x, ytext),
                              arrowprops = arrowprops)
+
         if show_legend:
             legend = plt.legend(loc='upper left', prop={'size': 10})
             if legend and legend.get_frame():
@@ -316,6 +320,7 @@ class PlotChannelWaveforms2D(PlotBase):
     def plot_event(self, event):
         time_scale = self.config['digitizer_t_resolution'] / units.us
 
+        self.log.debug('Plotting occurrence locations...')
         for channel, occurrences in event.occurrences.items():
             for start_index, occurrence_waveform in occurrences:
 
@@ -332,11 +337,13 @@ class PlotChannelWaveforms2D(PlotBase):
 
         # Plot the channel peaks as dots
         # All these for loops are slow -- hope we get by-column access some time
+        self.log.debug('Plotting channel peaks...')
         plt.scatter(  [p.index_of_maximum * time_scale     for p in event.channel_peaks],
                       [p.channel              for p in event.channel_peaks],
-                    c=[p.height/p.noise_sigma for p in event.channel_peaks],
+                    c=[p.height/p.noise_sigma for p in event.channel_peaks],   # TODO: can cause /div0?
                     s=[10*p.area              for p in event.channel_peaks])
 
+        self.log.debug('Final annotations...')
         # Plot the bottom/top/veto boundaries
         for boundary_location in (min(self.config['pmts_bottom'])-0.5, min(self.config['pmts_veto'])-0.5):
             plt.plot(
@@ -381,26 +388,31 @@ class PlotEventSummary(PlotBase):
                          event.start_time%(10**9))
         plt.suptitle(title, fontsize=18)
 
+        self.log.debug("Plotting largest S1...")
         plt.subplot2grid((rows, cols), (0, 0))
         q = PlotSumWaveformLargestS1(self.config)
         q.plot_event(event, show_legend=False)
 
+        self.log.debug("Plotting largest S2...")
         ax = plt.subplot2grid((rows, cols), (0, 3))
         ax.yaxis.set_label_position("right")
         ax.yaxis.set_ticks_position("right")
         q = PlotSumWaveformLargestS2(self.config)
         q.plot_event(event, show_legend=False)
 
+        self.log.debug("Plotting hitpatterns...")
         q = PlottingHitPattern(self.config)
         q.plot_event(event, show_dominant_array_only=True, subplots_to_use = [
                 plt.subplot2grid((rows, cols), (0, 1)),
                 plt.subplot2grid((rows, cols), (0, 2))
             ])
 
+        self.log.debug("Plotting sum waveform...")
         plt.subplot2grid((rows, cols), (1, 0), colspan=cols)
         q = PlotSumWaveformEntireEvent(self.config)
         q.plot_event(event, show_legend=True)
 
+        self.log.debug("Plotting channel waveforms...")
         plt.subplot2grid((rows, cols), (2, 0), colspan=cols)
         q = PlotChannelWaveforms2D(self.config)
         q.plot_event(event)
