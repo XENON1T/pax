@@ -348,7 +348,7 @@ class PlotChannelWaveforms2D(PlotBase):
             plt.plot(
                 [0,event.length()*time_scale],
                 [boundary_location, boundary_location],
-                color='gray')
+                color='black', alpha=0.2)
 
         # Annotate the channel groups
         for group in ('Bottom', 'Top', 'Veto'):
@@ -407,12 +407,12 @@ class PlotEventSummary(PlotBase):
             ])
 
         self.log.debug("Plotting sum waveform...")
-        plt.subplot2grid((rows, cols), (1, 0), colspan=cols)
+        sumw_ax = plt.subplot2grid((rows, cols), (rows-2, 0), colspan=cols)
         q = PlotSumWaveformEntireEvent(self.config)
         q.plot_event(event, show_legend=True)
 
         self.log.debug("Plotting channel waveforms...")
-        plt.subplot2grid((rows, cols), (2, 0), colspan=cols)
+        plt.subplot2grid((rows, cols), (rows-1, 0), colspan=cols, sharex=sumw_ax)
         q = PlotChannelWaveforms2D(self.config)
         q.plot_event(event)
 
