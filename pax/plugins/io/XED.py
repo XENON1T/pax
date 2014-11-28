@@ -84,9 +84,6 @@ class XedInput(plugin.InputPlugin):
         self.select_xedfile(0)
 
 
-    def number_events(self):
-        return self.number_of_events
-
     def init_xedfile(self, filename):
         """Loads in an XED file header, so we can look up which events are in it"""
         self.log.info("Opening %s", filename)

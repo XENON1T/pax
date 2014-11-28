@@ -9,14 +9,17 @@ Tests for `pax` module.
 """
 import unittest
 
-from pax import core
+from pax import core, plugin
 from pax.datastructure import Event, Peak
 
 
 class TestPosRecWeightedSum(unittest.TestCase):
 
     def setUp(self):
-        self.posrec_plugin = core.instantiate_plugin('PosSimple.PosRecWeightedSum', for_testing=True)
+        self.pax = core.Processor(config_names='XENON100', just_testing=True, config_dict={'pax': {
+            'plugin_group_names': ['test'],
+            'test':               'PosSimple.PosRecWeightedSum'}})
+        self.posrec_plugin = self.pax.get_plugin_by_name('PosRecWeightedSum')
 
         self.e = Event()
 
@@ -25,6 +28,8 @@ class TestPosRecWeightedSum(unittest.TestCase):
                                   'type':  's2'}))
 
     def test_something(self):
+        self.assertIsInstance(self.posrec_plugin, plugin.TransformPlugin)
+        self.assertEqual(self.posrec_plugin.__class__.__name__, 'PosRecWeightedSum')
         pass
         # This test is broken: PosSimple doesn't use pmt_waveforms anymore, but area_per_pmt
 

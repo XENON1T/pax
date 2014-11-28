@@ -140,8 +140,12 @@ class BuildWaveforms(plugin.TransformPlugin):
                 else:
                     corrected_pulse = (baseline - occurrence_wave) * self.conversion_factor / self.config['gains'][channel]
 
+                # Store the waveform in pmt_waveforms, unless gain=0, then we leave it as 0
+                # TODO: is this wise? How would we investigate undead channels if we don't store the data?
+                if self.config['gains'][channel] != 0:
+                    event.pmt_waveforms[channel][start_index:end_index] = corrected_pulse
+
                 # Add corrected pulse to pmt_waveforms and all appropriate summed waveforms
-                event.pmt_waveforms[channel][start_index:end_index] = corrected_pulse
                 for group, members in self.channel_groups.items():
                     if channel in members:
                         if group[0] == 'u':

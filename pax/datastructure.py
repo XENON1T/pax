@@ -57,7 +57,8 @@ class Peak(Model):
     """Peak object"""
 
     index_of_maximum = IntegerField()           #: Index in the event's sum waveform at which this peak has its maximum.
-    index_of_filtered_maximum = IntegerField()  #: same, but maximum in filtered sum waveform
+    index_of_filtered_maximum = IntegerField()  #: same, but maximum in filtered (for S2) sum waveform
+
     left = IntegerField()                       #: Index of left bound (inclusive) in sum waveform.
     right = IntegerField() #: Index of right bound (for Xdp matching: exclusive; otherwise: inclusive) in sum waveform.
 
@@ -75,6 +76,9 @@ class Peak(Model):
     #: Array of areas in each PMT.
     area_per_pmt = f.NumpyArrayField(dtype='float64')
 
+    #: Array of squared signal entropies in each PMT.
+    entropy_per_pmt = f.NumpyArrayField(dtype='float64')
+
     #: PMTs which see 'something significant' (depends on settings)
     contributing_pmts = f.NumpyArrayField(dtype=np.uint16)
 
@@ -88,6 +92,24 @@ class Peak(Model):
     def coincidence_level(self):
         """ Number of PMTS which see something significant (depends on settings) """
         return len(self.contributing_pmts)
+
+
+
+class ChannelPeak(Model):
+
+    """Peaks found in individual channels
+    These should be combined into full peaks later?
+    """
+    channel = IntegerField()                    #: Channel in which this peak was found
+    index_of_maximum = IntegerField()           #: Index in the event at which this peak has its maximum.
+
+    left = IntegerField()                 #: Index of left bound (inclusive) of peak.
+    right = IntegerField()                #: Index of right bound of peak
+
+    area = FloatField()                   #: Area of the peak in photoelectrons
+    height = FloatField()                 #: Height of highest point in peak (in pe/bin)
+    noise_sigma = FloatField()            #: StDev of the noise in the occurrence (in pe/bin) where we found this peak
+
 
 
 class Waveform(Model):
@@ -145,6 +167,7 @@ class Event(Model):
     #:
     #: Returns a list of :class:`pax.datastructure.Peak` classes.
     peaks = f.ModelCollectionField(default=[], wrapped_class=Peak)
+    channel_peaks = f.ModelCollectionField(default=[], wrapped_class=ChannelPeak)
 
     #: Returns a list of sum waveforms
     #:
