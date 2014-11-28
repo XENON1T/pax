@@ -48,11 +48,6 @@ class FindBigPeaks(plugin.TransformPlugin):
                     if len(peak_wave) < pf.get('min_interval_width', 0):
                         continue
 
-                    if np.sum(peak_wave) < pf.get('area_threshold', 0):
-                        # Let the low-energy peakfinder take care of this one...
-                        # TODO: no good to compute area here, then again in computepeakareas... decide!
-                        continue
-
                     # We've found an interval above threshold: should we split it?
                     if len(peak_wave) < pf.get('min_split_attempt_width', float('inf')):
                         # No, the interval is too small
@@ -198,10 +193,10 @@ class FindBigPeaks(plugin.TransformPlugin):
 
 
 
+
+
 # TODO: do low-E peakfinding in veto even if we see a high-E peak in TPC (and vice versa, although less important)
 # Needs more proper separation of veto & tpc peaks than just ignore_previous_peaks option in peakfinder
-
-
 class FindSmallPeaks(plugin.TransformPlugin):
 
     def startup(self):

@@ -1,5 +1,5 @@
 """
-This code imitates the peakfinding of Xerawdp (Xenon100 processor)
+This code imitates the peakfinding of Xerawdp (the Xenon100 processor)
 Its only purpose is to show we understand Xerawdp enough to be able to reproduce it,
 it is not meant to replace Xerawdp, nor to be used unmodified by Xenon1T or any experiment.
 
@@ -643,7 +643,7 @@ class ComputePeakPropertiesXdpStyle(plugin.TransformPlugin):
                         continue
                     if channel in self.config['pmts_veto']:
                         continue
-                    if area > self.config['minimum_pe_area'] * (2 * 10 ** 6 / self.config['gains'][channel]):
+                    if area > self.config['coincidence_threshold'] * (2 * 10 ** 6 / self.config['gains'][channel]):
                         contributing_pmts.append(channel)
                 peak.contributing_pmts = np.array(contributing_pmts, dtype=np.uint16)
             else:

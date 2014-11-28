@@ -6,6 +6,14 @@ from pax import dsputils, plugin
 import math
 
 
+class DeleteLowCoincidencePeaks(plugin.TransformPlugin):
+    """Deletes low coincidence peaks, so the low-energy peakfinder can have a crack at them"""
+    def transform_event(self, event):
+        event.peaks = [p for p in event.peaks if p.coincidence_level >=
+                                                 self.config['prune_if_coincidence_lower_than']]
+        return event
+
+
 class ComputePeakWidths(plugin.TransformPlugin):
     """Does what it says on the tin"""
 
@@ -31,7 +39,7 @@ class ComputePeakWidths(plugin.TransformPlugin):
 
 
 
-class ComputePeakAreas(plugin.TransformPlugin):
+class ComputePeakAreasAndCoincidence(plugin.TransformPlugin):
 
     def transform_event(self, event):
         for peak in event.peaks:
@@ -113,7 +121,7 @@ class IdentifyPeaks(plugin.TransformPlugin):
             # PLACEHOLDER:
             # if area in s1_half_area_in samples around max is > 50% of total area, christen as S1 candidate
             # if peak is smaller than s1_half_area_in, it is certainly an s1
-            if p.right - p.left < self.config['s1_half_area_in']:
+            if p.right - p.left + 1 < self.config['s1_half_area_in']:
                 p.type = 's1'
             else:
                 left_samples = math.floor(self.config['s1_half_area_in']/2)
