@@ -75,19 +75,22 @@ development::
 
 5. When you're done making changes, check that your changes pass flake8 and the tests, including testing other Python versions with tox::
 
-    $ flake8 pax tests
-    $ python setup.py test
-    $ tox
+    $ make lint
+    $ make test
 
-   To get flake8 and tox, just pip install them into your virtualenv.
+   This runs flake8 for style testing.  To get flake8, just pip install them into your virtualenv.
+   
+6.  Check that the documentation is still up-to-date.  You may need to add another 'rst' file in docs or
+update one of the files that are already written.  Please specifically check README.rst (for new features)
+and AUTHORS.rst (if you are a new contributor)
 
-6. Commit your changes and push your branch to GitHub::
+7. Commit your changes and push your branch to GitHub::
 
     $ git add .
     $ git commit -m "Your detailed description of your changes."
     $ git push origin name-of-your-bugfix-or-feature
 
-7. Submit a pull request through the GitHub website.
+8. Submit a pull request through the GitHub website.
 
 Pull Request Guidelines
 -----------------------
