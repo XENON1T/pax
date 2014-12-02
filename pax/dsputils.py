@@ -242,8 +242,8 @@ class InterpolatingMap(object):
             # 2D interpolation
             elif self.dimensions == 2:
                 itp_fun = interpolate.interp2d(x = np.linspace(*(cs[0][1])),
-                                                         y = np.linspace(*(cs[1][1])),
-                                                         z = self.data[map_name],)
+                                               y = np.linspace(*(cs[1][1])),
+                                               z = self.data[map_name])
 
             # 3D interpolation
             elif self.dimensions == 3:
