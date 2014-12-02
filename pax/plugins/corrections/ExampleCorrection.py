@@ -5,8 +5,6 @@ class ExampleCorrection(plugin.TransformPlugin):
     def startup(self):
         self.correction_map = dsputils.InterpolatingMap(
              core.data_file_name('s2_xy_lce_map_XENON100_Xerawdp0.4.5.json.gz'))
-        # self.correction_map = dsputils.InterpolatingMap(
-        #     core.data_file_name('s2_xy_lce_map_XENON100_Xerawdp0.4.5.json'))
         # self.correction_map.plot(map_name='60')
 
     def transform_event(self, event):
