@@ -58,9 +58,11 @@ You can run the program by, for example, running::
 
   paxer --config XED --input xe100_120402_2000_000000.xed
 
-See `paxer --help` for a list of command line arguments.
+For other options and a list of command line arguments, please run::
 
-If you want to do something fancy, you can create your own configuration file
+  paxer --help
+
+If you want to do something nonstandard, you can create your own configuration file
 like::
 
    [pax]
@@ -69,9 +71,8 @@ like::
    my_extra_transforms = ["PosSimple.PosRecWeightedSum"]
    output = ["Plotting.PlottingWaveform"]
 
-and load it using `paxer --config_path YOURFILE`. We already have a few example
-configs available in config, which you can load using `paxer --config NAME` (with
-NAME, for example, XED_example or Mongo_example).
+and load it using the `config_path` command line option. We already have a few example
+configs available in config, which you can load using `config` option.
 
 
 Features
