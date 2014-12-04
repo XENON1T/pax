@@ -1,7 +1,6 @@
 import numpy as np
 import math
 from pax import plugin, datastructure, dsputils
-import pandas
 
 # Used for diagnostic plotting only
 # TODO: factor out to separate plugin
@@ -209,7 +208,6 @@ class FindSmallPeaks(plugin.TransformPlugin):
         # Optional settings
         self.filter_to_use = self.config.get('filter_to_use', None)
         self.give_up_after = self.config.get('give_up_after_peak_of_size', float('inf'))
-        self.look_in_large_peak_tails = self.config.get('also_look_in_tails_of_large_peaks', False)
         self.make_diagnostic_plots_in = self.config.get('make_diagnostic_plots_in', None)
         if self.make_diagnostic_plots_in is not None:
             if not os.path.exists(self.make_diagnostic_plots_in):
@@ -218,21 +216,6 @@ class FindSmallPeaks(plugin.TransformPlugin):
     def transform_event(self, event):
         # ocs is shorthand for occurrences
 
-        # Convert occurrences to pandas dataframe
-        # TODO: iterating over a pandas frame is extremely slow, we shouldn't use it
-
-        ocs_flat = []
-        for channel, channel_occurrences in event.occurrences.items():
-            for start_index, occurrence_waveform in channel_occurrences:
-                end_index = start_index + len(occurrence_waveform) - 1
-                ocs_flat.append({
-                    'channel' : channel,
-                    'start_index' : start_index,
-                    'end_index' : end_index,
-                    'n_peaks' : float('nan'),   # Will be set later
-                })
-        all_ocs = pandas.DataFrame(ocs_flat)
-
         # Any ultra-large peaks after which we can give up?
         large_peak_start_points = [p.left for p in event.peaks if p.area > self.give_up_after]
         if len(large_peak_start_points) > 0:
@@ -240,44 +223,25 @@ class FindSmallPeaks(plugin.TransformPlugin):
         else:
             give_up_after = float('inf')
 
-        # Find regions free of peaks (found previously by the large peak finder)
-        # Then search for small peaks in each of these regions
-        for region_left, region_right in dsputils.free_regions(event):
+        # Get all free regions before the give_up_after point
+        free_regions = [(l,r) for l, r in dsputils.free_regions(event) if l < give_up_after]
 
-            # Can we give up yet?
-            if region_left >= give_up_after:
-                self.log.debug("Giving up small-peak finding due to a peak > %s pe starting at %s" %
-                               (self.give_up_after, give_up_after))
-                break
+        for channel, channel_occurrences in event.occurrences.items():
+            for start, occurrence_waveform in channel_occurrences:
 
-            # Determine which occurrences to search in
-            if self.look_in_large_peak_tails:
-                # Which occurrences are partially in the free region?
-                ocs = all_ocs[(all_ocs.start_index < region_right) & (all_ocs.end_index > region_left)]
-            else:
-                # Which occurrences are completely in the free region?
-                ocs = all_ocs[(all_ocs.start_index >= region_left) & (all_ocs.end_index <= region_right)]
+                stop = start + len(occurrence_waveform) - 1
 
-            if len(ocs) == 0:
-                continue
-            self.log.debug("Free region %s-%s: process %s occurrences" % (region_left, region_right, len(ocs)))
-
-
-            for index, oc in ocs.iterrows():
-
-                # In case we search occurrences only partially in free regions, we need to slice them
-                if self.look_in_large_peak_tails:
-                    # subtract oc['start_index'] to give an index in the occurrence waveform
-                    start = max(region_left,  oc['start_index'])
-                    stop  = min(region_right, oc['end_index'])
+                # Skip occurrences not entirely in a free region
+                # TODO: hmzz, isn't this slow?
+                for region_left, region_right in free_regions:
+                    if start >= region_left and stop <= region_right:
+                        break
                 else:
-                    # No need to slice the occurrence
-                    start = oc['start_index']
-                    stop = oc['end_index']
+                    continue
 
                 # Retrieve the waveform from pmt_waveforms
                 # Do this only here: no sense retrieiving it for occurrences you are not going to test
-                w = event.pmt_waveforms[oc['channel'], start:stop +1]
+                w = event.pmt_waveforms[channel, start:stop +1]
                 origw = w
 
                 # Apply the filter, if needed
@@ -285,7 +249,6 @@ class FindSmallPeaks(plugin.TransformPlugin):
                     w = np.convolve(w, self.filter_to_use, 'same')
 
                 # Use three passes to separate noise / peaks, see description in .... TODO
-                # TODO: this is quite an expensive inner loop: maybe move to C? Or am I missing a clever speedup?
                 noise_sigma = self.initial_noise_sigma
                 for pass_number in range(3):
                     # TODO: use sliding window integral over 2 samples
@@ -294,9 +257,11 @@ class FindSmallPeaks(plugin.TransformPlugin):
                         # No change in peakfinding, previous noise level is still valid
                         # That means there's no point in repeating peak finding either, and we can just:
                         break
+                        # This saves about 25% of runtime
                     noise_sigma = w[self.samples_without_peaks(w, raw_peaks)].std()
                     old_raw_peaks = raw_peaks
-                    # You can't break if you find no peaks: maybe the estimated noise level was too high
+                    # You can't break if you find no peaks on the first pass:
+                    # maybe the estimated noise level was too high
 
                 # TODO: move to separate plugin
                 if self.make_diagnostic_plots_in is not None:
@@ -311,7 +276,7 @@ class FindSmallPeaks(plugin.TransformPlugin):
                     plt.plot(noise_sigma * np.ones(len(w)), '--', label='1 sigma')
                     plt.plot(self.min_sigma * noise_sigma * np.ones(len(w)), '--', label='%s sigma' % self.min_sigma)
                     plt.legend()
-                    bla = (event.event_number, oc['start_index'], oc['end_index'], oc['channel'],)
+                    bla = (event.event_number, start, stop, channel)
                     plt.title('Event %s, occurrence %d-%d, Channel %d' % bla)
                     plt.savefig(os.path.join(self.make_diagnostic_plots_in,  'event%04d_occ%06d-%06d_ch%03d.png' % bla))
                     plt.close()
@@ -320,7 +285,7 @@ class FindSmallPeaks(plugin.TransformPlugin):
                 # ocs.loc[index,'n_peaks'] = len(raw_peaks)
                 event.channel_peaks.extend([datastructure.ChannelPeak({
                     # TODO: store occurrence index -- occurrences needs to be a better datastructure first
-                    'channel':             oc['channel'],
+                    'channel':             channel,
                     'left':                start + p[0],
                     'index_of_maximum':    start + p[1],
                     'right':               start + p[2],
