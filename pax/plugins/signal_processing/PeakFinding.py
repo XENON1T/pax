@@ -278,7 +278,7 @@ class FindSmallPeaks(plugin.TransformPlugin):
                     plt.legend()
                     bla = (event.event_number, start, stop, channel)
                     plt.title('Event %s, occurrence %d-%d, Channel %d' % bla)
-                    plt.savefig(os.path.join(self.make_diagnostic_plots_in,  'event%04d_occ%06d-%06d_ch%03d.png' % bla))
+                    plt.savefig(os.path.join(self.make_diagnostic_plots_in,  'event%04d_occ%05d-%05d_ch%03d.png' % bla))
                     plt.close()
 
                 # Store the found peaks in the datastructure

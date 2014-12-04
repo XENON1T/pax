@@ -6,11 +6,12 @@ from pax import dsputils, plugin
 import math
 
 
-class DeleteLowCoincidencePeaks(plugin.TransformPlugin):
+class DeleteSmallPeaks(plugin.TransformPlugin):
     """Deletes low coincidence peaks, so the low-energy peakfinder can have a crack at them"""
     def transform_event(self, event):
-        event.peaks = [p for p in event.peaks if p.coincidence_level >=
-                                                 self.config['prune_if_coincidence_lower_than']]
+        event.peaks = [p for p in event.peaks
+                       if p.coincidence_level >= self.config['prune_if_coincidence_lower_than']
+                       and p.area >= self.config['prune_if_area_lower_than']]
         return event
 
 
