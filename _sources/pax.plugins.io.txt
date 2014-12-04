@@ -28,6 +28,14 @@ pax.plugins.io.MongoDB module
     :undoc-members:
     :show-inheritance:
 
+pax.plugins.io.Music module
+---------------------------
+
+.. automodule:: pax.plugins.io.Music
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pax.plugins.io.OnlineMonitor module
 -----------------------------------
 

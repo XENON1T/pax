@@ -81,6 +81,7 @@
 
 
     <span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Shutting down </span><span class="si">%s</span><span class="s">...&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
         <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">y</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&#39;Shutdown of </span><span class="si">%s</span><span class="s"> returned a </span><span class="si">%s</span><span class="s"> instead of None.&#39;</span> <span class="o">%</span> <span class="p">(</span>
@@ -88,7 +89,7 @@
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">_timeit</span><span class="p">(</span><span class="n">method</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Decorator for measuring class method speeds</span>
+        <span class="sd">&quot;&quot;&quot;Decorator for measuring method speeds</span>
 <span class="sd">        Should be wrapped about each plugin&#39;s main method</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">def</span> <span class="nf">timed</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>

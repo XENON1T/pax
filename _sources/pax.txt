@@ -6,7 +6,6 @@ Subpackages
 
 .. toctree::
 
-    pax.config
     pax.micromodels
     pax.plugins
 
@@ -33,14 +32,6 @@ pax.dsputils module
 -------------------
 
 .. automodule:: pax.dsputils
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pax.generate_pmts module
-------------------------
-
-.. automodule:: pax.generate_pmts
     :members:
     :undoc-members:
     :show-inheritance:

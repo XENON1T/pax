@@ -122,13 +122,17 @@ $ python setup.py develop
 <p>Now you can make your changes locally.</p>
 </li>
 <li><p class="first">When you&#8217;re done making changes, check that your changes pass flake8 and the tests, including testing other Python versions with tox:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ flake8 pax tests
-$ python setup.py test
-$ tox
+<div class="highlight-python"><div class="highlight"><pre>$ make lint
+$ make test
 </pre></div>
 </div>
-<p>To get flake8 and tox, just pip install them into your virtualenv.</p>
+<p>This runs flake8 for style testing.  To get flake8, just pip install them into your virtualenv.</p>
 </li>
+</ol>
+<p>6.  Check that the documentation is still up-to-date.  You may need to add another &#8216;rst&#8217; file in docs or
+update one of the files that are already written.  Please specifically check README.rst (for new features)
+and AUTHORS.rst (if you are a new contributor)</p>
+<ol class="arabic" start="7">
 <li><p class="first">Commit your changes and push your branch to GitHub:</p>
 <div class="highlight-python"><div class="highlight"><pre>$ git add .
 $ git commit -m &quot;Your detailed description of your changes.&quot;

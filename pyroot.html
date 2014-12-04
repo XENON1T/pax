@@ -1,0 +1,196 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>PyROOT installation &mdash; Processor for Analyzing XENON1T 1.4.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.4.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Processor for Analyzing XENON1T 1.4.0 documentation" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">Processor for Analyzing XENON1T 1.4.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="pyroot-installation">
+<h1>PyROOT installation<a class="headerlink" href="#pyroot-installation" title="Permalink to this headline">¶</a></h1>
+<p>The Processor for Analysing XENON (PAX) uses ROOT (<a class="reference external" href="http://root.cern.ch/drupal/">http://root.cern.ch/drupal/</a>) for the output of files.
+PyROOT is a Python extension module that allows the user to interact with any ROOT class from the Python interpreter.
+For this purpose it is necessary to have the latest Python (3.4) version working with ROOT. This installation document
+shows the steps needed to do this correctly in an virtual environment on Ubuntu 14.</p>
+<div class="section" id="installation">
+<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<p>We assume installation on Ubuntu 14 desktop with python3.4 pre-installed.</p>
+<ul>
+<li><p class="first">To install virualenv with py3.4 run:</p>
+<div class="highlight-python"><div class="highlight"><pre>sudo apt-get install python-pip
+sudo pip install virtualenv
+virtualenv -p /usr/bin/python3.4 $HOME/env/py34
+source ~/env/py34/bin/activate
+</pre></div>
+</div>
+</li>
+</ul>
+<p>Check that python3.4 starts when typing &#8216;python&#8217; after activating the virtualenv. The virtualenv can be exited by typing &#8216;deactivate&#8217;.</p>
+<p>To get ROOT ready for compilation:</p>
+<ul>
+<li><p class="first">Download the latest root: <a class="reference external" href="http://root.cern.ch/drupal/content/downloading-root">http://root.cern.ch/drupal/content/downloading-root</a></p>
+</li>
+<li><p class="first">Unpack and install dependencies with the command from: <a class="reference external" href="http://root.cern.ch/drupal/content/build-prerequisites">http://root.cern.ch/drupal/content/build-prerequisites</a>:</p>
+<div class="highlight-python"><div class="highlight"><pre>mkdir ~/env/py34/src
+cd ~/env/py34/src
+gzip -dc root_&lt;version&gt;.source.tar.gz | tar -xf -
+sudo apt-get install git dpkg-dev make g++ gcc binutils libx11-dev libxpm-dev libxft-dev libxext-dev
+</pre></div>
+</div>
+</li>
+<li><p class="first">Search for the files Python.h and libpython3.4.so:</p>
+<div class="highlight-python"><div class="highlight"><pre>sudo updatedb
+locate Python.h
+locate libpython3.4.so
+</pre></div>
+</div>
+</li>
+<li><p class="first">If they are not found run:</p>
+<div class="highlight-python"><div class="highlight"><pre>sudo apt-get install python3.4-dev
+</pre></div>
+</div>
+</li>
+<li><p class="first">Now go to the root directory and set configure to the locations of the found files of the correct python version.:</p>
+<div class="highlight-python"><div class="highlight"><pre>./configure --enable-python --with-python-incdir=/usr/include/python3.4m --with-python-libdir=/usr/lib/python3.4/config-3.4m-x86_64-linux-gnu
+</pre></div>
+</div>
+</li>
+</ul>
+<p>where the Python include directory should point to the directory containing the Python.h file, and the library directory should contain libpython.x.y.[so][.dll],
+where &#8216;x&#8217; and &#8216;y&#8217; are the major and minor version number of Python,  respectively. Note that at the end of the configuration, the list of
+enabled features is printed: make sure that &#8216;python&#8217; is listed among them. If you do not specify the inc and lib directories configure will try to use the environment
+variable $PYTHONDIR or alternatively will look in the standard locations.</p>
+<ul>
+<li><p class="first">The output should now include:</p>
+<div class="highlight-python"><div class="highlight"><pre>Checking for Python.h ... /usr/include/python3.4m
+Checking for python3.4, libpython3.4, libpython, python, or Python ... /usr/lib/
+</pre></div>
+</div>
+</li>
+<li><p class="first">Compile ROOT:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">make</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p>TIP: When running the command make above, one can multi thread the build by doing make -jN for an N-core machine. For example, in a four core laptop, one could do make -j4.
+The ROOT build should be successful</p>
+<ul>
+<li><p class="first">Check that the PyROOT module was build correctly by looking for ROOT.py and libPyROOT.so:</p>
+<div class="highlight-python"><div class="highlight"><pre>sudo updatedb
+locate ROOT.py
+locate libPyROOT.so
+</pre></div>
+</div>
+</li>
+<li><p class="first">Set this root as source for the env:</p>
+<div class="highlight-python"><div class="highlight"><pre>echo source bin/thisroot.sh &gt;&gt; ~/env/py34/bin/activate
+</pre></div>
+</div>
+</li>
+<li><p class="first">Convert the code in ROOT.py from python 2 to python 3 with 2to3:</p>
+<div class="highlight-python"><div class="highlight"><pre>2to3 -w ~/env/py34/src/root/lib/ROOT.py
+</pre></div>
+</div>
+</li>
+</ul>
+<p>Start python and check that &#8220;import ROOT&#8221; works. If so happy programming.</p>
+<dl class="docutils">
+<dt>Now every time you want to use PyROOT 3.4 activate the virtualenv::</dt>
+<dd>source ~/env/py34/bin/activate</dd>
+</dl>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">PyROOT installation</a><ul>
+<li><a class="reference internal" href="#installation">Installation</a></li>
+</ul>
+</li>
+</ul>
+
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/pyroot.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">Processor for Analyzing XENON1T 1.4.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Christopher Tunnell.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

@@ -76,9 +76,12 @@
 <div class="viewcode-block" id="intervals_above_threshold"><a class="viewcode-back" href="../../pax.html#pax.dsputils.intervals_above_threshold">[docs]</a><span class="k">def</span> <span class="nf">intervals_above_threshold</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">threshold</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Return boundary indices of all intervals in signal (strictly) above threshold&quot;&quot;&quot;</span>
     <span class="n">cross_above</span><span class="p">,</span> <span class="n">cross_below</span> <span class="o">=</span> <span class="n">sign_changes</span><span class="p">(</span><span class="n">signal</span> <span class="o">-</span> <span class="n">threshold</span><span class="p">)</span>
-    <span class="c"># Assuming each interval&#39;s left &lt;= right, we can simply split sorted(lefts+rights) in pairs</span>
-    <span class="c"># Todo: come on, there must be a numpy method for this!</span>
-    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="nb">iter</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">cross_above</span> <span class="o">+</span> <span class="n">cross_below</span><span class="p">))]</span> <span class="o">*</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="c"># Assuming each interval&#39;s left &lt;= right, we can split sorted(cross_above+cross_below) into pairs to get our result</span>
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="nb">iter</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">cross_above</span><span class="p">)</span> <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="n">cross_below</span><span class="p">)))]</span> <span class="o">*</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="c"># I&#39;ve been looking for a proper numpy solution. It should be:</span>
+    <span class="c"># return np.vstack((cross_above, cross_below)).T</span>
+    <span class="c"># But it appears to make the processor run slower! (a tiny bit)</span>
+    <span class="c"># Maybe because we&#39;re dealing with many small arrays rather than big ones?</span>
 
 </div>
 <div class="viewcode-block" id="sign_changes"><a class="viewcode-back" href="../../pax.html#pax.dsputils.sign_changes">[docs]</a><span class="k">def</span> <span class="nf">sign_changes</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">report_first_index</span><span class="o">=</span><span class="s">&#39;positive&#39;</span><span class="p">):</span>
@@ -92,6 +95,8 @@
 <span class="sd">                                 if &#39;non-positive&#39;, index 0 is reported if it is non-positive</span>
 <span class="sd">                                 if &#39;never&#39;, index 0 is NEVER reported.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[],</span> <span class="p">[]</span>
     <span class="n">above0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">signal</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;inf&#39;</span><span class="p">))</span>
     <span class="k">if</span> <span class="n">report_first_index</span> <span class="o">==</span> <span class="s">&#39;positive&#39;</span><span class="p">:</span>
         <span class="n">above0</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span>
@@ -102,18 +107,22 @@
     <span class="n">above0_next</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">above0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
     <span class="n">becomes_positive</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">above0</span> <span class="o">-</span> <span class="n">above0_next</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
     <span class="n">becomes_non_positive</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">above0</span> <span class="o">-</span> <span class="n">above0_next</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">becomes_positive</span><span class="p">),</span> <span class="nb">list</span><span class="p">(</span><span class="n">becomes_non_positive</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">becomes_positive</span><span class="p">,</span> <span class="n">becomes_non_positive</span>
 
 </div>
-<div class="viewcode-block" id="peak_bounds"><a class="viewcode-back" href="../../pax.html#pax.dsputils.peak_bounds">[docs]</a><span class="k">def</span> <span class="nf">peak_bounds</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">max_idx</span><span class="p">,</span> <span class="n">fraction_of_max</span><span class="p">,</span> <span class="n">zero_level</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<div class="viewcode-block" id="peak_bounds"><a class="viewcode-back" href="../../pax.html#pax.dsputils.peak_bounds">[docs]</a><span class="k">def</span> <span class="nf">peak_bounds</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">fraction_of_max</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">max_idx</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">zero_level</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">inclusive</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Return (left, right) indices closest to max_idx where signal drops below signal[max_idx]*fraction_of_max.</span>
 
 <span class="sd">    :param signal: waveform to look in (numpy array)</span>
-<span class="sd">    :param peak: Peak object</span>
-<span class="sd">    :param fraction_of_max: Width at this fraction of maximum</span>
-<span class="sd">    :param zero_level: Always end a peak before it is &lt; this. Default: 0</span>
+<span class="sd">    :param fraction_of_max: Width at this fraction of maximum. If None, peaks will extend until zero_level.</span>
+<span class="sd">    :param max_idx: Index in signal of the maximum of the peak. Default None, will be determined by np.argmax(signal)</span>
+<span class="sd">    :param zero_level: Always end a peak when it drops below this level. Default: 0</span>
+<span class="sd">    :param inclusive: Include endpoints (first points where signal drops below), default True.</span>
+<span class="sd">    TODO: proper support for inclusive (don&#39;t just subtract 1)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">max_idx</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">max_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Empty signal, can&#39;t find peak bounds!&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">max_idx</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span><span class="o">-</span><span class="mi">1</span><span class="p">:</span>
@@ -122,14 +131,16 @@
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Peak maximum index is negative (</span><span class="si">%s</span><span class="s">)... what are you smoking?&quot;</span> <span class="o">%</span> <span class="n">max_idx</span> <span class="p">)</span>
 
     <span class="n">height</span> <span class="o">=</span> <span class="n">signal</span><span class="p">[</span><span class="n">max_idx</span><span class="p">]</span>
-    <span class="n">threshold</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">zero_level</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">fraction_of_max</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">fraction_of_max</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">threshold</span> <span class="o">=</span> <span class="n">zero_level</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">threshold</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">zero_level</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">fraction_of_max</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">height</span> <span class="o">&lt;</span> <span class="n">threshold</span><span class="p">:</span>
         <span class="c"># Peak is always below threshold -&gt; return smallest legal peak.</span>
         <span class="k">return</span> <span class="p">(</span><span class="n">max_idx</span><span class="p">,</span> <span class="n">max_idx</span><span class="p">)</span>
 
-    <span class="c"># Note reversion acts before indexing!</span>
-    <span class="n">bla</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">signal</span><span class="p">[</span><span class="n">max_idx</span><span class="p">::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">threshold</span><span class="p">)</span>
+    <span class="c"># Note reversion acts before indexing in numpy!</span>
     <span class="n">left</span> <span class="o">=</span> <span class="n">find_first_fast</span><span class="p">(</span><span class="n">signal</span><span class="p">[</span><span class="n">max_idx</span><span class="p">::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">threshold</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">left</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
         <span class="n">left</span> <span class="o">=</span> <span class="mi">0</span>
@@ -141,9 +152,15 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">right</span> <span class="o">+=</span> <span class="n">max_idx</span>
 
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">inclusive</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">signal</span><span class="p">[</span><span class="n">left</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">threshold</span> <span class="ow">and</span> <span class="n">left</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">left</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">signal</span><span class="p">[</span><span class="n">right</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">threshold</span> <span class="ow">and</span> <span class="n">right</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">right</span> <span class="o">-=</span> <span class="mi">1</span>
     <span class="k">return</span> <span class="p">(</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">)</span>
 
-</div>
+
+<span class="c">#TODO: interpolate argument shadows interpolate imported from scipy</span></div>
 <div class="viewcode-block" id="width_at_fraction"><a class="viewcode-back" href="../../pax.html#pax.dsputils.width_at_fraction">[docs]</a><span class="k">def</span> <span class="nf">width_at_fraction</span><span class="p">(</span><span class="n">peak_wave</span><span class="p">,</span> <span class="n">fraction_of_max</span><span class="p">,</span> <span class="n">max_idx</span><span class="p">,</span> <span class="n">interpolate</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Returns width of a peak IN SAMPLES at fraction of maximum&quot;&quot;&quot;</span>
     <span class="n">left</span><span class="p">,</span> <span class="n">right</span> <span class="o">=</span> <span class="n">peak_bounds</span><span class="p">(</span><span class="n">peak_wave</span><span class="p">,</span> <span class="n">max_idx</span><span class="o">=</span><span class="n">max_idx</span><span class="p">,</span> <span class="n">fraction_of_max</span><span class="o">=</span><span class="n">fraction_of_max</span><span class="p">)</span>
@@ -182,8 +199,6 @@
 
     <span class="k">return</span> <span class="n">right</span> <span class="o">-</span> <span class="n">left</span> <span class="o">+</span> <span class="mi">1</span>
 
-
-
 </div>
 <div class="viewcode-block" id="find_first_fast"><a class="viewcode-back" href="../../pax.html#pax.dsputils.find_first_fast">[docs]</a><span class="k">def</span> <span class="nf">find_first_fast</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">chunk_size</span><span class="o">=</span><span class="mi">128</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Returns the first index in a below threshold.</span>
@@ -211,22 +226,18 @@
     <span class="c"># return len(a) - 1</span>
 
 
-
-<span class="c">##</span>
-<span class="c"># Peak processing routines</span>
-<span class="c">##</span>
 </div>
-<div class="viewcode-block" id="free_regions"><a class="viewcode-back" href="../../pax.html#pax.dsputils.free_regions">[docs]</a><span class="k">def</span> <span class="nf">free_regions</span><span class="p">(</span><span class="n">event</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Find the free regions in the event&#39;s waveform - regions where peaks haven&#39;t yet been found&quot;&quot;&quot;</span>
-    <span class="n">lefts</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">left</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">])</span>
-    <span class="n">rights</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">p</span><span class="o">.</span><span class="n">right</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">event</span><span class="o">.</span><span class="n">length</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
+<div class="viewcode-block" id="free_regions"><a class="viewcode-back" href="../../pax.html#pax.dsputils.free_regions">[docs]</a><span class="k">def</span> <span class="nf">free_regions</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">ignore_peak_types</span><span class="o">=</span><span class="p">()):</span>
+    <span class="sd">&quot;&quot;&quot;Find the free regions in the event&#39;s waveform - regions where peaks haven&#39;t yet been found</span>
+<span class="sd">        ignore_peak_types: list of names of peak.type&#39;s which will be ignored for the computation</span>
+<span class="sd">    :returns list of 2-tuples (left index, right index) of regions where no peaks have been found</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">lefts</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">left</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">peaks</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ignore_peak_types</span><span class="p">])</span>
+    <span class="n">rights</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">p</span><span class="o">.</span><span class="n">right</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">peaks</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">ignore_peak_types</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">event</span><span class="o">.</span><span class="n">length</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
     <span class="c"># Assuming each peak&#39;s right &gt; left, we can simply split</span>
     <span class="c"># sorted(lefts+rights) in pairs:</span>
     <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="nb">iter</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">lefts</span> <span class="o">+</span> <span class="n">rights</span><span class="p">))]</span> <span class="o">*</span> <span class="mi">2</span><span class="p">))</span>
 
-
-<span class="c"># TODO: maybe move this to the peak splitter? It isn&#39;t used by anything</span>
-<span class="c"># else... yet</span>
 
 
 
@@ -280,8 +291,8 @@
             <span class="c"># 2D interpolation</span>
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
                 <span class="n">itp_fun</span> <span class="o">=</span> <span class="n">interpolate</span><span class="o">.</span><span class="n">interp2d</span><span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">cs</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">])),</span>
-                                                         <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">cs</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">])),</span>
-                                                         <span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">map_name</span><span class="p">])</span>
+                                               <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">*</span><span class="p">(</span><span class="n">cs</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">])),</span>
+                                               <span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">map_name</span><span class="p">])</span>
 
             <span class="c"># 3D interpolation</span>
             <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>

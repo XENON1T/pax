@@ -95,8 +95,15 @@ installed, which you can test by running at the command line:</p>
 </div>
 <div class="section" id="usage">
 <h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
-<p>See paxer &#8211;help for a list of command line arguments.</p>
-<p>If you want to do something fancy, you can create your own configuration file
+<p>You can run the program by, for example, running:</p>
+<div class="highlight-python"><div class="highlight"><pre>paxer --config XED --input xe100_120402_2000_000000.xed
+</pre></div>
+</div>
+<p>For other options and a list of command line arguments, please run:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">paxer</span> <span class="o">--</span><span class="n">help</span>
+</pre></div>
+</div>
+<p>If you want to do something nonstandard, you can create your own configuration file
 like:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="p">[</span><span class="n">pax</span><span class="p">]</span>
 <span class="n">parent_configuration</span> <span class="o">=</span> <span class="s">&#39;XENON100&#39;</span>    <span class="c"># Inherit from the XENON100 configuration</span>
@@ -105,9 +112,8 @@ like:</p>
 <span class="n">output</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;Plotting.PlottingWaveform&quot;</span><span class="p">]</span>
 </pre></div>
 </div>
-<p>and load it using paxer &#8211;config_path YOURFILE. We already have a few example
-configs available in config, which you can load using paxer &#8211;config NAME (with
-NAME, for example, XED_example or Mongo_example).</p>
+<p>and load it using the <cite>config_path</cite> command line option. We already have a few example
+configs available in config, which you can load using <cite>config</cite> option.</p>
 </div>
 <div class="section" id="features">
 <h2>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
@@ -126,9 +132,10 @@ NAME, for example, XED_example or Mongo_example).</p>
 </ul>
 <blockquote>
 <div><ul class="simple">
+<li>ROOT</li>
 <li>MongoDB (used online for DAQ)</li>
 <li>XED (XENON100 format)</li>
-<li>HDF5 (default output)</li>
+<li>HDF5</li>
 <li>Pickled waveforms output</li>
 <li>Plots of sum waveform and PMT hitpattern</li>
 <li>DAQ injector</li>
@@ -140,6 +147,7 @@ NAME, for example, XED_example or Mongo_example).</p>
 <blockquote>
 <div><ul class="simple">
 <li>Charge-weighted sum (x, y) reconstruction</li>
+<li>Chi2 reconstruction</li>
 </ul>
 </div></blockquote>
 <ul class="simple">

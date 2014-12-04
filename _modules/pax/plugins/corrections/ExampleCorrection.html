@@ -54,8 +54,6 @@
 <div class="viewcode-block" id="ExampleCorrection.startup"><a class="viewcode-back" href="../../../../pax.plugins.corrections.html#pax.plugins.corrections.ExampleCorrection.ExampleCorrection.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">correction_map</span> <span class="o">=</span> <span class="n">dsputils</span><span class="o">.</span><span class="n">InterpolatingMap</span><span class="p">(</span>
              <span class="n">core</span><span class="o">.</span><span class="n">data_file_name</span><span class="p">(</span><span class="s">&#39;s2_xy_lce_map_XENON100_Xerawdp0.4.5.json.gz&#39;</span><span class="p">))</span>
-        <span class="c"># self.correction_map = dsputils.InterpolatingMap(</span>
-        <span class="c">#     core.data_file_name(&#39;s2_xy_lce_map_XENON100_Xerawdp0.4.5.json&#39;))</span>
         <span class="c"># self.correction_map.plot(map_name=&#39;60&#39;)</span>
 </div>
 <div class="viewcode-block" id="ExampleCorrection.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.corrections.html#pax.plugins.corrections.ExampleCorrection.ExampleCorrection.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>

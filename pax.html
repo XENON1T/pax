@@ -59,6 +59,12 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="pax.plugins.html">pax.plugins package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="pax.plugins.html#subpackages">Subpackages</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="pax.plugins.corrections.html">pax.plugins.corrections package</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.corrections.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.corrections.html#module-pax.plugins.corrections.ExampleCorrection">pax.plugins.corrections.ExampleCorrection module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.corrections.html#module-pax.plugins.corrections">Module contents</a></li>
+</ul>
+</li>
 <li class="toctree-l3"><a class="reference internal" href="pax.plugins.display.html">pax.plugins.display package</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.display.html#submodules">Submodules</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.display.html#module-pax.plugins.display.Display">pax.plugins.display.Display module</a></li>
@@ -70,6 +76,7 @@
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.CSV">pax.plugins.io.CSV module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.HDF5">pax.plugins.io.HDF5 module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.MongoDB">pax.plugins.io.MongoDB module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.Music">pax.plugins.io.Music module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.OnlineMonitor">pax.plugins.io.OnlineMonitor module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.Pickle">pax.plugins.io.Pickle module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.Plotting">pax.plugins.io.Plotting module</a></li>
@@ -83,6 +90,7 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="pax.plugins.posrec.html">pax.plugins.posrec package</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.posrec.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.posrec.html#module-pax.plugins.posrec.NeuralNet">pax.plugins.posrec.NeuralNet module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.posrec.html#module-pax.plugins.posrec.PosSimple">pax.plugins.posrec.PosSimple module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.posrec.html#module-pax.plugins.posrec">Module contents</a></li>
 </ul>
@@ -101,6 +109,62 @@
 <div class="section" id="module-pax.core">
 <span id="pax-core-module"></span><h2>pax.core module<a class="headerlink" href="#module-pax.core" title="Permalink to this headline">¶</a></h2>
 <p>The backbone of pax</p>
+<dl class="class">
+<dt id="pax.core.Processor">
+<em class="property">class </em><tt class="descclassname">pax.core.</tt><tt class="descname">Processor</tt><big>(</big><em>config_names=()</em>, <em>config_paths=()</em>, <em>config_string=None</em>, <em>config_dict={}</em>, <em>just_testing=False</em><big>)</big><a class="reference internal" href="_modules/pax/core.html#Processor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
+<dl class="attribute">
+<dt id="pax.core.Processor.fallback_configuration">
+<tt class="descname">fallback_configuration</tt><em class="property"> = 'XENON100'</em><a class="headerlink" href="#pax.core.Processor.fallback_configuration" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.core.Processor.get_plugin_by_name">
+<tt class="descname">get_plugin_by_name</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/pax/core.html#Processor.get_plugin_by_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor.get_plugin_by_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return plugin by class name. Use for testing.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="pax.core.Processor.get_plugin_search_paths">
+<em class="property">static </em><tt class="descname">get_plugin_search_paths</tt><big>(</big><em>extra_paths=None</em><big>)</big><a class="reference internal" href="_modules/pax/core.html#Processor.get_plugin_search_paths"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor.get_plugin_search_paths" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns paths where we should search for plugins
+Search for plugins in  ./plugins, PAX_DIR/plugins, any directories in config[&#8216;plugin_paths&#8217;]
+Search in all subdirs of the above, except for __pycache__ dirs</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.core.Processor.instantiate_plugin">
+<tt class="descname">instantiate_plugin</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/pax/core.html#Processor.instantiate_plugin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor.instantiate_plugin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Take plugin class name and build class from it</p>
+<p>The python default module locations are also searched... I think.. so don&#8217;t name your module &#8216;glob&#8217;...</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.core.Processor.load_configuration">
+<tt class="descname">load_configuration</tt><big>(</big><em>config_names</em>, <em>config_paths</em>, <em>config_string</em>, <em>config_dict</em><big>)</big><a class="reference internal" href="_modules/pax/core.html#Processor.load_configuration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor.load_configuration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a configuration &#8211; see init&#8217;s docstring</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.core.Processor.process_event">
+<tt class="descname">process_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/core.html#Processor.process_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor.process_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process one event with all action plugins. Returns processed event.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.core.Processor.run">
+<tt class="descname">run</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/core.html#Processor.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run the processor over all events</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.core.Processor.setup_logging">
+<tt class="descname">setup_logging</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/core.html#Processor.setup_logging"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor.setup_logging" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets up logging. Must have loaded config first.</p>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="function">
 <dt id="pax.core.data_file_name">
 <tt class="descclassname">pax.core.</tt><tt class="descname">data_file_name</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/pax/core.html#data_file_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.data_file_name" title="Permalink to this definition">¶</a></dt>
@@ -113,86 +177,6 @@
 <dd><p>Return the names of all named configurations</p>
 </dd></dl>
 
-<dl class="function">
-<dt id="pax.core.init_configuration">
-<tt class="descclassname">pax.core.</tt><tt class="descname">init_configuration</tt><big>(</big><em>config_names=()</em>, <em>config_paths=()</em>, <em>config_string=None</em><big>)</big><a class="reference internal" href="_modules/pax/core.html#init_configuration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.init_configuration" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="docutils">
-<dt>Get pax configuration from three configuration sources:</dt>
-<dd><ul class="first last simple">
-<li>config_names: List of named configurations to load (sequentially)</li>
-<li>config_paths: List of config file paths to load (sequentially)</li>
-<li>config_string: A final config override string</li>
-</ul>
-</dd>
-</dl>
-<p>Files from config_paths will be loaded after config_names, and can thus override their settings.
-The config_string is loaded last of all.</p>
-<p>Configuration files can inherit from others using parent_configuration and parent_configuration_files.</p>
-<dl class="docutils">
-<dt>Each value in the ini file is eval()&#8217;ed in a context with physical unit variables:</dt>
-<dd>4 * 2 -&gt; 8
-4 * cm**(2)/s -&gt; correctly interpreted as a physical value with units of cm^2/s</dd>
-</dl>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">nested dictionary of evaluated configuration values, use as: config[section][key].</td>
-</tr>
-</tbody>
-</table>
-<p>Will return None if no configuration sources are specified at all.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pax.core.instantiate_plugin">
-<tt class="descclassname">pax.core.</tt><tt class="descname">instantiate_plugin</tt><big>(</big><em>name</em>, <em>plugin_search_paths=None</em>, <em>config=None</em>, <em>log=&lt;module 'logging' from '/opt/local/Library/Frameworks/Python.framework/Versions/3.4/lib/python3.4/logging/__init__.py'&gt;</em>, <em>for_testing=False</em><big>)</big><a class="reference internal" href="_modules/pax/core.html#instantiate_plugin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.instantiate_plugin" title="Permalink to this definition">¶</a></dt>
-<dd><p>Take plugin class name and build class from it</p>
-<p>The python default module locations are also searched... I think.. so don&#8217;t name your module &#8216;glob&#8217;...</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pax.core.load_file_into_configparser">
-<tt class="descclassname">pax.core.</tt><tt class="descname">load_file_into_configparser</tt><big>(</big><em>config</em>, <em>config_file</em><big>)</big><a class="reference internal" href="_modules/pax/core.html#load_file_into_configparser"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.load_file_into_configparser" title="Permalink to this definition">¶</a></dt>
-<dd><p>Loads a configuration file into our config parser, with support for inheritance.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>config</strong> &#8211; configparser instance</li>
-<li><strong>config_file</strong> &#8211; path or file object of configuration file to read</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">None</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="function">
-<dt id="pax.core.make_plugin_search_paths">
-<tt class="descclassname">pax.core.</tt><tt class="descname">make_plugin_search_paths</tt><big>(</big><em>config=None</em><big>)</big><a class="reference internal" href="_modules/pax/core.html#make_plugin_search_paths"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.make_plugin_search_paths" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="pax.core.processor">
-<tt class="descclassname">pax.core.</tt><tt class="descname">processor</tt><big>(</big><em>config</em><big>)</big><a class="reference internal" href="_modules/pax/core.html#processor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.processor" title="Permalink to this definition">¶</a></dt>
-<dd><p>Run the processor according to the configuration dictionary</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>config</strong> &#8211; dictionary with configuration values</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">None</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
 </div>
 <div class="section" id="module-pax.datastructure">
 <span id="pax-datastructure-module"></span><h2>pax.datastructure module<a class="headerlink" href="#module-pax.datastructure" title="Permalink to this headline">¶</a></h2>
@@ -202,6 +186,56 @@ physically meaningful variables.  For example, S2.</p>
 <p>NOTE: This class is stable within major releases.  Do not change any variable
 names of functionality between major releases.  You may add variables in minor
 releases.  Patch releases cannot modify this.</p>
+<dl class="class">
+<dt id="pax.datastructure.ChannelPeak">
+<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">ChannelPeak</tt><big>(</big><em>kwargs=None</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#ChannelPeak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.ChannelPeak" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pax.micromodels.html#pax.micromodels.models.Model" title="pax.micromodels.models.Model"><tt class="xref py py-class docutils literal"><span class="pre">pax.micromodels.models.Model</span></tt></a></p>
+<p>Peaks found in individual channels
+These should be combined into full peaks later?</p>
+<dl class="attribute">
+<dt id="pax.datastructure.ChannelPeak.area">
+<tt class="descname">area</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.ChannelPeak.area" title="Permalink to this definition">¶</a></dt>
+<dd><p>Area of the peak in photoelectrons</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.ChannelPeak.channel">
+<tt class="descname">channel</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.ChannelPeak.channel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Channel in which this peak was found</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.ChannelPeak.height">
+<tt class="descname">height</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.ChannelPeak.height" title="Permalink to this definition">¶</a></dt>
+<dd><p>Height of highest point in peak (in pe/bin)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.ChannelPeak.index_of_maximum">
+<tt class="descname">index_of_maximum</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.ChannelPeak.index_of_maximum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Index in the event at which this peak has its maximum.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.ChannelPeak.left">
+<tt class="descname">left</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.ChannelPeak.left" title="Permalink to this definition">¶</a></dt>
+<dd><p>Index of left bound (inclusive) of peak.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.ChannelPeak.noise_sigma">
+<tt class="descname">noise_sigma</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.ChannelPeak.noise_sigma" title="Permalink to this definition">¶</a></dt>
+<dd><p>StDev of the noise in the occurrence (in pe/bin) where we found this peak</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.ChannelPeak.right">
+<tt class="descname">right</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.ChannelPeak.right" title="Permalink to this definition">¶</a></dt>
+<dd><p>Index of right bound of peak</p>
+</dd></dl>
+
+</dd></dl>
+
 <dl class="class">
 <dt id="pax.datastructure.Event">
 <em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Event</tt><big>(</big><em>kwargs=None</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event" title="Permalink to this definition">¶</a></dt>
@@ -383,6 +417,12 @@ Or rather, it starts from January 1, 1970.</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="pax.datastructure.Peak.index_of_filtered_maximum">
+<tt class="descname">index_of_filtered_maximum</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.index_of_filtered_maximum" title="Permalink to this definition">¶</a></dt>
+<dd><p>same, but maximum in filtered (for S2) sum waveform</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="pax.datastructure.Peak.index_of_maximum">
 <tt class="descname">index_of_maximum</tt><em class="property"> = None</em><a class="headerlink" href="#pax.datastructure.Peak.index_of_maximum" title="Permalink to this definition">¶</a></dt>
 <dd><p>Index in the event&#8217;s sum waveform at which this peak has its maximum.</p>
@@ -557,8 +597,12 @@ If a never goes below threshold, returns the last index in a.</p>
 
 <dl class="function">
 <dt id="pax.dsputils.free_regions">
-<tt class="descclassname">pax.dsputils.</tt><tt class="descname">free_regions</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/dsputils.html#free_regions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.free_regions" title="Permalink to this definition">¶</a></dt>
-<dd><p>Find the free regions in the event&#8217;s waveform - regions where peaks haven&#8217;t yet been found</p>
+<tt class="descclassname">pax.dsputils.</tt><tt class="descname">free_regions</tt><big>(</big><em>event</em>, <em>ignore_peak_types=()</em><big>)</big><a class="reference internal" href="_modules/pax/dsputils.html#free_regions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.free_regions" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Find the free regions in the event&#8217;s waveform - regions where peaks haven&#8217;t yet been found</dt>
+<dd>ignore_peak_types: list of names of peak.type&#8217;s which will be ignored for the computation</dd>
+</dl>
+<p>:returns list of 2-tuples (left index, right index) of regions where no peaks have been found</p>
 </dd></dl>
 
 <dl class="function">
@@ -569,7 +613,7 @@ If a never goes below threshold, returns the last index in a.</p>
 
 <dl class="function">
 <dt id="pax.dsputils.peak_bounds">
-<tt class="descclassname">pax.dsputils.</tt><tt class="descname">peak_bounds</tt><big>(</big><em>signal</em>, <em>max_idx</em>, <em>fraction_of_max</em>, <em>zero_level=0</em><big>)</big><a class="reference internal" href="_modules/pax/dsputils.html#peak_bounds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.peak_bounds" title="Permalink to this definition">¶</a></dt>
+<tt class="descclassname">pax.dsputils.</tt><tt class="descname">peak_bounds</tt><big>(</big><em>signal</em>, <em>fraction_of_max=None</em>, <em>max_idx=None</em>, <em>zero_level=0</em>, <em>inclusive=True</em><big>)</big><a class="reference internal" href="_modules/pax/dsputils.html#peak_bounds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.peak_bounds" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return (left, right) indices closest to max_idx where signal drops below signal[max_idx]*fraction_of_max.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -577,14 +621,16 @@ If a never goes below threshold, returns the last index in a.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
 <li><strong>signal</strong> &#8211; waveform to look in (numpy array)</li>
-<li><strong>peak</strong> &#8211; Peak object</li>
-<li><strong>fraction_of_max</strong> &#8211; Width at this fraction of maximum</li>
-<li><strong>zero_level</strong> &#8211; Always end a peak before it is &lt; this. Default: 0</li>
+<li><strong>fraction_of_max</strong> &#8211; Width at this fraction of maximum. If None, peaks will extend until zero_level.</li>
+<li><strong>max_idx</strong> &#8211; Index in signal of the maximum of the peak. Default None, will be determined by np.argmax(signal)</li>
+<li><strong>zero_level</strong> &#8211; Always end a peak when it drops below this level. Default: 0</li>
+<li><strong>inclusive</strong> &#8211; Include endpoints (first points where signal drops below), default True.</li>
 </ul>
 </td>
 </tr>
 </tbody>
 </table>
+<p>TODO: proper support for inclusive (don&#8217;t just subtract 1)</p>
 </dd></dl>
 
 <dl class="function">
@@ -621,9 +667,6 @@ if &#8216;never&#8217;, index 0 is NEVER reported.</p>
 <dd><p>Returns width of a peak IN SAMPLES at fraction of maximum</p>
 </dd></dl>
 
-</div>
-<div class="section" id="module-pax.generate_pmts">
-<span id="pax-generate-pmts-module"></span><h2>pax.generate_pmts module<a class="headerlink" href="#module-pax.generate_pmts" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="module-pax.plugin">
 <span id="pax-plugin-module"></span><h2>pax.plugin module<a class="headerlink" href="#module-pax.plugin" title="Permalink to this headline">¶</a></h2>
@@ -852,7 +895,6 @@ unit_name(ns,&#8217;s&#8217;) will give &#8216;ns&#8217;</p>
 <li><a class="reference internal" href="#module-pax.core">pax.core module</a></li>
 <li><a class="reference internal" href="#module-pax.datastructure">pax.datastructure module</a></li>
 <li><a class="reference internal" href="#module-pax.dsputils">pax.dsputils module</a></li>
-<li><a class="reference internal" href="#module-pax.generate_pmts">pax.generate_pmts module</a></li>
 <li><a class="reference internal" href="#module-pax.plugin">pax.plugin module</a></li>
 <li><a class="reference internal" href="#module-pax.simulation">pax.simulation module</a></li>
 <li><a class="reference internal" href="#module-pax.units">pax.units module</a></li>

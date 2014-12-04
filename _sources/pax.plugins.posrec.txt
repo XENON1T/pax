@@ -4,6 +4,14 @@ pax.plugins.posrec package
 Submodules
 ----------
 
+pax.plugins.posrec.NeuralNet module
+-----------------------------------
+
+.. automodule:: pax.plugins.posrec.NeuralNet
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pax.plugins.posrec.PosSimple module
 -----------------------------------
 

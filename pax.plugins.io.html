@@ -183,6 +183,32 @@ on formats:</p>
 </dd></dl>
 
 </div>
+<div class="section" id="module-pax.plugins.io.Music">
+<span id="pax-plugins-io-music-module"></span><h2>pax.plugins.io.Music module<a class="headerlink" href="#module-pax.plugins.io.Music" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pax.plugins.io.Music.WavOutput">
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.Music.</tt><tt class="descname">WavOutput</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Music.html#WavOutput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Music.WavOutput" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.OutputPlugin" title="pax.plugin.OutputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.OutputPlugin</span></tt></a></p>
+<p>Convert sum waveforms of event and dataset to WAV file</p>
+<p>If we don&#8217;t find dark matter, at least we&#8217;ll have contemporary music.</p>
+<dl class="method">
+<dt id="pax.plugins.io.Music.WavOutput.shutdown">
+<tt class="descname">shutdown</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Music.html#WavOutput.shutdown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Music.WavOutput.shutdown" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.Music.WavOutput.startup">
+<tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Music.html#WavOutput.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Music.WavOutput.startup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.Music.WavOutput.write_event">
+<tt class="descname">write_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Music.html#WavOutput.write_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Music.WavOutput.write_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
 <div class="section" id="module-pax.plugins.io.OnlineMonitor">
 <span id="pax-plugins-io-onlinemonitor-module"></span><h2>pax.plugins.io.OnlineMonitor module<a class="headerlink" href="#module-pax.plugins.io.OnlineMonitor" title="Permalink to this headline">¶</a></h2>
 </div>
@@ -231,6 +257,11 @@ on formats:</p>
 <em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlotBase</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotBase" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.OutputPlugin" title="pax.plugin.OutputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.OutputPlugin</span></tt></a></p>
 <dl class="method">
+<dt id="pax.plugins.io.Plotting.PlotBase.color_peak_ranges">
+<tt class="descname">color_peak_ranges</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotBase.color_peak_ranges"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotBase.color_peak_ranges" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="pax.plugins.io.Plotting.PlotBase.finalize_plot">
 <tt class="descname">finalize_plot</tt><big>(</big><em>num=0</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotBase.finalize_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotBase.finalize_plot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finalize plotting, send to screen/file, then closes plot properly (avoids runtimewarning / memory leak).</p>
@@ -265,14 +296,27 @@ on formats:</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="pax.plugins.io.Plotting.PlotChannelWaveforms">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlotChannelWaveforms</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotChannelWaveforms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotChannelWaveforms" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.plugins.io.Plotting.PlotChannelWaveforms2D">
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlotChannelWaveforms2D</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotChannelWaveforms2D"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotChannelWaveforms2D" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.Plotting.PlotBase" title="pax.plugins.io.Plotting.PlotBase"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.Plotting.PlotBase</span></tt></a></p>
+<p>Makes a plot of all the occurencences in the event
+Just like PlotChannelWaveforms3D, but seen from above (or below ;-)</p>
+<dl class="method">
+<dt id="pax.plugins.io.Plotting.PlotChannelWaveforms2D.plot_event">
+<tt class="descname">plot_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotChannelWaveforms2D.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotChannelWaveforms2D.plot_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.plugins.io.Plotting.PlotChannelWaveforms3D">
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlotChannelWaveforms3D</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotChannelWaveforms3D"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotChannelWaveforms3D" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.Plotting.PlotBase" title="pax.plugins.io.Plotting.PlotBase"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.Plotting.PlotBase</span></tt></a></p>
 <p>Plot an event</p>
 <p>Will make a fancy &#8216;3D&#8217; plot with different y positions for all channels. User sets variables for plot.</p>
 <dl class="method">
-<dt id="pax.plugins.io.Plotting.PlotChannelWaveforms.plot_event">
-<tt class="descname">plot_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotChannelWaveforms.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotChannelWaveforms.plot_event" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.plugins.io.Plotting.PlotChannelWaveforms3D.plot_event">
+<tt class="descname">plot_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotChannelWaveforms3D.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotChannelWaveforms3D.plot_event" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -283,7 +327,7 @@ on formats:</p>
 <dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.Plotting.PlotBase" title="pax.plugins.io.Plotting.PlotBase"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.Plotting.PlotBase</span></tt></a></p>
 <dl class="method">
 <dt id="pax.plugins.io.Plotting.PlotEventSummary.plot_event">
-<tt class="descname">plot_event</tt><big>(</big><em>event</em>, <em>plt=&lt;module 'matplotlib.pyplot' from '/opt/local/Library/Frameworks/Python.framework/Versions/3.4/lib/python3.4/site-packages/matplotlib/pyplot.py'&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotEventSummary.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotEventSummary.plot_event" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">plot_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotEventSummary.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotEventSummary.plot_event" title="Permalink to this definition">¶</a></dt>
 <dd><p>Combines several plots into a nice summary plot</p>
 </dd></dl>
 
@@ -447,20 +491,24 @@ There is no physics here, all that is in pax.simulation.</p>
 <dd></dd></dl>
 
 <dl class="method">
+<dt id="pax.plugins.io.WaveformSimulator.WaveformSimulator.shutdown">
+<tt class="descname">shutdown</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulator.shutdown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulator.shutdown" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.WaveformSimulator.WaveformSimulator.simulate_single_event">
+<tt class="descname">simulate_single_event</tt><big>(</big><em>*args</em>, <em>**kw</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulator.simulate_single_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulator.simulate_single_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="pax.plugins.io.WaveformSimulator.WaveformSimulator.startup">
 <tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulator.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulator.startup" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="pax.plugins.io.WaveformSimulator.WaveformSimulator.store_true_peak">
-<tt class="descname">store_true_peak</tt><big>(</big><em>peak_type</em>, <em>t</em>, <em>x</em>, <em>y</em>, <em>z</em>, <em>photon_times</em>, <em>electron_times=</em><span class="optional">[</span><span class="optional">]</span><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulator.store_true_peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulator.store_true_peak" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">store_true_peak</tt><big>(</big><em>peak_type</em>, <em>t</em>, <em>x</em>, <em>y</em>, <em>z</em>, <em>photon_times</em>, <em>electron_times=()</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulator.store_true_peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulator.store_true_peak" title="Permalink to this definition">¶</a></dt>
 <dd><p>Saves the truth information about a peak (s1 or s2)</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.WaveformSimulator.WaveformSimulator.write_truth">
-<tt class="descname">write_truth</tt><big>(</big><em>event_number</em>, <em>peaks</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulator.write_truth"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulator.write_truth" title="Permalink to this definition">¶</a></dt>
-<dd><p>Write stuff to the truth file</p>
 </dd></dl>
 
 </dd></dl>
@@ -658,6 +706,7 @@ code for details.</p>
 <li><a class="reference internal" href="#module-pax.plugins.io.CSV">pax.plugins.io.CSV module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.HDF5">pax.plugins.io.HDF5 module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.MongoDB">pax.plugins.io.MongoDB module</a></li>
+<li><a class="reference internal" href="#module-pax.plugins.io.Music">pax.plugins.io.Music module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.OnlineMonitor">pax.plugins.io.OnlineMonitor module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.Pickle">pax.plugins.io.Pickle module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.Plotting">pax.plugins.io.Plotting module</a></li>

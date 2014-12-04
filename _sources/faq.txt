@@ -54,3 +54,8 @@ Yes, in fact several of the developers do this, much to the sadness of the other
 
 Unfortunately, Windows + Python3 + Root is not exactly a winning team; if you use windows you'll be stuck
 with the other 433 output formats we have.
+
+---------------------------------------
+How do I get Python 3.4 with ROOT working on Ubuntu 14?
+---------------------------------------
+* Just follow the instructions on `the PyROOT page <https://github.com/XENON1T/pax/blob/master/docs/pyroot.rst>`_.

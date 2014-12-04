@@ -103,8 +103,8 @@
     <span class="sd">&quot;&quot;&quot;Peak object&quot;&quot;&quot;</span>
 
     <span class="n">index_of_maximum</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>           <span class="c">#: Index in the event&#39;s sum waveform at which this peak has its maximum.</span>
-    <span class="c"># What waveform is &#39;filtered&#39;? Do we actually need this? In which plugin should we compute this?</span>
-    <span class="c"># index_of_filtered_maximum = IntegerField()  #: same, but maximum in filtered sum waveform</span>
+    <span class="n">index_of_filtered_maximum</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>  <span class="c">#: same, but maximum in filtered (for S2) sum waveform</span>
+
     <span class="n">left</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>                       <span class="c">#: Index of left bound (inclusive) in sum waveform.</span>
     <span class="n">right</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span> <span class="c">#: Index of right bound (for Xdp matching: exclusive; otherwise: inclusive) in sum waveform.</span>
 
@@ -139,7 +139,25 @@
         <span class="sd">&quot;&quot;&quot; Number of PMTS which see something significant (depends on settings) &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">contributing_pmts</span><span class="p">)</span>
 
+
 </div></div>
+<div class="viewcode-block" id="ChannelPeak"><a class="viewcode-back" href="../../pax.html#pax.datastructure.ChannelPeak">[docs]</a><span class="k">class</span> <span class="nc">ChannelPeak</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;Peaks found in individual channels</span>
+<span class="sd">    These should be combined into full peaks later?</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">channel</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>                    <span class="c">#: Channel in which this peak was found</span>
+    <span class="n">index_of_maximum</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>           <span class="c">#: Index in the event at which this peak has its maximum.</span>
+
+    <span class="n">left</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>                 <span class="c">#: Index of left bound (inclusive) of peak.</span>
+    <span class="n">right</span> <span class="o">=</span> <span class="n">IntegerField</span><span class="p">()</span>                <span class="c">#: Index of right bound of peak</span>
+
+    <span class="n">area</span> <span class="o">=</span> <span class="n">FloatField</span><span class="p">()</span>                   <span class="c">#: Area of the peak in photoelectrons</span>
+    <span class="n">height</span> <span class="o">=</span> <span class="n">FloatField</span><span class="p">()</span>                 <span class="c">#: Height of highest point in peak (in pe/bin)</span>
+    <span class="n">noise_sigma</span> <span class="o">=</span> <span class="n">FloatField</span><span class="p">()</span>            <span class="c">#: StDev of the noise in the occurrence (in pe/bin) where we found this peak</span>
+
+
+</div>
 <div class="viewcode-block" id="Waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Waveform">[docs]</a><span class="k">class</span> <span class="nc">Waveform</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;Class used to store sum (filtered or not) waveform information.</span>
@@ -195,6 +213,7 @@
     <span class="c">#:</span>
     <span class="c">#: Returns a list of :class:`pax.datastructure.Peak` classes.</span>
     <span class="n">peaks</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">ModelCollectionField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="p">[],</span> <span class="n">wrapped_class</span><span class="o">=</span><span class="n">Peak</span><span class="p">)</span>
+    <span class="n">channel_peaks</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">ModelCollectionField</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="p">[],</span> <span class="n">wrapped_class</span><span class="o">=</span><span class="n">ChannelPeak</span><span class="p">)</span>
 
     <span class="c">#: Returns a list of sum waveforms</span>
     <span class="c">#:</span>
