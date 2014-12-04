@@ -9,3 +9,4 @@ scipy>=0.14.0
 tqdm                 # Progress bar library
 prettytable
 pandas               # Used for the waveformsimulator's truth file
+pyintervaltree       # Used for event.occurrences_interval_tree

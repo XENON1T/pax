@@ -320,18 +320,21 @@ class PlotChannelWaveforms2D(PlotBase):
         time_scale = self.config['digitizer_t_resolution'] / units.us
 
         self.log.debug('Plotting occurrence locations...')
-        for channel, occurrences in event.occurrences.items():
-            for start_index, occurrence_waveform in occurrences:
 
-                # Take the waveform from pmt_waveforms, it is already gain & baseline corrected
-                waveform = event.pmt_waveforms[channel, start_index : start_index + len(occurrence_waveform)]
+        for oc in event.occurrences_interval_tree:
+                start_index = oc.begin
+                # Remember: intervaltree uses half-open intervals, end_index is the first index outside!
+                end_index = oc.end
+                length = end_index - start_index
+                channel = oc.data['channel']
+                height = oc.data['height']
 
                 # Choose a color for this occurrence based on amplitude
-                color_factor = np.clip(np.log10(np.max(waveform))/2, 0, 1)
+                color_factor = np.clip(np.log10(height)/2, 0, 1)
 
                 plt.plot(
-                    np.linspace(start_index, start_index + len(waveform), len(waveform)) * time_scale,
-                    channel * np.ones(len(waveform)),
+                    np.linspace(start_index, end_index, length) * time_scale,
+                    channel * np.ones(length),
                     color=(color_factor, 0, 1-color_factor))
 
         # Plot the channel peaks as dots

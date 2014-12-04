@@ -224,24 +224,23 @@ class FindSmallPeaks(plugin.TransformPlugin):
             give_up_after = float('inf')
 
         # Get all free regions before the give_up_after point
-        free_regions = [(l,r) for l, r in dsputils.free_regions(event) if l < give_up_after]
+        for region_left, region_right in dsputils.free_regions(event):
 
-        for channel, channel_occurrences in event.occurrences.items():
-            for start, occurrence_waveform in channel_occurrences:
+            # Can we give up yet?
+            if region_left >= give_up_after:
+                break
 
-                stop = start + len(occurrence_waveform) - 1
+            ocs = event.occurrences_interval_tree.search(region_left, region_right, strict=True)
+            self.log.debug("Free region %05d-%05d: process %s occurrences" % (region_left, region_right, len(ocs)))
 
-                # Skip occurrences not entirely in a free region
-                # TODO: hmzz, isn't this slow?
-                for region_left, region_right in free_regions:
-                    if start >= region_left and stop <= region_right:
-                        break
-                else:
-                    continue
+            for oc in ocs:
+                start = oc.begin
+                # Remember: intervaltree uses half-open intervals, stop is the first index outside
+                stop = oc.end
+                channel = oc.data['channel']
 
                 # Retrieve the waveform from pmt_waveforms
-                # Do this only here: no sense retrieiving it for occurrences you are not going to test
-                w = event.pmt_waveforms[channel, start:stop +1]
+                w = event.pmt_waveforms[channel, start:stop]
                 origw = w
 
                 # Apply the filter, if needed
@@ -303,7 +302,7 @@ class FindSmallPeaks(plugin.TransformPlugin):
         Peak boundaries are last samples above noise_sigma
         :param w: waveform to check for peaks
         :param noise_sigma: stdev of the noise
-        :return: list of (left_index, max_index, right_index) tuples
+        :return: peaks as list of (left_index, max_index, right_index) tuples
         """
         peaks = []
 
@@ -317,6 +316,7 @@ class FindSmallPeaks(plugin.TransformPlugin):
         return peaks
 
     def samples_without_peaks(self, w, peaks):
+        """Return array of bools of same size as w, True if none of peaks live there"""
         not_in_peak = np.ones(len(w), dtype=np.bool)    # All True
         for p in peaks:
             not_in_peak[p[0]:p[1] + 1] = False
