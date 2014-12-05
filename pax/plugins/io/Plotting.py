@@ -322,20 +322,20 @@ class PlotChannelWaveforms2D(PlotBase):
         self.log.debug('Plotting occurrence locations...')
 
         for oc in event.occurrences_interval_tree:
-                start_index = oc.begin
-                # Remember: intervaltree uses half-open intervals, end_index is the first index outside!
-                end_index = oc.end
-                length = end_index - start_index
-                channel = oc.data['channel']
-                height = oc.data['height']
+            start_index = oc.begin
+            # Remember: intervaltree uses half-open intervals, end_index is the first index outside!
+            end_index = oc.end
+            length = end_index - start_index
+            channel = oc.data['channel']
+            height = oc.data['height']
 
-                # Choose a color for this occurrence based on amplitude
-                color_factor = np.clip(np.log10(height)/2, 0, 1)
+            # Choose a color for this occurrence based on amplitude
+            color_factor = np.clip(np.log10(height)/2, 0, 1)
 
-                plt.plot(
-                    np.linspace(start_index, end_index, length) * time_scale,
-                    channel * np.ones(length),
-                    color=(color_factor, 0, 1-color_factor))
+            plt.plot(
+                np.linspace(start_index, end_index, length) * time_scale,
+                channel * np.ones(length),
+                color=(color_factor, 0, 1-color_factor))
 
         # Plot the channel peaks as dots
         # All these for loops are slow -- hope we get by-column access some time

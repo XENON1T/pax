@@ -42,8 +42,8 @@ class FindBigPeaks(plugin.TransformPlugin):
 
             # Search for peaks in the free regions
             for region_left, region_right in pf_regions:
-                for itv_left, itv_right in dsputils.intervals_above_threshold(
-                        peakfinding_wave[region_left:region_right + 1], pf['threshold']):
+                for itv_left, itv_right in dsputils.intervals_where(
+                        peakfinding_wave[region_left:region_right + 1] > pf['threshold']):
 
                     peaks = []
                     peak_wave = peakfinding_wave[itv_left:itv_right + 1]
@@ -119,7 +119,7 @@ class FindBigPeaks(plugin.TransformPlugin):
         offset = (len(self.derivative_kernel) - 1) / 2
         slope[0:offset] = np.zeros(offset)
         slope[len(slope) - offset:] = np.zeros(offset)
-        peaks, valleys = dsputils.sign_changes(slope, report_first_index='never')
+        peaks, valleys = dsputils.where_changes(slope > 0)
         peaks = np.array(sorted(peaks))
         valleys = np.array(sorted(valleys))
         assert len(peaks) == len(valleys)
@@ -306,7 +306,7 @@ class FindSmallPeaks(plugin.TransformPlugin):
         """
         peaks = []
 
-        for left, right in dsputils.intervals_above_threshold(w, noise_sigma):
+        for left, right in dsputils.intervals_where(w > noise_sigma):
             max_idx = left + np.argmax(w[left:right + 1])
             height = w[max_idx]
             if height < noise_sigma * self.min_sigma:

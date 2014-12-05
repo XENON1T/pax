@@ -24,51 +24,40 @@ from pax import datastructure, units
 # Peak finding routines
 ##
 
-def intervals_above_threshold(signal, threshold):
-    """Return boundary indices of all intervals in signal (strictly) above threshold"""
-    cross_above, cross_below = sign_changes(signal - threshold)
+def intervals_where(x, report_first_index_if=None):
+    """Given numpy array of bools, return list of (left, right) INCLUSIVE bounds of all intervals of True
+    """
+    becomes_true, becomes_false = where_changes(x)
+    assert 0 not in becomes_false     # Have to deal with this case specially, too lazy now
     # Assuming each interval's left <= right, we can split sorted(cross_above+cross_below) into pairs to get our result
-    return list(zip(*[iter(sorted(list(cross_above) + list(cross_below)))] * 2))
+    return list(zip(*[iter(sorted(list(becomes_true) + list(becomes_false - 1)))] * 2))
     # I've been looking for a proper numpy solution. It should be:
     # return np.vstack((cross_above, cross_below)).T
     # But it appears to make the processor run slower! (a tiny bit)
     # Maybe because we're dealing with many small arrays rather than big ones?
 
 
-def sign_changes(signal, report_first_index='positive'):
-    """Return indices at which signal changes sign.
-    Returns two sorted numpy arrays:
-        - indices at which signal becomes positive (changes from  <=0 to >0)
-        - indices at which signal becomes non-positive (changes from >0 to <=0)
-    Arguments:
-        - signal
-        - report_first_index:    if 'positive', index 0 is reported only if it is positive (default)
-                                 if 'non-positive', index 0 is reported if it is non-positive
-                                 if 'never', index 0 is NEVER reported.
+def where_changes(x, report_first_index_if=None):
     """
-    if len(signal) == 0:
-        return [], []
-    above0 = np.clip(np.sign(signal), 0, float('inf'))
-    if report_first_index == 'positive':
-        above0[-1] = 0
-    elif report_first_index == 'non-positive':
-        above0[-1] = 1
-    else:      # report_first_index ==  'never':
-        above0[-1] = -1234
-    above0_next = np.roll(above0, 1)
-    becomes_positive = np.sort(np.where(above0 - above0_next == 1)[0])
-    becomes_non_positive = np.sort(np.where(above0 - above0_next == -1)[0] - 1)
-    return becomes_positive, becomes_non_positive
+    Given an numpy boolean array, returns two ndarrays:
+    - indices where x is True  and was False before
+    - indices where x is True, and was True  before
+    report_first_index_if can be True, False, or None
+    If True, 0 is reported (in first returned array) if it is true.
+    If False, 0 is reported (in second returned array) if it is false.
+    If None, 0 is never reported.
+    """
+    previous_x = np.roll(x, 1)
+    points_of_difference = (x != previous_x)
+    becomes_true =  np.sort(np.where(points_of_difference & x)[0])
+    becomes_false = np.sort(np.where(points_of_difference & (-x))[0])
+    if report_first_index_if is not True and 0 in becomes_true:
+        becomes_true = becomes_false[1:]
+    if report_first_index_if is not False and 0 in becomes_false:
+        becomes_false = becomes_false[1:]
+    return becomes_true, becomes_false
 
-"""
-def intervals_true(x):
-    #Given an numpy boolean array, returns intervals with True's.
-    #Returns left endpoi
 
-    next_x = np.roll(x, 1)
-    starts = np.sort(np.where(x - next_x == 1)[0])
-    ends = np.sort(np.where(x - next_x == -1)[0] - 1)
-"""
 
 
 def peak_bounds(signal, fraction_of_max=None, max_idx=None, zero_level=0, inclusive=True):
