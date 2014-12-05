@@ -21,16 +21,27 @@ from pax import datastructure, units
 
 
 ##
-# Peak finding routines
+# Peak finding helper routines
 ##
 
-def intervals_where(x, report_first_index_if=None):
-    """Given numpy array of bools, return list of (left, right) INCLUSIVE bounds of all intervals of True
+def intervals_where(x):
+    """Given numpy array of bools, return list of (left, right) inclusive bounds of all intervals of True
     """
-    becomes_true, becomes_false = where_changes(x)
-    assert 0 not in becomes_false     # Have to deal with this case specially, too lazy now
+    # In principle, boundaries are just points of change...
+    becomes_true, becomes_false = where_changes(x, report_first_index_if=True)
+
+    # ... except that the right boundaries are 1 index BEFORE the array becomes False ...
+    assert 0 not in becomes_false     # Would indicate a bad bug in where_changes
+    becomes_false -= 1
+
+    # ... and if the last index is True, we must ensure it is in manually (it may or may not be a point of change).
+    # can't say x[-1] is True, it is a numpy bool...
+    if x[-1] and len(x)-1 not in becomes_true:
+        becomes_true = np.concatenate((becomes_true, np.array([len(x)-1])))
+
     # Assuming each interval's left <= right, we can split sorted(cross_above+cross_below) into pairs to get our result
-    return list(zip(*[iter(sorted(list(becomes_true) + list(becomes_false - 1)))] * 2))
+    return list(zip(*[iter(sorted(list(becomes_true) + list(becomes_false )))] * 2))
+
     # I've been looking for a proper numpy solution. It should be:
     # return np.vstack((cross_above, cross_below)).T
     # But it appears to make the processor run slower! (a tiny bit)
@@ -38,26 +49,39 @@ def intervals_where(x, report_first_index_if=None):
 
 
 def where_changes(x, report_first_index_if=None):
+    """Return indices where boolean array changes value.
+    :param x: ndarray of bools
+    :param report_first_index_if: When to report the first index in x.
+        If True,  0 is reported (in first returned array)  if it is true.
+        If False, 0 is reported (in second returned array) if it is false.
+        If None, 0 is never reported. (Default)
+    :returns: 2-tuple of integer ndarrays (becomes_true, becomes_false):
+        becomes_true:  indices where x is True,  and was False one index before
+        becomes_false: indices where x is False, and was True  one index before
+
+    report_first_index_if can be
     """
-    Given an numpy boolean array, returns two ndarrays:
-    - indices where x is True  and was False before
-    - indices where x is True, and was True  before
-    report_first_index_if can be True, False, or None
-    If True, 0 is reported (in first returned array) if it is true.
-    If False, 0 is reported (in second returned array) if it is false.
-    If None, 0 is never reported.
-    """
+
+    # To compare with the previous sample in a quick way, we use np.roll
     previous_x = np.roll(x, 1)
     points_of_difference = (x != previous_x)
+
+    # The last sample, however, has nothing to do with the first sample
+    # It can never be a point of difference, so we remove it:
+    points_of_difference[0] = False
+
+    # Now we can find where the array becomes True or False
     becomes_true =  np.sort(np.where(points_of_difference & x)[0])
     becomes_false = np.sort(np.where(points_of_difference & (-x))[0])
-    if report_first_index_if is not True and 0 in becomes_true:
-        becomes_true = becomes_false[1:]
-    if report_first_index_if is not False and 0 in becomes_false:
-        becomes_false = becomes_false[1:]
+
+    # In case the user set report_first_index_if, we have to manually add 0 if it is True or False
+    # Can't say x[0] is True, it is a numpy bool...
+    if report_first_index_if is True and x[0]:
+        becomes_true = np.concatenate((np.array([0]), becomes_true))
+    if report_first_index_if is False and not x[0]:
+        becomes_false = np.concatenate((np.array([0]), becomes_false))
+
     return becomes_true, becomes_false
-
-
 
 
 def peak_bounds(signal, fraction_of_max=None, max_idx=None, zero_level=0, inclusive=True):
@@ -81,6 +105,7 @@ def peak_bounds(signal, fraction_of_max=None, max_idx=None, zero_level=0, inclus
         raise RuntimeError("Peak maximum index is negative (%s)... what are you smoking?" % max_idx )
 
     height = signal[max_idx]
+
     if fraction_of_max is None:
         threshold = zero_level
     else:
