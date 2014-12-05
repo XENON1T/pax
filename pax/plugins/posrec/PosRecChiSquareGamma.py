@@ -13,18 +13,18 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
     """Position reconstruction by minimization of chi square gamma function.
 
     Class to reconstruct S2's x, y and chi square gamma 
-	(as 'goodness-of-fit' parameter) using the S2 signal in top PMTs, simulated
-	LCE map, gains and QE's.
+    (as 'goodness-of-fit' parameter) using the S2 signal in top PMTs, simulated
+    LCE map, gains and QE's.
 
-	Additionally calculate chi square gamma for reconstructed positions by other
-	algorithms.
+    Additionally calculate chi square gamma for reconstructed positions by other
+    algorithms.
     """
 
     def startup(self):
         """Initialize reconstruction algorithm
 
         Determine which PMTs to use for reconstruction.
-		Load LCE maps, gains and QE's
+        Load LCE maps, gains and QE's
         """
 
         # Set mode for algorithm
