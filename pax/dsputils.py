@@ -60,6 +60,16 @@ def sign_changes(signal, report_first_index='positive'):
     becomes_non_positive = np.sort(np.where(above0 - above0_next == -1)[0] - 1)
     return becomes_positive, becomes_non_positive
 
+"""
+def intervals_true(x):
+    #Given an numpy boolean array, returns intervals with True's.
+    #Returns left endpoi
+
+    next_x = np.roll(x, 1)
+    starts = np.sort(np.where(x - next_x == 1)[0])
+    ends = np.sort(np.where(x - next_x == -1)[0] - 1)
+"""
+
 
 def peak_bounds(signal, fraction_of_max=None, max_idx=None, zero_level=0, inclusive=True):
     """
