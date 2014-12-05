@@ -91,6 +91,7 @@ Features
 * Position reconstruction of events
 
  * Charge-weighted sum (x, y) reconstruction
+ * (x, y) Reconstruction using chi-square-gamma minimization
 
 * Interactive display
 

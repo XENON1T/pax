@@ -29,7 +29,7 @@ class ReconstructedPosition(Model):
     y = FloatField()  #: y position (cm)
     z = FloatField()  #: z position (cm)
 
-    chi_square_gamma = FloatField()  #: goodness-of-fit parameter generated with PosRecChiSquareGamma
+    goodness_of_fit = FloatField()  #: goodness-of-fit parameter generated with PosRecChiSquareGamma
     ndf = FloatField() #: number of degrees of freedom calculated with PosRecChiSquareGamma
 
     #: For this reconstructed peak, index of maximum value within sum waveform.
