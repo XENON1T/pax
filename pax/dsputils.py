@@ -8,7 +8,7 @@ import math
 import re
 import json
 import gzip
-from itertools import chain
+from itertools import zip_longest
 
 import numpy as np
 from scipy import interpolate
@@ -32,15 +32,23 @@ def intervals_where(x):
 
     # ... except that the right boundaries are 1 index BEFORE the array becomes False ...
     assert 0 not in becomes_false     # Would indicate a bad bug in where_changes
-    becomes_false -= 1
+    boundaries = list(becomes_true) + list(becomes_false - 1)
+    boundaries.sort()
 
-    # ... and if the last index is True, we must ensure it is in manually (it may or may not be a point of change).
-    # can't say x[-1] is True, it is a numpy bool...
-    if x[-1] and len(x)-1 not in becomes_true:
-        becomes_true = np.concatenate((becomes_true, np.array([len(x)-1])))
+    # ... and if the last index is True, we must add it once more manually:
+    #   - if the second to last index is True, it is not a point of change, so must be added
+    #   - if the second to last index is False, it is a lone interval, so must be in boundaries twice
+    # [True] would cause trouble here, but we've removed it already
+    if x[-1]:
+        boundaries.append(len(x)-1)
 
-    # Assuming each interval's left <= right, we can split sorted(cross_above+cross_below) into pairs to get our result
-    return list(zip(*[iter(sorted(list(becomes_true) + list(becomes_false )))] * 2))
+    # If some bug causes a non-even number of boundaries, better catch it here
+    if len(boundaries) % 2 != 0:
+        print(sorted(boundaries), x, x[-1], len(x)-1)
+        raise RuntimeError("Number of boundaries is not even: can't return intervals!")
+
+    # Assuming each interval's left <= right, we split sorted(boundaries) into pairs to get our result
+    return chunk_in_ntuples(sorted(boundaries), n=2)
 
     # I've been looking for a proper numpy solution. It should be:
     # return np.vstack((cross_above, cross_below)).T
@@ -48,9 +56,22 @@ def intervals_where(x):
     # Maybe because we're dealing with many small arrays rather than big ones?
 
 
+
+def chunk_in_ntuples(iterable, n, fillvalue=None):
+    """ Chunks an iterable into a list of tuples
+    :param iterable: input iterable
+    :param n: length of n tuple
+    :param fillvalue: if iterable is not divisible by chunk_size, pad last tuple with this value
+    :return: list of n-tuples
+    Stolen from http://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks-in-python
+    Modified for python3, and made it return lists
+    """
+    return list(zip_longest(*[iter(iterable)]*n, fillvalue=fillvalue))
+
+
 def where_changes(x, report_first_index_if=None):
     """Return indices where boolean array changes value.
-    :param x: ndarray of bools
+    :param x: ndarray or list of bools
     :param report_first_index_if: When to report the first index in x.
         If True,  0 is reported (in first returned array)  if it is true.
         If False, 0 is reported (in second returned array) if it is false.
@@ -61,6 +82,7 @@ def where_changes(x, report_first_index_if=None):
 
     report_first_index_if can be
     """
+    x = np.array(x)
 
     # To compare with the previous sample in a quick way, we use np.roll
     previous_x = np.roll(x, 1)
