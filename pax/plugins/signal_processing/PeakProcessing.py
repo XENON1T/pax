@@ -231,6 +231,8 @@ class IdentifySmallPeaks(plugin.TransformPlugin):
     def cluster_by_separation(x, separation_length):
         # Returns list of lists of indices of clusters in x
         # TODO: put in dsputils, test exhaustively
+        if len(x) == 0:
+            return []
         clusters = []
         current_cluster = []
         previous_t = x[0]
