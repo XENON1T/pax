@@ -207,6 +207,9 @@ class Event(Model):
     #: After BuildWaveforms, you should only use this, not event.occurrences
     occurrences_interval_tree = f.BaseField()
 
+    #: List of channels which showed an increased dark rate
+    bad_channels = f.NumpyArrayField(dtype=np.int)
+
     def event_duration(self):
         """Duration of event window in units of ns
         """

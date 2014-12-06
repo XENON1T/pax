@@ -28,6 +28,7 @@ class PlotBase(plugin.OutputPlugin):
         self.peak_colors = {
             's1':   'blue',
             's2':   'green',
+            'dark_pulse': '0.7'
         }
 
         self.substartup()
@@ -49,11 +50,11 @@ class PlotBase(plugin.OutputPlugin):
     def plot_event(self, event):
         raise NotImplementedError()
 
-    def finalize_plot(self, num = 0):
+    def finalize_plot(self, event_number = 0):
         """Finalize plotting, send to screen/file, then closes plot properly (avoids runtimewarning / memory leak).
         """
         if self.output_dir:
-            plt.savefig(self.output_dir + '/' + str(num) + '.png')
+            plt.savefig(self.output_dir + '/%06d.png' % event_number)
         else:
             plt.show(block=False)
             self.log.info("Hit enter to continue...")
@@ -107,6 +108,9 @@ class PlotBase(plugin.OutputPlugin):
             max_y = max([p.height for p in event.peaks])
 
             for peak in event.peaks:
+                if peak.type == 'dark_pulse':
+                    continue
+
                 x = peak.index_of_maximum * self.samples_to_us
                 y = peak.height
                 if log_y_axis:
@@ -319,8 +323,6 @@ class PlotChannelWaveforms2D(PlotBase):
     def plot_event(self, event):
         time_scale = self.config['digitizer_t_resolution'] / units.us
 
-        self.log.debug('Plotting occurrence locations...')
-
         for oc in event.occurrences_interval_tree:
             start_index = oc.begin
             # Remember: intervaltree uses half-open intervals, end_index is the first index outside!
@@ -345,7 +347,6 @@ class PlotChannelWaveforms2D(PlotBase):
                     c=[p.height/p.noise_sigma for p in event.channel_peaks],   # TODO: can cause /div0?
                     s=[10*p.area              for p in event.channel_peaks])
 
-        self.log.debug('Final annotations...')
         # Plot the bottom/top/veto boundaries
         for boundary_location in (min(self.config['pmts_bottom'])-0.5, min(self.config['pmts_veto'])-0.5):
             plt.plot(
@@ -362,6 +363,11 @@ class PlotChannelWaveforms2D(PlotBase):
 
         # Color the peak ranges
         self.color_peak_ranges(event)
+
+        # Indicate bad channels
+        for ch in event.bad_channels:
+            plt.axhspan(ch-0.5, ch+0.5, color='red', alpha=0.2)
+
 
         # Make sure we always see all channels , even if there are few occurrences
         plt.xlim((0,event.length() * time_scale))

@@ -1,10 +1,8 @@
 """
 Utilities for peakfinders etc.
-Heavily used in SimpleDSP
 
 """
 
-import math
 import re
 import json
 import gzip
@@ -17,7 +15,12 @@ import matplotlib.pyplot as plt
 import logging
 log = logging.getLogger('dsputils')
 
-from pax import datastructure, units
+
+def mad(data, axis=None):
+    """ Return median absolute deviation of numpy array"""
+    return np.mean(np.absolute(data - np.mean(data, axis)), axis)
+
+
 
 
 ##
