@@ -121,7 +121,7 @@ def free_regions(event, ignore_peak_types=()):
 
 def mad(data, axis=None):
     """ Return median absolute deviation of numpy array"""
-    return np.mean(np.absolute(data - np.mean(data, axis)), axis)
+    return np.mean(np.absolute(data - np.median(data, axis)), axis)
 
 
 def peak_bounds(signal, fraction_of_max=None, max_idx=None, zero_level=0, inclusive=True):

@@ -126,6 +126,7 @@ class IdentifyPeaks(plugin.TransformPlugin):
             else:
                 left_samples = math.floor(self.config['s1_half_area_in']/2)
                 right_samples = math.ceil(self.config['s1_half_area_in']/2)
+                # TODO: IS BUGGED, includes veto area!!!
                 if np.sum(unfiltered[p.index_of_maximum - left_samples: p.index_of_maximum + right_samples]) > 0.5 * p.area:
                     p.type = 's1'
                     #self.log.debug("%s-%s-%s: S1" % (p.left, p.index_of_maximum, p.right))
@@ -188,7 +189,7 @@ class IdentifySmallPeaks(plugin.TransformPlugin):
 
                     c['mad'] = dsputils.mad([times[i] for i in c['spes']])
 
-                    if c['mad'] < 10:
+                    if c['mad'] < 20:
                         c['type'] = 's1'
                     else:
                         if c['n_spes'] < 5:

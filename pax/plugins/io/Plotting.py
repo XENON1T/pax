@@ -338,18 +338,20 @@ class PlotChannelWaveforms2D(PlotBase):
                 np.linspace(start_index, end_index, length) * time_scale,
                 channel * np.ones(length),
                 color=(color_factor, 0, 1-color_factor),
-                alpha=(0.2 if channel in event.bad_channels else 1.0))
+                alpha=(0.1 if channel in event.bad_channels else 1.0))
 
         # Plot the channel peaks as dots
         # All these for loops are slow -- hope we get by-column access some time
         self.log.debug('Plotting channel peaks...')
 
         for p in event.channel_peaks:
+            color_factor = min(max(p.height/(20*p.noise_sigma), 0), 1)  # TODO: can cause /div0?
             plt.scatter(  [p.index_of_maximum * time_scale],
                           [p.channel],
-                        c=[p.height/p.noise_sigma],   # TODO: can cause /div0?
-                        s=[10*p.area],
-                        alpha=(0.2 if p.channel in event.bad_channels else 1.0))
+                        c=(color_factor, 0, 1-color_factor),
+                        s=10*p.area,
+                        edgecolor=(0.5*color_factor, 0, 0.5*(1-color_factor)),
+                        alpha=(0.1 if p.channel in event.bad_channels else 1.0))
 
         # Plot the bottom/top/veto boundaries
         for boundary_location in (min(self.config['pmts_bottom'])-0.5, min(self.config['pmts_veto'])-0.5):
@@ -367,11 +369,6 @@ class PlotChannelWaveforms2D(PlotBase):
 
         # Color the peak ranges
         self.color_peak_ranges(event)
-
-        # Indicate bad channels
-        #for ch in event.bad_channels:
-        #    plt.axhspan(ch-0.5, ch+0.5, color='red', alpha=0.2)
-
 
         # Make sure we always see all channels , even if there are few occurrences
         plt.xlim((0,event.length() * time_scale))
