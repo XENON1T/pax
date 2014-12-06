@@ -208,7 +208,8 @@ class Event(Model):
     occurrences_interval_tree = f.BaseField()
 
     #: List of channels which showed an increased dark rate
-    bad_channels = f.NumpyArrayField(dtype=np.int)
+    #: Declared as basefield as we want to store a list (it will get appended to constantly)
+    bad_channels = f.BaseField()
 
     def event_duration(self):
         """Duration of event window in units of ns

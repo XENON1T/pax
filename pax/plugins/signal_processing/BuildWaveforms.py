@@ -122,7 +122,15 @@ class BuildWaveforms(plugin.TransformPlugin):
                     )
                     baseline = self.config['digitizer_baseline']
                 else:
-                    baseline = np.mean(baseline_sample)  # No floor, Xerawdp uses float arithmetic too. Good.
+                    baselining_method = self.config.get('find_baselines_using', 'mean')
+                    if baselining_method == 'mean':
+                        # Xerawdp behaviour
+                        baseline = np.mean(baseline_sample)  # No floor, Xerawdp uses float arithmetic too. Good.
+                    elif baselining_method == 'median':
+                        # More robust against peaks in start of sample
+                        baseline = np.median(baseline_sample)
+                    else:
+                        raise ValueError("Invalid find_baselines_using: should be 'mean' or 'median'")
 
                 # Truncate pulses starting too early -- see issue 43
                 if start_index < 0:

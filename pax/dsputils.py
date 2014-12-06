@@ -16,13 +16,6 @@ import logging
 log = logging.getLogger('dsputils')
 
 
-def mad(data, axis=None):
-    """ Return median absolute deviation of numpy array"""
-    return np.mean(np.absolute(data - np.mean(data, axis)), axis)
-
-
-
-
 ##
 # Peak finding helper routines
 ##
@@ -107,6 +100,28 @@ def where_changes(x, report_first_index_if=None):
         becomes_false = np.concatenate((np.array([0]), becomes_false))
 
     return becomes_true, becomes_false
+
+
+##
+# Peak processing helper routines
+##
+
+
+def free_regions(event, ignore_peak_types=()):
+    """Find the free regions in the event's waveform - regions where peaks haven't yet been found
+        ignore_peak_types: list of names of peak.type's which will be ignored for the computation
+    :returns list of 2-tuples (left index, right index) of regions where no peaks have been found
+    """
+    lefts = sorted([0] + [p.left for p in event.peaks if p.type not in ignore_peak_types])
+    rights = sorted([p.right for p in event.peaks if p.type not in ignore_peak_types] + [event.length() - 1])
+    # Assuming each peak's right > left, we can simply split
+    # sorted(lefts+rights) in pairs:
+    return list(zip(*[iter(sorted(lefts + rights))] * 2))
+
+
+def mad(data, axis=None):
+    """ Return median absolute deviation of numpy array"""
+    return np.mean(np.absolute(data - np.mean(data, axis)), axis)
 
 
 def peak_bounds(signal, fraction_of_max=None, max_idx=None, zero_level=0, inclusive=True):
@@ -226,38 +241,24 @@ def find_first_fast(a, threshold, chunk_size=128):
     # return len(a) - 1
 
 
-
-def free_regions(event, ignore_peak_types=()):
-    """Find the free regions in the event's waveform - regions where peaks haven't yet been found
-        ignore_peak_types: list of names of peak.type's which will be ignored for the computation
-    :returns list of 2-tuples (left index, right index) of regions where no peaks have been found
-    """
-    lefts = sorted([0] + [p.left for p in event.peaks if p.type not in ignore_peak_types])
-    rights = sorted([p.right for p in event.peaks if p.type not in ignore_peak_types] + [event.length() - 1])
-    # Assuming each peak's right > left, we can simply split
-    # sorted(lefts+rights) in pairs:
-    return list(zip(*[iter(sorted(lefts + rights))] * 2))
-
-
-
-
 ##
-# Correction map class
+# Interpolating map class
 ##
+
 class InterpolatingMap(object):
     """
     Builds a scalar function of space using interpolation from sampling points on a regular grid.
 
     All interpolation is done linearly.
-    Cartesian coordinates are supported and tested, cylindrical coordinates (z, r, phi) may also work...
+    Cartesian coordinates are supported, cylindrical coordinates (z, r, phi) may also work...
 
     The map must be specified as a json containing a dictionary with keys
         'coordinate_system' :   [['x', x_min, x_max, n_x], ['y',...
         'your_map_name' :       [[valuex1y1, valuex1y2, ..], [valuex2y1, valuex2y2, ..], ...
         'another_map_name' :    idem
         'name':                 'Nice file with maps',
-        'description':          'Say what the maps are and who you are',
-        'timestamp':            unix timestamp
+        'description':          'Say what the maps are, who you are, your favorite food, etc',
+        'timestamp':            unix epoch seconds timestamp
     with the straightforward generalization to 1d and 3d.
 
     See also examples/generate_mock_correction_map.py

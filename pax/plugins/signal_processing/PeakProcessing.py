@@ -142,7 +142,6 @@ class IdentifySmallPeaks(plugin.TransformPlugin):
         self.cluster_separation_length = self.config['cluster_separation_time'] / dt
 
     def transform_event(self, event):
-        bad_channels = []
 
         # Hmzz, python has no do_while, so..
         redo_classification = True
@@ -150,7 +149,7 @@ class IdentifySmallPeaks(plugin.TransformPlugin):
             redo_classification = False
 
             # Get all single-pe data in a list of dicts, sorted by index_of_maximum
-            spes = sorted([p.to_dict() for p in event.channel_peaks if p.channel not in bad_channels],
+            spes = sorted([p.to_dict() for p in event.channel_peaks if p.channel not in event.bad_channels],
                           key=lambda x: x['index_of_maximum'])
 
             new_bad_channels = False
@@ -173,17 +172,20 @@ class IdentifySmallPeaks(plugin.TransformPlugin):
 
             for c in clusters:
                 # Find how many occurences overlap with the cluster, so we know (roughly) how many channels show a waveform
+                # Note this includes occurrences in bad channels
                 c['occurrences'] = len(event.occurrences_interval_tree.search(c['left'], c['right'], strict=False))
+                c['channels'] = set([spes[x]['channel'] for x in c['spes']])
 
-                if c['occurrences'] > 2 * c['n_spes']:
+                if c['occurrences'] >= 2 * c['n_spes']:
                     c['type'] = 'noise'
 
-                elif c['n_spes'] == 1:
-                    c['type'] = 'dark_pulse'
+                elif len(c['channels']) == 1:
+                    c['type'] = 'lone_pulse'
                     channel = spes[c['spes'][0]]['channel']
                     dark_count[channel] = dark_count.get(channel, 0) + 1
 
                 else:
+
                     c['mad'] = dsputils.mad([times[i] for i in c['spes']])
 
                     if c['mad'] < 10:
@@ -196,11 +198,11 @@ class IdentifySmallPeaks(plugin.TransformPlugin):
 
             # Look for channels with abnormal dark rate
             for ch, dc in dark_count.items():
-                if dc > 3:
-                    self.log.warning(
-                        "Channel %s shows an abnormally high dark rate (%s): its spe pulses will be excluded" % (
+                if dc > self.config['maximum_lone_pulses_per_channel']:
+                    self.log.debug(
+                        "Channel %s shows an abnormally high lone pulse rate (%s): its spe pulses will be excluded" % (
                             ch, dc))
-                    bad_channels.append(ch)
+                    event.bad_channels.append(ch)
                     redo_classification = True
 
         # Add the peaks to the datastructure
@@ -222,8 +224,6 @@ class IdentifySmallPeaks(plugin.TransformPlugin):
                                             for ch in range(len(event.pmt_waveforms))]),
                 'type':                 c['type'],
             }))
-
-        event.bad_channels = np.array(bad_channels, dtype=np.int)
 
         return event
 

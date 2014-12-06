@@ -225,6 +225,9 @@ class FindSmallPeaks(plugin.TransformPlugin):
         else:
             give_up_after = float('inf')
 
+        noise_count = {}
+        event.bad_channels = []
+
         # Get all free regions before the give_up_after point
         for region_left, region_right in dsputils.free_regions(event):
 
@@ -233,14 +236,21 @@ class FindSmallPeaks(plugin.TransformPlugin):
                 break
 
             # Find all occurrences completely enveloped in the free region. Thank pyintervaltree for log(n) run
+            # In the future we may enable strict=False, so we're not relying on the zero-suppression to separate
+            # small peaks close to a large peak
             ocs = event.occurrences_interval_tree.search(region_left, region_right, strict=True)
             self.log.debug("Free region %05d-%05d: process %s occurrences" % (region_left, region_right, len(ocs)))
 
             for oc in ocs:
-                start = oc.begin
+                # Focus only on the part of the occurrence inside the free region (superfluous as long as strict=True)
                 # Remember: intervaltree uses half-open intervals, stop is the first index outside
-                stop = oc.end
+                start = max(region_left, oc.begin)
+                stop = min(region_right + 1, oc.end)
                 channel = oc.data['channel']
+
+                # Maybe some channels have already been marked as bad (configuration?), don't consider these.
+                if channel in event.bad_channels:
+                    continue
 
                 # Retrieve the waveform from pmt_waveforms
                 w = event.pmt_waveforms[channel, start:stop]
@@ -286,6 +296,9 @@ class FindSmallPeaks(plugin.TransformPlugin):
 
                     pass_number += 1
 
+                # Update the noise occurrence count
+                if len(raw_peaks) == 0:
+                    noise_count[channel] = noise_count.get(channel, 0) + 1
 
                 # Store the found peaks in the datastructure
                 peaks = []
@@ -322,7 +335,13 @@ class FindSmallPeaks(plugin.TransformPlugin):
                     plt.savefig(os.path.join(self.make_diagnostic_plots_in,  'event%04d_occ%05d-%05d_ch%03d.png' % bla))
                     plt.close()
 
-
+        # Mark channels with an abnormally high noise rate as bad
+        for ch, dc in noise_count.items():
+            if dc > self.config['maximum_noise_occurrences_per_channel']:
+                self.log.debug(
+                    "Channel %s shows an abnormally high rate of noise pulses (%s): its spe pulses will be excluded" % (
+                        ch, dc))
+                event.bad_channels.append(ch)
 
         return event
 
