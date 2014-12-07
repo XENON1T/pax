@@ -367,6 +367,9 @@ class PlotChannelWaveforms2D(PlotBase):
                 np.mean(np.array(list(self.config['pmts_' + group.lower()]))),
                 group)
 
+        # Tell about the bad channels
+        plt.text(0, 0, 'Bad channels: ' + ', '.join(map(str,sorted(event.bad_channels))), {'size': 8})
+
         # Color the peak ranges
         self.color_peak_ranges(event)
 
