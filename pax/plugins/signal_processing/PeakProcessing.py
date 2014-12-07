@@ -164,8 +164,8 @@ class IdentifySmallPeaks(plugin.TransformPlugin):
                     'spes':         cluster_spes,
                     'n_spes':       len(cluster_spes),
                     # TODO: add extents of min/max peaks
-                    'left':          spes[cluster_spes[0]]['left'],
-                    'right':          spes[cluster_spes[-1]]['right'],
+                    'left':         spes[cluster_spes[0]]['left'],
+                    'right':        spes[cluster_spes[-1]]['right'],
                     'type':         'unknown',
                 } for cluster_spes in time_clusters]
 
@@ -176,6 +176,7 @@ class IdentifySmallPeaks(plugin.TransformPlugin):
                 # Note this includes occurrences in bad channels
                 c['occurrences'] = len(event.occurrences_interval_tree.search(c['left'], c['right'], strict=False))
                 c['channels'] = set([spes[x]['channel'] for x in c['spes']])
+                c['mad'] = dsputils.mad([times[i] for i in c['spes']])
 
                 if c['occurrences'] >= 2 * c['n_spes']:
                     c['type'] = 'noise'
@@ -187,9 +188,7 @@ class IdentifySmallPeaks(plugin.TransformPlugin):
 
                 else:
 
-                    c['mad'] = dsputils.mad([times[i] for i in c['spes']])
-
-                    if c['mad'] < 20:
+                    if c['mad'] < 10:
                         c['type'] = 's1'
                     else:
                         if c['n_spes'] < 5:
@@ -224,6 +223,7 @@ class IdentifySmallPeaks(plugin.TransformPlugin):
                                             sum([spes[x]['area'] for x in c['spes'] if spes[x]['channel'] == ch])
                                             for ch in range(len(event.pmt_waveforms))]),
                 'type':                 c['type'],
+                'mean_absolute_deviation': c['mad'],
             }))
 
         return event

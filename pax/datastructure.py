@@ -70,6 +70,8 @@ class Peak(Model):
     full_width_half_max_filtered = FloatField()    #: Full width at half of maximum in samples, in filtered waveform
     full_width_tenth_max_filtered = FloatField()   #: Full width at tenth of maximum in samples, in filtered waveform
 
+    mean_absolute_deviation = FloatField()         #: MAD of the photons making up this peak
+
     #: Array of areas in each PMT.
     area_per_pmt = f.NumpyArrayField(dtype='float64')
 
