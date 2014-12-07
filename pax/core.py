@@ -148,7 +148,7 @@ class Processor:
             # How should the events be generated?
             if 'events_to_process' in pc and pc['events_to_process'] is not None:
                 # The user specified which events to process:
-                self.total_number_events = len(pc['events_to_process'])
+                self.total_number_events = min(len(pc['events_to_process']), self.stop_after)
 
                 def get_events():
                     for event_number in pc['events_to_process']:
