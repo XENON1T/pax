@@ -97,11 +97,8 @@ Features
 * Position reconstruction of events
 
  * Charge-weighted sum (x, y) reconstruction
-<<<<<<< HEAD
  * (x, y) Reconstruction using chi-square-gamma minimization
-=======
- * Chi2 reconstruction
->>>>>>> upstream/master
+
 
 * Interactive display
 
