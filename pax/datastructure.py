@@ -214,7 +214,7 @@ class Event(Model):
 
     #: List of channels which showed an increased dark rate
     #: Declared as basefield as we want to store a list (it will get appended to constantly)
-    bad_channels = f.BaseField()
+    bad_channels = f.BaseField(default=[])
 
     def event_duration(self):
         """Duration of event window in units of ns
