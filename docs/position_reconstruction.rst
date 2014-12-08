@@ -8,6 +8,7 @@ Intro
 Position reconstruction (in the x,y plane) in pax is done via transformation plugins. Such a plugin will take an event and for each S2 peak reconstruct the original position of the interaction. Each peak will then be appended with a `ReconstructedPosition` object so other plugins in the processing chain can use this information.
 
 Pax has the following position reconstruction plugins:
+
 * Charge-weighted sum reconstruction
 * Chi-square-gamma minimization reconstruction 
 
@@ -24,6 +25,7 @@ In the configuration file, in the list of transformation plugins, include: ::
   'PosSimple.PosRecWeightedSum'
 
 Options:
+
 * pmts_to_use_for_reconstruction
 
 pmts_to_use_for_reconstruction can either be `top` or `bottom`
@@ -50,11 +52,14 @@ In the configuration file, in the list of transformation plugins, include: ::
 There are currenly two options that need to be set in order to use the plugin. `posrecChi.ini` provides a "minimal working example".
 
 Options are:
+
 * mode
 * lce_map_file_name
 
 mode can be either `full`, `no_reconstruct` or `only_reconstruct`:
+
 * `no_reconstruct` will only append a new goodness-of-fit and ndf parameter to existing `ReconstructedPosition` objects created with other algorithms.
 * `only_reconstruct` will leave existing `ReconstructedPosition` objects alone, do position reconstruction and append a new `ReconstructedPosition` object.
+* `full` will do both
 
 lce_map_file is the name of the LCE-map in the data directory.
