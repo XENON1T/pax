@@ -31,7 +31,7 @@ This can be added to your `.bashrc` to be run automatically when you login.
 After setting your environment you need a local copy of pax, clone it
 from github by executing::
 
-  $ git clone git@github.com:XENON1T/pax.git
+  $ git clone https://github.com/XENON1T/pax.git
   
 After doing::
 
