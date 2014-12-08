@@ -368,7 +368,8 @@ class PlotChannelWaveforms2D(PlotBase):
                 group)
 
         # Tell about the bad channels
-        plt.text(0, 0, 'Bad channels: ' + ', '.join(map(str,sorted(event.bad_channels))), {'size': 8})
+        if len(event.bad_channels) > 0:
+            plt.text(0, 0, 'Bad channels: ' + ', '.join(map(str,sorted(event.bad_channels))), {'size': 8})
 
         # Color the peak ranges
         self.color_peak_ranges(event)
