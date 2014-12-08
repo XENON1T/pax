@@ -32,6 +32,7 @@ class BasePlugin(object):
 
 
     def __del__(self):
+        self.log.debug("Shutting down %s..." % self.name)
         y = self.shutdown()
         if y is not None:
             raise RuntimeError('Shutdown of %s returned a %s instead of None.' % (

@@ -5,7 +5,7 @@ There is no physics here, all that is in pax.simulation.
 """
 
 
-import numpy as np
+
 import os
 import time
 import csv
@@ -13,6 +13,9 @@ try:
     import cPickle as pickle
 except:
     import pickle
+
+import numpy as np
+import pandas
 
 from pax import core, plugin, units, datastructure, simulation
 
@@ -22,52 +25,28 @@ class WaveformSimulator(plugin.InputPlugin):
     """
     def startup(self):
         print("Running WaveformSimulator startup")
-        self.truth_file = None
+        self.all_truth_peaks = []
         self.config = simulation.init_config(self.config)
 
-    def write_truth(self, event_number, peaks):
-        """ Write stuff to the truth file
-        """
-        tff = self.config['truth_file_format']
+    def shutdown(self):
+        self.log.debug("Write the truth peaks to %s" % self.config['truth_file_name'])
+        output = pandas.DataFrame(self.all_truth_peaks)
+        output.to_csv(self.config['truth_file_name'])
 
-        if tff == 'stacked_pickles':
-            if self.truth_file is None:
-                self.truth_file = open(self.config['truth_file_name'], 'wb')
-            pickle.dump({'event_number' : event_number, 'peaks' : peaks}, self.truth_file)
-
-        elif tff == 'csv_peaklist':
-            if self.truth_file is None:
-
-                headers = [
-                    'instruction', 'event_number', 'peak_type',
-                    'x', 'y', 'z',
-                    't_interaction',
-                    'n_photons', 't_mean_photons', 't_first_photon', 't_last_photon', 't_sigma_photons',
-                    'n_electrons', 't_sigma_electrons', 't_mean_electrons', 't_first_electron', 't_last_electron'
-                ]
-                self.truth_file = csv.DictWriter(
-                    f = open(self.config['truth_file_name'], 'w'),
-                    fieldnames = headers,
-                    lineterminator='\n'
-                )
-                self.truth_file.writeheader()
-            for p in peaks:
-                p['event_number'] = event_number
-                self.truth_file.writerow(p)
-        else:
-            raise ValueError('Unsupported waveform simulator truth file format %s' % tff)
-
-    def store_true_peak(self, peak_type, t, x, y, z, photon_times, electron_times=[]):
+    def store_true_peak(self, peak_type, t, x, y, z, photon_times, electron_times=()):
         """ Saves the truth information about a peak (s1 or s2)
         """
         true_peak = {
-            'instruction' : self.current_instruction,
-            'peak_type': peak_type,
+            'instruction':      self.current_instruction,
+            'repetition':       self.current_repetition,
+            'event':            self.current_repetition,
+            'peak_type':        peak_type,
             'x': x, 'y': y, 'z': z,
             't_interaction':     t,
         }
         for name, times in (('photon', photon_times), ('electron', electron_times)):
             if len(times) != 0:
+                # This signal type doesn't exist in this peak
                 true_peak.update({
                     ('n_%ss' % name):         len(times),
                     ('t_mean_%ss' % name):    np.mean(times),
@@ -77,11 +56,11 @@ class WaveformSimulator(plugin.InputPlugin):
                 })
             else:
                 true_peak.update({
-                    ('n_%ss' % name):         '',
-                    ('t_mean_%ss' % name):     '',
-                    ('t_first_%s' % name):    '',
-                    ('t_last_%s' % name):     '',
-                    ('t_sigma_%ss' % name):    '',
+                    ('n_%ss' % name):         float('nan'),
+                    ('t_mean_%ss' % name):    float('nan'),
+                    ('t_first_%s' % name):    float('nan'),
+                    ('t_last_%s' % name):     float('nan'),
+                    ('t_sigma_%ss' % name):   float('nan'),
                 })
         self.truth_peaks.append(true_peak)
 
@@ -110,9 +89,7 @@ class WaveformSimulator(plugin.InputPlugin):
         raise NotImplementedError()
 
     @plugin.BasePlugin._timeit
-    def simulate_single_event(self, instructions, event_number):
-        # self.truth_peaks is attribute because it gets written to by s1 and s2
-        # and I don't want to keep passing it around between functions
+    def simulate_single_event(self, instructions):
         self.truth_peaks = []
         dt = self.config['digitizer_t_resolution']
 
@@ -169,7 +146,7 @@ class WaveformSimulator(plugin.InputPlugin):
         event = datastructure.Event()
         if hasattr(self, 'dataset_name'):
             event.dataset_name = self.dataset_name
-        event.event_number = event_number
+        event.event_number = self.current_event
         event.start_time = int(time.time() * units.s)
         event.stop_time = event.start_time + int(event_length * dt)
         event.sample_duration = dt
@@ -182,15 +159,15 @@ class WaveformSimulator(plugin.InputPlugin):
         self.log.debug("These numbers should be the same: %s %s %s %s" % (
             pmt_waveforms.shape[1], event_length, event.length(), event.occurrences[1][0][1].shape))
 
-        # Write the truth of the event
-        # Remove start time offset from all times in the peak
+        # Remove start time offset from all times in the truth information peak
+        # Can't be done at the time of peak creation, it is only known now...
         for p in self.truth_peaks:
             for key in p.keys():
                 if key[:2] == 't_' and key[2:7] != 'sigma':
                     if p[key] == '':
                         continue
                     p[key] -= start_time_offset
-        self.write_truth(event_number=event_number, peaks=self.truth_peaks)
+        self.all_truth_peaks.extend(self.truth_peaks)
 
         return event
 
@@ -200,10 +177,11 @@ class WaveformSimulator(plugin.InputPlugin):
         for instruction_number, instructions in enumerate(self.get_instructions_for_next_event()):
             self.current_instruction = instruction_number
             for repetition_i in range(self.config['event_repetitions']):
-                event_number = instruction_number * self.config['event_repetitions'] + repetition_i
+                self.current_repetition = repetition_i
+                self.current_event = instruction_number * self.config['event_repetitions'] + repetition_i
                 self.log.debug('Instruction %s, iteration %s, event number %s' % (
-                    instruction_number, repetition_i, event_number))
-                event = self.simulate_single_event(instructions, event_number)
+                    instruction_number, repetition_i, self.current_event))
+                event = self.simulate_single_event(instructions)
                 if event is not None:
                     yield event
 
@@ -246,6 +224,7 @@ class WaveformSimulatorFromCSV(WaveformSimulator):
 
     def shutdown(self):
         self.instructions_file.close()
+        WaveformSimulator.shutdown(self)
 
     def get_instructions_for_next_event(self):
         for instr in self.instructions:

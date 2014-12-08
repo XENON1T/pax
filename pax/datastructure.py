@@ -73,6 +73,8 @@ class Peak(Model):
     full_width_half_max_filtered = FloatField()    #: Full width at half of maximum in samples, in filtered waveform
     full_width_tenth_max_filtered = FloatField()   #: Full width at tenth of maximum in samples, in filtered waveform
 
+    mean_absolute_deviation = FloatField()         #: MAD of the photons making up this peak
+
     #: Array of areas in each PMT.
     area_per_pmt = f.NumpyArrayField(dtype='float64')
 
@@ -190,18 +192,29 @@ class Event(Model):
 
     #: Occurrences
     #:
-    #: Each one of these is like a 'pulse' from one channel.  This field is a
-    #: dictionary where each key is an integer channel number.  Each value for
-    #: the dictionary is a list, where each element of the list is a 2-tuple.
-    #: The first element of the 2-tuple is the index within the event (i.e.
-    #: units of sample, e.g., 10 ns) where this 'occurence'/pulse begins. The
-    #: second element is a numpy array 16-bit signed integers, which represent
-    #: the ADC counts.
+    #: An occurrence holds a stream of samples in one channel, as provided by the digitizer.
+    #: The format of this field is a dict of lists of 2-tuples:
+    #: {
+    #:      channel_int : [ (start_index_int, samples_ndarray), (...,...), ...],
+    #:      channel_int : ...,
+    #:      ...
+    #: }
+    #: The first element of each 2-tuple is the index within the event (i.e.
+    #: units of sample, e.g., 10 ns), the second a numpy array 16-bit signed integers,
+    #: which represent the ADC counts.
     #:
-    #:
-    #:
-    # : (This may get moved into the Input plugin baseclass, see issue #32)
+    #: (This may get moved into the Input plugin base class, see issue #32)
     occurrences = f.BaseField()
+
+    #: Interval tree (from PyIntervalTree) for occurrence lookup.
+    #: This saves the bounds of each occurrence for us, with a dict with secret goodies in the data field.
+    #: TODO: document this once stable
+    #: After BuildWaveforms, you should only use this, not event.occurrences
+    occurrences_interval_tree = f.BaseField()
+
+    #: List of channels which showed an increased dark rate
+    #: Declared as basefield as we want to store a list (it will get appended to constantly)
+    bad_channels = f.BaseField()
 
     def event_duration(self):
         """Duration of event window in units of ns

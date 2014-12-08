@@ -56,7 +56,7 @@ class HDF5Output(plugin.OutputPlugin):
                          (tables.IsDescription,),
                          value)
 
-            self.tables[key] = self.h5_file.createTable('/',
+            self.tables[key] = self.h5_file.create_table('/',
                                                         '%s_table' % key.lower(),
                                                         table,
                                                         filters=compression_filter)

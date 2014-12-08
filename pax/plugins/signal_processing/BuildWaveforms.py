@@ -1,4 +1,7 @@
 import numpy as np
+
+from intervaltree import IntervalTree
+
 from pax import plugin, units, datastructure
 
 
@@ -53,7 +56,9 @@ class BuildWaveforms(plugin.TransformPlugin):
                 'pmt_list': self.crazy_type_conversion(members),
             }))
 
-        for channel, waveform_occurrences in event.occurrences.items():
+        event.occurrences_interval_tree = IntervalTree()
+
+        for channel, channel_occurrences in event.occurrences.items():
 
             # Check for unknown gains and undead channels
             if channel not in self.config['gains']:
@@ -70,23 +75,26 @@ class BuildWaveforms(plugin.TransformPlugin):
 
             # Convert and store every occurrence in the right place
             baseline_sample = None
-            for i, (start_index, occurrence_wave) in enumerate(waveform_occurrences):
+            for i, (start_index, occurrence_wave) in enumerate(channel_occurrences):
+
+                length = len(occurrence_wave)
+                end_index = start_index + length - 1
 
                 # Grab samples to compute baseline from
 
                 # For pulses starting right after previous ones, we can keep the samples from the previous pulse
                 if self.config['reuse_baseline_for_adjacent_occurrences'] \
                         and i > 0 \
-                        and start_index == waveform_occurrences[i - 1][0] + len(waveform_occurrences[i - 1][1]):
+                        and start_index == channel_occurrences[i - 1][0] + len(channel_occurrences[i - 1][1]):
                     #self.log.debug('Occurence %s in channel %s is adjacent to previous occurrence: reusing baseline' %
                     #               (i, channel))
                     pass
 
                 # For VERY short pulses, we are in trouble...
-                elif len(occurrence_wave) < self.config['baseline_sample_length']:
+                elif length < self.config['baseline_sample_length']:
                     self.log.warning(
                         ("Occurrence %s in channel %s has too few samples (%s) to compute baseline:" +
-                         ' reusing previous baseline in channel.') % (i, channel, len(occurrence_wave))
+                         ' reusing previous baseline in channel.') % (i, channel, length)
                     )
                     pass
 
@@ -94,12 +102,12 @@ class BuildWaveforms(plugin.TransformPlugin):
                 # The last occurrence is truncated in Xenon100, OK to use front-baselining even if short.
                 elif self.config['rear_baselining_for_short_occurrences'] and  \
                             len(occurrence_wave) < self.config['rear_baselining_threshold_occurrence_length'] and \
-                            (not start_index + len(occurrence_wave) > event.length() - 1):
+                            (not start_index + length > event.length() - 1):
                     if i > 0:
                         self.log.warning("Unexpected short occurrence %s in channel %s at %s (%s samples long)"
-                                         % (i, channel, start_index, len(occurrence_wave)))
+                                         % (i, channel, start_index, length))
                     self.log.debug("Short pulse, using rear-baselining")
-                    baseline_sample = occurrence_wave[len(occurrence_wave) - self.config['baseline_sample_length']:]
+                    baseline_sample = occurrence_wave[length - self.config['baseline_sample_length']:]
 
                 # Finally, the usual baselining case:
                 else:
@@ -114,24 +122,35 @@ class BuildWaveforms(plugin.TransformPlugin):
                     )
                     baseline = self.config['digitizer_baseline']
                 else:
-                    baseline = np.mean(baseline_sample)  # No floor, Xerawdp uses float arithmetic too. Good.
+                    baselining_method = self.config.get('find_baselines_using', 'mean')
+                    if baselining_method == 'mean':
+                        # Xerawdp behaviour
+                        baseline = np.mean(baseline_sample)  # No floor, Xerawdp uses float arithmetic too. Good.
+                    elif baselining_method == 'median':
+                        # More robust against peaks in start of sample
+                        baseline = np.median(baseline_sample)
+                    else:
+                        raise ValueError("Invalid find_baselines_using: should be 'mean' or 'median'")
 
-                # Truncate pulses starting too early
+                # Truncate pulses starting too early -- see issue 43
                 if start_index < 0:
-                    self.log.warning('Occurence %s in channel %s starts %s samples before event start: truncating.' % (
-                        i, channel, -start_index
-                    ))
-                    occurrence_wave = (0, occurrence_wave[-start_index:])
+                    self.log.warning(
+                        'Occurence %s in channel %s starts %s samples before event start: truncating. See issue #43.' % (
+                        i, channel, -start_index))
+                    occurrence_wave = occurrence_wave[-start_index:]
+                    # Update the start index
+                    start_index = 0
 
                 # Truncate pulses taking too long
                 overhang_length = len(occurrence_wave) - 1 + start_index - event.length()
                 if overhang_length > 0:
-                    self.log.warning('Occurence %s in channel %s has overhang of %s samples: truncating.' % (
-                        i, channel, overhang_length
-                    ))
-                    occurrence_wave = occurrence_wave[:len(occurrence_wave)-overhang_length]
-
-                end_index = start_index + len(occurrence_wave)   # Well, not really index... index+1
+                    self.log.warning(
+                        'Occurence %s in channel %s has overhang of %s samples: truncating. See issue #43.' % (
+                        i, channel, overhang_length))
+                    occurrence_wave = occurrence_wave[:length-overhang_length]
+                    # Update the length & end index
+                    length = len(occurrence_wave)
+                    end_index = start_index + length - 1
 
                 # Compute corrected pulse
                 if self.config['build_nominally_gain_corrected_waveforms']:
@@ -143,7 +162,7 @@ class BuildWaveforms(plugin.TransformPlugin):
                 # Store the waveform in pmt_waveforms, unless gain=0, then we leave it as 0
                 # TODO: is this wise? How would we investigate undead channels if we don't store the data?
                 if self.config['gains'][channel] != 0:
-                    event.pmt_waveforms[channel][start_index:end_index] = corrected_pulse
+                    event.pmt_waveforms[channel][start_index:end_index + 1] = corrected_pulse
 
                 # Add corrected pulse to pmt_waveforms and all appropriate summed waveforms
                 for group, members in self.channel_groups.items():
@@ -152,7 +171,14 @@ class BuildWaveforms(plugin.TransformPlugin):
                             pulse_to_add = nominally_corrected_pulse
                         else:
                             pulse_to_add = corrected_pulse
-                        event.get_waveform(group).samples[start_index:end_index] += pulse_to_add
+                        event.get_waveform(group).samples[start_index:end_index + 1] += pulse_to_add
+
+                # Add the occurrence to the interval tree (+1 as pyintervaltree uses half-open intervals)
+                event.occurrences_interval_tree.addi(start_index, end_index + 1, {
+                    'channel':                 channel,
+                    'digitzer_baseline_used':  baseline,
+                    'height':                  np.max(corrected_pulse),     # Useful for plotting later
+                })
 
         # Add the tpc waveform: sum of top and bottom
         event.waveforms.append(datastructure.Waveform({

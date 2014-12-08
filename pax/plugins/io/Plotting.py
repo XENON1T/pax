@@ -28,6 +28,7 @@ class PlotBase(plugin.OutputPlugin):
         self.peak_colors = {
             's1':   'blue',
             's2':   'green',
+            'lone_pulse': '0.75'
         }
 
         self.substartup()
@@ -49,11 +50,11 @@ class PlotBase(plugin.OutputPlugin):
     def plot_event(self, event):
         raise NotImplementedError()
 
-    def finalize_plot(self, num = 0):
+    def finalize_plot(self, event_number = 0):
         """Finalize plotting, send to screen/file, then closes plot properly (avoids runtimewarning / memory leak).
         """
         if self.output_dir:
-            plt.savefig(self.output_dir + '/' + str(num) + '.png')
+            plt.savefig(self.output_dir + '/%06d.png' % event_number)
         else:
             plt.show(block=False)
             self.log.info("Hit enter to continue...")
@@ -107,6 +108,9 @@ class PlotBase(plugin.OutputPlugin):
             max_y = max([p.height for p in event.peaks])
 
             for peak in event.peaks:
+                if peak.type == 'lone_pulse':
+                    continue
+
                 x = peak.index_of_maximum * self.samples_to_us
                 y = peak.height
                 if log_y_axis:
@@ -147,7 +151,7 @@ class PlotSumWaveformLargestS2(PlotBase):
 
     def plot_event(self, event, show_legend=False):
         if not event.S2s():
-            self.log.warning("Can't plot the largest S2: there aren't any S2s in this event.")
+            self.log.debug("Can't plot the largest S2: there aren't any S2s in this event.")
             plt.title('No S2 in event')
             return
 
@@ -168,7 +172,7 @@ class PlotSumWaveformLargestS1(PlotBase):
 
     def plot_event(self, event, show_legend=False):
         if not event.S1s():
-            self.log.warning("Can't plot the largest S1: there aren't any S1s in this event.")
+            self.log.debug("Can't plot the largest S1: there aren't any S1s in this event.")
             plt.title('No S1 in event')
             return
 
@@ -319,30 +323,36 @@ class PlotChannelWaveforms2D(PlotBase):
     def plot_event(self, event):
         time_scale = self.config['digitizer_t_resolution'] / units.us
 
-        self.log.debug('Plotting occurrence locations...')
-        for channel, occurrences in event.occurrences.items():
-            for start_index, occurrence_waveform in occurrences:
+        for oc in event.occurrences_interval_tree:
+            start_index = oc.begin
+            # Remember: intervaltree uses half-open intervals, end_index is the first index outside!
+            end_index = oc.end
+            length = end_index - start_index
+            channel = oc.data['channel']
+            height = oc.data['height']
 
-                # Take the waveform from pmt_waveforms, it is already gain & baseline corrected
-                waveform = event.pmt_waveforms[channel, start_index : start_index + len(occurrence_waveform)]
+            # Choose a color for this occurrence based on amplitude
+            color_factor = np.clip(np.log10(height)/2, 0, 1)
 
-                # Choose a color for this occurrence based on amplitude
-                color_factor = np.clip(np.log10(np.max(waveform))/2, 0, 1)
-
-                plt.plot(
-                    np.linspace(start_index, start_index + len(waveform), len(waveform)) * time_scale,
-                    channel * np.ones(len(waveform)),
-                    color=(color_factor, 0, 1-color_factor))
+            plt.plot(
+                np.linspace(start_index, end_index, length) * time_scale,
+                channel * np.ones(length),
+                color=(color_factor, 0, 1-color_factor),
+                alpha=(0.1 if channel in event.bad_channels else 1.0))
 
         # Plot the channel peaks as dots
         # All these for loops are slow -- hope we get by-column access some time
         self.log.debug('Plotting channel peaks...')
-        plt.scatter(  [p.index_of_maximum * time_scale     for p in event.channel_peaks],
-                      [p.channel              for p in event.channel_peaks],
-                    c=[p.height/p.noise_sigma for p in event.channel_peaks],   # TODO: can cause /div0?
-                    s=[10*p.area              for p in event.channel_peaks])
 
-        self.log.debug('Final annotations...')
+        for p in event.channel_peaks:
+            color_factor = min(max(p.height/(20*p.noise_sigma), 0), 1)  # TODO: can cause /div0?
+            plt.scatter(  [p.index_of_maximum * time_scale],
+                          [p.channel],
+                        c=(color_factor, 0, 1-color_factor),
+                        s=10*p.area,
+                        edgecolor=(0.5*color_factor, 0, 0.5*(1-color_factor)),
+                        alpha=(0.1 if p.channel in event.bad_channels else 1.0))
+
         # Plot the bottom/top/veto boundaries
         for boundary_location in (min(self.config['pmts_bottom'])-0.5, min(self.config['pmts_veto'])-0.5):
             plt.plot(
@@ -356,6 +366,9 @@ class PlotChannelWaveforms2D(PlotBase):
                 0.03*event.length()*time_scale,
                 np.mean(np.array(list(self.config['pmts_' + group.lower()]))),
                 group)
+
+        # Tell about the bad channels
+        plt.text(0, 0, 'Bad channels: ' + ', '.join(map(str,sorted(event.bad_channels))), {'size': 8})
 
         # Color the peak ranges
         self.color_peak_ranges(event)

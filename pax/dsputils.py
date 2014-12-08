@@ -1,14 +1,12 @@
 """
 Utilities for peakfinders etc.
-Heavily used in SimpleDSP
 
 """
 
-import math
 import re
 import json
 import gzip
-from itertools import chain
+from itertools import zip_longest
 
 import numpy as np
 from scipy import interpolate
@@ -17,48 +15,113 @@ import matplotlib.pyplot as plt
 import logging
 log = logging.getLogger('dsputils')
 
-from pax import datastructure, units
-
 
 ##
-# Peak finding routines
+# Peak finding helper routines
 ##
 
-def intervals_above_threshold(signal, threshold):
-    """Return boundary indices of all intervals in signal (strictly) above threshold"""
-    cross_above, cross_below = sign_changes(signal - threshold)
-    # Assuming each interval's left <= right, we can split sorted(cross_above+cross_below) into pairs to get our result
-    return list(zip(*[iter(sorted(list(cross_above) + list(cross_below)))] * 2))
+def intervals_where(x):
+    """Given numpy array of bools, return list of (left, right) inclusive bounds of all intervals of True
+    """
+    # In principle, boundaries are just points of change...
+    becomes_true, becomes_false = where_changes(x, report_first_index_if=True)
+
+    # ... except that the right boundaries are 1 index BEFORE the array becomes False ...
+    assert 0 not in becomes_false     # Would indicate a bad bug in where_changes
+    boundaries = list(becomes_true) + list(becomes_false - 1)
+    boundaries.sort()
+
+    # ... and if the last index is True, we must add it once more manually:
+    #   - if the second to last index is True, it is not a point of change, so must be added
+    #   - if the second to last index is False, it is a lone interval, so must be in boundaries twice
+    # [True] would cause trouble here, but we've removed it already
+    if x[-1]:
+        boundaries.append(len(x)-1)
+
+    # If some bug causes a non-even number of boundaries, better catch it here
+    if len(boundaries) % 2 != 0:
+        print(sorted(boundaries), x, x[-1], len(x)-1)
+        raise RuntimeError("Number of boundaries is not even: can't return intervals!")
+
+    # Assuming each interval's left <= right, we split sorted(boundaries) into pairs to get our result
+    return chunk_in_ntuples(sorted(boundaries), n=2)
+
     # I've been looking for a proper numpy solution. It should be:
     # return np.vstack((cross_above, cross_below)).T
     # But it appears to make the processor run slower! (a tiny bit)
     # Maybe because we're dealing with many small arrays rather than big ones?
 
 
-def sign_changes(signal, report_first_index='positive'):
-    """Return indices at which signal changes sign.
-    Returns two sorted numpy arrays:
-        - indices at which signal becomes positive (changes from  <=0 to >0)
-        - indices at which signal becomes non-positive (changes from >0 to <=0)
-    Arguments:
-        - signal
-        - report_first_index:    if 'positive', index 0 is reported only if it is positive (default)
-                                 if 'non-positive', index 0 is reported if it is non-positive
-                                 if 'never', index 0 is NEVER reported.
+
+def chunk_in_ntuples(iterable, n, fillvalue=None):
+    """ Chunks an iterable into a list of tuples
+    :param iterable: input iterable
+    :param n: length of n tuple
+    :param fillvalue: if iterable is not divisible by chunk_size, pad last tuple with this value
+    :return: list of n-tuples
+    Stolen from http://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks-in-python
+    Modified for python3, and made it return lists
     """
-    if len(signal) == 0:
-        return [], []
-    above0 = np.clip(np.sign(signal), 0, float('inf'))
-    if report_first_index == 'positive':
-        above0[-1] = 0
-    elif report_first_index == 'non-positive':
-        above0[-1] = 1
-    else:      # report_first_index ==  'never':
-        above0[-1] = -1234
-    above0_next = np.roll(above0, 1)
-    becomes_positive = np.sort(np.where(above0 - above0_next == 1)[0])
-    becomes_non_positive = np.sort(np.where(above0 - above0_next == -1)[0] - 1)
-    return becomes_positive, becomes_non_positive
+    return list(zip_longest(*[iter(iterable)]*n, fillvalue=fillvalue))
+
+
+def where_changes(x, report_first_index_if=None):
+    """Return indices where boolean array changes value.
+    :param x: ndarray or list of bools
+    :param report_first_index_if: When to report the first index in x.
+        If True,  0 is reported (in first returned array)  if it is true.
+        If False, 0 is reported (in second returned array) if it is false.
+        If None, 0 is never reported. (Default)
+    :returns: 2-tuple of integer ndarrays (becomes_true, becomes_false):
+        becomes_true:  indices where x is True,  and was False one index before
+        becomes_false: indices where x is False, and was True  one index before
+
+    report_first_index_if can be
+    """
+    x = np.array(x)
+
+    # To compare with the previous sample in a quick way, we use np.roll
+    previous_x = np.roll(x, 1)
+    points_of_difference = (x != previous_x)
+
+    # The last sample, however, has nothing to do with the first sample
+    # It can never be a point of difference, so we remove it:
+    points_of_difference[0] = False
+
+    # Now we can find where the array becomes True or False
+    becomes_true =  np.sort(np.where(points_of_difference & x)[0])
+    becomes_false = np.sort(np.where(points_of_difference & (-x))[0])
+
+    # In case the user set report_first_index_if, we have to manually add 0 if it is True or False
+    # Can't say x[0] is True, it is a numpy bool...
+    if report_first_index_if is True and x[0]:
+        becomes_true = np.concatenate((np.array([0]), becomes_true))
+    if report_first_index_if is False and not x[0]:
+        becomes_false = np.concatenate((np.array([0]), becomes_false))
+
+    return becomes_true, becomes_false
+
+
+##
+# Peak processing helper routines
+##
+
+
+def free_regions(event, ignore_peak_types=()):
+    """Find the free regions in the event's waveform - regions where peaks haven't yet been found
+        ignore_peak_types: list of names of peak.type's which will be ignored for the computation
+    :returns list of 2-tuples (left index, right index) of regions where no peaks have been found
+    """
+    lefts = sorted([0] + [p.left for p in event.peaks if p.type not in ignore_peak_types])
+    rights = sorted([p.right for p in event.peaks if p.type not in ignore_peak_types] + [event.length() - 1])
+    # Assuming each peak's right > left, we can simply split
+    # sorted(lefts+rights) in pairs:
+    return list(zip(*[iter(sorted(lefts + rights))] * 2))
+
+
+def mad(data, axis=None):
+    """ Return median absolute deviation of numpy array"""
+    return np.mean(np.absolute(data - np.median(data, axis)), axis)
 
 
 def peak_bounds(signal, fraction_of_max=None, max_idx=None, zero_level=0, inclusive=True):
@@ -82,6 +145,7 @@ def peak_bounds(signal, fraction_of_max=None, max_idx=None, zero_level=0, inclus
         raise RuntimeError("Peak maximum index is negative (%s)... what are you smoking?" % max_idx )
 
     height = signal[max_idx]
+
     if fraction_of_max is None:
         threshold = zero_level
     else:
@@ -177,38 +241,24 @@ def find_first_fast(a, threshold, chunk_size=128):
     # return len(a) - 1
 
 
-
-def free_regions(event, ignore_peak_types=()):
-    """Find the free regions in the event's waveform - regions where peaks haven't yet been found
-        ignore_peak_types: list of names of peak.type's which will be ignored for the computation
-    :returns list of 2-tuples (left index, right index) of regions where no peaks have been found
-    """
-    lefts = sorted([0] + [p.left for p in event.peaks if p.type not in ignore_peak_types])
-    rights = sorted([p.right for p in event.peaks if p.type not in ignore_peak_types] + [event.length() - 1])
-    # Assuming each peak's right > left, we can simply split
-    # sorted(lefts+rights) in pairs:
-    return list(zip(*[iter(sorted(lefts + rights))] * 2))
-
-
-
-
 ##
-# Correction map class
+# Interpolating map class
 ##
+
 class InterpolatingMap(object):
     """
     Builds a scalar function of space using interpolation from sampling points on a regular grid.
 
     All interpolation is done linearly.
-    Cartesian coordinates are supported and tested, cylindrical coordinates (z, r, phi) may also work...
+    Cartesian coordinates are supported, cylindrical coordinates (z, r, phi) may also work...
 
     The map must be specified as a json containing a dictionary with keys
         'coordinate_system' :   [['x', x_min, x_max, n_x], ['y',...
         'your_map_name' :       [[valuex1y1, valuex1y2, ..], [valuex2y1, valuex2y2, ..], ...
         'another_map_name' :    idem
         'name':                 'Nice file with maps',
-        'description':          'Say what the maps are and who you are',
-        'timestamp':            unix timestamp
+        'description':          'Say what the maps are, who you are, your favorite food, etc',
+        'timestamp':            unix epoch seconds timestamp
     with the straightforward generalization to 1d and 3d.
 
     See also examples/generate_mock_correction_map.py

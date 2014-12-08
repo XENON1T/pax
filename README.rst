@@ -54,9 +54,15 @@ For information on how to setup the code for contributing, please see the
 Usage
 =====
 
-See paxer --help for a list of command line arguments.
+You can run the program by, for example, running::
 
-If you want to do something fancy, you can create your own configuration file
+  paxer --config XED --input xe100_120402_2000_000000.xed
+
+For other options and a list of command line arguments, please run::
+
+  paxer --help
+
+If you want to do something nonstandard, you can create your own configuration file
 like::
 
    [pax]
@@ -65,9 +71,8 @@ like::
    my_extra_transforms = ["PosSimple.PosRecWeightedSum"]
    output = ["Plotting.PlottingWaveform"]
 
-and load it using paxer --config_path YOURFILE. We already have a few example
-configs available in config, which you can load using paxer --config NAME (with
-NAME, for example, XED_example or Mongo_example).
+and load it using the `config_path` command line option. We already have a few example
+configs available in config, which you can load using `config` option.
 
 
 Features
@@ -81,9 +86,10 @@ Features
 
 * I/O
 
+ * ROOT
  * MongoDB (used online for DAQ)
  * XED (XENON100 format)
- * HDF5 (default output)
+ * HDF5 
  * Pickled waveforms output
  * Plots of sum waveform and PMT hitpattern
  * DAQ injector
@@ -91,7 +97,11 @@ Features
 * Position reconstruction of events
 
  * Charge-weighted sum (x, y) reconstruction
+<<<<<<< HEAD
  * (x, y) Reconstruction using chi-square-gamma minimization
+=======
+ * Chi2 reconstruction
+>>>>>>> upstream/master
 
 * Interactive display
 

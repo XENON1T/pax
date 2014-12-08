@@ -2,15 +2,15 @@
 Plugins for computing properties of peaks that have been found
 """
 import numpy as np
-from pax import dsputils, plugin
+from pax import dsputils, plugin, datastructure
 import math
 
-
-class DeleteLowCoincidencePeaks(plugin.TransformPlugin):
+class DeleteSmallPeaks(plugin.TransformPlugin):
     """Deletes low coincidence peaks, so the low-energy peakfinder can have a crack at them"""
     def transform_event(self, event):
-        event.peaks = [p for p in event.peaks if p.coincidence_level >=
-                                                 self.config['prune_if_coincidence_lower_than']]
+        event.peaks = [p for p in event.peaks
+                       if p.coincidence_level >= self.config['prune_if_coincidence_lower_than']
+                       and p.area >= self.config['prune_if_area_lower_than']]
         return event
 
 
@@ -126,6 +126,7 @@ class IdentifyPeaks(plugin.TransformPlugin):
             else:
                 left_samples = math.floor(self.config['s1_half_area_in']/2)
                 right_samples = math.ceil(self.config['s1_half_area_in']/2)
+                # TODO: IS BUGGED, includes veto area!!!
                 if np.sum(unfiltered[p.index_of_maximum - left_samples: p.index_of_maximum + right_samples]) > 0.5 * p.area:
                     p.type = 's1'
                     #self.log.debug("%s-%s-%s: S1" % (p.left, p.index_of_maximum, p.right))
@@ -134,41 +135,113 @@ class IdentifyPeaks(plugin.TransformPlugin):
                     #self.log.debug("%s-%s-%s: S2" % (p.left, p.index_of_maximum, p.right))
         return event
 
+#TODO: proper separation of TPC and veto
+class IdentifySmallPeaks(plugin.TransformPlugin):
 
+    def startup(self):
+        dt = self.config['digitizer_t_resolution']
+        self.cluster_separation_length = self.config['cluster_separation_time'] / dt
 
-# class PruneSmallPeaksNearLargePeaks(plugin.TransformPlugin):
-#     """Delete small peaks too close to a large peak
-#     Large peaks trigger many channels, so the noise in the sum waveform noise becomes large
-#     (if the noise is gaussian, it scales as ~sqrt(nchannels).
-#     The low-energy peakfinder should take care of fake peaks in these regions just fine,
-#     but it is expensive, so if we are certain a peak can't be real, might as well delete it already.
-#     """
-#
-#     def transform_event(self, event):
-#         large_peaks = [p for p in event.peaks if p.area >= self.config['large_peaks_start_from']]
-#         small_peaks = [p for p in event.peaks if p.area < self.config['always_keep_peaks_larger_than']]
-#         print(large_peaks)
-#         for p in small_peaks:
-#             if p.type in self.config['never_prune_peak_types']:
-#                 continue
-#
-#             largepeakstoleft = [q for q in large_peaks if q.left < p.left]
-#             if len(largepeakstoleft) > 0:
-#                 leftlargepeak = max(largepeakstoleft, key=lambda x : x.left)
-#                 if p.left - leftlargepeak.right < self.config['min_distance_to_large_peak']:
-#                     self.log.warning("Prune %s at %s-%s-%s: too close to large peak on the left" % (
-#                         p.type, p.left, p.index_of_maximum, p.right))
-#                     p.type = 'X'
-#                     continue
-#
-#             largepeakstoright = [q for q in large_peaks if q.right > p.right]
-#             if len(largepeakstoright) > 0:
-#                 rightlargepeak = min(largepeakstoright, key=lambda x : x.right)
-#                 if rightlargepeak.left - p.right < self.config['min_distance_to_large_peak']:
-#                     self.log.warning("Prune %s at %s-%s-%s: too close to large peak on the right" % (
-#                         p.type, p.left, p.index_of_maximum, p.right))
-#                     p.type = 'X'
-#                     continue
-#
-#         #event.peaks = [p for p in event.peaks if p.type != 'X']
-#         return event
+    def transform_event(self, event):
+
+        # Hmzz, python has no do_while, so..
+        redo_classification = True
+        while redo_classification:
+            redo_classification = False
+
+            # Get all single-pe data in a list of dicts, sorted by index_of_maximum
+            spes = sorted([p.to_dict() for p in event.channel_peaks if p.channel not in event.bad_channels],
+                          key=lambda x: x['index_of_maximum'])
+
+            new_bad_channels = False
+
+            times = [s['index_of_maximum'] for s in spes]
+            assert(times == sorted(times))
+            time_clusters = self.cluster_by_separation(times, self.cluster_separation_length)
+
+            # Make a list of dicts of spe clusters (essentially a dataframe, but I want to do a for loop...)
+            clusters = [{
+                    'spes':         cluster_spes,
+                    'n_spes':       len(cluster_spes),
+                    # TODO: add extents of min/max peaks
+                    'left':         spes[cluster_spes[0]]['left'],
+                    'right':        spes[cluster_spes[-1]]['right'],
+                    'type':         'unknown',
+                } for cluster_spes in time_clusters]
+
+            dark_count = {}
+
+            for c in clusters:
+                # Find how many occurences overlap with the cluster, so we know (roughly) how many channels show a waveform
+                # Note this includes occurrences in bad channels
+                c['occurrences'] = len(event.occurrences_interval_tree.search(c['left'], c['right'], strict=False))
+                c['channels'] = set([spes[x]['channel'] for x in c['spes']])
+                c['mad'] = dsputils.mad([times[i] for i in c['spes']])
+
+                if c['occurrences'] >= 2 * c['n_spes']:
+                    c['type'] = 'noise'
+
+                elif len(c['channels']) == 1:
+                    c['type'] = 'lone_pulse'
+                    channel = spes[c['spes'][0]]['channel']
+                    dark_count[channel] = dark_count.get(channel, 0) + 1
+
+                else:
+
+                    if c['mad'] < 10:
+                        c['type'] = 's1'
+                    else:
+                        if c['n_spes'] < 5:
+                            c['type'] = 'unknown'
+                        else:
+                            c['type'] = 's2'
+
+            # Look for channels with abnormal dark rate
+            for ch, dc in dark_count.items():
+                if dc > self.config['maximum_lone_pulses_per_channel']:
+                    self.log.debug(
+                        "Channel %s shows an abnormally high lone pulse rate (%s): its spe pulses will be excluded" % (
+                            ch, dc))
+                    event.bad_channels.append(ch)
+                    redo_classification = True
+
+        # Add the peaks to the datastructure
+        for c in clusters:
+            # We need an index_of_maximum and height, these we can only get from the sum waveform]
+            # TODO: do we really want these in datastructure even for peaks reconstructed from spes?
+            sum_wave = event.get_waveform('tpc').samples[c['left'] : c['right'] + 1]
+            max_idx = np.argmax(sum_wave)
+            height = sum_wave[max_idx]
+            event.peaks.append(datastructure.Peak({
+                'index_of_maximum':     max_idx + c['left'],
+                'height':               height,
+                'left':                 c['left'],
+                'right':                c['right'],
+                'area':                 sum([spes[x]['area'] for x in c['spes']]),
+                'contributing_pmts':    np.array(list(set([spes[x]['channel'] for x in c['spes']])), dtype=np.uint16),
+                'area_per_pmt':         np.array([
+                                            sum([spes[x]['area'] for x in c['spes'] if spes[x]['channel'] == ch])
+                                            for ch in range(len(event.pmt_waveforms))]),
+                'type':                 c['type'],
+                'mean_absolute_deviation': c['mad'],
+            }))
+
+        return event
+
+    @staticmethod
+    def cluster_by_separation(x, separation_length):
+        # Returns list of lists of indices of clusters in x
+        # TODO: put in dsputils, test exhaustively
+        if len(x) == 0:
+            return []
+        clusters = []
+        current_cluster = []
+        previous_t = x[0]
+        for i, t in enumerate(x):
+            if t - previous_t > separation_length:
+                clusters.append(current_cluster)
+                current_cluster = []
+            current_cluster.append(i)
+            previous_t = t
+        clusters.append(current_cluster)
+        return clusters
