@@ -21,6 +21,9 @@ class PlotBase(plugin.OutputPlugin):
         else:
             self.output_dir = None
 
+        self.size_multiplier = self.config.get('size_multiplier', 1)
+        self.horizontal_size_multiplier = self.config.get('horizontal_size_multiplier', 1)
+
         self.skip_counter = 0
         # Convert times in samples to times in us: need to know how many samples / us
         self.samples_to_us = self.config['digitizer_t_resolution'] / units.us
@@ -115,13 +118,13 @@ class PlotBase(plugin.OutputPlugin):
                 y = peak.height
                 if log_y_axis:
                     y += 1
+                    ytext = y
+                    arrowprops = None
                     # max ensures ytext comes out positive (well, if y is)
                     # and that the text is never below the peak
-                    if max_y != 0:
-                        ytext = max(y, y * (3-2*y/max_y))
-                    else:
-                        ytext = y
-                    arrowprops = None
+                    #if max_y != 0:
+                    #    ytext = max(y, y * (3-2*y/max_y))
+                    #else:
                 else:
                     ytext = max(y, y + (max_y - y) * (0.05 + 0.2 * random.random()))
                     arrowprops = dict(arrowstyle="fancy",
@@ -255,7 +258,7 @@ class PlotChannelWaveforms3D(PlotBase): # user sets variables xlim, ylim for 3D 
         #[pe/(bin*V)] = time_resolution [s/bin] / ( resistor [V*s/C] * gain [] * amplification [] * electric_charge [C/pe] )
         #For Xenon100 (gain 2e6, amplification 10, resistor 50, time resolution 10ns/bin), this gives 62.4 pe/(bin*V), so 1 pe/bin is 16.0 mV; 1 mV is 0.0624 pe/bin.
 
-        fig = plt.figure(figsize=(4 * 4, 4 * 2))
+        fig = plt.figure(figsize=(self.size_multiplier * 4, self.size_multiplier * 2))
         ax = fig.gca(projection='3d')
 
         # Plot each individual occurrence
@@ -340,7 +343,7 @@ class PlotChannelWaveforms2D(PlotBase):
             plt.plot(
                 np.linspace(start_index, end_index, length) * time_scale,
                 channel * np.ones(length),
-                color=(color_factor, 0, 1-color_factor),
+                color=plt.cm.gnuplot2(color_factor),
                 alpha=(0.1 if channel in event.bad_channels else 1.0))
 
         # Plot the channel peaks as dots
@@ -351,7 +354,7 @@ class PlotChannelWaveforms2D(PlotBase):
             color_factor = min(max(p.height/(20*p.noise_sigma), 0), 1)  # TODO: can cause /div0?
             plt.scatter(  [p.index_of_maximum * time_scale],
                           [p.channel],
-                        c=(color_factor, 0, 1-color_factor),
+                        c=(color_factor, 0, (1-color_factor)),
                         s=10*p.area,
                         edgecolor=(0.5*color_factor, 0, 0.5*(1-color_factor)),
                         alpha=(0.1 if p.channel in event.bad_channels else 1.0))
@@ -389,6 +392,7 @@ class PlotChannelWaveforms2D(PlotBase):
 
 
 class PlotEventSummary(PlotBase):
+
     def plot_event(self, event):
         """
         Combines several plots into a nice summary plot
@@ -396,32 +400,36 @@ class PlotEventSummary(PlotBase):
 
         rows = 3
         cols = 4
+        if not self.config['plot_largest_peaks']:
+            rows -=1
 
-        plt.figure(figsize=(4 * cols, 4 * rows))
+        plt.figure(figsize=(self.horizontal_size_multiplier * self.size_multiplier * cols, self.size_multiplier * rows))
         title = 'Event %s from %s -- recorded at %s UTC, %09dns' % (
-                        event.event_number, event.dataset_name,
-                        time.strftime("%Y/%m/%d, %H:%M:%S", time.gmtime(event.start_time/10**9)),
-                         event.start_time%(10**9))
+            event.event_number, event.dataset_name,
+            time.strftime("%Y/%m/%d, %H:%M:%S", time.gmtime(event.start_time/10**9)),
+            event.start_time%(10**9))
         plt.suptitle(title, fontsize=18)
 
-        self.log.debug("Plotting largest S1...")
-        plt.subplot2grid((rows, cols), (0, 0))
-        q = PlotSumWaveformLargestS1(self.config)
-        q.plot_event(event, show_legend=False)
+        if self.config['plot_largest_peaks']:
 
-        self.log.debug("Plotting largest S2...")
-        ax = plt.subplot2grid((rows, cols), (0, 3))
-        ax.yaxis.set_label_position("right")
-        ax.yaxis.set_ticks_position("right")
-        q = PlotSumWaveformLargestS2(self.config)
-        q.plot_event(event, show_legend=False)
+            self.log.debug("Plotting largest S1...")
+            plt.subplot2grid((rows, cols), (0, 0))
+            q = PlotSumWaveformLargestS1(self.config)
+            q.plot_event(event, show_legend=False)
 
-        self.log.debug("Plotting hitpatterns...")
-        q = PlottingHitPattern(self.config)
-        q.plot_event(event, show_dominant_array_only=True, subplots_to_use = [
-                plt.subplot2grid((rows, cols), (0, 1)),
-                plt.subplot2grid((rows, cols), (0, 2))
-            ])
+            self.log.debug("Plotting largest S2...")
+            ax = plt.subplot2grid((rows, cols), (0, 3))
+            ax.yaxis.set_label_position("right")
+            ax.yaxis.set_ticks_position("right")
+            q = PlotSumWaveformLargestS2(self.config)
+            q.plot_event(event, show_legend=False)
+
+            self.log.debug("Plotting hitpatterns...")
+            q = PlottingHitPattern(self.config)
+            q.plot_event(event, show_dominant_array_only=True, subplots_to_use = [
+                    plt.subplot2grid((rows, cols), (0, 1)),
+                    plt.subplot2grid((rows, cols), (0, 2))
+                ])
 
         self.log.debug("Plotting sum waveform...")
         sumw_ax = plt.subplot2grid((rows, cols), (rows-2, 0), colspan=cols)
@@ -434,4 +442,6 @@ class PlotEventSummary(PlotBase):
         q.plot_event(event)
 
         plt.tight_layout()
-        plt.subplots_adjust(top=0.88)
+
+        # Make some room for the title
+        plt.subplots_adjust(top=1-0.12*4/self.size_multiplier)
