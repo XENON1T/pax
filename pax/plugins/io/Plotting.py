@@ -117,7 +117,10 @@ class PlotBase(plugin.OutputPlugin):
                     y += 1
                     # max ensures ytext comes out positive (well, if y is)
                     # and that the text is never below the peak
-                    ytext = max(y, y * (3-2*y/max_y))
+                    if max_y != 0:
+                        ytext = max(y, y * (3-2*y/max_y))
+                    else:
+                        ytext = y
                     arrowprops = None
                 else:
                     ytext = max(y, y + (max_y - y) * (0.05 + 0.2 * random.random()))

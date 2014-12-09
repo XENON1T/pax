@@ -17,16 +17,15 @@ class FindBigPeaks(plugin.TransformPlugin):
     """
 
     def startup(self):
-        self.derivative_kernel=[-0.003059, -0.035187, -0.118739, -0.143928, 0.000000, 0.143928, 0.118739, 0.035187, 0.003059]
+        self.derivative_kernel = [-0.003059, -0.035187, -0.118739, -0.143928, 0.000000, 0.143928, 0.118739, 0.035187, 0.003059]
         #TODO: put in config
 
     def transform_event(self, event):
         for pf in self.config['peakfinders']:
             peakfinding_wave = event.get_waveform(pf['peakfinding_wave']).samples
             unfiltered_wave = event.get_waveform(pf['unfiltered_wave']).samples
-            peaks = []
 
-            # Define the peak/valley tester for this peakfinder
+            # Define the peak/valley tester for the peaksplitter this peakfinder
             def is_valid_p_v_pair( signal, peak, valley):
                 return (
                     abs(peak - valley) >= pf.get('min_p_v_distance', 0) and
@@ -92,8 +91,6 @@ class FindBigPeaks(plugin.TransformPlugin):
                         # Should we already label the peak?
                         if 'force_peak_label' in pf:
                             event.peaks[-1].type = pf['force_peak_label']
-
-            self.log.debug("Found %s peaks in %s." % (len(peaks), pf['peakfinding_wave']))
 
         return event
 
