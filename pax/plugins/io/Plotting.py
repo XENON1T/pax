@@ -322,8 +322,14 @@ class PlotChannelWaveforms3D(PlotBase): # user sets variables xlim, ylim for 3D 
 
 
 class PlotChannelWaveforms2D(PlotBase):
-    """ Makes a plot of all the occurencences in the event
-    Just like PlotChannelWaveforms3D, but seen from above (or below ;-)
+    """ Plots the occurrences in each channel, like like PlotChannelWaveforms3D, but seen from above
+
+    Circles in the bottom subplot show when individual photo-electrons arrived in each channel .
+    Circle color indicates log(peak amplitude / noise amplitude), size indicates peak integral.
+    For large peaks you see no dots; single-channel peakfinding is skipped for performance reasons.
+
+    Some channels are grayed out: these are excluded from low-energy peakfinding because they show an
+    unusual rate of lone pulses or pure-noise occurrences in this event.
     """
 
     def plot_event(self, event):
