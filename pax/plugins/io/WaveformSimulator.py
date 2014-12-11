@@ -39,7 +39,7 @@ class WaveformSimulator(plugin.InputPlugin):
         true_peak = {
             'instruction':      self.current_instruction,
             'repetition':       self.current_repetition,
-            'event':            self.current_repetition,
+            'event':            self.current_event,
             'peak_type':        peak_type,
             'x': x, 'y': y, 'z': z,
             't_interaction':     t,
