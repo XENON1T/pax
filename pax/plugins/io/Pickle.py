@@ -34,6 +34,9 @@ class DirWithPickleFiles(plugin.InputPlugin):
                 continue
             else:
                 self.event_files[int(m.group(0))] = file
+        if len(self.event_files) == 0:
+            self.log.fatal("No valid event files found in input directory %s!" % self.config['input_name'])
+        self.number_of_events = len(self.event_files)
 
     def get_single_event(self, index):
         file = self.event_files[index]

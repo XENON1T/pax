@@ -395,6 +395,8 @@ class Processor:
         else:   # If no break occurred:
             self.log.info("All events from input source have been processed.")
 
+        events_actually_processed = i
+
         if self.config['pax']['print_timing_report']:
             all_plugins = [self.input_plugin] + self.action_plugins
             timing_report = PrettyTable(['Plugin', '%', 'Per event (ms)', 'Total (s)'])
@@ -406,11 +408,11 @@ class Processor:
                 timing_report.add_row([
                     plugin.__class__.__name__,
                     round(100*t/total_time, 1),
-                    round(t/self.total_number_events, 1),
+                    round(t/events_actually_processed, 1),
                     round(t/1000, 1)])
             timing_report.add_row([
                 'TOTAL',
                 round(100., 1),
-                round(total_time/self.total_number_events, 1),
+                round(total_time/events_actually_processed, 1),
                 round(total_time/1000, 1)])
             self.log.info("Timing report:\n"+str(timing_report))
