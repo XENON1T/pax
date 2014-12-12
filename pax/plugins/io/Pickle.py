@@ -14,7 +14,7 @@ class WriteToPickleFile(plugin.OutputPlugin):
 
     def write_event(self, event):
         self.log.debug("Starting pickling...")
-        with gzip.open(self.config['output_name'] + '/' + str(event.event_number), 'wb', compresslevel=1) as file:
+        with gzip.open(self.config['output_name'] + '/%06d' % event.event_number, 'wb', compresslevel=1) as file:
             pickle.dump(event, file)
         self.log.debug("Done!")
 

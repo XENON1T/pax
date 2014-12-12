@@ -295,7 +295,8 @@ def photons_to_hitlist(photon_timings, x=0., y=0., z=0.):
     np.random.shuffle(photon_timings)
 
     # Now generate n_pmts integers < n_pmts to denote the splitting points
-    split_points = np.sort(np.random.randint(0, len(photon_timings), n_pmts))
+    # TODO: think carefully about these +1 and -1's Without the +1 S1sClose failed
+    split_points = np.sort(np.random.randint(0, len(photon_timings)+1, n_pmts-1))
 
     # Split the array according to the split points
     # numpy correctly inserts empty arrays if a split point occurs twice if split_points is sorted
@@ -351,7 +352,7 @@ def hitlist_to_waveforms(hitlist):
     Returns None if you pass a hitlist without any hits
     returns start_time (in units, ie ns), pmt waveform matrix
     """
-    log.debug("Now performing hitlist to waveform conversion")
+    log.debug("Now performing hitlist to waveform conversion for %s photons" % hitlist['n'])
     # TODO: Account for random initial digitizer state  wrt interaction?
     # Where?
 
@@ -373,7 +374,7 @@ def hitlist_to_waveforms(hitlist):
     for channel, photon_detection_times in hitlist.items():
         if channel in ('min', 'max', 'n'):
             continue
-        #print("We got %s %s" % (channel, photon_detection_times))
+
         if len(photon_detection_times) == 0:
             continue  # No photons in this channel
 

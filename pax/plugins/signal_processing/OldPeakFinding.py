@@ -14,6 +14,7 @@ from pax import plugin, datastructure
 class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
 
     def transform_event(self, event):
+
         # Load settings here, so we are sure dynamic threshold stuff etc gets reset
         # Don't need to move these to ini I think, this plugin is meant to match Xerawdp, which always used these
         self.settings_for_peaks = [   # We need a specific order, so we can't use a dict
@@ -79,7 +80,8 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                 event.peaks = sort_and_prune_by(
                     event.peaks,
                     key=lambda x: getattr(x, 'area'),
-                    keep_number=32, reverse=True
+                    keep_number=(32 if self.config['prune_peaks'] else float('inf')),
+                    reverse=True
                 )
 
             ##
@@ -239,9 +241,11 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                     # For large s2, update the dynamic threshold
                     # TODO: don't modify settings, so they don't have to be reloaded all the time!
                     if peak_type == 'large_s2':
-                        settings['threshold'] = max(
-                            settings['threshold'], 0.001 * self.highest_s2_height_ever
-                        )
+                        potential_new_threshold =  0.001 * self.highest_s2_height_ever
+                        if potential_new_threshold > settings['threshold']:
+                            self.log.debug("Dynamic threshold raised from %s to %s" % (
+                                settings['threshold'], potential_new_threshold))
+                            settings['threshold'] = potential_new_threshold
 
         return event
 
@@ -655,7 +659,7 @@ class ComputePeakPropertiesXdpStyle(plugin.TransformPlugin):
         event.peaks = sort_and_prune_by(
             event.peaks,
             key=lambda x: (x.coincidence_level, x.area),
-            keep_number=len(event.peaks) - len(event.S1s()) + 32,
+            keep_number=(len(event.peaks) - len(event.S1s()) + 32 if self.config['prune_peaks'] else float('inf')),
             reverse=True
         )
 
