@@ -24,7 +24,6 @@ class WaveformSimulator(plugin.InputPlugin):
     """ Common I/O for waveform simulator plugins
     """
     def startup(self):
-        print("Running WaveformSimulator startup")
         self.all_truth_peaks = []
         self.config = simulation.init_config(self.config)
 
@@ -130,7 +129,7 @@ class WaveformSimulator(plugin.InputPlugin):
         # Baseline addition & flipping down is done here
         self.log.debug("Combining %s signals into a single matrix" % len(signals))
         pmt_waveforms = self.config['digitizer_baseline'] *\
-                        np.ones((len(self.config['channels']), event_length), dtype=np.int16)
+                        np.ones((len(self.config['all_pmts']), event_length), dtype=np.int16)
         for s in signals:
             start_index = int(
                 (s[0] - start_time_offset + self.config['event_padding']) / dt
@@ -154,7 +153,7 @@ class WaveformSimulator(plugin.InputPlugin):
         # Make a single occurrence for the entire event... yeah, this is wonky
         event.occurrences = {
             ch: [(0, pmt_waveforms[ch])]
-            for ch in self.config['channels']
+            for ch in self.config['all_pmts']
         }
         self.log.debug("These numbers should be the same: %s %s %s %s" % (
             pmt_waveforms.shape[1], event_length, event.length(), event.occurrences[1][0][1].shape))

@@ -6,7 +6,6 @@ There is no I/O stuff here, all that is in the WaveformSimulator plugins
 import numpy as np
 import math
 
-import random
 from collections import Counter
 
 import logging
@@ -42,6 +41,19 @@ def init_config(config_to_init):
     config['s1_ER_recombination_time'] = 3.5/0.18 * (1/20 + 0.41) * math.exp(-0.009*efield)
     log.debug('Inferred s1_ER_recombination_time %s ns' % config['s1_ER_recombination_time'])
 
+    # How large is the PMT waveform matrix we will we have to produce?
+    config['all_pmts'] = list(config['pmts_top'] | config['pmts_bottom'])
+
+    # Which channels stand to recieve any photons?
+    # TODO: In XENON100, channel 0 WILL receive photons unless magically_avoid_dead_pmts=True
+    # To prevent this, subtract 0 from channel_for_photons. But don't do that for XENON1T!!
+    channels_for_photons = list(config['pmts_top'] | config['pmts_bottom'])
+    if config.get('magically_avoid_dead_pmts', False):
+        channels_for_photons = [ch for ch in channels_for_photons if config['gains'][ch] > 0]
+    if config.get('magically_avoid_s1_excluded_pmts', False):
+        channels_for_photons = [ch for ch in channels_for_photons if not ch in config['pmts_excluded_for_s1']]
+    config['channels_for_photons'] = channels_for_photons
+
     # Determine sensible length of a pmt pulse to simulate
     dt = config['digitizer_t_resolution']
     config['samples_before_pulse_center'] = math.ceil(
@@ -72,9 +84,6 @@ def init_config(config_to_init):
         )
         log.debug('Determined padding at %s ns' % config['pad_before'])
 
-    # Temp hack: need 0 in channels so we can use lists... hmmzzz
-    config['channels'] = list({0} | config['pmts_top'] | config['pmts_bottom'])
-
     return config
 
 
@@ -93,7 +102,7 @@ def exp_pulse(t, q, tr, tf):
         return q / (tr + tf) * (tr * math.exp(t / (c * tr)))
     else:
         return q / (tr + tf) * (tr + tf * (1 - math.exp(-t / (c * tf))))
-    
+
 
 def s2_electrons(electrons_generated=None, z=0., t=0.):
     """Return a list of electron arrival times in the ELR region caused by an S2 process.
@@ -239,6 +248,7 @@ def singlet_triplet_delays(times, t1, t3, singlet_ratio):
 
 def get_luminescence_positions(n):
     """Sample luminescence positions in the ELR, using a mixed wire-dominated / uniform field"""
+    # TODO: could gain performance here I think
     x = np.random.uniform(0, 1, n)
     l = config['elr_gas_gap_length']
     wire_par = config['wire_field_parameter']
@@ -248,75 +258,100 @@ def get_luminescence_positions(n):
         return x * l
     totalArea = l + rm * (math.log(rm / rw) - 1)
     relA_wd_region = rm * math.log(rm / rw) / totalArea
-    # AARRGHH! Should vectorize...
-    return np.array([
-        (l - np.exp(xi * totalArea / rm) * rw)
-        if xi < relA_wd_region
-        else l - (xi * totalArea + rm * (1 - math.log(rm / rw)))
-        for xi in x
-    ])
-
+    # This is a bit slower, not much though:
+    # return np.array([
+    #     (l - np.exp(xi * totalArea / rm) * rw)
+    #     if xi < relA_wd_region
+    #     else l - (xi * totalArea + rm * (1 - math.log(rm / rw)))
+    #     for xi in x
+    # ])
+    result = np.zeros(n)
+    x_in_relA_wd_region = x < relA_wd_region
+    result[x_in_relA_wd_region] = (l - np.exp(x[x < relA_wd_region] * totalArea / rm) * rw)
+    result[-x_in_relA_wd_region] = l - (x[-x_in_relA_wd_region] * totalArea + rm * (1 - math.log(rm / rw)))
+    return result
 
 def photons_to_hitlist(photon_timings, x=0., y=0., z=0.):
     """Compute photon arrival time list ('hitlist') from photon production times
 
-    :param photon_timings: list of times at which photons are produced at this position
+    :param photon_timings: np arra of times at which photons are produced at this position
     :param x: x-coordinate of photon production site
     :param y: y-coordinate of photon production site
     :param z: z-coordinate of photon production site
-    :return: numpy array, indexed by pmt number, of numpy arrays of photon arrival times
+    :return: dictionary (index = by pmt number) of numpy arrays of photon arrival times
+    also contains keys 'min' and 'max' with min/max arrival times
+    TODO: histlist is a dict! confusing!!
     """
 
     # TODO: Use light collection map to divide photons
     # TODO: if positions unspecified, pick a random position (useful for poisson noise)
-
-    # So channel 1 doesn't always get the first photon...
-    random.shuffle(photon_timings)
-
-    # Determine how many photons each pmt gets
-    # TEMP - Uniformly distribute photons over all PMTs!
-    # TEMP - hack to prevent photons getting into the ghost channel 0
-    channels_for_photons = list(set(config['channels']) - set([0]))
-    if 'magically_avoid_dead_pmts' in config and config['magically_avoid_dead_pmts']:
-        channels_for_photons = [ch for ch in channels_for_photons if config['gains'][ch] > 0]
-    if 'magically_avoid_s1_excluded_pmts' in config and config['magically_avoid_dead_pmts']:
-        channels_for_photons = [ch for ch in channels_for_photons if not ch in config['pmts_excluded_for_s1']]
-    hit_counts = Counter([
-        random.choice(channels_for_photons)
-        for _ in photon_timings
-    ])
-
-    # Make the hitlist, a numpy array, so we can add it elementwise so we
-    # can add them
-    hitlist = []
-    already_used = 0
-    for ch in config['channels']:
-        hitlist.append(sorted(photon_timings[already_used:already_used + hit_counts[ch]]))
-        already_used += hit_counts[ch]
-    log.debug("    %s hits in hitlist" % sum([len(x) for x in hitlist]))
-
     # TODO: factor in propagation time
-    return np.array(hitlist)
 
+    # The number of pmts which can receive a photon
+    ch_for_photons = config['channels_for_photons']
+    n_pmts = len(ch_for_photons)
+
+    # First shuffle all timings in the array, so channel 1 doesn't always get the first photon
+    np.random.shuffle(photon_timings)
+
+    # Now generate n_pmts integers < n_pmts to denote the splitting points
+    split_points = np.sort(np.random.randint(0, len(photon_timings), n_pmts))
+
+    # Split the array according to the split points
+    # numpy correctly inserts empty arrays if a split point occurs twice if split_points is sorted
+    photons_per_channel = np.split(photon_timings, split_points)
+
+    #assert sum(list(map(len, photons_per_channel))) == len(photon_timings)
+
+    # Merge the result in a dictionary, which we return
+    # TODO: zip can probably do this faster!
+    result = {ch_for_photons[i] : photons_per_channel[i] for i in range(n_pmts)}
+
+    # Add the minimum and maximum times, and number of times
+    # hitlist_to_waveforms would have to go through weird flattening stuff to determine these
+    result['min'] = min(photon_timings)
+    result['max'] = max(photon_timings)
+    result['n'] = len(photon_timings)
+
+    return result
 
 def pmt_pulse_current(gain, offset=0):
+    # Rounds offset to nearest ns so we can exploit caching
+    # TODO: hardcodes ns.. bad!
+    return gain * pmt_pulse_current_raw(round(offset))
+
+class memoize:
+    # from http://avinashv.net/2008/04/python-decorators-syntactic-sugar/
+    def __init__(self, function):
+        self.function = function
+        self.memoized = {}
+
+    def __call__(self, *args):
+        try:
+            return self.memoized[args]
+        except KeyError:
+            self.memoized[args] = self.function(*args)
+            return self.memoized[args]
+
+@memoize
+def pmt_pulse_current_raw(offset):
     dt = config['digitizer_t_resolution']
     return np.diff(exp_pulse(
         np.linspace(
             - offset - config['samples_before_pulse_center'] * dt,
             - offset + config['samples_after_pulse_center']  * dt,
-            1 + config['samples_after_pulse_center'] + config['samples_before_pulse_center']
-        ),
-        gain * units.electron_charge,
+            1 + config['samples_after_pulse_center'] + config['samples_before_pulse_center']),
+        units.electron_charge,
         config['pmt_rise_time'],
         config['pmt_fall_time']
     )) / dt
 
-
 def hitlist_to_waveforms(hitlist):
     """Simulate PMT response to incoming photons
     Returns None if you pass a hitlist without any hits
+    returns start_time (in units, ie ns), pmt waveform matrix
     """
+    log.debug("Now performing hitlist to waveform conversion")
     # TODO: Account for random initial digitizer state  wrt interaction?
     # Where?
 
@@ -327,17 +362,18 @@ def hitlist_to_waveforms(hitlist):
     pad_after = config['pad_after']
 
     # Compute waveform start, length, end
-    all_photons = flatten(hitlist)
-    if not all_photons:
-        return None
-    start_time = min(all_photons) - pad_before
-    n_samples = math.ceil((max(all_photons) + pad_after - start_time) / dt)\
+    # TODO: this is bugged... +10 is emergency countermeasure!
+    start_time = hitlist['min'] - pad_before
+    n_samples = math.ceil((hitlist['max'] + pad_after - start_time) / dt)\
                 + 2 \
                 + config['samples_after_pulse_center']
 
     # Build waveform channel by channel
-    pmt_waveforms = np.zeros((len(hitlist), n_samples), dtype=np.int16)
-    for channel, photon_detection_times in enumerate(hitlist):
+    pmt_waveforms = np.zeros((len(config['all_pmts']), n_samples), dtype=np.int16)
+    for channel, photon_detection_times in hitlist.items():
+        if channel in ('min', 'max', 'n'):
+            continue
+        #print("We got %s %s" % (channel, photon_detection_times))
         if len(photon_detection_times) == 0:
             continue  # No photons in this channel
 
@@ -356,13 +392,25 @@ def hitlist_to_waveforms(hitlist):
         # Compute offset & center index for each pulse
         offsets = pmt_pulse_centers % dt
         center_index = (pmt_pulse_centers - offsets) / dt
-        if len(all_photons) > config['use_simplified_simulator_from']:
+        current_wave = np.zeros(n_samples)
+        if hitlist['n'] > config['use_simplified_simulator_from']:
+
+            #TODO: Is this actually faster still? Should check!
 
             # Start with a delta function single photon pulse, then convolve with one actual single-photon pulse
             # This effectively assumes photons always arrive at the start of a digitizer t-bin, but is much faster
-            pulse_counts = Counter(center_index)
-            current_wave = np.array([pulse_counts[n] for n in range(n_samples)]) \
-                           * config['gains'][channel] * units.electron_charge / dt
+
+            # Division by dt necessary for charge -> current
+
+            unique, counts = np.unique(center_index, return_counts=True)
+            unique = unique.astype(np.int)
+            current_wave[unique] = counts * config['gains'][channel] * units.electron_charge / dt
+
+            # Previous, slow implementation
+            # pulse_counts = Counter(center_index)
+            # print(pulse_counts)
+            # current_wave2 = np.array([pulse_counts[n] for n in range(n_samples)]) \
+            #                * config['gains'][channel] * units.electron_charge / dt
 
             # Calculate a normalized pmt pulse, for use in convolution later (only
             # for large peaks)
@@ -373,37 +421,52 @@ def hitlist_to_waveforms(hitlist):
         else:
 
             # Do the full, slower simulation for each single-photon pulse
-            current_wave = np.zeros(n_samples)
             for i, t0 in enumerate(pmt_pulse_centers):
 
                 # Add some current for this photon pulse
                 # Compute the integrated pmt pulse at various samples, then
                 # do their diffs/dt
-
-                current_wave[
-                    # +1 due to np.diff in pmt_pulse_current
-                    center_index[i] - config['samples_before_pulse_center'] + 1 :
-                    center_index[i] + 1 + config['samples_after_pulse_center']
-                ] += pmt_pulse_current(
+                generated_pulse = pmt_pulse_current(
                     # Really a Poisson (although mean is so high it is very
                     # close to a Gauss)
                     gain=np.random.poisson(config['gains'][channel]),
                     offset=offsets[i]
                 )
 
+                # +1 due to np.diff in pmt_pulse_current
+                left_index = int(center_index[i] - config['samples_before_pulse_center'] + 1)
+                righter_index = int(center_index[i] + 1 + config['samples_after_pulse_center'])
+
+                # Debugging stuff
+                # if len(generated_pulse) != righter_index - left_index:
+                #     raise RuntimeError("Generated pulse is %s samples long, can't be inserted between %s and %s" % (
+                #             len(generated_pulse), left_index, righter_index))
+                #
+                # if left_index <0 :
+                #     raise RuntimeError("Invalid left index %s: can't be negative!" % left_index)
+                #
+                # if righter_index >= len(current_wave) :
+                #     raise RuntimeError("Invalid right index %s: can't be longer than length of wave (%s)!" % (
+                #         righter_index, len(current_wave)))
+
+                current_wave[left_index : righter_index] += generated_pulse
+
         # Add white noise current - only to channels that have seen a photon, only around a peak
-        current_wave += np.random.normal(0, config['white_noise_sigma'], len(current_wave))
+        # TODO: this is very expensive, inconsistent with zero length encoding, and very incorrect if peaks overlap
+        if config['white_noise_sigma'] is not None:
+            current_wave += np.random.normal(0, config['white_noise_sigma'], len(current_wave))
 
         # Convert current to digitizer count (should I trunc, ceil or floor?) and store
         # Don't baseline correct, clip or flip down here, we do that at the
         # very end when all signals are combined
         temp = np.trunc(
-            config['pmt_circuit_load_resistor'] 
-            * config['external_amplification'] / dV 
+            config['pmt_circuit_load_resistor']
+            * config['external_amplification'] / dV
             * current_wave
         )
         pmt_waveforms[channel] = temp.astype(np.int16)
 
+    log.debug("...done")
     return start_time, pmt_waveforms
 
 
