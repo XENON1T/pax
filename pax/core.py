@@ -53,7 +53,6 @@ def get_named_configuration_options():
 # Processor class
 ##
 class Processor:
-
     fallback_configuration = 'XENON100'    # Configuration to use when none is specified
 
     def __init__(self, config_names=(), config_paths=(), config_string=None, config_dict={}, just_testing=False):
@@ -75,6 +74,11 @@ class Processor:
 
         Setting just_testing disables some warnings about not specifying any plugins or plugin groups in the config.
         Use only if, for some reason, you don't want to load a full configuration file.
+        
+        .. note:: 
+          Although the log level can be specified in the configuration, it is an application wide
+          setting that will not be modified once set. New instances of the Processor class will have
+          the same log level as the first, regardless of their configuration.  See #78.
         """
         self.config_files_read = []
         self.configp = None    # load_configuration will use this to store the ConfigParser
