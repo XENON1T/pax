@@ -363,7 +363,6 @@ def hitlist_to_waveforms(hitlist):
     pad_after = config['pad_after']
 
     # Compute waveform start, length, end
-    # TODO: this is bugged... +10 is emergency countermeasure!
     start_time = hitlist['min'] - pad_before
     n_samples = math.ceil((hitlist['max'] + pad_after - start_time) / dt)\
                 + 2 \
