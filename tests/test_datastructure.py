@@ -116,6 +116,8 @@ class TestDatastructure(unittest.TestCase):
 
         self.assertIsInstance(w.samples, np.ndarray)
 
+        # Will trigger a warning from line 87 in fields.py from micromodels:
+        # 'converting list to numpy array'
         w.samples = samples
 
         self.assertEqual(len(w.samples),

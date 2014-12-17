@@ -84,7 +84,7 @@ class NumpyArrayField(BaseField):
             return np.array(list(self.data),
                             dtype=self._dtype)
         elif isinstance(self.data, (list, tuple)):
-            logging.warning("Converting set to numpy array.")
+            logging.warning("Converting list/tuple to numpy array.")
             return np.array(self.data, dtype=self._dtype)
         else:
             raise TypeError("Data must be array: not %s, %s" % (str(type(self.data)),

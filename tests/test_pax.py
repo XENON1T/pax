@@ -98,7 +98,9 @@ class TestPax(unittest.TestCase):
         self.assertEqual(pl.__class__.__name__, 'DummyTransform2')
 
     def test_evaluate_default_configuration(self):
-        """ Test loading the entire default configuration & all its plugins"""
+        """ Test loading the entire default configuration & all its plugins
+        Will trigger a warning: no configuration specified
+        """
         mypax = core.Processor()
         self.assertIsInstance(mypax, core.Processor)
         self.assertIsInstance(mypax.input_plugin,  plugin.InputPlugin)
@@ -112,7 +114,8 @@ class TestPax(unittest.TestCase):
     ##
 
     def test_get_events(self):
-        """ Tests getting events from the input plugin"""
+        """ Test getting events from the input plugin
+        """
         mypax = core.Processor(config_dict = {'pax' : {'plugin_group_names':   ['input'],
                                                        'input':                'Dummy.DummyInput'}},
                                just_testing=True)
@@ -122,7 +125,8 @@ class TestPax(unittest.TestCase):
         self.assertIsInstance(event, datastructure.Event)
 
     def test_process_empty_event(self):
-        """ Tests processing without processing plugins defined """
+        """ Test processing without processing plugins defined
+        """
         mypax = core.Processor(config_dict = {'pax' : {'plugin_group_names':   ['input'],
                                                        'input':                'Dummy.DummyInput'}},
                                just_testing=True)
@@ -132,7 +136,8 @@ class TestPax(unittest.TestCase):
         self.assertIsInstance(event, datastructure.Event)
 
     def test_process_single_XED_event(self):
-        """ Process the first event from the XED file."""
+        """ Process the first event from the XED file.
+        """
         # TODO: delete the HD5 file that is created by this
         mypax = core.Processor(config_names='XED', config_dict = {'pax' : {'events_to_process': [0]}})
         mypax.run()
