@@ -76,6 +76,8 @@ class HDF5Output(plugin.OutputPlugin):
 
         self.rows['Event'].append()
 
+        # TODO: construct channel peaks table
+
         # Construct peak table
         for peak in event_dict['peaks']:
             peak = peak.to_dict()
@@ -101,7 +103,13 @@ class HDF5Output(plugin.OutputPlugin):
                 self.rows['ReconstructedPosition'].append()
 
     def shutdown(self):
-        for table in self.tables.values():
-            table.flush()
+        for table_name, table in self.tables.items():
+            try:
+                table.flush()
+            except AttributeError as e:
+                self.log.error("Arcane error in flushing HDF5 table %s on shutdown of HDF5Output. " % table_name +
+                               "May be related to running multiple Processor's with clean_shutdown=False?\n"
+                )
+                raise e
 
         self.h5_file.close()

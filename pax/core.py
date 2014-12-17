@@ -55,7 +55,7 @@ def get_named_configuration_options():
 class Processor:
     fallback_configuration = 'XENON100'    # Configuration to use when none is specified
 
-    def __init__(self, config_names=(), config_paths=(), config_string=None, config_dict={}, just_testing=False):
+    def __init__(self, config_names=(), config_paths=(), config_string=None, config_dict=None, just_testing=False):
         """Setup pax using configuration data from three sources:
           - config_names: List of named configurations to load (sequentially)
           - config_paths: List of config file paths to load (sequentially)
@@ -70,8 +70,6 @@ class Processor:
 
         The config_dict's settings are not evaluated.
 
-        :return: nested dictionary of evaluated configuration values, use as: config[section][key].
-
         Setting just_testing disables some warnings about not specifying any plugins or plugin groups in the config.
         Use only if, for some reason, you don't want to load a full configuration file.
         
@@ -80,8 +78,6 @@ class Processor:
           setting that will not be modified once set. New instances of the Processor class will have
           the same log level as the first, regardless of their configuration.  See #78.
         """
-        self.config_files_read = []
-        self.configp = None    # load_configuration will use this to store the ConfigParser
         self.config = self.load_configuration(config_names, config_paths, config_string, config_dict)
         self.log = self.setup_logging()
         pc = self.config['pax']
@@ -181,7 +177,16 @@ class Processor:
                 self.log.warning("No action plugins specified: this will be a pretty boring processing run...")
 
     def load_configuration(self, config_names, config_paths, config_string, config_dict):
-        """Load a configuration -- see init's docstring"""
+        """Load a configuration -- see init's docstring
+        :return: nested dictionary of evaluated configuration values, use as: config[section][key].
+        """
+        if config_dict is None:
+            config_dict = {}
+
+        # Temporary attributes, will be deleted when function ends.
+        # We want this function to recurse on another method, which always needs access to these
+        # TODO: Is there a more pythonic way to do this?
+        self.configp = None    # load_configuration will use this to store the ConfigParser
         self.config_files_read = []      # Need to clean this here so tests can re-load the config
 
         # Support for string arguments
@@ -231,6 +236,10 @@ class Processor:
                 evaled_config[section_name].update(config_dict[section_name])
             else:
                 evaled_config[section_name] = config_dict[section_name]
+
+        # Delete temporary attributes
+        del self.configp
+        del self.config_files_read
 
         return evaled_config
 
@@ -380,9 +389,24 @@ class Processor:
 
         return event
 
-    def run(self):
-        """Run the processor over all events
+    def run(self, clean_shutdown=True):
+        """Run the processor over all events, then shuts down the plugins (unless clean_shutdown=False)
+
+        If clean_shutdown=False, will not shutdown plugin classes
+            (they still shut down if the Processor class is deleted)
+            Use only if for some arcane reason you want to run more than once in a row.
+            If you do, realize that if you start a new Processor instance that tries to write to the same files...
+
         """
+        if not hasattr(self, 'input_plugin'):
+            # self.input_plugin is set by __init__ even if you don't pass an input plugin.
+            # It is removed at the end of this method, however, so we were probably run() before:
+            raise RuntimeError("Attempt to run a Processor without an input_plugin attribute.\n" +
+                               "Perhaps you already ran this Processor (with clean_shutdown=True)?")
+        if self.input_plugin is None:
+            # You're allowed to specify no input plugin, which is useful for testing. (You may want to feed events
+            # in by hand). If you do this you can't use the run method. In case somebody ever tries:
+            raise RuntimeError("You just tried to run a Processor without an input plugin.")
 
         # This is the actual event loop.  'tqdm' is a progress bar.
         for i, event in enumerate(tqdm(self.get_events(),
@@ -399,7 +423,8 @@ class Processor:
         else:   # If no break occurred:
             self.log.info("All events from input source have been processed.")
 
-        events_actually_processed = i
+        #TODO: not nice, accessing the loop var outside the loop.. What if loop was never run?
+        events_actually_processed = i + 1
 
         if self.config['pax']['print_timing_report']:
             all_plugins = [self.input_plugin] + self.action_plugins
@@ -420,3 +445,9 @@ class Processor:
                 round(total_time/events_actually_processed, 1),
                 round(total_time/1000, 1)])
             self.log.info("Timing report:\n"+str(timing_report))
+
+        # Shutdown all plugins now -- don't wait until this Processor instance gets deleted
+        # Must shutdown via __del__, as plugin.shutdown() probably doesn't expect to be called twice
+        if clean_shutdown:
+            del self.input_plugin
+            del self.action_plugins
