@@ -90,7 +90,7 @@ def where_changes(x, report_first_index_if=None):
 
     # Now we can find where the array becomes True or False
     becomes_true =  np.sort(np.where(points_of_difference & x)[0])
-    becomes_false = np.sort(np.where(points_of_difference & (-x))[0])
+    becomes_false = np.sort(np.where(points_of_difference & (True ^ x))[0])
 
     # In case the user set report_first_index_if, we have to manually add 0 if it is True or False
     # Can't say x[0] is True, it is a numpy bool...
