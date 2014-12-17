@@ -30,7 +30,6 @@ setup(
         'pax.config',
         'pax.plugins',
         'pax.plugins.corrections',
-        'pax.plugins.display',
         'pax.plugins.signal_processing',
         'pax.plugins.io',
         'pax.plugins.posrec',
