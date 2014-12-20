@@ -4,6 +4,7 @@ Use matplotlib to display various things about the event.
 """
 
 import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
 import random
 import numpy as np
 import os
@@ -351,11 +352,10 @@ class PlotChannelWaveforms2D(PlotBase):
             # Choose a color for this occurrence based on amplitude
             color_factor = np.clip(np.log10(height)/2, 0, 1)
 
-            plt.plot(
-                np.linspace(start_index, end_index, length) * time_scale,
-                channel * np.ones(length),
-                color=plt.cm.gnuplot2(color_factor),
-                alpha=(0.1 if channel in event.bad_channels else 1.0))
+            plt.gca().add_patch(Rectangle((start_index*time_scale, channel), length*time_scale, 1,
+                                          facecolor=plt.cm.gnuplot2(color_factor),
+                                          edgecolor='none',
+                                          alpha=(0.1 if channel in event.bad_channels else 1.0)))
 
         # Plot the channel peaks as dots
         # All these for loops are slow -- hope we get by-column access some time
