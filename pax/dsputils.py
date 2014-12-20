@@ -117,6 +117,29 @@ def free_regions(event, detector='tpc'):
     return chunk_in_ntuples(sorted(lefts + rights), n=2)
 
 
+def split_by_separation(x, separation_length, return_indices=False):
+    """Returns list of lists of indices of clusters in x,
+    inserting cluster boundaries whenever values are >= separation_length apart.
+    Assumes x is sorted.
+    """
+    # TODO: test exhaustively, then write a numpy algorithm using where_changes and rounded division
+    assert(np.all(x == sorted(x)))
+    if len(x) == 0:
+        return []
+    clusters = []
+    current_cluster = []
+    previous_t = x[0]
+    for i, t in enumerate(x):
+        if t - previous_t > separation_length:
+            clusters.append(current_cluster)
+            current_cluster = []
+        current_cluster.append(i if return_indices else t)
+        previous_t = t
+    clusters.append(current_cluster)
+    return clusters
+
+
+
 def mad(data, axis=None):
     """ Return median absolute deviation of numpy array"""
     return np.mean(np.absolute(data - np.median(data, axis)), axis)

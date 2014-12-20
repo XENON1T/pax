@@ -362,7 +362,11 @@ class PlotChannelWaveforms2D(PlotBase):
         self.log.debug('Plotting channel peaks...')
 
         for p in event.channel_peaks:
-            color_factor = min(max(p.height/(20*p.noise_sigma), 0), 1)  # TODO: can cause /div0?
+            if p.noise_sigma == 0:
+                # What perfect world are you living in? WaveformSimulator!
+                color_factor = 1
+            else:
+                color_factor = min(max(p.height/(20*p.noise_sigma), 0), 1)
             plt.scatter(  [p.index_of_maximum * time_scale],
                           [p.channel],
                         c=(color_factor, 0, (1-color_factor)),
@@ -382,7 +386,7 @@ class PlotChannelWaveforms2D(PlotBase):
         for i in range(len(channel_ranges)):
             plt.plot(
                 [0,event.length()*time_scale],
-                [channel_ranges[i][1]-0.5]*2,
+                [channel_ranges[i][1]]*2,
                 color='black', alpha=0.2)
             plt.text(
                 0.03*event.length()*time_scale,

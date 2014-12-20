@@ -148,15 +148,13 @@ class ClusterAndClassifySmallPeaks(plugin.TransformPlugin):
                 # Get all single-pe data in a list of dicts, sorted by index_of_maximum
                 spes = sorted([
                     p.to_dict() for p in event.channel_peaks
-                                if p.channel not in event.bad_channels
-                                   and p.channel in self.channels_in_detector[detector]
+                                if p.channel in self.channels_in_detector[detector]
+                                and (not self.config['exclude_bad_channels'] or p.channel not in event.bad_channels)
                 ], key=lambda x: x['index_of_maximum'])
-
-                new_bad_channels = False
 
                 times = [s['index_of_maximum'] for s in spes]
                 assert(times == sorted(times))
-                time_clusters = self.cluster_by_separation(times, self.cluster_separation_length)
+                time_clusters = dsputils.split_by_separation(times, self.cluster_separation_length, return_indices=True)
 
                 # Make a list of dicts of spe clusters (essentially a dataframe, but I want to do a for loop...)
                 clusters = [{
@@ -204,7 +202,8 @@ class ClusterAndClassifySmallPeaks(plugin.TransformPlugin):
                             "Channel %s shows an abnormally high lone pulse rate (%s): its spe pulses will be excluded" % (
                                 ch, dc))
                         event.bad_channels.append(ch)
-                        redo_classification = True
+                        if self.config['exclude_bad_channels']:
+                            redo_classification = True
 
             # Classification is now done, so add the peaks to the datastructure
             for c in clusters:
@@ -229,21 +228,3 @@ class ClusterAndClassifySmallPeaks(plugin.TransformPlugin):
                 }))
 
         return event
-
-    @staticmethod
-    def cluster_by_separation(x, separation_length):
-        # Returns list of lists of indices of clusters in x
-        # TODO: put in dsputils, test exhaustively
-        if len(x) == 0:
-            return []
-        clusters = []
-        current_cluster = []
-        previous_t = x[0]
-        for i, t in enumerate(x):
-            if t - previous_t > separation_length:
-                clusters.append(current_cluster)
-                current_cluster = []
-            current_cluster.append(i)
-            previous_t = t
-        clusters.append(current_cluster)
-        return clusters

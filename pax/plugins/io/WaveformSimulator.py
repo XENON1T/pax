@@ -67,9 +67,7 @@ class WaveformSimulator(plugin.InputPlugin):
         electron_times = simulation.s2_electrons(electrons_generated=electrons, t=t, z=z)
         photon_times = simulation.s2_scintillation(electron_times)
         self.store_true_peak('s2', t, x, y, z, photon_times, electron_times)
-        return simulation.hitlist_to_waveforms(
-            simulation.photons_to_hitlist(photon_times),
-        )
+        return simulation.SimulatedHitpattern(photon_times)
 
     def s1(self, photons, recoil_type, t=0., x=0., y=0., z=0.):
         """
@@ -80,9 +78,7 @@ class WaveformSimulator(plugin.InputPlugin):
         """
         photon_times = simulation.s1_photons(photons, recoil_type, t)
         self.store_true_peak('s1', t, x, y, z, photon_times)
-        return simulation.hitlist_to_waveforms(
-            simulation.photons_to_hitlist(photon_times),
-        )
+        return simulation.SimulatedHitpattern(photon_times)
 
     def get_instructions_for_next_event(self):
         raise NotImplementedError()
@@ -92,80 +88,38 @@ class WaveformSimulator(plugin.InputPlugin):
         self.truth_peaks = []
         dt = self.config['digitizer_t_resolution']
 
-        # Make (start_time, waveform matrix) tuples for every s1/s2 we have to generate
-        signals = []
+        hitpatterns = []
         for q in instructions:
             self.log.debug("Simulating %s photons and %s electrons at %s cm depth, at t=%s ns" % (
                 q['s1_photons'], q['s2_electrons'], q['depth'], q['t']
             ))
             if int(q['s1_photons']):
-                signals.append(
+                hitpatterns.append(
                     self.s1( photons=int(q['s1_photons']), recoil_type=q['recoil_type'], t=float(q['t']) )
                 )
             if int(q['s2_electrons']):
-                signals.append(
+                hitpatterns.append(
                     self.s2(
                         electrons=int(q['s2_electrons']),
                         z=float(q['depth']) * units.cm,
                         t=float(q['t'])
                     )
                 )
-
-        # Remove empty signals (None) from signal list
-        signals = [s for s in signals if s is not None]
-        if len(signals) == 0:
-            self.log.warning("Fax simulation returned no signals, can't return an event...")
-            return None
-
-        # Compute start time and event length in samples)
-        start_time_offset = min([s[0] for s in signals])
-        event_length = int(
-             2 * self.config['event_padding'] / dt +
-             max([s[0] - start_time_offset for s in signals]) / dt +
-             max([s[1].shape[1] for s in signals])
-        )
-
-        # Make a single waveform matrix
-        # Baseline addition & flipping down is done here
-        self.log.debug("Combining %s signals into a single matrix" % len(signals))
-        pmt_waveforms = self.config['digitizer_baseline'] *\
-                        np.ones((len(self.config['all_pmts']), event_length), dtype=np.int16)
-        for s in signals:
-            start_index = int(
-                (s[0] - start_time_offset + self.config['event_padding']) / dt
-            )
-            # NOTE: MINUS!
-            pmt_waveforms[:, start_index:start_index + s[1].shape[1]] -= s[1]
-
-        # Clipping
-        pmt_waveforms = np.clip(pmt_waveforms, 0, 2 ** (self.config['digitizer_bits']))
-
-        # Setup the pax event 'header'
-        self.log.debug("Creating pax event")
-        event = datastructure.Event()
+        # Combine the hitpatterns by their overloaded addition operator, then simulate waveforms
+        event =  simulation.to_pax_event(sum([h for h in hitpatterns if h is not None]))
         if hasattr(self, 'dataset_name'):
             event.dataset_name = self.dataset_name
         event.event_number = self.current_event
-        event.start_time = int(time.time() * units.s)
-        event.stop_time = event.start_time + int(event_length * dt)
-        event.sample_duration = dt
 
-        # Make a single occurrence for the entire event... yeah, this is wonky
-        event.occurrences = {
-            ch: [(0, pmt_waveforms[ch])]
-            for ch in self.config['all_pmts']
-        }
-        self.log.debug("These numbers should be the same: %s %s %s %s" % (
-            pmt_waveforms.shape[1], event_length, event.length(), event.occurrences[1][0][1].shape))
-
-        # Remove start time offset from all times in the truth information peak
+        # Add start time offset to all times in the truth information peak
         # Can't be done at the time of peak creation, it is only known now...
+        # TODO: That's no longer true! so fix it
         for p in self.truth_peaks:
             for key in p.keys():
                 if key[:2] == 't_' and key[2:7] != 'sigma':
                     if p[key] == '':
                         continue
-                    p[key] -= start_time_offset
+                    p[key] += self.config['event_padding']
         self.all_truth_peaks.extend(self.truth_peaks)
 
         return event
