@@ -123,5 +123,6 @@ class Filtering(plugin.TransformPlugin):
                 'name':      f['name'],
                 'samples':   output,
                 'pmt_list':  input_w.pmt_list,
+                'detector':  input_w.detector,
             }))
         return event

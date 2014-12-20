@@ -62,11 +62,15 @@ class Peak(Model):
     left = IntegerField()                       #: Index of left bound (inclusive) in sum waveform.
     right = IntegerField() #: Index of right bound (for Xdp matching: exclusive; otherwise: inclusive) in sum waveform.
 
-    area = FloatField()                   #: Area of the pulse in photoelectrons
+    area = FloatField()                   #: Area of the pulse in photoelectrons. Only
+                                          #: Includes only contributing pmts (see later) in the right detector
     height = FloatField()                 #: Height of highest point in peak (in pe/bin)
     height_filtered = FloatField()        #: Height of highest point in filtered waveform of peak (in pe/bin)
 
-    type = StringField(default='unknown') #: Type of peak (e.g., 's1', 's2', 'veto_s1', ...)
+    type = StringField(default='unknown')   #: Type of peak (e.g., 's1', 's2', ...)
+    detector = StringField(default='none')  #: e.g. tpc or veto
+
+    central_area = FloatField()           #: Area in the central part of the peak (used for classification)
 
     full_width_half_max = FloatField()             #: Full width at half maximum in samples
     full_width_tenth_max = FloatField()            #: Full width at tenth of maximum in samples
@@ -100,10 +104,10 @@ class Peak(Model):
 class ChannelPeak(Model):
 
     """Peaks found in individual channels
-    These should be combined into full peaks later?
+    These are be combined ordinary peaks later
     """
-    channel = IntegerField()                    #: Channel in which this peak was found
-    index_of_maximum = IntegerField()           #: Index in the event at which this peak has its maximum.
+    channel = IntegerField()              #: Channel in which this peak was found
+    index_of_maximum = IntegerField()     #: Index in the event at which this peak has its maximum.
 
     left = IntegerField()                 #: Index of left bound (inclusive) of peak.
     right = IntegerField()                #: Index of right bound of peak
@@ -122,6 +126,7 @@ class Waveform(Model):
     #: Name of the filter used (or 'none')
     name_of_filter = StringField(default='none')
     name = StringField(default='none')  #: e.g. top
+    detector = StringField(default='none')  #: e.g. tpc or veto
 
     #: Array of PMT numbers included in this waveform
     pmt_list = f.NumpyArrayField(dtype=np.uint16)
@@ -240,6 +245,7 @@ class Event(Model):
         """
         return int(self.event_duration() / self.sample_duration)
 
+    # TODO: should this return tpc peaks only? also veto? configurable for separate/both?
     def S1s(self, sort_key='area', reverse=True):
         """List of S1 (scintillation) signals
 

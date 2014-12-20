@@ -12,6 +12,7 @@ from pax import plugin, datastructure
 
 
 class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
+    """NB: Does NOT do veto peakfinding!!!"""
 
     def transform_event(self, event):
 
@@ -67,7 +68,6 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                 'min_base_interval_length':         0,
                 'max_base_interval_length':         float('inf'),
             }),
-            # TODO: Veto S1 peakfinding
         ]
         self.seeker_position = None
         self.highest_s2_height_ever = 0
@@ -502,6 +502,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             'height':           height,
             'left':             left,
             'right':            right,
+            'detector':         'tpc',
         }))
 
         # Recursion for large s2s

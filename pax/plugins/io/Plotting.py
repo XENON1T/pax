@@ -113,6 +113,7 @@ class PlotBase(plugin.OutputPlugin):
             for peak in event.peaks:
                 if peak.type == 'lone_pulse':
                     continue
+                textcolor = 'black' if peak.detector == 'tpc' else 'red'
 
                 x = peak.index_of_maximum * self.samples_to_us
                 y = peak.height
@@ -137,7 +138,8 @@ class PlotBase(plugin.OutputPlugin):
                 plt.annotate('%s:%s' % (peak.type, int(peak.area)),
                              xy=(x, y),
                              xytext=(x, ytext),
-                             arrowprops = arrowprops)
+                             arrowprops = arrowprops,
+                             color=textcolor)
 
         if show_legend:
             legend = plt.legend(loc='upper left', prop={'size': 10})
@@ -145,10 +147,12 @@ class PlotBase(plugin.OutputPlugin):
                 legend.get_frame().set_alpha(0.5)
 
     def color_peak_ranges(self, event):
+        # Separated so PlotChannelWaveforms2D can also call it
         for peak in event.peaks:
+            shade_color = self.peak_colors.get(peak.type,'gray') if peak.detector == 'tpc' else 'red'
             plt.axvspan(peak.left  * self.samples_to_us,
                         peak.right * self.samples_to_us,
-                        color=self.peak_colors.get(peak.type,'gray'),
+                        color=shade_color,
                         alpha=0.2)
 
 

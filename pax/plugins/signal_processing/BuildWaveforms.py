@@ -6,6 +6,17 @@ from pax import plugin, units, datastructure
 
 
 class BuildWaveforms(plugin.TransformPlugin):
+    """
+
+    Waveforms that will be built:
+        tpc
+        top
+        bottom
+        NAME for each external detector named NAME (usually only the veto)
+    for Xerawdp matching also:
+        uS1
+        uS2
+    """
 
     def startup(self):
         c = self.config
@@ -53,6 +64,7 @@ class BuildWaveforms(plugin.TransformPlugin):
                 'samples':  np.zeros(event.length()),
                 'name':     group,
                 'pmt_list': self.crazy_type_conversion(members),
+                'detector': group if group in self.config['external_detectors'] else 'tpc'
             }))
 
         event.occurrences_interval_tree = IntervalTree()
@@ -183,6 +195,7 @@ class BuildWaveforms(plugin.TransformPlugin):
         event.waveforms.append(datastructure.Waveform({
             'samples':  event.get_waveform('top').samples + event.get_waveform('bottom').samples,
             'name':     'tpc',
+            'detector': 'tpc',
             'pmt_list': self.crazy_type_conversion(self.channel_groups['top'] | self.channel_groups['bottom'])
         }))
         return event

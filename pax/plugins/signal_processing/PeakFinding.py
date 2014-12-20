@@ -3,7 +3,7 @@ import math
 from pax import plugin, datastructure, dsputils
 
 # Used for diagnostic plotting only
-# TODO: factor out to separate plugin
+# TODO: factor out to separate plugin?
 import matplotlib.pyplot as plt
 import os
 
@@ -22,7 +22,9 @@ class FindBigPeaks(plugin.TransformPlugin):
 
     def transform_event(self, event):
         for pf in self.config['peakfinders']:
-            peakfinding_wave = event.get_waveform(pf['peakfinding_wave']).samples
+            pfwave_obj = event.get_waveform(pf['peakfinding_wave'])
+            peakfinding_wave = pfwave_obj.samples
+            detector = pfwave_obj.detector
             unfiltered_wave  = event.get_waveform(pf['unfiltered_wave']).samples
 
             # Define the peak/valley tester for the peaksplitter this peakfinder
@@ -33,14 +35,8 @@ class FindBigPeaks(plugin.TransformPlugin):
                     signal[peak] - signal[valley] >= pf.get('min_p_v_difference', 0)
                 )
 
-            # Find regions currently free of peaks
-            if len(event.peaks) == 0 or pf.get('ignore_previous_peaks', False):
-                pf_regions = [(0, len(peakfinding_wave) - 1)]
-            else:
-                pf_regions = dsputils.free_regions(event)
-
             # Search for peaks in the free regions
-            for region_left, region_right in pf_regions:
+            for region_left, region_right in dsputils.free_regions(event, detector):
                 for itv_left, itv_right in dsputils.intervals_where(
                         peakfinding_wave[region_left:region_right + 1] > pf['threshold']):
 
@@ -86,11 +82,8 @@ class FindBigPeaks(plugin.TransformPlugin):
                             'index_of_maximum': unfiltered_max_idx,   # in unfiltered waveform!
                             'height':           unfiltered_wave[unfiltered_max_idx],
                             'left':             region_left + itv_left + left,
-                            'right':            region_left + itv_left + right}))
-
-                        # Should we already label the peak?
-                        if 'force_peak_label' in pf:
-                            event.peaks[-1].type = pf['force_peak_label']
+                            'right':            region_left + itv_left + right,
+                            'detector':         detector}))
 
         return event
 
@@ -218,6 +211,12 @@ class FindSmallPeaks(plugin.TransformPlugin):
             if not os.path.exists(self.make_diagnostic_plots_in):
                 os.makedirs(self.make_diagnostic_plots_in)
 
+        self.channels_in_detector = {
+            'tpc':  self.config['pmts_top'] | self.config['pmts_bottom'],
+        }
+        for det, chs in self.config['external_detectors'].items():
+            self.channels_in_detector[det] = chs
+
     def transform_event(self, event):
         # ocs is shorthand for occurrences, as usual
 
@@ -231,112 +230,120 @@ class FindSmallPeaks(plugin.TransformPlugin):
         noise_count = {}
         event.bad_channels = []
 
-        # Get all free regions before the give_up_after point
-        for region_left, region_right in dsputils.free_regions(event):
+        # Handle each detector separately
+        for detector in self.channels_in_detector.keys():
 
-            # Can we give up yet?
-            if region_left >= give_up_after:
-                break
+            # Get all free regions before the give_up_after point
+            for region_left, region_right in dsputils.free_regions(event, detector):
 
-            # Find all occurrences completely enveloped in the free region. Thank pyintervaltree for log(n) run
-            # In the future we may enable strict=False, so we're not relying on the zero-suppression to separate
-            # small peaks close to a large peak
-            ocs = event.occurrences_interval_tree.search(region_left, region_right, strict=True)
-            self.log.debug("Free region %05d-%05d: process %s occurrences" % (region_left, region_right, len(ocs)))
+                # Can we give up yet?
+                if region_left >= give_up_after:
+                    break
 
-            for oc in ocs:
-                # Focus only on the part of the occurrence inside the free region (superfluous as long as strict=True)
-                # Remember: intervaltree uses half-open intervals, stop is the first index outside
-                start = max(region_left, oc.begin)
-                stop = min(region_right + 1, oc.end)
-                channel = oc.data['channel']
+                # Find all occurrences completely enveloped in the free region. Thank pyintervaltree for log(n) runtime
+                # TODO: we should put strict=False, so we're not relying on the zero-suppression to separate
+                # small peaks close to a large peak. However, right now this brings in stuff from large peaks if their
+                # boundsare not completely tight...
+                ocs = event.occurrences_interval_tree.search(region_left, region_right, strict=True)
+                self.log.debug("Free region %05d-%05d: process %s occurrences" % (region_left, region_right, len(ocs)))
 
-                # Maybe some channels have already been marked as bad (configuration?), don't consider these.
-                if channel in event.bad_channels:
-                    continue
+                for oc in ocs:
+                    # Focus only on the part of the occurrence inside the free region (superfluous as long as strict=True)
+                    # Remember: intervaltree uses half-open intervals, stop is the first index outside
+                    start = max(region_left, oc.begin)
+                    stop = min(region_right + 1, oc.end)
+                    channel = oc.data['channel']
 
-                # Retrieve the waveform from pmt_waveforms
-                w = event.pmt_waveforms[channel, start:stop]
+                    # Don't consider channels from other detectors
+                    if channel not in self.channels_in_detector[detector]:
+                        continue
 
-                # Keep a copy, so we can filter w if needed:
-                origw = w
+                    # Maybe some channels have already been marked as bad (configuration?), don't consider these.
+                    if channel in event.bad_channels:
+                        continue
 
-                # Apply the filter, if user wants to
-                if self.filter_to_use is not None:
-                    w = np.convolve(w, self.filter_to_use, 'same')
+                    # Retrieve the waveform from pmt_waveforms
+                    w = event.pmt_waveforms[channel, start:stop]
 
-                # Use three passes to separate noise / peaks, see description in .... TODO
-                noise_sigma = self.initial_noise_sigma
-                old_raw_peaks = []
-                pass_number = 0
-                while True:
-                    # Determine the peaks based on the noise level
-                    # Can't just use w > self.min_sigma * noise_sigma here, want to extend peak bounds to noise_sigma
-                    raw_peaks = self.find_peaks(w, noise_sigma)
+                    # Keep a copy, so we can filter w if needed:
+                    origw = w
 
-                    if pass_number != 0 and raw_peaks == old_raw_peaks:
-                        # No change in peakfinding, previous noise level is still valid
-                        # That means there's no point in repeating peak finding either, and we can just:
-                        break
-                        # This saves about 25% of runtime
-                        # You can't break if you find no peaks on the first pass:
-                        # maybe the estimated noise level was too high
+                    # Apply the filter, if user wants to
+                    if self.filter_to_use is not None:
+                        w = np.convolve(w, self.filter_to_use, 'same')
 
-                    # Correct the baseline -- BuildWaveforms can get it wrong if there is a pe in the starting samples
-                    w -= w[self.samples_without_peaks(w, raw_peaks)].mean()
+                    # Use three passes to separate noise / peaks, see description in .... TODO
+                    noise_sigma = self.initial_noise_sigma
+                    old_raw_peaks = []
+                    pass_number = 0
+                    while True:
+                        # Determine the peaks based on the noise level
+                        # Can't just use w > self.min_sigma * noise_sigma here, want to extend peak bounds to noise_sigma
+                        raw_peaks = self.find_peaks(w, noise_sigma)
 
-                    # Determine the new noise_sigma
-                    noise_sigma = w[self.samples_without_peaks(w, raw_peaks)].std()
+                        if pass_number != 0 and raw_peaks == old_raw_peaks:
+                            # No change in peakfinding, previous noise level is still valid
+                            # That means there's no point in repeating peak finding either, and we can just:
+                            break
+                            # This saves about 25% of runtime
+                            # You can't break if you find no peaks on the first pass:
+                            # maybe the estimated noise level was too high
 
-                    old_raw_peaks = raw_peaks
-                    if pass_number >= self.max_noise_detection_passes:
-                        self.log.warning((
-                            "In occurrence %s-%s in channel %s, findSmallPeaks did not converge on peaks after %s" +
-                            " iterations. This could indicate a baseline problem in this occurrence. " +
-                            "Channel-based peakfinding in this occurrence may be less accurate.") % (
-                                start, stop, channel, pass_number))
-                        break
+                        # Correct the baseline -- BuildWaveforms can get it wrong if there is a pe in the starting samples
+                        w -= w[self.samples_without_peaks(w, raw_peaks)].mean()
 
-                    pass_number += 1
+                        # Determine the new noise_sigma
+                        noise_sigma = w[self.samples_without_peaks(w, raw_peaks)].std()
 
-                # Update the noise occurrence count
-                if len(raw_peaks) == 0:
-                    noise_count[channel] = noise_count.get(channel, 0) + 1
+                        old_raw_peaks = raw_peaks
+                        if pass_number >= self.max_noise_detection_passes:
+                            self.log.warning((
+                                "In occurrence %s-%s in channel %s, findSmallPeaks did not converge on peaks after %s" +
+                                " iterations. This could indicate a baseline problem in this occurrence. " +
+                                "Channel-based peakfinding in this occurrence may be less accurate.") % (
+                                    start, stop, channel, pass_number))
+                            break
 
-                # Store the found peaks in the datastructure
-                peaks = []
-                for p in raw_peaks:
-                    peaks.append(datastructure.ChannelPeak({
-                        # TODO: store occurrence index -- occurrences needs to be a better datastructure first
-                        'channel':             channel,
-                        'left':                start + p[0],
-                        'index_of_maximum':    start + p[1],
-                        'right':               start + p[2],
-                        # NB: area and max are computed in filtered waveform, because
-                        # the sliding window filter will shift the peak shape a bit
-                        'area':                np.sum(w[p[0]:p[2]+1]),
-                        'height':              w[p[1]],
-                        'noise_sigma':         noise_sigma,
-                    }))
-                event.channel_peaks.extend(peaks)
+                        pass_number += 1
 
-                # TODO: move to separate plugin?
-                if self.make_diagnostic_plots_in:
-                    plt.figure()
-                    if self.filter_to_use is None:
-                        plt.plot(w, drawstyle='steps', label='data')
-                    else:
-                        plt.plot(w, drawstyle='steps', label='data (filtered)')
-                        plt.plot(origw, drawstyle='steps', label='data (raw)')
+                    # Update the noise occurrence count
+                    if len(raw_peaks) == 0:
+                        noise_count[channel] = noise_count.get(channel, 0) + 1
+
+                    # Store the found peaks in the datastructure
+                    peaks = []
                     for p in raw_peaks:
-                        plt.axvspan(p[0]-1, p[2], color='red', alpha=0.5)
-                    plt.plot(noise_sigma * np.ones(len(w)), '--', label='1 sigma')
-                    plt.plot(self.min_sigma * noise_sigma * np.ones(len(w)), '--', label='%s sigma' % self.min_sigma)
-                    plt.legend()
-                    bla = (event.event_number, start, stop, channel)
-                    plt.title('Event %s, occurrence %d-%d, Channel %d' % bla)
-                    plt.savefig(os.path.join(self.make_diagnostic_plots_in,  'event%04d_occ%05d-%05d_ch%03d.png' % bla))
-                    plt.close()
+                        peaks.append(datastructure.ChannelPeak({
+                            # TODO: store occurrence index -- occurrences needs to be a better datastructure first
+                            'channel':             channel,
+                            'left':                start + p[0],
+                            'index_of_maximum':    start + p[1],
+                            'right':               start + p[2],
+                            # NB: area and max are computed in filtered waveform, because
+                            # the sliding window filter will shift the peak shape a bit
+                            'area':                np.sum(w[p[0]:p[2]+1]),
+                            'height':              w[p[1]],
+                            'noise_sigma':         noise_sigma,
+                        }))
+                    event.channel_peaks.extend(peaks)
+
+                    # TODO: move to separate plugin?
+                    if self.make_diagnostic_plots_in:
+                        plt.figure()
+                        if self.filter_to_use is None:
+                            plt.plot(w, drawstyle='steps', label='data')
+                        else:
+                            plt.plot(w, drawstyle='steps', label='data (filtered)')
+                            plt.plot(origw, drawstyle='steps', label='data (raw)')
+                        for p in raw_peaks:
+                            plt.axvspan(p[0]-1, p[2], color='red', alpha=0.5)
+                        plt.plot(noise_sigma * np.ones(len(w)), '--', label='1 sigma')
+                        plt.plot(self.min_sigma * noise_sigma * np.ones(len(w)), '--', label='%s sigma' % self.min_sigma)
+                        plt.legend()
+                        bla = (event.event_number, start, stop, channel)
+                        plt.title('Event %s, occurrence %d-%d, Channel %d' % bla)
+                        plt.savefig(os.path.join(self.make_diagnostic_plots_in,  'event%04d_occ%05d-%05d_ch%03d.png' % bla))
+                        plt.close()
 
         # Mark channels with an abnormally high noise rate as bad
         for ch, dc in noise_count.items():

@@ -41,26 +41,39 @@ class ComputePeakWidths(plugin.TransformPlugin):
 
 class ComputePeakAreasAndCoincidence(plugin.TransformPlugin):
 
+    def startup(self):
+        self.central_width = round(self.config['central_area_region_width'] / self.config['digitizer_t_resolution'], 1)
+        self.channels_in_detector = {
+            'tpc':  self.config['pmts_top'] | self.config['pmts_bottom'],
+        }
+        for det, chs in self.config['external_detectors'].items():
+            self.channels_in_detector[det] = chs
+
     def transform_event(self, event):
         for peak in event.peaks:
 
             # Compute area in each channel
+            # Note this also computes the area for PMTs in other detectors!
             peak.area_per_pmt = np.sum(event.pmt_waveforms[:, peak.left:peak.right+1], axis=1)
 
             # Determine which channels contribute to the peak's total area
-            peak.contributing_pmts = np.array(
-                np.where(peak.area_per_pmt >= self.config['minimum_area'])[0],
-                dtype=np.uint16)
+            peak.contributing_pmts = np.array([ch for ch in range(self.config['n_pmts']) if
+                ch in self.channels_in_detector[peak.detector] and
+                peak.area_per_pmt[ch] >= self.config['minimum_area']
+            ], dtype=np.uint16)
 
-            # Compute the peak's areas
-            # TODO: make excluding non-contributing pmts optional
-            if peak.type == 'veto':
-                peak.area = np.sum(peak.area_per_pmt[list(self.config['external_detectors']['veto'])])
-            else:
-                if self.config['exclude_non_contributing_channels_from_area']:
-                    peak.area = np.sum(peak.area_per_pmt[peak.contributing_pmts])
-                else:
-                    peak.area = np.sum(peak.area_per_pmt[peak.contributing_pmts])
+            # Compute the peak's area
+            peak.area = np.sum(peak.area_per_pmt[peak.contributing_pmts])
+
+            # Compute the peak's central area (used for classification)
+            peak.central_area = np.sum(
+                event.pmt_waveforms[
+                    peak.contributing_pmts,
+                    max(peak.left, peak.index_of_maximum - math.floor(self.central_width/2)):
+                    min(peak.right+1, peak.index_of_maximum + math.ceil(self.central_width/2))
+                ],
+                axis=(0, 1)
+            )
 
         return event
 
@@ -68,20 +81,10 @@ class ComputePeakAreasAndCoincidence(plugin.TransformPlugin):
 class ComputePeakEntropies(plugin.TransformPlugin):
     #TODO: write tests
 
-
     def transform_event(self, event):
         for peak in event.peaks:
 
             peak_waveforms = event.pmt_waveforms[:, peak.left:peak.right+1]
-
-            # Switching from entropy to kurtosis doesn't make it faster...
-            # At head put:
-            # import scipy
-            # from scipy import stats
-            # Here put:
-            # peak.entropy_per_pmt = scipy.stats.kurtosis(peak_waveforms, axis=1)
-            # continue
-
             if self.config['normalization_mode'] is 'abs':
                 normalized = np.abs(peak_waveforms)
             elif self.config['normalization_mode'] is 'square':
@@ -95,136 +98,135 @@ class ComputePeakEntropies(plugin.TransformPlugin):
             # Note the use of np.newaxis to enable numpy broadcasting of the division
             normalized /= peak.area_per_pmt[:, np.newaxis]
 
-            if self.config['only_for_contributing_pmts']:
-                # Could this be vectorized better?
-                # There is probably little use in restricting to a set of pmts before here,
-                # the logarithm contains most of the work.
-                peak.entropy_per_pmt = np.zeros(len(peak_waveforms))
-                for pmt in peak.contributing_pmts:
-                    peak.entropy_per_pmt[pmt] = -np.sum(normalized[pmt]*np.log(normalized[pmt]))
-            else:
-                peak.entropy_per_pmt = -np.sum(normalized*np.log(normalized), axis=1)
+            # Could this be vectorized better?
+            # Restricting to contributing pmts is not optional: otherwise you'd include other detectors as well.
+            peak.entropy_per_pmt = np.zeros(len(peak_waveforms))
+            for pmt in peak.contributing_pmts:
+                peak.entropy_per_pmt[pmt] = -np.sum(normalized[pmt]*np.log(normalized[pmt]))
 
         return event
 
 
-
-class IdentifyPeaks(plugin.TransformPlugin):
+class ClassifyBigPeaks(plugin.TransformPlugin):
 
     def transform_event(self, event):
 
-        unfiltered = event.get_waveform('tpc').samples
-        for p in event.peaks:
-            if p.type != 'unknown':
-                # Some peakfinder forced the type. Fine, not my problem...
-                continue
+        for peak in event.peaks:
             # PLACEHOLDER:
-            # if area in s1_half_area_in samples around max is > 50% of total area, christen as S1 candidate
-            # if peak is smaller than s1_half_area_in, it is certainly an s1
-            if p.right - p.left + 1 < self.config['s1_half_area_in']:
-                p.type = 's1'
+            # if central area is > central_area_ratio * total area, christen as S1 candidate
+            if peak.central_area > self.config['central_area_ratio'] * peak.area:
+                peak.type = 's1'
+                #self.log.debug("%s-%s-%s: S1" % (peak.left, peak.index_of_maximum, peak.right))
             else:
-                left_samples = math.floor(self.config['s1_half_area_in']/2)
-                right_samples = math.ceil(self.config['s1_half_area_in']/2)
-                # TODO: IS BUGGED, includes veto area!!!
-                if np.sum(unfiltered[p.index_of_maximum - left_samples: p.index_of_maximum + right_samples]) > 0.5 * p.area:
-                    p.type = 's1'
-                    #self.log.debug("%s-%s-%s: S1" % (p.left, p.index_of_maximum, p.right))
-                else:
-                    p.type = 's2'
-                    #self.log.debug("%s-%s-%s: S2" % (p.left, p.index_of_maximum, p.right))
+                peak.type = 's2'
+                #self.log.debug("%s-%s-%s: S2" % (peak.left, peak.index_of_maximum, peak.right))
         return event
 
+
 #TODO: proper separation of TPC and veto
-class IdentifySmallPeaks(plugin.TransformPlugin):
+class ClusterAndClassifySmallPeaks(plugin.TransformPlugin):
 
     def startup(self):
         dt = self.config['digitizer_t_resolution']
         self.cluster_separation_length = self.config['cluster_separation_time'] / dt
+        self.channels_in_detector = {
+            'tpc':  self.config['pmts_top'] | self.config['pmts_bottom'],
+        }
+        for det, chs in self.config['external_detectors'].items():
+            self.channels_in_detector[det] = chs
 
     def transform_event(self, event):
 
-        # Hmzz, python has no do_while, so..
-        redo_classification = True
-        while redo_classification:
-            redo_classification = False
+        # Handle each detector separately
+        for detector in self.channels_in_detector.keys():
 
-            # Get all single-pe data in a list of dicts, sorted by index_of_maximum
-            spes = sorted([p.to_dict() for p in event.channel_peaks if p.channel not in event.bad_channels],
-                          key=lambda x: x['index_of_maximum'])
+            # Hmzz, python has no do_while, so..
+            redo_classification = True
+            while redo_classification:
+                redo_classification = False
 
-            new_bad_channels = False
+                # Get all single-pe data in a list of dicts, sorted by index_of_maximum
+                spes = sorted([
+                    p.to_dict() for p in event.channel_peaks
+                                if p.channel not in event.bad_channels
+                                   and p.channel in self.channels_in_detector[detector]
+                ], key=lambda x: x['index_of_maximum'])
 
-            times = [s['index_of_maximum'] for s in spes]
-            assert(times == sorted(times))
-            time_clusters = self.cluster_by_separation(times, self.cluster_separation_length)
+                new_bad_channels = False
 
-            # Make a list of dicts of spe clusters (essentially a dataframe, but I want to do a for loop...)
-            clusters = [{
-                    'spes':         cluster_spes,
-                    'n_spes':       len(cluster_spes),
-                    # TODO: add extents of min/max peaks
-                    'left':         spes[cluster_spes[0]]['left'],
-                    'right':        spes[cluster_spes[-1]]['right'],
-                    'type':         'unknown',
-                } for cluster_spes in time_clusters]
+                times = [s['index_of_maximum'] for s in spes]
+                assert(times == sorted(times))
+                time_clusters = self.cluster_by_separation(times, self.cluster_separation_length)
 
-            dark_count = {}
+                # Make a list of dicts of spe clusters (essentially a dataframe, but I want to do a for loop...)
+                clusters = [{
+                        'spes':         cluster_spes,
+                        'n_spes':       len(cluster_spes),
+                        # TODO: add extents of min/max peaks
+                        'left':         spes[cluster_spes[0]]['left'],
+                        'right':        spes[cluster_spes[-1]]['right'],
+                        'type':         'unknown',
+                    } for cluster_spes in time_clusters]
 
-            for c in clusters:
-                # Find how many occurences overlap with the cluster, so we know (roughly) how many channels show a waveform
-                # Note this includes occurrences in bad channels
-                c['occurrences'] = len(event.occurrences_interval_tree.search(c['left'], c['right'], strict=False))
-                c['channels'] = set([spes[x]['channel'] for x in c['spes']])
-                c['mad'] = dsputils.mad([times[i] for i in c['spes']])
+                dark_count = {}
 
-                if c['occurrences'] - 1 >= 2 * c['n_spes']:
-                    c['type'] = 'noise'
+                for c in clusters:
+                    # Find how many channels show something (noise, bad)
+                    # and how many are good & show photons
+                    coincident_occurrences = event.occurrences_interval_tree.search(c['left'], c['right'], strict=False)
+                    c['channels_with_something'] = set(self.channels_in_detector[detector]) & \
+                                                   set([oc.data['channel'] for oc in coincident_occurrences])
+                    c['channels_with_photons'] = set([spes[x]['channel'] for x in c['spes']])
+                    c['mad'] = dsputils.mad([times[i] for i in c['spes']])
 
-                elif len(c['channels']) == 1:
-                    c['type'] = 'lone_pulse'
-                    channel = spes[c['spes'][0]]['channel']
-                    dark_count[channel] = dark_count.get(channel, 0) + 1
+                    if len(c['channels_with_something']) > 2 * len(c['channels_with_photons']):
+                        c['type'] = 'noise'
 
-                else:
+                    elif len(c['channels_with_photons']) == 1:
+                        c['type'] = 'lone_pulse'
+                        channel = spes[c['spes'][0]]['channel']
+                        dark_count[channel] = dark_count.get(channel, 0) + 1
 
-                    if c['mad'] < 10:
-                        c['type'] = 's1'
                     else:
-                        if c['n_spes'] < 5:
-                            c['type'] = 'unknown'
+
+                        if c['mad'] < 10:
+                            c['type'] = 's1'
                         else:
-                            c['type'] = 's2'
+                            if c['n_spes'] < 5:
+                                c['type'] = 'unknown'
+                            else:
+                                c['type'] = 's2'
 
-            # Look for channels with abnormal dark rate
-            for ch, dc in dark_count.items():
-                if dc > self.config['maximum_lone_pulses_per_channel']:
-                    self.log.debug(
-                        "Channel %s shows an abnormally high lone pulse rate (%s): its spe pulses will be excluded" % (
-                            ch, dc))
-                    event.bad_channels.append(ch)
-                    redo_classification = True
+                # Look for channels with abnormal dark rate
+                for ch, dc in dark_count.items():
+                    if dc > self.config['maximum_lone_pulses_per_channel']:
+                        self.log.debug(
+                            "Channel %s shows an abnormally high lone pulse rate (%s): its spe pulses will be excluded" % (
+                                ch, dc))
+                        event.bad_channels.append(ch)
+                        redo_classification = True
 
-        # Add the peaks to the datastructure
-        for c in clusters:
-            # We need an index_of_maximum and height, these we can only get from the sum waveform]
-            # TODO: do we really want these in datastructure even for peaks reconstructed from spes?
-            sum_wave = event.get_waveform('tpc').samples[c['left'] : c['right'] + 1]
-            max_idx = np.argmax(sum_wave)
-            height = sum_wave[max_idx]
-            event.peaks.append(datastructure.Peak({
-                'index_of_maximum':     max_idx + c['left'],
-                'height':               height,
-                'left':                 c['left'],
-                'right':                c['right'],
-                'area':                 sum([spes[x]['area'] for x in c['spes']]),
-                'contributing_pmts':    np.array(list(set([spes[x]['channel'] for x in c['spes']])), dtype=np.uint16),
-                'area_per_pmt':         np.array([
-                                            sum([spes[x]['area'] for x in c['spes'] if spes[x]['channel'] == ch])
-                                            for ch in range(len(event.pmt_waveforms))]),
-                'type':                 c['type'],
-                'mean_absolute_deviation': c['mad'],
-            }))
+            # Classification is now done, so add the peaks to the datastructure
+            for c in clusters:
+                # We need an index_of_maximum and height, these we can only get from the sum waveform]
+                # TODO: do we really want these in datastructure even for peaks reconstructed from spes?
+                sum_wave = event.get_waveform(detector).samples[c['left'] : c['right'] + 1]
+                max_idx = np.argmax(sum_wave)
+                height = sum_wave[max_idx]
+                event.peaks.append(datastructure.Peak({
+                    'index_of_maximum':     max_idx + c['left'],
+                    'height':               height,
+                    'left':                 c['left'],
+                    'right':                c['right'],
+                    'area':                 sum([spes[x]['area'] for x in c['spes']]),
+                    'contributing_pmts':    np.array(list(c['channels_with_photons']), dtype=np.uint16),
+                    'area_per_pmt':         np.array([
+                                                sum([spes[x]['area'] for x in c['spes'] if spes[x]['channel'] == ch])
+                                                for ch in range(len(event.pmt_waveforms))]),
+                    'type':                 c['type'],
+                    'detector':             detector,
+                    'mean_absolute_deviation': c['mad'],
+                }))
 
         return event
 
