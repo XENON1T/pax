@@ -55,7 +55,7 @@ class ComputePeakAreasAndCoincidence(plugin.TransformPlugin):
             # Compute the peak's areas
             # TODO: make excluding non-contributing pmts optional
             if peak.type == 'veto':
-                peak.area = np.sum(peak.area_per_pmt[list(self.config['pmts_veto'])])
+                peak.area = np.sum(peak.area_per_pmt[list(self.config['external_detectors']['veto'])])
             else:
                 if self.config['exclude_non_contributing_channels_from_area']:
                     peak.area = np.sum(peak.area_per_pmt[peak.contributing_pmts])
@@ -178,7 +178,7 @@ class IdentifySmallPeaks(plugin.TransformPlugin):
                 c['channels'] = set([spes[x]['channel'] for x in c['spes']])
                 c['mad'] = dsputils.mad([times[i] for i in c['spes']])
 
-                if c['occurrences'] >= 2 * c['n_spes']:
+                if c['occurrences'] - 1 >= 2 * c['n_spes']:
                     c['type'] = 'noise'
 
                 elif len(c['channels']) == 1:

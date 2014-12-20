@@ -6,6 +6,7 @@ import itertools
 import logging
 import inspect
 from configparser import ConfigParser, ExtendedInterpolation
+from collections import OrderedDict  # DO NOT REMOVE, used in eval(configuration)
 
 import re
 import os
@@ -33,7 +34,7 @@ def data_file_name(filename):
 
 
 def get_named_configuration_options():
-    """ Return the names of all named configurations
+    """ Return the names of all working named configurations
     """
     config_files = []
     for filename in glob.glob(os.path.join(PAX_DIR, 'config', '*.ini')):
@@ -220,15 +221,19 @@ class Processor:
         for config_file_thing in config_files:
             self._load_file_into_configparser(config_file_thing)
 
-        # Get a dict with all variables from the units submodule
-        units_variables = {name: getattr(units, name) for name in dir(units)}
+        # Get a dict with all names visible by the eval:
+        #  - all variables from the units submodule
+        #  - OrderedDict
+        visible_variables = {name: getattr(units, name) for name in dir(units)}
+        visible_variables['OrderedDict'] = OrderedDict
+
         # Evaluate the values in the ini file
         evaled_config = {}
         for section_name, section_dict in self.configp.items():
             evaled_config[section_name] = {}
             for key, value in section_dict.items():
                 # Eval value in a context where all units are defined
-                evaled_config[section_name][key] = eval(value, units_variables)
+                evaled_config[section_name][key] = eval(value, visible_variables)
 
         # Apply the config_dict
         for section_name in config_dict.keys():
@@ -394,8 +399,8 @@ class Processor:
 
         If clean_shutdown=False, will not shutdown plugin classes
             (they still shut down if the Processor class is deleted)
-            Use only if for some arcane reason you want to run more than once in a row.
-            If you do, realize that if you start a new Processor instance that tries to write to the same files...
+            Use only if for some arcane reason you want to run a single instance more than once.
+            If you do, you get in trouble if you start a new Processor instance that tries to write to the same files.
 
         """
         if not hasattr(self, 'input_plugin'):
@@ -403,9 +408,10 @@ class Processor:
             # It is removed at the end of this method, however, so we were probably run() before:
             raise RuntimeError("Attempt to run a Processor without an input_plugin attribute.\n" +
                                "Perhaps you already ran this Processor (with clean_shutdown=True)?")
+
         if self.input_plugin is None:
             # You're allowed to specify no input plugin, which is useful for testing. (You may want to feed events
-            # in by hand). If you do this you can't use the run method. In case somebody ever tries:
+            # in by hand). If you do this, you can't use the run method. In case somebody ever tries:
             raise RuntimeError("You just tried to run a Processor without an input plugin.")
 
         # This is the actual event loop.  'tqdm' is a progress bar.

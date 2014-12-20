@@ -335,6 +335,7 @@ class PlotChannelWaveforms2D(PlotBase):
     def plot_event(self, event):
         time_scale = self.config['digitizer_t_resolution'] / units.us
 
+        # TODO: change from lines to squares
         for oc in event.occurrences_interval_tree:
             start_index = oc.begin
             # Remember: intervaltree uses half-open intervals, end_index is the first index outside!
@@ -366,18 +367,25 @@ class PlotChannelWaveforms2D(PlotBase):
                         alpha=(0.1 if p.channel in event.bad_channels else 1.0))
 
         # Plot the bottom/top/veto boundaries
-        for boundary_location in (min(self.config['pmts_bottom'])-0.5, min(self.config['pmts_veto'])-0.5):
+        channel_ranges = [
+            ('top',     min(self.config['pmts_top'])),
+            ('bottom',  min(self.config['pmts_bottom'])),
+        ]
+        for det, chs in self.config['external_detectors'].items():
+            channel_ranges.append((det, min(chs)))
+
+        # Annotate the channel groups and boundaries
+        for i in range(len(channel_ranges)):
             plt.plot(
                 [0,event.length()*time_scale],
-                [boundary_location, boundary_location],
+                [channel_ranges[i][1]-0.5]*2,
                 color='black', alpha=0.2)
-
-        # Annotate the channel groups
-        for group in ('Bottom', 'Top', 'Veto'):
             plt.text(
                 0.03*event.length()*time_scale,
-                np.mean(np.array(list(self.config['pmts_' + group.lower()]))),
-                group)
+                (channel_ranges[i][1] +
+                    (channel_ranges[i+1][1] if i < len(channel_ranges)-1 else self.config['n_pmts'])
+                )/2,
+                channel_ranges[i][0])
 
         # Tell about the bad channels
         if len(event.bad_channels) > 0:

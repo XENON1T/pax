@@ -23,7 +23,7 @@ class FindBigPeaks(plugin.TransformPlugin):
     def transform_event(self, event):
         for pf in self.config['peakfinders']:
             peakfinding_wave = event.get_waveform(pf['peakfinding_wave']).samples
-            unfiltered_wave = event.get_waveform(pf['unfiltered_wave']).samples
+            unfiltered_wave  = event.get_waveform(pf['unfiltered_wave']).samples
 
             # Define the peak/valley tester for the peaksplitter this peakfinder
             def is_valid_p_v_pair( signal, peak, valley):
@@ -94,7 +94,6 @@ class FindBigPeaks(plugin.TransformPlugin):
 
         return event
 
-
     def peaks_and_valleys(self, signal, test_function):
         """Find peaks and valleys based on derivative sign changes
         :param signal: signal to search in
@@ -103,23 +102,28 @@ class FindBigPeaks(plugin.TransformPlugin):
                 - peak, index of peak
                 - valley, index of valley
             must return True if peak/valley pair is acceptable, else False
-        :return: two sorted lists: peaks, valleys
+        :return: two sorted numpy arrays: peaks, valleys
         The peaks always occur before the valleys.
         """
+
         assert len(self.derivative_kernel) % 2 == 1
         if len(signal) < len(self.derivative_kernel):
             # Signal is too small, can't calculate derivatives
             return [], []
+
         slope = np.convolve(signal, self.derivative_kernel, mode='same')
+
         # Chop the invalid parts off - easier than mode='valid' and adding offset
         # to results
         offset = (len(self.derivative_kernel) - 1) / 2
         slope[0:offset] = np.zeros(offset)
         slope[len(slope) - offset:] = np.zeros(offset)
+
         peaks, valleys = dsputils.where_changes(slope > 0)
         peaks = np.array(sorted(peaks))
         valleys = np.array(sorted(valleys))
         assert len(peaks) == len(valleys)
+
         # Remove coinciding peak&valleys
         good_indices = np.where(peaks != valleys)[0]
         peaks = np.array(peaks[good_indices])
@@ -129,6 +133,7 @@ class FindBigPeaks(plugin.TransformPlugin):
             raise RuntimeError("Peak & valley list weird!")
 
         if len(peaks) < 2:
+            # The peak is not split
             return peaks, valleys
 
         # Remove peaks and valleys which are too close to each other, or have too low a p/v ratio
@@ -140,6 +145,7 @@ class FindBigPeaks(plugin.TransformPlugin):
             # Find the next peak, if there is one
             if now_at_peak > len(peaks) - 1:
                 break
+
             peak = peaks[now_at_peak]
             if math.isnan(peak):
                 now_at_peak += 1
@@ -186,8 +192,8 @@ class FindBigPeaks(plugin.TransformPlugin):
             now_at_peak = max(0, now_at_peak - 1)
             valleys = valleys[np.where(valleys != valley_to_remove)[0]]
 
-        peaks, valleys = [p for p in peaks if not math.isnan(
-            p)], [v for v in valleys if not math.isnan(v)]
+        peaks, valleys = [p for p in peaks if not math.isnan(p)], [v for v in valleys if not math.isnan(v)]
+
         # Return all remaining peaks & valleys
         return np.array(peaks), np.array(valleys)
 

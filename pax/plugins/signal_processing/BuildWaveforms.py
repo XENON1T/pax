@@ -11,10 +11,7 @@ class BuildWaveforms(plugin.TransformPlugin):
         c = self.config
 
         # Extract the number of PMTs from the configuration
-        all_pmts = self.config['pmts_top'] | self.config['pmts_bottom'] | self.config['pmts_veto']
-        self.n_pmts = len(all_pmts)
-        if not max(all_pmts) == self.n_pmts-1:
-            raise ValueError("PMT numbers should be an uninterrupted sequence starting from zero.")
+        self.n_pmts = self.config['n_pmts']
 
         # Conversion factor from converting from ADC counts -> pmt-electrons/bin
         # Still has to be divided by PMT gain to get pe/bin
@@ -27,10 +24,12 @@ class BuildWaveforms(plugin.TransformPlugin):
         self.channel_groups = {
             'top':              c['pmts_top'],
             'bottom':           c['pmts_bottom'],
-            'veto':             c['pmts_veto'],
             's1_peakfinding':   (c['pmts_top'] | c['pmts_bottom']) - c['pmts_excluded_for_s1']
             # The 'tpc' wave will be added by summing 'top' and 'bottom'
         }
+        for name, chs in c['external_detectors'].items():
+            self.channel_groups[name] = chs
+
         if self.config['build_nominally_gain_corrected_waveforms']:
             # Also store nominal-gain corrected waveforms
             self.channel_groups.update({
