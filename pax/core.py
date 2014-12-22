@@ -88,7 +88,12 @@ class Processor:
 
         # Start up the simulator
         # Must be done explicitly here, as plugins can rely on its presence in startup
-        self.simulator = simulation.Simulator(self.config['WaveformSimulator'])
+        if 'WaveformSimulator' in self.config:
+            self.simulator = simulation.Simulator(self.config['WaveformSimulator'])
+        else:
+            if not just_testing:
+                self.log.warning('You did not specify any configuration for the waveform simulator!\n'+
+                                 'If you attempt to load the waveform simulator, pax will crash!')
 
         # Get the list of plugins from the configuration file
         # plugin_names[group] is a list of all plugins we have to initialize in the group 'group'
