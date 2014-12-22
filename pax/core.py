@@ -16,7 +16,7 @@ from tqdm import tqdm     # Progress bar
 from prettytable import PrettyTable     # Timing report
 
 import pax
-from pax import units
+from pax import units, simulation
 
 # Store the directory of pax (i.e. this file's directory) as PAX_DIR
 PAX_DIR = os.path.join(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))))
@@ -85,6 +85,10 @@ class Processor:
 
         self.log.info("This is PAX version %s, running with configuration for %s." % (
             pax.__version__, self.config['DEFAULT'].get('tpc_name', 'UNSPECIFIED TPC NAME')))
+
+        # Start up the simulator
+        # Must be done explicitly here, as plugins can rely on its presence in startup
+        self.simulator = simulation.Simulator(self.config['WaveformSimulator'])
 
         # Get the list of plugins from the configuration file
         # plugin_names[group] is a list of all plugins we have to initialize in the group 'group'
@@ -176,6 +180,7 @@ class Processor:
             self.action_plugins = []
             if not just_testing:
                 self.log.warning("No action plugins specified: this will be a pretty boring processing run...")
+
 
     def load_configuration(self, config_names, config_paths, config_string, config_dict):
         """Load a configuration -- see init's docstring
@@ -368,7 +373,10 @@ class Processor:
         if name in self.config:
             this_plugin_config.update(self.config[name])
 
-        instance = getattr(plugin_module, name_class)(this_plugin_config)
+        # Let each plugin access its own config, and the processor instance as well
+        # -- needed to e.g. access self.simulator in the simulator plugins or self.config for dumping the config file
+        # TODO: Is this wise? If s there another way?
+        instance = getattr(plugin_module, name_class)(this_plugin_config, processor=self)
 
         self.log.debug('Instantiated %s succesfully' % name)
 

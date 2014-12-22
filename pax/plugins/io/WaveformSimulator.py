@@ -1,6 +1,6 @@
 """
 Plugins to interface with the integrated waveform simulator (FaX)
-This is I/O stuff only: truth file writing, pax event creation, etc.
+This is I/O stuff only: truth file writing, instruction reading, etc.
 There is no physics here, all that is in pax.simulation.
 """
 
@@ -17,7 +17,7 @@ except:
 import numpy as np
 import pandas
 
-from pax import core, plugin, units, datastructure, simulation
+from pax import core, plugin, units
 
 
 class WaveformSimulator(plugin.InputPlugin):
@@ -25,7 +25,8 @@ class WaveformSimulator(plugin.InputPlugin):
     """
     def startup(self):
         self.all_truth_peaks = []
-        self.config = simulation.init_config(self.config)
+        self.simulator = self.processor.simulator
+        # The simulator's internal config was already intialized in the core
 
     def shutdown(self):
         self.log.debug("Write the truth peaks to %s" % self.config['truth_file_name'])
@@ -64,10 +65,10 @@ class WaveformSimulator(plugin.InputPlugin):
         self.truth_peaks.append(true_peak)
 
     def s2(self, electrons, t=0., z=0., x=0., y=0.):
-        electron_times = simulation.s2_electrons(electrons_generated=electrons, t=t, z=z)
-        photon_times = simulation.s2_scintillation(electron_times)
+        electron_times = self.simulator.s2_electrons(electrons_generated=electrons, t=t, z=z)
+        photon_times = self.simulator.s2_scintillation(electron_times)
         self.store_true_peak('s2', t, x, y, z, photon_times, electron_times)
-        return simulation.SimulatedHitpattern(photon_times)
+        return self.simulator.make_hitpattern(photon_times)
 
     def s1(self, photons, recoil_type, t=0., x=0., y=0., z=0.):
         """
@@ -76,9 +77,9 @@ class WaveformSimulator(plugin.InputPlugin):
         :param t: Time at which the interaction occurs, i.e. offset for arrival times. Defaults to s1_default_recombination_time
         :return: start_time, pmt_waveforms
         """
-        photon_times = simulation.s1_photons(photons, recoil_type, t)
+        photon_times = self.simulator.s1_photons(photons, recoil_type, t)
         self.store_true_peak('s1', t, x, y, z, photon_times)
-        return simulation.SimulatedHitpattern(photon_times)
+        return self.simulator.make_hitpattern(photon_times)
 
     def get_instructions_for_next_event(self):
         raise NotImplementedError()
@@ -106,7 +107,7 @@ class WaveformSimulator(plugin.InputPlugin):
                     )
                 )
         # Combine the hitpatterns by their overloaded addition operator, then simulate waveforms
-        event =  simulation.to_pax_event(sum([h for h in hitpatterns if h is not None]))
+        event =  self.simulator.to_pax_event(sum([h for h in hitpatterns if h is not None]))
         if hasattr(self, 'dataset_name'):
             event.dataset_name = self.dataset_name
         event.event_number = self.current_event

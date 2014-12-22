@@ -436,18 +436,18 @@ class PlotEventSummary(PlotBase):
 
             self.log.debug("Plotting largest S1...")
             plt.subplot2grid((rows, cols), (0, 0))
-            q = PlotSumWaveformLargestS1(self.config)
+            q = PlotSumWaveformLargestS1(self.config, self.processor)
             q.plot_event(event, show_legend=False)
 
             self.log.debug("Plotting largest S2...")
             ax = plt.subplot2grid((rows, cols), (0, 3))
             ax.yaxis.set_label_position("right")
             ax.yaxis.set_ticks_position("right")
-            q = PlotSumWaveformLargestS2(self.config)
+            q = PlotSumWaveformLargestS2(self.config, self.processor)
             q.plot_event(event, show_legend=False)
 
             self.log.debug("Plotting hitpatterns...")
-            q = PlottingHitPattern(self.config)
+            q = PlottingHitPattern(self.config, self.processor)
             q.plot_event(event, show_dominant_array_only=True, subplots_to_use = [
                     plt.subplot2grid((rows, cols), (0, 1)),
                     plt.subplot2grid((rows, cols), (0, 2))
@@ -455,12 +455,12 @@ class PlotEventSummary(PlotBase):
 
         self.log.debug("Plotting sum waveform...")
         sumw_ax = plt.subplot2grid((rows, cols), (rows-2, 0), colspan=cols)
-        q = PlotSumWaveformEntireEvent(self.config)
+        q = PlotSumWaveformEntireEvent(self.config, self.processor)
         q.plot_event(event, show_legend=True)
 
         self.log.debug("Plotting channel waveforms...")
         plt.subplot2grid((rows, cols), (rows-1, 0), colspan=cols, sharex=sumw_ax)
-        q = PlotChannelWaveforms2D(self.config)
+        q = PlotChannelWaveforms2D(self.config, self.processor)
         q.plot_event(event)
 
         plt.tight_layout()

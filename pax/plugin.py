@@ -15,8 +15,9 @@ from pax.datastructure import Event
 
 class BasePlugin(object):
 
-    def __init__(self, config_values):
+    def __init__(self, config_values, processor):
         self.name = self.__class__.__name__
+        self.processor = processor
         self.log = logging.getLogger(self.name)
         self.total_time_taken = 0   # Total time in usec spent in this plugin
         # run() will ensure this gets set after it has shut down the plugin
