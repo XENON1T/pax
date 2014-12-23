@@ -105,3 +105,18 @@ class ComputePeakEntropies(plugin.TransformPlugin):
         return event
 
 
+
+class ClassifyBigPeaks(plugin.TransformPlugin):
+
+    def transform_event(self, event):
+
+        for peak in event.peaks:
+            # PLACEHOLDER:
+            # if central area is > central_area_ratio * total area, christen as S1 candidate
+            if peak.central_area > self.config['central_area_ratio'] * peak.area:
+                peak.type = 's1'
+                #self.log.debug("%s-%s-%s: S1" % (peak.left, peak.index_of_maximum, peak.right))
+            else:
+                peak.type = 's2'
+                #self.log.debug("%s-%s-%s: S2" % (peak.left, peak.index_of_maximum, peak.right))
+        return event
