@@ -62,8 +62,11 @@ def chunk_in_ntuples(iterable, n, fillvalue=None):
     Stolen from http://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks-in-python
     Modified for python3, and made it return lists
     """
-    # TODO: maybe np.reshape((-1,n)) is better?
+    if not n>0 and int(n) == n:
+        raise ValueError("Chunk size should be a positive integer, not %s" % n)
     return list(zip_longest(*[iter(iterable)]*n, fillvalue=fillvalue))
+    # Numpy solution -- without filling though
+    # return np.reshape(iterable, (-1,n))
 
 
 def where_changes(x, report_first_index_if=None):

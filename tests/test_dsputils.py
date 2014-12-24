@@ -89,6 +89,22 @@ class TestDSPUtils(unittest.TestCase):
         example = np.array([0, 0, 2, 3, 4, -1, 60, 700, 800])
         self.assertEqual(dsputils.intervals_where(example > 0), [(2,4), (6,8)])
 
-    def test_chunk_list(self):
 
+    def test_chunk_in_ntuples(self):
+
+        # Perfect fits
+        self.assertEqual(dsputils.chunk_in_ntuples('abcd', 2, 'x'), [('a','b'), ('c', 'd'),])
+        self.assertEqual(dsputils.chunk_in_ntuples('abcdefg', 1, 'x'), [('a',), ('b',), ('c',), ('d',), ('e',), ('f',), ('g',), ])
+        self.assertEqual(dsputils.chunk_in_ntuples('abcdefg', 7, 'x'), [('a', 'b', 'c', 'd', 'e', 'f', 'g')])
+
+        # Imperfect fits
         self.assertEqual(dsputils.chunk_in_ntuples('abcdefg', 3, 'x'), [('a','b','c'), ('d','e','f'), ('g','x','x')])
+        self.assertEqual(dsputils.chunk_in_ntuples('abcdefg', 2, 'x'), [('a','b'), ('c', 'd'), ('e','f'), ('g','x')])
+        self.assertEqual(dsputils.chunk_in_ntuples('abcdefg', 8, 'x'), [('a', 'b', 'c', 'd', 'e', 'f', 'g', 'x')])
+
+        # Insane input values
+        self.assertRaises(ValueError, dsputils.chunk_in_ntuples, 'abcdefg', 0, 'x')
+
+        # Numpy
+        self.assertEqual(dsputils.chunk_in_ntuples(np.array(list('abc')), 2, 'x'), [('a','b'), ('c', 'x'),])
+
