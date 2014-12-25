@@ -29,6 +29,14 @@ class FindSmallPeaks(plugin.TransformPlugin):
         for det, chs in self.config['external_detectors'].items():
             self.channels_in_detector[det] = chs
 
+        noise_mode = self.config['noise_determination_method']
+        if noise_mode == 'std':
+            self.noise_determination = np.std
+        elif noise_mode == 'mad':
+            self.noise_determination = dsputils.mad
+        else:
+            raise ValueError('noise_determination_method must be std or mad, not %s' % noise_mode)
+
     def transform_event(self, event):
         # ocs is shorthand for occurrences, as usual
 
@@ -105,7 +113,7 @@ class FindSmallPeaks(plugin.TransformPlugin):
                         w -= w[self.samples_without_peaks(w, raw_peaks)].mean()
 
                         # Determine the new noise_sigma
-                        noise_sigma = w[self.samples_without_peaks(w, raw_peaks)].std()
+                        noise_sigma = self.noise_determination(w[self.samples_without_peaks(w, raw_peaks)])
 
                         old_raw_peaks = raw_peaks
                         if pass_number >= self.max_noise_detection_passes:
@@ -173,7 +181,7 @@ class FindSmallPeaks(plugin.TransformPlugin):
         Find all peaks at least self.min_sigma * noise_sigma above baseline.
         Peak boundaries are last samples above noise_sigma
         :param w: waveform to check for peaks
-        :param noise_sigma: stdev of the noise
+        :param noise_sigma: noise level
         :return: peaks as list of (left_index, max_index, right_index) tuples
         """
         peaks = []
