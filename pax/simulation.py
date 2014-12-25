@@ -314,7 +314,7 @@ class Simulator(object):
             #  Add padding, sort (eh.. or were we already sorted? and is sorting necessary at all??)
             all_pmt_pulse_centers = np.sort(photon_detection_times + self.config['event_padding'])
 
-            for pmt_pulse_centers in dsputils.split_by_separation(all_pmt_pulse_centers, 2 * self.config['zle_padding']):
+            for pmt_pulse_centers in dsputils.cluster_by_diff(all_pmt_pulse_centers, 2 * self.config['zle_padding']):
 
                 # Build the waveform pulse by pulse (bin by bin was slow, hope this
                 # is faster)

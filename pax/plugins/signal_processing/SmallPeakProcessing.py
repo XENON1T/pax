@@ -108,9 +108,13 @@ class ClusterAndClassifySmallPeaks(plugin.TransformPlugin):
                                 and (not self.config['exclude_bad_channels'] or p.channel not in event.bad_channels)
                 ], key=lambda x: x['index_of_maximum'])
 
+                if not len(spes):
+                    clusters = []
+                    continue
+
                 times = [s['index_of_maximum'] * self.dt for s in spes]
                 assert(times == sorted(times))
-                time_clusters = dsputils.split_by_separation(times, self.cluster_separation_length, return_indices=True)
+                time_clusters = dsputils.cluster_by_diff(times, self.cluster_separation_length, return_indices=True)
 
                 # Make a list of dicts of spe clusters (essentially a dataframe, but I want to do a for loop...)
                 clusters = [{

@@ -121,26 +121,35 @@ def free_regions(event, detector='tpc'):
     return chunk_in_ntuples(sorted(lefts + rights), n=2)
 
 
-def split_by_separation(x, separation_length, return_indices=False):
+
+
+def cluster_by_diff(x, diff_threshold, return_indices=False):
     """Returns list of lists of indices of clusters in x,
-    inserting cluster boundaries whenever values are >= separation_length apart.
-    Assumes x is sorted.
+    making cluster boundaries whenever values are >= threshold apart.
     """
-    # TODO: test exhaustively, then write a numpy algorithm using where_changes and rounded division
-    assert(np.all(x == sorted(x)))
+    x = sorted(x)
     if len(x) == 0:
         return []
     clusters = []
     current_cluster = []
     previous_t = x[0]
     for i, t in enumerate(x):
-        if t - previous_t > separation_length:
+        if t - previous_t > diff_threshold:
             clusters.append(current_cluster)
             current_cluster = []
         current_cluster.append(i if return_indices else t)
         previous_t = t
     clusters.append(current_cluster)
     return clusters
+    # Numpy solution below appears to make processor run slower!
+    # x.sort()
+    # if not isinstance(x, np.ndarray):
+    #     x = np.array(x)
+    # split_indices = np.where(np.diff(x) >= diff_threshold)[0] + 1
+    # if return_indices:
+    #     return np.split(np.arange(len(x)), split_indices)
+    # else:
+    #     return np.split(x, split_indices)
 
 
 
