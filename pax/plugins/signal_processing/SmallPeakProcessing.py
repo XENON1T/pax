@@ -134,7 +134,7 @@ class ClusterAndClassifySmallPeaks(plugin.TransformPlugin):
 
                     coincident_occurrences = event.occurrences_interval_tree.search(c['left'], c['right'], strict=False)
                     c['channels_with_something'] = set(self.channels_in_detector[detector]) & \
-                                                   set([oc.data['channel'] for oc in coincident_occurrences])
+                                                   set([oc[2]['channel'] for oc in coincident_occurrences])
                     c['channels_with_photons'] = set([spes[x]['channel'] for x in c['spes']])
                     c_times = [times[i] for i in c['spes']]
                     c['mad'] = dsputils.mad(c_times)

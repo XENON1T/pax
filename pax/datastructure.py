@@ -211,9 +211,9 @@ class Event(Model):
     #: (This may get moved into the Input plugin base class, see issue #32)
     occurrences = f.BaseField()
 
-    #: Interval tree (from PyIntervalTree) for occurrence lookup.
-    #: This saves the bounds of each occurrence for us, with a dict with secret goodies in the data field.
-    #: TODO: document this once stable
+    #: Used to be an interval tree (from PyIntervalTree) for occurrence lookup.
+    #: Now just an 'IntervalTree' mock-up defined in dsputils, see there for usage
+    #: TODO: document this properly once stable
     #: After BuildWaveforms, you should only use this, not event.occurrences
     occurrences_interval_tree = f.BaseField()
 

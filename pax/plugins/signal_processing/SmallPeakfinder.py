@@ -62,9 +62,9 @@ class FindSmallPeaks(plugin.TransformPlugin):
                 for oc in ocs:
                     # Focus only on the part of the occurrence inside the free region (superfluous as long as strict=True)
                     # Remember: intervaltree uses half-open intervals, stop is the first index outside
-                    start = max(region_left, oc.begin)
-                    stop = min(region_right + 1, oc.end)
-                    channel = oc.data['channel']
+                    start = max(region_left, oc[0])
+                    stop = min(region_right + 1, oc[1])
+                    channel = oc[2]['channel']
 
                     # Don't consider channels from other detectors
                     if channel not in self.channels_in_detector[detector]:

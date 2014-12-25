@@ -1,8 +1,6 @@
 import numpy as np
 
-from intervaltree import IntervalTree
-
-from pax import plugin, units, datastructure
+from pax import plugin, units, datastructure, dsputils
 
 
 class BuildWaveforms(plugin.TransformPlugin):
@@ -67,7 +65,7 @@ class BuildWaveforms(plugin.TransformPlugin):
                 'detector': group if group in self.config['external_detectors'] else 'tpc'
             }))
 
-        event.occurrences_interval_tree = IntervalTree()
+        event.occurrences_interval_tree = dsputils.IntervalTree()
 
         for channel, channel_occurrences in event.occurrences.items():
 

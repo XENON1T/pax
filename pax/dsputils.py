@@ -276,6 +276,32 @@ def find_first_fast(a, threshold, chunk_size=128):
 
 
 ##
+# Interval tree encapsulation
+##
+
+# Mind-numbingly stupid implementation of interval data structure
+# Is not actually an interval tree.
+# We used to have fancy stuff using pyintervaltree
+# but it made the processor 2x slower...
+class IntervalTree(object):
+
+    def __init__(self):
+        self.intervals = []
+
+    def addi(self, left, right, data):
+        self.intervals.append((left, right, data))
+
+    def search(self, left, right, strict):
+        if strict:
+            return [itv for itv in self.intervals if itv[0]>=left and itv[1]<=right]
+        else:
+            return [itv for itv in self.intervals if itv[0]<=right and itv[1]>=left]
+
+    def get_all(self):
+        return self.intervals
+
+
+##
 # Interpolating map class
 ##
 

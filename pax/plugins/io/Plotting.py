@@ -341,13 +341,13 @@ class PlotChannelWaveforms2D(PlotBase):
         time_scale = self.config['digitizer_t_resolution'] / units.us
 
         # TODO: change from lines to squares
-        for oc in event.occurrences_interval_tree:
-            start_index = oc.begin
+        for oc in event.occurrences_interval_tree.get_all():
+            start_index = oc[0]
             # Remember: intervaltree uses half-open intervals, end_index is the first index outside!
-            end_index = oc.end
+            end_index = oc[1]
             length = end_index - start_index
-            channel = oc.data['channel']
-            height = oc.data['height']
+            channel = oc[2]['channel']
+            height = oc[2]['height']
 
             # Choose a color for this occurrence based on amplitude
             color_factor = np.clip(np.log10(height)/2, 0, 1)
