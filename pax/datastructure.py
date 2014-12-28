@@ -85,8 +85,12 @@ class Peak(Model):
     #: Array of squared signal entropies in each PMT.
     entropy_per_pmt = f.NumpyArrayField(dtype='float64')
 
-    #: PMTs which see 'something significant' (depends on settings)
-    contributing_pmts = f.NumpyArrayField(dtype=np.uint16)
+    #: Does a PMT see 'something significant'? (thresholds configurable)
+    does_pmt_contribute = f.NumpyArrayField(dtype=np.bool)
+
+    @property
+    def contributing_pmts(self):
+        return np.where(self.does_pmt_contribute)[0]
 
     #: Returns a list of reconstructed positions
     #:
@@ -219,7 +223,7 @@ class Event(Model):
 
     #: List of channels which showed an increased dark rate
     #: Declared as basefield as we want to store a list (it will get appended to constantly)
-    bad_channels = f.BaseField(default=[])
+    is_channel_bad = f.NumpyArrayField(dtype=np.bool)
 
     def event_duration(self):
         """Duration of event window in units of ns

@@ -105,7 +105,7 @@ class ClusterAndClassifySmallPeaks(plugin.TransformPlugin):
                 spes = sorted([
                     p.to_dict() for p in event.channel_peaks
                                 if p.channel in self.channels_in_detector[detector]
-                                and (not self.config['exclude_bad_channels'] or p.channel not in event.bad_channels)
+                                and (not self.config['exclude_bad_channels'] or not event.is_channel_bad[p.channel])
                 ], key=lambda x: x['index_of_maximum'])
 
                 if not len(spes):
@@ -208,7 +208,7 @@ class ClusterAndClassifySmallPeaks(plugin.TransformPlugin):
                         self.log.debug(
                             "Channel %s shows an abnormally high lone pulse rate (%s): its spe pulses will be excluded" % (
                                 ch, dc))
-                        event.bad_channels.append(ch)
+                        event.is_channel_bad[ch] = True
                         if self.config['exclude_bad_channels']:
                             redo_classification = True
 
@@ -226,7 +226,10 @@ class ClusterAndClassifySmallPeaks(plugin.TransformPlugin):
                     'left':                 c['left'],
                     'right':                c['right'],
                     'area':                 sum([spes[x]['area'] for x in c['spes']]),
-                    'contributing_pmts':    np.array(list(c['channels_with_photons']), dtype=np.uint16),
+                    'does_pmt_contribute':  np.array(
+                        [ch in c['channels_with_photons'] for ch in range(self.config['n_pmts'])],
+                        dtype=np.bool),
+                    # 'contributing_pmts':    np.array(list(c['channels_with_photons']), dtype=np.uint16),
                     'area_per_pmt':         np.array([
                                                 sum([spes[x]['area'] for x in c['spes'] if spes[x]['channel'] == ch])
                                                 for ch in range(len(event.pmt_waveforms))]),

@@ -48,7 +48,6 @@ class FindSmallPeaks(plugin.TransformPlugin):
             give_up_after = float('inf')
 
         noise_count = {}
-        event.bad_channels = []
 
         # Handle each detector separately
         for detector in self.channels_in_detector.keys():
@@ -79,7 +78,7 @@ class FindSmallPeaks(plugin.TransformPlugin):
                         continue
 
                     # Maybe some channels have already been marked as bad (configuration?), don't consider these.
-                    if channel in event.bad_channels:
+                    if event.is_channel_bad[channel]:
                         continue
 
                     # Retrieve the waveform from pmt_waveforms
@@ -171,7 +170,7 @@ class FindSmallPeaks(plugin.TransformPlugin):
                 self.log.debug(
                     "Channel %s shows an abnormally high rate of noise pulses (%s): its spe pulses will be excluded" % (
                         ch, dc))
-                event.bad_channels.append(ch)
+                event.is_channel_bad[ch] = True
 
         return event
 

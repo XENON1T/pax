@@ -355,7 +355,7 @@ class PlotChannelWaveforms2D(PlotBase):
             plt.gca().add_patch(Rectangle((start_index*time_scale, channel), length*time_scale, 1,
                                           facecolor=plt.cm.gnuplot2(color_factor),
                                           edgecolor='none',
-                                          alpha=(0.1 if channel in event.bad_channels else 1.0)))
+                                          alpha=(0.1 if event.is_channel_bad[channel] else 1.0)))
 
         # Plot the channel peaks as dots
         # All these for loops are slow -- hope we get by-column access some time
@@ -396,8 +396,9 @@ class PlotChannelWaveforms2D(PlotBase):
                 channel_ranges[i][0])
 
         # Tell about the bad channels
-        if len(event.bad_channels) > 0:
-            plt.text(0, 0, 'Bad channels: ' + ', '.join(map(str,sorted(event.bad_channels))), {'size': 8})
+        bad_channels = np.where(event.is_channel_bad)[0]
+        if len(bad_channels):
+            plt.text(0, 0, 'Bad channels: ' + ', '.join(map(str,sorted(bad_channels))), {'size': 8})
 
         # Color the peak ranges
         self.color_peak_ranges(event)

@@ -65,6 +65,9 @@ class BuildWaveforms(plugin.TransformPlugin):
                 'detector': group if group in self.config['external_detectors'] else 'tpc'
             }))
 
+        # Initialize bad channel data
+        event.is_channel_bad = np.zeros(self.n_pmts, dtype=np.bool)
+
         event.occurrences_interval_tree = dsputils.IntervalTree()
 
         for channel, channel_occurrences in event.occurrences.items():
