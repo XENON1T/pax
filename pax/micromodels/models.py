@@ -12,10 +12,10 @@ from pax.micromodels.fields import BaseField
 
 class ModelMeta(type):
 
-    '''Creates the metaclass for Model. The main function of this metaclass
+    """Creates the metaclass for Model. The main function of this metaclass
     is to move all of fields into the _fields variable on the class.
 
-    '''
+    """
     def __init__(cls, name, bases, attrs):
         cls._clsfields = {}
         for key, value in attrs.items():
@@ -78,23 +78,23 @@ class Model(object, metaclass=ModelMeta):
 
     @classmethod
     def from_dict(cls, D, is_json=False):
-        '''This factory for :class:`Model`
+        """This factory for :class:`Model`
         takes either a native Python dictionary or a JSON dictionary/object
         if ``is_json`` is ``True``. The dictionary passed does not need to
         contain all of the values that the Model declares.
 
-        '''
+        """
         instance = cls()
         instance.set_data(D, is_json=is_json)
         return instance
 
     @classmethod
     def from_kwargs(cls, **kwargs):
-        '''This factory for :class:`Model` only takes keywork arguments.
+        """This factory for :class:`Model` only takes keywork arguments.
         Each key and value pair that represents a field in the :class:`Model` is
         set on the new :class:`Model` instance.
 
-        '''
+        """
         instance = cls()
         instance.set_data(kwargs)
         return instance
@@ -124,22 +124,22 @@ class Model(object, metaclass=ModelMeta):
         return dict(self._clsfields, **self._extra)
 
     def add_field(self, key, value, field):
-        ''':meth:`add_field` must be used to add a field to an existing
+        """:meth:`add_field` must be used to add a field to an existing
         instance of Model. This method is required so that serialization of the
         data is possible. Data on existing fields (defined in the class) can be
         reassigned without using this method.
 
-        '''
+        """
         self._extra[key] = field
         setattr(self, key, value)
 
     def to_dict(self, serial=False):
-        '''A dictionary representing the the data of the class is returned.
+        """A dictionary representing the the data of the class is returned.
         Native Python objects will still exist in this dictionary (for example,
         a ``datetime`` object will be returned rather than a string)
         unless ``serial`` is set to True.
 
-        '''
+        """
         if serial:
             return dict((key, self._fields[key].to_serial(getattr(self, key)))
                         for key in list(self._fields.keys()) if hasattr(self, key))
@@ -148,8 +148,13 @@ class Model(object, metaclass=ModelMeta):
                         if hasattr(self, key))
 
     def to_json(self):
-        '''Returns a representation of the model as a JSON string. This method
+        """Returns a representation of the model as a JSON string. This method
         relies on the :meth:`~micromodels.Model.to_dict` method.
 
-        '''
+        """
         return numpyson.dumps(self.to_dict(serial=True))
+
+    def get_fields(self):
+        """Return a {field_name: field_instance} dictionary."""
+        return self._fields
+
