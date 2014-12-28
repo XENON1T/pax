@@ -653,12 +653,9 @@ class ComputePeakPropertiesXdpStyle(plugin.TransformPlugin):
                 peak.does_pmt_contribute = np.array(
                     [ch in contributing_pmts for ch in range(self.config['n_pmts'])],
                     dtype=np.bool)
-                #peak.contributing_pmts = np.array(contributing_pmts, dtype=np.uint16)
             else:
                 # Hack to ensure S2s won't get pruned:
                 peak.does_pmt_contribute = np.ones(self.config['n_pmts'], dtype=np.bool)
-                # peak.contributing_pmts = np.array(list(range(len(peak.area_per_pmt))),
-                #                                   dtype=np.uint16)
 
         # Prune excess S1s
         event.peaks = sort_and_prune_by(

@@ -229,7 +229,6 @@ class ClusterAndClassifySmallPeaks(plugin.TransformPlugin):
                     'does_pmt_contribute':  np.array(
                         [ch in c['channels_with_photons'] for ch in range(self.config['n_pmts'])],
                         dtype=np.bool),
-                    # 'contributing_pmts':    np.array(list(c['channels_with_photons']), dtype=np.uint16),
                     'area_per_pmt':         np.array([
                                                 sum([spes[x]['area'] for x in c['spes'] if spes[x]['channel'] == ch])
                                                 for ch in range(len(event.pmt_waveforms))]),

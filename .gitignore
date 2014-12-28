@@ -6,6 +6,7 @@
 *.root
 *.png
 *.h5
+*.hdf
 fax_truth.csv
 
 
