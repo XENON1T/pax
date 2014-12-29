@@ -55,13 +55,16 @@ class ComputePeakAreasAndCoincidence(plugin.TransformPlugin):
             peak.area_per_pmt = np.sum(event.pmt_waveforms[:, peak.left:peak.right+1], axis=1)
 
             # Determine which channels contribute to the peak's total area
-            contributing_pmts = [ch for ch in range(self.config['n_pmts']) if
-                ch in self.channels_in_detector[peak.detector] and
-                peak.area_per_pmt[ch] >= self.config['minimum_area']
-            ]
-            peak.does_channel_contribute = np.array(
-                [ch in contributing_pmts for ch in range(self.config['n_pmts'])],
-                dtype=np.bool)
+            channels = np.arange(self.config['n_pmts'])
+            peak.does_channel_contribute = np.in1d(channels,
+                                                   np.array(list(self.channels_in_detector[peak.detector]))) & \
+                                           (peak.area_per_pmt >= self.config['minimum_area'])
+
+            # Other channels with nonzero area have noise
+            peak.does_channel_have_noise = np.in1d(channels,
+                                                   np.array(list(self.channels_in_detector[peak.detector]))) & \
+                                           (peak.area_per_pmt != 0) & \
+                                           (np.invert(peak.does_channel_contribute))
 
             # Compute the peak's area
             peak.area = np.sum(peak.area_per_pmt[peak.contributing_pmts])
