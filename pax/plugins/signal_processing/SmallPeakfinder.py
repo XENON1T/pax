@@ -51,6 +51,7 @@ class FindSmallPeaks(plugin.TransformPlugin):
 
         # Handle each detector separately
         for detector in self.channels_in_detector.keys():
+            self.log.debug("Finding channel peaks in data from %s" % detector)
 
             # Get all free regions before the give_up_after point
             for region_left, region_right in dsputils.free_regions(event, detector):
@@ -144,7 +145,7 @@ class FindSmallPeaks(plugin.TransformPlugin):
                             'height':              w[p[1]],
                             'noise_sigma':         noise_sigma,
                         }))
-                    event.channel_peaks.extend(peaks)
+                    event.all_channel_peaks.extend(peaks)
 
                     # TODO: move to separate plugin?
                     if self.make_diagnostic_plots_in:

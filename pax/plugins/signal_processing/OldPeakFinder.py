@@ -650,12 +650,12 @@ class ComputePeakPropertiesXdpStyle(plugin.TransformPlugin):
                         continue
                     if area > self.config['coincidence_threshold'] * (2 * 10 ** 6 / self.config['gains'][channel]):
                         contributing_pmts.append(channel)
-                peak.does_pmt_contribute = np.array(
+                peak.does_channel_contribute = np.array(
                     [ch in contributing_pmts for ch in range(self.config['n_pmts'])],
                     dtype=np.bool)
             else:
                 # Hack to ensure S2s won't get pruned:
-                peak.does_pmt_contribute = np.ones(self.config['n_pmts'], dtype=np.bool)
+                peak.does_channel_contribute = np.ones(self.config['n_pmts'], dtype=np.bool)
 
         # Prune excess S1s
         event.peaks = sort_and_prune_by(

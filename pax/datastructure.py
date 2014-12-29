@@ -52,63 +52,10 @@ class ReconstructedPosition(Model):
         return math.atan2(self.y, self.x)
 
 
-class Peak(Model):
-
-    """Peak object"""
-
-    index_of_maximum = IntegerField()           #: Index in the event's sum waveform at which this peak has its maximum.
-    index_of_filtered_maximum = IntegerField()  #: same, but maximum in filtered (for S2) sum waveform
-
-    left = IntegerField()                       #: Index of left bound (inclusive) in sum waveform.
-    right = IntegerField() #: Index of right bound (for Xdp matching: exclusive; otherwise: inclusive) in sum waveform.
-
-    area = FloatField()                   #: Area of the pulse in photoelectrons. Only
-                                          #: Includes only contributing pmts (see later) in the right detector
-    height = FloatField()                 #: Height of highest point in peak (in pe/bin)
-    height_filtered = FloatField()        #: Height of highest point in filtered waveform of peak (in pe/bin)
-
-    type = StringField(default='unknown')   #: Type of peak (e.g., 's1', 's2', ...)
-    detector = StringField(default='none')  #: e.g. tpc or veto
-
-    central_area = FloatField()           #: Area in the central part of the peak (used for classification)
-
-    full_width_half_max = FloatField()             #: Full width at half maximum in samples
-    full_width_tenth_max = FloatField()            #: Full width at tenth of maximum in samples
-    full_width_half_max_filtered = FloatField()    #: Full width at half of maximum in samples, in filtered waveform
-    full_width_tenth_max_filtered = FloatField()   #: Full width at tenth of maximum in samples, in filtered waveform
-
-    mean_absolute_deviation = FloatField()         #: MAD of the photons making up this peak
-
-    #: Array of areas in each PMT.
-    area_per_pmt = f.NumpyArrayField(dtype='float64')
-
-    #: Array of squared signal entropies in each PMT.
-    entropy_per_pmt = f.NumpyArrayField(dtype='float64')
-
-    #: Does a PMT see 'something significant'? (thresholds configurable)
-    does_pmt_contribute = f.NumpyArrayField(dtype=np.bool)
-
-    @property
-    def contributing_pmts(self):
-        return np.where(self.does_pmt_contribute)[0]
-
-    #: Returns a list of reconstructed positions
-    #:
-    #: Returns an :class:`pax.datastructure.ReconstructedPosition` class.
-    reconstructed_positions = f.ModelCollectionField(default=[],
-                                                     wrapped_class=ReconstructedPosition)
-
-    @property
-    def coincidence_level(self):
-        """ Number of PMTS which see something significant (depends on settings) """
-        return len(self.contributing_pmts)
-
-
-
 class ChannelPeak(Model):
 
     """Peaks found in individual channels
-    These are be combined ordinary peaks later
+    These are be clustered into ordinary peaks later
     """
     channel = IntegerField()              #: Channel in which this peak was found
     index_of_maximum = IntegerField()     #: Index in the event at which this peak has its maximum.
@@ -120,6 +67,94 @@ class ChannelPeak(Model):
     height = FloatField()                 #: Height of highest point in peak (in pe/bin)
     noise_sigma = FloatField()            #: StDev of the noise in the occurrence (in pe/bin) where we found this peak
 
+
+class Peak(Model):
+
+    """Peak object"""
+
+    ##
+    #   Fields present in all peaks
+    ##
+
+    left = IntegerField()                       #: Index of left bound (inclusive) in event.
+    right = IntegerField() #: Index of right bound (for Xdp matching: exclusive; otherwise: inclusive) in event.
+
+    area = FloatField()                   #: Area of the pulse in photoelectrons. Only
+                                          #: Includes only contributing pmts (see later) in the right detector
+
+    type = StringField(default='unknown')   #: Type of peak (e.g., 's1', 's2', ...)
+    detector = StringField(default='none')  #: e.g. tpc or veto
+
+    #: Does a PMT see 'something significant'? (thresholds configurable)
+    does_channel_contribute = f.NumpyArrayField(dtype=np.bool)
+
+    @property
+    def contributing_pmts(self):
+        return np.where(self.does_channel_contribute)[0]
+
+    @property
+    def number_of_contributing_channels(self):
+        """ Number of PMTS which see something significant (depends on settings) """
+        return len(self.contributing_pmts)
+
+    # Alias for backwards compatibility
+    @property
+    def coincidence_level(self):
+        """ Number of PMTS which see something significant (depends on settings) """
+        return self.number_of_contributing_channels
+
+    #: Array of areas in each PMT.
+    area_per_pmt = f.NumpyArrayField(dtype='float64')
+
+    #: Returns a list of reconstructed positions
+    #:
+    #: Returns an :class:`pax.datastructure.ReconstructedPosition` class.
+    reconstructed_positions = f.ModelCollectionField(default=[],
+                                                     wrapped_class=ReconstructedPosition)
+
+
+    ##
+    #   Fields present in sum-waveform peaks
+    ##
+
+    index_of_maximum = IntegerField()           #: Index in the event's sum waveform at which this peak has its maximum.
+    index_of_filtered_maximum = IntegerField()  #: same, but maximum in filtered (for S2) sum waveform
+
+    height = FloatField()                 #: Height of highest point in peak (in pe/bin)
+    height_filtered = FloatField()        #: Height of highest point in filtered waveform of peak (in pe/bin)
+
+    central_area = FloatField()           #: Area in the central part of the peak (used for classification)
+
+    full_width_half_max = FloatField()             #: Full width at half maximum in samples
+    full_width_tenth_max = FloatField()            #: Full width at tenth of maximum in samples
+    full_width_half_max_filtered = FloatField()    #: Full width at half of maximum in samples, in filtered waveform
+    full_width_tenth_max_filtered = FloatField()   #: Full width at tenth of maximum in samples, in filtered waveform
+
+    #: Array of squared signal entropies in each PMT.
+    entropy_per_pmt = f.NumpyArrayField(dtype='float64')
+
+
+    ##
+    #   Fields present in peaks from single-channel peakfinding
+    ##
+
+    #: Peaks in individual channels that make up this peak
+    channel_peaks = f.ModelCollectionField(default=[],
+                                           wrapped_class=ChannelPeak)
+
+    does_channel_have_noise = f.NumpyArrayField(dtype=np.bool)
+
+    @property
+    def number_of_noise_channels(self):
+        """ Number of PMTS which see something significant (depends on settings) """
+        return len(self.contributing_pmts)
+
+
+    #: Variables indicating width of peak
+    mean_absolute_deviation = FloatField()
+    # standard_deviation = FloatField()
+    # half_area_range = FloatField()
+    # tenth_area_range = FloatField()
 
 
 class Waveform(Model):
@@ -178,7 +213,8 @@ class Event(Model):
     #:
     #: Returns a list of :class:`pax.datastructure.Peak` classes.
     peaks = f.ModelCollectionField(default=[], wrapped_class=Peak)
-    channel_peaks = f.ModelCollectionField(default=[], wrapped_class=ChannelPeak)
+    #: Temporary list of channel peaks -- will be shipped off to peaks later
+    all_channel_peaks = f.ModelCollectionField(default=[], wrapped_class=ChannelPeak)
 
     #: Returns a list of sum waveforms
     #:

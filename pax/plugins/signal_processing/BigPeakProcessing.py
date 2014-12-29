@@ -59,7 +59,7 @@ class ComputePeakAreasAndCoincidence(plugin.TransformPlugin):
                 ch in self.channels_in_detector[peak.detector] and
                 peak.area_per_pmt[ch] >= self.config['minimum_area']
             ]
-            peak.does_pmt_contribute = np.array(
+            peak.does_channel_contribute = np.array(
                 [ch in contributing_pmts for ch in range(self.config['n_pmts'])],
                 dtype=np.bool)
 

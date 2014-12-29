@@ -361,7 +361,7 @@ class PlotChannelWaveforms2D(PlotBase):
         # All these for loops are slow -- hope we get by-column access some time
         self.log.debug('Plotting channel peaks...')
 
-        for p in event.channel_peaks:
+        for p in event.all_channel_peaks:
             if p.noise_sigma == 0:
                 # What perfect world are you living in? WaveformSimulator!
                 color_factor = 1
@@ -372,7 +372,7 @@ class PlotChannelWaveforms2D(PlotBase):
                         c=(color_factor, 0, (1-color_factor)),
                         s=10*p.area,
                         edgecolor=(0.5*color_factor, 0, 0.5*(1-color_factor)),
-                        alpha=(0.1 if p.channel in event.bad_channels else 1.0))
+                        alpha=(0.1 if event.is_channel_bad[p.channel] else 1.0))
 
         # Plot the bottom/top/veto boundaries
         channel_ranges = [

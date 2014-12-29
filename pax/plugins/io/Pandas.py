@@ -8,15 +8,16 @@ from pax.micromodels import fields as mm_fields
 
 class WritePandas(plugin.OutputPlugin):
     """
-    Convert our event to pandas DataFrame, then write to containers supported by pandas: HDF5, CSV, JSON, HTML, ...
+    Convert our event to pandas DataFrames, then write to containers supported by pandas: HDF5, CSV, JSON, HTML, ...
 
-    We make a separates DataFrame for each model type in our data structure
+    We make a separate DataFrame for each model type in our data structure
     (Event, Peak, reconstructed position, ...) and every NumpyArrayField as well.
 
-    The data frames are multi-indexed in the obvious way, e.g.
-        the first index of the ReconstrucedPosition DataFrame is the event
-        the second the Peak index in event.peaks
-        the third the ReconstructedPosition index in peak.reconstructed_positions
+    The data frames have a hierarchical multi-index, e.g. for the ReconstrucedPosition DataFrame
+        the first  index is the event number
+        the second index is the Peak's index in event.peaks
+        the third  index is the ReconstructedPosition's index in peak.reconstructed_positions
+    Each index is also named (in this example, 'Event', 'Peak', 'ReconstructedPosition') for clarity.
 
     Because pandas is optimised for working with large data structures, converting/appending each micromodels instance
     to a DataFrame separately would take an unacceptable amount of CPU time. Hence, we store data in lists of
@@ -27,7 +28,7 @@ class WritePandas(plugin.OutputPlugin):
      - output_format:     If hdf, will produce an HDF5 file with tables for each dataframe.
                           If csv, json, html, pickle, ... will produce a folder with files for each dataframe.
                           See http://pandas.pydata.org/pandas-docs/dev/io.html for all possible options;
-                          I just call pandas.to_FORMAT.
+                          I really just call pandas.to_FORMAT for each DataFrame.
      - output_name:       The name of the output file or folder, WITHOUT file extension.
      - fields_to_ignore:  Fields which will not be stored.
      - append_data:       Only valid with output_format='hdf': append data to an existing HDF5 file.
@@ -38,7 +39,7 @@ class WritePandas(plugin.OutputPlugin):
 
     def startup(self):
         # Dictionary to contain the data, which will later become pandas DataFrames.
-        # Keys are data frame names, values are list of dictionaries
+        # Keys are data frame names, values are lists of (index_tuple,dictionary) tuples
         self.dataframes = {}
 
         self.outfile = outfile = self.config.get('output_name',     'output')
