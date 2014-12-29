@@ -441,6 +441,9 @@ class SimulatedHitpattern(object):
         self.config = config
         # TODO: specify x, y, z, let photon distribution depend on it
 
+        if not len(photon_timings):
+            raise ValueError('Need at least 1 photon timing to produce a valid hitpattern')
+
         # Correct for PMT TTS
         photon_timings += np.random.normal(
              self.config['pmt_transit_time_mean'],

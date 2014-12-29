@@ -66,7 +66,11 @@ class WaveformSimulator(plugin.InputPlugin):
 
     def s2(self, electrons, t=0., z=0., x=0., y=0.):
         electron_times = self.simulator.s2_electrons(electrons_generated=electrons, t=t, z=z)
+        if not len(electron_times):
+            return None
         photon_times = self.simulator.s2_scintillation(electron_times)
+        if not len(photon_times):
+            return None
         self.store_true_peak('s2', t, x, y, z, photon_times, electron_times)
         return self.simulator.make_hitpattern(photon_times)
 
@@ -78,6 +82,8 @@ class WaveformSimulator(plugin.InputPlugin):
         :return: start_time, pmt_waveforms
         """
         photon_times = self.simulator.s1_photons(photons, recoil_type, t)
+        if not len(photon_times):
+            return None
         self.store_true_peak('s1', t, x, y, z, photon_times)
         return self.simulator.make_hitpattern(photon_times)
 
@@ -106,6 +112,7 @@ class WaveformSimulator(plugin.InputPlugin):
                         t=float(q['t'])
                     )
                 )
+
         # Combine the hitpatterns by their overloaded addition operator, then simulate waveforms
         event =  self.simulator.to_pax_event(sum([h for h in hitpatterns if h is not None]))
         if hasattr(self, 'dataset_name'):
