@@ -54,5 +54,7 @@ docs/_build
 #Editor or something?
 .idea
 
+.ipynb_checkpoints
+
 Xerawdp_matching
 Bad_ideas
