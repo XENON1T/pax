@@ -25,15 +25,20 @@ class WritePandas(plugin.OutputPlugin):
 
     Available options:
 
-     - output_format:     If hdf, will produce an HDF5 file with tables for each dataframe.
-                          If csv, json, html, pickle, ... will produce a folder with files for each dataframe.
-                          See http://pandas.pydata.org/pandas-docs/dev/io.html for all possible options;
-                          I really just call pandas.to_FORMAT for each DataFrame.
-     - output_name:       The name of the output file or folder, WITHOUT file extension.
-     - fields_to_ignore:  Fields which will not be stored.
-     - append_data:       Only valid with output_format='hdf': append data to an existing HDF5 file.
-     - write_every:       Only valid with output_format='hdf': write data to disk after every nth event.
-                          With other output_formats, all data is kept in memory and written to disk on shutdown.
+     - output_format:      If hdf, will produce an HDF5 file with tables for each dataframe.
+                           If csv, json, html, pickle, ... will produce a folder with files for each dataframe.
+                           See http://pandas.pydata.org/pandas-docs/dev/io.html for all possible options;
+                           I really just call pandas.to_FORMAT for each DataFrame.
+     - output_name:        The name of the output file or folder, WITHOUT file extension.
+     - fields_to_ignore:   Fields which will not be stored.
+
+    Further options specific to output_format='hdf':
+
+     - append_data:        Append data to an existing HDF5 file.
+     - write_every:        Write data to disk after every nth event.
+                           (For the other output_formats, all data is kept in memory, then written to disk on shutdown.)
+     - string_data_length: Maximum length of strings in string data fields.  If you try to store a longer string
+                           in any but the first write pass, it will crash!
 
     """
 
@@ -42,11 +47,12 @@ class WritePandas(plugin.OutputPlugin):
         # Keys are data frame names, values are lists of (index_tuple,dictionary) tuples
         self.dataframes = {}
 
-        self.outfile = outfile = self.config.get('output_name',     'output')
-        self.fields_to_ignore = self.config.get('fields_to_ignore', [])
-        self.output_format = self.config.get('output_format',       'hdf')
-        self.write_every = self.config.get('write_every',           10)
-        self.append_data = self.config.get('append_data',           False)
+        self.outfile = outfile = self.config.get('output_name',         'output')
+        self.fields_to_ignore = self.config.get('fields_to_ignore',     [])
+        self.output_format = self.config.get('output_format',           'hdf')
+        self.write_every = self.config.get('write_every',               10)
+        self.append_data = self.config.get('append_data',               False)
+        self.string_data_length = self.config.get('string_data_length', 32)
 
         self.events_ready_to_be_written = 0
 
@@ -165,8 +171,13 @@ class WritePandas(plugin.OutputPlugin):
             self.log.debug("Writing %s" % df_name)
 
             if self.output_format == 'hdf':
+                # Look for string fields (dtype=object), we should pre-set a length for them
+                string_fields = df.select_dtypes(include=['object']).columns.values
+
                 # Write each DataFrame to a table
-                self.store.append(df_name, df, format='table')
+                self.store.append(df_name, df, format='table',
+                                  min_itemsize={field_name: self.string_data_length
+                                                for field_name in string_fields})
 
             else:
                 # Write each DataFrame to a file
