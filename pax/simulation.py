@@ -8,48 +8,19 @@ import math
 import time
 
 import logging
-log = logging.getLogger('SimulationCore')
 from pax import units, dsputils, datastructure
 
-
-# Caching decorator
-class memoize:
-    # from http://avinashv.net/2008/04/python-decorators-syntactic-sugar/
-    def __init__(self, function):
-        self.function = function
-        self.memoized = {}
-
-    def __call__(self, *args):
-        try:
-            return self.memoized[args]
-        except KeyError:
-            self.memoized[args] = self.function(*args)
-            return self.memoized[args]
-
-
-@memoize
-def pmt_pulse_current_raw(offset, dt, samples_before, samples_after, tr, tf):
-    return np.diff(exp_pulse(
-        np.linspace(
-            - offset - samples_before * dt,
-            - offset + samples_after  * dt,
-            1 + samples_before + samples_after),
-        units.electron_charge,
-        tr,
-        tf
-    )) / dt
-
+log = logging.getLogger('SimulationCore')
 
 
 class Simulator(object):
 
     def __init__(self, config_to_init):
         self.config = config_to_init
+
         # Should we repeat events?
         if not 'event_repetitions' in self.config:
             self.config['event_repetitions'] = 1
-
-        efield = (self.config['drift_field']/(units.V/units.cm))
 
         # Primary excimer fraction from Nest Version 098
         # See G4S1Light.cc line 298
@@ -62,14 +33,12 @@ class Simulator(object):
 
         # Recombination time from NEST 2014
         # 3.5 seems fishy, they fit an exponential to data, but in the code they use a non-exponential distribution...
+        efield = (self.config['drift_field']/(units.V/units.cm))
         self.config['s1_ER_recombination_time'] = 3.5/0.18 * (1/20 + 0.41) * math.exp(-0.009*efield)
         log.debug('Inferred s1_ER_recombination_time %s ns' % self.config['s1_ER_recombination_time'])
 
-        # How large is the PMT waveform matrix we will we have to produce?
-        self.config['all_pmts'] = list(self.config['pmts_top'] | self.config['pmts_bottom'])
-
-        # Which channels stand to recieve any photons?
-        # TODO: In XENON100, channel 0 WILL receive photons unless magically_avoid_dead_pmts=True
+        # Which channels stand to receive any photons?
+        # TODO: In XENON100, channel 0 will receive photons unless magically_avoid_dead_pmts=True
         # To prevent this, subtract 0 from channel_for_photons. But don't do that for XENON1T!!
         channels_for_photons = list(self.config['pmts_top'] | self.config['pmts_bottom'])
         if self.config.get('magically_avoid_dead_pmts', False):
@@ -87,22 +56,6 @@ class Simulator(object):
             self.config['pulse_width_cutoff'] * self.config['pmt_fall_time'] / dt
         )
         log.debug('Simulating %s samples before and %s samples after PMT pulse centers.')
-
-        # Padding before & after each pulse/peak/photon-cluster/whatever-you-call-it
-        if not 'pad_after' in self.config:
-            self.config['pad_after'] = 30 * dt + self.config['samples_after_pulse_center']
-        if not 'pad_before' in self.config:
-            self.config['pad_before'] = (
-                # 10 + Baseline bins
-                50 * dt
-                # Protection against early pre-peak rise
-                + self.config['samples_after_pulse_center']
-                # Protection against pulses arriving earlier than expected due
-                # to tail of TTS distribution
-                + 10 * self.config['pmt_transit_time_spread']
-                - self.config['pmt_transit_time_mean']
-            )
-            log.debug('Determined padding at %s ns' % self.config['pad_before'])
 
     def s2_electrons(self, electrons_generated=None, z=0., t=0.):
         """Return a list of electron arrival times in the ELR region caused by an S2 process.
@@ -140,7 +93,6 @@ class Simulator(object):
         if drift_time_stdev:
             e_arrival_times += np.random.normal(drift_time_mean, drift_time_stdev, electrons_seen)
         return e_arrival_times
-
 
     def s1_photons(self, n_photons, recoil_type, t=0.):
         """
@@ -197,7 +149,6 @@ class Simulator(object):
             raise ValueError('Recoil type must be ER or NR, not %s' % type)
 
         return timings + t * np.ones(len(timings))
-
 
     def s2_scintillation(self, electron_arrival_times):
         """
@@ -291,7 +242,7 @@ class Simulator(object):
         if not isinstance(hitpattern, SimulatedHitpattern):
             raise ValueError("to_pax_event takes an instance of SimulatedHitpattern, you gave a %s." % type(hitpattern))
 
-        log.debug("Now performing hitlist to waveform conversion for %s photons" % hitpattern.n_photons)
+        log.debug("Now performing hitpattern to waveform conversion for %s photons" % hitpattern.n_photons)
         # TODO: Account for random initial digitizer state  wrt interaction?
         # Where?
 
@@ -299,9 +250,7 @@ class Simulator(object):
         dt = self.config['digitizer_t_resolution']
         dV = self.config['digitizer_voltage_range'] / 2 ** (self.config['digitizer_bits'])
 
-
         # Build waveform channel by channel
-        #pmt_waveforms = np.zeros((len(self.config['all_pmts']), n_samples), dtype=np.int16)
         occurrences = {}
         for channel, photon_detection_times in hitpattern.arrival_times_per_channel.items():
             photon_detection_times = np.array(photon_detection_times)
@@ -335,7 +284,8 @@ class Simulator(object):
                     #TODO: Is this actually faster still? Should check!
 
                     # Start with a delta function single photon pulse, then convolve with one actual single-photon pulse
-                    # This effectively assumes photons always arrive at the start of a digitizer t-bin, but is much faster
+                    # This effectively assumes photons always arrive at the start of a digitizer t-bin,
+                    # but is much faster
 
                     # Division by dt necessary for charge -> current
 
@@ -377,7 +327,8 @@ class Simulator(object):
 
                         # Debugging stuff
                         if len(generated_pulse) != righter_index - left_index:
-                            raise RuntimeError("Generated pulse is %s samples long, can't be inserted between %s and %s" % (
+                            raise RuntimeError(
+                                "Generated pulse is %s samples long, can't be inserted between %s and %s" % (
                                     len(generated_pulse), left_index, righter_index))
 
                         if left_index <0 :
@@ -392,7 +343,8 @@ class Simulator(object):
                 # Add white noise current
                 if self.config['white_noise_sigma'] is not None:
                     # / dt is for charge -> current conversion, as in pmt_pulse_current
-                    current_wave += np.random.normal(0, self.config['white_noise_sigma'] * self.config['gains'][channel] / dt,
+                    current_wave += np.random.normal(0,
+                                                     self.config['white_noise_sigma'] * self.config['gains'][channel] / dt,
                                                      len(current_wave))
 
                 # Convert current to digitizer count (should I trunc, ceil or floor?) and store
@@ -411,28 +363,11 @@ class Simulator(object):
         event = datastructure.Event()
         event.start_time = int(time.time() * units.s)
         event.stop_time = int(event.start_time) + int(hitpattern.max + 2*self.config['event_padding'])
-        log.debug("Simulated event is %s samples long. Max pulse center at %s ns." %
-                  (event.length(), max(all_pmt_pulse_centers)))
+        log.debug("Simulated pax event of %s samples long created.")
         event.sample_duration = dt
         event.occurrences = occurrences
         return event
 
-
-@np.vectorize
-def exp_pulse(t, q, tr, tf):
-    """Integrated current (i.e. charge) of a single-pe PMT pulse centered at t=0
-    Assumes an exponential rise and fall waveform model
-    :param t:   Time to integrate up to
-    :param q:   Total charge in the pulse
-    :param tr:  Rise time
-    :param tf:  Fall time
-    :return: Float, charge deposited up to t
-    """
-    c = 0.45512  # 1/(ln(10)-ln(10/9))
-    if t < 0:
-        return q / (tr + tf) * (tr * math.exp(t / (c * tr)))
-    else:
-        return q / (tr + tf) * (tr + tf * (1 - math.exp(-t / (c * tf))))
 
 
 class SimulatedHitpattern(object):
@@ -502,6 +437,51 @@ class SimulatedHitpattern(object):
 
 
 
-# This is probably in some standard library...
-def flatten(l):
-    return [item for sublist in l for item in sublist]
+##
+# Photon pulse generation
+##
+
+# I pulled this out of Simulator: caching using memoize gave me trouble on methods due to the self argument
+# There's still a method pmt_pulse_current, but it just calls pmt_pulse_current_raw defined below
+
+# Caching decorator
+class memoize:
+    # from http://avinashv.net/2008/04/python-decorators-syntactic-sugar/
+    def __init__(self, function):
+        self.function = function
+        self.memoized = {}
+
+    def __call__(self, *args):
+        try:
+            return self.memoized[args]
+        except KeyError:
+            self.memoized[args] = self.function(*args)
+            return self.memoized[args]
+
+@memoize
+def pmt_pulse_current_raw(offset, dt, samples_before, samples_after, tr, tf):
+    return np.diff(exp_pulse(
+        np.linspace(
+            - offset - samples_before * dt,
+            - offset + samples_after  * dt,
+            1 + samples_before + samples_after),
+        units.electron_charge,
+        tr,
+        tf
+    )) / dt
+
+@np.vectorize
+def exp_pulse(t, q, tr, tf):
+    """Integrated current (i.e. charge) of a single-pe PMT pulse centered at t=0
+    Assumes an exponential rise and fall waveform model
+    :param t:   Time to integrate up to
+    :param q:   Total charge in the pulse
+    :param tr:  Rise time
+    :param tf:  Fall time
+    :return: Float, charge deposited up to t
+    """
+    c = 0.45512  # 1/(ln(10)-ln(10/9))
+    if t < 0:
+        return q / (tr + tf) * (tr * math.exp(t / (c * tr)))
+    else:
+        return q / (tr + tf) * (tr + tf * (1 - math.exp(-t / (c * tf))))
