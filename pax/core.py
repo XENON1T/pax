@@ -319,19 +319,22 @@ class Processor:
 
     def setup_logging(self):
         """Sets up logging. Must have loaded config first."""
+
         pc = self.config['pax']
+
         # Setup logging
-        try:
-            log_spec = pc['logging_level'].upper()
-        except KeyError:
-            log_spec = 'INFO'
+        log_spec = pc.get('logging_level', 'INFO').upper()
         numeric_level = getattr(logging, log_spec, None)
         if not isinstance(numeric_level, int):
             raise ValueError('Invalid log level: %s' % log_spec)
 
         logging.basicConfig(level=numeric_level,
                             format='%(name)s L%(lineno)s %(levelname)s %(message)s')
-        return logging.getLogger('processor')
+
+        logger = logging.getLogger('processor')
+        logger.debug('Logging initialized with level %s' % log_spec)
+
+        return logger
 
     @staticmethod
     def get_plugin_search_paths(extra_paths=None):
