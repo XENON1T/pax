@@ -134,7 +134,7 @@ class PlotBase(plugin.OutputPlugin):
                                       connectionstyle="angle3,"
                                                       "angleA=0,"
                                                       "angleB=-90")
-                plt.hlines(y, peak.left * self.samples_to_us,
+                plt.hlines(y, (peak.left - 1) * self.samples_to_us,
                               peak.right * self.samples_to_us)
                 plt.annotate('%s:%s' % (peak.type, int(peak.area)),
                              xy=(x, y),
@@ -151,7 +151,7 @@ class PlotBase(plugin.OutputPlugin):
         # Separated so PlotChannelWaveforms2D can also call it
         for peak in event.peaks:
             shade_color = self.peak_colors.get(peak.type,'gray') if peak.detector == 'tpc' else 'red'
-            plt.axvspan(peak.left  * self.samples_to_us,
+            plt.axvspan((peak.left - 1)  * self.samples_to_us,
                         peak.right * self.samples_to_us,
                         color=shade_color,
                         alpha=0.2)
@@ -343,25 +343,18 @@ class PlotChannelWaveforms2D(PlotBase):
 
         # TODO: change from lines to squares
         for oc in event.occurrences:
-            start_index = oc.left
-            # Remember: intervaltree uses half-open intervals, end_index is the first index outside!
-            end_index = oc.right
-            length = end_index - start_index
-            channel = oc.channel
-            height = oc.height
-
             if oc.height is None:
                 # Maybe gain was 0 or something
                 # TODO: plot these too, in a different color
                 continue
 
             # Choose a color for this occurrence based on amplitude
-            color_factor = np.clip(np.log10(height)/2, 0, 1)
+            color_factor = np.clip(np.log10(oc.height)/2, 0, 1)
 
-            plt.gca().add_patch(Rectangle((start_index*time_scale, channel), length*time_scale, 1,
+            plt.gca().add_patch(Rectangle((oc.left*time_scale, oc.channel), oc.length*time_scale, 1,
                                           facecolor=plt.cm.gnuplot2(color_factor),
                                           edgecolor='none',
-                                          alpha=(0.1 if event.is_channel_bad[channel] else 1.0)))
+                                          alpha=(0.1 if event.is_channel_bad[oc.channel] else 0.7)))
 
         # Plot the channel peaks as dots
         # All these for loops are slow -- hope we get by-column access some time
@@ -373,8 +366,8 @@ class PlotChannelWaveforms2D(PlotBase):
                 color_factor = 1
             else:
                 color_factor = min(max(p.height/(20*p.noise_sigma), 0), 1)
-            plt.scatter(  [p.index_of_maximum * time_scale],
-                          [p.channel],
+            plt.scatter(  [(0.5 + p.index_of_maximum) * time_scale],
+                          [0.5 + p.channel],
                         c=(color_factor, 0, (1-color_factor)),
                         s=10*p.area,
                         edgecolor=(0.5*color_factor, 0, 0.5*(1-color_factor)),

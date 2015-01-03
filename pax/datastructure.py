@@ -61,7 +61,11 @@ class ChannelPeak(Model):
     index_of_maximum = IntegerField()     #: Index in the event at which this peak has its maximum.
 
     left = IntegerField()                 #: Index of left bound (inclusive) of peak.
-    right = IntegerField()                #: Index of right bound of peak
+    right = IntegerField()                #: Index of right bound (INCLUSIVE!!) of peak
+
+    @property
+    def length(self):
+        return self.right - self.left + 1
 
     area = FloatField()                   #: Area of the peak in photoelectrons
     height = FloatField()                 #: Height of highest point in peak (in pe/bin)
@@ -76,8 +80,9 @@ class Peak(Model):
     #   Fields present in all peaks
     ##
 
-    left = IntegerField()                       #: Index of left bound (inclusive) in event.
-    right = IntegerField() #: Index of right bound (for Xdp matching: exclusive; otherwise: inclusive) in event.
+    left = IntegerField()                 #: Index of left bound (inclusive) in event.
+    right = IntegerField()                #: Index of right bound (INCLUSIVE!!) in event.
+    # For XDP matching rightmost sample is not in integral, so you could say it is exclusive then.
 
     area = FloatField()                   #: Area of the pulse in photoelectrons. Only
                                           #: Includes only contributing pmts (see later) in the right detector

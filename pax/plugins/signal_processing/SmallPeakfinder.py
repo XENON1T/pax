@@ -54,7 +54,7 @@ class FindSmallPeaks(plugin.TransformPlugin):
                 if region_left >= give_up_after:
                     break
 
-                # Find all occurrences completely enveloped in the free region. Thank pyintervaltree for log(n) runtime
+                # Find all occurrences completely enveloped in the free region.
                 # TODO: we should put strict=False, so we're not relying on the zero-suppression to separate
                 # small peaks close to a large peak. However, right now this brings in stuff from large peaks if their
                 # boundsare not completely tight...
@@ -63,9 +63,8 @@ class FindSmallPeaks(plugin.TransformPlugin):
 
                 for oc in ocs:
                     # Focus only on the part of the occurrence inside the free region (superfluous as long as strict=True)
-                    # Remember: intervaltree uses half-open intervals, stop is the first index outside
                     start = max(region_left, oc.left)
-                    stop = min(region_right + 1, oc.right)
+                    stop = min(region_right, oc.right)
                     channel = oc.channel
 
                     # Don't consider channels from other detectors
@@ -77,9 +76,9 @@ class FindSmallPeaks(plugin.TransformPlugin):
                         continue
 
                     # Retrieve the waveform from pmt_waveforms
-                    w = event.pmt_waveforms[channel, start:stop]
+                    w = event.pmt_waveforms[channel, start : stop + 1]
 
-                    # Keep a copy, so we can filter w if needed:
+                    # Keep the unfiltered waveform in origw
                     origw = w
 
                     # Apply the filter, if user wants to
@@ -127,16 +126,21 @@ class FindSmallPeaks(plugin.TransformPlugin):
                     # Store the found peaks in the datastructure
                     peaks = []
                     for p in raw_peaks:
+                        # TODO: Hmzz.. height is computed in unfiltered waveform, noise_level in filtered!
+                        # TODO: height is wrong if baseline is corrected...
+                        # TODO: are you sure it is ok to compute area in filtered waveform?
+                        max_idx = p[0] + np.argmax(origw[p[0]:p[1] + 1])
                         peaks.append(datastructure.ChannelPeak({
-                            # TODO: store occurrence index -- occurrences needs to be a better datastructure first
+                            # TODO: store occurrence index
                             'channel':             channel,
                             'left':                start + p[0],
-                            'index_of_maximum':    start + p[1],
-                            'right':               start + p[2],
+                            # Compute index_of_maximum in the original waveform: the filter introduces a phase shift
+                            'index_of_maximum':    start + max_idx,
+                            'right':               start + p[1],
                             # NB: area and max are computed in filtered waveform, because
                             # the sliding window filter will shift the peak shape a bit
-                            'area':                np.sum(w[p[0]:p[2]+1]),
-                            'height':              w[p[1]],
+                            'area':                np.sum(w[p[0]:p[1]+1]),
+                            'height':              origw[max_idx],
                             'noise_sigma':         noise_sigma,
                         }))
                     event.all_channel_peaks.extend(peaks)
@@ -148,9 +152,9 @@ class FindSmallPeaks(plugin.TransformPlugin):
                             plt.plot(w, drawstyle='steps', label='data')
                         else:
                             plt.plot(w, drawstyle='steps', label='data (filtered)')
-                            plt.plot(origw, drawstyle='steps', label='data (raw)')
+                            plt.plot(origw, drawstyle='steps', label='data (raw)', alpha=0.5, color='gray')
                         for p in raw_peaks:
-                            plt.axvspan(p[0]-1, p[2], color='red', alpha=0.5)
+                            plt.axvspan(p[0]-1, p[1], color='red', alpha=0.5)
                         plt.plot(noise_sigma * np.ones(len(w)), '--', label='1 sigma')
                         plt.plot(self.min_sigma * noise_sigma * np.ones(len(w)), '--', label='%s sigma' % self.min_sigma)
                         plt.legend()
@@ -185,12 +189,12 @@ class FindSmallPeaks(plugin.TransformPlugin):
             height = w[max_idx]
             if height < noise_sigma * self.min_sigma:
                 continue
-            peaks.append((left, max_idx, right))
+            peaks.append((left, right))
         return peaks
 
     def samples_without_peaks(self, w, peaks):
         """Return array of bools of same size as w, True if none of peaks live there"""
         not_in_peak = np.ones(len(w), dtype=np.bool)    # All True
         for p in peaks:
-            not_in_peak[p[0]:p[2] + 1] = False
+            not_in_peak[p[0]:p[1] + 1] = False
         return not_in_peak
