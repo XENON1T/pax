@@ -1,9 +1,7 @@
-__author__ = 'tunnell'
-
 import pax.datastructure as ds
 
 from pax import plugin
-
+from pax.micromodels import fields as mm_fields
 import tables
 
 
@@ -20,21 +18,29 @@ class HDF5Output(plugin.OutputPlugin):
     associated to it in the event table.
     """
 
+    hdf5_column = {
+        mm_fields.StringField:  tables.StringCol(32),
+        mm_fields.IntegerField: tables.Int64Col(),
+        mm_fields.FloatField:   tables.Float64Col(),
+        # Numpy array fields not supported?
+    }
 
     def startup(self):
         self.h5_file = tables.open_file(self.config['output_name'], 'w')
 
         self.hdf5_fields = {}
 
-        internal_classes = [ds.Event(),
+        # Need dummy instances here... bit wonky
+        internal_classes = [ds.Event(config=self.config, start_time=0, length=1),
                             ds.Peak(),
                             ds.ReconstructedPosition()]
 
         for ic in internal_classes:
             fields = {}
-            for key, value in ic._fields.items():
-                if value.hdf5_type() is not None:
-                    fields[key] = value.hdf5_type()
+            for field_name, field_instance in ic.get_fields().items():
+                hd5_column = self.hdf5_column.get(field_instance.__class__, None)
+                if hd5_column is not None:
+                    fields[field_name] = self.hdf5_column.get(field_instance.__class__, None)
 
             name = ic.__class__.__name__
 

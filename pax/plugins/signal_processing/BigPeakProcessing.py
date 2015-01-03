@@ -2,7 +2,7 @@
 Plugins for computing properties of peaks that have been found
 """
 import numpy as np
-from pax import dsputils, plugin, datastructure
+from pax import utils, plugin, datastructure
 import math
 
 class DeleteSmallPeaks(plugin.TransformPlugin):
@@ -28,7 +28,7 @@ class ComputePeakWidths(plugin.TransformPlugin):
 
             for width_name, conf in self.config['width_computations'].items():
 
-                peak[width_name] = dsputils.width_at_fraction(
+                peak[width_name] = utils.width_at_fraction(
                     peak_wave=event.get_waveform(conf['waveform_to_use']).samples[peak.left : peak.right+1],
                     fraction_of_max=conf['fraction_of_max'],
                     max_idx=peak.index_of_maximum - peak.left,
@@ -41,11 +41,7 @@ class ComputePeakAreasAndCoincidence(plugin.TransformPlugin):
 
     def startup(self):
         self.central_width = round(self.config['central_area_region_width'] / self.config['digitizer_t_resolution'], 1)
-        self.channels_in_detector = {
-            'tpc':  self.config['pmts_top'] | self.config['pmts_bottom'],
-        }
-        for det, chs in self.config['external_detectors'].items():
-            self.channels_in_detector[det] = chs
+
 
     def transform_event(self, event):
         for peak in event.peaks:
@@ -57,12 +53,12 @@ class ComputePeakAreasAndCoincidence(plugin.TransformPlugin):
             # Determine which channels contribute to the peak's total area
             channels = np.arange(self.config['n_pmts'])
             peak.does_channel_contribute = np.in1d(channels,
-                                                   np.array(list(self.channels_in_detector[peak.detector]))) & \
+                                                   np.array(list(self.config['channels_in_detector'][peak.detector]))) & \
                                            (peak.area_per_pmt >= self.config['minimum_area'])
 
             # Other channels with nonzero area have noise
             peak.does_channel_have_noise = np.in1d(channels,
-                                                   np.array(list(self.channels_in_detector[peak.detector]))) & \
+                                                   np.array(list(self.config['channels_in_detector'][peak.detector]))) & \
                                            (peak.area_per_pmt != 0) & \
                                            (np.invert(peak.does_channel_contribute))
 

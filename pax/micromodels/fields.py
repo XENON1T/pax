@@ -6,13 +6,7 @@ Add numpy support and quite a few ways the code operates.
 """
 
 import numpy as np
-import logging
-try:
-    from tables import Int64Col, Float64Col, StringCol
-except:
-    print("Pytables is not installed, you can't use the HDF5 I/O!!")
-    def dummy(x=None): return None
-    Int64Col = Float64Col = StringCol = dummy
+
 
 
 class BaseField(object):
@@ -25,10 +19,9 @@ class BaseField(object):
 
     """
 
-    def __init__(self, default=0, source=None, hdf5_type=None):
+    def __init__(self, default=0, source=None):
         self._default = default
         self.source = source
-        self._hdf5_type = hdf5_type
 
     def populate(self, data):
         """Set the value or values wrapped by this field"""
@@ -53,11 +46,6 @@ class BaseField(object):
 
         '''
         return data
-
-    def hdf5_type(self):
-        """Used to say what HDF5 type this corresponds to
-        """
-        return self._hdf5_type
 
 
 class NumpyArrayField(BaseField):
@@ -91,8 +79,8 @@ class StringField(BaseField):
 
     """Field to represent a simple Unicode string value."""
 
-    def __init__(self, hdf5_type=StringCol(32), **kwargs):
-        BaseField.__init__(self, hdf5_type=hdf5_type, **kwargs)
+    def __init__(self, **kwargs):
+        BaseField.__init__(self, **kwargs)
 
     def to_python(self):
         """Convert the data supplied using the :meth:`populate` method to a
@@ -108,8 +96,8 @@ class IntegerField(BaseField):
 
     """Field to represent an integer value"""
 
-    def __init__(self, hdf5_type=Int64Col(), **kwargs):
-        BaseField.__init__(self, hdf5_type=hdf5_type, **kwargs)
+    def __init__(self, **kwargs):
+        BaseField.__init__(self, **kwargs)
 
     def to_python(self):
         """Convert the data supplied to the :meth:`populate` method to an
@@ -125,8 +113,8 @@ class FloatField(BaseField):
 
     """Field to represent a floating point value"""
 
-    def __init__(self, hdf5_type=Float64Col(), **kwargs):
-        BaseField.__init__(self, hdf5_type=hdf5_type, **kwargs)
+    def __init__(self, **kwargs):
+        BaseField.__init__(self, **kwargs)
 
     def to_python(self):
         """Convert the data supplied to the :meth:`populate` method to a

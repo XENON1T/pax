@@ -25,7 +25,7 @@ import io
 import numpy as np
 
 from pax import core, plugin, units
-from pax.datastructure import Event
+from pax.datastructure import Event, Occurrence
 
 
 class XedInput(plugin.InputPlugin):
@@ -211,10 +211,20 @@ class XedInput(plugin.InputPlugin):
             # TODO: figure this out from flags
             chunk_fake_file = io.BytesIO(data_to_decompress)
 
-        # Loop over all channels in the event
-        occurrences = {}
+        # Start building the event
+        event = Event(
+            config=self.config,
+            start_time=int(
+                event_layer_metadata['utc_time'] * units.s +
+                event_layer_metadata['utc_time_usec'] * units.us
+            ),
+            length=event_layer_metadata['samples_in_event']
+        )
+        event.dataset_name = self.file_metadata['dataset_name'].decode("utf-8")
+        event.event_number = int(event_layer_metadata['event_number'])
+
+        # Loop over all channels in the event to get the occurrences
         for channel_id in channels_included:
-            occurrences[channel_id] = []
 
             # Read channel size (in 4bit words), subtract header size, convert
             # from 4-byte words to bytes
@@ -236,44 +246,27 @@ class XedInput(plugin.InputPlugin):
                 if not control_word_string:
                     break
 
-                # Control words starting with zero indicate a number of sample
-                # PAIRS to skip
+                # Control words starting with zero indicate a number of sample PAIRS to skip
                 control_word = int(
                     np.fromstring(control_word_string, dtype='<u4')[0])
                 if control_word < 2 ** 31:
                     sample_position += 2 * control_word
                     continue
 
-                # Control words starting with one indicate a number of sample
-                # PAIRS follow
+                # Control words starting with one indicate a number of sample PAIRS follow
                 else:
                     # Subtract the control word flag
                     data_samples = 2 * (control_word - (2 ** 31))
 
-                    # Note endianess
+                    # Note endianness
                     samples_occurrence = np.fromstring(channel_fake_file.read(2 * data_samples),
                                                        dtype="<i2")
 
-                    occurrences[channel_id].append((sample_position,
-                                                    samples_occurrence))
+                    event.occurrences.append(Occurrence(
+                        channel=channel_id,
+                        left=sample_position,
+                        raw_data=samples_occurrence
+                    ))
                     sample_position += len(samples_occurrence)
-
-        # Return the event
-        event = Event()
-        event.dataset_name = self.file_metadata['dataset_name'].decode("utf-8")
-        event.event_number = int(event_layer_metadata['event_number'])
-        event.occurrences = occurrences
-
-        event.sample_duration = int(self.config['digitizer_t_resolution'])
-        event.start_time = int(
-            event_layer_metadata['utc_time'] * units.s +
-            event_layer_metadata['utc_time_usec'] * units.us
-        )
-
-        # Remember stop_time is the stop time of the LAST sample!
-        event.stop_time = event_layer_metadata['samples_in_event']
-        event.stop_time *= event.sample_duration
-        event.stop_time = int(event.stop_time)
-        event.stop_time += event.start_time
 
         return event

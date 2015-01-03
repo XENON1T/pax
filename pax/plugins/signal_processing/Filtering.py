@@ -91,6 +91,7 @@ class Filtering(plugin.TransformPlugin):
                 # This dirty code hack implements the Xerawdp convolution bug
                 # DO NOT USE except for Xerawdp matching!
                 ##
+                #TODO: could be done more straightforwardly now that we've stored occurrences properly
                 filter_length = len(f['impulse_response'])
 
                 # Determine the pulse boundaries
@@ -119,7 +120,7 @@ class Filtering(plugin.TransformPlugin):
                     except Exception as e:
                         self.log.warning("Error during waveform mutilation: " + str(e) + ". So what...")
 
-            event.waveforms.append(datastructure.Waveform({
+            event.waveforms.append(datastructure.SumWaveform({
                 'name':      f['name'],
                 'samples':   output,
                 'pmt_list':  input_w.pmt_list,

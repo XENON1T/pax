@@ -15,7 +15,6 @@ import matplotlib.pyplot as plt
 import logging
 log = logging.getLogger('dsputils')
 
-
 ##
 # Peak finding helper routines
 ##
@@ -253,7 +252,7 @@ def find_first_fast(a, threshold, chunk_size=128):
     """Returns the first index in a below threshold.
     If a never goes below threshold, returns the last index in a."""
     # Numpy 2.0 may get a builtin to do this.
-    # I don't know of anything beter than the below for now:
+    # I don't know of anything better than the below for now:
     indices = np.where(a < threshold)[0]
     if len(indices) > 0:
         return indices[0]
@@ -275,30 +274,6 @@ def find_first_fast(a, threshold, chunk_size=128):
     # return len(a) - 1
 
 
-##
-# Interval tree encapsulation
-##
-
-# Mind-numbingly stupid implementation of interval data structure
-# Is not actually an interval tree.
-# We used to have fancy stuff using pyintervaltree
-# but it made the processor 2x slower...
-class IntervalTree(object):
-
-    def __init__(self):
-        self.intervals = []
-
-    def addi(self, left, right, data):
-        self.intervals.append((left, right, data))
-
-    def search(self, left, right, strict):
-        if strict:
-            return [itv for itv in self.intervals if itv[0]>=left and itv[1]<=right]
-        else:
-            return [itv for itv in self.intervals if itv[0]<=right and itv[1]>=left]
-
-    def get_all(self):
-        return self.intervals
 
 
 ##
@@ -412,48 +387,9 @@ class InterpolatingMap(object):
             plt.show()
         plt.close()
 
-# def rcosfilter(filter_length, rolloff, cutoff_freq, sampling_freq=1):
-#     """
-#     Returns a nd(float)-array describing a raised cosine (RC) filter (FIR) impulse response. Arguments:
-#         - filter_length:    filter event_duration in samples
-#         - rolloff:          roll-off factor
-#         - cutoff_freq:      cutoff frequency = 1/(2*symbol period)
-#         - sampling_freq:    sampling rate (in same units as cutoff_freq)
-#     """
-#     symbol_period = 1 / (2 * cutoff_freq)
-#     h_rc = np.zeros(filter_length, dtype=float)
-#
-#     for x in np.arange(filter_length):
-#         t = (x - filter_length / 2) / float(sampling_freq)
-#         phase = np.pi * t / symbol_period
-#         if t == 0.0:
-#             h_rc[x] = 1.0
-#         elif rolloff != 0 and abs(t) == symbol_period / (2 * rolloff):
-#             h_rc[x] = (np.pi / 4) * (np.sin(phase) / phase)
-#         else:
-#             h_rc[x] = (np.sin(phase) / phase) * (
-#                 np.cos(phase * rolloff) / (
-#                     1 - (((2 * rolloff * t) / symbol_period) * ((2 * rolloff * t) / symbol_period))
-#                 )
-#             )
-#
-#     return h_rc / h_rc.sum()
 
-# def merge_overlapping_peaks(peaks):
-#     """ Merge overlapping peaks - highest peak consumes lower peak """
-#     for p in peaks:
-#         if p.type == 'consumed':
-#             continue
-#         for q in peaks:
-#             if p == q:
-#                 continue
-#             if q.type == 'consumed':
-#                 continue
-#             if q.left <= p.index_of_maximum <= q.right:
-#                 log.debug('Peak at %s overlaps wit peak at %s' % (p.index_of_maximum, q.index_of_maximum))
-#                 if q.height > p.height:
-#                     consumed, consumer = p, q
-#                 else:
-#                     consumed, consumer = q, p
-#                 consumed.type = 'consumed'
-#     return [p for p in peaks if p.type != 'consumed']
+# useful for testing
+from pax.datastructure import Event
+from pax import units
+def empty_event():
+    return Event(config={'n_pmts': 1, 'digitizer_t_resolution': 10 * units.ns}, start_time=0, length=1)

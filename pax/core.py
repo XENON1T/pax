@@ -2,18 +2,18 @@
 
 """
 import glob
-import itertools
 import logging
-import inspect
-from configparser import ConfigParser, ExtendedInterpolation
-from collections import OrderedDict  # DO NOT REMOVE, used in eval(configuration)
-
-import re
-import os
-from io import StringIO
 import importlib
-from tqdm import tqdm     # Progress bar
+import inspect
+from io import StringIO
+import itertools
+import os
+import re
+
+from configparser import ConfigParser, ExtendedInterpolation
+import numpy as np
 from prettytable import PrettyTable     # Timing report
+from tqdm import tqdm                   # Progress bar
 
 import pax
 from pax import units, simulation
@@ -233,9 +233,9 @@ class Processor:
 
         # Get a dict with all names visible by the eval:
         #  - all variables from the units submodule
-        #  - OrderedDict
+        #  - np
         visible_variables = {name: getattr(units, name) for name in dir(units)}
-        visible_variables['OrderedDict'] = OrderedDict
+        visible_variables['np'] = np
 
         # Evaluate the values in the ini file
         evaled_config = {}

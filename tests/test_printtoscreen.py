@@ -5,8 +5,7 @@ import unittest
 
 
 from pax import core
-from pax.datastructure import Event, Peak, Waveform
-
+from pax.utils import empty_event
 
 
 class TestPrintToScreen(unittest.TestCase):
@@ -15,7 +14,7 @@ class TestPrintToScreen(unittest.TestCase):
             'plugin_group_names': ['output'],
             'output':              'PrintToScreen.PrintToScreen'}})
         self.obj = self.pax.get_plugin_by_name('PrintToScreen')
-        self.e = Event()
+        self.e = empty_event()
 
     def test_something(self):
         self.obj.process_event(self.e)

@@ -1,5 +1,5 @@
 import numpy as np
-from pax import plugin, datastructure, dsputils, units
+from pax import plugin, datastructure, utils, units
 
 # Used for diagnostic plotting only
 # TODO: factor out to separate plugin?
@@ -23,17 +23,11 @@ class FindSmallPeaks(plugin.TransformPlugin):
             if not os.path.exists(self.make_diagnostic_plots_in):
                 os.makedirs(self.make_diagnostic_plots_in)
 
-        self.channels_in_detector = {
-            'tpc':  self.config['pmts_top'] | self.config['pmts_bottom'],
-        }
-        for det, chs in self.config['external_detectors'].items():
-            self.channels_in_detector[det] = chs
-
         noise_mode = self.config['noise_determination_method']
         if noise_mode == 'std':
             self.noise_determination = np.std
         elif noise_mode == 'mad':
-            self.noise_determination = dsputils.mad
+            self.noise_determination = utils.mad
         else:
             raise ValueError('noise_determination_method must be std or mad, not %s' % noise_mode)
 
@@ -50,11 +44,11 @@ class FindSmallPeaks(plugin.TransformPlugin):
         noise_count = {}
 
         # Handle each detector separately
-        for detector in self.channels_in_detector.keys():
+        for detector in self.config['channels_in_detector'].keys():
             self.log.debug("Finding channel peaks in data from %s" % detector)
 
             # Get all free regions before the give_up_after point
-            for region_left, region_right in dsputils.free_regions(event, detector):
+            for region_left, region_right in utils.free_regions(event, detector):
 
                 # Can we give up yet?
                 if region_left >= give_up_after:
@@ -64,18 +58,18 @@ class FindSmallPeaks(plugin.TransformPlugin):
                 # TODO: we should put strict=False, so we're not relying on the zero-suppression to separate
                 # small peaks close to a large peak. However, right now this brings in stuff from large peaks if their
                 # boundsare not completely tight...
-                ocs = event.occurrences_interval_tree.search(region_left, region_right, strict=True)
+                ocs = event.get_occurrences_between(region_left, region_right, strict=True)
                 self.log.debug("Free region %05d-%05d: process %s occurrences" % (region_left, region_right, len(ocs)))
 
                 for oc in ocs:
                     # Focus only on the part of the occurrence inside the free region (superfluous as long as strict=True)
                     # Remember: intervaltree uses half-open intervals, stop is the first index outside
-                    start = max(region_left, oc[0])
-                    stop = min(region_right + 1, oc[1])
-                    channel = oc[2]['channel']
+                    start = max(region_left, oc.left)
+                    stop = min(region_right + 1, oc.right)
+                    channel = oc.channel
 
                     # Don't consider channels from other detectors
-                    if channel not in self.channels_in_detector[detector]:
+                    if channel not in self.config['channels_in_detector'][detector]:
                         continue
 
                     # Maybe some channels have already been marked as bad (configuration?), don't consider these.
@@ -186,7 +180,7 @@ class FindSmallPeaks(plugin.TransformPlugin):
         """
         peaks = []
 
-        for left, right in dsputils.intervals_where(w > noise_sigma):
+        for left, right in utils.intervals_where(w > noise_sigma):
             max_idx = left + np.argmax(w[left:right + 1])
             height = w[max_idx]
             if height < noise_sigma * self.min_sigma:

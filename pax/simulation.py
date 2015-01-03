@@ -1,6 +1,6 @@
 """
 Waveform simulator ("FaX") - physics backend
-There is no I/O stuff here, all that is in the WaveformSimulator plugins
+The only I/O stuff here is pax event creation, everything else is in the WaveformSimulator plugins
 """
 
 import numpy as np
@@ -8,7 +8,7 @@ import math
 import time
 
 import logging
-from pax import units, dsputils, datastructure
+from pax import units, utils, datastructure
 
 log = logging.getLogger('SimulationCore')
 
@@ -242,6 +242,14 @@ class Simulator(object):
         if not isinstance(hitpattern, SimulatedHitpattern):
             raise ValueError("to_pax_event takes an instance of SimulatedHitpattern, you gave a %s." % type(hitpattern))
 
+        # Create pax event
+        start_time = int(time.time() * units.s)
+        event = datastructure.Event(
+            config=self.config,
+            start_time=start_time,
+            stop_time=start_time + int(hitpattern.max + 2*self.config['event_padding']),
+        )
+
         log.debug("Now performing hitpattern to waveform conversion for %s photons" % hitpattern.n_photons)
         # TODO: Account for random initial digitizer state  wrt interaction?
         # Where?
@@ -251,19 +259,16 @@ class Simulator(object):
         dV = self.config['digitizer_voltage_range'] / 2 ** (self.config['digitizer_bits'])
 
         # Build waveform channel by channel
-        occurrences = {}
         for channel, photon_detection_times in hitpattern.arrival_times_per_channel.items():
             photon_detection_times = np.array(photon_detection_times)
 
             if len(photon_detection_times) == 0:
                 continue  # No photons in this channel
 
-            occurrences[channel] = []
-
             #  Add padding, sort (eh.. or were we already sorted? and is sorting necessary at all??)
             all_pmt_pulse_centers = np.sort(photon_detection_times + self.config['event_padding'])
 
-            for pmt_pulse_centers in dsputils.cluster_by_diff(all_pmt_pulse_centers, 2 * self.config['zle_padding']):
+            for pmt_pulse_centers in utils.cluster_by_diff(all_pmt_pulse_centers, 2 * self.config['zle_padding']):
 
                 # Build the waveform pulse by pulse (bin by bin was slow, hope this
                 # is faster)
@@ -356,16 +361,16 @@ class Simulator(object):
                     * current_wave
                 )
                 temp = np.clip(temp, 0, 2 ** (self.config['digitizer_bits']))
-                occurrences[channel].append((start_index, temp.astype(np.int16)))
+                event.occurrences.append(datastructure.Occurrence(
+                    channel=channel,
+                    left=start_index,
+                    raw_data=temp.astype(np.int16)))
 
-        if len(occurrences) == 0:
+        if len(event.occurrences) == 0:
             return None
-        event = datastructure.Event()
-        event.start_time = int(time.time() * units.s)
-        event.stop_time = int(event.start_time) + int(hitpattern.max + 2*self.config['event_padding'])
-        log.debug("Simulated pax event of %s samples long created.")
-        event.sample_duration = dt
-        event.occurrences = occurrences
+
+        log.debug("Simulated pax event of %s samples length and %s occurrences created." % (
+            event.length(), len(event.occurrences)))
         return event
 
 

@@ -1,6 +1,6 @@
 import numpy as np
 import math
-from pax import plugin, datastructure, dsputils
+from pax import plugin, datastructure, utils
 
 
 
@@ -33,8 +33,8 @@ class FindBigPeaks(plugin.TransformPlugin):
                 )
 
             # Search for peaks in the free regions
-            for region_left, region_right in dsputils.free_regions(event, detector):
-                for itv_left, itv_right in dsputils.intervals_where(
+            for region_left, region_right in utils.free_regions(event, detector):
+                for itv_left, itv_right in utils.intervals_where(
                         peakfinding_wave[region_left:region_right + 1] > pf['threshold']):
 
                     peaks = []
@@ -109,7 +109,7 @@ class FindBigPeaks(plugin.TransformPlugin):
         slope[0:offset] = np.zeros(offset)
         slope[len(slope) - offset:] = np.zeros(offset)
 
-        peaks, valleys = dsputils.where_changes(slope > 0)
+        peaks, valleys = utils.where_changes(slope > 0)
         peaks = np.array(sorted(peaks))
         valleys = np.array(sorted(valleys))
         assert len(peaks) == len(valleys)
