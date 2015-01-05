@@ -268,18 +268,15 @@ class Processor:
         # The loglevel is specified in the configuration, which isn't loaded at this point
 
         if isinstance(config_file, str):
-            #print("Loading %s" % config_file)
             if not os.path.isfile(config_file):
                 raise ValueError("Configuration file %s does not exist!" % config_file)
             if config_file in self.config_files_read:
                 # This file has already been loaded: don't load it again
                 # If we did, it would cause problems with inheritance diamonds
-                #print("Skipping config file %s: don't load it a second time" % config_file)
                 return
             self.configp.read(config_file)
             self.config_files_read.append(config_file)
         else:
-            #print("Loading config from file object")
             self.configp.read_file(config_file)
 
         # Determine the path(s) of the parent config file(s)
