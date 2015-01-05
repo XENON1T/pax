@@ -3,6 +3,22 @@
 History
 -------
 
+------------------
+2.0.0 (2015-01-05)
+------------------
+
+ * Cleanup datastructure including how occurences
+ * DSP
+ 
+   * Default DSP is PMT photoelectron counter
+ 
+ * Waveform simulator
+ 
+   * Zero-length encoding
+ 
+ * Output: pandas I/O used instead of pytables
+ * Cleaner shutdown of Processor class
+ * More tests
 
 ------------------
 1.4.0 (2014-11-21)
