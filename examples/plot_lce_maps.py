@@ -3,7 +3,7 @@ from tqdm import tqdm
 import numpy as np
 import matplotlib.pyplot as plt
 
-from pax.dsputils import InterpolatingMap
+from pax.utils import InterpolatingMap
 from pax.core import data_file_name
 from pax import units
 

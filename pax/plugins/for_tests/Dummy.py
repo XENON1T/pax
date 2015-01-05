@@ -1,9 +1,9 @@
-from pax import plugin, datastructure
+from pax import plugin, datastructure, utils
 
 class DummyInput(plugin.InputPlugin):
 
     def get_events(self):
-        yield datastructure.Event()
+        yield utils.empty_event()
 
 
 class DummyOutput(plugin.OutputPlugin):

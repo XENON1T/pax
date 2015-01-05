@@ -12,8 +12,8 @@ import snappy
 import numpy as np
 from bson.binary import Binary
 
-from pax.datastructure import Event
-from pax import plugin
+from pax.datastructure import Event, Occurrence
+from pax import plugin, units
 
 
 START_TIME_KEY = 'time_min'
@@ -36,6 +36,8 @@ class MongoDBInput(plugin.InputPlugin):
         self.cursor = self.collection.find()
         self.number_of_events = self.cursor.count()
 
+        self.mongo_time_unit = self.config.get('mongo_time_unit', 10 * units.ns)
+
         if self.number_of_events == 0:
             raise RuntimeError(
                 "No events found... did you run the event builder?")
@@ -45,8 +47,6 @@ class MongoDBInput(plugin.InputPlugin):
 
     def get_events(self):
         """Generator of events from Mongo
-
-        What is returned is all the channel's occurrences
         """
         for i, doc_event in enumerate(self.collection.find()):
             self.log.debug("Fetching document %s" % repr(doc_event['_id']))
@@ -54,42 +54,32 @@ class MongoDBInput(plugin.InputPlugin):
             # Store channel waveform-occurrences by iterating over all
             # occurrences.
             # This involves parsing MongoDB documents using WAX output format
-            event = Event()
-            event.event_number = i  # TODO: should come from Mongo
-
             assert isinstance(doc_event['range'][0], int)
             assert isinstance(doc_event['range'][1], int)
 
-            # Units is 10 ns from DAQ, but 1 ns within pax
-            event.start_time = int(doc_event['range'][0]) * 10
-            event.stop_time = int(doc_event['range'][1]) * 10
+            # Convert from Mongo's time unit to pax units
+            event = Event(
+                config=self.config,
+                start_time=int(doc_event['range'][0]) * self.mongo_time_unit,
+                stop_time=int(doc_event['range'][1]) * self.mongo_time_unit,
+            )
+            event.event_number = i  # TODO: should come from Mongo
 
             assert isinstance(event.start_time, int)
             assert isinstance(event.stop_time, int)
 
-            # Key is channel number, value is list of occurences
-            occurrences = {}
-
             for doc_occurrence in doc_event['docs']:
-                # +1 so it works with Xenon100 gain lists
-                channel = doc_occurrence['channel']
-                if channel not in occurrences:
-                    occurrences[channel] = []
 
                 assert isinstance(doc_occurrence['time'], int)
                 assert isinstance(doc_event['range'][0], int)
 
-                
                 data = snappy.compress(doc_occurrence['data'])
-                
-                occurrences[channel].append((
-                    # Start sample index
-                    doc_occurrence['time'] - doc_event['range'][0],
-                    # SumWaveform occurrence data
-                    np.fromstring(data, dtype="<i2"),
-                ))
 
-            event.occurrences = occurrences
+                event.occurrences.append(Occurrence(
+                    left=doc_occurrence['time'] - doc_event['range'][0],
+                    raw_data=np.fromstring(data, dtype="<i2"),
+                    channel=doc_occurrence['channel']
+                ))
 
             if event.length() == 0:
                 raise RuntimeWarning("Empty event")
@@ -238,26 +228,30 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
             self.log.fatal(error)
             raise RuntimeError(error)
 
-        for pmt_num, payload in event.occurrences.items():
-            for sample_position, samples_occurrence in payload:
-                assert isinstance(sample_position, int)
 
-                occurence_doc = {}
+        for oc in event.occurrences:
+            pmt_num = oc.channel
+            sample_position = oc.left
+            samples_occurrence = oc.raw_data
 
-                #occurence_doc['_id'] = uuid.uuid4()
-                occurence_doc['module'] = pmt_num  # TODO: fix wax
-                occurence_doc['channel'] = pmt_num
+            assert isinstance(sample_position, int)
 
-                occurence_doc['time'] = time + sample_position - self.starttime
+            occurence_doc = {}
 
-                data = np.array(samples_occurrence, dtype=np.int16).tostring()
-                if self.query['reader']['compressed']:
-                    data = snappy.compress(data)
+            #occurence_doc['_id'] = uuid.uuid4()
+            occurence_doc['module'] = pmt_num  # TODO: fix wax
+            occurence_doc['channel'] = pmt_num
 
-                # Convert raw samples into BSON format
-                occurence_doc['data'] = Binary(data, 0)
+            occurence_doc['time'] = time + sample_position - self.starttime
 
-                self.occurences.append(occurence_doc)
+            data = np.array(samples_occurrence, dtype=np.int16).tostring()
+            if self.query['reader']['compressed']:
+                data = snappy.compress(data)
+
+            # Convert raw samples into BSON format
+            occurence_doc['data'] = Binary(data, 0)
+
+            self.occurences.append(occurence_doc)
 
         if not self.collect_then_dump:
             self.handle_occurences()

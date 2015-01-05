@@ -1,24 +1,21 @@
 import numpy as np
-from pax import plugin, datastructure, dsputils
+from pax import plugin, datastructure, utils
 
 
-class ClusterAndClassifySmallPeaks(plugin.TransformPlugin):
+class ClusterSmallPeaks(plugin.TransformPlugin):
+    """Clusters individual channel peaks into groups, and labels them as noise / lone_pulse / unknown
+    'unknown' means an S1 or S2, which will be decided by a later plugin
+    """
 
     def startup(self):
         self.dt = dt = self.config['digitizer_t_resolution']
         self.cluster_separation_length = self.config['cluster_separation_time']
-        self.classification_mode = self.config['classification_mode']
-        self.channels_in_detector = {
-            'tpc':  self.config['pmts_top'] | self.config['pmts_bottom'],
-        }
-        for det, chs in self.config['external_detectors'].items():
-            self.channels_in_detector[det] = chs
 
     def transform_event(self, event):
 
         # Handle each detector separately
-        for detector in self.channels_in_detector.keys():
-            self.log.debug("Clustering and classifying channel peaks in data from %s" % detector)
+        for detector in self.config['channels_in_detector'].keys():
+            self.log.debug("Clustering channel peaks in data from %s" % detector)
             peaks = []      # Superfluous, while loop is always run once... but pycharm complains if we omit
 
             # Hmzz, python has no do_while, so..
@@ -31,7 +28,7 @@ class ClusterAndClassifySmallPeaks(plugin.TransformPlugin):
                 # Get all single-pe data in a list of dicts, sorted by index_of_maximum
                 spes = sorted([
                     p for p in event.all_channel_peaks
-                    if p.channel in self.channels_in_detector[detector]
+                    if p.channel in self.config['channels_in_detector'][detector]
                     and (not self.config['exclude_bad_channels'] or not event.is_channel_bad[p.channel])
                 ], key=lambda s: s.index_of_maximum)
                 self.log.debug("Found %s channel peaks" % len(spes))
@@ -40,7 +37,7 @@ class ClusterAndClassifySmallPeaks(plugin.TransformPlugin):
                     break
 
                 # Cluster the single-pes in groups separated by >= self.cluster_separation_length
-                cluster_indices = dsputils.cluster_by_diff([s.index_of_maximum * self.dt for s in spes],
+                cluster_indices = utils.cluster_by_diff([s.index_of_maximum * self.dt for s in spes],
                                                            self.cluster_separation_length,
                                                            return_indices=True)
                 self.log.debug("Made %s clusters" % len(cluster_indices))
@@ -56,24 +53,18 @@ class ClusterAndClassifySmallPeaks(plugin.TransformPlugin):
                     peak.area =  sum([s.area  for s in peak.channel_peaks])
 
                     # For backwards compatibility with plotting code
-                    peak.index_of_maximum = int((peak.left + peak.right)/2)
-                    peak.height = 0
+                    highest_peak_index = np.argmax([s.height for s in peak.channel_peaks])
+                    peak.index_of_maximum = peak.channel_peaks[highest_peak_index].index_of_maximum
+                    peak.height = peak.channel_peaks[highest_peak_index].height
 
                     # Contributing channels are in the detector and have an spe
                     # (not in a bad channel, but those spes have already been filtered out)
                     channels = np.arange(self.config['n_pmts'])
                     peak.does_channel_contribute = (np.in1d(channels,
-                                                            # numpy doesn't like sets...
-                                                            np.array(list(self.channels_in_detector[detector])))) & \
+                                                            self.config['channels_in_detector'][detector])) & \
                                                    (np.in1d(channels, [s.channel for s in peak.channel_peaks]))
 
                     if peak.number_of_contributing_channels == 0:
-                        print(peak.to_dict(), "\n\n")
-                        for s in peak.channel_peaks:
-                            print(s.to_dict(), "\n\n")
-                        print(self.channels_in_detector[detector])
-                        print(np.in1d(channels, self.channels_in_detector[detector]), "\n\n")
-                        print(np.in1d(channels, [s.channel for s in peak.channel_peaks]), "\n\n")
                         raise RuntimeError(
                             "Every peak should have at least one contributing channel... what's going on?")
 
@@ -84,16 +75,16 @@ class ClusterAndClassifySmallPeaks(plugin.TransformPlugin):
                             peak.area_per_pmt[ch] = sum([s.area for s in peak.channel_peaks])
 
                     # Find how many channels show some data, but no spe
-                    coincident_occurrences = event.occurrences_interval_tree.search(peak.left, peak.right, strict=False)
+                    coincident_occurrences = event.get_occurrences_between(peak.left, peak.right, strict=False)
                     peak.does_channel_have_noise = (np.invert(peak.does_channel_contribute)) & \
-                                                   (np.in1d(channels, [oc[2]['channel']
+                                                   (np.in1d(channels, [oc.channel
                                                                        for oc in coincident_occurrences]))
 
                     # Compute some quantities summarizing the timing distributing
                     times = [s.index_of_maximum * self.dt for s in peak.channel_peaks]
-                    peak.mean_absolute_deviation = dsputils.mad(times)
+                    peak.mean_absolute_deviation = utils.mad(times)
 
-                    # Simple ad-hoc classification
+                    # Classification for noise and lone_pulse peaks
 
                     if peak.number_of_noise_channels > 2 * peak.number_of_contributing_channels:
                         peak.type = 'noise'
@@ -104,13 +95,8 @@ class ClusterAndClassifySmallPeaks(plugin.TransformPlugin):
                         dark_count[channel] = dark_count.get(channel, 0) + 1
 
                     else:
-                        if peak.mean_absolute_deviation < 10:
-                            peak.type = 's1'
-                        else:
-                            if peak.number_of_contributing_channels < 5:
-                                peak.type = 'unknown'
-                            else:
-                                peak.type = 's2'
+                        # Peak classification done in a separate plugin
+                        peak.type = 'unknown'
 
                     peaks.append(peak)
 
@@ -122,9 +108,30 @@ class ClusterAndClassifySmallPeaks(plugin.TransformPlugin):
                         event.is_channel_bad[ch] = True
                         if self.config['exclude_bad_channels']:
                             redo_classification = True
-                            self.log.debug("Classification has to be redone!!")
+                            self.log.debug("Clustering has to be redone!!")
 
             # Classification is now done, so add the peaks to the datastructure
             event.peaks.extend(peaks)
+
+        return event
+
+
+class AdHocClassification(plugin.TransformPlugin):
+
+    def transform_event(self, event):
+
+        for peak in event.peaks:
+
+            # Work only on unknown peaks - not noise, lone_pulse, and big peaks (which are already s1 or s2)
+            if peak.type != 'unknown':
+                continue
+
+            if peak.mean_absolute_deviation < 10:
+                peak.type = 's1'
+                continue
+
+            if peak.number_of_contributing_channels >= 5:
+                peak.type = 's2'
+                continue
 
         return event

@@ -6,15 +6,19 @@ import glob, re, struct, time
 import numpy as np
 
 from pax import plugin, units
-from pax.datastructure import Event
+from pax.datastructure import Event, Occurrence
 
+
+# TODO: probably doesn't work anymore
 
 class DirWithWaveformFiles(plugin.InputPlugin):
 
+    # Should be set by child class
+    filename_regexp = None
+
     def startup(self):
-        # Assumes self.filename_regexp is set by child class
         self.input_dirname = self.config['input_name']
-        files = glob.glob(input_dirname + "/*.*")
+        files = glob.glob(self.input_dirname + "/*.*")
         if len(files)==0:
             self.log.fatal("No files found in input directory %s!" % self.input_dirname)
         #Load all events... ugly code
@@ -45,23 +49,34 @@ class DirWithWaveformFiles(plugin.InputPlugin):
 
         if not index in self.events:
             raise RuntimeError("Event %s not found! File missing?" % index)
-        event = Event()
 
         #Get the event data
         self.current_event_channels = self.events[index]
-        event.occurrences = {
+        occurrences = {
             int(channel) : [(0, np.array(self.get_channel_data(channel), dtype=np.int16))]
             for channel in self.events[index]
         }
-        event_length = len(event.occurrences[list(event.occurrences.keys())[0]][0][1])
+        event_length = len(occurrences[list(occurrences.keys())[0]][0][1])
 
-        # Set all the other stuff
+        now = time.time()
+        event = Event(
+            config=self.config,
+            # XAMS files don't have a timestamp!
+            # TODO: can we get this from e.g. file creation time?
+            start_time=int(np.random.random() + now * units.s),
+            length=event_length
+        )
+
+        # Convert to new occurrences format... meh
+        for ch, occs in occurrences:
+            for oc in occs:
+                event.occurrences.append(Occurrence(
+                    left=oc[0],
+                    raw_data=oc[1],
+                    channel=ch,
+                ))
+
         event.event_number = int(index)
-        event.sample_duration = int(1 * units.ns)    # TODO: don't hardcode sample size...
-        now = time.time()    # TODO: read file creation time?
-        event.start_time = int(np.random.random() + now * units.s)
-        # Remember stop_time is the stop time of the LAST sample!
-        event.stop_time = event.start_time + int(event_length * event.sample_duration)
 
         return event
 
@@ -70,6 +85,10 @@ class DirWithWaveformFiles(plugin.InputPlugin):
         for key, value in self.current_event_channels[str(channel)].items():
             temp = re.sub('\(\?P\<%s\>[^\)]*\)'%key, value, temp)
         return self.input_dirname +'/'+ temp
+
+    # Should be overriden by child class
+    def get_channel_data(self, channel):
+        raise NotImplementedError()
 
 
 

@@ -10,46 +10,46 @@ Tests for `pax` module.
 import numpy as np
 import unittest
 
-from pax.datastructure import Event, Peak, Waveform
+from pax.datastructure import Peak, SumWaveform
+from pax.utils import empty_event
 
 
 class TestDatastructure(unittest.TestCase):
-
+    
     def setUp(self):
         pass
 
     def test_does_not_exist(self):
-        e = Event()
-
+        e = empty_event()
         with self.assertRaises(AttributeError):
-            e.does_not_exist = 3.0
+            self.empty_event.does_not_exist = 3.0
 
     def test_good(self):
-        e = Event()
+        e = empty_event()
         e.event_number = 3.0
         self.assertEqual(e.event_number, 3.0)
 
     def test_to_json(self):
-        e = Event()
+        e = empty_event()
         e.to_json()
 
     def test_to_dict(self):
-        e = Event()
+        e = empty_event()
         e.to_dict()
 
     def test_default(self):
-        e = Event()
+        e = empty_event()
         self.assertEqual(e.event_number, 0)
         self.assertEqual(e.peaks, [])
 
     def test_wrong_type(self):
-        e = Event()
+        e = empty_event()
 
         with self.assertRaises(ValueError):
             e.event_number = "abc"
 
     def test_peaks(self):
-        e = Event()
+        e = empty_event()
         e.peaks = [{'area': 0,
                     'index_of_maximum': 0}]
 
@@ -64,7 +64,7 @@ class TestDatastructure(unittest.TestCase):
         self.assertEqual(p.area, 3.0)
 
     def test_peaks_append(self):
-        e = Event()
+        e = empty_event()
         e.peaks.append(Peak({'area': 2.0,
                              'index_of_maximum': 0,
                              'type': 'S1'}))
@@ -74,7 +74,7 @@ class TestDatastructure(unittest.TestCase):
         self.assertEqual(e.peaks[0].area, 2.0)
 
     def test_s1_helper_method(self):
-        e = Event()
+        e = empty_event()
         e.peaks.append(Peak({'area': 2.0,
                              'index_of_maximum': 0,
                              'type': 'S1'}))
@@ -86,7 +86,7 @@ class TestDatastructure(unittest.TestCase):
     def test_s1_helper_method_sort(self):
         areas = [3.0, 1.0, 2.0, 1.2]
 
-        e = Event()
+        e = empty_event()
         for area in areas:
             e.peaks.append(Peak({'area': area,
                                  'type': 'S2'}))
@@ -102,8 +102,8 @@ class TestDatastructure(unittest.TestCase):
             self.assertEqual(s2s[i].area, area)
 
     def test_waveform_string_name(self):
-        w = Waveform()
-        self.assertIsInstance(w, Waveform)
+        w = SumWaveform()
+        self.assertIsInstance(w, SumWaveform)
 
         w.name_of_filter = "blahblah"
         self.assertEqual(w.name_of_filter, "blahblah")
@@ -111,8 +111,8 @@ class TestDatastructure(unittest.TestCase):
     def test_numpy_array_type(self):
         samples = [3, 4, 5]
 
-        w = Waveform()
-        self.assertIsInstance(w, Waveform)
+        w = SumWaveform()
+        self.assertIsInstance(w, SumWaveform)
 
         self.assertIsInstance(w.samples, np.ndarray)
 

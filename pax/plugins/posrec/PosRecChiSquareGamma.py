@@ -5,7 +5,7 @@ from scipy.optimize import fmin_powell
 from pax import plugin
 
 from pax.datastructure import ReconstructedPosition
-from pax.dsputils import InterpolatingMap
+from pax.utils import InterpolatingMap
 from pax.core import data_file_name
 
 

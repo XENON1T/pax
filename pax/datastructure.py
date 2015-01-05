@@ -61,7 +61,11 @@ class ChannelPeak(Model):
     index_of_maximum = IntegerField()     #: Index in the event at which this peak has its maximum.
 
     left = IntegerField()                 #: Index of left bound (inclusive) of peak.
-    right = IntegerField()                #: Index of right bound of peak
+    right = IntegerField()                #: Index of right bound (INCLUSIVE!!) of peak
+
+    @property
+    def length(self):
+        return self.right - self.left + 1
 
     area = FloatField()                   #: Area of the peak in photoelectrons
     height = FloatField()                 #: Height of highest point in peak (in pe/bin)
@@ -76,8 +80,9 @@ class Peak(Model):
     #   Fields present in all peaks
     ##
 
-    left = IntegerField()                       #: Index of left bound (inclusive) in event.
-    right = IntegerField() #: Index of right bound (for Xdp matching: exclusive; otherwise: inclusive) in event.
+    left = IntegerField()                 #: Index of left bound (inclusive) in event.
+    right = IntegerField()                #: Index of right bound (INCLUSIVE!!) in event.
+    # For XDP matching rightmost sample is not in integral, so you could say it is exclusive then.
 
     area = FloatField()                   #: Area of the pulse in photoelectrons. Only
                                           #: Includes only contributing pmts (see later) in the right detector
@@ -157,7 +162,7 @@ class Peak(Model):
     # tenth_area_range = FloatField()
 
 
-class Waveform(Model):
+class SumWaveform(Model):
 
     """Class used to store sum (filtered or not) waveform information.
     """
@@ -180,6 +185,62 @@ class Waveform(Model):
             return False
 
 
+# We need to access these a gazillion times, but using a namedtuple gains little (+6% BuildWaveforms runtime)
+# and would sacrifice mutability.
+# plain tuples/dicts in OccurrencesContainer perform similarly to namedtuples, but can't be extended/documented
+# Using a MicroModel, however, would slow things down a lot (+60% BuildWaveforms runtime)
+class Occurrence(object):
+    """A DAQ occurrence
+    """
+
+    #: First index
+    left = None
+
+    #: Last index
+    right = None
+
+    #: Channel the occurrence belongs to
+    channel = None
+
+    #: Maximum amplitude (in pe/bin)
+    #: Will remain None if channel's gain is 0
+    height = None
+
+    #: Baseline used in conversion to pe/bin (in ADC counts)
+    # TODO: in small peakfinding, an improved baseline estimate is computed -- maybe we should store that too?
+    digitizer_baseline_used = None
+
+    #: Raw wave data (in ADC counts, NOT pe/bin!)
+    raw_data = None
+
+    @property
+    def length(self):
+        return self.right - self.left + 1
+
+    def __init__(self, **kwargs):
+        """Initialize an occurrence
+        You must specify at least:
+         - left (first index)
+        And one of
+         - raw_data (numpy array of samples)
+         - right (last index)
+        """
+
+        # Boilerplate to store all valid kwargs as attrs
+        for k, v in kwargs.items():
+            if not hasattr(self, k):
+                raise ValueError('Invalid argument %s to Occurrence.__init__' % k)
+            setattr(self, k, v)
+
+        # Determine right from raw_data if needed
+        if self.right is None:
+            if self.raw_data is None:
+                raise ValueError('Must have right or raw_data to init Occurrence')
+            self.right = self.left + len(self.raw_data) - 1
+
+
+
+
 class Event(Model):
 
     """Event class
@@ -191,13 +252,13 @@ class Event(Model):
     #: Time duration of a sample in units of ns
     sample_duration = IntegerField(default=10*units.ns)
 
-    #: Start time of the event.
+    #: Start time of the event (time at which the first sample STARTS)
     #:
     #: This is a 64-bit number in units of ns that follows the UNIX clock.
     #: Or rather, it starts from January 1, 1970.
     start_time = IntegerField()
 
-    #: Stop time of the event.
+    #: Stop time of the event (time at which the last sample ENDS).
     #:
     #: This is a 64-bit number in units of ns that follows the UNIX clock.
     #: Or rather, it starts from January 1, 1970.
@@ -219,7 +280,7 @@ class Event(Model):
     #: Returns a list of sum waveforms
     #:
     #: Returns an :class:`pax.datastructure.SumWaveform` class.
-    waveforms = f.ModelCollectionField(default=[], wrapped_class=Waveform)
+    waveforms = f.ModelCollectionField(default=[], wrapped_class=SumWaveform)
 
     #: A 2D array of all the PMT waveforms, units of pe/bin.
     #:
@@ -235,31 +296,36 @@ class Event(Model):
     #: and gain corrected.
     pmt_waveforms = f.NumpyArrayField(dtype=np.float64)  # : Array of samples.
 
-    #: Occurrences
-    #:
+    #: A python list of all occurrences in the event (containing instances of the Occurrence class)
     #: An occurrence holds a stream of samples in one channel, as provided by the digitizer.
-    #: The format of this field is a dict of lists of 2-tuples:
-    #: {
-    #:      channel_int : [ (start_index_int, samples_ndarray), (...,...), ...],
-    #:      channel_int : ...,
-    #:      ...
-    #: }
-    #: The first element of each 2-tuple is the index within the event (i.e.
-    #: units of sample, e.g., 10 ns), the second a numpy array 16-bit signed integers,
-    #: which represent the ADC counts.
-    #:
-    #: (This may get moved into the Input plugin base class, see issue #32)
     occurrences = f.BaseField()
-
-    #: Used to be an interval tree (from PyIntervalTree) for occurrence lookup.
-    #: Now just an 'IntervalTree' mock-up defined in dsputils, see there for usage
-    #: TODO: document this properly once stable
-    #: After BuildWaveforms, you should only use this, not event.occurrences
-    occurrences_interval_tree = f.BaseField()
 
     #: List of channels which showed an increased dark rate
     #: Declared as basefield as we want to store a list (it will get appended to constantly)
     is_channel_bad = f.NumpyArrayField(dtype=np.bool)
+
+
+    def __init__(self, config, start_time, **kwargs):
+
+        # Micromodels' init must be called first, else we can't store attributes
+        super().__init__(kwargs)
+
+        self.start_time = start_time
+        self.sample_duration = config['digitizer_t_resolution']
+
+        if 'stop_time' in kwargs:
+            self.stop_time = kwargs['stop_time']
+
+        elif 'length' in kwargs:
+            self.stop_time = self.start_time + kwargs['length'] * self.sample_duration
+
+        else:
+            raise ValueError('Must supply either stop_time or length to init event')
+
+        self.pmt_waveforms = np.zeros((config['n_pmts'], self.length()))
+        self.is_channel_bad = np.zeros(config['n_pmts'], dtype=np.bool)
+        self.occurrences = []
+
 
     def event_duration(self):
         """Duration of event window in units of ns
@@ -278,7 +344,7 @@ class Event(Model):
             if sw.name == name:
                 return sw
 
-        raise RuntimeError("Waveform %s not found" % name)
+        raise RuntimeError("SumWaveform %s not found" % name)
 
     def length(self):
         """Number of samples for the sum waveform
@@ -317,6 +383,16 @@ class Event(Model):
                        reverse=reverse)
 
         return peaks
+
+    def get_occurrences_between(self, left, right, strict=False):
+        """Returns all occurrences that overlap with [left, right]
+        If strict=True, only returns occurrences that are not outside [left, right]
+        """
+        if strict:
+            return [oc for oc in self.occurrences if oc.left >= left and oc.right <= right]
+        else:
+            return [oc for oc in self.occurrences if oc.left <= right and oc.right >= left]
+
 
 
 def _explain(class_name):

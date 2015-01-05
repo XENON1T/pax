@@ -10,7 +10,8 @@ Tests for `pax` module.
 import unittest
 
 from pax import core, plugin
-from pax.datastructure import Event, Peak
+from pax.datastructure import Peak
+from pax.utils import empty_event
 
 
 class TestPosRecWeightedSum(unittest.TestCase):
@@ -21,7 +22,7 @@ class TestPosRecWeightedSum(unittest.TestCase):
             'test':               'PosSimple.PosRecWeightedSum'}})
         self.posrec_plugin = self.pax.get_plugin_by_name('PosRecWeightedSum')
 
-        self.e = Event()
+        self.e = empty_event()
 
         self.e.peaks.append(Peak({'left':  5,
                                   'right': 9,

@@ -134,7 +134,7 @@ class PlotBase(plugin.OutputPlugin):
                                       connectionstyle="angle3,"
                                                       "angleA=0,"
                                                       "angleB=-90")
-                plt.hlines(y, peak.left * self.samples_to_us,
+                plt.hlines(y, (peak.left - 1) * self.samples_to_us,
                               peak.right * self.samples_to_us)
                 plt.annotate('%s:%s' % (peak.type, int(peak.area)),
                              xy=(x, y),
@@ -151,7 +151,7 @@ class PlotBase(plugin.OutputPlugin):
         # Separated so PlotChannelWaveforms2D can also call it
         for peak in event.peaks:
             shade_color = self.peak_colors.get(peak.type,'gray') if peak.detector == 'tpc' else 'red'
-            plt.axvspan(peak.left  * self.samples_to_us,
+            plt.axvspan((peak.left - 1)  * self.samples_to_us,
                         peak.right * self.samples_to_us,
                         color=shade_color,
                         alpha=0.2)
@@ -268,34 +268,35 @@ class PlotChannelWaveforms3D(PlotBase): # user sets variables xlim, ylim for 3D 
 
         # Plot each individual occurrence
         global_max_amplitude = 0
-        for channel, occurrences in event.occurrences.items(): # is dictionary, so need .items()...
+        for oc in event.occurrences:
+            start_index = oc.left
+            channel = oc.channel
+            end_index = oc.right
 
-            for start_index, occurrence_waveform in occurrences: # is list of tuples, so don't need .items()...
+            # Takes only channels in the range we want to plot
+            if not ylim_channel_start <= channel <= ylim_channel_end:
+                continue
 
-                # Takes only channels in the range we want to plot
-                if not ylim_channel_start <= channel <= ylim_channel_end:
-                    continue
+            # Take only occurrences that start in the time window
+            # -- But don't you also want occurrences which start outside, but end inside the window?
+            if not xlim_time_start*100 <= start_index <= xlim_time_end*100:
+                continue
 
-                # Take only occurrences that start in the time window
-                # -- But don't you also want occurrences which start outside, but end inside the window?
-                if not xlim_time_start*100 <= start_index <= xlim_time_end*100:
-                    continue
+            waveform = event.pmt_waveforms[channel, start_index : end_index + 1]
+            if self.config['log_scale']:
+                # TODO: this will still give nan's if waveform drops below 1 pe_nominal / bin...
+                waveform = np.log10(1 + waveform)
 
-                waveform = event.pmt_waveforms[channel, start_index : start_index + len(occurrence_waveform)]
-                if self.config['log_scale']:
-                    # TODO: this will still give nan's if waveform drops below 1 pe_nominal / bin...
-                    waveform = np.log10(1 + waveform)
+            # We need to keep track of this, apparently gca can't scale itself?
+            global_max_amplitude = max(np.max(waveform), global_max_amplitude)
 
-                # We need to keep track of this, apparently gca can't scale itself?
-                global_max_amplitude = max(np.max(waveform), global_max_amplitude)
-
-                ax.plot(
-                    np.linspace(start_index, start_index+len(waveform)-1, len(waveform)) * dt/units.us,
-                    channel * np.ones(len(waveform)),
-                    zs=waveform,
-                    zdir='z',
-                    label=str(channel)
-                )
+            ax.plot(
+                np.linspace(start_index, start_index+len(waveform)-1, len(waveform)) * dt / units.us,
+                channel * np.ones(len(waveform)),
+                zs=waveform,
+                zdir='z',
+                label=str(channel)
+            )
 
         # Plot the sum waveform
         lefti = xlim_time_start*100
@@ -341,21 +342,19 @@ class PlotChannelWaveforms2D(PlotBase):
         time_scale = self.config['digitizer_t_resolution'] / units.us
 
         # TODO: change from lines to squares
-        for oc in event.occurrences_interval_tree.get_all():
-            start_index = oc[0]
-            # Remember: intervaltree uses half-open intervals, end_index is the first index outside!
-            end_index = oc[1]
-            length = end_index - start_index
-            channel = oc[2]['channel']
-            height = oc[2]['height']
+        for oc in event.occurrences:
+            if oc.height is None:
+                # Maybe gain was 0 or something
+                # TODO: plot these too, in a different color
+                continue
 
             # Choose a color for this occurrence based on amplitude
-            color_factor = np.clip(np.log10(height)/2, 0, 1)
+            color_factor = np.clip(np.log10(oc.height)/2, 0, 1)
 
-            plt.gca().add_patch(Rectangle((start_index*time_scale, channel), length*time_scale, 1,
+            plt.gca().add_patch(Rectangle((oc.left*time_scale, oc.channel), oc.length*time_scale, 1,
                                           facecolor=plt.cm.gnuplot2(color_factor),
                                           edgecolor='none',
-                                          alpha=(0.1 if event.is_channel_bad[channel] else 1.0)))
+                                          alpha=(0.1 if event.is_channel_bad[oc.channel] else 0.7)))
 
         # Plot the channel peaks as dots
         # All these for loops are slow -- hope we get by-column access some time
@@ -367,19 +366,22 @@ class PlotChannelWaveforms2D(PlotBase):
                 color_factor = 1
             else:
                 color_factor = min(max(p.height/(20*p.noise_sigma), 0), 1)
-            plt.scatter(  [p.index_of_maximum * time_scale],
-                          [p.channel],
+            plt.scatter(  [(0.5 + p.index_of_maximum) * time_scale],
+                          [0.5 + p.channel],
                         c=(color_factor, 0, (1-color_factor)),
                         s=10*p.area,
                         edgecolor=(0.5*color_factor, 0, 0.5*(1-color_factor)),
                         alpha=(0.1 if event.is_channel_bad[p.channel] else 1.0))
 
         # Plot the bottom/top/veto boundaries
+        # Assumes the detector names' lexical order is the same as the channel order!
         channel_ranges = [
             ('top',     min(self.config['pmts_top'])),
             ('bottom',  min(self.config['pmts_bottom'])),
         ]
-        for det, chs in self.config['external_detectors'].items():
+        for det, chs in self.config['channels_in_detector'].items():
+            if det == 'tpc':
+                continue
             channel_ranges.append((det, min(chs)))
 
         # Annotate the channel groups and boundaries
