@@ -19,10 +19,10 @@ class FindBigPeaks(plugin.TransformPlugin):
 
     def transform_event(self, event):
         for pf in self.config['peakfinders']:
-            pfwave_obj = event.get_waveform(pf['peakfinding_wave'])
+            pfwave_obj = event.get_sum_waveform(pf['peakfinding_wave'])
             peakfinding_wave = pfwave_obj.samples
             detector = pfwave_obj.detector
-            unfiltered_wave  = event.get_waveform(pf['unfiltered_wave']).samples
+            unfiltered_wave  = event.get_sum_waveform(pf['unfiltered_wave']).samples
 
             # Define the peak/valley tester for the peaksplitter this peakfinder
             def is_valid_p_v_pair( signal, peak, valley):

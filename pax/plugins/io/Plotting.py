@@ -27,7 +27,7 @@ class PlotBase(plugin.OutputPlugin):
 
         self.skip_counter = 0
         # Convert times in samples to times in us: need to know how many samples / us
-        self.samples_to_us = self.config['digitizer_t_resolution'] / units.us
+        self.samples_to_us = self.config['sample_duration'] / units.us
 
         self.peak_colors = {
             's1':   'blue',
@@ -96,7 +96,7 @@ class PlotBase(plugin.OutputPlugin):
         plt.xlabel('Time (us)')
 
         for w in self.config['waveforms_to_plot']:
-            waveform = event.get_waveform(w['internal_name'])
+            waveform = event.get_sum_waveform(w['internal_name'])
             plt.plot(xlabels,
                      (waveform.samples[lefti:righti + 1] + y_offset)*scale,
                      label=w['plot_label'],
@@ -207,15 +207,15 @@ class PlotSumWaveformEntireEvent(PlotBase):
 
 class PlottingHitPattern(PlotBase):
     def substartup(self):
-        self.pmts_top = self.config['pmts_top']
-        self.pmts_bottom = self.config['pmts_bottom']
+        self.channels_top = self.config['channels_top']
+        self.channels_bottom = self.config['channels_bottom']
         self.pmt_locations = self.config['pmt_locations']
 
     def _plot(self, peak, ax, pmts):
         area = []
         points = []
         for pmt in pmts:
-            area.append(peak.area_per_pmt[pmt])
+            area.append(peak.area_per_channel[pmt])
             points.append((self.pmt_locations[pmt]['x'],
                            self.pmt_locations[pmt]['y']))
 
@@ -226,7 +226,7 @@ class PlottingHitPattern(PlotBase):
         ax.set_xticklabels([])
         ax.set_yticklabels([])
 
-    def plot_event(self, event, show=['S1','S2'], show_dominant_array_only=True, subplots_to_use=None):
+    def plot_event(self, event, show=('S1','S2'), show_dominant_array_only=True, subplots_to_use=None):
         if subplots_to_use is None:
             f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, sharex='col', sharey='row')
             subplots_to_use = [ax1, ax2, ax3, ax4]
@@ -244,7 +244,7 @@ class PlottingHitPattern(PlotBase):
                     ax = subplots_to_use.pop(0)
                     ax.set_title('%s %s' % (peak_type, array))
 
-                    self._plot(peak, ax, getattr(self, 'pmts_%s'%array))
+                    self._plot(peak, ax, getattr(self, 'channels_%s'%array))
 
             
 class PlotChannelWaveforms3D(PlotBase): # user sets variables xlim, ylim for 3D plot
@@ -254,7 +254,7 @@ class PlotChannelWaveforms3D(PlotBase): # user sets variables xlim, ylim for 3D 
     """
 
     def plot_event(self, event):
-        dt = self.config['digitizer_t_resolution']
+        dt = self.config['sample_duration']
         ylim_channel_start = 0 # top : 1-98, bottom : 99-178, Top Shield Array: PMTs 179..210, Bottom Shield Array: PMTs 211..242
         ylim_channel_end = 242
         xlim_time_start = 0 # s1: 205.5 , s2: 260
@@ -282,7 +282,7 @@ class PlotChannelWaveforms3D(PlotBase): # user sets variables xlim, ylim for 3D 
             if not xlim_time_start*100 <= start_index <= xlim_time_end*100:
                 continue
 
-            waveform = event.pmt_waveforms[channel, start_index : end_index + 1]
+            waveform = event.channel_waveforms[channel, start_index : end_index + 1]
             if self.config['log_scale']:
                 # TODO: this will still give nan's if waveform drops below 1 pe_nominal / bin...
                 waveform = np.log10(1 + waveform)
@@ -301,7 +301,7 @@ class PlotChannelWaveforms3D(PlotBase): # user sets variables xlim, ylim for 3D 
         # Plot the sum waveform
         lefti = xlim_time_start*100
         righti = xlim_time_end*100
-        waveform = event.get_waveform('uS2').samples[lefti:righti]
+        waveform = event.get_sum_waveform('uS2').samples[lefti:righti]
         scale = global_max_amplitude/np.max(waveform)
         time = np.array(np.linspace(lefti, righti, righti-lefti))
         ax.plot(
@@ -318,7 +318,7 @@ class PlotChannelWaveforms3D(PlotBase): # user sets variables xlim, ylim for 3D 
         ax.set_ylabel('Channel number')
         ax.set_ylim3d(ylim_channel_start, ylim_channel_end)
 
-        zlabel = 'Pulse height [pe_nominal / %d ns]' % (self.config['digitizer_t_resolution']/units.ns)
+        zlabel = 'Pulse height [pe_nominal / %d ns]' % (self.config['sample_duration']/units.ns)
         if self.config['log_scale']:
             zlabel = 'Log10 1 + ' + zlabel
         ax.set_zlabel(zlabel)
@@ -339,7 +339,7 @@ class PlotChannelWaveforms2D(PlotBase):
     """
 
     def plot_event(self, event):
-        time_scale = self.config['digitizer_t_resolution'] / units.us
+        time_scale = self.config['sample_duration'] / units.us
 
         # TODO: change from lines to squares
         for oc in event.occurrences:
@@ -376,8 +376,8 @@ class PlotChannelWaveforms2D(PlotBase):
         # Plot the bottom/top/veto boundaries
         # Assumes the detector names' lexical order is the same as the channel order!
         channel_ranges = [
-            ('top',     min(self.config['pmts_top'])),
-            ('bottom',  min(self.config['pmts_bottom'])),
+            ('top',     min(self.config['channels_top'])),
+            ('bottom',  min(self.config['channels_bottom'])),
         ]
         for det, chs in self.config['channels_in_detector'].items():
             if det == 'tpc':
@@ -393,7 +393,7 @@ class PlotChannelWaveforms2D(PlotBase):
             plt.text(
                 0.03*event.length()*time_scale,
                 (channel_ranges[i][1] +
-                    (channel_ranges[i+1][1] if i < len(channel_ranges)-1 else self.config['n_pmts'])
+                    (channel_ranges[i+1][1] if i < len(channel_ranges)-1 else self.config['n_channels'])
                 )/2,
                 channel_ranges[i][0])
 
@@ -407,7 +407,7 @@ class PlotChannelWaveforms2D(PlotBase):
 
         # Make sure we always see all channels , even if there are few occurrences
         plt.xlim((0,event.length() * time_scale))
-        plt.ylim((0,len(event.pmt_waveforms)))
+        plt.ylim((0,len(event.channel_waveforms)))
 
         plt.xlabel('Time (us)')
         plt.ylabel('PMT channel')

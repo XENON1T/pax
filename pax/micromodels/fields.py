@@ -242,6 +242,11 @@ class ModelCollectionField(WrappedObjectField):
 
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Initialize default here, don't want mutable defaults in datatstructure
+        self._default = []
+
     def to_python(self):
         object_list = []
         for item in self.data:

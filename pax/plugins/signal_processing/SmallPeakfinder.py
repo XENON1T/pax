@@ -75,8 +75,8 @@ class FindSmallPeaks(plugin.TransformPlugin):
                     if event.is_channel_bad[channel]:
                         continue
 
-                    # Retrieve the waveform from pmt_waveforms
-                    w = event.pmt_waveforms[channel, start : stop + 1]
+                    # Retrieve the waveform from channel_waveforms
+                    w = event.channel_waveforms[channel, start : stop + 1]
 
                     # Keep the unfiltered waveform in origw
                     origw = w

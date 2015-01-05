@@ -32,7 +32,7 @@ Assumptions made:
         were missing)       
 """
 
-def convert_lce_map(filename, outname, n_pmts=98):
+def convert_lce_map(filename, outname, n_channels=98):
     """Convert the Xerawdp simulated S2 lce per pmt map to a pax map"""
     
     # Slurp the file
@@ -58,7 +58,7 @@ def convert_lce_map(filename, outname, n_pmts=98):
     assert n_x == -2*x_min/d_x+1
     assert n_y == -2*y_min/d_y+1
     
-    output = {str(pmt+1) : np.zeros((n_x, n_y)).tolist() for pmt in range(n_pmts)}
+    output = {str(pmt+1) : np.zeros((n_x, n_y)).tolist() for pmt in range(n_channels)}
     output['total_LCE'] = np.zeros((n_x, n_y)).tolist()
     output['name'] = outname
     output['coordinate_system'] = [
@@ -91,7 +91,7 @@ def convert_lce_map(filename, outname, n_pmts=98):
         
         # lines are composed of: x, y, Nhits/Nphotons, {pmt1, pmt98}
         # pmt1 = hitsonpmt1 / Nhits
-        assert len(linedata) == n_pmts + 3
+        assert len(linedata) == n_channels + 3
         if overall_lce >0:
             assert abs(1-sum(linedata[3:])) < 0.001
         for pmt, fraction_of_light_received in enumerate(linedata[3:]):

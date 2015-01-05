@@ -1,6 +1,6 @@
 import pax.datastructure as ds
 
-from pax import plugin
+from pax import plugin, utils
 from pax.micromodels import fields as mm_fields
 import tables
 
@@ -31,7 +31,7 @@ class HDF5Output(plugin.OutputPlugin):
         self.hdf5_fields = {}
 
         # Need dummy instances here... bit wonky
-        internal_classes = [ds.Event(config=self.config, start_time=0, length=1),
+        internal_classes = [utils.empty_event(),
                             ds.Peak(),
                             ds.ReconstructedPosition()]
 

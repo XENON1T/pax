@@ -178,7 +178,7 @@ class XedInput(plugin.InputPlugin):
         values_to_check = (
             ('Voltage range',   self.config['digitizer_voltage_range'],
                                 event_layer_metadata['voltage_range']),
-            ('Digitizer dt',    self.config['digitizer_t_resolution'],
+            ('Digitizer dt',    self.config['sample_duration'],
                                 1/(event_layer_metadata['sampling_frequency'] * units.Hz)),
         )
         for name, ini_value, xed_value in values_to_check:
@@ -213,11 +213,12 @@ class XedInput(plugin.InputPlugin):
 
         # Start building the event
         event = Event(
-            config=self.config,
+            n_channels=self.config['n_channels'],
             start_time=int(
                 event_layer_metadata['utc_time'] * units.s +
                 event_layer_metadata['utc_time_usec'] * units.us
             ),
+            sample_duration=self.config['sample_duration'],
             length=event_layer_metadata['samples_in_event']
         )
         event.dataset_name = self.file_metadata['dataset_name'].decode("utf-8")

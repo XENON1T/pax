@@ -390,6 +390,5 @@ class InterpolatingMap(object):
 
 # useful for testing
 from pax.datastructure import Event
-from pax import units
 def empty_event():
-    return Event(config={'n_pmts': 1, 'digitizer_t_resolution': 10 * units.ns}, start_time=0, length=1)
+    return Event(n_channels=1, start_time=0, length=1)

@@ -65,9 +65,7 @@ class WritePandas(plugin.OutputPlugin):
                     os.remove(outfile)
 
             self.store = pandas.HDFStore(outfile, complevel=9, complib='blosc')
-
         else:
-
             # Ensure the directory for the output files exists
             if not os.path.isdir(outfile):
                 os.mkdir(outfile)

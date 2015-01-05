@@ -34,7 +34,7 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
             raise RuntimeError("Bad choice 'mode'")
 
         # List of integers of which PMTs to use, this algorithm uses the top pmt array to reconstruct
-        self.pmts = self.config['pmts_top']
+        self.pmts = self.config['channels_top']
 
         # (x,y) Locations of these PMTs.  This is stored as a dictionary such
         # that self.pmt_locations[int] = {'x' : int, 'y' : int, 'z' : None}
@@ -53,13 +53,13 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
         self.qe_errors = [0.009 for i in range(99)] #test for now, make config variable
 
         # Number of pmts (minus dead pmts)
-        self.n_pmts = 0
+        self.n_channels = 0
         for pmt in self.pmts:
             if not self.gains[pmt] == 0:
-                self.n_pmts += 1
+                self.n_channels += 1
 
-        # Number of degrees of freedom, n_pmts - model degrees of freedom (x,y) - 1
-        self.ndf = self.n_pmts - 2 - 1
+        # Number of degrees of freedom, n_channels - model degrees of freedom (x,y) - 1
+        self.ndf = self.n_channels - 2 - 1
 
         # Log the total number of calls and success rate to debug, see shutdown
         self.total_rec_calls = 0
@@ -112,7 +112,7 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
         for peak in event.S2s():
             # This is an array where every i-th element is how many pe
             # were seen by the i-th PMT
-            self.hits = peak.area_per_pmt
+            self.hits = peak.area_per_channel
 
             # Total number of detected photons in the top array (pe/qe)
             self.area_photons = 0.0

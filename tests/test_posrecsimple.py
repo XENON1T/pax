@@ -32,9 +32,9 @@ class TestPosRecWeightedSum(unittest.TestCase):
         self.assertIsInstance(self.posrec_plugin, plugin.TransformPlugin)
         self.assertEqual(self.posrec_plugin.__class__.__name__, 'PosRecWeightedSum')
         pass
-        # This test is broken: PosSimple doesn't use pmt_waveforms anymore, but area_per_pmt
+        # This test is broken: PosSimple doesn't use channel_waveforms anymore, but area_per_pmt
 
-        # self.e.pmt_waveforms = np.arange(1000).reshape(100, 10)
+        # self.e.channel_waveforms = np.arange(1000).reshape(100, 10)
         # e2 = self.posrec_plugin.process_event(self.e)
         #
         # rps = e2.peaks[0].reconstructed_positions

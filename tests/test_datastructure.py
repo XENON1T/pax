@@ -51,7 +51,8 @@ class TestDatastructure(unittest.TestCase):
     def test_peaks(self):
         e = empty_event()
         e.peaks = [{'area': 0,
-                    'index_of_maximum': 0}]
+                    'index_of_maximum': 0,
+                    'detector':         'tpc',}]
 
         self.assertEqual(len(e.peaks), 1)
         self.assertIsInstance(e.peaks[0], Peak)
@@ -59,7 +60,8 @@ class TestDatastructure(unittest.TestCase):
 
     def test_peak_instantiation(self):
         p = Peak({'area': 3.0,
-                  'index_of_maximum': 0})
+                  'index_of_maximum': 0,
+                  'detector':         'tpc',})
         self.assertIsInstance(p, Peak)
         self.assertEqual(p.area, 3.0)
 
@@ -67,7 +69,8 @@ class TestDatastructure(unittest.TestCase):
         e = empty_event()
         e.peaks.append(Peak({'area': 2.0,
                              'index_of_maximum': 0,
-                             'type': 'S1'}))
+                             'type': 'S1',
+                             'detector':         'tpc'}))
 
         self.assertEqual(len(e.peaks), 1)
         self.assertIsInstance(e.peaks[0], Peak)
@@ -77,7 +80,8 @@ class TestDatastructure(unittest.TestCase):
         e = empty_event()
         e.peaks.append(Peak({'area': 2.0,
                              'index_of_maximum': 0,
-                             'type': 'S1'}))
+                             'type': 'S1',
+                             'detector':         'tpc',}))
 
         self.assertEqual(len(e.S1s()), 1)
         self.assertIsInstance(e.S1s()[0], Peak)
@@ -89,7 +93,8 @@ class TestDatastructure(unittest.TestCase):
         e = empty_event()
         for area in areas:
             e.peaks.append(Peak({'area': area,
-                                 'type': 'S2'}))
+                                 'type': 'S2',
+                                 'detector': 'tpc'}))
 
         s2s = e.S2s()
         self.assertEqual(len(s2s), len(areas))

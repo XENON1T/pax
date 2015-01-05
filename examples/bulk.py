@@ -18,7 +18,7 @@ hdf5file = '%s.h5'
 
 [PosSimple.PosRecWeightedSum]
 
-pmts_to_use_for_reconstruction = 'top'
+channels_to_use_for_reconstruction = 'top'
 """
 
 files = [ os.path.join(base, f) 

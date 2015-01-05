@@ -20,20 +20,20 @@ class BuildWaveforms(plugin.TransformPlugin):
         c = self.config
 
         # Extract the number of PMTs from the configuration
-        self.n_pmts = self.config['n_pmts']
+        self.n_channels = self.config['n_channels']
 
         # Conversion factor from converting from ADC counts -> pmt-electrons/bin
         # Still has to be divided by PMT gain to get pe/bin
-        self.conversion_factor = c['digitizer_t_resolution'] * c['digitizer_voltage_range'] / (
+        self.conversion_factor = c['sample_duration'] * c['digitizer_voltage_range'] / (
             2 ** (c['digitizer_bits']) * c['pmt_circuit_load_resistor']
             * c['external_amplification'] * units.electron_charge
         )
 
         # Channel groups starting with 'u' will be gain corrected using nominal gain
         self.channel_groups = {
-            'top':              c['pmts_top'],
-            'bottom':           c['pmts_bottom'],
-            's1_peakfinding':   (c['pmts_top'] | c['pmts_bottom']) - c['pmts_excluded_for_s1']
+            'top':              c['channels_top'],
+            'bottom':           c['channels_bottom'],
+            's1_peakfinding':   (c['channels_top'] | c['channels_bottom']) - c['channels_excluded_for_s1']
         }
         # Add each detector as a channel group
         for name, chs in c['channels_in_detector'].items():
@@ -43,8 +43,8 @@ class BuildWaveforms(plugin.TransformPlugin):
         if self.config['build_nominally_gain_corrected_waveforms']:
             # Also store nominal-gain corrected waveforms
             self.channel_groups.update({
-                'uS1':  (c['pmts_top'] | c['pmts_bottom']) - c['pmts_excluded_for_s1'],
-                'uS2':  (c['pmts_top'] | c['pmts_bottom']),
+                'uS1':  (c['channels_top'] | c['channels_bottom']) - c['channels_excluded_for_s1'],
+                'uS2':  (c['channels_top'] | c['channels_bottom']),
             })
         self.undead_channels = []
 
@@ -52,16 +52,16 @@ class BuildWaveforms(plugin.TransformPlugin):
     def transform_event(self, event):
 
         # Sanity check
-        if not self.config['digitizer_t_resolution'] == event.sample_duration:
-            raise ValueError('Event %s quotes sample duration = %s ns, but digitizer_t_resolution is set to %s!' % (
-                              event.event_number, event.sample_duration, self.config['digitizer_t_resolution']))
+        if not self.config['sample_duration'] == event.sample_duration:
+            raise ValueError('Event %s quotes sample duration = %s ns, but sample_duration is set to %s!' % (
+                              event.event_number, event.sample_duration, self.config['sample_duration']))
 
         # Initialize empty waveforms
         for group, members in self.channel_groups.items():
-            event.waveforms.append(datastructure.SumWaveform({
+            event.sum_waveforms.append(datastructure.SumWaveform({
                 'samples':  np.zeros(event.length()),
                 'name':     group,
-                'pmt_list': np.array(list(members), dtype=np.uint16),
+                'channel_list': np.array(list(members), dtype=np.uint16),
                 'detector': group if group in self.external_detectors else 'tpc'
             }))
 
@@ -172,24 +172,24 @@ class BuildWaveforms(plugin.TransformPlugin):
 
             # Compute corrected pulse
             if self.config['build_nominally_gain_corrected_waveforms']:
-                nominally_corrected_pulse = (baseline - occurrence_wave) * self.conversion_factor / self.config['nominal_pmt_gain']
-                corrected_pulse = nominally_corrected_pulse * self.config['nominal_pmt_gain'] / self.config['gains'][channel]
+                nominally_corrected_pulse = (baseline - occurrence_wave) * self.conversion_factor / self.config['nominal_gain']
+                corrected_pulse = nominally_corrected_pulse * self.config['nominal_gain'] / self.config['gains'][channel]
             else:
                 corrected_pulse = (baseline - occurrence_wave) * self.conversion_factor / self.config['gains'][channel]
 
-            # Store the waveform in pmt_waveforms, unless gain=0, then we leave it as 0
+            # Store the waveform in channel_waveforms, unless gain=0, then we leave it as 0
             # TODO: is this wise? How would we investigate undead channels if we don't store the data?
             if self.config['gains'][channel] != 0:
-                event.pmt_waveforms[channel][start_index:end_index + 1] = corrected_pulse
+                event.channel_waveforms[channel][start_index:end_index + 1] = corrected_pulse
 
-            # Add corrected pulse to pmt_waveforms and all appropriate summed waveforms
+            # Add corrected pulse to channel_waveforms and all appropriate summed waveforms
             for group, members in self.channel_groups.items():
                 if channel in members:
                     if group[0] == 'u':
                         pulse_to_add = nominally_corrected_pulse
                     else:
                         pulse_to_add = corrected_pulse
-                    event.get_waveform(group).samples[start_index:end_index + 1] += pulse_to_add
+                    event.get_sum_waveform(group).samples[start_index:end_index + 1] += pulse_to_add
 
             # Store some metadata for this occurrence
             occ.height = np.max(corrected_pulse)

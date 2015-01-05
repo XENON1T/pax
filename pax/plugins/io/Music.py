@@ -25,16 +25,16 @@ class WavOutput(plugin.OutputPlugin):
         self.log.debug('Writing event')
 
         # Make sum waveform without PMT info
-        data = event.pmt_waveforms.sum(0)
+        data = event.channel_waveforms.sum(0)
         self.n = len(data)
 
         # Note that // is an integer divide
-        self.all_data[event.start_time] = event.pmt_waveforms.sum()
+        self.all_data[event.start_time] = event.channel_waveforms.sum()
 
         if self.single_events:
             # Write a file
-            s1 = event.get_waveform('s1_peakfinding').samples
-            s2 = event.get_waveform('filtered_for_large_s2').samples
+            s1 = event.get_sum_waveform('s1_peakfinding').samples
+            s2 = event.get_sum_waveform('filtered_for_large_s2').samples
 
             duration = 0.01 # seconds
             n = s1.size

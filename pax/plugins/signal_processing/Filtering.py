@@ -44,7 +44,7 @@ class Filtering(plugin.TransformPlugin):
             else:
                 # Frequency bandpass filter
                 # Implementation from http://wiki.scipy.org/Cookbook/ButterworthBandpass
-                sampling_rate = 1/self.config['digitizer_t_resolution']
+                sampling_rate = 1/self.config['sample_duration']
 
                 # # Plot the frequency response for a few different orders.
                 # fs = sampling_rate
@@ -79,7 +79,7 @@ class Filtering(plugin.TransformPlugin):
     def transform_event(self, event):
         for f in self.config['filters']:
 
-            input_w = event.get_waveform(f['source'])
+            input_w = event.get_sum_waveform(f['source'])
             signal = input_w.samples
             if 'impulse_response' in f:
                 output = np.convolve(signal, f['impulse_response'], 'same')
@@ -120,10 +120,10 @@ class Filtering(plugin.TransformPlugin):
                     except Exception as e:
                         self.log.warning("Error during waveform mutilation: " + str(e) + ". So what...")
 
-            event.waveforms.append(datastructure.SumWaveform({
+            event.sum_waveforms.append(datastructure.SumWaveform({
                 'name':      f['name'],
                 'samples':   output,
-                'pmt_list':  input_w.pmt_list,
+                'channel_list':  input_w.channel_list,
                 'detector':  input_w.detector,
             }))
         return event

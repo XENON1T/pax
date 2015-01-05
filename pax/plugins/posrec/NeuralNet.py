@@ -27,9 +27,9 @@ class PosRecNeuralNet(plugin.TransformPlugin):
         """
 
         # This can either be 'top' or 'bottom'.
-        self.which_pmts = 'pmts_%s' % self.config['pmts_to_use_for_reconstruction']
+        self.which_pmts = 'pmts_%s' % self.config['channels_to_use_for_reconstruction']
         if self.which_pmts not in self.config.keys():
-            raise RuntimeError("Bad choice 'pmts_to_use_for_reconstruction'")
+            raise RuntimeError("Bad choice 'channels_to_use_for_reconstruction'")
 
         # List of integers of which PMTs to use
         self.pmts = self.config[self.which_pmts]
@@ -50,7 +50,7 @@ class PosRecNeuralNet(plugin.TransformPlugin):
         for peak in event.S2s():
             # This is an array where every i-th element is how many pe
             # were seen by the i-th PMT
-            hits = peak.area_per_pmt
+            hits = peak.area_per_channel
 
             sum_x = 0  # sum of x positions
             sum_y = 0  # sum of y positions
