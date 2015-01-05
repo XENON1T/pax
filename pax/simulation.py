@@ -24,17 +24,17 @@ class Simulator(object):
 
         # Primary excimer fraction from Nest Version 098
         # See G4S1Light.cc line 298
-        density = self.config['liquid_density'] / (units.g / units.cm**3)
-        excfrac = 0.4-0.11131*density-0.0026651*density**2                   # primary / secondary excimers
-        excfrac = 1/(1+excfrac)                                              # primary / all excimers
-        excfrac /= 1-(1-excfrac)*(1-self.config['s1_ER_recombination_fraction'])  # primary / all excimers that produce a photon
+        density = self.config['liquid_density'] / (units.g / units.cm ** 3)
+        excfrac = 0.4 - 0.11131 * density - 0.0026651 * density ** 2                   # primary / secondary excimers
+        excfrac = 1 / (1 + excfrac)                                              # primary / all excimers
+        excfrac /= 1 - (1 - excfrac) * (1 - self.config['s1_ER_recombination_fraction'])  # primary / all excimers that produce a photon
         self.config['s1_ER_primary_excimer_fraction'] = excfrac
         log.debug('Inferred s1_ER_primary_excimer_fraction %s' % excfrac)
 
         # Recombination time from NEST 2014
         # 3.5 seems fishy, they fit an exponential to data, but in the code they use a non-exponential distribution...
-        efield = (self.config['drift_field']/(units.V/units.cm))
-        self.config['s1_ER_recombination_time'] = 3.5/0.18 * (1/20 + 0.41) * math.exp(-0.009*efield)
+        efield = (self.config['drift_field'] / (units.V / units.cm))
+        self.config['s1_ER_recombination_time'] = 3.5 / 0.18 * (1 / 20 + 0.41) * math.exp(-0.009 * efield)
         log.debug('Inferred s1_ER_recombination_time %s ns' % self.config['s1_ER_recombination_time'])
 
         # Which channels stand to receive any photons?
@@ -82,9 +82,9 @@ class Simulator(object):
 
         # Absorb electrons during the drift
         electrons_seen = np.random.binomial(
-            n= electrons_generated,
-            p= self.config['electron_extraction_yield']
-               * math.exp(- drift_time_mean / self.config['electron_lifetime_liquid'])
+            n=electrons_generated,
+            p=self.config['electron_extraction_yield']
+            * math.exp(- drift_time_mean / self.config['electron_lifetime_liquid'])
         )
         log.debug("    %s electrons survive the drift." % electrons_generated)
 
@@ -122,7 +122,7 @@ class Simulator(object):
             # For the non-exponential distribution: see Kubota 1979, solve eqn 2 for n/n0.
             # Alternatively, see Nest V098 source code G4S1Light.cc line 948
             secondary_timings = self.config['s1_ER_recombination_time']\
-                                * (-1 + 1/np.random.uniform(0, 1, n_photons-n_primaries))
+                * (-1 + 1 / np.random.uniform(0, 1, n_photons - n_primaries))
             secondary_timings = np.clip(secondary_timings, 0, self.config['maximum_recombination_time'])
             # Handle singlet/ triplet decays as before
             secondary_timings += self.singlet_triplet_delays(
@@ -223,7 +223,7 @@ class Simulator(object):
     def pmt_pulse_current(self, gain, offset=0):
         # Rounds offset to nearest pmt_pulse_time_rounding so we can exploit caching
         return gain * pmt_pulse_current_raw(
-            self.config['pmt_pulse_time_rounding']*round(offset/self.config['pmt_pulse_time_rounding']),
+            self.config['pmt_pulse_time_rounding'] * round(offset / self.config['pmt_pulse_time_rounding']),
             self.config['sample_duration'],
             self.config['samples_before_pulse_center'],
             self.config['samples_after_pulse_center'],
@@ -247,7 +247,7 @@ class Simulator(object):
         event = datastructure.Event(
             n_channels=self.config['n_channels'],
             start_time=start_time,
-            stop_time=start_time + int(hitpattern.max + 2*self.config['event_padding']),
+            stop_time=start_time + int(hitpattern.max + 2 * self.config['event_padding']),
         )
 
         log.debug("Now performing hitpattern to waveform conversion for %s photons" % hitpattern.n_photons)
@@ -278,15 +278,15 @@ class Simulator(object):
                 offsets = pmt_pulse_centers % dt
                 center_index = (pmt_pulse_centers - offsets) / dt   # Absolute index in waveform of pe-pulse center
 
-                start_index = min(center_index) - int(self.config['zle_padding']/dt)
-                end_index =   max(center_index) + int(self.config['zle_padding']/dt)
+                start_index = min(center_index) - int(self.config['zle_padding'] / dt)
+                end_index = max(center_index) + int(self.config['zle_padding'] / dt)
                 occurrence_length = end_index - start_index + 1
 
                 current_wave = np.zeros(occurrence_length)
 
                 if len(center_index) > self.config['use_simplified_simulator_from']:
 
-                    #TODO: Is this actually faster still? Should check!
+                    # TODO: Is this actually faster still? Should check!
 
                     # Start with a delta function single photon pulse, then convolve with one actual single-photon pulse
                     # This effectively assumes photons always arrive at the start of a digitizer t-bin,
@@ -327,8 +327,8 @@ class Simulator(object):
                         )
 
                         # +1 due to np.diff in pmt_pulse_current   #????
-                        left_index = center_index[i]    - start_index - int(self.config['samples_before_pulse_center']) + 1
-                        righter_index = center_index[i] - start_index + int(self.config['samples_after_pulse_center'])  + 1
+                        left_index = center_index[i] - start_index - int(self.config['samples_before_pulse_center']) + 1
+                        righter_index = center_index[i] - start_index + int(self.config['samples_after_pulse_center']) + 1
 
                         # Debugging stuff
                         if len(generated_pulse) != righter_index - left_index:
@@ -336,14 +336,14 @@ class Simulator(object):
                                 "Generated pulse is %s samples long, can't be inserted between %s and %s" % (
                                     len(generated_pulse), left_index, righter_index))
 
-                        if left_index <0 :
+                        if left_index < 0:
                             raise RuntimeError("Invalid left index %s: can't be negative!" % left_index)
 
-                        if righter_index >= len(current_wave) :
+                        if righter_index >= len(current_wave):
                             raise RuntimeError("Invalid right index %s: can't be longer than length of wave (%s)!" % (
                                 righter_index, len(current_wave)))
 
-                        current_wave[left_index : righter_index] += generated_pulse
+                        current_wave[left_index: righter_index] += generated_pulse
 
                 # Add white noise current
                 if self.config['white_noise_sigma'] is not None:
@@ -374,7 +374,6 @@ class Simulator(object):
         return event
 
 
-
 class SimulatedHitpattern(object):
 
     def __init__(self, config, photon_timings):
@@ -386,9 +385,9 @@ class SimulatedHitpattern(object):
 
         # Correct for PMT TTS
         photon_timings += np.random.normal(
-             self.config['pmt_transit_time_mean'],
-             self.config['pmt_transit_time_spread'],
-             len(photon_timings)
+            self.config['pmt_transit_time_mean'],
+            self.config['pmt_transit_time_spread'],
+            len(photon_timings)
         )
 
         # The number of pmts which can receive a photon
@@ -400,7 +399,7 @@ class SimulatedHitpattern(object):
 
         # Now generate n_channels integers < n_channels to denote the splitting points
         # TODO: think carefully about these +1 and -1's Without the +1 S1sClose failed
-        split_points = np.sort(np.random.randint(0, len(photon_timings)+1, n_channels-1))
+        split_points = np.sort(np.random.randint(0, len(photon_timings) + 1, n_channels - 1))
 
         # Split the array according to the split points
         # numpy correctly inserts empty arrays if a split point occurs twice if split_points is sorted
@@ -410,7 +409,7 @@ class SimulatedHitpattern(object):
 
         # Merge the result in a dictionary, which we return
         # TODO: zip can probably do this faster!
-        self.arrival_times_per_channel = {ch_for_photons[i] : photons_per_channel[i] for i in range(n_channels)}
+        self.arrival_times_per_channel = {ch_for_photons[i]: photons_per_channel[i] for i in range(n_channels)}
 
         # Add the minimum and maximum times, and number of times
         # hitlist_to_waveforms would have to go through weird flattening stuff to determine these
@@ -441,7 +440,6 @@ class SimulatedHitpattern(object):
         self.__add__(other)
 
 
-
 ##
 # Photon pulse generation
 ##
@@ -452,6 +450,7 @@ class SimulatedHitpattern(object):
 # Caching decorator
 class memoize:
     # from http://avinashv.net/2008/04/python-decorators-syntactic-sugar/
+
     def __init__(self, function):
         self.function = function
         self.memoized = {}
@@ -463,17 +462,19 @@ class memoize:
             self.memoized[args] = self.function(*args)
             return self.memoized[args]
 
+
 @memoize
 def pmt_pulse_current_raw(offset, dt, samples_before, samples_after, tr, tf):
     return np.diff(exp_pulse(
         np.linspace(
             - offset - samples_before * dt,
-            - offset + samples_after  * dt,
+            - offset + samples_after * dt,
             1 + samples_before + samples_after),
         units.electron_charge,
         tr,
         tf
     )) / dt
+
 
 @np.vectorize
 def exp_pulse(t, q, tr, tf):

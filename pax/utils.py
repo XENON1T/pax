@@ -19,6 +19,7 @@ log = logging.getLogger('dsputils')
 # Peak finding helper routines
 ##
 
+
 def intervals_where(x):
     """Given numpy array of bools, return list of (left, right) inclusive bounds of all intervals of True
     """
@@ -35,11 +36,11 @@ def intervals_where(x):
     #   - if the second to last index is False, it is a lone interval, so must be in boundaries twice
     # [True] would cause trouble here, but we've removed it already
     if x[-1]:
-        boundaries.append(len(x)-1)
+        boundaries.append(len(x) - 1)
 
     # If some bug causes a non-even number of boundaries, better catch it here
     if len(boundaries) % 2 != 0:
-        print(sorted(boundaries), x, x[-1], len(x)-1)
+        print(sorted(boundaries), x, x[-1], len(x) - 1)
         raise RuntimeError("Number of boundaries is not even: can't return intervals!")
 
     # Assuming each interval's left <= right, we split sorted(boundaries) into pairs to get our result
@@ -51,7 +52,6 @@ def intervals_where(x):
     # Maybe because we're dealing with many small arrays rather than big ones?
 
 
-
 def chunk_in_ntuples(iterable, n, fillvalue=None):
     """ Chunks an iterable into a list of tuples
     :param iterable: input iterable
@@ -61,9 +61,9 @@ def chunk_in_ntuples(iterable, n, fillvalue=None):
     Stolen from http://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks-in-python
     Modified for python3, and made it return lists
     """
-    if not n>0 and int(n) == n:
+    if not n > 0 and int(n) == n:
         raise ValueError("Chunk size should be a positive integer, not %s" % n)
-    return list(zip_longest(*[iter(iterable)]*n, fillvalue=fillvalue))
+    return list(zip_longest(*[iter(iterable)] * n, fillvalue=fillvalue))
     # Numpy solution -- without filling though
     # return np.reshape(iterable, (-1,n))
 
@@ -92,7 +92,7 @@ def where_changes(x, report_first_index_if=None):
     points_of_difference[0] = False
 
     # Now we can find where the array becomes True or False
-    becomes_true =  np.sort(np.where(points_of_difference & x)[0])
+    becomes_true = np.sort(np.where(points_of_difference & x)[0])
     becomes_false = np.sort(np.where(points_of_difference & (True ^ x))[0])
 
     # In case the user set report_first_index_if, we have to manually add 0 if it is True or False
@@ -118,8 +118,6 @@ def free_regions(event, detector='tpc'):
     rights = [p.right for p in event.peaks if p.detector is detector] + [event.length() - 1]
     # Assuming each peak's right > left, we can simply split sorted(lefts+rights) in pairs:
     return chunk_in_ntuples(sorted(lefts + rights), n=2)
-
-
 
 
 def cluster_by_diff(x, diff_threshold, return_indices=False):
@@ -151,7 +149,6 @@ def cluster_by_diff(x, diff_threshold, return_indices=False):
     #     return np.split(x, split_indices)
 
 
-
 def mad(data, axis=None):
     """ Return median absolute deviation of numpy array"""
     return np.mean(np.absolute(data - np.median(data, axis)), axis)
@@ -172,10 +169,10 @@ def peak_bounds(signal, fraction_of_max=None, max_idx=None, zero_level=0, inclus
         max_idx = np.argmax(signal)
     if len(signal) == 0:
         raise RuntimeError("Empty signal, can't find peak bounds!")
-    if max_idx > len(signal)-1:
+    if max_idx > len(signal) - 1:
         raise RuntimeError("Can't compute bounds: max at %s, peak wave is %s long" % (max_idx, len(signal)))
     if max_idx < 0:
-        raise RuntimeError("Peak maximum index is negative (%s)... what are you smoking?" % max_idx )
+        raise RuntimeError("Peak maximum index is negative (%s)... what are you smoking?" % max_idx)
 
     height = signal[max_idx]
 
@@ -208,17 +205,17 @@ def peak_bounds(signal, fraction_of_max=None, max_idx=None, zero_level=0, inclus
     return (left, right)
 
 
-#TODO: interpolate argument shadows interpolate imported from scipy
+# TODO: interpolate argument shadows interpolate imported from scipy
 def width_at_fraction(peak_wave, fraction_of_max, max_idx, interpolate=False):
     """Returns width of a peak IN SAMPLES at fraction of maximum"""
     left, right = peak_bounds(peak_wave, max_idx=max_idx, fraction_of_max=fraction_of_max)
     # Try to do sub-sample width determination
 
-    threshold = peak_wave[max_idx]*fraction_of_max
+    threshold = peak_wave[max_idx] * fraction_of_max
 
     if interpolate:     # Need at least 3 points to interpolate
-        if left+1 in peak_wave and peak_wave[left] < threshold < peak_wave[left+1]:
-            correction = (peak_wave[left] - threshold) / (peak_wave[left] - peak_wave[left+1])
+        if left + 1 in peak_wave and peak_wave[left] < threshold < peak_wave[left + 1]:
+            correction = (peak_wave[left] - threshold) / (peak_wave[left] - peak_wave[left + 1])
             assert 0 <= correction <= 1
             left += correction
         else:
@@ -226,8 +223,8 @@ def width_at_fraction(peak_wave, fraction_of_max, max_idx, interpolate=False):
             # Should not happen once peakfinder works well
             pass
 
-        if right-1 in peak_wave and peak_wave[right] < threshold < peak_wave[right-1]:
-            correction = (threshold - peak_wave[right]) / (peak_wave[right-1] - peak_wave[right])
+        if right - 1 in peak_wave and peak_wave[right] < threshold < peak_wave[right - 1]:
+            correction = (threshold - peak_wave[right]) / (peak_wave[right - 1] - peak_wave[right])
             assert 0 <= correction <= 1
             right -= correction
         else:
@@ -257,8 +254,8 @@ def find_first_fast(a, threshold, chunk_size=128):
     if len(indices) > 0:
         return indices[0]
     else:
-        #None found, return last index
-        return len(a)-1
+        # None found, return last index
+        return len(a) - 1
     # This was recommended by https://github.com/numpy/numpy/issues/2269
     # It actually performs significantly worse in our case...
     # Maybe I'm messing something up?
@@ -270,10 +267,8 @@ def find_first_fast(a, threshold, chunk_size=128):
     #     for inds in zip(*threshold_test(chunk).nonzero()):
     #         return inds[0] + i0
     #     i0 = i1
-    # # HACK: None found... return the last index
+    # HACK: None found... return the last index
     # return len(a) - 1
-
-
 
 
 ##
@@ -281,6 +276,7 @@ def find_first_fast(a, threshold, chunk_size=128):
 ##
 
 class InterpolatingMap(object):
+
     """
     Builds a scalar function of space using interpolation from sampling points on a regular grid.
 
@@ -321,14 +317,14 @@ class InterpolatingMap(object):
 
             # 1 D interpolation
             if self.dimensions == 1:
-                itp_fun = interpolate.interp1d(x = np.linspace(*(cs[0][1])),
-                                                         y = self.data[map_name])
+                itp_fun = interpolate.interp1d(x=np.linspace(*(cs[0][1])),
+                                               y=self.data[map_name])
 
             # 2D interpolation
             elif self.dimensions == 2:
-                itp_fun = interpolate.interp2d(x = np.linspace(*(cs[0][1])),
-                                               y = np.linspace(*(cs[1][1])),
-                                               z = self.data[map_name])
+                itp_fun = interpolate.interp2d(x=np.linspace(*(cs[0][1])),
+                                               y=np.linspace(*(cs[1][1])),
+                                               z=self.data[map_name])
 
             # 3D interpolation
             elif self.dimensions == 3:
@@ -345,13 +341,12 @@ class InterpolatingMap(object):
 
             self.interpolators[map_name] = itp_fun
 
-
     def get_value_at(self, position, map_name='map'):
         """Returns the value of the map map_name at a ReconstructedPosition
          position - pax.datastructure.ReconstructedPosition instance
         """
         return self.get_value(*[getattr(position, q[0]) for q in self.coordinate_system], map_name=map_name)
-        
+
     def get_value(self, *coordinates, map_name='map'):
         """Returns the value of the map at the position given by coordinates"""
         result = self.interpolators[map_name](*coordinates)
@@ -390,5 +385,7 @@ class InterpolatingMap(object):
 
 # useful for testing
 from pax.datastructure import Event
+
+
 def empty_event():
     return Event(n_channels=1, start_time=0, length=1)

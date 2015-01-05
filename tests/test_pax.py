@@ -16,16 +16,11 @@ from pax import units, core, plugin, datastructure
 
 class TestPax(unittest.TestCase):
 
-
-    def setUp(self):
-        pass
-
-
     def test_pax_minimal(self):
         """ The smallest possible test that actually instantiates the processor.
         Does not load any plugins or configuration
         """
-        mypax = core.Processor(config_dict={'pax':{}}, just_testing=True)
+        mypax = core.Processor(config_dict={'pax': {}}, just_testing=True)
         self.assertIsInstance(mypax, core.Processor)
         # Make sure the configuration is actually empty, and a default config did not sneakily get loaded...
         # Note plugin_group_names gets autoset during config init
@@ -40,7 +35,7 @@ class TestPax(unittest.TestCase):
         self.assertEqual(mypax.config, {'DEFAULT': {}, 'pax': {'plugin_group_names': []}})
 
     ##
-    ## Test for configuration evaluation
+    # Test for configuration evaluation
     ##
 
     def _do_config_eval_test(self, test_value, must_become):
@@ -60,37 +55,36 @@ class TestPax(unittest.TestCase):
     def test_evaluate_configuration_add(self):
         self._do_config_eval_test('4.0 + 2.0', 6.0)
 
-
     ##
-    ## Tests for plugin instantiation
+    # Tests for plugin instantiation
     ##
 
     def test_dummy_input_plugin(self):
-        mypax = core.Processor(config_dict = {'pax' : {'plugin_group_names':   ['input'],
-                                                       'input':                'Dummy.DummyInput'}},
+        mypax = core.Processor(config_dict={'pax': {'plugin_group_names':   ['input'],
+                                                    'input':                'Dummy.DummyInput'}},
                                just_testing=True)
         self.assertIsInstance(mypax, core.Processor)
         self.assertIsInstance(mypax.input_plugin, plugin.InputPlugin)
 
     def test_dummy_output_plugin(self):
-        mypax = core.Processor(config_dict = {'pax' : {'plugin_group_names':   ['output'],
-                                                       'output':                'Dummy.DummyOutput'}},
+        mypax = core.Processor(config_dict={'pax': {'plugin_group_names':   ['output'],
+                                                    'output':                'Dummy.DummyOutput'}},
                                just_testing=True)
         self.assertIsInstance(mypax, core.Processor)
         self.assertIsInstance(mypax.action_plugins[0], plugin.OutputPlugin)
 
     def test_dummy_transform_plugin(self):
-        mypax = core.Processor(config_dict = {'pax' : {'plugin_group_names':   ['bla'],
-                                                       'bla':                'Dummy.DummyTransform'}},
+        mypax = core.Processor(config_dict={'pax': {'plugin_group_names':   ['bla'],
+                                                    'bla':                'Dummy.DummyTransform'}},
                                just_testing=True)
         self.assertIsInstance(mypax, core.Processor)
         self.assertIsInstance(mypax.action_plugins[0], plugin.TransformPlugin)
 
     def test_get_plugin_by_name(self):
-        mypax = core.Processor(config_dict = {'pax' : {'plugin_group_names':   ['bla'],
-                                                       'bla':                  ['Dummy.DummyTransform',
-                                                                                'Dummy.DummyTransform2',
-                                                                                'Dummy.DummyTransform3']}},
+        mypax = core.Processor(config_dict={'pax': {'plugin_group_names':   ['bla'],
+                                                    'bla':                  ['Dummy.DummyTransform',
+                                                                             'Dummy.DummyTransform2',
+                                                                             'Dummy.DummyTransform3']}},
                                just_testing=True)
         self.assertIsInstance(mypax, core.Processor)
         pl = mypax.get_plugin_by_name('DummyTransform2')
@@ -108,16 +102,15 @@ class TestPax(unittest.TestCase):
         for p in mypax.action_plugins:
             self.assertIsInstance(p, (plugin.TransformPlugin, plugin.OutputPlugin))
 
-
     ##
-    ## Test event processing
+    # Test event processing
     ##
 
     def test_get_events(self):
         """ Test getting events from the input plugin
         """
-        mypax = core.Processor(config_dict = {'pax' : {'plugin_group_names':   ['input'],
-                                                       'input':                'Dummy.DummyInput'}},
+        mypax = core.Processor(config_dict={'pax': {'plugin_group_names':   ['input'],
+                                                    'input':                'Dummy.DummyInput'}},
                                just_testing=True)
         self.assertTrue(inspect.isgeneratorfunction(mypax.get_events))
         event_generator = mypax.get_events()
@@ -127,25 +120,20 @@ class TestPax(unittest.TestCase):
     def test_process_empty_event(self):
         """ Test processing without processing plugins defined
         """
-        mypax = core.Processor(config_dict = {'pax' : {'plugin_group_names':   ['input'],
-                                                       'input':                'Dummy.DummyInput'}},
+        mypax = core.Processor(config_dict={'pax': {'plugin_group_names':   ['input'],
+                                                    'input':                'Dummy.DummyInput'}},
                                just_testing=True)
         event_generator = mypax.get_events()
         event = next(event_generator)
         event = mypax.process_event(event)
         self.assertIsInstance(event, datastructure.Event)
 
-    def test_process_single_XED_event(self):
+    def test_process_single_xed_event(self):
         """ Process the first event from the XED file.
         """
         # TODO: delete the HD5 file that is created by this
-        mypax = core.Processor(config_names='XED', config_dict = {'pax' : {'events_to_process': [0]}})
+        mypax = core.Processor(config_names='XED', config_dict={'pax': {'events_to_process': [0]}})
         mypax.run()
-
-    def tearDown(self):
-        pass
-
-
 
 if __name__ == '__main__':
     unittest.main()

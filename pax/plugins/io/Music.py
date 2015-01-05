@@ -6,6 +6,7 @@ from pax import plugin
 
 
 class WavOutput(plugin.OutputPlugin):
+
     """Convert sum waveforms of event and dataset to WAV file
 
     If we don't find dark matter, at least we'll have contemporary music.
@@ -36,11 +37,11 @@ class WavOutput(plugin.OutputPlugin):
             s1 = event.get_sum_waveform('s1_peakfinding').samples
             s2 = event.get_sum_waveform('filtered_for_large_s2').samples
 
-            duration = 0.01 # seconds
+            duration = 0.01  # seconds
             n = s1.size
 
-            f1 = 1046.50 # Hz
-            f2 = 130.813 # Hz
+            f1 = 1046.50  # Hz
+            f2 = 130.813  # Hz
 
             s1 = np.repeat(s1, duration * self.rate)
             s2 = np.repeat(s2, duration * self.rate)
@@ -55,14 +56,13 @@ class WavOutput(plugin.OutputPlugin):
 
             print(data.sum())
             write('song_%d.wav' % event.event_number,
-                  self.rate, # Frequency
+                  self.rate,  # Frequency
                   data)
-
 
     def shutdown(self):
         if self.single_events:
             return
-        
+
         start = min(self.all_data)
         end = max(self.all_data)
 
@@ -73,7 +73,7 @@ class WavOutput(plugin.OutputPlugin):
             self.log.error("Not known how many samples per event!")
 
         # Resample such that data plays at live speed
-        R = 10**9 // self.rate
+        R = 10 ** 9 // self.rate
 
         n = math.ceil((end - start) / R)
         data = np.zeros(n, dtype=np.int16)
@@ -82,11 +82,9 @@ class WavOutput(plugin.OutputPlugin):
             key = int(key // R)
 
             if value > 0:
-                data[key] = np.min([value, 2**15 -1])
+                data[key] = np.min([value, 2 ** 15 - 1])
 
         # Output
         write(self.filename,
               self.rate,
               data)
-        
-        

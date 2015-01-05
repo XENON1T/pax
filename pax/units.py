@@ -31,7 +31,7 @@ base_units = {
 # Derive secondary units from the base values - don't change this
 base_units['Hz'] = 1 / base_units['s']
 base_units['J'] = base_units['eV'] / electron_charge_SI
-base_units['g'] = base_units['J'] * base_units['s']**2 / base_units['m']**2
+base_units['g'] = base_units['J'] * base_units['s'] ** 2 / base_units['m'] ** 2
 base_units['V'] = base_units['J'] / base_units['C']
 base_units['A'] = base_units['C'] / base_units['s']
 base_units['Ohm'] = base_units['V'] / base_units['A']

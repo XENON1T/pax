@@ -3,8 +3,8 @@ import math
 from pax import plugin, datastructure, utils
 
 
-
 class FindBigPeaks(plugin.TransformPlugin):
+
     """Find peaks in intervals above threshold in the sum waveform
     This type of peakfinding is only reliable for peaks >> 1pe
     (unless you have no noise, or use a battery of peak shape & isolation tests)
@@ -15,17 +15,17 @@ class FindBigPeaks(plugin.TransformPlugin):
 
     def startup(self):
         self.derivative_kernel = [-0.003059, -0.035187, -0.118739, -0.143928, 0.000000, 0.143928, 0.118739, 0.035187, 0.003059]
-        #TODO: put in config
+        # TODO: put in config
 
     def transform_event(self, event):
         for pf in self.config['peakfinders']:
             pfwave_obj = event.get_sum_waveform(pf['peakfinding_wave'])
             peakfinding_wave = pfwave_obj.samples
             detector = pfwave_obj.detector
-            unfiltered_wave  = event.get_sum_waveform(pf['unfiltered_wave']).samples
+            unfiltered_wave = event.get_sum_waveform(pf['unfiltered_wave']).samples
 
             # Define the peak/valley tester for the peaksplitter this peakfinder
-            def is_valid_p_v_pair( signal, peak, valley):
+            def is_valid_p_v_pair(signal, peak, valley):
                 return (
                     abs(peak - valley) >= pf.get('min_p_v_distance', 0) and
                     signal[peak] / signal[valley] >= pf.get('min_p_v_ratio', 0) and
@@ -45,19 +45,19 @@ class FindBigPeaks(plugin.TransformPlugin):
                     # We've found an interval above threshold: should we split it?
                     if len(peak_wave) < pf.get('min_split_attempt_width', float('inf')):
                         # No, the interval is too small
-                        peaks.append((0,len(peak_wave)-1))
+                        peaks.append((0, len(peak_wave) - 1))
                     else:
                         # Yes, try it
                         peak_indices, valley_indices = self.peaks_and_valleys(peak_wave,
                                                                               test_function=is_valid_p_v_pair)
                         if len(peak_indices) <= 1:
                             # The peak was not split
-                            peaks.append((0,len(peak_wave)-1))
+                            peaks.append((0, len(peak_wave) - 1))
                         else:
                             # It was split, add the subpeaks
                             for i, _ in enumerate(peak_indices):
                                 left = valley_indices[i - 1] if i != 0 else 0
-                                right = valley_indices[i] if i != len(peak_indices) else len(peak_wave)-1
+                                right = valley_indices[i] if i != len(peak_indices) else len(peak_wave) - 1
                                 peaks.append((left, right))
                             # Show peak splitting diagnostic plot
                             # TODO: Make option, or factor to separate plugin
@@ -73,7 +73,7 @@ class FindBigPeaks(plugin.TransformPlugin):
                     # Add all the found peaks to the event
                     for left, right in peaks:
                         offset = region_left + itv_left + left
-                        unfiltered_max_idx = offset + np.argmax(unfiltered_wave[offset : offset - left + right + 1])
+                        unfiltered_max_idx = offset + np.argmax(unfiltered_wave[offset: offset - left + right + 1])
 
                         event.peaks.append(datastructure.Peak({
                             'index_of_maximum': unfiltered_max_idx,   # in unfiltered waveform!

@@ -13,7 +13,9 @@ from mpl_toolkits.mplot3d import Axes3D
 
 from pax import plugin, units
 
+
 class PlotBase(plugin.OutputPlugin):
+
     def startup(self):
         if self.config['output_dir'] is not None:
             self.output_dir = self.config['output_dir']
@@ -54,7 +56,7 @@ class PlotBase(plugin.OutputPlugin):
     def plot_event(self, event):
         raise NotImplementedError()
 
-    def finalize_plot(self, event_number = 0):
+    def finalize_plot(self, event_number=0):
         """Finalize plotting, send to screen/file, then closes plot properly (avoids runtimewarning / memory leak).
         """
         if self.output_dir:
@@ -66,8 +68,7 @@ class PlotBase(plugin.OutputPlugin):
         plt.close()
         self.skip_counter = self.config['plot_every'] - 1
 
-
-    def plot_waveform(self, event, left=0, right=None, pad=0, show_peaks=False, show_legend=True, log_y_axis=False,scale=1):
+    def plot_waveform(self, event, left=0, right=None, pad=0, show_peaks=False, show_legend=True, log_y_axis=False, scale=1):
         """
         Plot part of an event's sum waveform. Defined in base class to ensure a uniform style
         """
@@ -78,11 +79,10 @@ class PlotBase(plugin.OutputPlugin):
         nsamples = 1 + righti - lefti
         dt = event.sample_duration * units.ns
 
-        xlabels = np.arange(lefti * dt / units.us, # 10+ labels will be cut later, prevents off by one errors
+        xlabels = np.arange(lefti * dt / units.us,  # 10+ labels will be cut later, prevents off by one errors
                             (10 + righti) * dt / units.us,
                             dt / units.us)
         xlabels = xlabels[:nsamples]
-
 
         plt.autoscale(True, axis='both', tight=True)
 
@@ -98,12 +98,11 @@ class PlotBase(plugin.OutputPlugin):
         for w in self.config['waveforms_to_plot']:
             waveform = event.get_sum_waveform(w['internal_name'])
             plt.plot(xlabels,
-                     (waveform.samples[lefti:righti + 1] + y_offset)*scale,
+                     (waveform.samples[lefti:righti + 1] + y_offset) * scale,
                      label=w['plot_label'],
                      drawstyle=w.get('drawstyle'))
         if log_y_axis:
-            plt.ylim((0.9,plt.ylim()[1]))
-
+            plt.ylim((0.9, plt.ylim()[1]))
 
         if show_peaks and event.peaks:
             self.color_peak_ranges(event)
@@ -124,9 +123,9 @@ class PlotBase(plugin.OutputPlugin):
                     arrowprops = None
                     # max ensures ytext comes out positive (well, if y is)
                     # and that the text is never below the peak
-                    #if max_y != 0:
+                    # if max_y != 0:
                     #    ytext = max(y, y * (3-2*y/max_y))
-                    #else:
+                    # else:
                 else:
                     ytext = max(y, y + (max_y - y) * (0.05 + 0.2 * random.random()))
                     arrowprops = dict(arrowstyle="fancy",
@@ -135,7 +134,7 @@ class PlotBase(plugin.OutputPlugin):
                                                       "angleA=0,"
                                                       "angleB=-90")
                 plt.hlines(y, (peak.left - 1) * self.samples_to_us,
-                              peak.right * self.samples_to_us)
+                           peak.right * self.samples_to_us)
                 plt.annotate('%s:%s' % (peak.type, int(peak.area)),
                              xy=(x, y),
                              xytext=(x, ytext),
@@ -150,12 +149,11 @@ class PlotBase(plugin.OutputPlugin):
     def color_peak_ranges(self, event):
         # Separated so PlotChannelWaveforms2D can also call it
         for peak in event.peaks:
-            shade_color = self.peak_colors.get(peak.type,'gray') if peak.detector == 'tpc' else 'red'
-            plt.axvspan((peak.left - 1)  * self.samples_to_us,
+            shade_color = self.peak_colors.get(peak.type, 'gray') if peak.detector == 'tpc' else 'red'
+            plt.axvspan((peak.left - 1) * self.samples_to_us,
                         peak.right * self.samples_to_us,
                         color=shade_color,
                         alpha=0.2)
-
 
 
 class PlotSumWaveformLargestS2(PlotBase):
@@ -206,6 +204,7 @@ class PlotSumWaveformEntireEvent(PlotBase):
 
 
 class PlottingHitPattern(PlotBase):
+
     def substartup(self):
         self.channels_top = self.config['channels_top']
         self.channels_bottom = self.config['channels_bottom']
@@ -220,13 +219,13 @@ class PlottingHitPattern(PlotBase):
                            self.pmt_locations[pmt]['y']))
 
         area = np.array(area)
-        total_area = np.sum(area[area >0])
-        c = ax.scatter(*zip(*points), s=5000*area/total_area, c=area, cmap=plt.cm.hot)
+        total_area = np.sum(area[area > 0])
+        c = ax.scatter(*zip(*points), s=5000 * area / total_area, c=area, cmap=plt.cm.hot)
         c.set_alpha(0.75)
         ax.set_xticklabels([])
         ax.set_yticklabels([])
 
-    def plot_event(self, event, show=('S1','S2'), show_dominant_array_only=True, subplots_to_use=None):
+    def plot_event(self, event, show=('S1', 'S2'), show_dominant_array_only=True, subplots_to_use=None):
         if subplots_to_use is None:
             f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, sharex='col', sharey='row')
             subplots_to_use = [ax1, ax2, ax3, ax4]
@@ -235,7 +234,7 @@ class PlottingHitPattern(PlotBase):
                 ('S1', 'bottom'), ('S2', 'top')):
             if peak_type not in show:
                 continue
-            peak_list = getattr(event, peak_type+'s')()
+            peak_list = getattr(event, peak_type + 's')()
             if peak_list and len(peak_list) >= 1:
                 peak = peak_list[0]
                 for array in ('top', 'bottom'):
@@ -244,10 +243,11 @@ class PlottingHitPattern(PlotBase):
                     ax = subplots_to_use.pop(0)
                     ax.set_title('%s %s' % (peak_type, array))
 
-                    self._plot(peak, ax, getattr(self, 'channels_%s'%array))
+                    self._plot(peak, ax, getattr(self, 'channels_%s' % array))
 
-            
-class PlotChannelWaveforms3D(PlotBase): # user sets variables xlim, ylim for 3D plot
+
+class PlotChannelWaveforms3D(PlotBase):  # user sets variables xlim, ylim for 3D plot
+
     """Plot an event
 
     Will make a fancy '3D' plot with different y positions for all channels. User sets variables for plot.
@@ -255,13 +255,13 @@ class PlotChannelWaveforms3D(PlotBase): # user sets variables xlim, ylim for 3D 
 
     def plot_event(self, event):
         dt = self.config['sample_duration']
-        ylim_channel_start = 0 # top : 1-98, bottom : 99-178, Top Shield Array: PMTs 179..210, Bottom Shield Array: PMTs 211..242
+        ylim_channel_start = 0  # top : 1-98, bottom : 99-178, Top Shield Array: PMTs 179..210, Bottom Shield Array: PMTs 211..242
         ylim_channel_end = 242
-        xlim_time_start = 0 # s1: 205.5 , s2: 260
-        xlim_time_end = 400 # [us] S1: 206.5, s2: 270
+        xlim_time_start = 0  # s1: 205.5 , s2: 260
+        xlim_time_end = 400  # [us] S1: 206.5, s2: 270
 
         #[pe/(bin*V)] = time_resolution [s/bin] / ( resistor [V*s/C] * gain [] * amplification [] * electric_charge [C/pe] )
-        #For Xenon100 (gain 2e6, amplification 10, resistor 50, time resolution 10ns/bin), this gives 62.4 pe/(bin*V), so 1 pe/bin is 16.0 mV; 1 mV is 0.0624 pe/bin.
+        # For Xenon100 (gain 2e6, amplification 10, resistor 50, time resolution 10ns/bin), this gives 62.4 pe/(bin*V), so 1 pe/bin is 16.0 mV; 1 mV is 0.0624 pe/bin.
 
         fig = plt.figure(figsize=(self.size_multiplier * 4, self.size_multiplier * 2))
         ax = fig.gca(projection='3d')
@@ -279,10 +279,10 @@ class PlotChannelWaveforms3D(PlotBase): # user sets variables xlim, ylim for 3D 
 
             # Take only occurrences that start in the time window
             # -- But don't you also want occurrences which start outside, but end inside the window?
-            if not xlim_time_start*100 <= start_index <= xlim_time_end*100:
+            if not xlim_time_start * 100 <= start_index <= xlim_time_end * 100:
                 continue
 
-            waveform = event.channel_waveforms[channel, start_index : end_index + 1]
+            waveform = event.channel_waveforms[channel, start_index: end_index + 1]
             if self.config['log_scale']:
                 # TODO: this will still give nan's if waveform drops below 1 pe_nominal / bin...
                 waveform = np.log10(1 + waveform)
@@ -291,7 +291,7 @@ class PlotChannelWaveforms3D(PlotBase): # user sets variables xlim, ylim for 3D 
             global_max_amplitude = max(np.max(waveform), global_max_amplitude)
 
             ax.plot(
-                np.linspace(start_index, start_index+len(waveform)-1, len(waveform)) * dt / units.us,
+                np.linspace(start_index, start_index + len(waveform) - 1, len(waveform)) * dt / units.us,
                 channel * np.ones(len(waveform)),
                 zs=waveform,
                 zdir='z',
@@ -299,14 +299,14 @@ class PlotChannelWaveforms3D(PlotBase): # user sets variables xlim, ylim for 3D 
             )
 
         # Plot the sum waveform
-        lefti = xlim_time_start*100
-        righti = xlim_time_end*100
+        lefti = xlim_time_start * 100
+        righti = xlim_time_end * 100
         waveform = event.get_sum_waveform('uS2').samples[lefti:righti]
-        scale = global_max_amplitude/np.max(waveform)
-        time = np.array(np.linspace(lefti, righti, righti-lefti))
+        scale = global_max_amplitude / np.max(waveform)
+        time = np.array(np.linspace(lefti, righti, righti - lefti))
         ax.plot(
-            time/100,
-            (ylim_channel_end + 1) * np.ones(len(waveform)), # time to micro sec
+            time / 100,
+            (ylim_channel_end + 1) * np.ones(len(waveform)),  # time to micro sec
             zs=waveform * scale,
             zdir='z',
             label=str(channel)
@@ -314,20 +314,21 @@ class PlotChannelWaveforms3D(PlotBase): # user sets variables xlim, ylim for 3D 
 
         ax.set_xlabel('Time [$\mu$s]')
         ax.set_xlim3d(xlim_time_start, xlim_time_end)
-        
+
         ax.set_ylabel('Channel number')
         ax.set_ylim3d(ylim_channel_start, ylim_channel_end)
 
-        zlabel = 'Pulse height [pe_nominal / %d ns]' % (self.config['sample_duration']/units.ns)
+        zlabel = 'Pulse height [pe_nominal / %d ns]' % (self.config['sample_duration'] / units.ns)
         if self.config['log_scale']:
             zlabel = 'Log10 1 + ' + zlabel
         ax.set_zlabel(zlabel)
         ax.set_zlim3d(0, global_max_amplitude)
-        
+
         plt.tight_layout()
 
 
 class PlotChannelWaveforms2D(PlotBase):
+
     """ Plots the occurrences in each channel, like like PlotChannelWaveforms3D, but seen from above
 
     Circles in the bottom subplot show when individual photo-electrons arrived in each channel .
@@ -349,9 +350,9 @@ class PlotChannelWaveforms2D(PlotBase):
                 continue
 
             # Choose a color for this occurrence based on amplitude
-            color_factor = np.clip(np.log10(oc.height)/2, 0, 1)
+            color_factor = np.clip(np.log10(oc.height) / 2, 0, 1)
 
-            plt.gca().add_patch(Rectangle((oc.left*time_scale, oc.channel), oc.length*time_scale, 1,
+            plt.gca().add_patch(Rectangle((oc.left * time_scale, oc.channel), oc.length * time_scale, 1,
                                           facecolor=plt.cm.gnuplot2(color_factor),
                                           edgecolor='none',
                                           alpha=(0.1 if event.is_channel_bad[oc.channel] else 0.7)))
@@ -365,12 +366,12 @@ class PlotChannelWaveforms2D(PlotBase):
                 # What perfect world are you living in? WaveformSimulator!
                 color_factor = 1
             else:
-                color_factor = min(max(p.height/(20*p.noise_sigma), 0), 1)
-            plt.scatter(  [(0.5 + p.index_of_maximum) * time_scale],
-                          [0.5 + p.channel],
-                        c=(color_factor, 0, (1-color_factor)),
-                        s=10*p.area,
-                        edgecolor=(0.5*color_factor, 0, 0.5*(1-color_factor)),
+                color_factor = min(max(p.height / (20 * p.noise_sigma), 0), 1)
+            plt.scatter([(0.5 + p.index_of_maximum) * time_scale],
+                        [0.5 + p.channel],
+                        c=(color_factor, 0, (1 - color_factor)),
+                        s=10 * p.area,
+                        edgecolor=(0.5 * color_factor, 0, 0.5 * (1 - color_factor)),
                         alpha=(0.1 if event.is_channel_bad[p.channel] else 1.0))
 
         # Plot the bottom/top/veto boundaries
@@ -387,33 +388,31 @@ class PlotChannelWaveforms2D(PlotBase):
         # Annotate the channel groups and boundaries
         for i in range(len(channel_ranges)):
             plt.plot(
-                [0,event.length()*time_scale],
-                [channel_ranges[i][1]]*2,
+                [0, event.length() * time_scale],
+                [channel_ranges[i][1]] * 2,
                 color='black', alpha=0.2)
             plt.text(
-                0.03*event.length()*time_scale,
+                0.03 * event.length() * time_scale,
                 (channel_ranges[i][1] +
-                    (channel_ranges[i+1][1] if i < len(channel_ranges)-1 else self.config['n_channels'])
-                )/2,
+                    (channel_ranges[i + 1][1] if i < len(channel_ranges) - 1 else self.config['n_channels'])
+                 ) / 2,
                 channel_ranges[i][0])
 
         # Tell about the bad channels
         bad_channels = np.where(event.is_channel_bad)[0]
         if len(bad_channels):
-            plt.text(0, 0, 'Bad channels: ' + ', '.join(map(str,sorted(bad_channels))), {'size': 8})
+            plt.text(0, 0, 'Bad channels: ' + ', '.join(map(str, sorted(bad_channels))), {'size': 8})
 
         # Color the peak ranges
         self.color_peak_ranges(event)
 
         # Make sure we always see all channels , even if there are few occurrences
-        plt.xlim((0,event.length() * time_scale))
-        plt.ylim((0,len(event.channel_waveforms)))
+        plt.xlim((0, event.length() * time_scale))
+        plt.ylim((0, len(event.channel_waveforms)))
 
         plt.xlabel('Time (us)')
         plt.ylabel('PMT channel')
         plt.tight_layout()
-
-
 
 
 class PlotEventSummary(PlotBase):
@@ -426,13 +425,13 @@ class PlotEventSummary(PlotBase):
         rows = 3
         cols = 4
         if not self.config['plot_largest_peaks']:
-            rows -=1
+            rows -= 1
 
         plt.figure(figsize=(self.horizontal_size_multiplier * self.size_multiplier * cols, self.size_multiplier * rows))
         title = 'Event %s from %s -- recorded at %s UTC, %09dns' % (
             event.event_number, event.dataset_name,
-            time.strftime("%Y/%m/%d, %H:%M:%S", time.gmtime(event.start_time/10**9)),
-            event.start_time%(10**9))
+            time.strftime("%Y/%m/%d, %H:%M:%S", time.gmtime(event.start_time / 10 ** 9)),
+            event.start_time % (10 ** 9))
         plt.suptitle(title, fontsize=18)
 
         if self.config['plot_largest_peaks']:
@@ -451,22 +450,22 @@ class PlotEventSummary(PlotBase):
 
             self.log.debug("Plotting hitpatterns...")
             q = PlottingHitPattern(self.config, self.processor)
-            q.plot_event(event, show_dominant_array_only=True, subplots_to_use = [
-                    plt.subplot2grid((rows, cols), (0, 1)),
-                    plt.subplot2grid((rows, cols), (0, 2))
-                ])
+            q.plot_event(event, show_dominant_array_only=True, subplots_to_use=[
+                plt.subplot2grid((rows, cols), (0, 1)),
+                plt.subplot2grid((rows, cols), (0, 2))
+            ])
 
         self.log.debug("Plotting sum waveform...")
-        sumw_ax = plt.subplot2grid((rows, cols), (rows-2, 0), colspan=cols)
+        sumw_ax = plt.subplot2grid((rows, cols), (rows - 2, 0), colspan=cols)
         q = PlotSumWaveformEntireEvent(self.config, self.processor)
         q.plot_event(event, show_legend=True)
 
         self.log.debug("Plotting channel waveforms...")
-        plt.subplot2grid((rows, cols), (rows-1, 0), colspan=cols, sharex=sumw_ax)
+        plt.subplot2grid((rows, cols), (rows - 1, 0), colspan=cols, sharex=sumw_ax)
         q = PlotChannelWaveforms2D(self.config, self.processor)
         q.plot_event(event)
 
         plt.tight_layout()
 
         # Make some room for the title
-        plt.subplots_adjust(top=1-0.12*4/self.size_multiplier)
+        plt.subplots_adjust(top=1 - 0.12 * 4 / self.size_multiplier)

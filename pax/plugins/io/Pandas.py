@@ -7,6 +7,7 @@ from pax.micromodels import fields as mm_fields
 
 
 class WritePandas(plugin.OutputPlugin):
+
     """
     Convert our event to pandas DataFrames, then write to containers supported by pandas: HDF5, CSV, JSON, HTML, ...
 
@@ -73,7 +74,6 @@ class WritePandas(plugin.OutputPlugin):
             # We need to write in one go at the end:
             self.write_every = float('inf')
 
-
     def write_event(self, event):
 
         # Store all the event data in self.dataframes
@@ -84,7 +84,6 @@ class WritePandas(plugin.OutputPlugin):
         if self.events_ready_to_be_written == self.write_every:
             self.write_dataframes()
 
-
     def shutdown(self):
 
         if self.events_ready_to_be_written:
@@ -92,7 +91,6 @@ class WritePandas(plugin.OutputPlugin):
 
         if self.output_format == 'hdf':
             self.store.close()
-
 
     def mm_to_dataframe(self, mm, index_trail):
         """Convert a MicroModels class instance to a pre-dataframe (data_dict with index_trail),
@@ -132,7 +130,6 @@ class WritePandas(plugin.OutputPlugin):
         # Finally, append the instance we started with to its pre_dataframe
         self.append_to_df(mm.__class__.__name__, (index_trail, data_dict))
 
-
     def append_to_df(self, dfname, index_and_data_tuple):
         """ Appends an (index, data_dict) tuple to self.dataframes[dfname]
         """
@@ -140,7 +137,6 @@ class WritePandas(plugin.OutputPlugin):
             self.dataframes[dfname].append(index_and_data_tuple)
         else:
             self.dataframes[dfname] = [index_and_data_tuple]
-
 
     def write_dataframes(self):
 

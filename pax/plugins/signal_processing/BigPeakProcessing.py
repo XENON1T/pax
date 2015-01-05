@@ -5,8 +5,11 @@ import numpy as np
 from pax import utils, plugin, datastructure
 import math
 
+
 class DeleteSmallPeaks(plugin.TransformPlugin):
+
     """Deletes low coincidence peaks, so the low-energy peakfinder can have a crack at them"""
+
     def transform_event(self, event):
         event.peaks = [p for p in event.peaks
                        if p.number_of_contributing_channels >= self.config['prune_if_coincidence_lower_than']
@@ -15,6 +18,7 @@ class DeleteSmallPeaks(plugin.TransformPlugin):
 
 
 class ComputePeakWidths(plugin.TransformPlugin):
+
     """Does what it says on the tin"""
 
     def transform_event(self, event):
@@ -29,7 +33,7 @@ class ComputePeakWidths(plugin.TransformPlugin):
             for width_name, conf in self.config['width_computations'].items():
 
                 peak[width_name] = utils.width_at_fraction(
-                    peak_wave=event.get_sum_waveform(conf['waveform_to_use']).samples[peak.left : peak.right+1],
+                    peak_wave=event.get_sum_waveform(conf['waveform_to_use']).samples[peak.left: peak.right + 1],
                     fraction_of_max=conf['fraction_of_max'],
                     max_idx=peak.index_of_maximum - peak.left,
                     interpolate=conf['interpolate'])
@@ -42,25 +46,24 @@ class ComputePeakAreasAndCoincidence(plugin.TransformPlugin):
     def startup(self):
         self.central_width = round(self.config['central_area_region_width'] / self.config['sample_duration'], 1)
 
-
     def transform_event(self, event):
         for peak in event.peaks:
 
             # Compute area in each channel
             # Note this also computes the area for PMTs in other detectors!
-            peak.area_per_channel = np.sum(event.channel_waveforms[:, peak.left:peak.right+1], axis=1)
+            peak.area_per_channel = np.sum(event.channel_waveforms[:, peak.left:peak.right + 1], axis=1)
 
             # Determine which channels contribute to the peak's total area
             channels = np.arange(self.config['n_channels'])
             peak.does_channel_contribute = np.in1d(channels,
                                                    np.array(list(self.config['channels_in_detector'][peak.detector]))) & \
-                                           (peak.area_per_channel >= self.config['minimum_area'])
+                (peak.area_per_channel >= self.config['minimum_area'])
 
             # Other channels with nonzero area have noise
             peak.does_channel_have_noise = np.in1d(channels,
                                                    np.array(list(self.config['channels_in_detector'][peak.detector]))) & \
-                                           (peak.area_per_channel != 0) & \
-                                           (np.invert(peak.does_channel_contribute))
+                (peak.area_per_channel != 0) & \
+                (np.invert(peak.does_channel_contribute))
 
             # Compute the peak's area
             peak.area = np.sum(peak.area_per_channel[peak.contributing_channels])
@@ -69,8 +72,8 @@ class ComputePeakAreasAndCoincidence(plugin.TransformPlugin):
             peak.central_area = np.sum(
                 event.channel_waveforms[
                     peak.contributing_channels,
-                    max(peak.left, peak.index_of_maximum - math.floor(self.central_width/2)):
-                    min(peak.right+1, peak.index_of_maximum + math.ceil(self.central_width/2))
+                    max(peak.left, peak.index_of_maximum - math.floor(self.central_width / 2)):
+                    min(peak.right + 1, peak.index_of_maximum + math.ceil(self.central_width / 2))
                 ],
                 axis=(0, 1)
             )
@@ -79,16 +82,16 @@ class ComputePeakAreasAndCoincidence(plugin.TransformPlugin):
 
 
 class ComputePeakEntropies(plugin.TransformPlugin):
-    #TODO: write tests
+    # TODO: write tests
 
     def transform_event(self, event):
         for peak in event.peaks:
 
-            peak_waveforms = event.channel_waveforms[:, peak.left:peak.right+1]
+            peak_waveforms = event.channel_waveforms[:, peak.left:peak.right + 1]
             if self.config['normalization_mode'] is 'abs':
                 normalized = np.abs(peak_waveforms)
             elif self.config['normalization_mode'] is 'square':
-                normalized = peak_waveforms**2
+                normalized = peak_waveforms ** 2
             else:
                 raise ValueError(
                     'Invalid Configuration for ComputePeakEntropies: normalization_mode must be abs or square')
@@ -102,10 +105,9 @@ class ComputePeakEntropies(plugin.TransformPlugin):
             # Restricting to contributing pmts is not optional: otherwise you'd include other detectors as well.
             peak.entropy_per_channel = np.zeros(len(peak_waveforms))
             for pmt in peak.contributing_channels:
-                peak.entropy_per_channel[pmt] = -np.sum(normalized[pmt]*np.log(normalized[pmt]))
+                peak.entropy_per_channel[pmt] = -np.sum(normalized[pmt] * np.log(normalized[pmt]))
 
         return event
-
 
 
 class ClassifyBigPeaks(plugin.TransformPlugin):

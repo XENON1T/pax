@@ -157,4 +157,3 @@ class Model(object, metaclass=ModelMeta):
     def get_fields(self):
         """Return a {field_name: field_instance} dictionary."""
         return self._fields
-

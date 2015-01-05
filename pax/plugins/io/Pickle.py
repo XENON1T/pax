@@ -3,7 +3,9 @@
 
 from pax import plugin
 
-import gzip, re, glob
+import gzip
+import re
+import glob
 try:
     import cPickle as pickle
 except:
@@ -19,7 +21,6 @@ class WriteToPickleFile(plugin.OutputPlugin):
         self.log.debug("Done!")
 
 
-
 class DirWithPickleFiles(plugin.InputPlugin):
 
     def startup(self):
@@ -28,7 +29,7 @@ class DirWithPickleFiles(plugin.InputPlugin):
         if len(files) == 0:
             self.log.fatal("No files found in input directory %s!" % self.config['input_name'])
         for file in files:
-            m = re.search('(\d+)$',file)
+            m = re.search('(\d+)$', file)
             if m is None:
                 self.log.debug("Invalid file %s" % file)
                 continue
@@ -40,7 +41,7 @@ class DirWithPickleFiles(plugin.InputPlugin):
 
     def get_single_event(self, index):
         file = self.event_files[index]
-        with gzip.open(file,'rb') as f:
+        with gzip.open(file, 'rb') as f:
             return pickle.load(f)
 
     def get_events(self):

@@ -59,7 +59,7 @@ class XedInput(plugin.InputPlugin):
     def startup(self):
         self.xedfiles = []
         self.input = None
-        self.number_of_events = 0 # Updated by init_xedfile
+        self.number_of_events = 0  # Updated by init_xedfile
         filename = core.data_file_name(self.config['input_name'])
 
         if filename[-4:] == '.xed':
@@ -73,7 +73,7 @@ class XedInput(plugin.InputPlugin):
 
             self.log.debug("Found these files: %s", str(xed_file_names))
 
-            if len(xed_file_names)==0:
+            if len(xed_file_names) == 0:
                 raise ValueError("No XED files found in input directory %s!" % filename)
 
             for xf in xed_file_names:
@@ -83,20 +83,19 @@ class XedInput(plugin.InputPlugin):
         # Select the first XED file
         self.select_xedfile(0)
 
-
     def init_xedfile(self, filename):
         """Loads in an XED file header, so we can look up which events are in it"""
         self.log.info("Opening %s", filename)
         input = open(filename, 'rb')
 
-        self.xedfiles.append({ 'filename' : filename })
+        self.xedfiles.append({'filename': filename})
 
         # File meta data
         fmd = np.fromfile(input, dtype=XedInput.file_header, count=1)[0]
 
         self.xedfiles[-1]['first_event'] = fmd['first_event_number']
         self.xedfiles[-1]['last_event'] =  fmd['first_event_number'] + \
-                                           fmd['events_in_file'] - 1
+            fmd['events_in_file'] - 1
 
         # Read metadata and event positions from the XED file
         self.event_positions = np.fromfile(input, dtype=np.dtype("<u4"),
@@ -130,7 +129,7 @@ class XedInput(plugin.InputPlugin):
         if self.file_metadata['events_in_file'] < self.file_metadata['event_index_size']:
             self.log.debug(
                 ("The XED file claims there are %s events in the file, while the event position index has %s entries. " +
-                "Is this the last XED file of a dataset?" ) %
+                 "Is this the last XED file of a dataset?") %
                 (self.file_metadata['events_in_file'], self.file_metadata['event_index_size'])
             )
             self.event_positions = self.event_positions[:self.file_metadata['events_in_file']]
@@ -177,9 +176,9 @@ class XedInput(plugin.InputPlugin):
         # If not, raise error. Would be simple matter to change settings dynamically, but that's weird.
         values_to_check = (
             ('Voltage range',   self.config['digitizer_voltage_range'],
-                                event_layer_metadata['voltage_range']),
+             event_layer_metadata['voltage_range']),
             ('Digitizer dt',    self.config['sample_duration'],
-                                1/(event_layer_metadata['sampling_frequency'] * units.Hz)),
+             1 / (event_layer_metadata['sampling_frequency'] * units.Hz)),
         )
         for name, ini_value, xed_value in values_to_check:
             if ini_value != xed_value:

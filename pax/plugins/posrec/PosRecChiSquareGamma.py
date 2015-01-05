@@ -10,6 +10,7 @@ from pax.core import data_file_name
 
 
 class PosRecChiSquareGamma(plugin.TransformPlugin):
+
     """Position reconstruction by minimization of chi square gamma function.
 
     Class to reconstruct S2's x, y and chi square gamma 
@@ -46,11 +47,11 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
 
         # Load gains (gains from config file, gain error 0.5 pe for all pmts for now)
         self.gains = self.config['gains']
-        self.gain_errors = [0.5 for i in range(99)] #test for now, make config variable
+        self.gain_errors = [0.5 for i in range(99)]  # test for now, make config variable
 
         # Load QE (for now use arbitrary values)
-        self.qes = [0.3 for i in range(99)] #test for now, make config variable
-        self.qe_errors = [0.009 for i in range(99)] #test for now, make config variable
+        self.qes = [0.3 for i in range(99)]  # test for now, make config variable
+        self.qe_errors = [0.009 for i in range(99)]  # test for now, make config variable
 
         # Number of pmts (minus dead pmts)
         self.n_channels = 0
@@ -75,7 +76,7 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
         y = position[1]
 
         # Cutoff value at r=15 cm, chi_square_gamma is +infinity here
-        if x**2 + y**2 > 225:
+        if x ** 2 + y ** 2 > 225:
             return float('inf')
 
         function_value = 0
@@ -86,14 +87,14 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
             if self.gains[pmt] == 0:
                 continue
 
-            photons_in_pmt = self.hits[pmt]/self.qes[pmt]
-            pmt_error = (self.qe_errors[pmt] / self.qes[pmt])**4 + (self.gain_errors[pmt]/self.gains[pmt])**2
+            photons_in_pmt = self.hits[pmt] / self.qes[pmt]
+            pmt_error = (self.qe_errors[pmt] / self.qes[pmt]) ** 4 + (self.gain_errors[pmt] / self.gains[pmt]) ** 2
 
             # Lookup value from LCE map for pmt at position x,y
-            map_value = self.maps.get_value(x,y,map_name=str(pmt))
+            map_value = self.maps.get_value(x, y, map_name=str(pmt))
 
-            term_numerator = (photons_in_pmt + min(photons_in_pmt,1) - self.area_photons * map_value)**2
-            term_denominator = photons_in_pmt**2 * pmt_error + self.area_photons * map_value + 1.0
+            term_numerator = (photons_in_pmt + min(photons_in_pmt, 1) - self.area_photons * map_value) ** 2
+            term_denominator = photons_in_pmt ** 2 * pmt_error + self.area_photons * map_value + 1.0
 
             function_value += term_numerator / term_denominator
 
@@ -120,7 +121,7 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
             # Highest number of pe seen in one PMT and the id of this PMT
             max_pmt = 0
             max_pmt_id = 0
-            
+
             # Calculate which pmt has maximum signal
             for pmt in self.pmts:
                 # Exclude dead pmts
@@ -134,7 +135,7 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
                 self.area_photons += self.hits[pmt] / self.qes[pmt]
 
             # Start position for minimizer, if no weighted sum position is present
-            # use max pmt location as minimizer start position 
+            # use max pmt location as minimizer start position
             start_x = max_pmt_x = self.pmt_locations[max_pmt_id]['x']
             start_y = max_pmt_y = self.pmt_locations[max_pmt_id]['y']
 
@@ -169,7 +170,7 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
             # A warnflag tells if the maximum number of iterations was exceeded
             #    warnflag 0, OK
             #    warnflag 1, maximum functions evaluations exceeded
-            #    warnflag 2, maximum iterations exceeded 
+            #    warnflag 2, maximum iterations exceeded
             xopt, fopt, direc, iter, funcalls, warnflag = fmin_powell(self.function_chi_square_gamma,
                                                                       [start_x, start_y],
                                                                       args=(),
@@ -215,4 +216,4 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
             return
 
         self.log.debug("Total number of reconstruct calls: %d" % self.total_rec_calls)
-        self.log.debug("Success rate: %f" % (self.total_rec_success/self.total_rec_calls))
+        self.log.debug("Success rate: %f" % (self.total_rec_success / self.total_rec_calls))

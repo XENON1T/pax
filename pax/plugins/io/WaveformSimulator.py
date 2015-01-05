@@ -5,7 +5,6 @@ There is no physics here, all that is in pax.simulation.
 """
 
 
-
 import os
 import time
 import csv
@@ -21,8 +20,10 @@ from pax import core, plugin, units
 
 
 class WaveformSimulator(plugin.InputPlugin):
+
     """ Common I/O for waveform simulator plugins
     """
+
     def startup(self):
         self.all_truth_peaks = []
         self.simulator = self.processor.simulator
@@ -102,7 +103,7 @@ class WaveformSimulator(plugin.InputPlugin):
             ))
             if int(q['s1_photons']):
                 hitpatterns.append(
-                    self.s1( photons=int(q['s1_photons']), recoil_type=q['recoil_type'], t=float(q['t']) )
+                    self.s1(photons=int(q['s1_photons']), recoil_type=q['recoil_type'], t=float(q['t']))
                 )
             if int(q['s2_electrons']):
                 hitpatterns.append(
@@ -114,7 +115,7 @@ class WaveformSimulator(plugin.InputPlugin):
                 )
 
         # Combine the hitpatterns by their overloaded addition operator, then simulate waveforms
-        event =  self.simulator.to_pax_event(sum([h for h in hitpatterns if h is not None]))
+        event = self.simulator.to_pax_event(sum([h for h in hitpatterns if h is not None]))
         if hasattr(self, 'dataset_name'):
             event.dataset_name = self.dataset_name
         event.event_number = self.current_event
@@ -132,7 +133,6 @@ class WaveformSimulator(plugin.InputPlugin):
 
         return event
 
-
     def get_events(self):
 
         for instruction_number, instructions in enumerate(self.get_instructions_for_next_event()):
@@ -147,7 +147,6 @@ class WaveformSimulator(plugin.InputPlugin):
                     yield event
 
 
-
 class WaveformSimulatorFromCSV(WaveformSimulator):
 
     def startup(self):
@@ -160,11 +159,11 @@ class WaveformSimulatorFromCSV(WaveformSimulator):
         self.dataset_name = os.path.basename(filename)
         self.instructions_file = open(core.data_file_name(filename), 'r')
         #
-        # # Slurp the entire instructions file, so we know the number of events
+        # Slurp the entire instructions file, so we know the number of events
         self.instruction_reader = csv.DictReader(self.instructions_file)
         self.instructions = []
         #
-        # # Loop over lines, make instructions
+        # Loop over lines, make instructions
         instruction_number = 0
         instruction = []
         for p in self.instruction_reader:
@@ -195,14 +194,14 @@ class WaveformSimulatorFromCSV(WaveformSimulator):
 class WaveformSimulatorFromNEST(WaveformSimulator):
 
     variables = (
-             #Fax name        #Root name    #Conversion factor (multiplicative)
-            ('x',             'Nest_x',     0.1),
-            ('y',             'Nest_y',     0.1),
-            ('depth',         'Nest_z',     -0.1),
-            ('s1_photons',    'Nest_nph',   1),
-            ('s2_electrons',  'Nest_nel',   1),
-            ('t',             'Nest_t',     10**9),
-            ('recoil_type',   'Nest_nr',    1),
+        # Fax name        #Root name    #Conversion factor (multiplicative)
+        ('x',             'Nest_x',     0.1),
+        ('y',             'Nest_y',     0.1),
+        ('depth',         'Nest_z',     -0.1),
+        ('s1_photons',    'Nest_nph',   1),
+        ('s2_electrons',  'Nest_nel',   1),
+        ('t',             'Nest_t',     10 ** 9),
+        ('recoil_type',   'Nest_nr',    1),
     )
 
     def startup(self):
@@ -210,7 +209,7 @@ class WaveformSimulatorFromNEST(WaveformSimulator):
         filename = self.config['input_name']
         import ROOT
         f = ROOT.TFile(core.data_file_name(filename))
-        self.t = f.Get("t1") # For Xerawdp use T1, for MC t1
+        self.t = f.Get("t1")  # For Xerawdp use T1, for MC t1
         WaveformSimulator.startup(self)
         self.number_of_events = self.t.GetEntries() * self.config['event_repetitions']
 
@@ -227,19 +226,19 @@ class WaveformSimulatorFromNEST(WaveformSimulator):
             npeaks = len(values[self.variables[0][0]])
             peaks = []
             for i in range(npeaks):
-                peaks.append({'instruction' : event_i})
+                peaks.append({'instruction': event_i})
                 for (variable_name, _, conversion_factor) in self.variables:
                     peaks[-1][variable_name] = values[variable_name][i] * conversion_factor
 
             for p in peaks:
                 # Subtract depth of gate mesh, see xenon:xenon100:mc:roottree, bottom of page
-                p['depth'] -= 2.15+0.25
+                p['depth'] -= 2.15 + 0.25
                 # Fix ER / NR label
                 if p['recoil_type'] != 0:
                     p['recoil_type'] = 'NR'
                 else:
                     p['recoil_type'] = 'ER'
             # Sort by time
-            peaks.sort(key = lambda p:p['t'])
+            peaks.sort(key=lambda p: p['t'])
 
             yield peaks

@@ -6,6 +6,7 @@ import tables
 
 
 class HDF5Output(plugin.OutputPlugin):
+
     """Use PyTables to write HDF5 output
 
     HDF5 is a hierarchical data structure used extensively in astrophysics, and
@@ -63,9 +64,9 @@ class HDF5Output(plugin.OutputPlugin):
                          value)
 
             self.tables[key] = self.h5_file.create_table('/',
-                                                        '%s_table' % key.lower(),
-                                                        table,
-                                                        filters=compression_filter)
+                                                         '%s_table' % key.lower(),
+                                                         table,
+                                                         filters=compression_filter)
             self.rows[key] = self.tables[key].row
 
     def write_event(self, event):
@@ -115,7 +116,7 @@ class HDF5Output(plugin.OutputPlugin):
             except AttributeError as e:
                 self.log.error("Arcane error in flushing HDF5 table %s on shutdown of HDF5Output. " % table_name +
                                "May be related to running multiple Processor's with clean_shutdown=False?\n"
-                )
+                               )
                 raise e
 
         self.h5_file.close()

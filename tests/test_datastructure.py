@@ -15,9 +15,6 @@ from pax.utils import empty_event
 
 
 class TestDatastructure(unittest.TestCase):
-    
-    def setUp(self):
-        pass
 
     def test_does_not_exist(self):
         e = empty_event()
@@ -52,7 +49,7 @@ class TestDatastructure(unittest.TestCase):
         e = empty_event()
         e.peaks = [{'area': 0,
                     'index_of_maximum': 0,
-                    'detector':         'tpc',}]
+                    'detector':         'tpc', }]
 
         self.assertEqual(len(e.peaks), 1)
         self.assertIsInstance(e.peaks[0], Peak)
@@ -61,7 +58,7 @@ class TestDatastructure(unittest.TestCase):
     def test_peak_instantiation(self):
         p = Peak({'area': 3.0,
                   'index_of_maximum': 0,
-                  'detector':         'tpc',})
+                  'detector':         'tpc', })
         self.assertIsInstance(p, Peak)
         self.assertEqual(p.area, 3.0)
 
@@ -81,7 +78,7 @@ class TestDatastructure(unittest.TestCase):
         e.peaks.append(Peak({'area': 2.0,
                              'index_of_maximum': 0,
                              'type': 'S1',
-                             'detector':         'tpc',}))
+                             'detector':         'tpc', }))
 
         self.assertEqual(len(e.S1s()), 1)
         self.assertIsInstance(e.S1s()[0], Peak)
@@ -137,9 +134,6 @@ class TestDatastructure(unittest.TestCase):
                          len(samples))
         self.assertIsInstance(w.samples, np.ndarray)
         self.assertEqual(w.samples.dtype, np.float64)
-
-    def tearDown(self):
-        pass
 
 
 if __name__ == '__main__':

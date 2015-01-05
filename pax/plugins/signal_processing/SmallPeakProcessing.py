@@ -3,6 +3,7 @@ from pax import plugin, datastructure, utils
 
 
 class ClusterSmallPeaks(plugin.TransformPlugin):
+
     """Clusters individual channel peaks into groups, and labels them as noise / lone_pulse / unknown
     'unknown' means an S1 or S2, which will be decided by a later plugin
     """
@@ -38,8 +39,8 @@ class ClusterSmallPeaks(plugin.TransformPlugin):
 
                 # Cluster the single-pes in groups separated by >= self.cluster_separation_length
                 cluster_indices = utils.cluster_by_diff([s.index_of_maximum * self.dt for s in spes],
-                                                           self.cluster_separation_length,
-                                                           return_indices=True)
+                                                        self.cluster_separation_length,
+                                                        return_indices=True)
                 self.log.debug("Made %s clusters" % len(cluster_indices))
 
                 # Each cluster becomes a peak
@@ -48,9 +49,9 @@ class ClusterSmallPeaks(plugin.TransformPlugin):
                         'channel_peaks': [s for i, s in enumerate(spes) if i in ci],
                         'detector':      detector,
                     })
-                    peak.left =  min([s.left  for s in peak.channel_peaks])
+                    peak.left = min([s.left for s in peak.channel_peaks])
                     peak.right = max([s.right for s in peak.channel_peaks])
-                    peak.area =  sum([s.area  for s in peak.channel_peaks])
+                    peak.area = sum([s.area for s in peak.channel_peaks])
 
                     # For backwards compatibility with plotting code
                     highest_peak_index = np.argmax([s.height for s in peak.channel_peaks])
@@ -62,7 +63,7 @@ class ClusterSmallPeaks(plugin.TransformPlugin):
                     channels = np.arange(self.config['n_channels'])
                     peak.does_channel_contribute = (np.in1d(channels,
                                                             self.config['channels_in_detector'][detector])) & \
-                                                   (np.in1d(channels, [s.channel for s in peak.channel_peaks]))
+                        (np.in1d(channels, [s.channel for s in peak.channel_peaks]))
 
                     if peak.number_of_contributing_channels == 0:
                         raise RuntimeError(

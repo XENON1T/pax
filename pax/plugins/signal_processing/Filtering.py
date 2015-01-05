@@ -33,7 +33,7 @@ class Filtering(plugin.TransformPlugin):
                     self.log.warning("Filter %s has non-normalized impulse response: %s != 1. Normalizing for you..." % (
                         f['name'], np.sum(ir))
                     )
-                    f['impulse_response'] = ir/np.sum(ir)
+                    f['impulse_response'] = ir / np.sum(ir)
 
                 if len(ir) % 2 == 0:
                     self.log.warning("Filter %s has an even-length impulse response!" % f['name'])
@@ -44,9 +44,9 @@ class Filtering(plugin.TransformPlugin):
             else:
                 # Frequency bandpass filter
                 # Implementation from http://wiki.scipy.org/Cookbook/ButterworthBandpass
-                sampling_rate = 1/self.config['sample_duration']
+                sampling_rate = 1 / self.config['sample_duration']
 
-                # # Plot the frequency response for a few different orders.
+                # Plot the frequency response for a few different orders.
                 # fs = sampling_rate
                 # import matplotlib.pyplot as plt
                 # plt.figure(1)
@@ -75,7 +75,6 @@ class Filtering(plugin.TransformPlugin):
                     order=1    # At high orders the frequency response seems to go bananas..?
                 )
 
-
     def transform_event(self, event):
         for f in self.config['filters']:
 
@@ -91,7 +90,7 @@ class Filtering(plugin.TransformPlugin):
                 # This dirty code hack implements the Xerawdp convolution bug
                 # DO NOT USE except for Xerawdp matching!
                 ##
-                #TODO: could be done more straightforwardly now that we've stored occurrences properly
+                # TODO: could be done more straightforwardly now that we've stored occurrences properly
                 filter_length = len(f['impulse_response'])
 
                 # Determine the pulse boundaries

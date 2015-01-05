@@ -1,5 +1,6 @@
 from pax import plugin, datastructure, utils
 
+
 class DummyInput(plugin.InputPlugin):
 
     def get_events(self):
@@ -9,11 +10,14 @@ class DummyInput(plugin.InputPlugin):
 class DummyOutput(plugin.OutputPlugin):
     pass
 
+
 class DummyTransform(plugin.TransformPlugin):
     pass
 
+
 class DummyTransform2(plugin.TransformPlugin):
     pass
+
 
 class DummyTransform3(plugin.TransformPlugin):
     pass

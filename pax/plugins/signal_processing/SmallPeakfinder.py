@@ -6,6 +6,7 @@ from pax import plugin, datastructure, utils, units
 import matplotlib.pyplot as plt
 import os
 
+
 class FindSmallPeaks(plugin.TransformPlugin):
 
     def startup(self):
@@ -76,7 +77,7 @@ class FindSmallPeaks(plugin.TransformPlugin):
                         continue
 
                     # Retrieve the waveform from channel_waveforms
-                    w = event.channel_waveforms[channel, start : stop + 1]
+                    w = event.channel_waveforms[channel, start: stop + 1]
 
                     # Keep the unfiltered waveform in origw
                     origw = w
@@ -139,7 +140,7 @@ class FindSmallPeaks(plugin.TransformPlugin):
                             'right':               start + p[1],
                             # NB: area and max are computed in filtered waveform, because
                             # the sliding window filter will shift the peak shape a bit
-                            'area':                np.sum(w[p[0]:p[1]+1]),
+                            'area':                np.sum(w[p[0]:p[1] + 1]),
                             'height':              origw[max_idx],
                             'noise_sigma':         noise_sigma,
                         }))
@@ -154,7 +155,7 @@ class FindSmallPeaks(plugin.TransformPlugin):
                             plt.plot(w, drawstyle='steps', label='data (filtered)')
                             plt.plot(origw, drawstyle='steps', label='data (raw)', alpha=0.5, color='gray')
                         for p in raw_peaks:
-                            plt.axvspan(p[0]-1, p[1], color='red', alpha=0.5)
+                            plt.axvspan(p[0] - 1, p[1], color='red', alpha=0.5)
                         plt.plot(noise_sigma * np.ones(len(w)), '--', label='1 sigma')
                         plt.plot(self.min_sigma * noise_sigma * np.ones(len(w)), '--', label='%s sigma' % self.min_sigma)
                         plt.legend()
@@ -172,7 +173,6 @@ class FindSmallPeaks(plugin.TransformPlugin):
                 event.is_channel_bad[ch] = True
 
         return event
-
 
     def find_peaks(self, w, noise_sigma):
         """

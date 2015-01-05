@@ -80,10 +80,10 @@ class InputPlugin(BasePlugin):
     # The plugin should update this to the number of events which get_events will eventually return
     number_of_events = 0
 
-    #TODO: how/where do we check if the input plugin has already shut down?
+    # TODO: how/where do we check if the input plugin has already shut down?
 
     def get_single_event(self, index):
-        self.log.warning("Single event support not implemented for this input plugin... " +\
+        self.log.warning("Single event support not implemented for this input plugin... " +
                          "Iterating though events until we find event %s!" % index)
         for event in self.get_events():
             if event.event_number == index:

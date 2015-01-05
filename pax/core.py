@@ -73,7 +73,7 @@ class Processor:
 
         Setting just_testing disables some warnings about not specifying any plugins or plugin groups in the config.
         Use only if, for some reason, you don't want to load a full configuration file.
-        
+
         .. note:: 
           Although the log level can be specified in the configuration, it is an application wide
           setting that will not be modified once set. New instances of the Processor class will have
@@ -92,7 +92,7 @@ class Processor:
             self.simulator = simulation.Simulator(self.config['WaveformSimulator'])
         else:
             if not just_testing:
-                self.log.warning('You did not specify any configuration for the waveform simulator!\n'+
+                self.log.warning('You did not specify any configuration for the waveform simulator!\n' +
                                  'If you attempt to load the waveform simulator, pax will crash!')
 
         # Get the list of plugins from the configuration file
@@ -120,8 +120,8 @@ class Processor:
         # Separate input and actions (which for now includes output).
         # For the plugin groups which are action plugins, get all names, flatten them
         action_plugin_names = list(itertools.chain(*[plugin_names[g]
-                                                   for g in pc['plugin_group_names']
-                                                   if g != 'input']))
+                                                     for g in pc['plugin_group_names']
+                                                     if g != 'input']))
 
         # Hand out input & output override instructions
         if 'input_name' in pc and 'input' in pc['plugin_group_names']:
@@ -185,7 +185,6 @@ class Processor:
             self.action_plugins = []
             if not just_testing:
                 self.log.warning("No action plugins specified: this will be a pretty boring processing run...")
-
 
     def load_configuration(self, config_names, config_paths, config_string, config_dict):
         """Load a configuration -- see init's docstring
@@ -445,7 +444,7 @@ class Processor:
         else:   # If no break occurred:
             self.log.info("All events from input source have been processed.")
 
-        #TODO: not nice, accessing the loop var outside the loop.. What if loop was never run?
+        # TODO: not nice, accessing the loop var outside the loop.. What if loop was never run?
         events_actually_processed = i + 1
 
         if self.config['pax']['print_timing_report']:
@@ -458,15 +457,15 @@ class Processor:
                 t = plugin.total_time_taken
                 timing_report.add_row([
                     plugin.__class__.__name__,
-                    round(100*t/total_time, 1),
-                    round(t/events_actually_processed, 1),
-                    round(t/1000, 1)])
+                    round(100 * t / total_time, 1),
+                    round(t / events_actually_processed, 1),
+                    round(t / 1000, 1)])
             timing_report.add_row([
                 'TOTAL',
                 round(100., 1),
-                round(total_time/events_actually_processed, 1),
-                round(total_time/1000, 1)])
-            self.log.info("Timing report:\n"+str(timing_report))
+                round(total_time / events_actually_processed, 1),
+                round(total_time / 1000, 1)])
+            self.log.info("Timing report:\n" + str(timing_report))
 
         # Shutdown all plugins now -- don't wait until this Processor instance gets deleted
         if clean_shutdown:

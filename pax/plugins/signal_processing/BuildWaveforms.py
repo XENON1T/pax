@@ -4,6 +4,7 @@ from pax import plugin, units, datastructure
 
 
 class BuildWaveforms(plugin.TransformPlugin):
+
     """
 
     Waveforms that will be built:
@@ -48,13 +49,12 @@ class BuildWaveforms(plugin.TransformPlugin):
             })
         self.undead_channels = []
 
-
     def transform_event(self, event):
 
         # Sanity check
         if not self.config['sample_duration'] == event.sample_duration:
             raise ValueError('Event %s quotes sample duration = %s ns, but sample_duration is set to %s!' % (
-                              event.event_number, event.sample_duration, self.config['sample_duration']))
+                event.event_number, event.sample_duration, self.config['sample_duration']))
 
         # Initialize empty waveforms
         for group, members in self.channel_groups.items():
@@ -77,7 +77,7 @@ class BuildWaveforms(plugin.TransformPlugin):
             if self.config['gains'][channel] == 0:
                 if channel not in self.undead_channels:
                     if self.config['zombie_paranoia']:
-                        self.log.warning('Undead channel %s: gain is set to 0, but it has a signal in this event!'  % channel)
+                        self.log.warning('Undead channel %s: gain is set to 0, but it has a signal in this event!' % channel)
                         self.log.warning('Further undead channel warnings for this channel will be suppressed.')
                     self.undead_channels.append(channel)
                 if not self.config['build_nominally_gain_corrected_waveforms']:
@@ -96,7 +96,7 @@ class BuildWaveforms(plugin.TransformPlugin):
             if self.config['reuse_baseline_for_adjacent_occurrences'] \
                     and channel in last_occurrence_in \
                     and start_index == last_occurrence_in[channel].right + 1:
-                #self.log.debug('Occurence %s in channel %s is adjacent to previous occurrence: reusing baseline' %
+                # self.log.debug('Occurence %s in channel %s is adjacent to previous occurrence: reusing baseline' %
                 #               (i, channel))
                 pass
 
@@ -111,8 +111,8 @@ class BuildWaveforms(plugin.TransformPlugin):
             # For short pulses, we can take baseline samples from its rear.
             # The last occurrence is truncated in Xenon100, OK to use front-baselining even if short.
             elif self.config['rear_baselining_for_short_occurrences'] and  \
-                        len(occurrence_wave) < self.config['rear_baselining_threshold_occurrence_length'] and \
-                        (not start_index + length > event.length() - 1):
+                    len(occurrence_wave) < self.config['rear_baselining_threshold_occurrence_length'] and \
+                    (not start_index + length > event.length() - 1):
                 if occ_i > 0:
                     self.log.warning("Unexpected short occurrence %s in channel %s at %s (%s samples long)"
                                      % (occ_i, channel, start_index, length))
@@ -148,13 +148,13 @@ class BuildWaveforms(plugin.TransformPlugin):
             # Throw error if occurrence is completely outside event -- see issue 43
             if end_index < 0 or start_index > event.length() - 1:
                 raise ValueError('Occurrence %s in channel %s (%s-%s) is entirely outside event bounds (%s-%s)!' % (
-                    occ_i, channel, start_index, end_index, 0, event.length()-1))
+                    occ_i, channel, start_index, end_index, 0, event.length() - 1))
 
             # Truncate occurrences starting too early -- see issue 43
             if start_index < 0:
                 self.log.warning(
                     'Occurence %s in channel %s starts %s samples before event start: truncating. See issue #43.' % (
-                    occ_i, channel, -start_index))
+                        occ_i, channel, -start_index))
                 occurrence_wave = occurrence_wave[-start_index:]
                 # Update the start index
                 start_index = 0
@@ -164,8 +164,8 @@ class BuildWaveforms(plugin.TransformPlugin):
             if overhang_length > 0:
                 self.log.warning(
                     'Occurrence %s in channel %s has overhang of %s samples: truncating. See issue #43.' % (
-                    occ_i, channel, overhang_length))
-                occurrence_wave = occurrence_wave[:length-overhang_length]
+                        occ_i, channel, overhang_length))
+                occurrence_wave = occurrence_wave[:length - overhang_length]
                 # Update the length & end index
                 length = len(occurrence_wave)
                 end_index = start_index + length - 1

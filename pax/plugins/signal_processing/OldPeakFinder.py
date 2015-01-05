@@ -12,6 +12,7 @@ from pax import plugin, datastructure
 
 
 class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
+
     """NB: Does NOT do veto peakfinding!!!"""
 
     def transform_event(self, event):
@@ -241,7 +242,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                     # For large s2, update the dynamic threshold
                     # TODO: don't modify settings, so they don't have to be reloaded all the time!
                     if peak_type == 'large_s2':
-                        potential_new_threshold =  0.001 * self.highest_s2_height_ever
+                        potential_new_threshold = 0.001 * self.highest_s2_height_ever
                         if potential_new_threshold > settings['threshold']:
                             self.log.debug("Dynamic threshold raised from %s to %s" % (
                                 settings['threshold'], potential_new_threshold))
@@ -615,6 +616,7 @@ class ComputePeakPropertiesXdpStyle(plugin.TransformPlugin):
 
 
     """
+
     def startup(self):
         self.config['pmts_tpc'] = self.config['channels_top'] | self.config['channels_bottom']
 
@@ -668,13 +670,12 @@ class ComputePeakPropertiesXdpStyle(plugin.TransformPlugin):
         return event
 
 
-
-
 # Helper functions for peakfinding
 # Can't yet put them in the peakfinding class, because extent_until_threshold is used by computequantities also...
 
 import logging
 log = logging.getLogger('PeakFinding_find_next_crossing')
+
 
 def find_next_crossing(signal, threshold,
                        start=0, direction='right', min_length=1,
@@ -716,8 +717,8 @@ def find_next_crossing(signal, threshold,
     # Check for errors in arguments
     # TEMP HACK, these should become errors... or at least stern warnings!
     warninghead = ("Strange error during Xerawdp-imitation peakfinding: find_next_crossing was asked to search for " +
-                  "a threshold crossing for >= %s samples in the %s direction starting from sample %s and stopping " +
-                  "at sample %s in a signal %s samples in size.\n") % (min_length, direction, start, stop, len(signal))
+                   "a threshold crossing for >= %s samples in the %s direction starting from sample %s and stopping " +
+                   "at sample %s in a signal %s samples in size.\n") % (min_length, direction, start, stop, len(signal))
     if stop < 0:
         log.warning(warninghead + "A negative stop point makes no sense, setting it to 0 instead.")
         stop = 0
@@ -820,7 +821,7 @@ def find_next_crossing(signal, threshold,
                         # log_slope %s > %s. started from %s" % (i, log_slope, log_slope_threshold, start))
                         return start + np.argmin(signal[start:i + 1])
                 except ValueError:
-                    log.warning("The slope inversion test crashed, tell Jelle he should not be lazy and check if "+
+                    log.warning("The slope inversion test crashed, tell Jelle he should not be lazy and check if " +
                                 "there are enough samples to use the derivative kernel.")
         # Increment the search position in the right direction
         i += -1 if direction == 'left' else 1

@@ -5,16 +5,17 @@ from pax.datastructure import ReconstructedPosition
 
 
 class PosRecNeuralNet(plugin.TransformPlugin):
+
     """Please write one sentence here
 
     Please write on 3 paragraphs here here here here here here here 
     here here here here here here here here here here here here here
     here 
-    
+
     and here here here here here here here here here here here here
     here here here here here here here here here here here here here
     here 
-    
+
     and here here here here here here here here here here here here
     here here here here here here here here here here here here here
     here 
@@ -60,7 +61,7 @@ class PosRecNeuralNet(plugin.TransformPlugin):
             # For every PMT
             for pmt in self.pmts:  # 'pmt' is a PMT ID
                 value = self.pmt_locations[pmt]  # Dictionary {'x' : int, etc.}
-                Q = hits[pmt] # Area of this S2 for this PMT
+                Q = hits[pmt]  # Area of this S2 for this PMT
 
                 # Add this 'Q' to total Q 'scale'
                 scale += Q

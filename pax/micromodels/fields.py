@@ -8,7 +8,6 @@ Add numpy support and quite a few ways the code operates.
 import numpy as np
 
 
-
 class BaseField(object):
 
     """Base class for all field types.
@@ -64,7 +63,7 @@ class NumpyArrayField(BaseField):
         if isinstance(self.data, np.ndarray):
             if self.data.dtype != self._dtype:
                 raise TypeError("Wrong data type; must be %s, not %s." % (str(self._dtype),
-                                                                                    str(self.data.dtype)))
+                                                                          str(self.data.dtype)))
                 self.data = self.data.astype(self._dtype, copy=False)
             return self.data
         else:

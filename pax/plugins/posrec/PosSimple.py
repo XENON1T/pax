@@ -5,6 +5,7 @@ from pax.datastructure import ReconstructedPosition
 
 
 class PosRecWeightedSum(plugin.TransformPlugin):
+
     """Centroid reconstruction using a charge-weighted sum.
 
     Charge-weighted average of PMT positions.  Class to reconstruct S2's x, y
@@ -51,7 +52,7 @@ class PosRecWeightedSum(plugin.TransformPlugin):
             # For every PMT
             for pmt in self.pmts:  # 'pmt' is a PMT ID
                 value = self.pmt_locations[pmt]  # Dictionary {'x' : int, etc.}
-                Q = hits[pmt] # Area of this S2 for this PMT
+                Q = hits[pmt]  # Area of this S2 for this PMT
 
                 # Add this 'Q' to total Q 'scale'
                 scale += Q

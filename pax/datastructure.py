@@ -30,7 +30,7 @@ class ReconstructedPosition(Model):
     z = FloatField()  #: z position (cm)
 
     goodness_of_fit = FloatField()  #: goodness-of-fit parameter generated with PosRecChiSquareGamma
-    ndf = FloatField() #: number of degrees of freedom calculated with PosRecChiSquareGamma
+    ndf = FloatField()  # : number of degrees of freedom calculated with PosRecChiSquareGamma
 
     #: For this reconstructed peak, index of maximum value within sum waveform.
     index_of_maximum = IntegerField()
@@ -45,7 +45,7 @@ class ReconstructedPosition(Model):
     # Must be properties so InterpolatingDetectorMap can transparently use cylindrical coordinates
     @property
     def r(self):
-        return math.sqrt(self.x**2 + self.y**2)
+        return math.sqrt(self.x ** 2 + self.y ** 2)
 
     @property
     def phi(self):
@@ -84,8 +84,10 @@ class Peak(Model):
     right = IntegerField()                #: Index of right bound (INCLUSIVE!!) in event.
     # For XDP matching rightmost sample is not in integral, so you could say it is exclusive then.
 
-    area = FloatField()                   #: Area of the pulse in photoelectrons. Only
-                                          #: Includes only contributing pmts (see later) in the right detector
+    #: Area of the pulse in photoelectrons.
+    #:
+    #: Includes only contributing pmts (see later) in the right detector 
+    area = FloatField()
 
     type = StringField(default='unknown')        #: Type of peak (e.g., 's1', 's2', ...)
     subtype = StringField(default='unknown')     #: Subtype of peak
@@ -110,7 +112,6 @@ class Peak(Model):
     #:
     #: Returns an :class:`pax.datastructure.ReconstructedPosition` class.
     reconstructed_positions = f.ModelCollectionField(wrapped_class=ReconstructedPosition)
-
 
     ##
     #   Fields present in sum-waveform peaks
@@ -181,6 +182,7 @@ class SumWaveform(Model):
 # plain tuples/dicts in OccurrencesContainer perform similarly to namedtuples, but can't be extended/documented
 # Using a MicroModel, however, would slow things down a lot (+60% BuildWaveforms runtime)
 class Occurrence(object):
+
     """A DAQ occurrence
     """
 
@@ -240,7 +242,7 @@ class Event(Model):
 
     #: Time duration of a sample in units of ns
     #: This is also in config, but we need it here too, to convert between event duration and length in samples
-    sample_duration = IntegerField(default=10*units.ns)
+    sample_duration = IntegerField(default=10 * units.ns)
 
     #: Start time of the event (time at which the first sample STARTS)
     #:
@@ -304,7 +306,7 @@ class Event(Model):
         # This will store all of the kwargs as attrs
         # We don't pass length, it's not an attribute that can be set
         # (although it seems nothing bad happens if we do)
-        super().__init__({k:v for k,v in kwargs.items() if k != 'length'})
+        super().__init__({k: v for k, v in kwargs.items() if k != 'length'})
 
         # Cheat to init stop_time from length and duration
         if 'length' in kwargs and self.sample_duration and not self.stop_time:

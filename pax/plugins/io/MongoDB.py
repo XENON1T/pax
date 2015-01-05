@@ -18,9 +18,12 @@ from pax import plugin, units
 
 START_TIME_KEY = 'time_min'
 
+
 class MongoDBInput(plugin.InputPlugin):
+
     """Read data from DAQ database
     """
+
     def startup(self):
         self.log.debug("Connecting to %s" % self.config['address'])
         try:
@@ -89,6 +92,7 @@ class MongoDBInput(plugin.InputPlugin):
 
 
 class MongoDBFakeDAQOutput(plugin.OutputPlugin):
+
     """Inject PMT pulses into DAQ to test trigger.
 
     This plugin aims to emulate the DAQReader by creating run control documents
@@ -106,14 +110,13 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
 
         # Collect all events in a buffer, then inject them at the end.
         self.collect_then_dump = self.config['collect_then_dump']
-        self.repeater = int(self.config['repeater']) # Hz repeater
-        self.runtime = int(self.config['runtime']) # How long run repeater
+        self.repeater = int(self.config['repeater'])  # Hz repeater
+        self.runtime = int(self.config['runtime'])  # How long run repeater
 
         # Schema for input collection
         self.start_time_key = START_TIME_KEY
         self.stop_time_key = 'time_max'
         self.bulk_key = 'bulk'
-        
 
         self.connections = {}
 
@@ -145,9 +148,9 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
         self.raw_collection.ensure_index([(self.stop_time_key, 1)])
 
         self.raw_collection.ensure_index([('_id', pymongo.HASHED)])
-            
+
         #self.log.info("Sharding %s" % str(c))
-        #self.raw_client.admin.command('shardCollection',
+        # self.raw_client.admin.command('shardCollection',
         #                              '%s.%s' % (self.config['raw_database'], self.config['raw_collection']),
         #                              key = {'_id': pymongo.HASHED})
 
@@ -165,13 +168,13 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
                               "dbname": self.config['raw_database'],
                               "dbcollection": self.config['raw_collection'],
                           },
-                      },
-                      "trigger": {
+        },
+            "trigger": {
                           "mode": "calibration",
                           "status": "waiting_to_be_processed",
-                      },
-                      "processor": {"mode": "something"},
-                      "comments": [],
+        },
+            "processor": {"mode": "something"},
+            "comments": [],
         }
 
         self.log.info("Injecting run control document")
@@ -229,7 +232,6 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
             self.log.fatal(error)
             raise RuntimeError(error)
 
-
         for oc in event.occurrences:
             pmt_num = oc.channel
             sample_position = oc.left
@@ -262,12 +264,12 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
         # for occurences in list(self.chunks(self.occurences,
         # 1000)):
 
-        #docs.append({'test' : 0,
+        # docs.append({'test' : 0,
         #                     'docs' : occurences})
 
         i = 0
-        t0 = time.time() # start time
-        t1 = time.time() # last time
+        t0 = time.time()  # start time
+        t1 = time.time()  # last time
 
         if self.repeater > 0:
             while (t1 - t0) < self.runtime:
@@ -297,9 +299,9 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
                         modified_docs.append(doc.copy())
 
                         if len(modified_docs) > 1000:
-                            self.raw_collection.insert({self.start_time_key : min_time,
-                                                        self.stop_time_key : max_time,
-                                                        self.bulk_key : modified_docs},
+                            self.raw_collection.insert({self.start_time_key: min_time,
+                                                        self.stop_time_key: max_time,
+                                                        self.bulk_key: modified_docs},
                                                        w=0)
                             modified_docs = []
                             min_time = None
@@ -312,13 +314,11 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
 
             t0 = time.time()
 
-            self.raw_collection.insert({self.start_time_key : min_time,
-                                        self.stop_time_key : max_time,
-                                        self.bulk_key : docs},
+            self.raw_collection.insert({self.start_time_key: min_time,
+                                        self.stop_time_key: max_time,
+                                        self.bulk_key: docs},
                                        w=0)
 
             t1 = time.time()
 
         self.occurences = []
-
-
