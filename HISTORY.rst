@@ -4,22 +4,34 @@ History
 -------
 
 ------------------
-2.0.0 (2015-01-05)
+2.0.0 (2015-01-0?)
 ------------------
 
- * Cleanup datastructure including how occurences
- * DSP
+ * Core changes
  
-   * Default DSP is PMT photoelectron counter
- 
- * Waveform simulator
- 
-   * Zero-length encoding
- 
- * Output: pandas I/O used instead of pytables
- * Cleaner shutdown of Processor class
+   * Cleanup of datastructure (see #80 and #81)
+   * Most of core wrapped in Processor class
+   * Plugins shut down at end of Processor.run(), not just on destruction
+
+ * New signal processing chain
+
+   * FindBigPeaks, a traditional sum-waveform peakfinder
+   * FindSmallPeaks, finds single-photon peaks in each channel
+   * Supporting peak classification and property computation plugins
+
+ * Chi-square gamma x,y position reconstruction
+ * Waveform simulator enhancements
+
+   * Wrapped in Simulator class, loaded along with processor
+   * Performance improvements
+   * Basic zero-length encoding emulation 
+   
+ * WritePandas: write our data as DataFrames to containers supported by pandas
+ * 2D channel waveforms plot
+ * Support for arbitrary external detectors / extra channel groups
  * More tests
 
+ 
 ------------------
 1.4.0 (2014-11-21)
 ------------------
