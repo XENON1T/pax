@@ -5,6 +5,7 @@ from pax import utils
 
 
 class TestDSPUtils(unittest.TestCase):
+
     def test_where_changes(self):
         # Tests without report_first_index
         for example, result in (

@@ -86,7 +86,7 @@ class Peak(Model):
 
     #: Area of the pulse in photoelectrons.
     #:
-    #: Includes only contributing pmts (see later) in the right detector 
+    #: Includes only contributing pmts (see later) in the right detector
     area = FloatField()
 
     type = StringField(default='unknown')        #: Type of peak (e.g., 's1', 's2', ...)
