@@ -31,6 +31,7 @@ setup(
         'pax.plugins',
         'pax.plugins.corrections',
         'pax.plugins.signal_processing',
+        'pax.plugins.for_testing',
         'pax.plugins.io',
         'pax.plugins.posrec',
         'pax.micromodels'

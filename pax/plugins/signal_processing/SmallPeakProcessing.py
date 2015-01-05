@@ -8,7 +8,7 @@ class ClusterSmallPeaks(plugin.TransformPlugin):
     """
 
     def startup(self):
-        self.dt = dt = self.config['digitizer_t_resolution']
+        self.dt = dt = self.config['sample_duration']
         self.cluster_separation_length = self.config['cluster_separation_time']
 
     def transform_event(self, event):
@@ -59,7 +59,7 @@ class ClusterSmallPeaks(plugin.TransformPlugin):
 
                     # Contributing channels are in the detector and have an spe
                     # (not in a bad channel, but those spes have already been filtered out)
-                    channels = np.arange(self.config['n_pmts'])
+                    channels = np.arange(self.config['n_channels'])
                     peak.does_channel_contribute = (np.in1d(channels,
                                                             self.config['channels_in_detector'][detector])) & \
                                                    (np.in1d(channels, [s.channel for s in peak.channel_peaks]))
@@ -69,10 +69,10 @@ class ClusterSmallPeaks(plugin.TransformPlugin):
                             "Every peak should have at least one contributing channel... what's going on?")
 
                     # Compute the area per pmt -- for the contributing channels only!
-                    peak.area_per_pmt = np.zeros(len(channels))
+                    peak.area_per_channel = np.zeros(len(channels))
                     for ch in channels:
                         if peak.does_channel_contribute[ch]:
-                            peak.area_per_pmt[ch] = sum([s.area for s in peak.channel_peaks])
+                            peak.area_per_channel[ch] = sum([s.area for s in peak.channel_peaks])
 
                     # Find how many channels show some data, but no spe
                     coincident_occurrences = event.get_occurrences_between(peak.left, peak.right, strict=False)

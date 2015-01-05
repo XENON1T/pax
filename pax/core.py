@@ -420,15 +420,15 @@ class Processor:
 
         """
         if not hasattr(self, 'input_plugin'):
-            # self.input_plugin is set by __init__ even if you don't pass an input plugin.
-            # It is removed at the end of this method, however, so we were probably run() before:
-            raise RuntimeError("Attempt to run a Processor without an input_plugin attribute.\n" +
-                               "Perhaps you already ran this Processor (with clean_shutdown=True)?")
+            raise RuntimeError("Attempt to run a Processor without an input_plugin attribute... WTF??")
 
         if self.input_plugin is None:
             # You're allowed to specify no input plugin, which is useful for testing. (You may want to feed events
             # in by hand). If you do this, you can't use the run method. In case somebody ever tries:
-            raise RuntimeError("You just tried to run a Processor without an input plugin.")
+            raise RuntimeError("You just tried to run a Processor without specifyin input plugin.")
+
+        if self.input_plugin.has_shut_down:
+            raise RuntimeError("Attempt to run a Processor twice.")
 
         # This is the actual event loop.  'tqdm' is a progress bar.
         for i, event in enumerate(tqdm(self.get_events(),

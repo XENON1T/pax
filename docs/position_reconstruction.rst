@@ -26,9 +26,9 @@ In the configuration file, in the list of transformation plugins, include: ::
 
 Options:
 
-* pmts_to_use_for_reconstruction
+* channels_to_use_for_reconstruction
 
-pmts_to_use_for_reconstruction can either be `top` or `bottom`
+channels_to_use_for_reconstruction can either be `top` or `bottom`
 
 
 Chi-square-gamma Minimization

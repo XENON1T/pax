@@ -59,8 +59,9 @@ class MongoDBInput(plugin.InputPlugin):
 
             # Convert from Mongo's time unit to pax units
             event = Event(
-                config=self.config,
+                n_channels=self.config['n_channels'],
                 start_time=int(doc_event['range'][0]) * self.mongo_time_unit,
+                sample_duration=self.config['sample_duration'],
                 stop_time=int(doc_event['range'][1]) * self.mongo_time_unit,
             )
             event.event_number = i  # TODO: should come from Mongo

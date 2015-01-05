@@ -73,7 +73,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
         self.highest_s2_height_ever = 0
         for (peak_type, settings) in self.settings_for_peaks:
             # Get the signal out
-            signal = event.get_waveform(settings['source_waveform']).samples
+            signal = event.get_sum_waveform(settings['source_waveform']).samples
 
             # Delete peaks beyond the 32 with largest area - must do AFTER small s2 peakfinding
             if peak_type == 's1':
@@ -106,7 +106,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
                         [event.peaks[0].left] +
                         # Also stop looking after s2s with large enough amplitude.
                         # Xerawdp redetermines the amplitude here, using the s1 peakfinding waveform!
-                        [p.left for p in event.peaks if event.get_waveform('uS1').samples[p.index_of_maximum] > settings['stop_after_s2_height']]
+                        [p.left for p in event.peaks if event.get_sum_waveform('uS1').samples[p.index_of_maximum] > settings['stop_after_s2_height']]
                     )
             self.log.debug("Starting %s search, stop looking after %s" % (peak_type, stop_looking_after))
 
@@ -229,7 +229,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
 
                     # Hack for xerawdp matching: small s2 has wrong signal from here on
                     if peak_type == 'small_s2':
-                        signal_for_later_stages = event.get_waveform('filtered_for_large_s2').samples
+                        signal_for_later_stages = event.get_sum_waveform('filtered_for_large_s2').samples
                     else:
                         signal_for_later_stages = signal
 
@@ -400,7 +400,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
         elif peak_type == 'small_s2':
 
             # Test for aspect ratio of the UNFILTERED WAVEFORM, probably to avoid misidentifying s1s as small s2s
-            unfiltered_signal = event.get_waveform('uS2').samples
+            unfiltered_signal = event.get_sum_waveform('uS2').samples
             height_for_aspect_ratio_test = unfiltered_signal[left + int(np.argmax(unfiltered_signal[left:right + 1]))]
             aspect_ratio_threshold = settings['aspect_ratio_threshold']
             peak_width = right - left
@@ -456,7 +456,7 @@ class FindPeaksXeRawDPStyle(plugin.TransformPlugin):
             # In reality this test is less strict than it seems:
             #  - the filtered waveform is mangled by the convolution bug, so the widths come out lower
             #  - Xerawdp limits the width search quite strictly, making it come out lower than the real FWQM
-            filtered_wave = event.get_waveform('filtered_for_s1_width_test').samples
+            filtered_wave = event.get_sum_waveform('filtered_for_s1_width_test').samples
             max_in_filtered = left + int(np.argmax(filtered_wave[left:right]))  # not right+1, Xerawdp doesn't include it either
             if filtered_wave[max_in_filtered] <= 0:
                 # = 0 Happens due to Xerawdp's convolution bug, Xerawdp's width will return 0, passes test
@@ -616,7 +616,7 @@ class ComputePeakPropertiesXdpStyle(plugin.TransformPlugin):
 
     """
     def startup(self):
-        self.config['pmts_tpc'] = self.config['pmts_top'] | self.config['pmts_bottom']
+        self.config['pmts_tpc'] = self.config['channels_top'] | self.config['channels_bottom']
 
     def transform_event(self, event):
         """Only computes area for Xerawdp matching at the moment
@@ -624,15 +624,15 @@ class ComputePeakPropertiesXdpStyle(plugin.TransformPlugin):
 
         # Compute relevant peak quantities for each pmt's peak: height, FWHM, FWTM, area, ..
         for peak in event.peaks:
-            peak.area_per_pmt = np.zeros(len(event.pmt_waveforms), dtype='float64')
-            for channel, wave_data in enumerate(event.pmt_waveforms):
+            peak.area_per_channel = np.zeros(len(event.channel_waveforms), dtype='float64')
+            for channel, wave_data in enumerate(event.channel_waveforms):
                 if channel not in self.config['pmts_tpc'] or \
-                   peak.type == 's1' and channel in self.config['pmts_excluded_for_s1']:
+                   peak.type == 's1' and channel in self.config['channels_excluded_for_s1']:
                     continue
                 # No +1, Xerawdp forgets the right edge also:
-                peak.area_per_pmt[channel] = np.sum(wave_data[peak.left:peak.right])
+                peak.area_per_channel[channel] = np.sum(wave_data[peak.left:peak.right])
             # Exclude negative areas
-            peak.area = sum([area for _, area in enumerate(peak.area_per_pmt) if area > 0])
+            peak.area = sum([area for _, area in enumerate(peak.area_per_channel) if area > 0])
             """
             The coincidence level is actually computed twice in Xerawdp: once before and once after gain correction
             The coincidence computed before gain correction is used for sorting
@@ -643,24 +643,24 @@ class ComputePeakPropertiesXdpStyle(plugin.TransformPlugin):
             """
             if peak.type == 's1':
                 contributing_pmts = []
-                for channel, area in enumerate(peak.area_per_pmt):
-                    if channel not in self.config['pmts_tpc'] or channel in self.config['pmts_excluded_for_s1']:
+                for channel, area in enumerate(peak.area_per_channel):
+                    if channel not in self.config['pmts_tpc'] or channel in self.config['channels_excluded_for_s1']:
                         continue
                     if self.config['gains'][channel] == 0:
                         continue
                     if area > self.config['coincidence_threshold'] * (2 * 10 ** 6 / self.config['gains'][channel]):
                         contributing_pmts.append(channel)
                 peak.does_channel_contribute = np.array(
-                    [ch in contributing_pmts for ch in range(self.config['n_pmts'])],
+                    [ch in contributing_pmts for ch in range(self.config['n_channels'])],
                     dtype=np.bool)
             else:
                 # Hack to ensure S2s won't get pruned:
-                peak.does_channel_contribute = np.ones(self.config['n_pmts'], dtype=np.bool)
+                peak.does_channel_contribute = np.ones(self.config['n_channels'], dtype=np.bool)
 
         # Prune excess S1s
         event.peaks = sort_and_prune_by(
             event.peaks,
-            key=lambda x: (x.coincidence_level, x.area),
+            key=lambda x: (x.number_of_contributing_channels, x.area),
             keep_number=(len(event.peaks) - len(event.S1s()) + 32 if self.config['prune_peaks'] else float('inf')),
             reverse=True
         )

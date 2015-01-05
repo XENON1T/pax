@@ -40,15 +40,15 @@ class Simulator(object):
         # Which channels stand to receive any photons?
         # TODO: In XENON100, channel 0 will receive photons unless magically_avoid_dead_pmts=True
         # To prevent this, subtract 0 from channel_for_photons. But don't do that for XENON1T!!
-        channels_for_photons = list(self.config['pmts_top'] | self.config['pmts_bottom'])
+        channels_for_photons = list(self.config['channels_top'] | self.config['channels_bottom'])
         if self.config.get('magically_avoid_dead_pmts', False):
             channels_for_photons = [ch for ch in channels_for_photons if self.config['gains'][ch] > 0]
         if self.config.get('magically_avoid_s1_excluded_pmts', False):
-            channels_for_photons = [ch for ch in channels_for_photons if not ch in self.config['pmts_excluded_for_s1']]
+            channels_for_photons = [ch for ch in channels_for_photons if not ch in self.config['channels_excluded_for_s1']]
         self.config['channels_for_photons'] = channels_for_photons
 
         # Determine sensible length of a pmt pulse to simulate
-        dt = self.config['digitizer_t_resolution']
+        dt = self.config['sample_duration']
         self.config['samples_before_pulse_center'] = math.ceil(
             self.config['pulse_width_cutoff'] * self.config['pmt_rise_time'] / dt
         )
@@ -224,7 +224,7 @@ class Simulator(object):
         # Rounds offset to nearest pmt_pulse_time_rounding so we can exploit caching
         return gain * pmt_pulse_current_raw(
             self.config['pmt_pulse_time_rounding']*round(offset/self.config['pmt_pulse_time_rounding']),
-            self.config['digitizer_t_resolution'],
+            self.config['sample_duration'],
             self.config['samples_before_pulse_center'],
             self.config['samples_after_pulse_center'],
             self.config['pmt_rise_time'],
@@ -245,7 +245,7 @@ class Simulator(object):
         # Create pax event
         start_time = int(time.time() * units.s)
         event = datastructure.Event(
-            config=self.config,
+            n_channels=self.config['n_channels'],
             start_time=start_time,
             stop_time=start_time + int(hitpattern.max + 2*self.config['event_padding']),
         )
@@ -255,7 +255,7 @@ class Simulator(object):
         # Where?
 
         # Convenience variables
-        dt = self.config['digitizer_t_resolution']
+        dt = self.config['sample_duration']
         dV = self.config['digitizer_voltage_range'] / 2 ** (self.config['digitizer_bits'])
 
         # Build waveform channel by channel
@@ -393,14 +393,14 @@ class SimulatedHitpattern(object):
 
         # The number of pmts which can receive a photon
         ch_for_photons = self.config['channels_for_photons']
-        n_pmts = len(ch_for_photons)
+        n_channels = len(ch_for_photons)
 
         # First shuffle all timings in the array, so channel 1 doesn't always get the first photon
         np.random.shuffle(photon_timings)
 
-        # Now generate n_pmts integers < n_pmts to denote the splitting points
+        # Now generate n_channels integers < n_channels to denote the splitting points
         # TODO: think carefully about these +1 and -1's Without the +1 S1sClose failed
-        split_points = np.sort(np.random.randint(0, len(photon_timings)+1, n_pmts-1))
+        split_points = np.sort(np.random.randint(0, len(photon_timings)+1, n_channels-1))
 
         # Split the array according to the split points
         # numpy correctly inserts empty arrays if a split point occurs twice if split_points is sorted
@@ -410,7 +410,7 @@ class SimulatedHitpattern(object):
 
         # Merge the result in a dictionary, which we return
         # TODO: zip can probably do this faster!
-        self.arrival_times_per_channel = {ch_for_photons[i] : photons_per_channel[i] for i in range(n_pmts)}
+        self.arrival_times_per_channel = {ch_for_photons[i] : photons_per_channel[i] for i in range(n_channels)}
 
         # Add the minimum and maximum times, and number of times
         # hitlist_to_waveforms would have to go through weird flattening stuff to determine these

@@ -87,35 +87,29 @@ class Peak(Model):
     area = FloatField()                   #: Area of the pulse in photoelectrons. Only
                                           #: Includes only contributing pmts (see later) in the right detector
 
-    type = StringField(default='unknown')   #: Type of peak (e.g., 's1', 's2', ...)
+    type = StringField(default='unknown')        #: Type of peak (e.g., 's1', 's2', ...)
+    subtype = StringField(default='unknown')     #: Subtype of peak
     detector = StringField(default='none')  #: e.g. tpc or veto
 
     #: Does a PMT see 'something significant'? (thresholds configurable)
     does_channel_contribute = f.NumpyArrayField(dtype=np.bool)
 
     @property
-    def contributing_pmts(self):
+    def contributing_channels(self):
         return np.where(self.does_channel_contribute)[0]
 
     @property
     def number_of_contributing_channels(self):
         """ Number of PMTS which see something significant (depends on settings) """
-        return len(self.contributing_pmts)
-
-    # Alias for backwards compatibility
-    @property
-    def coincidence_level(self):
-        """ Number of PMTS which see something significant (depends on settings) """
-        return self.number_of_contributing_channels
+        return len(self.contributing_channels)
 
     #: Array of areas in each PMT.
-    area_per_pmt = f.NumpyArrayField(dtype='float64')
+    area_per_channel = f.NumpyArrayField(dtype='float64')
 
     #: Returns a list of reconstructed positions
     #:
     #: Returns an :class:`pax.datastructure.ReconstructedPosition` class.
-    reconstructed_positions = f.ModelCollectionField(default=[],
-                                                     wrapped_class=ReconstructedPosition)
+    reconstructed_positions = f.ModelCollectionField(wrapped_class=ReconstructedPosition)
 
 
     ##
@@ -136,24 +130,21 @@ class Peak(Model):
     full_width_tenth_max_filtered = FloatField()   #: Full width at tenth of maximum in samples, in filtered waveform
 
     #: Array of squared signal entropies in each PMT.
-    entropy_per_pmt = f.NumpyArrayField(dtype='float64')
-
+    entropy_per_channel = f.NumpyArrayField(dtype='float64')
 
     ##
     #   Fields present in peaks from single-channel peakfinding
     ##
 
     #: Peaks in individual channels that make up this peak
-    channel_peaks = f.ModelCollectionField(default=[],
-                                           wrapped_class=ChannelPeak)
+    channel_peaks = f.ModelCollectionField(wrapped_class=ChannelPeak)
 
     does_channel_have_noise = f.NumpyArrayField(dtype=np.bool)
 
     @property
     def number_of_noise_channels(self):
         """ Number of PMTS which see something significant (depends on settings) """
-        return len(self.contributing_pmts)
-
+        return len(self.contributing_channels)
 
     #: Variables indicating width of peak
     mean_absolute_deviation = FloatField()
@@ -173,7 +164,7 @@ class SumWaveform(Model):
     detector = StringField(default='none')  #: e.g. tpc or veto
 
     #: Array of PMT numbers included in this waveform
-    pmt_list = f.NumpyArrayField(dtype=np.uint16)
+    channel_list = f.NumpyArrayField(dtype=np.uint16)
 
     #: Array of samples, units of pe/bin.
     samples = f.NumpyArrayField(dtype=np.float64)
@@ -193,24 +184,24 @@ class Occurrence(object):
     """A DAQ occurrence
     """
 
-    #: First index
+    #: First index (inclusive; integer)
     left = None
 
-    #: Last index
+    #: Last index (inclusive; integer)
     right = None
 
-    #: Channel the occurrence belongs to
+    #: Channel the occurrence belongs to (integer)
     channel = None
 
-    #: Maximum amplitude (in pe/bin)
+    #: Maximum amplitude (in pe/bin; float)
     #: Will remain None if channel's gain is 0
     height = None
 
-    #: Baseline used in conversion to pe/bin (in ADC counts)
+    #: Baseline (in ADC counts; float)
     # TODO: in small peakfinding, an improved baseline estimate is computed -- maybe we should store that too?
     digitizer_baseline_used = None
 
-    #: Raw wave data (in ADC counts, NOT pe/bin!)
+    #: Raw wave data (in ADC counts, NOT pe/bin!; numpy array of int16)
     raw_data = None
 
     @property
@@ -226,10 +217,10 @@ class Occurrence(object):
          - right (last index)
         """
 
-        # Boilerplate to store all valid kwargs as attrs
+        # Biolerplate to store kwargs as attrs
         for k, v in kwargs.items():
             if not hasattr(self, k):
-                raise ValueError('Invalid argument %s to Occurrence.__init__' % k)
+                raise ValueError('Invalid argument %s to %s.__init__' % (k, self.__class__.__name__))
             setattr(self, k, v)
 
         # Determine right from raw_data if needed
@@ -237,8 +228,6 @@ class Occurrence(object):
             if self.raw_data is None:
                 raise ValueError('Must have right or raw_data to init Occurrence')
             self.right = self.left + len(self.raw_data) - 1
-
-
 
 
 class Event(Model):
@@ -250,6 +239,7 @@ class Event(Model):
     event_number = IntegerField()    # A nonnegative integer that uniquely identifies the event within the dataset.
 
     #: Time duration of a sample in units of ns
+    #: This is also in config, but we need it here too, to convert between event duration and length in samples
     sample_duration = IntegerField(default=10*units.ns)
 
     #: Start time of the event (time at which the first sample STARTS)
@@ -273,14 +263,15 @@ class Event(Model):
     #: List of peaks
     #:
     #: Returns a list of :class:`pax.datastructure.Peak` classes.
-    peaks = f.ModelCollectionField(default=[], wrapped_class=Peak)
+    peaks = f.ModelCollectionField(wrapped_class=Peak)
+
     #: Temporary list of channel peaks -- will be shipped off to peaks later
-    all_channel_peaks = f.ModelCollectionField(default=[], wrapped_class=ChannelPeak)
+    all_channel_peaks = f.ModelCollectionField(wrapped_class=ChannelPeak)
 
     #: Returns a list of sum waveforms
     #:
     #: Returns an :class:`pax.datastructure.SumWaveform` class.
-    waveforms = f.ModelCollectionField(default=[], wrapped_class=SumWaveform)
+    sum_waveforms = f.ModelCollectionField(wrapped_class=SumWaveform)
 
     #: A 2D array of all the PMT waveforms, units of pe/bin.
     #:
@@ -288,13 +279,13 @@ class Event(Model):
     #: index is the sample number.  This must be a numpy array.  To access the
     #: waveform for a specific PMT such as PMT 10, you can do::
     #:
-    #:     event.pmt_waveforms[10]
+    #:     event.channel_waveforms[10]
     #:
     #: which returns a 1D array of samples.
     #:
     #: The data type is a float32 since these numbers are already baseline
     #: and gain corrected.
-    pmt_waveforms = f.NumpyArrayField(dtype=np.float64)  # : Array of samples.
+    channel_waveforms = f.NumpyArrayField(dtype=np.float64)  # : Array of samples.
 
     #: A python list of all occurrences in the event (containing instances of the Occurrence class)
     #: An occurrence holds a stream of samples in one channel, as provided by the digitizer.
@@ -304,43 +295,47 @@ class Event(Model):
     #: Declared as basefield as we want to store a list (it will get appended to constantly)
     is_channel_bad = f.NumpyArrayField(dtype=np.bool)
 
+    def __init__(self, n_channels, start_time, **kwargs):
 
-    def __init__(self, config, start_time, **kwargs):
+        # Start time is mandatory, so it is not in kwargs
+        kwargs['start_time'] = start_time
 
         # Micromodels' init must be called first, else we can't store attributes
-        super().__init__(kwargs)
+        # This will store all of the kwargs as attrs
+        # We don't pass length, it's not an attribute that can be set
+        # (although it seems nothing bad happens if we do)
+        super().__init__({k:v for k,v in kwargs.items() if k != 'length'})
 
-        self.start_time = start_time
-        self.sample_duration = config['digitizer_t_resolution']
-
-        if 'stop_time' in kwargs:
-            self.stop_time = kwargs['stop_time']
-
-        elif 'length' in kwargs:
+        # Cheat to init stop_time from length and duration
+        if 'length' in kwargs and self.sample_duration and not self.stop_time:
             self.stop_time = self.start_time + kwargs['length'] * self.sample_duration
 
-        else:
-            raise ValueError('Must supply either stop_time or length to init event')
+        if not self.length:
+            raise ValueError("Cannot initialize an event with an unknown length: " +
+                             "pass either stop_time or length and sample_duration")
 
-        self.pmt_waveforms = np.zeros((config['n_pmts'], self.length()))
-        self.is_channel_bad = np.zeros(config['n_pmts'], dtype=np.bool)
+        # Initialize numpy arrays -- need to have n_channels and self.length
+        # This is the reason for having an __init__ in the first place
+        self.channel_waveforms = np.zeros((n_channels, self.length()))
+        self.is_channel_bad = np.zeros(n_channels, dtype=np.bool)
+
+        # Initialize stuff with mutable defaults
         self.occurrences = []
 
-
-    def event_duration(self):
+    def duration(self):
         """Duration of event window in units of ns
         """
         return self.stop_time - self.start_time
 
-    def get_waveform_names(self):
+    def get_sum_waveform_names(self):
         """Get list of the names of waveforms
         """
-        return [sw.name for sw in self.waveforms]
+        return [sw.name for sw in self.sum_waveforms]
 
-    def get_waveform(self, name):
+    def get_sum_waveform(self, name):
         """Get waveform for name
         """
-        for sw in self.waveforms:
+        for sw in self.sum_waveforms:
             if sw.name == name:
                 return sw
 
@@ -349,24 +344,23 @@ class Event(Model):
     def length(self):
         """Number of samples for the sum waveform
         """
-        return int(self.event_duration() / self.sample_duration)
+        return int(self.duration() / self.sample_duration)
 
-    # TODO: should this return tpc peaks only? also veto? configurable for separate/both?
-    def S1s(self, sort_key='area', reverse=True):
+    def S1s(self, detector='tpc', sort_key='area', reverse=True):
         """List of S1 (scintillation) signals
 
         Returns an :class:`pax.datastructure.Peak` class.
         """
-        return self._get_peaks_by_type('s1', sort_key, reverse)
+        return self._get_peaks_by_type('s1', sort_key, reverse, detector)
 
-    def S2s(self, sort_key='area', reverse=True):
+    def S2s(self, detector='tpc', sort_key='area', reverse=True):
         """List of S2 (ionization) signals
 
         Returns an :class:`pax.datastructure.Peak` class.
         """
-        return self._get_peaks_by_type('s2', sort_key, reverse=reverse)
+        return self._get_peaks_by_type('s2', sort_key, reverse, detector)
 
-    def _get_peaks_by_type(self, desired_type, sort_key, reverse):
+    def _get_peaks_by_type(self, desired_type, sort_key, reverse, detector='tpc'):
         """Helper function for retrieving only certain types of peaks
 
         You shouldn't be using this directly.
@@ -374,8 +368,12 @@ class Event(Model):
         # Extract only peaks of a certain type
         peaks = []
         for peak in self.peaks:
-            if peak.type.lower() == desired_type:
-                peaks.append(peak)
+            if peak.detector is not 'all':
+                if peak.detector != detector:
+                    continue
+            if peak.type.lower() != desired_type:
+                continue
+            peaks.append(peak)
 
         # Sort the peaks by your sort key
         peaks = sorted(peaks,
@@ -392,7 +390,6 @@ class Event(Model):
             return [oc for oc in self.occurrences if oc.left >= left and oc.right <= right]
         else:
             return [oc for oc in self.occurrences if oc.left <= right and oc.right >= left]
-
 
 
 def _explain(class_name):

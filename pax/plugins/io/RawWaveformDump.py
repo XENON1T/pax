@@ -11,7 +11,7 @@ class WaveformDumperBase(plugin.OutputPlugin):
         c = self.config
         # Factor from assemble_signals, without the ADC -> voltage stuff, with
         # gain=2e6
-        self.conversion_factor = c['digitizer_t_resolution'] / (
+        self.conversion_factor = c['sample_duration'] / (
             c['pmt_circuit_load_resistor'] *
             c['external_amplification'] * units.electron_charge * 2e6
         )
@@ -32,10 +32,10 @@ class WaveformDumperBase(plugin.OutputPlugin):
 class DumpSumWaveformToBinary(WaveformDumperBase):
 
     def get_waveform_to_dump(self, event):
-        return event.get_waveform(self.config['waveform_to_dump']).samples
+        return event.get_sum_waveform(self.config['waveform_to_dump']).samples
 
 
 class DumpPMTWaveformsToBinary(WaveformDumperBase):
 
     def get_waveform_to_dump(self, event):
-        return event.pmt_waveforms
+        return event.channel_waveforms

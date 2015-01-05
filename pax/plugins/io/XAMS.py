@@ -60,7 +60,8 @@ class DirWithWaveformFiles(plugin.InputPlugin):
 
         now = time.time()
         event = Event(
-            config=self.config,
+            n_channels=self.config['n_channels'],
+            sample_duration=self.config['sample_duration'],
             # XAMS files don't have a timestamp!
             # TODO: can we get this from e.g. file creation time?
             start_time=int(np.random.random() + now * units.s),
@@ -109,8 +110,8 @@ class XAMSBinary(DirWithWaveformFiles):
                 )
             input.seek(187)
             self.dt = struct.unpack('<f', input.read(4))[0] *units.s
-            if not self.dt == self.config['digitizer_t_resolution']:
-                self.log.error("This file reports a digitizer dt of %s ns, your settings say %s ns!!" % (self.dt/units.ns, self.config['digitizer_t_resolution']/units.ns))
+            if not self.dt == self.config['sample_duration']:
+                self.log.error("This file reports a digitizer dt of %s ns, your settings say %s ns!!" % (self.dt/units.ns, self.config['sample_duration']/units.ns))
             input.seek(357)
             return np.fromfile(input, dtype=np.int8)
 
