@@ -77,7 +77,8 @@ class BuildWaveforms(plugin.TransformPlugin):
             if self.config['gains'][channel] == 0:
                 if channel not in self.undead_channels:
                     if self.config['zombie_paranoia']:
-                        self.log.warning('Undead channel %s: gain is set to 0, but it has a signal in this event!' % channel)
+                        self.log.warning('Undead channel %s: gain is set to 0, '
+                                         'but it has a signal in this event!' % channel)
                         self.log.warning('Further undead channel warnings for this channel will be suppressed.')
                     self.undead_channels.append(channel)
                 if not self.config['build_nominally_gain_corrected_waveforms']:
@@ -172,8 +173,10 @@ class BuildWaveforms(plugin.TransformPlugin):
 
             # Compute corrected pulse
             if self.config['build_nominally_gain_corrected_waveforms']:
-                nominally_corrected_pulse = (baseline - occurrence_wave) * self.conversion_factor / self.config['nominal_gain']
-                corrected_pulse = nominally_corrected_pulse * self.config['nominal_gain'] / self.config['gains'][channel]
+                nominally_corrected_pulse = baseline - occurrence_wave
+                nominally_corrected_pulse *= self.conversion_factor / self.config['nominal_gain']
+                corrected_pulse = nominally_corrected_pulse
+                corrected_pulse *= self.config['nominal_gain'] / self.config['gains'][channel]
             else:
                 corrected_pulse = (baseline - occurrence_wave) * self.conversion_factor / self.config['gains'][channel]
 

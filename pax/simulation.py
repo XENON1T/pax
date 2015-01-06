@@ -19,15 +19,16 @@ class Simulator(object):
         self.config = config_to_init
 
         # Should we repeat events?
-        if not 'event_repetitions' in self.config:
+        if 'event_repetitions' not in self.config:
             self.config['event_repetitions'] = 1
 
         # Primary excimer fraction from Nest Version 098
         # See G4S1Light.cc line 298
         density = self.config['liquid_density'] / (units.g / units.cm ** 3)
-        excfrac = 0.4 - 0.11131 * density - 0.0026651 * density ** 2                   # primary / secondary excimers
-        excfrac = 1 / (1 + excfrac)                                              # primary / all excimers
-        excfrac /= 1 - (1 - excfrac) * (1 - self.config['s1_ER_recombination_fraction'])  # primary / all excimers that produce a photon
+        excfrac = 0.4 - 0.11131 * density - 0.0026651 * density ** 2    # primary / secondary excimers
+        excfrac = 1 / (1 + excfrac)                                     # primary / all excimers
+        # primary / all excimers that produce a photon:
+        excfrac /= 1 - (1 - excfrac) * (1 - self.config['s1_ER_recombination_fraction'])
         self.config['s1_ER_primary_excimer_fraction'] = excfrac
         log.debug('Inferred s1_ER_primary_excimer_fraction %s' % excfrac)
 
@@ -44,7 +45,8 @@ class Simulator(object):
         if self.config.get('magically_avoid_dead_pmts', False):
             channels_for_photons = [ch for ch in channels_for_photons if self.config['gains'][ch] > 0]
         if self.config.get('magically_avoid_s1_excluded_pmts', False):
-            channels_for_photons = [ch for ch in channels_for_photons if not ch in self.config['channels_excluded_for_s1']]
+            channels_for_photons = [ch for ch in channels_for_photons
+                                    if ch not in self.config['channels_excluded_for_s1']]
         self.config['channels_for_photons'] = channels_for_photons
 
         # Determine sensible length of a pmt pulse to simulate
@@ -327,8 +329,10 @@ class Simulator(object):
                         )
 
                         # +1 due to np.diff in pmt_pulse_current   #????
-                        left_index = center_index[i] - start_index - int(self.config['samples_before_pulse_center']) + 1
-                        righter_index = center_index[i] - start_index + int(self.config['samples_after_pulse_center']) + 1
+                        left_index = center_index[i] - start_index + 1
+                        left_index -= int(self.config['samples_before_pulse_center'])
+                        righter_index = center_index[i] - start_index + 1
+                        righter_index -= int(self.config['samples_after_pulse_center'])
 
                         # Debugging stuff
                         if len(generated_pulse) != righter_index - left_index:
@@ -348,9 +352,8 @@ class Simulator(object):
                 # Add white noise current
                 if self.config['white_noise_sigma'] is not None:
                     # / dt is for charge -> current conversion, as in pmt_pulse_current
-                    current_wave += np.random.normal(0,
-                                                     self.config['white_noise_sigma'] * self.config['gains'][channel] / dt,
-                                                     len(current_wave))
+                    noise_sigma_current = self.config['white_noise_sigma'] * self.config['gains'][channel] / dt,
+                    current_wave += np.random.normal(0, noise_sigma_current, len(current_wave))
 
                 # Convert current to digitizer count (should I trunc, ceil or floor?) and store
                 # Don't baseline correct, clip or flip down here, we do that at the
@@ -405,7 +408,7 @@ class SimulatedHitpattern(object):
         # numpy correctly inserts empty arrays if a split point occurs twice if split_points is sorted
         photons_per_channel = np.split(photon_timings, split_points)
 
-        #assert sum(list(map(len, photons_per_channel))) == len(photon_timings)
+        # assert sum(list(map(len, photons_per_channel))) == len(photon_timings)
 
         # Merge the result in a dictionary, which we return
         # TODO: zip can probably do this faster!

@@ -79,7 +79,8 @@ class WaveformSimulator(plugin.InputPlugin):
         """
         :param photons: total # of photons generated in the S1
         :param recoil_type: 'ER' for electronic recoil, 'NR' for nuclear recoil
-        :param t: Time at which the interaction occurs, i.e. offset for arrival times. Defaults to s1_default_recombination_time
+        :param t: Time at which the interaction occurs, i.e. offset for arrival times.
+                Defaults to s1_default_recombination_time.
         :return: start_time, channel_waveforms
         """
         photon_times = self.simulator.s1_photons(photons, recoil_type, t)

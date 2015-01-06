@@ -30,9 +30,8 @@ class Filtering(plugin.TransformPlugin):
                 # Check if the impulse response is sane
 
                 if abs(1 - np.sum(ir)) > 0.0001:
-                    self.log.warning("Filter %s has non-normalized impulse response: %s != 1. Normalizing for you..." % (
-                        f['name'], np.sum(ir))
-                    )
+                    self.log.warning("Filter %s has non-normalized impulse response: %s != 1."
+                                     "Normalizing for you..." % (f['name'], np.sum(ir)))
                     f['impulse_response'] = ir / np.sum(ir)
 
                 if len(ir) % 2 == 0:
@@ -103,7 +102,8 @@ class Filtering(plugin.TransformPlugin):
                 for q in pbs:
                     if q < 3 or q > len(signal) - 4:
                         continue  # So these tests don't fail
-                    if signal[q - 1] == signal[q - 2] == signal[q - 3] == 0 or signal[q + 1] == signal[q + 2] == signal[q + 3] == 0:
+                    if signal[q - 1] == signal[q - 2] == signal[q - 3] == 0 or \
+                       signal[q + 1] == signal[q + 2] == signal[q + 3] == 0:
                         real_pbs.append(q)
 
                 # Mutilate the waveform

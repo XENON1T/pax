@@ -13,7 +13,7 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
 
     """Position reconstruction by minimization of chi square gamma function.
 
-    Class to reconstruct S2's x, y and chi square gamma 
+    Class to reconstruct S2's x, y and chi square gamma
     (as 'goodness-of-fit' parameter) using the S2 signal in top PMTs, simulated
     LCE map, gains and QE's.
 

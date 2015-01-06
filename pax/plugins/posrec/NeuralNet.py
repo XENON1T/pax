@@ -8,17 +8,17 @@ class PosRecNeuralNet(plugin.TransformPlugin):
 
     """Please write one sentence here
 
-    Please write on 3 paragraphs here here here here here here here 
+    Please write on 3 paragraphs here here here here here here here
     here here here here here here here here here here here here here
-    here 
+    here
 
     and here here here here here here here here here here here here
     here here here here here here here here here here here here here
-    here 
+    here
 
     and here here here here here here here here here here here here
     here here here here here here here here here here here here here
-    here 
+    here
     """
 
     def startup(self):

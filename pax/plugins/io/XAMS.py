@@ -33,14 +33,14 @@ class DirWithWaveformFiles(plugin.InputPlugin):
             gd = m.groupdict()
             idx, channel = gd['event_index'], gd['channel']
             # Have we never seen a channel data file for this event?
-            if not idx in self.events:
+            if idx not in self.events:
                 self.events[idx] = {}
             # Store all regex fields, so we can find the file later
             self.events[idx][channel] = gd
         if len(self.events) == 0:
             self.log.fatal("No valid event files found in input directory %s!" % self.input_dirname)
         # Maybe sort self.events by event index?
-        #????? self.get_next_event()
+        # ????? self.get_next_event()
         self.first_event = min(self.events.keys())
         self.last_event = max(self.events.keys())
         self.log.debug('Found events %s to %s in input directory' % (self.first_event, self.last_event))
@@ -51,7 +51,7 @@ class DirWithWaveformFiles(plugin.InputPlugin):
 
     def get_single_event(self, index):
 
-        if not index in self.events:
+        if index not in self.events:
             raise RuntimeError("Event %s not found! File missing?" % index)
 
         # Get the event data
@@ -114,7 +114,9 @@ class XAMSBinary(DirWithWaveformFiles):
             input.seek(187)
             self.dt = struct.unpack('<f', input.read(4))[0] * units.s
             if not self.dt == self.config['sample_duration']:
-                self.log.error("This file reports a digitizer dt of %s ns, your settings say %s ns!!" % (self.dt / units.ns, self.config['sample_duration'] / units.ns))
+                self.log.error("This file reports a digitizer dt of %s ns,"
+                               "your settings say %s ns!!" % (self.dt / units.ns,
+                                                              self.config['sample_duration'] / units.ns))
             input.seek(357)
             return np.fromfile(input, dtype=np.int8)
 

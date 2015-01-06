@@ -46,8 +46,8 @@ class PlotBase(plugin.OutputPlugin):
         # Should we plot or skip?
         if self.skip_counter:
             self.skip_counter -= 1
-            self.log.debug("Skipping this event due to plot_every = %s. Skip counter at %s" % (self.config['plot_every'],
-                                                                                               self.skip_counter))
+            self.log.debug("Skipping this event due to plot_every = %s. "
+                           "Skip counter at %s" % (self.config['plot_every'], self.skip_counter))
             return
 
         self.plot_event(event)
@@ -68,7 +68,8 @@ class PlotBase(plugin.OutputPlugin):
         plt.close()
         self.skip_counter = self.config['plot_every'] - 1
 
-    def plot_waveform(self, event, left=0, right=None, pad=0, show_peaks=False, show_legend=True, log_y_axis=False, scale=1):
+    def plot_waveform(self, event, left=0, right=None, pad=0,
+                      show_peaks=False, show_legend=True, log_y_axis=False, scale=1):
         """
         Plot part of an event's sum waveform. Defined in base class to ensure a uniform style
         """
@@ -255,13 +256,16 @@ class PlotChannelWaveforms3D(PlotBase):  # user sets variables xlim, ylim for 3D
 
     def plot_event(self, event):
         dt = self.config['sample_duration']
-        ylim_channel_start = 0  # top : 1-98, bottom : 99-178, Top Shield Array: PMTs 179..210, Bottom Shield Array: PMTs 211..242
+        # top : 1-98, bottom : 99-178, Top Shield Array: PMTs 179..210, Bottom Shield Array: PMTs 211..242
+        ylim_channel_start = 0
         ylim_channel_end = 242
         xlim_time_start = 0  # s1: 205.5 , s2: 260
         xlim_time_end = 400  # [us] S1: 206.5, s2: 270
 
-        #[pe/(bin*V)] = time_resolution [s/bin] / ( resistor [V*s/C] * gain [] * amplification [] * electric_charge [C/pe] )
-        # For Xenon100 (gain 2e6, amplification 10, resistor 50, time resolution 10ns/bin), this gives 62.4 pe/(bin*V), so 1 pe/bin is 16.0 mV; 1 mV is 0.0624 pe/bin.
+        # [pe/(bin*V)] = time_resolution [s/bin]
+        #               / ( resistor [V*s/C] * gain [] * amplification [] * electric_charge [C/pe] )
+        # For Xenon100 (gain 2e6, amplification 10, resistor 50, time resolution 10ns/bin),
+        # this gives 62.4 pe/(bin*V), so 1 pe/bin is 16.0 mV; 1 mV is 0.0624 pe/bin.
 
         fig = plt.figure(figsize=(self.size_multiplier * 4, self.size_multiplier * 2))
         ax = fig.gca(projection='3d')

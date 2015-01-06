@@ -63,7 +63,8 @@ class FindSmallPeaks(plugin.TransformPlugin):
                 self.log.debug("Free region %05d-%05d: process %s occurrences" % (region_left, region_right, len(ocs)))
 
                 for oc in ocs:
-                    # Focus only on the part of the occurrence inside the free region (superfluous as long as strict=True)
+                    # Focus only on the part of the occurrence inside the free region
+                    # (superfluous as long as strict=True)
                     start = max(region_left, oc.left)
                     stop = min(region_right, oc.right)
                     channel = oc.channel
@@ -92,7 +93,8 @@ class FindSmallPeaks(plugin.TransformPlugin):
                     pass_number = 0
                     while True:
                         # Determine the peaks based on the noise level
-                        # Can't just use w > self.min_sigma * noise_sigma here, want to extend peak bounds to noise_sigma
+                        # Can't just use w > self.min_sigma * noise_sigma here,
+                        # want to extend peak bounds to noise_sigma
                         raw_peaks = self.find_peaks(w, noise_sigma)
 
                         if pass_number != 0 and raw_peaks == old_raw_peaks:
@@ -103,7 +105,8 @@ class FindSmallPeaks(plugin.TransformPlugin):
                             # You can't break if you find no peaks on the first pass:
                             # maybe the estimated noise level was too high
 
-                        # Correct the baseline -- BuildWaveforms can get it wrong if there is a pe in the starting samples
+                        # Correct the baseline
+                        # -- BuildWaveforms can get it wrong if there is a pe in the starting samples
                         w -= w[self.samples_without_peaks(w, raw_peaks)].mean()
 
                         # Determine the new noise_sigma
@@ -157,11 +160,13 @@ class FindSmallPeaks(plugin.TransformPlugin):
                         for p in raw_peaks:
                             plt.axvspan(p[0] - 1, p[1], color='red', alpha=0.5)
                         plt.plot(noise_sigma * np.ones(len(w)), '--', label='1 sigma')
-                        plt.plot(self.min_sigma * noise_sigma * np.ones(len(w)), '--', label='%s sigma' % self.min_sigma)
+                        plt.plot(self.min_sigma * noise_sigma * np.ones(len(w)),
+                                 '--', label='%s sigma' % self.min_sigma)
                         plt.legend()
                         bla = (event.event_number, start, stop, channel)
                         plt.title('Event %s, occurrence %d-%d, Channel %d' % bla)
-                        plt.savefig(os.path.join(self.make_diagnostic_plots_in,  'event%04d_occ%05d-%05d_ch%03d.png' % bla))
+                        plt.savefig(os.path.join(self.make_diagnostic_plots_in,
+                                                 'event%04d_occ%05d-%05d_ch%03d.png' % bla))
                         plt.close()
 
         # Mark channels with an abnormally high noise rate as bad

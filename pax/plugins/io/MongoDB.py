@@ -149,7 +149,7 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
 
         self.raw_collection.ensure_index([('_id', pymongo.HASHED)])
 
-        #self.log.info("Sharding %s" % str(c))
+        # self.log.info("Sharding %s" % str(c))
         # self.raw_client.admin.command('shardCollection',
         #                              '%s.%s' % (self.config['raw_database'], self.config['raw_collection']),
         #                              key = {'_id': pymongo.HASHED})
@@ -241,7 +241,7 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
 
             occurence_doc = {}
 
-            #occurence_doc['_id'] = uuid.uuid4()
+            # occurence_doc['_id'] = uuid.uuid4()
             occurence_doc['module'] = pmt_num  # TODO: fix wax
             occurence_doc['channel'] = pmt_num
 
@@ -288,7 +288,7 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
                 for _ in range(n):
                     i += 1
                     for doc in self.occurences:
-                        #doc['_id'] = uuid.uuid4()
+                        # doc['_id'] = uuid.uuid4()
                         doc['time'] += i * (t1 - t0) / self.repeater
 
                         if min_time is None or doc['time'] < min_time:

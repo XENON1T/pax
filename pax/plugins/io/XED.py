@@ -94,14 +94,15 @@ class XedInput(plugin.InputPlugin):
         fmd = np.fromfile(input, dtype=XedInput.file_header, count=1)[0]
 
         self.xedfiles[-1]['first_event'] = fmd['first_event_number']
-        self.xedfiles[-1]['last_event'] =  fmd['first_event_number'] + \
-            fmd['events_in_file'] - 1
+        self.xedfiles[-1]['last_event'] = fmd['first_event_number'] + fmd['events_in_file'] - 1
 
         # Read metadata and event positions from the XED file
         self.event_positions = np.fromfile(input, dtype=np.dtype("<u4"),
                                            count=fmd['event_index_size'])
         if fmd['events_in_file'] > fmd['event_index_size']:
-            raise RuntimeError("The XED file claims there are %s events in the file, but the event position index has only %s entries!" % (fmd['events_in_file'], fmd['event_index_size']))
+            raise RuntimeError("The XED file claims there are %s events in the file, "
+                               "but the event position index has only %s entries!" % (fmd['events_in_file'],
+                                                                                      fmd['event_index_size']))
 
         self.log.debug('Found XED file %s containing events %s-%s' % (
             filename, self.xedfiles[-1]['first_event'],
@@ -128,7 +129,8 @@ class XedInput(plugin.InputPlugin):
                                            count=self.file_metadata['event_index_size'])
         if self.file_metadata['events_in_file'] < self.file_metadata['event_index_size']:
             self.log.debug(
-                ("The XED file claims there are %s events in the file, while the event position index has %s entries. " +
+                ("The XED file claims there are %s events in the file, "
+                 "while the event position index has %s entries. \n"
                  "Is this the last XED file of a dataset?") %
                 (self.file_metadata['events_in_file'], self.file_metadata['event_index_size'])
             )

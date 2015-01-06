@@ -14,8 +14,7 @@ class FindBigPeaks(plugin.TransformPlugin):
     """
 
     def startup(self):
-        self.derivative_kernel = [-0.003059, -0.035187, -0.118739, -0.143928, 0.000000, 0.143928, 0.118739, 0.035187, 0.003059]
-        # TODO: put in config
+        self.derivative_kernel = self.config['derivative_kernel']
 
     def transform_event(self, event):
         for pf in self.config['peakfinders']:

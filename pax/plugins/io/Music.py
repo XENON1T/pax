@@ -69,7 +69,7 @@ class WavOutput(plugin.OutputPlugin):
         # Determine how long dataset music should be
         self.log.info(end - start)
 
-        if self.n == None:
+        if self.n is None:
             self.log.error("Not known how many samples per event!")
 
         # Resample such that data plays at live speed

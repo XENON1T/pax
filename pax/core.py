@@ -74,7 +74,7 @@ class Processor:
         Setting just_testing disables some warnings about not specifying any plugins or plugin groups in the config.
         Use only if, for some reason, you don't want to load a full configuration file.
 
-        .. note:: 
+        .. note::
           Although the log level can be specified in the configuration, it is an application wide
           setting that will not be modified once set. New instances of the Processor class will have
           the same log level as the first, regardless of their configuration.  See #78.
@@ -98,14 +98,14 @@ class Processor:
         # Get the list of plugins from the configuration file
         # plugin_names[group] is a list of all plugins we have to initialize in the group 'group'
         plugin_names = {}
-        if not 'plugin_group_names' in pc:
+        if 'plugin_group_names' not in pc:
             if not just_testing:
                 self.log.warning('You did not specify any plugin groups to load: are you testing me?')
             pc['plugin_group_names'] = []
 
         for plugin_group_name in pc['plugin_group_names']:
 
-            if not plugin_group_name in pc:
+            if plugin_group_name not in pc:
                 raise ValueError('Invalid configuration: plugin group list %s missing' % plugin_group_name)
 
             plugin_names[plugin_group_name] = pc[plugin_group_name]
@@ -132,7 +132,7 @@ class Processor:
             self.log.debug('User-defined output override: %s' % pc['output_name'])
             # Hmmz, there can be several output plugins, some don't have a configuration...
             for o in plugin_names['output']:
-                if not o in self.config:
+                if o not in self.config:
                     self.config[o] = {}
                 self.config[o]['output_name'] = pc['output_name']
 
@@ -263,10 +263,6 @@ class Processor:
         :param config_file: path or file object of configuration file to read
         :return: None
         """
-
-        # This code has some commented print statements, because it can't yet use logging:
-        # The loglevel is specified in the configuration, which isn't loaded at this point
-
         if isinstance(config_file, str):
             if not os.path.isfile(config_file):
                 raise ValueError("Configuration file %s does not exist!" % config_file)
@@ -307,7 +303,6 @@ class Processor:
         # By doing this in a recursing function, multi-level inheritance is supported.
         for pfp in parent_file_paths:
             self._load_file_into_configparser(pfp)
-        #print("Reloading %s for override" % config_file)
         if isinstance(config_file, str):
             self.configp.read(config_file)
         else:
