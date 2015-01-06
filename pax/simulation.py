@@ -6,8 +6,10 @@ The only I/O stuff here is pax event creation, everything else is in the Wavefor
 import numpy as np
 import math
 import time
-
 import logging
+
+from scipy import stats
+
 from pax import units, utils, datastructure
 
 log = logging.getLogger('SimulationCore')
@@ -292,10 +294,10 @@ class Simulator(object):
 
                     # Start with a delta function single photon pulse, then convolve with one actual single-photon pulse
                     # This effectively assumes photons always arrive at the start of a digitizer t-bin,
+                    # and also
                     # but is much faster
 
                     # Division by dt necessary for charge -> current
-
                     unique, counts = np.unique(center_index - start_index, return_counts=True)
                     unique = unique.astype(np.int)
                     current_wave[unique] = counts * self.config['gains'][channel] * units.electron_charge / dt
@@ -306,13 +308,20 @@ class Simulator(object):
                     # current_wave2 = np.array([pulse_counts[n] for n in range(n_samples)]) \
                     #                * self.config['gains'][channel] * units.electron_charge / dt
 
-                    # Calculate a normalized pmt pulse, for use in convolution later (only
-                    # for large peaks)
+                    # Calculate a normalized pmt pulse, then convolve with it
                     normalized_pulse = self.pmt_pulse_current(gain=1)
                     normalized_pulse /= np.sum(normalized_pulse)
                     current_wave = np.convolve(current_wave, normalized_pulse, mode='same')
 
                 else:
+
+                    # Use a Gaussian truncated to positive values for the SPE gain distribution
+                    gains = truncated_gauss_rvs(
+                        my_mean=self.config['gains'][channel],
+                        my_std=self.config['gain_sigmas'][channel],
+                        left_boundary=0,
+                        right_boundary=float('inf'),
+                        n_rvs=len(pmt_pulse_centers))
 
                     # Do the full, slower simulation for each single-photon pulse
                     for i, _ in enumerate(pmt_pulse_centers):
@@ -320,19 +329,13 @@ class Simulator(object):
                         # Add some current for this photon pulse
                         # Compute the integrated pmt pulse at various samples, then
                         # do their diffs/dt
-                        generated_pulse = self.pmt_pulse_current(
-                            # Really a Poisson (although mean is so high it is very
-                            # close to a Gauss)
-                            # TODO: what are you smoking? Add proper distribution!
-                            gain=np.random.poisson(self.config['gains'][channel]),
-                            offset=offsets[i]
-                        )
+                        generated_pulse = self.pmt_pulse_current(gain=gains[i], offset=offsets[i])
 
                         # +1 due to np.diff in pmt_pulse_current   #????
                         left_index = center_index[i] - start_index + 1
                         left_index -= int(self.config['samples_before_pulse_center'])
                         righter_index = center_index[i] - start_index + 1
-                        righter_index -= int(self.config['samples_after_pulse_center'])
+                        righter_index += int(self.config['samples_after_pulse_center'])
 
                         # Debugging stuff
                         if len(generated_pulse) != righter_index - left_index:
@@ -421,6 +424,8 @@ class SimulatedHitpattern(object):
         self.n_photons = len(photon_timings)
 
     def __add__(self, other):
+        # Don't reuse __init__, we don't want another TTS correction..
+        # TODO: hm, maybe we shouldn't do TTS correction here?
         # print("add called self=%s, other=%s" % (type(self), type(other)))
         self.min = min(self.min, other.min)
         self.max = max(self.max, other.max)
@@ -494,3 +499,17 @@ def exp_pulse(t, q, tr, tf):
         return q / (tr + tf) * (tr * math.exp(t / (c * tr)))
     else:
         return q / (tr + tf) * (tr + tf * (1 - math.exp(-t / (c * tf))))
+
+
+@memoize
+def _truncated_gauss(my_mean, my_std, left_boundary, right_boundary):
+    return stats.truncnorm(
+        (left_boundary - my_mean) / my_std,
+        (right_boundary - my_mean) / my_std)
+
+
+def truncated_gauss_rvs(my_mean, my_std, left_boundary, right_boundary, n_rvs):
+    """Get Gauss with specified mean and std, truncated to boundaries
+    See http://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.stats.truncnorm.html
+    """
+    return _truncated_gauss(my_mean, my_std, left_boundary, right_boundary).rvs(n_rvs) * my_std + my_mean
