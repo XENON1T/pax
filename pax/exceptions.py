@@ -1,0 +1,3 @@
+
+class OccurrenceBeyondEventError(Exception):
+    pass

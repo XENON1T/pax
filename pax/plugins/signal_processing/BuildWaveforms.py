@@ -1,6 +1,6 @@
 import numpy as np
 
-from pax import plugin, units, datastructure
+from pax import plugin, units, datastructure, exceptions
 
 
 class BuildWaveforms(plugin.TransformPlugin):
@@ -48,6 +48,8 @@ class BuildWaveforms(plugin.TransformPlugin):
                 'uS2':  (c['channels_top'] | c['channels_bottom']),
             })
         self.undead_channels = []
+
+        self.truncate_occurrences_partially_outside = self.config.get('truncate_occurrences_partially_outside', False)
 
     def transform_event(self, event):
 
@@ -146,16 +148,19 @@ class BuildWaveforms(plugin.TransformPlugin):
                 else:
                     raise ValueError("Invalid find_baselines_using: should be 'mean' or 'median'")
 
-            # Throw error if occurrence is completely outside event -- see issue 43
+            # Always throw error if occurrence is completely outside event -- see issue 43
             if end_index < 0 or start_index > event.length() - 1:
-                raise ValueError('Occurrence %s in channel %s (%s-%s) is entirely outside event bounds (%s-%s)!' % (
-                    occ_i, channel, start_index, end_index, 0, event.length() - 1))
+                raise exceptions.OccurrenceBeyondEventError(
+                    'Occurrence %s in channel %s (%s-%s) is entirely outside event bounds (%s-%s)!' % (
+                        occ_i, channel, start_index, end_index, 0, event.length() - 1))
 
             # Truncate occurrences starting too early -- see issue 43
             if start_index < 0:
-                self.log.warning(
-                    'Occurence %s in channel %s starts %s samples before event start: truncating. See issue #43.' % (
-                        occ_i, channel, -start_index))
+                message_head = "Occurrence %s in channel %s starts %s samples before event starts (see issue #43)" % (
+                    occ_i, channel, -start_index)
+                if not self.truncate_occurrences_partially_outside:
+                    raise exceptions.OccurrenceBeyondEventError(message_head + '!')
+                self.log.warning(message_head + ': truncating.')
                 occurrence_wave = occurrence_wave[-start_index:]
                 # Update the start index
                 start_index = 0
@@ -163,9 +168,11 @@ class BuildWaveforms(plugin.TransformPlugin):
             # Truncate occurrences taking too long -- see issue 43
             overhang_length = len(occurrence_wave) - 1 + start_index - event.length()
             if overhang_length > 0:
-                self.log.warning(
-                    'Occurrence %s in channel %s has overhang of %s samples: truncating. See issue #43.' % (
-                        occ_i, channel, overhang_length))
+                message_head = "Occurrence %s in channel %s has overhang of %s samples (see issue #43)" % (
+                    occ_i, channel, overhang_length)
+                if not self.truncate_occurrences_partially_outside:
+                    raise exceptions.OccurrenceBeyondEventError(message_head + '!')
+                self.log.warning(message_head + ': truncating.')
                 occurrence_wave = occurrence_wave[:length - overhang_length]
                 # Update the length & end index
                 length = len(occurrence_wave)
