@@ -1,7 +1,11 @@
 import os
+import time
+import pickle
+import json
 
 import pandas
 
+import pax
 from pax import plugin
 from pax.micromodels import fields as mm_fields
 
@@ -74,6 +78,20 @@ class WritePandas(plugin.OutputPlugin):
             # We need to write in one go at the end:
             self.write_every = float('inf')
 
+        # Write pax configuration and version to pax_info dataframe
+        # Will be a dataframe with one row, indexed by timestamp
+        # If you append to an existing HDF5 file, it will make a second row
+        # TODO: However, it will probably crash if the configuration is a longer string...
+        def json_object_handler(obj):
+            if isinstance(obj, set):
+                return list(obj)
+            raise TypeError
+
+        self.append_to_df('pax_info', ([('timestamp', time.time()), ], {
+            'pax_version':             pax.__version__,
+            'configuration_json':      json.dumps(self.processor.config, default=json_object_handler),
+        }))
+
     def write_event(self, event):
 
         # Store all the event data in self.dataframes
@@ -143,6 +161,8 @@ class WritePandas(plugin.OutputPlugin):
         # Convert pre-dataframes to actual pandas DataFrames
         for df_name, df in self.dataframes.items():
 
+            self.log.debug("Converting %s to pandas DataFrame" % df_name)
+
             df_data = []
             df_index = []
             df_index_names = []
@@ -165,13 +185,19 @@ class WritePandas(plugin.OutputPlugin):
             self.log.debug("Writing %s" % df_name)
 
             if self.output_format == 'hdf':
-                # Look for string fields (dtype=object), we should pre-set a length for them
-                string_fields = df.select_dtypes(include=['object']).columns.values
 
                 # Write each DataFrame to a table
-                self.store.append(df_name, df, format='table',
-                                  min_itemsize={field_name: self.string_data_length
-                                                for field_name in string_fields})
+                if df_name == 'pax_info':
+                    # Don't worry about pre-setting string field lengths
+                    self.store.append(df_name, df, format='table')
+
+                else:
+                    # Look for string fields (dtype=object), we should pre-set a length for them
+                    string_fields = df.select_dtypes(include=['object']).columns.values
+
+                    self.store.append(df_name, df, format='table',
+                                      min_itemsize={field_name: self.string_data_length
+                                                    for field_name in string_fields})
 
             else:
                 # Write each DataFrame to a file
