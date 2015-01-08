@@ -15,11 +15,8 @@ class Model(object):
     def __init__(self, kwargs_dict=None, **kwargs):
 
         # Do we already know what the list fields of this class are?
-        # print("initializing %s..." % self.__class__.__name__)
-
         if not hasattr(self, '_list_fields'):
             # We need to figure out the list fields in this class
-            #print("Don't know list fields yet")
             list_fields = {}
             for attr in dir(self):
                 val = getattr(self, attr)
@@ -38,10 +35,7 @@ class Model(object):
             # maybe downcast to tuple of 2-tuples..
             setattr(self.__class__, '_list_fields', list_fields)
 
-            # print("Determined list fields to be %s" % list_fields)
-
-        # print("List fields are %s" % self._list_fields)
-        # Give this instance a new list in this field
+        # Give this instance a new list in the list fields
         # Could write a list extension that checks types... too lazy right now
         for field_name, wrapped_class in self._list_fields.items():
             object.__setattr__(self, field_name, [])
@@ -58,7 +52,6 @@ class Model(object):
         return self._list_fields
 
 
-
 casting_allowed_for = {
     int:    ['int16', 'int32', 'int64'],
     float:  ['int', 'float32', 'float64', 'int16', 'int32', 'int64'],
@@ -67,8 +60,8 @@ casting_allowed_for = {
 
 class StrictModel(Model):
     """Model which enforces additional restrictions:
-      - can't add new attributes: have to be set at class level
-      - attributes are not allowed to change type once set
+      - can't add new attributes: have to be fixed at class declaration
+      - attributes can't change type or numpy dtype once set.
     """
 
     def __setattr__(self, key, value):
