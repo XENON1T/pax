@@ -229,7 +229,6 @@ class Event(Model):
 
     """Event class
     """
-
     dataset_name = default='Unknown'  # The name of the dataset this event belongs to
     event_number = 0    # A nonnegative integer that uniquely identifies the event within the dataset.
 
