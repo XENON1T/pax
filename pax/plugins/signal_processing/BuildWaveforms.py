@@ -34,6 +34,7 @@ class BuildWaveforms(plugin.TransformPlugin):
         self.channel_groups = {
             'top':              c['channels_top'],
             'bottom':           c['channels_bottom'],
+            # TEMP for Xerawdp matching
             's1_peakfinding':   (c['channels_top'] | c['channels_bottom']) - c['channels_excluded_for_s1']
         }
         # Add each detector as a channel group
@@ -60,12 +61,12 @@ class BuildWaveforms(plugin.TransformPlugin):
 
         # Initialize empty waveforms
         for group, members in self.channel_groups.items():
-            event.sum_waveforms.append(datastructure.SumWaveform({
-                'samples':  np.zeros(event.length()),
-                'name':     group,
-                'channel_list': np.array(list(members), dtype=np.uint16),
-                'detector': group if group in self.external_detectors else 'tpc'
-            }))
+            event.sum_waveforms.append(datastructure.SumWaveform(
+                samples=np.zeros(event.length()),
+                name=group,
+                channel_list=np.array(list(members), dtype=np.uint16),
+                detector=group if group in self.external_detectors else 'tpc'
+            ))
 
         last_occurrence_in = {}
 
@@ -183,7 +184,10 @@ class BuildWaveforms(plugin.TransformPlugin):
                 nominally_corrected_pulse = baseline - occurrence_wave
                 nominally_corrected_pulse *= self.conversion_factor / self.config['nominal_gain']
                 corrected_pulse = nominally_corrected_pulse
-                corrected_pulse *= self.config['nominal_gain'] / self.config['gains'][channel]
+                if self.config['gains'][channel] == 0:
+                    corrected_pulse = float('inf')
+                else:
+                    corrected_pulse *= self.config['nominal_gain'] / self.config['gains'][channel]
             else:
                 corrected_pulse = (baseline - occurrence_wave) * self.conversion_factor / self.config['gains'][channel]
 

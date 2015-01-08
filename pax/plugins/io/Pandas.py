@@ -3,10 +3,10 @@ import time
 import json
 
 import pandas
+import numpy as np
 
 import pax
-from pax import plugin
-from pax.micromodels import fields as mm_fields
+from pax import plugin, datastructure, data_model
 
 
 class WritePandas(plugin.OutputPlugin):
@@ -116,25 +116,46 @@ class WritePandas(plugin.OutputPlugin):
         :param mm: instance to convert
         :param index_trail: list of (index_name, index) tuples denoting multi-index trail
         """
+
+        # Dict of list fields -> data type in list field
+        list_fields = mm.get_list_fields()
+
         # Dict to contain data from this mm instance, will be used in dataframe generation
         data_dict = {}
 
         # Grab all data into data_dict -- and more imporantly, handle subcollections
-        for field_name, field_instance in mm.get_fields().items():
+        for field_name in dir(mm):
 
-            field_value = getattr(mm, field_name)
+            # Filter out internal stuff and methods
+            if field_name.startswith('_'):
+                continue
 
+            # Filter out properties
+            # stackoverflow.com/questions/17735520/determine-if-given-class-attribute-is-a-property-or-not-python-object
+            # TODO: won't work with dynamically set attributes!
+            type_in_class = type(getattr(mm.__class__, field_name))
+            if isinstance(type_in_class, property):
+                continue
+
+            # Ignore fields we want to ignore
             if field_name in self.fields_to_ignore:
                 continue
 
-            if isinstance(field_instance, mm_fields.ModelCollectionField):
+            field_value = getattr(mm, field_name)
+
+            # Filter out methods
+            if callable(field_value):
+                continue
+
+            if field_name in list_fields:
 
                 # We'll ship model collections off to their own pre-dataframes
                 # Convert each child_mm to a dataframe, with a new index appended to the index trail
                 for new_index, child_mm in enumerate(field_value):
-                    self.mm_to_dataframe(child_mm, index_trail + [(child_mm.__class__.__name__, new_index)])
+                    self.mm_to_dataframe(child_mm, index_trail + [(list_fields[field_name].__name__,
+                                                                   new_index)])
 
-            elif isinstance(field_instance, mm_fields.NumpyArrayField):
+            elif isinstance(field_value, np.ndarray):
 
                 # NumpyArrayFields also get their own dataframe -- assumes field names are unique!
                 # dataframe columns = positions in the array

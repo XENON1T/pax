@@ -32,11 +32,11 @@ class ComputePeakWidths(plugin.TransformPlugin):
 
             for width_name, conf in self.config['width_computations'].items():
 
-                peak[width_name] = utils.width_at_fraction(
+                setattr(peak, width_name, utils.width_at_fraction(
                     peak_wave=event.get_sum_waveform(conf['waveform_to_use']).samples[peak.left: peak.right + 1],
                     fraction_of_max=conf['fraction_of_max'],
                     max_idx=peak.index_of_maximum - peak.left,
-                    interpolate=conf['interpolate'])
+                    interpolate=conf['interpolate']))
 
         return event
 
