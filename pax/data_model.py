@@ -40,8 +40,6 @@ class Model(object):
             # maybe downcast to tuple of 2-tuples..
             setattr(self.__class__, '_list_fields', list_fields)
 
-            print("Figured out _list_fields for %s: %s" % (self.__class__.__name__, list_fields))
-
         # Give this instance a new list in the list fields
         # Could write a list extension that checks types... too lazy right now
         for field_name, wrapped_class in self._list_fields:
@@ -73,8 +71,6 @@ class Model(object):
             except AttributeError:
                 # Apparently it wasn't a class attribute, so it won't be a property
                 continue
-
-
 
             # Ignore fields we want to ignore
             if field_name in except_for:
@@ -123,7 +119,7 @@ class StrictModel(Model):
         # Check for attempted dtype change
         if isinstance(old_val, np.ndarray):
             if old_val.dtype != value.dtype:
-                raise TypeError('Attribute %s of class %s should have dtype %s, not %s' % (
+                raise TypeError('Attribute %s of class %s should have numpy dtype %s, not %s' % (
                     key, self.__class__.__name__, old_val.dtype, value.dtype))
 
         super().__setattr__(key, value)

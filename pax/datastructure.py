@@ -9,15 +9,15 @@ releases.  Patch releases cannot modify this.
 """
 
 import inspect
+import math
 
 import numpy as np
-import math
 
 # To turn off type-checking for all models, replace the line below with
 # from pax.data_model import Model
 # This will improve performance a bit (+ ~10% running time), but use at your own risk
 from pax.data_model import StrictModel as Model
-
+from pax import units
 
 class ReconstructedPosition(Model):
 
@@ -248,7 +248,7 @@ class Event(Model):
     #: Time duration of a sample (in pax units, i.e. ns)
     #: This is also in config, but we need it here too, to convert between event duration and length in samples
     #: Must be an int for same reason as start_time and stop_time
-    sample_duration = 0
+    sample_duration = int(10 * units.ns)
 
     user_float_0 = 0.0  # : Unused float (useful for developing)
     user_float_1 = 0.0  # : Unused float (useful for developing)
