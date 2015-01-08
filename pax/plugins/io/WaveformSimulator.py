@@ -6,12 +6,7 @@ There is no physics here, all that is in pax.simulation.
 
 
 import os
-import time
 import csv
-try:
-    import cPickle as pickle
-except:
-    import pickle
 
 import numpy as np
 import pandas

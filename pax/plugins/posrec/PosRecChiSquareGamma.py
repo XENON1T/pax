@@ -1,5 +1,4 @@
 """Position reconstruction algorithm using chi square gamma distribution minimization"""
-import numpy as np
 from scipy.optimize import fmin_powell
 
 from pax import plugin

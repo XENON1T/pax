@@ -9,7 +9,6 @@ import random
 import numpy as np
 import os
 import time
-from mpl_toolkits.mplot3d import Axes3D
 
 from pax import plugin, units
 

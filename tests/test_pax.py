@@ -11,7 +11,7 @@ Tests for `pax` module.
 import unittest
 import inspect
 
-from pax import units, core, plugin, datastructure
+from pax import core, plugin, datastructure
 
 
 class TestPax(unittest.TestCase):

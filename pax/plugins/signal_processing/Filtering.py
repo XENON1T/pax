@@ -1,8 +1,7 @@
 import numpy as np
 
-from pax import plugin, datastructure, units
-from scipy.signal import butter, lfilter, filtfilt
-from scipy.signal import freqz
+from pax import plugin, datastructure
+from scipy.signal import butter, filtfilt
 
 
 class Filtering(plugin.TransformPlugin):

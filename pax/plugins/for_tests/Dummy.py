@@ -1,4 +1,4 @@
-from pax import plugin, datastructure, utils
+from pax import plugin utils
 
 
 class DummyInput(plugin.InputPlugin):
