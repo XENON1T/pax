@@ -19,6 +19,7 @@ import numpy as np
 from pax.data_model import StrictModel as Model
 from pax import units
 
+
 class ReconstructedPosition(Model):
 
     """Reconstructed position
@@ -229,7 +230,7 @@ class Event(Model):
 
     """Event class
     """
-    dataset_name = default='Unknown'  # The name of the dataset this event belongs to
+    dataset_name = 'Unknown'  # The name of the dataset this event belongs to
     event_number = 0    # A nonnegative integer that uniquely identifies the event within the dataset.
 
     #: Start time of the event (time at which the first sample STARTS)

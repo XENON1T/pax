@@ -9,9 +9,11 @@ class Model(object):
     """Data modelling base class -- use for subclassing.
     Features:
       - set attribute values by passing dict or kwargs to init
-      - get_data_fields(): iterates over the user-specified attributes (that are not methods, properties, _internals)
-      - safely declare attributes defaulting to empty lists ([]) in the class declaration
-        some_field = (SomeClass,) in class declaration means you promise to fill the list with SomeClass instances
+      - get_data_fields(): iterates over the user-specified attributes
+                          (that are not methods, properties, _internals)
+      - safely declare attributes defaulting to empty lists ([])
+        in the class declaration. some_field = (SomeClass,) in class declaration
+        means you promise to fill the list  with SomeClass instances.
         TODO: this isn't actually checked, even in StrictModel
     """
 
@@ -23,7 +25,8 @@ class Model(object):
             list_fields = []   # list of (field_name, promised_type) tuples
             for attr in dir(self):
                 val = getattr(self, attr)
-                # list fields are specified as (ClassName,) 1-tuples, with ClassName the class of stuff in the list
+                # list fields are specified as (ClassName,) 1-tuples, with ClassName
+                # the class of stuff in the list
                 if isinstance(val, tuple) and len(val) == 1 and type(val[0]) == type:
                     list_fields.append((attr, val[0]))
 
@@ -36,7 +39,8 @@ class Model(object):
 
             # This took a few CPU cycles, so store as a class attribute too,
             # next time we init this object we won't have to go through this
-            # (note this calls the ordinary python object's setattr, 'class' is just a normal object)
+            # (note this calls the ordinary python object's setattr, 'class' is just a
+            # normal object)
             # maybe downcast to tuple of 2-tuples..
             setattr(self.__class__, '_list_fields', list_fields)
 
@@ -50,7 +54,8 @@ class Model(object):
             kwargs.update(kwargs_dict)
         for k, v in kwargs.items():
             if not hasattr(self, k):
-                raise ValueError('Invalid argument %s to %s.__init__' % (k, self.__class__.__name__))
+                raise ValueError('Invalid argument %s to %s.__init__' % (
+                    k, self.__class__.__name__))
             setattr(self, k, v)
 
     def get_data_fields(self, except_for=()):
@@ -99,7 +104,8 @@ class StrictModel(Model):
 
     def __setattr__(self, key, value):
 
-        # Get the old attr. Will raise AttributeError if doesn't exists, which is what we want
+        # Get the old attr.
+        # #Will raise AttributeError if doesn't exists, which is what we want
         old_val = getattr(self, key)
         old_type = type(old_val)
         new_type = type(value)
@@ -109,7 +115,8 @@ class StrictModel(Model):
         if old_type != new_type:
 
             # Check if we are allowed to cast the type
-            if old_type in casting_allowed_for and value.__class__.__name__ in casting_allowed_for[old_type]:
+            if old_type in casting_allowed_for \
+                    and value.__class__.__name__ in casting_allowed_for[old_type]:
                 value = old_type(value)
 
             else:
