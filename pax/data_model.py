@@ -4,17 +4,10 @@ Extends python object to do a few tricks
 """
 import numpy as np
 
-casting_allowed_for = {
-    int:    ['int16', 'int32', 'int64'],
-    float:  ['int', 'float32', 'float64', 'int16', 'int32', 'int64'],
-}
-
-
 
 class Model(object):
     """Extended python object with few new features:/restrictions
       - can set attrs by passing dict or kwargs to init
-      - attributes are not allowed to change type once set
       - some_field = (SomeClass,) in class declaration allows a list of SomeClass
         To get promised type for some_field, do self.get_list_fields()['some_field'] -> SomeClass
     """
@@ -64,30 +57,43 @@ class Model(object):
     def get_list_fields(self):
         return self._list_fields
 
+
+
+casting_allowed_for = {
+    int:    ['int16', 'int32', 'int64'],
+    float:  ['int', 'float32', 'float64', 'int16', 'int32', 'int64'],
+}
+
+
+class StrictModel(Model):
+    """Model which enforces additional restrictions:
+      - can't add new attributes: have to be set at class level
+      - attributes are not allowed to change type once set
+    """
+
     def __setattr__(self, key, value):
 
-        if hasattr(self, key):
+        # Get the old attr. Will raise AttributeError if doesn't exists, which is what we want
+        old_val = getattr(self, key)
+        old_type = type(old_val)
+        new_type = type(value)
 
-            old_val = getattr(self, key)
-            old_type = type(old_val)
-            new_type = type(value)
+        # Check for attempted type change
 
-            # Check for attempted type change
+        if old_type != new_type:
 
-            if old_type != new_type:
+            # Check if we are allowed to cast the type
+            if old_type in casting_allowed_for and value.__class__.__name__ in casting_allowed_for[old_type]:
+                value = old_type(value)
 
-                # Check if we are allowed to cast the type
-                if old_type in casting_allowed_for and value.__class__.__name__ in casting_allowed_for[old_type]:
-                    value = old_type(value)
+            else:
+                raise TypeError('Attribute %s of class %s should be a %s, not a %s. '
+                                % (key, self.__class__.__name__, old_type, new_type))
 
-                else:
-                    raise TypeError('Attribute %s of class %s should be a %s, not a %s. '
-                                    % (key, self.__class__.__name__, old_type, new_type))
-
-            # Check for attempted dtype change
-            if isinstance(old_val, np.ndarray):
-                if old_val.dtype != value.dtype:
-                    raise TypeError('Attribute %s of class %s should have dtype %s, not %s' % (
-                        key, self.__class__.__name__, old_val.dtype, value.dtype))
+        # Check for attempted dtype change
+        if isinstance(old_val, np.ndarray):
+            if old_val.dtype != value.dtype:
+                raise TypeError('Attribute %s of class %s should have dtype %s, not %s' % (
+                    key, self.__class__.__name__, old_val.dtype, value.dtype))
 
         super().__setattr__(key, value)

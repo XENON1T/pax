@@ -12,7 +12,11 @@ import inspect
 
 import numpy as np
 import math
-from pax.data_model import Model
+
+# To turn off type-checking for all models, replace the line below with
+# from pax.data_model import Model
+# This will improve performance a bit (+ ~10% running time), but use at your own risk
+from pax.data_model import StrictModel as Model
 
 
 class ReconstructedPosition(Model):
