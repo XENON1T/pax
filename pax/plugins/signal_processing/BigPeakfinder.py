@@ -75,10 +75,10 @@ class FindBigPeaks(plugin.TransformPlugin):
                         unfiltered_max_idx = offset + np.argmax(unfiltered_wave[offset: offset - left + right + 1])
 
                         event.peaks.append(datastructure.Peak({
-                            'index_of_maximum': unfiltered_max_idx,   # in unfiltered waveform!
+                            'index_of_maximum': int(unfiltered_max_idx),   # in unfiltered waveform!
                             'height':           unfiltered_wave[unfiltered_max_idx],
-                            'left':             region_left + itv_left + left,
-                            'right':            region_left + itv_left + right,
+                            'left':             int(region_left + itv_left + left),
+                            'right':            int(region_left + itv_left + right),
                             'detector':         detector}))
 
         return event

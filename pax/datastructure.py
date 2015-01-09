@@ -9,14 +9,15 @@ releases.  Patch releases cannot modify this.
 """
 
 import inspect
-
-import numpy as np
 import math
 
+import numpy as np
+
+# To turn off type-checking for all models, replace the line below with
+# from pax.data_model import Model
+# This will improve performance a bit (+ ~10% running time), but use at your own risk
+from pax.data_model import StrictModel as Model
 from pax import units
-from pax.micromodels.models import Model
-from pax.micromodels import fields as f
-from pax.micromodels.fields import IntegerField, FloatField, StringField
 
 
 class ReconstructedPosition(Model):
@@ -25,21 +26,21 @@ class ReconstructedPosition(Model):
 
     Each reconstruction algorithm creates one of these.
     """
-    x = FloatField()  #: x position (cm)
-    y = FloatField()  #: y position (cm)
-    z = FloatField()  #: z position (cm)
+    x = 0.0  #: x position (cm)
+    y = 0.0  #: y position (cm)
+    z = 0.0  #: z position (cm)
 
-    goodness_of_fit = FloatField()  #: goodness-of-fit parameter generated with PosRecChiSquareGamma
-    ndf = FloatField()  # : number of degrees of freedom calculated with PosRecChiSquareGamma
+    goodness_of_fit = 0.0  #: goodness-of-fit parameter generated with PosRecChiSquareGamma
+    ndf = 0.0  # : number of degrees of freedom calculated with PosRecChiSquareGamma
 
     #: For this reconstructed peak, index of maximum value within sum waveform.
-    index_of_maximum = IntegerField()
+    index_of_maximum = 0
 
     #: Name of algorithm used for computation
-    algorithm = StringField(default='none')
+    algorithm = 'none'
 
     # : Errors - currently not used
-    # error_matrix = f.NumpyArrayField(dtype=np.float64)
+    # error_matrix = np.array([], dtype=np.float64)
 
     # For convenience: cylindrical coordinates
     # Must be properties so InterpolatingDetectorMap can transparently use cylindrical coordinates
@@ -57,19 +58,19 @@ class ChannelPeak(Model):
     """Peaks found in individual channels
     These are be clustered into ordinary peaks later
     """
-    channel = IntegerField()              #: Channel in which this peak was found
-    index_of_maximum = IntegerField()     #: Index in the event at which this peak has its maximum.
+    channel = 0              #: Channel in which this peak was found
+    index_of_maximum = 0     #: Index in the event at which this peak has its maximum.
 
-    left = IntegerField()                 #: Index of left bound (inclusive) of peak.
-    right = IntegerField()                #: Index of right bound (INCLUSIVE!!) of peak
+    left = 0                 #: Index of left bound (inclusive) of peak.
+    right = 0                #: Index of right bound (INCLUSIVE!!) of peak
 
     @property
     def length(self):
         return self.right - self.left + 1
 
-    area = FloatField()                   #: Area of the peak in photoelectrons
-    height = FloatField()                 #: Height of highest point in peak (in pe/bin)
-    noise_sigma = FloatField()            #: StDev of the noise in the occurrence (in pe/bin) where we found this peak
+    area = 0.0                   #: Area of the peak in photoelectrons
+    height = 0.0                 #: Height of highest point in peak (in pe/bin)
+    noise_sigma = 0.0            #: StDev of the noise in the occurrence (in pe/bin) where we found this peak
 
 
 class Peak(Model):
@@ -80,21 +81,21 @@ class Peak(Model):
     #   Fields present in all peaks
     ##
 
-    left = IntegerField()                 #: Index of left bound (inclusive) in event.
-    right = IntegerField()                #: Index of right bound (INCLUSIVE!!) in event.
+    left = 0                 #: Index of left bound (inclusive) in event.
+    right = 0                #: Index of right bound (INCLUSIVE!!) in event.
     # For XDP matching rightmost sample is not in integral, so you could say it is exclusive then.
 
     #: Area of the pulse in photoelectrons.
     #:
     #: Includes only contributing pmts (see later) in the right detector
-    area = FloatField()
+    area = 0.0
 
-    type = StringField(default='unknown')        #: Type of peak (e.g., 's1', 's2', ...)
-    subtype = StringField(default='unknown')     #: Subtype of peak
-    detector = StringField(default='none')  #: e.g. tpc or veto
+    type = 'unknown'        #: Type of peak (e.g., 's1', 's2', ...)
+    subtype = 'unknown'     #: Subtype of peak
+    detector = 'none'  #: e.g. tpc or veto
 
     #: Does a PMT see 'something significant'? (thresholds configurable)
-    does_channel_contribute = f.NumpyArrayField(dtype=np.bool)
+    does_channel_contribute = np.array([], dtype=np.bool)
 
     @property
     def contributing_channels(self):
@@ -106,41 +107,42 @@ class Peak(Model):
         return len(self.contributing_channels)
 
     #: Array of areas in each PMT.
-    area_per_channel = f.NumpyArrayField(dtype='float64')
+    area_per_channel = np.array([], dtype='float64')
 
     #: Returns a list of reconstructed positions
     #:
     #: Returns an :class:`pax.datastructure.ReconstructedPosition` class.
-    reconstructed_positions = f.ModelCollectionField(wrapped_class=ReconstructedPosition)
+    reconstructed_positions = (ReconstructedPosition,)
 
     ##
     #   Fields present in sum-waveform peaks
     ##
 
-    index_of_maximum = IntegerField()           #: Index in the event's sum waveform at which this peak has its maximum.
-    index_of_filtered_maximum = IntegerField()  #: same, but maximum in filtered (for S2) sum waveform
+    index_of_maximum = 0           #: Index in the event's sum waveform at which this peak has its maximum.
+    index_of_filtered_maximum = 0  #: same, but maximum in filtered (for S2) sum waveform
 
-    height = FloatField()                 #: Height of highest point in peak (in pe/bin)
-    height_filtered = FloatField()        #: Height of highest point in filtered waveform of peak (in pe/bin)
+    height = 0.0                 #: Height of highest point in peak (in pe/bin)
+    height_filtered = 0.0        #: Height of highest point in filtered waveform of peak (in pe/bin)
 
-    central_area = FloatField()           #: Area in the central part of the peak (used for classification)
+    central_area = 0.0           #: Area in the central part of the peak (used for classification)
 
-    full_width_half_max = FloatField()             #: Full width at half maximum in samples
-    full_width_tenth_max = FloatField()            #: Full width at tenth of maximum in samples
-    full_width_half_max_filtered = FloatField()    #: Full width at half of maximum in samples, in filtered waveform
-    full_width_tenth_max_filtered = FloatField()   #: Full width at tenth of maximum in samples, in filtered waveform
+    # Note these are floats -- the widths get interpolated
+    full_width_half_max = 0.0               #: Full width at half maximum in samples
+    full_width_tenth_max = 0.0              #: Full width at tenth of maximum in samples
+    full_width_half_max_filtered = 0.0      #: Full width at half of maximum in samples, in filtered waveform
+    full_width_tenth_max_filtered = 0.0     #: Full width at tenth of maximum in samples, in filtered waveform
 
     #: Array of squared signal entropies in each PMT.
-    entropy_per_channel = f.NumpyArrayField(dtype='float64')
+    entropy_per_channel = np.array([], dtype='float64')
 
     ##
     #   Fields present in peaks from single-channel peakfinding
     ##
 
     #: Peaks in individual channels that make up this peak
-    channel_peaks = f.ModelCollectionField(wrapped_class=ChannelPeak)
+    channel_peaks = (ChannelPeak,)
 
-    does_channel_have_noise = f.NumpyArrayField(dtype=np.bool)
+    does_channel_have_noise = np.array([], dtype=np.bool)
 
     @property
     def number_of_noise_channels(self):
@@ -148,10 +150,10 @@ class Peak(Model):
         return len(self.contributing_channels)
 
     #: Variables indicating width of peak
-    mean_absolute_deviation = FloatField()
-    # standard_deviation = FloatField()
-    # half_area_range = FloatField()
-    # tenth_area_range = FloatField()
+    mean_absolute_deviation = 0.0
+    # standard_deviation = 0.0
+    # half_area_range = 0.0
+    # tenth_area_range = 0.0
 
 
 class SumWaveform(Model):
@@ -160,15 +162,15 @@ class SumWaveform(Model):
     """
 
     #: Name of the filter used (or 'none')
-    name_of_filter = StringField(default='none')
-    name = StringField(default='none')  #: e.g. top
-    detector = StringField(default='none')  #: e.g. tpc or veto
+    name_of_filter = 'none'
+    name = 'none'  #: e.g. top
+    detector = 'none'  #: e.g. tpc or veto
 
     #: Array of PMT numbers included in this waveform
-    channel_list = f.NumpyArrayField(dtype=np.uint16)
+    channel_list = np.array([], dtype=np.uint16)
 
     #: Array of samples, units of pe/bin.
-    samples = f.NumpyArrayField(dtype=np.float64)
+    samples = np.array([], dtype=np.float64)
 
     def is_filtered(self):
         if self.name_of_filter != 'none':
@@ -177,34 +179,30 @@ class SumWaveform(Model):
             return False
 
 
-# We need to access these a gazillion times, but using a namedtuple gains little (+6% BuildWaveforms runtime)
-# and would sacrifice mutability.
-# plain tuples/dicts in OccurrencesContainer perform similarly to namedtuples, but can't be extended/documented
-# Using a MicroModel, however, would slow things down a lot (+60% BuildWaveforms runtime)
-class Occurrence(object):
+class Occurrence(Model):
 
     """A DAQ occurrence
     """
 
     #: First index (inclusive; integer)
-    left = None
+    left = 0
 
     #: Last index (inclusive; integer)
-    right = None
+    right = 0
 
     #: Channel the occurrence belongs to (integer)
-    channel = None
+    channel = 0
 
     #: Maximum amplitude (in pe/bin; float)
     #: Will remain None if channel's gain is 0
-    height = None
+    height = 0.0
 
     #: Baseline (in ADC counts; float)
     # TODO: in small peakfinding, an improved baseline estimate is computed -- maybe we should store that too?
-    digitizer_baseline_used = None
+    digitizer_baseline_used = 0.0
 
     #: Raw wave data (in ADC counts, NOT pe/bin!; numpy array of int16)
-    raw_data = None
+    raw_data = np.array([], np.int16)
 
     @property
     def length(self):
@@ -218,16 +216,12 @@ class Occurrence(object):
          - raw_data (numpy array of samples)
          - right (last index)
         """
-
-        # Biolerplate to store kwargs as attrs
-        for k, v in kwargs.items():
-            if not hasattr(self, k):
-                raise ValueError('Invalid argument %s to %s.__init__' % (k, self.__class__.__name__))
-            setattr(self, k, v)
+        super().__init__(**kwargs)
 
         # Determine right from raw_data if needed
-        if self.right is None:
-            if self.raw_data is None:
+        # Don't want right as a property, we want it to be saved...
+        if self.right == 0:
+            if not len(self.raw_data):
                 raise ValueError('Must have right or raw_data to init Occurrence')
             self.right = self.left + len(self.raw_data) - 1
 
@@ -236,44 +230,45 @@ class Event(Model):
 
     """Event class
     """
-
-    dataset_name = StringField(default='Unknown')  # The name of the dataset this event belongs to
-    event_number = IntegerField()    # A nonnegative integer that uniquely identifies the event within the dataset.
-
-    #: Time duration of a sample in units of ns
-    #: This is also in config, but we need it here too, to convert between event duration and length in samples
-    sample_duration = IntegerField(default=10 * units.ns)
+    dataset_name = 'Unknown'  # The name of the dataset this event belongs to
+    event_number = 0    # A nonnegative integer that uniquely identifies the event within the dataset.
 
     #: Start time of the event (time at which the first sample STARTS)
     #:
     #: This is a 64-bit number in units of ns that follows the UNIX clock.
     #: Or rather, it starts from January 1, 1970.
-    start_time = IntegerField()
+    #: Must be an int!! large floats don't support precision arithmetic
+    start_time = 0
 
     #: Stop time of the event (time at which the last sample ENDS).
     #:
     #: This is a 64-bit number in units of ns that follows the UNIX clock.
     #: Or rather, it starts from January 1, 1970.
-    stop_time = IntegerField()
+    stop_time = 0
 
-    user_float_0 = FloatField()  # : Unused float (useful for developing)
-    user_float_1 = FloatField()  # : Unused float (useful for developing)
-    user_float_2 = FloatField()  # : Unused float (useful for developing)
-    user_float_3 = FloatField()  # : Unused float (useful for developing)
-    user_float_4 = FloatField()  # : Unused float (useful for developing)
+    #: Time duration of a sample (in pax units, i.e. ns)
+    #: This is also in config, but we need it here too, to convert between event duration and length in samples
+    #: Must be an int for same reason as start_time and stop_time
+    sample_duration = int(10 * units.ns)
+
+    user_float_0 = 0.0  # : Unused float (useful for developing)
+    user_float_1 = 0.0  # : Unused float (useful for developing)
+    user_float_2 = 0.0  # : Unused float (useful for developing)
+    user_float_3 = 0.0  # : Unused float (useful for developing)
+    user_float_4 = 0.0  # : Unused float (useful for developing)
 
     #: List of peaks
     #:
     #: Returns a list of :class:`pax.datastructure.Peak` classes.
-    peaks = f.ModelCollectionField(wrapped_class=Peak)
+    peaks = (Peak,)
 
     #: Temporary list of channel peaks -- will be shipped off to peaks later
-    all_channel_peaks = f.ModelCollectionField(wrapped_class=ChannelPeak)
+    all_channel_peaks = (ChannelPeak,)
 
     #: Returns a list of sum waveforms
     #:
     #: Returns an :class:`pax.datastructure.SumWaveform` class.
-    sum_waveforms = f.ModelCollectionField(wrapped_class=SumWaveform)
+    sum_waveforms = (SumWaveform,)
 
     #: A 2D array of all the PMT waveforms, units of pe/bin.
     #:
@@ -287,15 +282,15 @@ class Event(Model):
     #:
     #: The data type is a float32 since these numbers are already baseline
     #: and gain corrected.
-    channel_waveforms = f.NumpyArrayField(dtype=np.float64)  # : Array of samples.
+    channel_waveforms = np.array([], dtype=np.float64)  # : Array of samples.
 
     #: A python list of all occurrences in the event (containing instances of the Occurrence class)
     #: An occurrence holds a stream of samples in one channel, as provided by the digitizer.
-    occurrences = f.BaseField()
+    occurrences = (Occurrence,)
 
     #: List of channels which showed an increased dark rate
     #: Declared as basefield as we want to store a list (it will get appended to constantly)
-    is_channel_bad = f.NumpyArrayField(dtype=np.bool)
+    is_channel_bad = np.array([], dtype=np.bool)
 
     def __init__(self, n_channels, start_time, **kwargs):
 
@@ -306,11 +301,11 @@ class Event(Model):
         # This will store all of the kwargs as attrs
         # We don't pass length, it's not an attribute that can be set
         # (although it seems nothing bad happens if we do)
-        super().__init__({k: v for k, v in kwargs.items() if k != 'length'})
+        super().__init__(**{k: v for k, v in kwargs.items() if k != 'length'})
 
         # Cheat to init stop_time from length and duration
         if 'length' in kwargs and self.sample_duration and not self.stop_time:
-            self.stop_time = self.start_time + kwargs['length'] * self.sample_duration
+            self.stop_time = int(self.start_time + kwargs['length'] * self.sample_duration)
 
         if not self.length:
             raise ValueError("Cannot initialize an event with an unknown length: " +
@@ -320,9 +315,6 @@ class Event(Model):
         # This is the reason for having an __init__ in the first place
         self.channel_waveforms = np.zeros((n_channels, self.length()))
         self.is_channel_bad = np.zeros(n_channels, dtype=np.bool)
-
-        # Initialize stuff with mutable defaults
-        self.occurrences = []
 
     def duration(self):
         """Duration of event window in units of ns

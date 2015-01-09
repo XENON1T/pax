@@ -118,10 +118,11 @@ class Filtering(plugin.TransformPlugin):
                     except Exception as e:
                         self.log.warning("Error during waveform mutilation: " + str(e) + ". So what...")
 
-            event.sum_waveforms.append(datastructure.SumWaveform({
-                'name':      f['name'],
-                'samples':   output,
-                'channel_list':  input_w.channel_list,
-                'detector':  input_w.detector,
-            }))
+            event.sum_waveforms.append(datastructure.SumWaveform(
+                name=f['name'],
+                samples=output,
+                channel_list=input_w.channel_list,
+                detector=input_w.detector,
+            ))
+
         return event

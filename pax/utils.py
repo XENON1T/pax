@@ -271,6 +271,22 @@ def find_first_fast(a, threshold, chunk_size=128):
     # return len(a) - 1
 
 
+# Caching decorator
+class memoize:
+    # from http://avinashv.net/2008/04/python-decorators-syntactic-sugar/
+
+    def __init__(self, function):
+        self.function = function
+        self.memoized = {}
+
+    def __call__(self, *args):
+        try:
+            return self.memoized[args]
+        except KeyError:
+            self.memoized[args] = self.function(*args)
+            return self.memoized[args]
+
+
 ##
 # Interpolating map class
 ##

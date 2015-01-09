@@ -31,7 +31,7 @@ class TestBuildWaveforms(unittest.TestCase):
         event = self.make_single_occurrence_event(
             channel=1,
             left=1,
-            raw_data=np.ones(20) * self.baseline)
+            raw_data=np.ones(20, dtype=np.int16) * self.baseline)
         event = self.plugin.transform_event(event)
         self.assertTrue(len(event.sum_waveforms) > 0)
 
@@ -40,7 +40,7 @@ class TestBuildWaveforms(unittest.TestCase):
         event = self.make_single_occurrence_event(
             channel=1,
             left=99,
-            raw_data=np.ones(1) * self.baseline)
+            raw_data=np.ones(1, dtype=np.int16) * self.baseline)
         event = self.plugin.transform_event(event)
         self.assertTrue(len(event.sum_waveforms) > 0)
 
@@ -48,7 +48,7 @@ class TestBuildWaveforms(unittest.TestCase):
         event = self.make_single_occurrence_event(
             channel=1,
             left=0,
-            raw_data=np.ones(100) * self.baseline)
+            raw_data=np.ones(100, dtype=np.int16) * self.baseline)
         event = self.plugin.transform_event(event)
         self.assertTrue(len(event.sum_waveforms) > 0)
 
@@ -58,34 +58,34 @@ class TestBuildWaveforms(unittest.TestCase):
         event = self.make_single_occurrence_event(
             channel=1,
             left=-5,
-            raw_data=np.ones(20) * self.baseline)
+            raw_data=np.ones(20, dtype=np.int16) * self.baseline)
         self.assertRaises(exceptions.OccurrenceBeyondEventError,
                           self.plugin.transform_event, event)
 
         event = self.make_single_occurrence_event(
             channel=1,
             left=-5,
-            raw_data=np.ones(2) * self.baseline)
+            raw_data=np.ones(2, dtype=np.int16) * self.baseline)
         self.assertRaises(exceptions.OccurrenceBeyondEventError,
                           self.plugin.transform_event, event)
 
         event = self.make_single_occurrence_event(
             channel=1,
             left=120,
-            raw_data=np.ones(2) * self.baseline)
+            raw_data=np.ones(2, dtype=np.int16) * self.baseline)
         self.assertRaises(exceptions.OccurrenceBeyondEventError,
                           self.plugin.transform_event, event)
 
         event = self.make_single_occurrence_event(
             channel=1,
             left=-5,
-            raw_data=np.ones(200) * self.baseline)
+            raw_data=np.ones(200, dtype=np.int16) * self.baseline)
         self.assertRaises(exceptions.OccurrenceBeyondEventError,
                           self.plugin.transform_event, event)
 
         event = self.make_single_occurrence_event(
             channel=1,
             left=100,
-            raw_data=np.ones(1) * self.baseline)
+            raw_data=np.ones(1, dtype=np.int16) * self.baseline)
         self.assertRaises(exceptions.OccurrenceBeyondEventError,
                           self.plugin.transform_event, event)

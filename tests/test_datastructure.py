@@ -23,8 +23,8 @@ class TestDatastructure(unittest.TestCase):
 
     def test_good(self):
         e = empty_event()
-        e.event_number = 3.0
-        self.assertEqual(e.event_number, 3.0)
+        e.event_number = 3
+        self.assertEqual(e.event_number, 3)
 
     def test_to_json(self):
         e = empty_event()
@@ -34,7 +34,7 @@ class TestDatastructure(unittest.TestCase):
         e = empty_event()
         e.to_dict()
 
-    def test_default(self):
+    def test_defaults(self):
         e = empty_event()
         self.assertEqual(e.event_number, 0)
         self.assertEqual(e.peaks, [])
@@ -42,14 +42,18 @@ class TestDatastructure(unittest.TestCase):
     def test_wrong_type(self):
         e = empty_event()
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             e.event_number = "abc"
+
+        with self.assertRaises(TypeError):
+            e.event_number = 3.0
 
     def test_peaks(self):
         e = empty_event()
-        e.peaks = [{'area': 0,
-                    'index_of_maximum': 0,
-                    'detector':         'tpc', }]
+        e.peaks = [Peak(
+            area=0,
+            index_of_maximum=0,
+            detector='tpc')]
 
         self.assertEqual(len(e.peaks), 1)
         self.assertIsInstance(e.peaks[0], Peak)

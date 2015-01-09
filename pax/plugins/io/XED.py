@@ -219,7 +219,7 @@ class XedInput(plugin.InputPlugin):
                 event_layer_metadata['utc_time'] * units.s +
                 event_layer_metadata['utc_time_usec'] * units.us
             ),
-            sample_duration=self.config['sample_duration'],
+            sample_duration=int(self.config['sample_duration']),
             length=event_layer_metadata['samples_in_event']
         )
         event.dataset_name = self.file_metadata['dataset_name'].decode("utf-8")

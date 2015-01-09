@@ -38,7 +38,7 @@ class HDF5Output(plugin.OutputPlugin):
 
         for ic in internal_classes:
             fields = {}
-            for field_name, field_instance in ic.get_fields().items():
+            for field_name, field_instance in ic.get_fields_data().items():
                 hd5_column = self.hdf5_column.get(field_instance.__class__, None)
                 if hd5_column is not None:
                     fields[field_name] = self.hdf5_column.get(field_instance.__class__, None)

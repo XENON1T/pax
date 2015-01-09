@@ -3,10 +3,10 @@ import time
 import json
 
 import pandas
+import numpy as np
 
 import pax
 from pax import plugin
-from pax.micromodels import fields as mm_fields
 
 
 class WritePandas(plugin.OutputPlugin):
@@ -23,7 +23,7 @@ class WritePandas(plugin.OutputPlugin):
         the third  index is the ReconstructedPosition's index in peak.reconstructed_positions
     Each index is also named (in this example, 'Event', 'Peak', 'ReconstructedPosition') for clarity.
 
-    Because pandas is optimised for working with large data structures, converting/appending each micromodels instance
+    Because pandas is optimised for working with large data structures, converting/appending each model instance
     to a DataFrame separately would take an unacceptable amount of CPU time. Hence, we store data in lists of
     dictionaries first ("pre-dataframes"), then convert those to DataFrames once we are ready to write to disk.
 
@@ -94,7 +94,7 @@ class WritePandas(plugin.OutputPlugin):
     def write_event(self, event):
 
         # Store all the event data in self.dataframes
-        self.mm_to_dataframe(event, [('Event', event.event_number)])
+        self.model_to_dataframe(event, [('Event', event.event_number)])
 
         # Write the data to file if needed
         self.events_ready_to_be_written += 1
@@ -109,43 +109,43 @@ class WritePandas(plugin.OutputPlugin):
         if self.output_format == 'hdf':
             self.store.close()
 
-    def mm_to_dataframe(self, mm, index_trail):
+    def model_to_dataframe(self, m, index_trail):
         """Convert a MicroModels class instance to a pre-dataframe (data_dict with index_trail),
         handling its subcollections recursively.
 
-        :param mm: instance to convert
+        :param m: instance to convert
         :param index_trail: list of (index_name, index) tuples denoting multi-index trail
         """
-        # Dict to contain data from this mm instance, will be used in dataframe generation
+
+        # Dict to contain data from this model instance, will be used in dataframe generation
         data_dict = {}
 
         # Grab all data into data_dict -- and more imporantly, handle subcollections
-        for field_name, field_instance in mm.get_fields().items():
-
-            field_value = getattr(mm, field_name)
+        for field_name, field_value in m.get_fields_data():
 
             if field_name in self.fields_to_ignore:
                 continue
 
-            if isinstance(field_instance, mm_fields.ModelCollectionField):
+            if isinstance(field_value, list):
+                if not len(field_value):
+                    continue
 
                 # We'll ship model collections off to their own pre-dataframes
-                # Convert each child_mm to a dataframe, with a new index appended to the index trail
-                for new_index, child_mm in enumerate(field_value):
-                    self.mm_to_dataframe(child_mm, index_trail + [(child_mm.__class__.__name__, new_index)])
-
-            elif isinstance(field_instance, mm_fields.NumpyArrayField):
-
+                # Convert each child_model to a dataframe, with a new index appended to the index trail
+                element_type = type(field_value[0])
+                for new_index, child_model in enumerate(field_value):
+                    self.model_to_dataframe(child_model, index_trail + [(element_type.__name__,
+                                                                         new_index)])
+            elif isinstance(field_value, np.ndarray):
                 # NumpyArrayFields also get their own dataframe -- assumes field names are unique!
                 # dataframe columns = positions in the array
                 self.append_to_df(field_name, (index_trail,
                                                {k: v for k, v in enumerate(field_value)}))
-
             else:
                 data_dict[field_name] = field_value
 
         # Finally, append the instance we started with to its pre_dataframe
-        self.append_to_df(mm.__class__.__name__, (index_trail, data_dict))
+        self.append_to_df(m.__class__.__name__, (index_trail, data_dict))
 
     def append_to_df(self, dfname, index_and_data_tuple):
         """ Appends an (index, data_dict) tuple to self.dataframes[dfname]
@@ -156,10 +156,8 @@ class WritePandas(plugin.OutputPlugin):
             self.dataframes[dfname] = [index_and_data_tuple]
 
     def write_dataframes(self):
-
         # Convert pre-dataframes to actual pandas DataFrames
         for df_name, df in self.dataframes.items():
-
             self.log.debug("Converting %s to pandas DataFrame" % df_name)
 
             df_data = []
