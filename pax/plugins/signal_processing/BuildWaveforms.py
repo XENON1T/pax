@@ -183,7 +183,10 @@ class BuildWaveforms(plugin.TransformPlugin):
                 nominally_corrected_pulse = baseline - occurrence_wave
                 nominally_corrected_pulse *= self.conversion_factor / self.config['nominal_gain']
                 corrected_pulse = nominally_corrected_pulse
-                corrected_pulse *= self.config['nominal_gain'] / self.config['gains'][channel]
+                if self.config['gains'][channel] == 0:
+                    corrected_pulse = float('inf')
+                else:
+                    corrected_pulse *= self.config['nominal_gain'] / self.config['gains'][channel]
             else:
                 corrected_pulse = (baseline - occurrence_wave) * self.conversion_factor / self.config['gains'][channel]
 
