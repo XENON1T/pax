@@ -11,6 +11,7 @@ import logging
 from scipy import stats
 
 from pax import units, utils, datastructure
+from pax.utils import memoize
 
 log = logging.getLogger('SimulationCore')
 
@@ -454,22 +455,6 @@ class SimulatedHitpattern(object):
 
 # I pulled this out of Simulator: caching using memoize gave me trouble on methods due to the self argument
 # There's still a method pmt_pulse_current, but it just calls pmt_pulse_current_raw defined below
-
-# Caching decorator
-class memoize:
-    # from http://avinashv.net/2008/04/python-decorators-syntactic-sugar/
-
-    def __init__(self, function):
-        self.function = function
-        self.memoized = {}
-
-    def __call__(self, *args):
-        try:
-            return self.memoized[args]
-        except KeyError:
-            self.memoized[args] = self.function(*args)
-            return self.memoized[args]
-
 
 @memoize
 def pmt_pulse_current_raw(offset, dt, samples_before, samples_after, tr, tf):
