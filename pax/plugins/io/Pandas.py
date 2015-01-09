@@ -121,7 +121,10 @@ class WritePandas(plugin.OutputPlugin):
         data_dict = {}
 
         # Grab all data into data_dict -- and more imporantly, handle subcollections
-        for field_name, field_value in m.get_data_fields(except_for=self.fields_to_ignore):
+        for field_name, field_value in m.get_fields_data():
+
+            if field_name in self.fields_to_ignore:
+                continue
 
             if isinstance(field_value, list):
                 if not len(field_value):

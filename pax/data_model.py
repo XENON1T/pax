@@ -3,6 +3,9 @@ Python skeleton for data structure
 Extends python object to do a few tricks
 """
 import numpy as np
+import json
+
+from pax.utils import memoize
 
 
 class Model(object):
@@ -15,79 +18,51 @@ class Model(object):
         in the class declaration. some_field = (SomeClass,) in class declaration
         means you promise to fill the list  with SomeClass instances.
         TODO: this isn't actually checked, even in StrictModel
+      - dump as dictionary and JSON
     """
 
     def __init__(self, kwargs_dict=None, **kwargs):
 
-        # Do we already know what the list fields of this class are?
-        if not hasattr(self, '_list_fields'):
-            # We need to figure out the list fields in this class
-            list_fields = []   # list of (field_name, promised_type) tuples
-            for attr in dir(self):
-                val = getattr(self, attr)
-                # list fields are specified as (ClassName,) 1-tuples, with ClassName
-                # the class of stuff in the list
-                if isinstance(val, tuple) and len(val) == 1 and type(val[0]) == type:
-                    list_fields.append((attr, val[0]))
+        # Initialize the list fields
+        # super() is needed to bypass type checking in StrictModel
+        for field_name in self._get_list_field_names():
+            super().__setattr__(field_name, [])
 
-            # Conver to tuple, so we're not storing a mutable as a class attribute
-            list_fields = tuple(list_fields)
-
-            # Store _list_fields in this object
-            # Need to use object.__setattr__ to override type checking
-            object.__setattr__(self, '_list_fields', list_fields)
-
-            # This took a few CPU cycles, so store as a class attribute too,
-            # next time we init this object we won't have to go through this
-            # (note this calls the ordinary python object's setattr, 'class' is just a
-            # normal object)
-            # maybe downcast to tuple of 2-tuples..
-            setattr(self.__class__, '_list_fields', list_fields)
-
-        # Give this instance a new list in the list fields
-        # Could write a list extension that checks types... too lazy right now
-        for field_name, wrapped_class in self._list_fields:
-            object.__setattr__(self, field_name, [])
-
-        # Initialize the kwargs as attrs
-        if kwargs_dict:
-            kwargs.update(kwargs_dict)
+        # Initialize all attributes from kwargs and kwargs_dict
+        kwargs.update(kwargs_dict or {})
         for k, v in kwargs.items():
-            if not hasattr(self, k):
-                raise ValueError('Invalid argument %s to %s.__init__' % (
-                    k, self.__class__.__name__))
             setattr(self, k, v)
 
-    def get_data_fields(self, except_for=()):
-        """Iterate over (name, data) tuples for all fields in the model
+    @classmethod        # Use only in initialization (or if attributes are fixed, as for StrictModel)
+    @memoize            # Caching decorator, improves performance if a model is initialized often
+    def _get_list_field_names(cls):
+        """Get the field names of all list fields in this class
         """
-        # Loop over all attrs of self
-        for field_name in dir(self):
+        list_field_names = []
+        for k, v in cls.__dict__.items():
+            if isinstance(v, tuple) and len(v) == 1 and type(v[0]) == type:
+                list_field_names.append(k)
+        return list_field_names
 
-            # Filter out internal stuff
-            if field_name.startswith('_'):
-                continue
+    def get_fields_data(self):
+        """Iterator over (key, value) tuples of all user-specified fields
+        """
+        return self.__dict__.items()
 
-            # Filter out properties, see stackoverflow.com/questions/17735520
-            try:
-                value_in_class = getattr(self.__class__, field_name)
-                if isinstance(value_in_class, property):
-                    continue
-            except AttributeError:
-                # Apparently it wasn't a class attribute, so it won't be a property
-                continue
+    def to_dict(self, json_compatible=False):
+        result = {}
+        for k, v in self.get_fields_data():
+            if isinstance(v, list):
+                result[k] = [el.to_dict(json_compatible) for el in v]
+            elif isinstance(v, np.ndarray) and json_compatible:
+                # For JSON compatibility, numpy arrays must be converted to lists
+                result[k] = v.tolist()
+            else:
+                result[k] = v
+        return result
 
-            # Ignore fields we want to ignore
-            if field_name in except_for:
-                continue
-
-            field_value = getattr(self, field_name)
-
-            # Filter out methods
-            if callable(field_value):
-                continue
-
-            yield (field_name, field_value)
+    def to_json(self):
+        return json.dumps(self.to_dict(json_compatible=True))
 
 
 casting_allowed_for = {
@@ -111,10 +86,9 @@ class StrictModel(Model):
         new_type = type(value)
 
         # Check for attempted type change
-
         if old_type != new_type:
 
-            # Check if we are allowed to cast the type
+            # Are we allowed to cast the type?
             if old_type in casting_allowed_for \
                     and value.__class__.__name__ in casting_allowed_for[old_type]:
                 value = old_type(value)
