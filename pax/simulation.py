@@ -413,6 +413,11 @@ class SimulatedHitpattern(object):
         # numpy correctly inserts empty arrays if a split point occurs twice if split_points is sorted
         photons_per_channel = np.split(photon_timings, split_points)
 
+        # This distributes stuff in some pattern, favouring the center... odd
+        # So: shuffle to randomize the photon distribution
+        np.random.shuffle(photons_per_channel)
+
+        # Check we have not generated any photons or lost any
         # assert sum(list(map(len, photons_per_channel))) == len(photon_timings)
 
         # Merge the result in a dictionary, which we return
