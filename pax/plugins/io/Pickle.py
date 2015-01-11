@@ -4,6 +4,7 @@
 from pax import plugin
 
 import gzip
+import os
 import re
 import glob
 try:
@@ -15,8 +16,13 @@ except:
 class WriteToPickleFile(plugin.OutputPlugin):
 
     def write_event(self, event):
+        output_dir = self.config['output_name']
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
+
         self.log.debug("Starting pickling...")
-        with gzip.open(self.config['output_name'] + '/%06d' % event.event_number, 'wb', compresslevel=1) as file:
+        with gzip.open(os.path.join(output_dir, '%06d' % event.event_number),
+                       'wb', compresslevel=1) as file:
             pickle.dump(event, file)
         self.log.debug("Done!")
 
