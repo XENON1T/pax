@@ -279,11 +279,12 @@ class Simulator(object):
                 # is faster)
 
                 # Compute offset & center index for each pe-pulse
-                pmt_pulse_centers = np.array(pmt_pulse_centers)
+                pmt_pulse_centers = np.array(pmt_pulse_centers, dtype=np.int)
                 offsets = pmt_pulse_centers % dt
                 center_index = (pmt_pulse_centers - offsets) / dt   # Absolute index in waveform of pe-pulse center
+                center_index = center_index.astype(np.int)
 
-                start_index = min(center_index) - int(self.config['zle_padding'] / dt)
+                start_index = np.min(center_index) - int(self.config['zle_padding'] / dt)
                 end_index = max(center_index) + int(self.config['zle_padding'] / dt)
                 occurrence_length = end_index - start_index + 1
 
