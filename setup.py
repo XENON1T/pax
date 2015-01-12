@@ -34,7 +34,6 @@ setup(
         'pax.plugins.for_tests',
         'pax.plugins.io',
         'pax.plugins.posrec',
-        'pax.micromodels'
     ],
     package_dir={'pax': 'pax'},
     package_data={'pax': ['config/*.ini', 'data/*.*']},
