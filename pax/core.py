@@ -89,7 +89,10 @@ class Processor:
         # Start up the simulator
         # Must be done explicitly here, as plugins can rely on its presence in startup
         if 'WaveformSimulator' in self.config:
-            self.simulator = simulation.Simulator(self.config['WaveformSimulator'])
+            wvsim_config = {}
+            wvsim_config.update(self.config['DEFAULT'])
+            wvsim_config.update(self.config['WaveformSimulator'])
+            self.simulator = simulation.Simulator(wvsim_config)
         else:
             if not just_testing:
                 self.log.warning('You did not specify any configuration for the waveform simulator!\n' +
@@ -207,7 +210,8 @@ class Processor:
 
         self.configp = ConfigParser(inline_comment_prefixes='#',
                                     interpolation=ExtendedInterpolation(),
-                                    strict=True)
+                                    strict=True,
+                                    default_section="Dont_want_one__We_take_care_of_this_ourselves")
 
         # Allow for case-sensitive configuration keys
         self.configp.optionxform = str
