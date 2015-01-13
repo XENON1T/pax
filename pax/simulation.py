@@ -47,7 +47,8 @@ class Simulator(object):
         channels_for_photons = self.config['channels_in_detector']['tpc']
         if self.config.get('magically_avoid_dead_pmts', False):
             channels_for_photons = [ch for ch in channels_for_photons if self.config['gains'][ch] > 0]
-        if self.config.get('magically_avoid_s1_excluded_pmts', False):
+        if self.config.get('magically_avoid_s1_excluded_pmts', False) and \
+            'channels_excluded_for_s1' in self.config:
             channels_for_photons = [ch for ch in channels_for_photons
                                     if ch not in self.config['channels_excluded_for_s1']]
         self.config['channels_for_photons'] = channels_for_photons
