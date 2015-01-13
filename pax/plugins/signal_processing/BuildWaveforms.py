@@ -18,10 +18,12 @@ class BuildWaveforms(plugin.TransformPlugin):
     """
 
     def startup(self):
+        self.undead_channels = []
         c = self.config
 
         # Extract the number of PMTs from the configuration
         self.n_channels = self.config['n_channels']
+        self.truncate_occurrences_partially_outside = self.config.get('truncate_occurrences_partially_outside', False)
 
         # Conversion factor from converting from ADC counts -> pmt-electrons/bin
         # Still has to be divided by PMT gain to get pe/bin
@@ -30,27 +32,26 @@ class BuildWaveforms(plugin.TransformPlugin):
             * c['external_amplification'] * units.electron_charge
         )
 
-        # Channel groups starting with 'u' will be gain corrected using nominal gain
         self.channel_groups = {
             'top':              c['channels_top'],
             'bottom':           c['channels_bottom'],
-            # TEMP for Xerawdp matching
-            's1_peakfinding':   (c['channels_top'] | c['channels_bottom']) - c['channels_excluded_for_s1']
         }
         # Add each detector as a channel group
         for name, chs in c['channels_in_detector'].items():
             self.channel_groups[name] = chs
         self.external_detectors = [k for k in c['channels_in_detector'].keys() if k != 'tpc']
 
-        if self.config['build_nominally_gain_corrected_waveforms']:
-            # Also store nominal-gain corrected waveforms
-            self.channel_groups.update({
-                'uS1':  (c['channels_top'] | c['channels_bottom']) - c['channels_excluded_for_s1'],
-                'uS2':  (c['channels_top'] | c['channels_bottom']),
-            })
-        self.undead_channels = []
 
-        self.truncate_occurrences_partially_outside = self.config.get('truncate_occurrences_partially_outside', False)
+        # For Xerawdp matching: have to exclude some channels from S1 peakfinding and build sum wv with nominal gain
+        self.xerawdp_matching = c.get('xerawdp_matching', False)
+        if self.xerawdp_matching:
+            s1_channels = list(
+                set(c['channels_top']) | set(c['channels_bottom']) - set(c['channels_excluded_for_s1']))
+            self.channel_groups.update({
+                's1_peakfinding': s1_channels,
+                'uS1':  s1_channels,
+                'uS2':  c['channels_top'] + c['channels_bottom'],
+            })
 
     def transform_event(self, event):
 
@@ -84,7 +85,7 @@ class BuildWaveforms(plugin.TransformPlugin):
                                          'but it has a signal in this event!' % channel)
                         self.log.warning('Further undead channel warnings for this channel will be suppressed.')
                     self.undead_channels.append(channel)
-                if not self.config['build_nominally_gain_corrected_waveforms']:
+                if not self.xerawdp_matching:
                     # This channel won't add anything, so:
                     continue
 
@@ -180,7 +181,7 @@ class BuildWaveforms(plugin.TransformPlugin):
                 end_index = start_index + length - 1
 
             # Compute corrected pulse
-            if self.config['build_nominally_gain_corrected_waveforms']:
+            if self.xerawdp_matching:
                 nominally_corrected_pulse = baseline - occurrence_wave
                 nominally_corrected_pulse *= self.conversion_factor / self.config['nominal_gain']
                 corrected_pulse = nominally_corrected_pulse
@@ -191,15 +192,15 @@ class BuildWaveforms(plugin.TransformPlugin):
             else:
                 corrected_pulse = (baseline - occurrence_wave) * self.conversion_factor / self.config['gains'][channel]
 
-            # Store the waveform in channel_waveforms, unless gain=0, then we leave it as 0
-            # TODO: is this wise? How would we investigate undead channels if we don't store the data?
+            # Store the waveform in channel_waveforms
+            # If the gain is 0, we can still be here if self.xerawdp_matching, don't want to store infs, so check first
             if self.config['gains'][channel] != 0:
                 event.channel_waveforms[channel][start_index:end_index + 1] = corrected_pulse
 
-            # Add corrected pulse to channel_waveforms and all appropriate summed waveforms
+            # Add corrected pulse to all appropriate summed waveforms
             for group, members in self.channel_groups.items():
                 if channel in members:
-                    if group[0] == 'u':
+                    if self.xerawdp_matching and group.startswith('u'):
                         pulse_to_add = nominally_corrected_pulse
                     else:
                         pulse_to_add = corrected_pulse

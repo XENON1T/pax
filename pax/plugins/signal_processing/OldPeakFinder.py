@@ -628,9 +628,6 @@ class ComputePeakPropertiesXdpStyle(plugin.TransformPlugin):
 
     """
 
-    def startup(self):
-        self.config['pmts_tpc'] = self.config['channels_top'] | self.config['channels_bottom']
-
     def transform_event(self, event):
         """Only computes area for Xerawdp matching at the moment
         """
@@ -639,7 +636,7 @@ class ComputePeakPropertiesXdpStyle(plugin.TransformPlugin):
         for peak in event.peaks:
             peak.area_per_channel = np.zeros(len(event.channel_waveforms), dtype='float64')
             for channel, wave_data in enumerate(event.channel_waveforms):
-                if channel not in self.config['pmts_tpc'] or \
+                if channel not in self.config['channels_in_detector']['tpc'] or \
                    peak.type == 's1' and channel in self.config['channels_excluded_for_s1']:
                     continue
                 # No +1, Xerawdp forgets the right edge also:
@@ -657,7 +654,8 @@ class ComputePeakPropertiesXdpStyle(plugin.TransformPlugin):
             if peak.type == 's1':
                 contributing_pmts = []
                 for channel, area in enumerate(peak.area_per_channel):
-                    if channel not in self.config['pmts_tpc'] or channel in self.config['channels_excluded_for_s1']:
+                    if channel not in self.config['channels_in_detector']['tpc'] \
+                            or channel in self.config['channels_excluded_for_s1']:
                         continue
                     if self.config['gains'][channel] == 0:
                         continue

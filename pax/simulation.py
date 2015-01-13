@@ -44,7 +44,7 @@ class Simulator(object):
         # Which channels stand to receive any photons?
         # TODO: In XENON100, channel 0 will receive photons unless magically_avoid_dead_pmts=True
         # To prevent this, subtract 0 from channel_for_photons. But don't do that for XENON1T!!
-        channels_for_photons = list(self.config['channels_top'] | self.config['channels_bottom'])
+        channels_for_photons = self.config['channels_in_detector']['tpc']
         if self.config.get('magically_avoid_dead_pmts', False):
             channels_for_photons = [ch for ch in channels_for_photons if self.config['gains'][ch] > 0]
         if self.config.get('magically_avoid_s1_excluded_pmts', False):
