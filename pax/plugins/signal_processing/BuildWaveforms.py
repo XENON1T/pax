@@ -41,7 +41,6 @@ class BuildWaveforms(plugin.TransformPlugin):
             self.channel_groups[name] = chs
         self.external_detectors = [k for k in c['channels_in_detector'].keys() if k != 'tpc']
 
-
         # For Xerawdp matching: have to exclude some channels from S1 peakfinding and build sum wv with nominal gain
         self.xerawdp_matching = c.get('xerawdp_matching', False)
         if self.xerawdp_matching:

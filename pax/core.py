@@ -80,6 +80,10 @@ class Processor:
           the same log level as the first, regardless of their configuration.  See #78.
         """
         self.config = self.load_configuration(config_names, config_paths, config_string, config_dict)
+        self.config['DEFAULT'] = self.config.get('DEFAULT', {})    # Enable empty [DEFAULT] for tests
+        if 'Dont_want_configparser_to_handle_our_DEFAULT' in self.config:
+            del self.config['Dont_want_configparser_to_handle_our_DEFAULT']
+
         self.log = self.setup_logging()
         pc = self.config['pax']
 
@@ -210,7 +214,7 @@ class Processor:
         self.configp = ConfigParser(inline_comment_prefixes='#',
                                     interpolation=ExtendedInterpolation(),
                                     strict=True,
-                                    default_section="Dont_want_one__We_take_care_of_this_ourselves")
+                                    default_section='Dont_want_configparser_to_handle_our_DEFAULT')
 
         # Allow for case-sensitive configuration keys
         self.configp.optionxform = str
