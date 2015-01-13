@@ -196,17 +196,16 @@ class Processor:
         if config_dict is None:
             config_dict = {}
 
-        # Temporary attributes, will be deleted when function ends.
-        # We want this function to recurse on another method, which always needs access to these
-        # TODO: Is there a more pythonic way to do this?
-        self.configp = None    # load_configuration will use this to store the ConfigParser
-        self.config_files_read = []      # Need to clean this here so tests can re-load the config
-
         # Support for string arguments
         if isinstance(config_names, str):
             config_names = [config_names]
         if isinstance(config_paths, str):
             config_paths = [config_paths]
+
+        # Temporary attributes, will be deleted when function ends.
+        # We want this function to recurse on another method, which always needs access to these
+        # TODO: Is there a more pythonic way to do this?
+        self.config_files_read = []      # Need to clean this here so tests can re-load the config
 
         self.configp = ConfigParser(inline_comment_prefixes='#',
                                     interpolation=ExtendedInterpolation(),
@@ -367,14 +366,13 @@ class Processor:
             raise ValueError('Invalid configuration: plugin %s not found.' % name)
         plugin_module = spec.loader.load_module()
 
-        # First load the default settings
-        this_plugin_config = self.config['DEFAULT']
-        # Then override with module-level settings
+        this_plugin_config = {}
+
+        this_plugin_config.update(self.config['DEFAULT'])          # First load the default settings
         if name_module in self.config:
-            this_plugin_config.update(self.config[name_module])
-        # Then override with plugin-level settings
+            this_plugin_config.update(self.config[name_module])    # Then override with module-level settings
         if name in self.config:
-            this_plugin_config.update(self.config[name])
+            this_plugin_config.update(self.config[name])           # Then override with plugin-level settings
 
         # Let each plugin access its own config, and the processor instance as well
         # -- needed to e.g. access self.simulator in the simulator plugins or self.config for dumping the config file
