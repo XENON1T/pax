@@ -75,9 +75,7 @@ class BuildWaveforms(plugin.TransformPlugin):
 
             channel = occ.channel
 
-            # Check for unknown gains and undead channels
-            if channel not in self.config['gains']:
-                raise ValueError('Gain for channel %s is not specified!' % channel)
+            # Check for undead channels
             if self.config['gains'][channel] == 0:
                 if channel not in self.undead_channels:
                     if self.config['zombie_paranoia']:
