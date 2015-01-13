@@ -25,12 +25,18 @@ parser.add_argument(
     nargs='+',
     help="Name(s) of the pax configuration(s) to use."
 )
-# ...or pass in a path to your own config file:
+# ... or pass in a path to your own config file:
 parser.add_argument(
     '--config_path',
     default=[],
     nargs='+',
     help="Path(s) of the configuration file(s) to use."
+)
+# ... or load the configuration from a previous processed data file
+parser.add_argument(
+    '--redo',
+    default='',
+    help="Path of the HDF5 data file to redo. Combine with --output unless you want to overwrite..."
 )
 
 # Plotting override
@@ -57,8 +63,17 @@ parser.add_argument('--stop_after',
 
 args = parser.parse_args()
 
-# Override pax main options
-override_dict = {'pax': {}}
+# Take config from previous file
+if args.redo:
+    from pandas import HDFStore
+    import json
+    file_to_redo = core.data_file_name(args.redo)
+    store = HDFStore(file_to_redo)
+    override_dict = json.loads(store['pax_info'].iloc[0]['configuration_json'])
+    store.close()
+else:
+    override_dict = {'pax': {}}
+
 for argname, configname in (
         ('input',      'input_name'),
         ('output',     'output_name'),
