@@ -11,9 +11,11 @@ class DeleteSmallPeaks(plugin.TransformPlugin):
     """Deletes low coincidence peaks, so the low-energy peakfinder can have a crack at them"""
 
     def transform_event(self, event):
+        before = len(event.peaks)
         event.peaks = [p for p in event.peaks
                        if p.number_of_contributing_channels >= self.config['prune_if_coincidence_lower_than']
                        and p.area >= self.config['prune_if_area_lower_than']]
+        self.log.debug("Deleted %d peaks out of %d, %d left" % (before - len(event.peaks), before, len(event.peaks)))
         return event
 
 
