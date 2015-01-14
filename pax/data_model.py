@@ -44,6 +44,9 @@ class Model(object):
                 list_field_names.append(k)
         return list_field_names
 
+    def __str__(self):
+        return str(self.__dict__)
+
     def get_fields_data(self):
         """Iterator over (key, value) tuples of all user-specified fields
         """
