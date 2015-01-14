@@ -19,8 +19,9 @@ class FindSmallPeaks(plugin.TransformPlugin):
         self.filter_to_use = self.config.get('filter_to_use', None)
         self.give_up_after = self.config.get('give_up_after_peak_of_size', float('inf'))
         self.max_noise_detection_passes = self.config.get('max_noise_detection_passes', float('inf'))
-        self.make_diagnostic_plots_in = self.config.get('make_diagnostic_plots_in', None)
-        if self.make_diagnostic_plots_in is not None:
+        self.make_diagnostic_plots = self.config.get('make_diagnostic_plots', 'never')
+        self.make_diagnostic_plots_in = self.config.get('make_diagnostic_plots_in', 'small_pf_diagnostic_plots')
+        if self.make_diagnostic_plots != 'never':
             if not os.path.exists(self.make_diagnostic_plots_in):
                 os.makedirs(self.make_diagnostic_plots_in)
 
@@ -150,7 +151,8 @@ class FindSmallPeaks(plugin.TransformPlugin):
                     event.all_channel_peaks.extend(peaks)
 
                     # TODO: move to separate plugin?
-                    if self.make_diagnostic_plots_in:
+                    if self.make_diagnostic_plots == 'always' or \
+                       self.make_diagnostic_plots == 'no peaks' and not len(peaks):
                         plt.figure()
                         if self.filter_to_use is None:
                             plt.plot(w, drawstyle='steps', label='data')
