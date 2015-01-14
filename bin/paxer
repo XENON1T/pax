@@ -2,6 +2,7 @@
 """ Processor for Analyzing XENON - command line interface """
 
 import argparse
+import os
 from pax import core
 
 ##
@@ -36,7 +37,7 @@ parser.add_argument(
 parser.add_argument(
     '--redo',
     default='',
-    help="Path of the HDF5 data file to redo. Combine with --output unless you want to overwrite..."
+    help="Path of the HDF5 data file to redo."
 )
 
 # Plotting override
@@ -69,7 +70,15 @@ if args.redo:
     import json
     file_to_redo = core.data_file_name(args.redo)
     store = HDFStore(file_to_redo)
-    override_dict = json.loads(store['pax_info'].iloc[0]['configuration_json'])
+    if len(store['pax_info']) > 1:
+        print("Warning: This file contains data from several processings. Will use config from last!\n")
+    override_dict = json.loads(store['pax_info'].iloc[-1]['configuration_json'])
+    # Add _redone to output name, unless user has specified an output name
+    if not args.output:
+        redo_path, ext = os.path.splitext(args.redo)    # Remove .hdf from path
+        redo_path += '_redone'
+        print("Output path of redone processing not specified: will write to %s\n" % redo_path)
+        args.output = redo_path
     store.close()
 else:
     override_dict = {'pax': {}}
