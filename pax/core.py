@@ -80,6 +80,10 @@ class Processor:
           the same log level as the first, regardless of their configuration.  See #78.
         """
         self.config = self.load_configuration(config_names, config_paths, config_string, config_dict)
+        self.config['DEFAULT'] = self.config.get('DEFAULT', {})    # Enable empty [DEFAULT] for tests
+        if 'Why_doesnt_configparser_let_me_disable_DEFAULT' in self.config:
+            del self.config['Why_doesnt_configparser_let_me_disable_DEFAULT']
+
         self.log = self.setup_logging()
         pc = self.config['pax']
 
@@ -89,7 +93,10 @@ class Processor:
         # Start up the simulator
         # Must be done explicitly here, as plugins can rely on its presence in startup
         if 'WaveformSimulator' in self.config:
-            self.simulator = simulation.Simulator(self.config['WaveformSimulator'])
+            wvsim_config = {}
+            wvsim_config.update(self.config['DEFAULT'])
+            wvsim_config.update(self.config['WaveformSimulator'])
+            self.simulator = simulation.Simulator(wvsim_config)
         else:
             if not just_testing:
                 self.log.warning('You did not specify any configuration for the waveform simulator!\n' +
@@ -193,21 +200,21 @@ class Processor:
         if config_dict is None:
             config_dict = {}
 
-        # Temporary attributes, will be deleted when function ends.
-        # We want this function to recurse on another method, which always needs access to these
-        # TODO: Is there a more pythonic way to do this?
-        self.configp = None    # load_configuration will use this to store the ConfigParser
-        self.config_files_read = []      # Need to clean this here so tests can re-load the config
-
         # Support for string arguments
         if isinstance(config_names, str):
             config_names = [config_names]
         if isinstance(config_paths, str):
             config_paths = [config_paths]
 
+        # Temporary attributes, will be deleted when function ends.
+        # We want this function to recurse on another method, which always needs access to these
+        # TODO: Is there a more pythonic way to do this?
+        self.config_files_read = []      # Need to clean this here so tests can re-load the config
+
         self.configp = ConfigParser(inline_comment_prefixes='#',
                                     interpolation=ExtendedInterpolation(),
-                                    strict=True)
+                                    strict=True,
+                                    default_section='Why_doesnt_configparser_let_me_disable_DEFAULT')
 
         # Allow for case-sensitive configuration keys
         self.configp.optionxform = str
@@ -363,14 +370,13 @@ class Processor:
             raise ValueError('Invalid configuration: plugin %s not found.' % name)
         plugin_module = spec.loader.load_module()
 
-        # First load the default settings
-        this_plugin_config = self.config['DEFAULT']
-        # Then override with module-level settings
+        this_plugin_config = {}
+
+        this_plugin_config.update(self.config['DEFAULT'])          # First load the default settings
         if name_module in self.config:
-            this_plugin_config.update(self.config[name_module])
-        # Then override with plugin-level settings
+            this_plugin_config.update(self.config[name_module])    # Then override with module-level settings
         if name in self.config:
-            this_plugin_config.update(self.config[name])
+            this_plugin_config.update(self.config[name])           # Then override with plugin-level settings
 
         # Let each plugin access its own config, and the processor instance as well
         # -- needed to e.g. access self.simulator in the simulator plugins or self.config for dumping the config file
