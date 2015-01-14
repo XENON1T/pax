@@ -124,6 +124,10 @@ class Processor:
             if not isinstance(plugin_names[plugin_group_name], list):
                 plugin_names[plugin_group_name] = [plugin_names[plugin_group_name]]
 
+            # Ensure each plugin has a configuration
+            for plugin_name in plugin_names[plugin_group_name]:
+                self.config[plugin_name] = self.config.get(plugin_name, {})
+
         # Separate input and actions (which for now includes output).
         # For the plugin groups which are action plugins, get all names, flatten them
         action_plugin_names = list(itertools.chain(*[plugin_names[g]
@@ -137,10 +141,7 @@ class Processor:
 
         if 'output_name' in pc and 'output' in pc['plugin_group_names']:
             self.log.debug('User-defined output override: %s' % pc['output_name'])
-            # Hmmz, there can be several output plugins, some don't have a configuration...
             for o in plugin_names['output']:
-                if o not in self.config:
-                    self.config[o] = {}
                 self.config[o]['output_name'] = pc['output_name']
 
         self.plugin_search_paths = self.get_plugin_search_paths(pc.get('plugin_paths', None))
