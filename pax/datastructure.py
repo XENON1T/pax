@@ -194,12 +194,23 @@ class Occurrence(Model):
     channel = 0
 
     #: Maximum amplitude (in pe/bin; float)
-    #: Will remain None if channel's gain is 0
-    height = 0.0
+    #: Will remain nan if channel's gain is 0
+    #: baseline_correction, if any, has been substracted
+    # TODO: may not be equal to actual occurrence height,
+    # baseline correction is computed on 2-sample filtered wv. :-(
+    height = float('nan')
 
-    #: Baseline (in ADC counts; float)
-    # TODO: in small peakfinding, an improved baseline estimate is computed -- maybe we should store that too?
-    digitizer_baseline_used = 0.0
+    #: Noise sigma for this occurrence
+    #: Will remain nan unless processed by smallpeakfinder
+    noise_sigma = float('nan')
+
+    #: Baseline (in ADC counts, but float!)
+    #: Will remain nan if channel's gain is 0
+    digitizer_baseline_used = float('nan')
+
+    #: Baseline correction computed by FindSmallpeaks (in pe/bin)
+    #: Will remain nan if channel is not processed by FindSmallPeaks
+    baseline_correction = float('nan')
 
     #: Raw wave data (in ADC counts, NOT pe/bin!; numpy array of int16)
     raw_data = np.array([], np.int16)

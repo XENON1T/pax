@@ -77,6 +77,10 @@ class FindSmallPeaks(plugin.TransformPlugin):
                     if event.is_channel_bad[channel]:
                         continue
 
+                    # Don't consider dead channels
+                    if self.config['gains'][channel] == 0:
+                        continue
+
                     # Retrieve the waveform from channel_waveforms
                     w = event.channel_waveforms[channel, start: stop + 1]
 
@@ -91,6 +95,8 @@ class FindSmallPeaks(plugin.TransformPlugin):
                     noise_sigma = self.initial_noise_sigma
                     old_raw_peaks = []
                     pass_number = 0
+                    baseline_correction_delta = 0
+                    baseline_correction = 0
                     while True:
                         # Determine the peaks based on the noise level
                         # Can't just use w > self.min_sigma * noise_sigma here,
@@ -107,7 +113,9 @@ class FindSmallPeaks(plugin.TransformPlugin):
 
                         # Correct the baseline
                         # -- BuildWaveforms can get it wrong if there is a pe in the starting samples
-                        w -= w[self.samples_without_peaks(w, raw_peaks)].mean()
+                        baseline_correction_delta += w[self.samples_without_peaks(w, raw_peaks)].mean()
+                        w -= baseline_correction_delta
+                        baseline_correction += baseline_correction_delta
 
                         # Determine the new noise_sigma
                         noise_sigma = self.noise_determination(w[self.samples_without_peaks(w, raw_peaks)])
@@ -122,6 +130,11 @@ class FindSmallPeaks(plugin.TransformPlugin):
                             break
 
                         pass_number += 1
+
+                    # Update occurrence data
+                    oc.noise_sigma = noise_sigma
+                    oc.baseline_correction = baseline_correction
+                    oc.height = oc.height - baseline_correction
 
                     # Update the noise occurrence count
                     if len(raw_peaks) == 0:
