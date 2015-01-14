@@ -11,7 +11,7 @@ is more under control.
 from pax import core, units
 
 print("Processing the real data...")
-core.Processor(config_names=['XENON100', 'newDSP'], config_dict={
+core.Processor(config_names=['XENON100'], config_dict={
     'pax' : {
         'input_name'  :     'xe100_120402_2000_000000.xed',
         'output_name' :     'xe100_120402_2000_000000',
@@ -32,7 +32,6 @@ for simulation_name in ('fake_s1s', 'fake_s2s'):
     core.Processor(config_names=['XENON100', 'newDSP'], config_dict={
         'pax' : {
             'input_name'  :     simulation_name + '.csv',
-            'output_name' :     simulation_name,
             'input' :           'WaveformSimulator.WaveformSimulatorFromCSV',
             'output':           ['Pandas.WritePandas','Plotting.PlotEventSummary'],
         },
@@ -43,6 +42,7 @@ for simulation_name in ('fake_s1s', 'fake_s2s'):
 			'drift_velocity_gas': 3*units.mm/units.us,
         },
         'Pandas.WritePandas' : {
+			'output_name' :     simulation_name,
             'output_format': 'hdf',
         },
 		'Plotting.PlotEventSummary' : {
