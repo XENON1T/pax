@@ -114,8 +114,8 @@ def free_regions(event, detector='tpc'):
         detector: give free regions wrt this detector
     :returns list of 2-tuples (left index, right index) of regions where no peaks have been found
     """
-    lefts = [0] + [p.left for p in event.peaks if p.detector is detector]
-    rights = [p.right for p in event.peaks if p.detector is detector] + [event.length() - 1]
+    lefts = [0] + [p.left for p in event.peaks if p.detector == detector]
+    rights = [p.right for p in event.peaks if p.detector == detector] + [event.length() - 1]
     # Assuming each peak's right > left, we can simply split sorted(lefts+rights) in pairs:
     return chunk_in_ntuples(sorted(lefts + rights), n=2)
 
