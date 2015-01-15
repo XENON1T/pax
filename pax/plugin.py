@@ -110,6 +110,8 @@ class TransformPlugin(BasePlugin):
 
     @BasePlugin._timeit
     def process_event(self, event):
+        self.log = logging.getLogger('%s (event %d)' % (self.name, event.event_number))
+
         if self.has_shut_down:
             raise RuntimeError("%s was asked to process an event, but it has already shut down!" % self.name)
 
@@ -139,6 +141,7 @@ class OutputPlugin(BasePlugin):
 
     @BasePlugin._timeit
     def process_event(self, event):
+        self.log = logging.getLogger('%s (event %d)' % (self.name, event.event_number))
         if self.has_shut_down:
             raise RuntimeError("%s was asked to process an event, but it has already shut down!" % self.name)
         self.write_event(event)
