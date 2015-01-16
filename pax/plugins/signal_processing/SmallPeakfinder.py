@@ -114,7 +114,7 @@ class FindSmallPeaks(plugin.TransformPlugin):
 
                         # Correct the baseline
                         # -- BuildWaveforms can get it wrong if there is a pe in the starting samples
-                        baseline_correction_delta += w[self.samples_without_peaks(w, raw_peaks)].mean()
+                        baseline_correction_delta = w[self.samples_without_peaks(w, raw_peaks)].mean()
                         w -= baseline_correction_delta
                         baseline_correction += baseline_correction_delta
 
