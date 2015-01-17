@@ -74,10 +74,6 @@ class FindSmallPeaks(plugin.TransformPlugin):
                     if channel not in self.config['channels_in_detector'][detector]:
                         continue
 
-                    # Maybe some channels have already been marked as bad (configuration?), don't consider these.
-                    if event.is_channel_bad[channel]:
-                        continue
-
                     # Don't consider dead channels
                     if self.config['gains'][channel] == 0:
                         continue
