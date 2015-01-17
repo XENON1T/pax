@@ -13,11 +13,11 @@ import math
 
 import numpy as np
 
+from pax import units
 # To turn off type-checking for all models, replace the line below with
 # from pax.data_model import Model
 # This will improve performance a bit (+ ~10% running time), but use at your own risk
 from pax.data_model import StrictModel as Model
-from pax import units
 
 
 class ReconstructedPosition(Model):
@@ -145,9 +145,13 @@ class Peak(Model):
     does_channel_have_noise = np.array([], dtype=np.bool)
 
     @property
+    def noise_channels(self):
+        return np.where(self.does_channel_have_noise)[0]
+
+    @property
     def number_of_noise_channels(self):
-        """ Number of PMTS which see something significant (depends on settings) """
-        return len(self.contributing_channels)
+        """ Number of channels which have noise during this peak """
+        return len(self.noise_channels)
 
     #: Variables indicating width of peak
     mean_absolute_deviation = 0.0
@@ -163,8 +167,9 @@ class SumWaveform(Model):
 
     #: Name of the filter used (or 'none')
     name_of_filter = 'none'
-    name = 'none'  #: e.g. top
-    detector = 'none'  #: e.g. tpc or veto
+    #: Name of this sum waveform
+    name = 'none'
+    detector = 'none'  #: Name of the detector this waveform belongs to (e.g. tpc or veto)
 
     #: Array of PMT numbers included in this waveform
     channel_list = np.array([], dtype=np.uint16)
@@ -201,7 +206,7 @@ class Occurrence(Model):
     height = float('nan')
 
     #: Noise sigma for this occurrence
-    #: Will remain nan unless processed by smallpeakfinder
+    #: Will remain nan unless occurrence is processed by smallpeakfinder
     noise_sigma = float('nan')
 
     #: Baseline (in ADC counts, but float!)
@@ -308,10 +313,9 @@ class Event(Model):
         # Start time is mandatory, so it is not in kwargs
         kwargs['start_time'] = start_time
 
-        # Micromodels' init must be called first, else we can't store attributes
+        # Model's init must be called first, else we can't store attributes
         # This will store all of the kwargs as attrs
         # We don't pass length, it's not an attribute that can be set
-        # (although it seems nothing bad happens if we do)
         super().__init__(**{k: v for k, v in kwargs.items() if k != 'length'})
 
         # Cheat to init stop_time from length and duration
@@ -323,7 +327,7 @@ class Event(Model):
                              "pass either stop_time or length and sample_duration")
 
         # Initialize numpy arrays -- need to have n_channels and self.length
-        # This is the reason for having an __init__ in the first place
+        # This is the main reason for having Event.__init__
         self.channel_waveforms = np.zeros((n_channels, self.length()))
         self.is_channel_bad = np.zeros(n_channels, dtype=np.bool)
 
