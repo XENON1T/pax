@@ -154,6 +154,8 @@ class Peak(Model):
         return len(self.noise_channels)
 
     #: Variables indicating width of peak
+
+    #: Mean absolute deviation of photon arrival times (in ns)
     mean_absolute_deviation = 0.0
     # standard_deviation = 0.0
     # half_area_range = 0.0

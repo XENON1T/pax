@@ -373,7 +373,7 @@ class PlotChannelWaveforms2D(PlotBase):
             plt.scatter([(0.5 + p.index_of_maximum) * time_scale],
                         [0.5 + p.channel],
                         c=(color_factor, 0, (1 - color_factor)),
-                        s=10 * p.area,
+                        s=10 * min(10, p.area),
                         edgecolor=(0.5 * color_factor, 0, 0.5 * (1 - color_factor)),
                         alpha=(0.1 if event.is_channel_bad[p.channel] else 1.0))
 

@@ -63,8 +63,8 @@ class ClusterSmallPeaks(plugin.TransformPlugin):
                     # Contributing channels are in the detector and have an spe
                     # (not in a bad channel, but those spes have already been filtered out)
                     channels = np.arange(self.config['n_channels'])
-                    peak.does_channel_contribute = (np.in1d(channels,
-                                                            self.config['channels_in_detector'][detector])) & \
+                    peak.does_channel_contribute = \
+                        (np.in1d(channels, self.config['channels_in_detector'][detector])) & \
                         (np.in1d(channels, [s.channel for s in peak.channel_peaks]))
 
                     if peak.number_of_contributing_channels == 0:
@@ -128,11 +128,11 @@ class AdHocClassification(plugin.TransformPlugin):
             if peak.type != 'unknown':
                 continue
 
-            if peak.mean_absolute_deviation < 10:
+            if peak.mean_absolute_deviation < 60:
                 peak.type = 's1'
                 continue
 
-            if peak.number_of_contributing_channels >= 5:
+            elif peak.mean_absolute_deviation > 100 and peak.area > 8:
                 peak.type = 's2'
                 continue
 

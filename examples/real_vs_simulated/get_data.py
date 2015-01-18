@@ -29,7 +29,7 @@ core.Processor(config_names=['XENON100'], config_dict={
 
 print("Simulating some fake data...")
 for simulation_name in ('fake_s1s', 'fake_s2s'):
-    core.Processor(config_names=['XENON100', 'newDSP'], config_dict={
+    core.Processor(config_names=['XENON100'], config_dict={
         'pax' : {
             'input_name'  :     simulation_name + '.csv',
             'input' :           'WaveformSimulator.WaveformSimulatorFromCSV',
