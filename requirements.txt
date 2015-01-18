@@ -9,3 +9,4 @@ scipy>=0.14.0
 tqdm                 # Progress bar library
 prettytable          # Timing report formatting
 pandas               # Used for various I/O stuff
+numba
