@@ -92,7 +92,6 @@ class FindSmallPeaks(plugin.TransformPlugin):
                     noise_sigma = self.initial_noise_sigma
                     old_raw_peaks = []
                     pass_number = 0
-                    baseline_correction_delta = 0
                     baseline_correction = 0
                     while True:
                         # Determine the peaks based on the noise level
@@ -104,7 +103,6 @@ class FindSmallPeaks(plugin.TransformPlugin):
                             # No change in peakfinding, previous noise level is still valid
                             # That means there's no point in repeating peak finding either, and we can just:
                             break
-                            # This saves about 25% of runtime
                             # You can't break if you find no peaks on the first pass:
                             # maybe the estimated noise level was too high
 
@@ -115,7 +113,8 @@ class FindSmallPeaks(plugin.TransformPlugin):
                         baseline_correction += baseline_correction_delta
 
                         # Determine the new noise_sigma
-                        noise_sigma = self.noise_determination(w[self.samples_without_peaks(w, raw_peaks)])
+                        # noise_sigma = self.noise_determination(w[self.samples_without_peaks(w, raw_peaks)])
+                        noise_sigma = utils.fast_std(w[self.samples_without_peaks(w, raw_peaks)])
 
                         old_raw_peaks = raw_peaks
                         if pass_number >= self.max_noise_detection_passes:
@@ -196,16 +195,16 @@ class FindSmallPeaks(plugin.TransformPlugin):
         Peak boundaries are last samples above noise_sigma
         :param w: waveform to check for peaks
         :param noise_sigma: noise level
-        :return: peaks as list of (left_index, max_index, right_index) tuples
+        :return: peaks as list of (left_index, right_index) tuples
         """
         peaks = []
+        threshold = noise_sigma * self.min_sigma
 
         for left, right in utils.intervals_where(w > noise_sigma):
-            max_idx = left + np.argmax(w[left:right + 1])
-            height = w[max_idx]
-            if height < noise_sigma * self.min_sigma:
-                continue
-            peaks.append((left, right))
+            # No point in returning the max index: have to recalculate in UNfiltered waveform for storage
+            if utils.first_above_threshold(w[left:right + 1], threshold) is not None:
+                peaks.append((left, right))
+
         return peaks
 
     def samples_without_peaks(self, w, peaks):
