@@ -98,7 +98,6 @@ class FindSmallPeaks(plugin.TransformPlugin):
                         # Can't just use w > self.min_sigma * noise_sigma here,
                         # want to extend peak bounds to noise_sigma
                         raw_peaks = self.find_peaks(w, noise_sigma)
-                        # raw_peaks = _find_peaks(w, noise_sigma, self.min_sigma * noise_sigma)
 
                         if pass_number != 0 and raw_peaks == old_raw_peaks:
                             # No change in peakfinding, previous noise level is still valid
@@ -206,11 +205,6 @@ class FindSmallPeaks(plugin.TransformPlugin):
             if utils.first_above_threshold(w[left:right + 1], threshold) is not None:
                 peaks.append((left, right))
 
-        # Verifies correctness of numba find_peaks
-        # peaks2 = _find_peaks(w, noise_sigma, threshold)
-        # if not(list(map(list, peaks)) == peaks2):
-        #     print(peaks, peaks2, len(w)-1, w[-10:] > noise_sigma)
-
         return peaks
 
     def samples_without_peaks(self, w, peaks):
@@ -219,45 +213,3 @@ class FindSmallPeaks(plugin.TransformPlugin):
         for p in peaks:
             not_in_peak[p[0]:p[1] + 1] = False
         return not_in_peak
-
-
-# Numba find_peaks: performance improves very little (2% plugin runtime)
-# from numba import autojit
-# @autojit
-# def _find_peaks(w, noise_sigma, threshold):
-#     """Return intervals > noise_sigma which exceed threshold somewhere"""
-#
-#     in_candidate_interval = False
-#     current_interval_passed_test = False
-#     current_interval = [0, 0]
-#     peaks = []
-#
-#     for i, x in enumerate(w):
-#
-#         if not in_candidate_interval and x > noise_sigma:
-#             # Start of candidate interval
-#             in_candidate_interval = True
-#             current_interval[0] = i
-#
-#         # This must be if, not else: an interval can cross threshold in start sample
-#         if in_candidate_interval:
-#
-#             if x > threshold:
-#                 current_interval_passed_test = True
-#
-#             if x < noise_sigma:
-#                 # End of candidate interval
-#                 if current_interval_passed_test:
-#                     current_interval[1] = i - 1
-#                     peaks.append(current_interval)
-#                 in_candidate_interval = False
-#                 current_interval_passed_test = False
-#                 current_interval = [0, 0]
-#
-#     # Add last interval, if it didn't end
-#     # TODO: Hmm, this should raise a warning...
-#     if in_candidate_interval and current_interval_passed_test:
-#         current_interval[1] = len(w) - 1
-#         peaks.append(current_interval)
-#
-#     return peaks
