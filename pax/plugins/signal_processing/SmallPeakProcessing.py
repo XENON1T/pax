@@ -48,12 +48,12 @@ class ClusterSmallPeaks(plugin.TransformPlugin):
                 # Each cluster becomes a peak
                 for ci in cluster_indices:
                     peak = datastructure.Peak({
-                        'channel_peaks': list(spes[[ci]]),
-                        'detector':      detector,
+                        'channel_peaks':    spes[[ci]].tolist(),
+                        'detector':         detector,
+                        'area_per_channel': np.zeros(self.config['n_channels']),
                     })
                     peak.left = min([s.left for s in peak.channel_peaks])
                     peak.right = max([s.right for s in peak.channel_peaks])
-                    peak.area = sum([s.area for s in peak.channel_peaks])
 
                     # For backwards compatibility with plotting code
                     highest_peak_index = np.argmax([s.height for s in peak.channel_peaks])
@@ -71,11 +71,11 @@ class ClusterSmallPeaks(plugin.TransformPlugin):
                         raise RuntimeError(
                             "Every peak should have at least one contributing channel... what's going on?")
 
-                    # Compute the area per pmt -- for the contributing channels only!
-                    peak.area_per_channel = np.zeros(len(channels))
-                    for ch in channels:
-                        if peak.does_channel_contribute[ch]:
-                            peak.area_per_channel[ch] = sum([s.area for s in peak.channel_peaks])
+                    # Compute the area per pmt
+                    for s in peak.channel_peaks:
+                        peak.area_per_channel[s.channel] += s.area
+                    peak.area = np.sum(peak.area_per_channel)
+
 
                     # Find how many channels show some data, but no spe
                     coincident_occurrences = event.get_occurrences_between(peak.left, peak.right, strict=False)
