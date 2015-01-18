@@ -39,14 +39,16 @@ class ClusterSmallPeaks(plugin.TransformPlugin):
 
                 # Cluster the single-pes in groups separated by >= self.cluster_separation_length
                 cluster_indices = utils.cluster_by_diff([s.index_of_maximum * self.dt for s in spes],
-                                                        self.cluster_separation_length,
-                                                        return_indices=True)
+                                                        self.cluster_separation_length, return_indices=True)
                 self.log.debug("Made %s clusters" % len(cluster_indices))
+
+                # Make spes a numpy array, so we can do list-based indexing
+                spes = np.array(spes)
 
                 # Each cluster becomes a peak
                 for ci in cluster_indices:
                     peak = datastructure.Peak({
-                        'channel_peaks': [s for i, s in enumerate(spes) if i in ci],
+                        'channel_peaks': list(spes[[ci]]),
                         'detector':      detector,
                     })
                     peak.left = min([s.left for s in peak.channel_peaks])
