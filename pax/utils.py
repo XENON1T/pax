@@ -24,29 +24,20 @@ def intervals_where(x):
     """Given numpy array of bools, return list of (left, right) inclusive bounds of all intervals of True
     """
     # In principle, boundaries are just points of change...
-    becomes_true, becomes_false = where_changes(x, report_first_index_if=True)
+    start_points, end_points = where_changes(x, report_first_index_if=True)
 
     # ... except that the right boundaries are 1 index BEFORE the array becomes False ...
-    assert 0 not in becomes_false     # Would indicate a bad bug in where_changes
-    boundaries = list(becomes_true) + list(becomes_false - 1)
-    boundaries.sort()
+    end_points -= 1
 
-    # ... and if the last index is True, we must add it once more manually:
-    #   - if the second to last index is True, it is not a point of change, so must be added
-    #   - if the second to last index is False, it is a lone interval, so must be in boundaries twice
-    # [True] would cause trouble here, but we've removed it already
+    # ... and if the last index is True, it is another endpoint
     if x[-1]:
-        boundaries.append(len(x) - 1)
+        end_points = np.concatenate((end_points, np.array([len(x) - 1])))
 
-    # If some bug causes a non-even number of boundaries, better catch it here
-    if len(boundaries) % 2 != 0:
-        print(sorted(boundaries), x, x[-1], len(x) - 1)
-        raise RuntimeError("Number of boundaries is not even: can't return intervals!")
+    return list(zip(
+        start_points.tolist(),
+        end_points.tolist()))
 
-    # Assuming each interval's left <= right, we split sorted(boundaries) into pairs to get our result
-    return chunk_in_ntuples(sorted(boundaries), n=2)
-
-    # I've been looking for a proper numpy solution. It should be:
+    # I've been looking for a proper numpy solution. It should be something like:
     # return np.vstack((cross_above, cross_below)).T
     # But it appears to make the processor run slower! (a tiny bit)
     # Maybe because we're dealing with many small arrays rather than big ones?
@@ -68,13 +59,14 @@ def chunk_in_ntuples(iterable, n, fillvalue=None):
     # return np.reshape(iterable, (-1,n))
 
 
-def where_changes(x, report_first_index_if=None):
+def where_changes(x, report_first_index_if=None, separate_results=True):
     """Return indices where boolean array changes value.
     :param x: ndarray or list of bools
     :param report_first_index_if: When to report the first index in x.
         If True,  0 is reported (in first returned array)  if it is true.
         If False, 0 is reported (in second returned array) if it is false.
         If None, 0 is never reported. (Default)
+    :param separate_results: If True (default), see returns. If False, returns single array of change points instead.
     :returns: 2-tuple of integer ndarrays (becomes_true, becomes_false):
         becomes_true:  indices where x is True,  and was False one index before
         becomes_false: indices where x is False, and was True  one index before
@@ -91,18 +83,28 @@ def where_changes(x, report_first_index_if=None):
     # It can never be a point of difference, so we remove it:
     points_of_difference[0] = False
 
-    # Now we can find where the array becomes True or False
-    becomes_true = np.sort(np.where(points_of_difference & x)[0])
-    becomes_false = np.sort(np.where(points_of_difference & (True ^ x))[0])
+    if separate_results:
+        # Now we can find where the array becomes True or False
+        # Automatically come out sorted
+        becomes_true = np.where(points_of_difference & x)[0]
+        becomes_false = np.where(points_of_difference & (True ^ x))[0]
 
-    # In case the user set report_first_index_if, we have to manually add 0 if it is True or False
-    # Can't say x[0] is True, it is a numpy bool...
-    if report_first_index_if is True and x[0]:
-        becomes_true = np.concatenate((np.array([0]), becomes_true))
-    if report_first_index_if is False and not x[0]:
-        becomes_false = np.concatenate((np.array([0]), becomes_false))
+        # In case the user set report_first_index_if, we have to manually add 0 if it is True or False
+        # Can't say x[0] is True, it is a numpy bool...
+        if report_first_index_if is True and x[0]:
+            becomes_true = np.concatenate((np.array([0]), becomes_true))
+        if report_first_index_if is False and not x[0]:
+            becomes_false = np.concatenate((np.array([0]), becomes_false))
 
-    return becomes_true, becomes_false
+        return becomes_true, becomes_false
+
+    else:
+        # Faster, simpler, saves user a concatenate + sort
+        # Not actually used I believe... but is tested.
+        if report_first_index_if is not None and report_first_index_if == x[0]:
+            points_of_difference[0] = True
+
+        return np.where(points_of_difference)[0]
 
 
 ##

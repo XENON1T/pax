@@ -6,60 +6,75 @@ from pax import utils
 
 class TestDSPUtils(unittest.TestCase):
 
-    def test_where_changes(self):
-        # Tests without report_first_index
+    def test_where_changes_without_report_first_index(self):
         for example, result in (
-            # example                                    #b_f      #b_t
-                (np.array([0, 1, 2, 0, 4, -1, 60, 700, -4]),  ([3, 5, 8], [1, 4, 6])),
-                (np.array([1, 1, 2, 0, 4, -1, 60, 700, -4]),  ([3, 5, 8], [4, 6])),
-                (np.array([1, 0, 2, 3, 4, -1, 60, 700, -4]),  ([1, 5, 8], [2, 6])),
-                (np.array([1, 0, 2, 3, 4, -1, 60, 700, 800]), ([1, 5],    [2, 6])),
-                (np.array([0, 0, 2, 3, 4, -1, 60, 700, 800]), ([5],       [2, 6])),
+            # example                           #b_f           #b_t
+            ([0, 1, 2, 0, 4, -1, 60, 700, -4],  ([3, 5, 8], [1, 4, 6])),
+            ([1, 1, 2, 0, 4, -1, 60, 700, -4],  ([3, 5, 8], [4, 6])),
+            ([1, 0, 2, 3, 4, -1, 60, 700, -4],  ([1, 5, 8], [2, 6])),
+            ([1, 0, 2, 3, 4, -1, 60, 700, 800], ([1, 5],    [2, 6])),
+            ([0, 0, 2, 3, 4, -1, 60, 700, 800], ([5],       [2, 6])),
+            ([1],                               ([],        [])),
+            ([0],                               ([],        [])),
+            ([0, 0],                            ([],        [])),
+            ([1, 1],                            ([],        [])),
+            ([0, 1, 1],                         ([],        [1])),
         ):
-            b_t, b_f = utils.where_changes(example > 0)
+            # Separate results
+            b_t, b_f = utils.where_changes(np.array(example) > 0)
             self.assertEqual(list(b_f), result[0])
             self.assertEqual(list(b_t), result[1])
 
-        b_t, b_f = utils.where_changes([True])
-        self.assertEqual(list(b_f), [])
-        self.assertEqual(list(b_t), [])
+            # Not separate results
+            it_was = list(utils.where_changes(np.array(example) > 0, separate_results=False))
+            it_should_be = sorted(result[0] + result[1])
+            self.assertEqual(it_was, it_should_be)
 
-        b_t, b_f = utils.where_changes([False])
-        self.assertEqual(list(b_f), [])
-        self.assertEqual(list(b_t), [])
-
-    def test_where_changes_with_report_first_index(self):
+    def test_where_changes_with_report_first_index_false(self):
         for example, result in (
-            # example                                    #b_f        #b_t
-                (np.array([0, 1, 2, 0, 4, -1, 60, 700, -4]),  ([3, 5, 8], [1, 4, 6])),
-                (np.array([1, 1, 2, 0, 4, -1, 60, 700, -4]),  ([3, 5, 8], [0, 4, 6])),
-                (np.array([1, 0, 2, 3, 4, -1, 60, 700, -4]),  ([1, 5, 8], [0, 2, 6])),
-                (np.array([1, 0, 2, 3, 4, -1, 60, 700, 800]), ([1, 5],    [0, 2, 6])),
-                (np.array([0, 0, 2, 3, 4, -1, 60, 700, 800]), ([5],       [2, 6])),
+            # example                           #b_f           #b_t
+            ([0, 1, 2, 0, 4, -1, 60, 700, -4],  ([0, 3, 5, 8], [1, 4, 6])),
+            ([1, 1, 2, 0, 4, -1, 60, 700, -4],  ([3, 5, 8],    [4, 6])),
+            ([1, 0, 2, 3, 4, -1, 60, 700, -4],  ([1, 5, 8],    [2, 6])),
+            ([1, 0, 2, 3, 4, -1, 60, 700, 800], ([1, 5],       [2, 6])),
+            ([0, 0, 2, 3, 4, -1, 60, 700, 800], ([0, 5],       [2, 6])),
+            ([1],                               ([],           [])),
+            ([0],                               ([0],          [])),
+            ([0, 0],                            ([0],          [])),
+            ([1, 1],                            ([],           [])),
+            ([0, 1, 1],                         ([0],          [1])),
         ):
-            b_t, b_f = utils.where_changes(example > 0, report_first_index_if=True)
+            b_t, b_f = utils.where_changes(np.array(example) > 0, report_first_index_if=False)
             self.assertEqual(list(b_f), result[0])
             self.assertEqual(list(b_t), result[1])
 
-        b_t, b_f = utils.where_changes([True], report_first_index_if=True)
-        self.assertEqual(list(b_f), [])
-        self.assertEqual(list(b_t), [0])
+            it_was = list(utils.where_changes(np.array(example) > 0, report_first_index_if=False,
+                                              separate_results=False))
+            it_should_be = sorted(result[0] + result[1])
+            self.assertEqual(it_was, it_should_be)
 
-        b_t, b_f = utils.where_changes([False], report_first_index_if=True)
-        self.assertEqual(list(b_f), [])
-        self.assertEqual(list(b_t), [])
+    def test_where_changes_with_report_first_index_true(self):
+        for example, result in (
+            # example                          #b_f        #b_t
+            ([0, 1, 2, 0, 4, -1, 60, 700, -4],  ([3, 5, 8], [1, 4, 6])),
+            ([1, 1, 2, 0, 4, -1, 60, 700, -4],  ([3, 5, 8], [0, 4, 6])),
+            ([1, 0, 2, 3, 4, -1, 60, 700, -4],  ([1, 5, 8], [0, 2, 6])),
+            ([1, 0, 2, 3, 4, -1, 60, 700, 800], ([1, 5],    [0, 2, 6])),
+            ([0, 0, 2, 3, 4, -1, 60, 700, 800], ([5],       [2, 6])),
+            ([1],                               ([],        [0])),
+            ([0],                               ([],        [])),
+            ([0, 0],                            ([],        [])),
+            ([1, 1],                            ([],        [0])),
+            ([0, 1, 1],                         ([],        [1])),
+        ):
+            b_t, b_f = utils.where_changes(np.array(example) > 0, report_first_index_if=True)
+            self.assertEqual(list(b_f), result[0])
+            self.assertEqual(list(b_t), result[1])
 
-        b_t, b_f = utils.where_changes([False, False], report_first_index_if=True)
-        self.assertEqual(list(b_f), [])
-        self.assertEqual(list(b_t), [])
-
-        b_t, b_f = utils.where_changes([True, True], report_first_index_if=True)
-        self.assertEqual(list(b_f), [])
-        self.assertEqual(list(b_t), [0])
-
-        b_t, b_f = utils.where_changes([False, True, True], report_first_index_if=True)
-        self.assertEqual(list(b_f), [])
-        self.assertEqual(list(b_t), [1])
+            it_was = list(utils.where_changes(np.array(example) > 0, report_first_index_if=True,
+                                              separate_results=False))
+            it_should_be = sorted(result[0] + result[1])
+            self.assertEqual(it_was, it_should_be)
 
     def test_intervals_where(self):
         self.assertEqual(utils.intervals_where([True]), [(0, 0)])

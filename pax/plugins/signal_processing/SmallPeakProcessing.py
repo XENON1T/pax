@@ -76,7 +76,6 @@ class ClusterSmallPeaks(plugin.TransformPlugin):
                         peak.area_per_channel[s.channel] += s.area
                     peak.area = np.sum(peak.area_per_channel)
 
-
                     # Find how many channels show some data, but no spe
                     coincident_occurrences = event.get_occurrences_between(peak.left, peak.right, strict=False)
                     peak.does_channel_have_noise = (np.invert(peak.does_channel_contribute)) & \
