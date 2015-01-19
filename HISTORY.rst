@@ -7,7 +7,7 @@ History
 2.0.0 (2015-01-0?)
 ------------------
 
- * Core changes
+ * Changes to core
  
    * Cleanup of datastructure (see #80 and #81)
    * Most of core wrapped in Processor class
