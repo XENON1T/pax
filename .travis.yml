@@ -6,6 +6,12 @@ python:
   - "3.4"
 #  - "pypy"
 
+notifications:
+  email:
+    - ctunnell@nikhef.nl
+    - jaalbers@nikhef.nl
+    - bartp@nikhef.nl
+
 install:
   - sudo apt-get update
   # You may want to periodically update this, although the conda update
