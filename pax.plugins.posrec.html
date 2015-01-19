@@ -54,10 +54,10 @@
 <p>Neural network reconstruction algorithms</p>
 <dl class="class">
 <dt id="pax.plugins.posrec.NeuralNet.PosRecNeuralNet">
-<em class="property">class </em><tt class="descclassname">pax.plugins.posrec.NeuralNet.</tt><tt class="descname">PosRecNeuralNet</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/posrec/NeuralNet.html#PosRecNeuralNet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.posrec.NeuralNet.PosRecNeuralNet" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.plugins.posrec.NeuralNet.</tt><tt class="descname">PosRecNeuralNet</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/posrec/NeuralNet.html#PosRecNeuralNet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.posrec.NeuralNet.PosRecNeuralNet" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></tt></a></p>
 <p>Please write one sentence here</p>
-<p>Please write on 3 paragraphs here here here here here here here 
+<p>Please write on 3 paragraphs here here here here here here here
 here here here here here here here here here here here here here
 here</p>
 <p>and here here here here here here here here here here here here
@@ -85,12 +85,59 @@ here</p>
 </dd></dl>
 
 </div>
+<div class="section" id="module-pax.plugins.posrec.PosRecChiSquareGamma">
+<span id="pax-plugins-posrec-posrecchisquaregamma-module"></span><h2>pax.plugins.posrec.PosRecChiSquareGamma module<a class="headerlink" href="#module-pax.plugins.posrec.PosRecChiSquareGamma" title="Permalink to this headline">¶</a></h2>
+<p>Position reconstruction algorithm using chi square gamma distribution minimization</p>
+<dl class="class">
+<dt id="pax.plugins.posrec.PosRecChiSquareGamma.PosRecChiSquareGamma">
+<em class="property">class </em><tt class="descclassname">pax.plugins.posrec.PosRecChiSquareGamma.</tt><tt class="descname">PosRecChiSquareGamma</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/posrec/PosRecChiSquareGamma.html#PosRecChiSquareGamma"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.posrec.PosRecChiSquareGamma.PosRecChiSquareGamma" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></tt></a></p>
+<p>Position reconstruction by minimization of chi square gamma function.</p>
+<p>Class to reconstruct S2&#8217;s x, y and chi square gamma
+(as &#8216;goodness-of-fit&#8217; parameter) using the S2 signal in top PMTs, simulated
+LCE map, gains and QE&#8217;s.</p>
+<p>Additionally calculate chi square gamma for reconstructed positions by other
+algorithms.</p>
+<dl class="method">
+<dt id="pax.plugins.posrec.PosRecChiSquareGamma.PosRecChiSquareGamma.function_chi_square_gamma">
+<tt class="descname">function_chi_square_gamma</tt><big>(</big><em>position</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/posrec/PosRecChiSquareGamma.html#PosRecChiSquareGamma.function_chi_square_gamma"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.posrec.PosRecChiSquareGamma.PosRecChiSquareGamma.function_chi_square_gamma" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return Chi Square Gamma value for position x,y</p>
+<p>This function is passed to the minimizer, the lowest
+function value will yield the reconstructed position</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.posrec.PosRecChiSquareGamma.PosRecChiSquareGamma.shutdown">
+<tt class="descname">shutdown</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/posrec/PosRecChiSquareGamma.html#PosRecChiSquareGamma.shutdown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.posrec.PosRecChiSquareGamma.PosRecChiSquareGamma.shutdown" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.posrec.PosRecChiSquareGamma.PosRecChiSquareGamma.startup">
+<tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/posrec/PosRecChiSquareGamma.html#PosRecChiSquareGamma.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.posrec.PosRecChiSquareGamma.PosRecChiSquareGamma.startup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initialize reconstruction algorithm</p>
+<p>Determine which PMTs to use for reconstruction.
+Load LCE maps, gains and QE&#8217;s</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.posrec.PosRecChiSquareGamma.PosRecChiSquareGamma.transform_event">
+<tt class="descname">transform_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/posrec/PosRecChiSquareGamma.html#PosRecChiSquareGamma.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.posrec.PosRecChiSquareGamma.PosRecChiSquareGamma.transform_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reconstruct the position of S2s in an event.</p>
+<p>For each S2 peak, append a chi_square_gamma value and ndf to existing
+ReconstructedPosition objects.
+Secondly minimize and find the minimum chi_square_gamma and reconstructed
+positions and append a ReconstructedPosition object for those.</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
 <div class="section" id="module-pax.plugins.posrec.PosSimple">
 <span id="pax-plugins-posrec-possimple-module"></span><h2>pax.plugins.posrec.PosSimple module<a class="headerlink" href="#module-pax.plugins.posrec.PosSimple" title="Permalink to this headline">¶</a></h2>
 <p>Very simple position reconstruction algorithms</p>
 <dl class="class">
 <dt id="pax.plugins.posrec.PosSimple.PosRecWeightedSum">
-<em class="property">class </em><tt class="descclassname">pax.plugins.posrec.PosSimple.</tt><tt class="descname">PosRecWeightedSum</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/posrec/PosSimple.html#PosRecWeightedSum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.posrec.PosSimple.PosRecWeightedSum" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.plugins.posrec.PosSimple.</tt><tt class="descname">PosRecWeightedSum</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/posrec/PosSimple.html#PosRecWeightedSum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.posrec.PosSimple.PosRecWeightedSum" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></tt></a></p>
 <p>Centroid reconstruction using a charge-weighted sum.</p>
 <p>Charge-weighted average of PMT positions.  Class to reconstruct S2&#8217;s x, y
@@ -130,6 +177,7 @@ positions using the weighted sum of PMTs in the top array.</p>
 <li><a class="reference internal" href="#">pax.plugins.posrec package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.posrec.NeuralNet">pax.plugins.posrec.NeuralNet module</a></li>
+<li><a class="reference internal" href="#module-pax.plugins.posrec.PosRecChiSquareGamma">pax.plugins.posrec.PosRecChiSquareGamma module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.posrec.PosSimple">pax.plugins.posrec.PosSimple module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.posrec">Module contents</a></li>
 </ul>

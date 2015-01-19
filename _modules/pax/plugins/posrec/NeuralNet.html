@@ -54,19 +54,20 @@
 
 
 <div class="viewcode-block" id="PosRecNeuralNet"><a class="viewcode-back" href="../../../../pax.plugins.posrec.html#pax.plugins.posrec.NeuralNet.PosRecNeuralNet">[docs]</a><span class="k">class</span> <span class="nc">PosRecNeuralNet</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
+
     <span class="sd">&quot;&quot;&quot;Please write one sentence here</span>
 
-<span class="sd">    Please write on 3 paragraphs here here here here here here here </span>
+<span class="sd">    Please write on 3 paragraphs here here here here here here here</span>
 <span class="sd">    here here here here here here here here here here here here here</span>
-<span class="sd">    here </span>
-<span class="sd">    </span>
+<span class="sd">    here</span>
+
 <span class="sd">    and here here here here here here here here here here here here</span>
 <span class="sd">    here here here here here here here here here here here here here</span>
-<span class="sd">    here </span>
-<span class="sd">    </span>
+<span class="sd">    here</span>
+
 <span class="sd">    and here here here here here here here here here here here here</span>
 <span class="sd">    here here here here here here here here here here here here here</span>
-<span class="sd">    here </span>
+<span class="sd">    here</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="PosRecNeuralNet.startup"><a class="viewcode-back" href="../../../../pax.plugins.posrec.html#pax.plugins.posrec.NeuralNet.PosRecNeuralNet.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -76,9 +77,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c"># This can either be &#39;top&#39; or &#39;bottom&#39;.</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">which_pmts</span> <span class="o">=</span> <span class="s">&#39;pmts_</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pmts_to_use_for_reconstruction&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">which_pmts</span> <span class="o">=</span> <span class="s">&#39;pmts_</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_to_use_for_reconstruction&#39;</span><span class="p">]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">which_pmts</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Bad choice &#39;pmts_to_use_for_reconstruction&#39;&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Bad choice &#39;channels_to_use_for_reconstruction&#39;&quot;</span><span class="p">)</span>
 
         <span class="c"># List of integers of which PMTs to use</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pmts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">which_pmts</span><span class="p">]</span>
@@ -99,7 +100,7 @@
         <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">S2s</span><span class="p">():</span>
             <span class="c"># This is an array where every i-th element is how many pe</span>
             <span class="c"># were seen by the i-th PMT</span>
-            <span class="n">hits</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">area_per_pmt</span>
+            <span class="n">hits</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">area_per_channel</span>
 
             <span class="n">sum_x</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c"># sum of x positions</span>
             <span class="n">sum_y</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c"># sum of y positions</span>
@@ -109,7 +110,7 @@
             <span class="c"># For every PMT</span>
             <span class="k">for</span> <span class="n">pmt</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmts</span><span class="p">:</span>  <span class="c"># &#39;pmt&#39; is a PMT ID</span>
                 <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmt_locations</span><span class="p">[</span><span class="n">pmt</span><span class="p">]</span>  <span class="c"># Dictionary {&#39;x&#39; : int, etc.}</span>
-                <span class="n">Q</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[</span><span class="n">pmt</span><span class="p">]</span> <span class="c"># Area of this S2 for this PMT</span>
+                <span class="n">Q</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[</span><span class="n">pmt</span><span class="p">]</span>  <span class="c"># Area of this S2 for this PMT</span>
 
                 <span class="c"># Add this &#39;Q&#39; to total Q &#39;scale&#39;</span>
                 <span class="n">scale</span> <span class="o">+=</span> <span class="n">Q</span>

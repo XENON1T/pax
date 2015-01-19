@@ -1,0 +1,310 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pax.plugins.posrec.PosRecChiSquareGamma &mdash; Processor for Analyzing XENON1T 1.4.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '1.4.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <link rel="top" title="Processor for Analyzing XENON1T 1.4.0 documentation" href="../../../../index.html" />
+    <link rel="up" title="Module code" href="../../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 1.4.0 documentation</a> &raquo;</li>
+          <li><a href="../../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pax.plugins.posrec.PosRecChiSquareGamma</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Position reconstruction algorithm using chi square gamma distribution minimization&quot;&quot;&quot;</span>
+<span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="kn">import</span> <span class="n">fmin_powell</span>
+
+<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span>
+
+<span class="kn">from</span> <span class="nn">pax.datastructure</span> <span class="kn">import</span> <span class="n">ReconstructedPosition</span>
+<span class="kn">from</span> <span class="nn">pax.utils</span> <span class="kn">import</span> <span class="n">InterpolatingMap</span>
+<span class="kn">from</span> <span class="nn">pax.core</span> <span class="kn">import</span> <span class="n">data_file_name</span>
+
+
+<div class="viewcode-block" id="PosRecChiSquareGamma"><a class="viewcode-back" href="../../../../pax.plugins.posrec.html#pax.plugins.posrec.PosRecChiSquareGamma.PosRecChiSquareGamma">[docs]</a><span class="k">class</span> <span class="nc">PosRecChiSquareGamma</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;Position reconstruction by minimization of chi square gamma function.</span>
+
+<span class="sd">    Class to reconstruct S2&#39;s x, y and chi square gamma</span>
+<span class="sd">    (as &#39;goodness-of-fit&#39; parameter) using the S2 signal in top PMTs, simulated</span>
+<span class="sd">    LCE map, gains and QE&#39;s.</span>
+
+<span class="sd">    Additionally calculate chi square gamma for reconstructed positions by other</span>
+<span class="sd">    algorithms.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="PosRecChiSquareGamma.startup"><a class="viewcode-back" href="../../../../pax.plugins.posrec.html#pax.plugins.posrec.PosRecChiSquareGamma.PosRecChiSquareGamma.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize reconstruction algorithm</span>
+
+<span class="sd">        Determine which PMTs to use for reconstruction.</span>
+<span class="sd">        Load LCE maps, gains and QE&#39;s</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># Set mode for algorithm</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;mode&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Startup, mode: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s">&#39;no_reconstruct&#39;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s">&#39;only_reconstruct&#39;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s">&#39;full&#39;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Bad choice &#39;mode&#39;&quot;</span><span class="p">)</span>
+
+        <span class="c"># List of integers of which PMTs to use, this algorithm uses the top pmt array to reconstruct</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pmts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_top&#39;</span><span class="p">]</span>
+
+        <span class="c"># (x,y) Locations of these PMTs.  This is stored as a dictionary such</span>
+        <span class="c"># that self.pmt_locations[int] = {&#39;x&#39; : int, &#39;y&#39; : int, &#39;z&#39; : None}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pmt_locations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pmt_locations&#39;</span><span class="p">]</span>
+
+        <span class="c"># Load LCE maps</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lce_map_file_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;lce_map_file_name&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">maps</span> <span class="o">=</span> <span class="n">InterpolatingMap</span><span class="p">(</span><span class="n">data_file_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">lce_map_file_name</span><span class="p">))</span>
+
+        <span class="c"># Load gains (gains from config file, gain error 0.5 pe for all pmts for now)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gains</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gains&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gain_errors</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.5</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">99</span><span class="p">)]</span>  <span class="c"># test for now, make config variable</span>
+
+        <span class="c"># Load QE (for now use arbitrary values)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">qes</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.3</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">99</span><span class="p">)]</span>  <span class="c"># test for now, make config variable</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">qe_errors</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.009</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">99</span><span class="p">)]</span>  <span class="c"># test for now, make config variable</span>
+
+        <span class="c"># Number of pmts (minus dead pmts)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_channels</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">pmt</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmts</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">gains</span><span class="p">[</span><span class="n">pmt</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">n_channels</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="c"># Number of degrees of freedom, n_channels - model degrees of freedom (x,y) - 1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ndf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_channels</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span>
+
+        <span class="c"># Log the total number of calls and success rate to debug, see shutdown</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_rec_calls</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_rec_success</span> <span class="o">=</span> <span class="mi">0</span>
+</div>
+<div class="viewcode-block" id="PosRecChiSquareGamma.function_chi_square_gamma"><a class="viewcode-back" href="../../../../pax.plugins.posrec.html#pax.plugins.posrec.PosRecChiSquareGamma.PosRecChiSquareGamma.function_chi_square_gamma">[docs]</a>    <span class="k">def</span> <span class="nf">function_chi_square_gamma</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">position</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return Chi Square Gamma value for position x,y</span>
+
+<span class="sd">        This function is passed to the minimizer, the lowest</span>
+<span class="sd">        function value will yield the reconstructed position&quot;&quot;&quot;</span>
+
+        <span class="n">x</span> <span class="o">=</span> <span class="n">position</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">position</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="c"># Cutoff value at r=15 cm, chi_square_gamma is +infinity here</span>
+        <span class="k">if</span> <span class="n">x</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">y</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">&gt;</span> <span class="mi">225</span><span class="p">:</span>
+            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;inf&#39;</span><span class="p">)</span>
+
+        <span class="n">function_value</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c"># Iterate over all pmts, adding each pmts contribution to function_value</span>
+        <span class="k">for</span> <span class="n">pmt</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmts</span><span class="p">:</span>
+            <span class="c"># Exclude dead pmts</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gains</span><span class="p">[</span><span class="n">pmt</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="n">photons_in_pmt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hits</span><span class="p">[</span><span class="n">pmt</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">qes</span><span class="p">[</span><span class="n">pmt</span><span class="p">]</span>
+            <span class="n">pmt_error</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">qe_errors</span><span class="p">[</span><span class="n">pmt</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">qes</span><span class="p">[</span><span class="n">pmt</span><span class="p">])</span> <span class="o">**</span> <span class="mi">4</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gain_errors</span><span class="p">[</span><span class="n">pmt</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">gains</span><span class="p">[</span><span class="n">pmt</span><span class="p">])</span> <span class="o">**</span> <span class="mi">2</span>
+
+            <span class="c"># Lookup value from LCE map for pmt at position x,y</span>
+            <span class="n">map_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">maps</span><span class="o">.</span><span class="n">get_value</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">map_name</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">pmt</span><span class="p">))</span>
+
+            <span class="n">term_numerator</span> <span class="o">=</span> <span class="p">(</span><span class="n">photons_in_pmt</span> <span class="o">+</span> <span class="nb">min</span><span class="p">(</span><span class="n">photons_in_pmt</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">area_photons</span> <span class="o">*</span> <span class="n">map_value</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+            <span class="n">term_denominator</span> <span class="o">=</span> <span class="n">photons_in_pmt</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">pmt_error</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">area_photons</span> <span class="o">*</span> <span class="n">map_value</span> <span class="o">+</span> <span class="mf">1.0</span>
+
+            <span class="n">function_value</span> <span class="o">+=</span> <span class="n">term_numerator</span> <span class="o">/</span> <span class="n">term_denominator</span>
+
+        <span class="k">return</span> <span class="n">function_value</span>
+</div>
+<div class="viewcode-block" id="PosRecChiSquareGamma.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.posrec.html#pax.plugins.posrec.PosRecChiSquareGamma.PosRecChiSquareGamma.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Reconstruct the position of S2s in an event.</span>
+
+<span class="sd">        For each S2 peak, append a chi_square_gamma value and ndf to existing</span>
+<span class="sd">        ReconstructedPosition objects.</span>
+<span class="sd">        Secondly minimize and find the minimum chi_square_gamma and reconstructed</span>
+<span class="sd">        positions and append a ReconstructedPosition object for those.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># For every S2 peak found in the event</span>
+        <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">S2s</span><span class="p">():</span>
+            <span class="c"># This is an array where every i-th element is how many pe</span>
+            <span class="c"># were seen by the i-th PMT</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">hits</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">area_per_channel</span>
+
+            <span class="c"># Total number of detected photons in the top array (pe/qe)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">area_photons</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+            <span class="c"># Highest number of pe seen in one PMT and the id of this PMT</span>
+            <span class="n">max_pmt</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">max_pmt_id</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="c"># Calculate which pmt has maximum signal</span>
+            <span class="k">for</span> <span class="n">pmt</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmts</span><span class="p">:</span>
+                <span class="c"># Exclude dead pmts</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">gains</span><span class="p">[</span><span class="n">pmt</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hits</span><span class="p">[</span><span class="n">pmt</span><span class="p">])</span> <span class="o">==</span> <span class="s">&#39;nan&#39;</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">qes</span><span class="p">[</span><span class="n">pmt</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">continue</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">hits</span><span class="p">[</span><span class="n">pmt</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">max_pmt</span><span class="p">:</span>
+                    <span class="n">max_pmt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hits</span><span class="p">[</span><span class="n">pmt</span><span class="p">]</span>
+                    <span class="n">max_pmt_id</span> <span class="o">=</span> <span class="n">pmt</span>
+
+                <span class="bp">self</span><span class="o">.</span><span class="n">area_photons</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hits</span><span class="p">[</span><span class="n">pmt</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">qes</span><span class="p">[</span><span class="n">pmt</span><span class="p">]</span>
+
+            <span class="c"># Start position for minimizer, if no weighted sum position is present</span>
+            <span class="c"># use max pmt location as minimizer start position</span>
+            <span class="n">start_x</span> <span class="o">=</span> <span class="n">max_pmt_x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmt_locations</span><span class="p">[</span><span class="n">max_pmt_id</span><span class="p">][</span><span class="s">&#39;x&#39;</span><span class="p">]</span>
+            <span class="n">start_y</span> <span class="o">=</span> <span class="n">max_pmt_y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmt_locations</span><span class="p">[</span><span class="n">max_pmt_id</span><span class="p">][</span><span class="s">&#39;y&#39;</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s">&#39;only_reconstruct&#39;</span><span class="p">:</span>
+                <span class="c"># Check for reconstructed positions by other algorithms, if found, calculate chi_square_gamma for those</span>
+                <span class="k">for</span> <span class="n">position</span> <span class="ow">in</span> <span class="n">peak</span><span class="o">.</span><span class="n">reconstructed_positions</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">position</span><span class="o">.</span><span class="n">algorithm</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+                        <span class="k">continue</span>
+
+                    <span class="n">position</span><span class="o">.</span><span class="n">goodness_of_fit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">function_chi_square_gamma</span><span class="p">([</span><span class="n">position</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">position</span><span class="o">.</span><span class="n">y</span><span class="p">])</span>
+                    <span class="n">position</span><span class="o">.</span><span class="n">ndf</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndf</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Found reconstructed position by other algorithm&quot;</span>
+                                   <span class="s">&quot; </span><span class="si">%s</span><span class="s"> x: </span><span class="si">%f</span><span class="s"> y: </span><span class="si">%f</span><span class="s">, appending chi_square_gamma: </span><span class="si">%f</span><span class="s"> ndf: </span><span class="si">%d</span><span class="s">&quot;</span>
+                                   <span class="o">%</span> <span class="p">(</span><span class="n">position</span><span class="o">.</span><span class="n">algorithm</span><span class="p">,</span> <span class="n">position</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">position</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">position</span><span class="o">.</span><span class="n">goodness_of_fit</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndf</span><span class="p">))</span>
+
+                    <span class="c"># If a weighted sum is already calculated for this peak, use it as start position</span>
+                    <span class="k">if</span> <span class="n">position</span><span class="o">.</span><span class="n">algorithm</span> <span class="o">==</span> <span class="s">&#39;PosRecWeightedSum&#39;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s">&#39;no_reconstruct&#39;</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Using weighted sum by PosRecWeightedSum as minimizer start position&#39;</span><span class="p">)</span>
+
+                        <span class="n">start_x</span> <span class="o">=</span> <span class="n">position</span><span class="o">.</span><span class="n">x</span>
+                        <span class="n">start_y</span> <span class="o">=</span> <span class="n">position</span><span class="o">.</span><span class="n">y</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s">&#39;no_reconstruct&#39;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">event</span>
+
+            <span class="c"># Start minimization</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Starting minimizer for position reconstruction&quot;</span><span class="p">)</span>
+
+            <span class="c"># Minimize chi_square_gamma function, fmin_powell is the call to the SciPy minimizer</span>
+            <span class="c"># It takes the function to minimize, starting position and several options</span>
+            <span class="c"># It returns the optimal values for the position (xopt) and function value (fopt)</span>
+            <span class="c"># A warnflag tells if the maximum number of iterations was exceeded</span>
+            <span class="c">#    warnflag 0, OK</span>
+            <span class="c">#    warnflag 1, maximum functions evaluations exceeded</span>
+            <span class="c">#    warnflag 2, maximum iterations exceeded</span>
+            <span class="n">xopt</span><span class="p">,</span> <span class="n">fopt</span><span class="p">,</span> <span class="n">direc</span><span class="p">,</span> <span class="nb">iter</span><span class="p">,</span> <span class="n">funcalls</span><span class="p">,</span> <span class="n">warnflag</span> <span class="o">=</span> <span class="n">fmin_powell</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">function_chi_square_gamma</span><span class="p">,</span>
+                                                                      <span class="p">[</span><span class="n">start_x</span><span class="p">,</span> <span class="n">start_y</span><span class="p">],</span>
+                                                                      <span class="n">args</span><span class="o">=</span><span class="p">(),</span>
+                                                                      <span class="n">xtol</span><span class="o">=</span><span class="mf">0.0001</span><span class="p">,</span>
+                                                                      <span class="n">ftol</span><span class="o">=</span><span class="mf">0.0001</span><span class="p">,</span>
+                                                                      <span class="n">maxiter</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>
+                                                                      <span class="n">maxfun</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                                                                      <span class="n">full_output</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                                                                      <span class="n">disp</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                                                      <span class="n">direc</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                                                                      <span class="n">retall</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Minimizer warnflag: </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">warnflag</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">total_rec_calls</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">warnflag</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">total_rec_success</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="n">x</span> <span class="o">=</span> <span class="n">xopt</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">xopt</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">chi_square_gamma</span> <span class="o">=</span> <span class="n">fopt</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Reconstructed event at x: </span><span class="si">%f</span><span class="s"> y: </span><span class="si">%f</span><span class="s"> chi_square_gamma:&quot;</span>
+                           <span class="s">&quot; </span><span class="si">%f</span><span class="s"> ndf: </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">chi_square_gamma</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndf</span><span class="p">))</span>
+
+            <span class="c"># Create a reconstructed position object</span>
+            <span class="n">rp</span> <span class="o">=</span> <span class="n">ReconstructedPosition</span><span class="p">({</span><span class="s">&#39;x&#39;</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span>
+                                        <span class="s">&#39;y&#39;</span><span class="p">:</span> <span class="n">y</span><span class="p">,</span>
+                                        <span class="s">&#39;z&#39;</span><span class="p">:</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">),</span>
+                                        <span class="s">&#39;goodness_of_fit&#39;</span><span class="p">:</span> <span class="n">chi_square_gamma</span><span class="p">,</span>
+                                        <span class="s">&#39;ndf&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndf</span><span class="p">,</span>
+                                        <span class="s">&#39;index_of_maximum&#39;</span><span class="p">:</span> <span class="n">peak</span><span class="o">.</span><span class="n">index_of_maximum</span><span class="p">,</span>
+                                        <span class="s">&#39;algorithm&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">})</span>
+
+            <span class="c"># Append our reconstructed position object to the peak</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">reconstructed_positions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rp</span><span class="p">)</span>
+
+        <span class="c"># Return the event such that the next plugin can work on it</span>
+        <span class="k">return</span> <span class="n">event</span>
+</div>
+<div class="viewcode-block" id="PosRecChiSquareGamma.shutdown"><a class="viewcode-back" href="../../../../pax.plugins.posrec.html#pax.plugins.posrec.PosRecChiSquareGamma.PosRecChiSquareGamma.shutdown">[docs]</a>    <span class="k">def</span> <span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_rec_calls</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Total number of reconstruct calls: </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_rec_calls</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Success rate: </span><span class="si">%f</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">total_rec_success</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">total_rec_calls</span><span class="p">))</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 1.4.0 documentation</a> &raquo;</li>
+          <li><a href="../../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Christopher Tunnell.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

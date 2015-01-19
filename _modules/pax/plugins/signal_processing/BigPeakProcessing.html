@@ -1,0 +1,218 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pax.plugins.signal_processing.BigPeakProcessing &mdash; Processor for Analyzing XENON1T 1.4.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '1.4.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <link rel="top" title="Processor for Analyzing XENON1T 1.4.0 documentation" href="../../../../index.html" />
+    <link rel="up" title="Module code" href="../../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 1.4.0 documentation</a> &raquo;</li>
+          <li><a href="../../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pax.plugins.signal_processing.BigPeakProcessing</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Plugins for computing properties of peaks that have been found</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">utils</span><span class="p">,</span> <span class="n">plugin</span>
+<span class="kn">import</span> <span class="nn">math</span>
+
+
+<div class="viewcode-block" id="DeleteSmallPeaks"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.BigPeakProcessing.DeleteSmallPeaks">[docs]</a><span class="k">class</span> <span class="nc">DeleteSmallPeaks</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;Deletes low coincidence peaks, so the low-energy peakfinder can have a crack at them&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="DeleteSmallPeaks.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.BigPeakProcessing.DeleteSmallPeaks.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="n">before</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">)</span>
+        <span class="n">event</span><span class="o">.</span><span class="n">peaks</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">peaks</span>
+                       <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">number_of_contributing_channels</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;prune_if_coincidence_lower_than&#39;</span><span class="p">]</span>
+                       <span class="ow">and</span> <span class="n">p</span><span class="o">.</span><span class="n">area</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;prune_if_area_lower_than&#39;</span><span class="p">]]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Deleted </span><span class="si">%d</span><span class="s"> peaks out of </span><span class="si">%d</span><span class="s">, </span><span class="si">%d</span><span class="s"> left&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">before</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">),</span> <span class="n">before</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">)))</span>
+        <span class="k">return</span> <span class="n">event</span>
+
+</div></div>
+<div class="viewcode-block" id="ComputePeakWidths"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.BigPeakProcessing.ComputePeakWidths">[docs]</a><span class="k">class</span> <span class="nc">ComputePeakWidths</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;Does what it says on the tin&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ComputePeakWidths.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.BigPeakProcessing.ComputePeakWidths.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">:</span>
+
+            <span class="c"># Check if peak is sane</span>
+            <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">index_of_maximum</span> <span class="o">&lt;</span> <span class="n">peak</span><span class="o">.</span><span class="n">left</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Insane peak </span><span class="si">%s</span><span class="s">-</span><span class="si">%s</span><span class="s">-</span><span class="si">%s</span><span class="s">, can&#39;t compute widths!&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                    <span class="n">peak</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">index_of_maximum</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">right</span><span class="p">))</span>
+                <span class="k">continue</span>
+
+            <span class="k">for</span> <span class="n">width_name</span><span class="p">,</span> <span class="n">conf</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;width_computations&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+
+                <span class="nb">setattr</span><span class="p">(</span><span class="n">peak</span><span class="p">,</span> <span class="n">width_name</span><span class="p">,</span> <span class="n">utils</span><span class="o">.</span><span class="n">width_at_fraction</span><span class="p">(</span>
+                    <span class="n">peak_wave</span><span class="o">=</span><span class="n">event</span><span class="o">.</span><span class="n">get_sum_waveform</span><span class="p">(</span><span class="n">conf</span><span class="p">[</span><span class="s">&#39;waveform_to_use&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">samples</span><span class="p">[</span><span class="n">peak</span><span class="o">.</span><span class="n">left</span><span class="p">:</span> <span class="n">peak</span><span class="o">.</span><span class="n">right</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span>
+                    <span class="n">fraction_of_max</span><span class="o">=</span><span class="n">conf</span><span class="p">[</span><span class="s">&#39;fraction_of_max&#39;</span><span class="p">],</span>
+                    <span class="n">max_idx</span><span class="o">=</span><span class="n">peak</span><span class="o">.</span><span class="n">index_of_maximum</span> <span class="o">-</span> <span class="n">peak</span><span class="o">.</span><span class="n">left</span><span class="p">,</span>
+                    <span class="n">interpolate</span><span class="o">=</span><span class="n">conf</span><span class="p">[</span><span class="s">&#39;interpolate&#39;</span><span class="p">]))</span>
+
+        <span class="k">return</span> <span class="n">event</span>
+
+</div></div>
+<div class="viewcode-block" id="ComputePeakAreasAndCoincidence"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.BigPeakProcessing.ComputePeakAreasAndCoincidence">[docs]</a><span class="k">class</span> <span class="nc">ComputePeakAreasAndCoincidence</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="ComputePeakAreasAndCoincidence.startup"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.BigPeakProcessing.ComputePeakAreasAndCoincidence.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">central_width</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;central_area_region_width&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;sample_duration&#39;</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="ComputePeakAreasAndCoincidence.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.BigPeakProcessing.ComputePeakAreasAndCoincidence.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">:</span>
+
+            <span class="c"># Compute area in each channel</span>
+            <span class="c"># Note this also computes the area for PMTs in other detectors!</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">area_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">channel_waveforms</span><span class="p">[:,</span> <span class="n">peak</span><span class="o">.</span><span class="n">left</span><span class="p">:</span><span class="n">peak</span><span class="o">.</span><span class="n">right</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+            <span class="c"># Determine which channels contribute to the peak&#39;s total area</span>
+            <span class="n">channels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;n_channels&#39;</span><span class="p">])</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">does_channel_contribute</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">in1d</span><span class="p">(</span><span class="n">channels</span><span class="p">,</span>
+                                                   <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_in_detector&#39;</span><span class="p">][</span><span class="n">peak</span><span class="o">.</span><span class="n">detector</span><span class="p">])))</span> <span class="o">&amp;</span> \
+                <span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">area_per_channel</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;minimum_area&#39;</span><span class="p">])</span>
+
+            <span class="c"># Other channels with nonzero area have noise</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">does_channel_have_noise</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">in1d</span><span class="p">(</span><span class="n">channels</span><span class="p">,</span>
+                                                   <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_in_detector&#39;</span><span class="p">][</span><span class="n">peak</span><span class="o">.</span><span class="n">detector</span><span class="p">])))</span> <span class="o">&amp;</span> \
+                <span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">area_per_channel</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> \
+                <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">invert</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">does_channel_contribute</span><span class="p">))</span>
+
+            <span class="c"># Compute the peak&#39;s area</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">area</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">area_per_channel</span><span class="p">[</span><span class="n">peak</span><span class="o">.</span><span class="n">contributing_channels</span><span class="p">])</span>
+
+            <span class="c"># Compute the peak&#39;s central area (used for classification)</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">central_area</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
+                <span class="n">event</span><span class="o">.</span><span class="n">channel_waveforms</span><span class="p">[</span>
+                    <span class="n">peak</span><span class="o">.</span><span class="n">contributing_channels</span><span class="p">,</span>
+                    <span class="nb">max</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">index_of_maximum</span> <span class="o">-</span> <span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">central_width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)):</span>
+                    <span class="nb">min</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">right</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">index_of_maximum</span> <span class="o">+</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">central_width</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span>
+                <span class="p">],</span>
+                <span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">event</span>
+
+</div></div>
+<div class="viewcode-block" id="ComputePeakEntropies"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.BigPeakProcessing.ComputePeakEntropies">[docs]</a><span class="k">class</span> <span class="nc">ComputePeakEntropies</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
+    <span class="c"># TODO: write tests</span>
+
+<div class="viewcode-block" id="ComputePeakEntropies.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.BigPeakProcessing.ComputePeakEntropies.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">:</span>
+
+            <span class="n">peak_waveforms</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">channel_waveforms</span><span class="p">[:,</span> <span class="n">peak</span><span class="o">.</span><span class="n">left</span><span class="p">:</span><span class="n">peak</span><span class="o">.</span><span class="n">right</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;normalization_mode&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="s">&#39;abs&#39;</span><span class="p">:</span>
+                <span class="n">normalized</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">peak_waveforms</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;normalization_mode&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="s">&#39;square&#39;</span><span class="p">:</span>
+                <span class="n">normalized</span> <span class="o">=</span> <span class="n">peak_waveforms</span> <span class="o">**</span> <span class="mi">2</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s">&#39;Invalid Configuration for ComputePeakEntropies: normalization_mode must be abs or square&#39;</span><span class="p">)</span>
+
+            <span class="c"># In the case of abs, we could re-use peak.area_per_channel to normalize</span>
+            <span class="c"># This gains only a little bit of performance, and &#39;square&#39; is what we use in Xenon100 anyway.</span>
+            <span class="c"># Note the use of np.newaxis to enable numpy broadcasting of the division</span>
+            <span class="n">normalized</span> <span class="o">/=</span> <span class="n">peak</span><span class="o">.</span><span class="n">area_per_channel</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+
+            <span class="c"># Could this be vectorized better?</span>
+            <span class="c"># Restricting to contributing pmts is not optional: otherwise you&#39;d include other detectors as well.</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">entropy_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">peak_waveforms</span><span class="p">))</span>
+            <span class="k">for</span> <span class="n">pmt</span> <span class="ow">in</span> <span class="n">peak</span><span class="o">.</span><span class="n">contributing_channels</span><span class="p">:</span>
+                <span class="n">peak</span><span class="o">.</span><span class="n">entropy_per_channel</span><span class="p">[</span><span class="n">pmt</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">normalized</span><span class="p">[</span><span class="n">pmt</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">normalized</span><span class="p">[</span><span class="n">pmt</span><span class="p">]))</span>
+
+        <span class="k">return</span> <span class="n">event</span>
+
+</div></div>
+<div class="viewcode-block" id="ClassifyBigPeaks"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.BigPeakProcessing.ClassifyBigPeaks">[docs]</a><span class="k">class</span> <span class="nc">ClassifyBigPeaks</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="ClassifyBigPeaks.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.BigPeakProcessing.ClassifyBigPeaks.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+
+        <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">:</span>
+            <span class="c"># PLACEHOLDER:</span>
+            <span class="c"># if central area is &gt; central_area_ratio * total area, christen as S1 candidate</span>
+            <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">central_area</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;central_area_ratio&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">peak</span><span class="o">.</span><span class="n">area</span><span class="p">:</span>
+                <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s">&#39;s1&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s">&#39;s2&#39;</span>
+        <span class="k">return</span> <span class="n">event</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 1.4.0 documentation</a> &raquo;</li>
+          <li><a href="../../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Christopher Tunnell.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

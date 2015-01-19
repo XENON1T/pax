@@ -51,7 +51,37 @@
   <div class="section" id="history">
 <h1>History<a class="headerlink" href="#history" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="id1">
-<h2>1.4.0 (2014-11-21)<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<h2>2.0.0 (2015-01-0?)<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><ul class="simple">
+<li>Core changes<ul>
+<li>Cleanup of datastructure (see #80 and #81)</li>
+<li>Most of core wrapped in Processor class</li>
+<li>Plugins shut down at end of Processor.run(), not just on destruction</li>
+</ul>
+</li>
+<li>New signal processing chain<ul>
+<li>FindBigPeaks, a traditional sum-waveform peakfinder</li>
+<li>FindSmallPeaks, finds single-photon peaks in each channel</li>
+<li>Supporting peak classification and property computation plugins</li>
+</ul>
+</li>
+<li>Chi-square gamma x,y position reconstruction</li>
+<li>Waveform simulator enhancements<ul>
+<li>Wrapped in Simulator class, loaded along with processor</li>
+<li>Performance improvements</li>
+<li>Basic zero-length encoding emulation</li>
+</ul>
+</li>
+<li>WritePandas: write our data as DataFrames to containers supported by pandas</li>
+<li>2D channel waveforms plot</li>
+<li>Support for arbitrary external detectors / extra channel groups</li>
+<li>More tests</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="id2">
+<h2>1.4.0 (2014-11-21)<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
 <li>DSP<ul>
@@ -77,8 +107,8 @@
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id2">
-<h2>1.3.0 (2014-10-17)<a class="headerlink" href="#id2" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id3">
+<h2>1.3.0 (2014-10-17)<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Plugin directory moved (fix bug in previous release)</li>
 <li>Bulk processing enhancements<ul>
@@ -112,15 +142,15 @@
 <li>Plot 2D hit patterns</li>
 </ul>
 </div>
-<div class="section" id="id3">
-<h2>1.2.0 (2014-10-02)<a class="headerlink" href="#id3" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id4">
+<h2>1.2.0 (2014-10-02)<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>DAQ injector - can inject data into DAQs.</li>
 <li>Nested configurations - better handling of configurations and allows for nesting</li>
 </ul>
 </div>
-<div class="section" id="id4">
-<h2>1.1.0 (2014-08-29)<a class="headerlink" href="#id4" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id5">
+<h2>1.1.0 (2014-08-29)<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>HDF5 output - will be, for now, default output format.<ul>
 <li>We now have a binary output format for peaks and event.</li>
@@ -134,8 +164,8 @@
 <li>General bug fixes and cleanup</li>
 </ul>
 </div>
-<div class="section" id="id5">
-<h2>1.0.0 (2014-08-16)<a class="headerlink" href="#id5" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id6">
+<h2>1.0.0 (2014-08-16)<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Completely refactored event datastructure</li>
 </ul>
@@ -197,14 +227,14 @@
 </ul>
 </div></blockquote>
 </div>
-<div class="section" id="id6">
-<h2>0.2.1 (2014-08-14)<a class="headerlink" href="#id6" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id7">
+<h2>0.2.1 (2014-08-14)<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>paxit binaries installed by default to allow working out of source</li>
 </ul>
 </div>
-<div class="section" id="id7">
-<h2>0.2.0 (2014-08-04)<a class="headerlink" href="#id7" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id8">
+<h2>0.2.0 (2014-08-04)<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>Define static event class data structure</li>
 <li>Transforms now specified in ini file</li>
@@ -222,8 +252,8 @@
 <li>Transforms have start and stop methods</li>
 </ul>
 </div>
-<div class="section" id="id8">
-<h2>0.1.0 (2014-07-18)<a class="headerlink" href="#id8" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="id9">
+<h2>0.1.0 (2014-07-18)<a class="headerlink" href="#id9" title="Permalink to this headline">¶</a></h2>
 <ul class="simple">
 <li>First release of software framework</li>
 <li>Functional but not complete digital signal processing
@@ -251,14 +281,15 @@
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">History</a><ul>
-<li><a class="reference internal" href="#id1">1.4.0 (2014-11-21)</a></li>
-<li><a class="reference internal" href="#id2">1.3.0 (2014-10-17)</a></li>
-<li><a class="reference internal" href="#id3">1.2.0 (2014-10-02)</a></li>
-<li><a class="reference internal" href="#id4">1.1.0 (2014-08-29)</a></li>
-<li><a class="reference internal" href="#id5">1.0.0 (2014-08-16)</a></li>
-<li><a class="reference internal" href="#id6">0.2.1 (2014-08-14)</a></li>
-<li><a class="reference internal" href="#id7">0.2.0 (2014-08-04)</a></li>
-<li><a class="reference internal" href="#id8">0.1.0 (2014-07-18)</a></li>
+<li><a class="reference internal" href="#id1">2.0.0 (2015-01-0?)</a></li>
+<li><a class="reference internal" href="#id2">1.4.0 (2014-11-21)</a></li>
+<li><a class="reference internal" href="#id3">1.3.0 (2014-10-17)</a></li>
+<li><a class="reference internal" href="#id4">1.2.0 (2014-10-02)</a></li>
+<li><a class="reference internal" href="#id5">1.1.0 (2014-08-29)</a></li>
+<li><a class="reference internal" href="#id6">1.0.0 (2014-08-16)</a></li>
+<li><a class="reference internal" href="#id7">0.2.1 (2014-08-14)</a></li>
+<li><a class="reference internal" href="#id8">0.2.0 (2014-08-04)</a></li>
+<li><a class="reference internal" href="#id9">0.1.0 (2014-07-18)</a></li>
 </ul>
 </li>
 </ul>

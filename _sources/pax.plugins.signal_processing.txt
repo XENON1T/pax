@@ -1,0 +1,70 @@
+pax.plugins.signal_processing package
+=====================================
+
+Submodules
+----------
+
+pax.plugins.signal_processing.BigPeakProcessing module
+------------------------------------------------------
+
+.. automodule:: pax.plugins.signal_processing.BigPeakProcessing
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.plugins.signal_processing.BigPeakfinder module
+--------------------------------------------------
+
+.. automodule:: pax.plugins.signal_processing.BigPeakfinder
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.plugins.signal_processing.BuildWaveforms module
+---------------------------------------------------
+
+.. automodule:: pax.plugins.signal_processing.BuildWaveforms
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.plugins.signal_processing.Filtering module
+----------------------------------------------
+
+.. automodule:: pax.plugins.signal_processing.Filtering
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.plugins.signal_processing.OldPeakFinder module
+--------------------------------------------------
+
+.. automodule:: pax.plugins.signal_processing.OldPeakFinder
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.plugins.signal_processing.SmallPeakProcessing module
+--------------------------------------------------------
+
+.. automodule:: pax.plugins.signal_processing.SmallPeakProcessing
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.plugins.signal_processing.SmallPeakfinder module
+----------------------------------------------------
+
+.. automodule:: pax.plugins.signal_processing.SmallPeakfinder
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: pax.plugins.signal_processing
+    :members:
+    :undoc-members:
+    :show-inheritance:

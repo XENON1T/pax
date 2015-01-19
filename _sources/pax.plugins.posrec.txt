@@ -12,6 +12,14 @@ pax.plugins.posrec.NeuralNet module
     :undoc-members:
     :show-inheritance:
 
+pax.plugins.posrec.PosRecChiSquareGamma module
+----------------------------------------------
+
+.. automodule:: pax.plugins.posrec.PosRecChiSquareGamma
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pax.plugins.posrec.PosSimple module
 -----------------------------------
 

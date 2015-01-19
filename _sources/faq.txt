@@ -18,6 +18,33 @@ can check that it worked by running `python` then::
 Which should result in version 3 of Python being used and you should not get an
 error.
 
+----------------------------------------
+How do I run `pax` at Nikhef?
+----------------------------------------
+
+Running pax at Nikhef requires you to add python 3.4 to your path.
+This can be done by running the following command from a shell::
+
+  $ export PATH="/data/xenon/bartp/anaconda3/bin:$PATH"
+
+This can be added to your `.bashrc` to be run automatically when you login.
+After setting your environment you need a local copy of pax, clone it
+from github by executing::
+
+  $ git clone https://github.com/XENON1T/pax.git
+  
+After doing::
+
+  $ cd pax/bin
+
+Setup pax by executing::
+
+  $ python setup.py develop
+  
+Pax should now work, test it by running::
+
+  $ python paxer --plot
+
 ---------------------------------------
 How do I run `git` at LNGS on xecluster
 ---------------------------------------

@@ -49,64 +49,6 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-pax.plugins.io.CSV">
-<span id="pax-plugins-io-csv-module"></span><h2>pax.plugins.io.CSV module<a class="headerlink" href="#module-pax.plugins.io.CSV" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="pax.plugins.io.CSV.WritePeaksCSV">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.CSV.</tt><tt class="descname">WritePeaksCSV</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/CSV.html#WritePeaksCSV"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.CSV.WritePeaksCSV" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.OutputPlugin" title="pax.plugin.OutputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.OutputPlugin</span></tt></a></p>
-<p>Write to a human readable CSV file</p>
-<dl class="method">
-<dt id="pax.plugins.io.CSV.WritePeaksCSV.shutdown">
-<tt class="descname">shutdown</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/CSV.html#WritePeaksCSV.shutdown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.CSV.WritePeaksCSV.shutdown" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.CSV.WritePeaksCSV.startup">
-<tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/CSV.html#WritePeaksCSV.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.CSV.WritePeaksCSV.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.CSV.WritePeaksCSV.write_event">
-<tt class="descname">write_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/CSV.html#WritePeaksCSV.write_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.CSV.WritePeaksCSV.write_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-</div>
-<div class="section" id="module-pax.plugins.io.HDF5">
-<span id="pax-plugins-io-hdf5-module"></span><h2>pax.plugins.io.HDF5 module<a class="headerlink" href="#module-pax.plugins.io.HDF5" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="pax.plugins.io.HDF5.HDF5Output">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.HDF5.</tt><tt class="descname">HDF5Output</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/HDF5.html#HDF5Output"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.HDF5.HDF5Output" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.OutputPlugin" title="pax.plugin.OutputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.OutputPlugin</span></tt></a></p>
-<p>Use PyTables to write HDF5 output</p>
-<p>HDF5 is a hierarchical data structure used extensively in astrophysics, and
-other scientific fields.  The PyTables module allows us to easily create
-these files.  The structure of the file is that there are tables and rows.
-A table could be an event table, where each row is an event and column a
-variable associated with that event (e.g., start time).  Similarly, we have
-tables of peaks and reconstructed quantities that refer to values in other
-tables.  For example, every peak has an event index, which is the row
-associated to it in the event table.</p>
-<dl class="method">
-<dt id="pax.plugins.io.HDF5.HDF5Output.shutdown">
-<tt class="descname">shutdown</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/HDF5.html#HDF5Output.shutdown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.HDF5.HDF5Output.shutdown" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.HDF5.HDF5Output.startup">
-<tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/HDF5.html#HDF5Output.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.HDF5.HDF5Output.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.HDF5.HDF5Output.write_event">
-<tt class="descname">write_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/HDF5.html#HDF5Output.write_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.HDF5.HDF5Output.write_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-</div>
 <div class="section" id="module-pax.plugins.io.MongoDB">
 <span id="pax-plugins-io-mongodb-module"></span><h2>pax.plugins.io.MongoDB module<a class="headerlink" href="#module-pax.plugins.io.MongoDB" title="Permalink to this headline">¶</a></h2>
 <p>Interfacing to DAQ via MongoDB</p>
@@ -114,7 +56,7 @@ associated to it in the event table.</p>
 user to read data from the DAQ and also inject raw occurences into the DAQ.</p>
 <dl class="class">
 <dt id="pax.plugins.io.MongoDB.MongoDBFakeDAQOutput">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.MongoDB.</tt><tt class="descname">MongoDBFakeDAQOutput</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBFakeDAQOutput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBFakeDAQOutput" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.MongoDB.</tt><tt class="descname">MongoDBFakeDAQOutput</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBFakeDAQOutput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBFakeDAQOutput" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.OutputPlugin" title="pax.plugin.OutputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.OutputPlugin</span></tt></a></p>
 <p>Inject PMT pulses into DAQ to test trigger.</p>
 <p>This plugin aims to emulate the DAQReader by creating run control documents
@@ -160,14 +102,13 @@ on formats:</p>
 
 <dl class="class">
 <dt id="pax.plugins.io.MongoDB.MongoDBInput">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.MongoDB.</tt><tt class="descname">MongoDBInput</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInput" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.MongoDB.</tt><tt class="descname">MongoDBInput</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInput" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.InputPlugin" title="pax.plugin.InputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.InputPlugin</span></tt></a></p>
 <p>Read data from DAQ database</p>
 <dl class="method">
 <dt id="pax.plugins.io.MongoDB.MongoDBInput.get_events">
 <tt class="descname">get_events</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInput.get_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInput.get_events" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generator of events from Mongo</p>
-<p>What is returned is all the channel&#8217;s occurrences</p>
 </dd></dl>
 
 <dl class="method">
@@ -187,7 +128,7 @@ on formats:</p>
 <span id="pax-plugins-io-music-module"></span><h2>pax.plugins.io.Music module<a class="headerlink" href="#module-pax.plugins.io.Music" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="pax.plugins.io.Music.WavOutput">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.Music.</tt><tt class="descname">WavOutput</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Music.html#WavOutput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Music.WavOutput" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.Music.</tt><tt class="descname">WavOutput</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Music.html#WavOutput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Music.WavOutput" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.OutputPlugin" title="pax.plugin.OutputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.OutputPlugin</span></tt></a></p>
 <p>Convert sum waveforms of event and dataset to WAV file</p>
 <p>If we don&#8217;t find dark matter, at least we&#8217;ll have contemporary music.</p>
@@ -209,15 +150,115 @@ on formats:</p>
 </dd></dl>
 
 </div>
-<div class="section" id="module-pax.plugins.io.OnlineMonitor">
-<span id="pax-plugins-io-onlinemonitor-module"></span><h2>pax.plugins.io.OnlineMonitor module<a class="headerlink" href="#module-pax.plugins.io.OnlineMonitor" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-pax.plugins.io.Pandas">
+<span id="pax-plugins-io-pandas-module"></span><h2>pax.plugins.io.Pandas module<a class="headerlink" href="#module-pax.plugins.io.Pandas" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pax.plugins.io.Pandas.WritePandas">
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.Pandas.</tt><tt class="descname">WritePandas</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Pandas.html#WritePandas"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Pandas.WritePandas" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.OutputPlugin" title="pax.plugin.OutputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.OutputPlugin</span></tt></a></p>
+<p>Convert our event to pandas DataFrames, then write to containers supported by pandas: HDF5, CSV, JSON, HTML, ...</p>
+<p>We make a separate DataFrame for each model type in our data structure
+(Event, Peak, reconstructed position, ...) and every NumpyArrayField as well.</p>
+<dl class="docutils">
+<dt>The data frames have a hierarchical multi-index, e.g. for the ReconstrucedPosition DataFrame</dt>
+<dd>the first  index is the event number
+the second index is the Peak&#8217;s index in event.peaks
+the third  index is the ReconstructedPosition&#8217;s index in peak.reconstructed_positions</dd>
+</dl>
+<p>Each index is also named (in this example, &#8216;Event&#8217;, &#8216;Peak&#8217;, &#8216;ReconstructedPosition&#8217;) for clarity.</p>
+<p>Because pandas is optimised for working with large data structures, converting/appending each model instance
+to a DataFrame separately would take an unacceptable amount of CPU time. Hence, we store data in lists of
+dictionaries first (&#8220;pre-dataframes&#8221;), then convert those to DataFrames once we are ready to write to disk.</p>
+<p>Available options:</p>
+<blockquote>
+<div><ul>
+<li><dl class="first docutils">
+<dt>output_format:      If hdf, will produce an HDF5 file with tables for each dataframe.</dt>
+<dd><p class="first last">If csv, json, html, pickle, ... will produce a folder with files for each dataframe.
+See <a class="reference external" href="http://pandas.pydata.org/pandas-docs/dev/io.html">http://pandas.pydata.org/pandas-docs/dev/io.html</a> for all possible options;
+I really just call pandas.to_FORMAT for each DataFrame.</p>
+</dd>
+</dl>
+</li>
+<li><p class="first">output_name:        The name of the output file or folder, WITHOUT file extension.</p>
+</li>
+<li><p class="first">fields_to_ignore:   Fields which will not be stored.</p>
+</li>
+</ul>
+</div></blockquote>
+<p>Further options specific to output_format=&#8217;hdf&#8217;:</p>
+<blockquote>
+<div><ul>
+<li><p class="first">append_data:        Append data to an existing HDF5 file.</p>
+</li>
+<li><dl class="first docutils">
+<dt>write_every:        Write data to disk after every nth event.</dt>
+<dd><p class="first last">(For the other output_formats, all data is kept in memory, then written to disk on shutdown.)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>string_data_length: Maximum length of strings in string data fields.  If you try to store a longer string</dt>
+<dd><p class="first last">in any but the first write pass, it will crash!</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+<dl class="method">
+<dt id="pax.plugins.io.Pandas.WritePandas.append_to_df">
+<tt class="descname">append_to_df</tt><big>(</big><em>dfname</em>, <em>index_and_data_tuple</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Pandas.html#WritePandas.append_to_df"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Pandas.WritePandas.append_to_df" title="Permalink to this definition">¶</a></dt>
+<dd><p>Appends an (index, data_dict) tuple to self.dataframes[dfname]</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.Pandas.WritePandas.model_to_dataframe">
+<tt class="descname">model_to_dataframe</tt><big>(</big><em>m</em>, <em>index_trail</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Pandas.html#WritePandas.model_to_dataframe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Pandas.WritePandas.model_to_dataframe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert a MicroModels class instance to a pre-dataframe (data_dict with index_trail),
+handling its subcollections recursively.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>m</strong> &#8211; instance to convert</li>
+<li><strong>index_trail</strong> &#8211; list of (index_name, index) tuples denoting multi-index trail</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.Pandas.WritePandas.shutdown">
+<tt class="descname">shutdown</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Pandas.html#WritePandas.shutdown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Pandas.WritePandas.shutdown" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.Pandas.WritePandas.startup">
+<tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Pandas.html#WritePandas.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Pandas.WritePandas.startup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.Pandas.WritePandas.write_dataframes">
+<tt class="descname">write_dataframes</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Pandas.html#WritePandas.write_dataframes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Pandas.WritePandas.write_dataframes" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.Pandas.WritePandas.write_event">
+<tt class="descname">write_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Pandas.html#WritePandas.write_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Pandas.WritePandas.write_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </div>
 <div class="section" id="module-pax.plugins.io.Pickle">
 <span id="pax-plugins-io-pickle-module"></span><h2>pax.plugins.io.Pickle module<a class="headerlink" href="#module-pax.plugins.io.Pickle" title="Permalink to this headline">¶</a></h2>
 <p>Read/write event class from/to gzip-compressed pickle files.</p>
 <dl class="class">
 <dt id="pax.plugins.io.Pickle.DirWithPickleFiles">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.Pickle.</tt><tt class="descname">DirWithPickleFiles</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Pickle.html#DirWithPickleFiles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Pickle.DirWithPickleFiles" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.Pickle.</tt><tt class="descname">DirWithPickleFiles</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Pickle.html#DirWithPickleFiles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Pickle.DirWithPickleFiles" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.InputPlugin" title="pax.plugin.InputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.InputPlugin</span></tt></a></p>
 <dl class="method">
 <dt id="pax.plugins.io.Pickle.DirWithPickleFiles.get_events">
@@ -238,7 +279,7 @@ on formats:</p>
 
 <dl class="class">
 <dt id="pax.plugins.io.Pickle.WriteToPickleFile">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.Pickle.</tt><tt class="descname">WriteToPickleFile</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Pickle.html#WriteToPickleFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Pickle.WriteToPickleFile" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.Pickle.</tt><tt class="descname">WriteToPickleFile</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Pickle.html#WriteToPickleFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Pickle.WriteToPickleFile" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.OutputPlugin" title="pax.plugin.OutputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.OutputPlugin</span></tt></a></p>
 <dl class="method">
 <dt id="pax.plugins.io.Pickle.WriteToPickleFile.write_event">
@@ -254,7 +295,7 @@ on formats:</p>
 <p>Use matplotlib to display various things about the event.</p>
 <dl class="class">
 <dt id="pax.plugins.io.Plotting.PlotBase">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlotBase</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotBase" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlotBase</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotBase" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.OutputPlugin" title="pax.plugin.OutputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.OutputPlugin</span></tt></a></p>
 <dl class="method">
 <dt id="pax.plugins.io.Plotting.PlotBase.color_peak_ranges">
@@ -263,7 +304,7 @@ on formats:</p>
 
 <dl class="method">
 <dt id="pax.plugins.io.Plotting.PlotBase.finalize_plot">
-<tt class="descname">finalize_plot</tt><big>(</big><em>num=0</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotBase.finalize_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotBase.finalize_plot" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">finalize_plot</tt><big>(</big><em>event_number=0</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotBase.finalize_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotBase.finalize_plot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Finalize plotting, send to screen/file, then closes plot properly (avoids runtimewarning / memory leak).</p>
 </dd></dl>
 
@@ -297,10 +338,14 @@ on formats:</p>
 
 <dl class="class">
 <dt id="pax.plugins.io.Plotting.PlotChannelWaveforms2D">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlotChannelWaveforms2D</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotChannelWaveforms2D"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotChannelWaveforms2D" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlotChannelWaveforms2D</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotChannelWaveforms2D"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotChannelWaveforms2D" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.Plotting.PlotBase" title="pax.plugins.io.Plotting.PlotBase"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.Plotting.PlotBase</span></tt></a></p>
-<p>Makes a plot of all the occurencences in the event
-Just like PlotChannelWaveforms3D, but seen from above (or below ;-)</p>
+<p>Plots the occurrences in each channel, like like PlotChannelWaveforms3D, but seen from above</p>
+<p>Circles in the bottom subplot show when individual photo-electrons arrived in each channel .
+Circle color indicates log(peak amplitude / noise amplitude), size indicates peak integral.
+For large peaks you see no dots; single-channel peakfinding is skipped for performance reasons.</p>
+<p>Some channels are grayed out: these are excluded from low-energy peakfinding because they show an
+unusual rate of lone pulses or pure-noise occurrences in this event.</p>
 <dl class="method">
 <dt id="pax.plugins.io.Plotting.PlotChannelWaveforms2D.plot_event">
 <tt class="descname">plot_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotChannelWaveforms2D.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotChannelWaveforms2D.plot_event" title="Permalink to this definition">¶</a></dt>
@@ -310,7 +355,7 @@ Just like PlotChannelWaveforms3D, but seen from above (or below ;-)</p>
 
 <dl class="class">
 <dt id="pax.plugins.io.Plotting.PlotChannelWaveforms3D">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlotChannelWaveforms3D</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotChannelWaveforms3D"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotChannelWaveforms3D" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlotChannelWaveforms3D</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotChannelWaveforms3D"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotChannelWaveforms3D" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.Plotting.PlotBase" title="pax.plugins.io.Plotting.PlotBase"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.Plotting.PlotBase</span></tt></a></p>
 <p>Plot an event</p>
 <p>Will make a fancy &#8216;3D&#8217; plot with different y positions for all channels. User sets variables for plot.</p>
@@ -323,7 +368,7 @@ Just like PlotChannelWaveforms3D, but seen from above (or below ;-)</p>
 
 <dl class="class">
 <dt id="pax.plugins.io.Plotting.PlotEventSummary">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlotEventSummary</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotEventSummary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotEventSummary" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlotEventSummary</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotEventSummary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotEventSummary" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.Plotting.PlotBase" title="pax.plugins.io.Plotting.PlotBase"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.Plotting.PlotBase</span></tt></a></p>
 <dl class="method">
 <dt id="pax.plugins.io.Plotting.PlotEventSummary.plot_event">
@@ -335,7 +380,7 @@ Just like PlotChannelWaveforms3D, but seen from above (or below ;-)</p>
 
 <dl class="class">
 <dt id="pax.plugins.io.Plotting.PlotSumWaveformEntireEvent">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlotSumWaveformEntireEvent</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotSumWaveformEntireEvent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotSumWaveformEntireEvent" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlotSumWaveformEntireEvent</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotSumWaveformEntireEvent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotSumWaveformEntireEvent" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.Plotting.PlotBase" title="pax.plugins.io.Plotting.PlotBase"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.Plotting.PlotBase</span></tt></a></p>
 <dl class="method">
 <dt id="pax.plugins.io.Plotting.PlotSumWaveformEntireEvent.plot_event">
@@ -346,7 +391,7 @@ Just like PlotChannelWaveforms3D, but seen from above (or below ;-)</p>
 
 <dl class="class">
 <dt id="pax.plugins.io.Plotting.PlotSumWaveformLargestS1">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlotSumWaveformLargestS1</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotSumWaveformLargestS1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotSumWaveformLargestS1" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlotSumWaveformLargestS1</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotSumWaveformLargestS1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotSumWaveformLargestS1" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.Plotting.PlotBase" title="pax.plugins.io.Plotting.PlotBase"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.Plotting.PlotBase</span></tt></a></p>
 <dl class="method">
 <dt id="pax.plugins.io.Plotting.PlotSumWaveformLargestS1.plot_event">
@@ -357,7 +402,7 @@ Just like PlotChannelWaveforms3D, but seen from above (or below ;-)</p>
 
 <dl class="class">
 <dt id="pax.plugins.io.Plotting.PlotSumWaveformLargestS2">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlotSumWaveformLargestS2</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotSumWaveformLargestS2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotSumWaveformLargestS2" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlotSumWaveformLargestS2</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotSumWaveformLargestS2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotSumWaveformLargestS2" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.Plotting.PlotBase" title="pax.plugins.io.Plotting.PlotBase"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.Plotting.PlotBase</span></tt></a></p>
 <dl class="method">
 <dt id="pax.plugins.io.Plotting.PlotSumWaveformLargestS2.plot_event">
@@ -368,11 +413,11 @@ Just like PlotChannelWaveforms3D, but seen from above (or below ;-)</p>
 
 <dl class="class">
 <dt id="pax.plugins.io.Plotting.PlottingHitPattern">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlottingHitPattern</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlottingHitPattern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlottingHitPattern" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlottingHitPattern</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlottingHitPattern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlottingHitPattern" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.Plotting.PlotBase" title="pax.plugins.io.Plotting.PlotBase"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.Plotting.PlotBase</span></tt></a></p>
 <dl class="method">
 <dt id="pax.plugins.io.Plotting.PlottingHitPattern.plot_event">
-<tt class="descname">plot_event</tt><big>(</big><em>event, show=['S1', 'S2'], show_dominant_array_only=True, subplots_to_use=None</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlottingHitPattern.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlottingHitPattern.plot_event" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">plot_event</tt><big>(</big><em>event</em>, <em>show=('S1'</em>, <em>'S2')</em>, <em>show_dominant_array_only=True</em>, <em>subplots_to_use=None</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlottingHitPattern.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlottingHitPattern.plot_event" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -383,26 +428,12 @@ Just like PlotChannelWaveforms3D, but seen from above (or below ;-)</p>
 </dd></dl>
 
 </div>
-<div class="section" id="module-pax.plugins.io.PrintToScreen">
-<span id="pax-plugins-io-printtoscreen-module"></span><h2>pax.plugins.io.PrintToScreen module<a class="headerlink" href="#module-pax.plugins.io.PrintToScreen" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="pax.plugins.io.PrintToScreen.PrintToScreen">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.PrintToScreen.</tt><tt class="descname">PrintToScreen</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/PrintToScreen.html#PrintToScreen"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.PrintToScreen.PrintToScreen" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.OutputPlugin" title="pax.plugin.OutputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.OutputPlugin</span></tt></a></p>
-<dl class="method">
-<dt id="pax.plugins.io.PrintToScreen.PrintToScreen.write_event">
-<tt class="descname">write_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/PrintToScreen.html#PrintToScreen.write_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.PrintToScreen.PrintToScreen.write_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-</div>
 <div class="section" id="module-pax.plugins.io.RawWaveformDump">
 <span id="pax-plugins-io-rawwaveformdump-module"></span><h2>pax.plugins.io.RawWaveformDump module<a class="headerlink" href="#module-pax.plugins.io.RawWaveformDump" title="Permalink to this headline">¶</a></h2>
 <p>Dumps event waveforms to file using numpy.tofile</p>
 <dl class="class">
 <dt id="pax.plugins.io.RawWaveformDump.DumpPMTWaveformsToBinary">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.RawWaveformDump.</tt><tt class="descname">DumpPMTWaveformsToBinary</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/RawWaveformDump.html#DumpPMTWaveformsToBinary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.RawWaveformDump.DumpPMTWaveformsToBinary" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.RawWaveformDump.</tt><tt class="descname">DumpPMTWaveformsToBinary</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/RawWaveformDump.html#DumpPMTWaveformsToBinary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.RawWaveformDump.DumpPMTWaveformsToBinary" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.RawWaveformDump.WaveformDumperBase" title="pax.plugins.io.RawWaveformDump.WaveformDumperBase"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.RawWaveformDump.WaveformDumperBase</span></tt></a></p>
 <dl class="method">
 <dt id="pax.plugins.io.RawWaveformDump.DumpPMTWaveformsToBinary.get_waveform_to_dump">
@@ -413,7 +444,7 @@ Just like PlotChannelWaveforms3D, but seen from above (or below ;-)</p>
 
 <dl class="class">
 <dt id="pax.plugins.io.RawWaveformDump.DumpSumWaveformToBinary">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.RawWaveformDump.</tt><tt class="descname">DumpSumWaveformToBinary</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/RawWaveformDump.html#DumpSumWaveformToBinary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.RawWaveformDump.DumpSumWaveformToBinary" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.RawWaveformDump.</tt><tt class="descname">DumpSumWaveformToBinary</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/RawWaveformDump.html#DumpSumWaveformToBinary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.RawWaveformDump.DumpSumWaveformToBinary" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.RawWaveformDump.WaveformDumperBase" title="pax.plugins.io.RawWaveformDump.WaveformDumperBase"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.RawWaveformDump.WaveformDumperBase</span></tt></a></p>
 <dl class="method">
 <dt id="pax.plugins.io.RawWaveformDump.DumpSumWaveformToBinary.get_waveform_to_dump">
@@ -424,7 +455,7 @@ Just like PlotChannelWaveforms3D, but seen from above (or below ;-)</p>
 
 <dl class="class">
 <dt id="pax.plugins.io.RawWaveformDump.WaveformDumperBase">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.RawWaveformDump.</tt><tt class="descname">WaveformDumperBase</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/RawWaveformDump.html#WaveformDumperBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.RawWaveformDump.WaveformDumperBase" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.RawWaveformDump.</tt><tt class="descname">WaveformDumperBase</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/RawWaveformDump.html#WaveformDumperBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.RawWaveformDump.WaveformDumperBase" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.OutputPlugin" title="pax.plugin.OutputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.OutputPlugin</span></tt></a></p>
 <dl class="method">
 <dt id="pax.plugins.io.RawWaveformDump.WaveformDumperBase.get_waveform_to_dump">
@@ -447,11 +478,11 @@ Just like PlotChannelWaveforms3D, but seen from above (or below ;-)</p>
 <div class="section" id="module-pax.plugins.io.WaveformSimulator">
 <span id="pax-plugins-io-waveformsimulator-module"></span><h2>pax.plugins.io.WaveformSimulator module<a class="headerlink" href="#module-pax.plugins.io.WaveformSimulator" title="Permalink to this headline">¶</a></h2>
 <p>Plugins to interface with the integrated waveform simulator (FaX)
-This is I/O stuff only: truth file writing, pax event creation, etc.
+This is I/O stuff only: truth file writing, instruction reading, etc.
 There is no physics here, all that is in pax.simulation.</p>
 <dl class="class">
 <dt id="pax.plugins.io.WaveformSimulator.WaveformSimulator">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.WaveformSimulator.</tt><tt class="descname">WaveformSimulator</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulator" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.WaveformSimulator.</tt><tt class="descname">WaveformSimulator</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.InputPlugin" title="pax.plugin.InputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.InputPlugin</span></tt></a></p>
 <p>Common I/O for waveform simulator plugins</p>
 <dl class="method">
@@ -474,11 +505,12 @@ There is no physics here, all that is in pax.simulation.</p>
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
 <li><strong>photons</strong> &#8211; total # of photons generated in the S1</li>
 <li><strong>recoil_type</strong> &#8211; &#8216;ER&#8217; for electronic recoil, &#8216;NR&#8217; for nuclear recoil</li>
-<li><strong>t</strong> &#8211; Time at which the interaction occurs, i.e. offset for arrival times. Defaults to s1_default_recombination_time</li>
+<li><strong>t</strong> &#8211; Time at which the interaction occurs, i.e. offset for arrival times.
+Defaults to s1_default_recombination_time.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">start_time, pmt_waveforms</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">start_time, channel_waveforms</p>
 </td>
 </tr>
 </tbody>
@@ -515,7 +547,7 @@ There is no physics here, all that is in pax.simulation.</p>
 
 <dl class="class">
 <dt id="pax.plugins.io.WaveformSimulator.WaveformSimulatorFromCSV">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.WaveformSimulator.</tt><tt class="descname">WaveformSimulatorFromCSV</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulatorFromCSV"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromCSV" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.WaveformSimulator.</tt><tt class="descname">WaveformSimulatorFromCSV</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulatorFromCSV"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromCSV" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.WaveformSimulator.WaveformSimulator" title="pax.plugins.io.WaveformSimulator.WaveformSimulator"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.WaveformSimulator.WaveformSimulator</span></tt></a></p>
 <dl class="method">
 <dt id="pax.plugins.io.WaveformSimulator.WaveformSimulatorFromCSV.get_instructions_for_next_event">
@@ -537,7 +569,7 @@ There is no physics here, all that is in pax.simulation.</p>
 
 <dl class="class">
 <dt id="pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.WaveformSimulator.</tt><tt class="descname">WaveformSimulatorFromNEST</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulatorFromNEST"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.WaveformSimulator.</tt><tt class="descname">WaveformSimulatorFromNEST</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulatorFromNEST"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.WaveformSimulator.WaveformSimulator" title="pax.plugins.io.WaveformSimulator.WaveformSimulator"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.WaveformSimulator.WaveformSimulator</span></tt></a></p>
 <dl class="method">
 <dt id="pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST.get_instructions_for_next_event">
@@ -562,8 +594,18 @@ There is no physics here, all that is in pax.simulation.</p>
 <p>This plug-in reads raw waveform data from the Old XAMS Lecroy scope binary &amp; text files.</p>
 <dl class="class">
 <dt id="pax.plugins.io.XAMS.DirWithWaveformFiles">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.XAMS.</tt><tt class="descname">DirWithWaveformFiles</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/XAMS.html#DirWithWaveformFiles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.XAMS.DirWithWaveformFiles" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.XAMS.</tt><tt class="descname">DirWithWaveformFiles</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/XAMS.html#DirWithWaveformFiles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.XAMS.DirWithWaveformFiles" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.InputPlugin" title="pax.plugin.InputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.InputPlugin</span></tt></a></p>
+<dl class="attribute">
+<dt id="pax.plugins.io.XAMS.DirWithWaveformFiles.filename_regexp">
+<tt class="descname">filename_regexp</tt><em class="property"> = None</em><a class="headerlink" href="#pax.plugins.io.XAMS.DirWithWaveformFiles.filename_regexp" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.XAMS.DirWithWaveformFiles.get_channel_data">
+<tt class="descname">get_channel_data</tt><big>(</big><em>channel</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/XAMS.html#DirWithWaveformFiles.get_channel_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.XAMS.DirWithWaveformFiles.get_channel_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="method">
 <dt id="pax.plugins.io.XAMS.DirWithWaveformFiles.get_channel_filename">
 <tt class="descname">get_channel_filename</tt><big>(</big><em>channel</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/XAMS.html#DirWithWaveformFiles.get_channel_filename"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.XAMS.DirWithWaveformFiles.get_channel_filename" title="Permalink to this definition">¶</a></dt>
@@ -604,7 +646,7 @@ There is no physics here, all that is in pax.simulation.</p>
 
 <dl class="class">
 <dt id="pax.plugins.io.XAMS.XAMSBinary">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.XAMS.</tt><tt class="descname">XAMSBinary</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/XAMS.html#XAMSBinary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.XAMS.XAMSBinary" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.XAMS.</tt><tt class="descname">XAMSBinary</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/XAMS.html#XAMSBinary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.XAMS.XAMSBinary" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.XAMS.DirWithWaveformFiles" title="pax.plugins.io.XAMS.DirWithWaveformFiles"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.XAMS.DirWithWaveformFiles</span></tt></a></p>
 <dl class="attribute">
 <dt id="pax.plugins.io.XAMS.XAMSBinary.filename_regexp">
@@ -641,7 +683,7 @@ reprocessing of the XED-files we have.</p>
 code for details.</p>
 <dl class="class">
 <dt id="pax.plugins.io.XED.XedInput">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.XED.</tt><tt class="descname">XedInput</tt><big>(</big><em>config_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/XED.html#XedInput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.XED.XedInput" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.XED.</tt><tt class="descname">XedInput</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/XED.html#XedInput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.XED.XedInput" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.InputPlugin" title="pax.plugin.InputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.InputPlugin</span></tt></a></p>
 <dl class="attribute">
 <dt id="pax.plugins.io.XED.XedInput.event_header">
@@ -703,14 +745,11 @@ code for details.</p>
   <ul>
 <li><a class="reference internal" href="#">pax.plugins.io package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#module-pax.plugins.io.CSV">pax.plugins.io.CSV module</a></li>
-<li><a class="reference internal" href="#module-pax.plugins.io.HDF5">pax.plugins.io.HDF5 module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.MongoDB">pax.plugins.io.MongoDB module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.Music">pax.plugins.io.Music module</a></li>
-<li><a class="reference internal" href="#module-pax.plugins.io.OnlineMonitor">pax.plugins.io.OnlineMonitor module</a></li>
+<li><a class="reference internal" href="#module-pax.plugins.io.Pandas">pax.plugins.io.Pandas module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.Pickle">pax.plugins.io.Pickle module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.Plotting">pax.plugins.io.Plotting module</a></li>
-<li><a class="reference internal" href="#module-pax.plugins.io.PrintToScreen">pax.plugins.io.PrintToScreen module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.RawWaveformDump">pax.plugins.io.RawWaveformDump module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.WaveformSimulator">pax.plugins.io.WaveformSimulator module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.XAMS">pax.plugins.io.XAMS module</a></li>

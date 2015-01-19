@@ -1,0 +1,164 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Position Reconstruction &mdash; Processor for Analyzing XENON1T 1.4.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '1.4.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Processor for Analyzing XENON1T 1.4.0 documentation" href="index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">Processor for Analyzing XENON1T 1.4.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="position-reconstruction">
+<h1>Position Reconstruction<a class="headerlink" href="#position-reconstruction" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="intro">
+<h2>Intro<a class="headerlink" href="#intro" title="Permalink to this headline">¶</a></h2>
+<p>Position reconstruction (in the x,y plane) in pax is done via transformation plugins. Such a plugin will take an event and for each S2 peak reconstruct the original position of the interaction. Each peak will then be appended with a <cite>ReconstructedPosition</cite> object so other plugins in the processing chain can use this information.</p>
+<p>Pax has the following position reconstruction plugins:</p>
+<ul class="simple">
+<li>Charge-weighted sum reconstruction</li>
+<li>Chi-square-gamma minimization reconstruction</li>
+</ul>
+</div>
+<div class="section" id="charge-weighted-sum">
+<h2>Charge-weighted Sum<a class="headerlink" href="#charge-weighted-sum" title="Permalink to this headline">¶</a></h2>
+<p>For each S2 peak this algorithm calculates the charge-weighted sum and appends this information to the peak in the form of a <cite>ReconstructedPosition</cite> object.</p>
+<div class="section" id="usage-and-settings">
+<h3>Usage and Settings<a class="headerlink" href="#usage-and-settings" title="Permalink to this headline">¶</a></h3>
+<p>In the configuration file, in the list of transformation plugins, include:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="s">&#39;PosSimple.PosRecWeightedSum&#39;</span>
+</pre></div>
+</div>
+<p>Options:</p>
+<ul class="simple">
+<li>channels_to_use_for_reconstruction</li>
+</ul>
+<p>channels_to_use_for_reconstruction can either be <cite>top</cite> or <cite>bottom</cite></p>
+</div>
+</div>
+<div class="section" id="chi-square-gamma-minimization">
+<h2>Chi-square-gamma Minimization<a class="headerlink" href="#chi-square-gamma-minimization" title="Permalink to this headline">¶</a></h2>
+<p>This position reconstruction is based on the assumption that the number of counts in the PMTs of the top array are generally low and we are thus dealing with poisson distributed data. Therefore this data will not in general be described by a chi-square distribution since it underestimates the true mean. Using a modified chi-square statistic for low counts, called the chi-square-gamma distribution it is possible to reconstruct the true mean.</p>
+<p>This plugin uses a simulated LCE map and an S2 hit pattern to construct a chi-square-gamma distribution function in the x,y plane. Then finding the global minimum of this function yields the reconstructed position. The function value at this position is a goodness-of-fit parameter &#8220;chi-square-gamma&#8221;. The plugin also calculates the number of degrees of freedom (ndf).</p>
+<p>To minimize the function the plugin uses a SciPy minimizer using the Powell method, the options of this minimizer are currently optimized for accuracy, not for speed. The starting position for the minimizer is the position of the top PMT which sees the most signal, if a weighted sum is already calculated this position is taken as start value.</p>
+<p>Since the chi-square-gamma function value at the reconstructed position is a goodness-of-fit parameter it can also be used to check how well other positions are reconstructed by calculating their chi-square-gamma value. Therefore the plugin checks if a peak already contains a <cite>ReconstructedPosition</cite> object created with another position reconstruction algorithm and appends the goodness-of-fit and ndf to these.</p>
+<div class="section" id="id1">
+<h3>Usage and Settings<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<p>In the configuration file, in the list of transformation plugins, include:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="s">&#39;PosRecChiSquareGamma.PosRecChiSquareGamma&#39;</span>
+</pre></div>
+</div>
+<p>There are currenly two options that need to be set in order to use the plugin. <cite>posrecChi.ini</cite> provides a &#8220;minimal working example&#8221;.</p>
+<p>Options are:</p>
+<ul class="simple">
+<li>mode</li>
+<li>lce_map_file_name</li>
+</ul>
+<p>mode can be either <cite>full</cite>, <cite>no_reconstruct</cite> or <cite>only_reconstruct</cite>:</p>
+<ul class="simple">
+<li><cite>no_reconstruct</cite> will only append a new goodness-of-fit and ndf parameter to existing <cite>ReconstructedPosition</cite> objects created with other algorithms.</li>
+<li><cite>only_reconstruct</cite> will leave existing <cite>ReconstructedPosition</cite> objects alone, do position reconstruction and append a new <cite>ReconstructedPosition</cite> object.</li>
+<li><cite>full</cite> will do both</li>
+</ul>
+<p>lce_map_file is the name of the LCE-map in the data directory.</p>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Position Reconstruction</a><ul>
+<li><a class="reference internal" href="#intro">Intro</a></li>
+<li><a class="reference internal" href="#charge-weighted-sum">Charge-weighted Sum</a><ul>
+<li><a class="reference internal" href="#usage-and-settings">Usage and Settings</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#chi-square-gamma-minimization">Chi-square-gamma Minimization</a><ul>
+<li><a class="reference internal" href="#id1">Usage and Settings</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/position_reconstruction.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="index.html">Processor for Analyzing XENON1T 1.4.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Christopher Tunnell.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

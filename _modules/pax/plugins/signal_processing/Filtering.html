@@ -1,0 +1,220 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pax.plugins.signal_processing.Filtering &mdash; Processor for Analyzing XENON1T 1.4.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '1.4.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <link rel="top" title="Processor for Analyzing XENON1T 1.4.0 documentation" href="../../../../index.html" />
+    <link rel="up" title="Module code" href="../../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 1.4.0 documentation</a> &raquo;</li>
+          <li><a href="../../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pax.plugins.signal_processing.Filtering</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">datastructure</span>
+<span class="kn">from</span> <span class="nn">scipy.signal</span> <span class="kn">import</span> <span class="n">butter</span><span class="p">,</span> <span class="n">filtfilt</span>
+
+
+<div class="viewcode-block" id="Filtering"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Filtering.Filtering">[docs]</a><span class="k">class</span> <span class="nc">Filtering</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
+
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="Filtering.butter_bandpass"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Filtering.Filtering.butter_bandpass">[docs]</a>    <span class="k">def</span> <span class="nf">butter_bandpass</span><span class="p">(</span><span class="n">lowcut</span><span class="p">,</span> <span class="n">highcut</span><span class="p">,</span> <span class="n">fs</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+        <span class="n">nyq</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">fs</span>
+        <span class="n">low</span> <span class="o">=</span> <span class="n">lowcut</span> <span class="o">/</span> <span class="n">nyq</span>
+        <span class="n">high</span> <span class="o">=</span> <span class="n">highcut</span> <span class="o">/</span> <span class="n">nyq</span>
+        <span class="n">b</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">butter</span><span class="p">(</span><span class="n">order</span><span class="p">,</span> <span class="p">[</span><span class="n">low</span><span class="p">,</span> <span class="n">high</span><span class="p">],</span> <span class="n">btype</span><span class="o">=</span><span class="s">&#39;band&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">b</span><span class="p">,</span> <span class="n">a</span>
+</div>
+<div class="viewcode-block" id="Filtering.startup"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Filtering.Filtering.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;simulate_Xerawdp_convolution_bug&#39;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&#39;Xerawdp convolution bug simulation is enabled: S2 peak finding will be less accurate.&#39;</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;filters&#39;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Applying filter </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">f</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="s">&#39;impulse_response&#39;</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+                <span class="c"># Time domain filter: convolution with an impulse response</span>
+                <span class="n">ir</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s">&#39;impulse_response&#39;</span><span class="p">])</span>
+
+                <span class="c"># Check if the impulse response is sane</span>
+
+                <span class="k">if</span> <span class="nb">abs</span><span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">ir</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mf">0.0001</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Filter </span><span class="si">%s</span><span class="s"> has non-normalized impulse response: </span><span class="si">%s</span><span class="s"> != 1.&quot;</span>
+                                     <span class="s">&quot;Normalizing for you...&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">ir</span><span class="p">)))</span>
+                    <span class="n">f</span><span class="p">[</span><span class="s">&#39;impulse_response&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ir</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">ir</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ir</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Filter </span><span class="si">%s</span><span class="s"> has an even-length impulse response!&quot;</span> <span class="o">%</span> <span class="n">f</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">])</span>
+
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">ir</span> <span class="o">-</span> <span class="n">ir</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Filter </span><span class="si">%s</span><span class="s"> has an asymmetric impulse response!&quot;</span> <span class="o">%</span> <span class="n">f</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">])</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c"># Frequency bandpass filter</span>
+                <span class="c"># Implementation from http://wiki.scipy.org/Cookbook/ButterworthBandpass</span>
+                <span class="n">sampling_rate</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;sample_duration&#39;</span><span class="p">]</span>
+
+                <span class="c"># Plot the frequency response for a few different orders.</span>
+                <span class="c"># fs = sampling_rate</span>
+                <span class="c"># import matplotlib.pyplot as plt</span>
+                <span class="c"># plt.figure(1)</span>
+                <span class="c"># plt.clf()</span>
+                <span class="c"># for order in range(6):</span>
+                <span class="c">#     b, a = self.butter_bandpass(</span>
+                <span class="c">#          lowcut=f[&#39;low_freq_bound&#39;],</span>
+                <span class="c">#          highcut=f[&#39;high_freq_bound&#39;],</span>
+                <span class="c">#          fs=sampling_rate,</span>
+                <span class="c">#          order=order</span>
+                <span class="c">#     )</span>
+                <span class="c">#     w, h = freqz(b, a, worN=2000)</span>
+                <span class="c">#     plt.plot((fs * 0.5 / np.pi) * w, abs(h), label=&quot;order = %d&quot; % order)</span>
+                <span class="c">#</span>
+                <span class="c"># plt.plot([0, 0.5 * fs], [np.sqrt(0.5), np.sqrt(0.5)],</span>
+                <span class="c">#          &#39;--&#39;, label=&#39;sqrt(0.5)&#39;)</span>
+                <span class="c"># plt.xlabel(&#39;Frequency (GHz)&#39;)</span>
+                <span class="c"># plt.ylabel(&#39;Gain&#39;)</span>
+                <span class="c"># plt.grid(True)</span>
+                <span class="c"># plt.legend(loc=&#39;best&#39;)</span>
+
+                <span class="n">f</span><span class="p">[</span><span class="s">&#39;filter_parameters&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">butter_bandpass</span><span class="p">(</span>
+                    <span class="n">lowcut</span><span class="o">=</span><span class="n">f</span><span class="p">[</span><span class="s">&#39;low_freq_bound&#39;</span><span class="p">],</span>
+                    <span class="n">highcut</span><span class="o">=</span><span class="n">f</span><span class="p">[</span><span class="s">&#39;high_freq_bound&#39;</span><span class="p">],</span>
+                    <span class="n">fs</span><span class="o">=</span><span class="n">sampling_rate</span><span class="p">,</span>
+                    <span class="n">order</span><span class="o">=</span><span class="mi">1</span>    <span class="c"># At high orders the frequency response seems to go bananas..?</span>
+                <span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Filtering.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Filtering.Filtering.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;filters&#39;</span><span class="p">]:</span>
+
+            <span class="n">input_w</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">get_sum_waveform</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s">&#39;source&#39;</span><span class="p">])</span>
+            <span class="n">signal</span> <span class="o">=</span> <span class="n">input_w</span><span class="o">.</span><span class="n">samples</span>
+            <span class="k">if</span> <span class="s">&#39;impulse_response&#39;</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">f</span><span class="p">[</span><span class="s">&#39;impulse_response&#39;</span><span class="p">],</span> <span class="s">&#39;same&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="n">filtfilt</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s">&#39;filter_parameters&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">f</span><span class="p">[</span><span class="s">&#39;filter_parameters&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">signal</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;simulate_Xerawdp_convolution_bug&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="s">&#39;impulse_response&#39;</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+                <span class="c">##</span>
+                <span class="c"># This dirty code hack implements the Xerawdp convolution bug</span>
+                <span class="c"># DO NOT USE except for Xerawdp matching!</span>
+                <span class="c">##</span>
+                <span class="c"># TODO: could be done more straightforwardly now that we&#39;ve stored occurrences properly</span>
+                <span class="n">filter_length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">f</span><span class="p">[</span><span class="s">&#39;impulse_response&#39;</span><span class="p">])</span>
+
+                <span class="c"># Determine the pulse boundaries</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sign</span><span class="p">(</span><span class="n">signal</span><span class="p">))</span>
+                <span class="n">pbs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">y</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">],</span>
+                                      <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">roll</span><span class="p">(</span><span class="n">y</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">y</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]))</span>
+
+                <span class="c"># Check if these are real pulse boundaries: at least three samples before or after must be zero</span>
+                <span class="n">real_pbs</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">pbs</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">q</span> <span class="o">&lt;</span> <span class="mi">3</span> <span class="ow">or</span> <span class="n">q</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span> <span class="o">-</span> <span class="mi">4</span><span class="p">:</span>
+                        <span class="k">continue</span>  <span class="c"># So these tests don&#39;t fail</span>
+                    <span class="k">if</span> <span class="n">signal</span><span class="p">[</span><span class="n">q</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">signal</span><span class="p">[</span><span class="n">q</span> <span class="o">-</span> <span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="n">signal</span><span class="p">[</span><span class="n">q</span> <span class="o">-</span> <span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> \
+                       <span class="n">signal</span><span class="p">[</span><span class="n">q</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">signal</span><span class="p">[</span><span class="n">q</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="n">signal</span><span class="p">[</span><span class="n">q</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">real_pbs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">q</span><span class="p">)</span>
+
+                <span class="c"># Mutilate the waveform</span>
+                <span class="c"># First mutilate the edges, which are always pulse boundaries</span>
+                <span class="n">output</span><span class="p">[:</span><span class="nb">int</span><span class="p">(</span><span class="n">filter_length</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">filter_length</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span>
+                <span class="n">output</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">output</span><span class="p">)</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">filter_length</span> <span class="o">/</span> <span class="mi">2</span><span class="p">):]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">filter_length</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span>
+                <span class="c"># Mutilate waveform around pulse boundaries</span>
+                <span class="k">for</span> <span class="n">pb</span> <span class="ow">in</span> <span class="n">real_pbs</span><span class="p">:</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">lefti</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">pb</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="n">filter_length</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span>
+                        <span class="n">righti</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">pb</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">filter_length</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span>
+                        <span class="n">output</span><span class="p">[</span><span class="n">lefti</span><span class="p">:</span><span class="n">righti</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">righti</span> <span class="o">-</span> <span class="n">lefti</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Error during waveform mutilation: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;. So what...&quot;</span><span class="p">)</span>
+
+            <span class="n">event</span><span class="o">.</span><span class="n">sum_waveforms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">datastructure</span><span class="o">.</span><span class="n">SumWaveform</span><span class="p">(</span>
+                <span class="n">name</span><span class="o">=</span><span class="n">f</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">],</span>
+                <span class="n">samples</span><span class="o">=</span><span class="n">output</span><span class="p">,</span>
+                <span class="n">channel_list</span><span class="o">=</span><span class="n">input_w</span><span class="o">.</span><span class="n">channel_list</span><span class="p">,</span>
+                <span class="n">detector</span><span class="o">=</span><span class="n">input_w</span><span class="o">.</span><span class="n">detector</span><span class="p">,</span>
+            <span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">event</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 1.4.0 documentation</a> &raquo;</li>
+          <li><a href="../../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Christopher Tunnell.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

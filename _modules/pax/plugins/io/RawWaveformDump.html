@@ -60,7 +60,7 @@
         <span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span>
         <span class="c"># Factor from assemble_signals, without the ADC -&gt; voltage stuff, with</span>
         <span class="c"># gain=2e6</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conversion_factor</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;digitizer_t_resolution&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conversion_factor</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;sample_duration&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span>
             <span class="n">c</span><span class="p">[</span><span class="s">&#39;pmt_circuit_load_resistor&#39;</span><span class="p">]</span> <span class="o">*</span>
             <span class="n">c</span><span class="p">[</span><span class="s">&#39;external_amplification&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">electron_charge</span> <span class="o">*</span> <span class="mf">2e6</span>
         <span class="p">)</span>
@@ -81,13 +81,13 @@
 <div class="viewcode-block" id="DumpSumWaveformToBinary"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.RawWaveformDump.DumpSumWaveformToBinary">[docs]</a><span class="k">class</span> <span class="nc">DumpSumWaveformToBinary</span><span class="p">(</span><span class="n">WaveformDumperBase</span><span class="p">):</span>
 
 <div class="viewcode-block" id="DumpSumWaveformToBinary.get_waveform_to_dump"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.RawWaveformDump.DumpSumWaveformToBinary.get_waveform_to_dump">[docs]</a>    <span class="k">def</span> <span class="nf">get_waveform_to_dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">event</span><span class="o">.</span><span class="n">get_waveform</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;waveform_to_dump&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">samples</span>
+        <span class="k">return</span> <span class="n">event</span><span class="o">.</span><span class="n">get_sum_waveform</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;waveform_to_dump&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">samples</span>
 
 </div></div>
 <div class="viewcode-block" id="DumpPMTWaveformsToBinary"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.RawWaveformDump.DumpPMTWaveformsToBinary">[docs]</a><span class="k">class</span> <span class="nc">DumpPMTWaveformsToBinary</span><span class="p">(</span><span class="n">WaveformDumperBase</span><span class="p">):</span>
 
 <div class="viewcode-block" id="DumpPMTWaveformsToBinary.get_waveform_to_dump"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.RawWaveformDump.DumpPMTWaveformsToBinary.get_waveform_to_dump">[docs]</a>    <span class="k">def</span> <span class="nf">get_waveform_to_dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">event</span><span class="o">.</span><span class="n">pmt_waveforms</span></div></div>
+        <span class="k">return</span> <span class="n">event</span><span class="o">.</span><span class="n">channel_waveforms</span></div></div>
 </pre></div>
 
           </div>

@@ -1,0 +1,956 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pax.plugins.signal_processing.OldPeakFinder &mdash; Processor for Analyzing XENON1T 1.4.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '1.4.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <link rel="top" title="Processor for Analyzing XENON1T 1.4.0 documentation" href="../../../../index.html" />
+    <link rel="up" title="Module code" href="../../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 1.4.0 documentation</a> &raquo;</li>
+          <li><a href="../../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pax.plugins.signal_processing.OldPeakFinder</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This code imitates the peakfinding of Xerawdp (the Xenon100 processor)</span>
+<span class="sd">Its only purpose is to show we understand Xerawdp enough to be able to reproduce it,</span>
+<span class="sd">it is not meant to replace Xerawdp, nor to be used unmodified by Xenon1T or any experiment.</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">datastructure</span>
+
+
+<div class="viewcode-block" id="FindPeaksXeRawDPStyle"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.OldPeakFinder.FindPeaksXeRawDPStyle">[docs]</a><span class="k">class</span> <span class="nc">FindPeaksXeRawDPStyle</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;NB: Does NOT do veto peakfinding!!!&quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="FindPeaksXeRawDPStyle.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.OldPeakFinder.FindPeaksXeRawDPStyle.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+
+        <span class="c"># Load settings here, so we are sure dynamic threshold stuff etc gets reset</span>
+        <span class="c"># Don&#39;t need to move these to ini I think, this plugin is meant to match Xerawdp, which always used these</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">settings_for_peaks</span> <span class="o">=</span> <span class="p">[</span>   <span class="c"># We need a specific order, so we can&#39;t use a dict</span>
+            <span class="p">(</span><span class="s">&#39;large_s2&#39;</span><span class="p">,</span> <span class="p">{</span>
+                <span class="s">&#39;threshold&#39;</span><span class="p">:</span>                        <span class="mf">0.6241506363</span><span class="p">,</span>
+                <span class="s">&#39;left_boundary_to_height_ratio&#39;</span><span class="p">:</span>    <span class="mf">0.005</span><span class="p">,</span>
+                <span class="s">&#39;right_boundary_to_height_ratio&#39;</span><span class="p">:</span>   <span class="mf">0.002</span><span class="p">,</span>
+                <span class="c"># +1 as Xerawdp tests for ... &gt; minwidth, which is stupid, so my code doesn&#39;t</span>
+                <span class="s">&#39;min_length&#39;</span><span class="p">:</span>                       <span class="mi">35</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s">&#39;max_length&#39;</span><span class="p">:</span>                       <span class="nb">float</span><span class="p">(</span><span class="s">&#39;inf&#39;</span><span class="p">),</span>
+                <span class="s">&#39;min_base_interval_length&#39;</span><span class="p">:</span>         <span class="mi">60</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s">&#39;max_base_interval_length&#39;</span><span class="p">:</span>         <span class="nb">float</span><span class="p">(</span><span class="s">&#39;inf&#39;</span><span class="p">),</span>
+                <span class="s">&#39;source_waveform&#39;</span><span class="p">:</span>                  <span class="s">&#39;filtered_for_large_s2&#39;</span><span class="p">,</span>
+                <span class="c"># For isolation test on top-level interval</span>
+                <span class="s">&#39;around_interval_to_height_ratio_max&#39;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>
+                <span class="s">&#39;test_around_interval&#39;</span><span class="p">:</span>             <span class="mi">21</span><span class="p">,</span>
+                <span class="c"># For isolation test on every peak</span>
+                <span class="s">&#39;around_peak_to_height_ratio_max&#39;</span><span class="p">:</span>  <span class="mf">0.25</span><span class="p">,</span>
+                <span class="s">&#39;test_around_peak&#39;</span><span class="p">:</span>                 <span class="mi">21</span><span class="p">,</span>
+                <span class="s">&#39;min_crossing_length&#39;</span><span class="p">:</span>              <span class="mi">1</span><span class="p">,</span>
+                <span class="s">&#39;stop_if_start_exceeded&#39;</span><span class="p">:</span>           <span class="bp">False</span><span class="p">,</span>  <span class="c"># Not for large s2s? Bug?</span>
+            <span class="p">}),</span>
+            <span class="p">(</span><span class="s">&#39;small_s2&#39;</span><span class="p">,</span> <span class="p">{</span>
+                <span class="s">&#39;threshold&#39;</span><span class="p">:</span>                        <span class="mf">0.06241506363</span><span class="p">,</span>
+                <span class="s">&#39;left_boundary_to_height_ratio&#39;</span><span class="p">:</span>    <span class="mf">0.01</span><span class="p">,</span>
+                <span class="s">&#39;right_boundary_to_height_ratio&#39;</span><span class="p">:</span>   <span class="mf">0.01</span><span class="p">,</span>
+                <span class="s">&#39;min_base_interval_length&#39;</span><span class="p">:</span>         <span class="mi">40</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s">&#39;max_base_interval_length&#39;</span><span class="p">:</span>         <span class="mi">200</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s">&#39;source_waveform&#39;</span><span class="p">:</span>                  <span class="s">&#39;filtered_for_small_s2&#39;</span><span class="p">,</span>
+                <span class="s">&#39;around_to_height_ratio_max&#39;</span><span class="p">:</span>       <span class="mf">0.05</span><span class="p">,</span>
+                <span class="s">&#39;test_around&#39;</span><span class="p">:</span>                      <span class="mi">10</span><span class="p">,</span>
+                <span class="s">&#39;min_crossing_length&#39;</span><span class="p">:</span>              <span class="mi">1</span><span class="p">,</span>
+                <span class="s">&#39;stop_if_start_exceeded&#39;</span><span class="p">:</span>           <span class="bp">True</span><span class="p">,</span>
+                <span class="s">&#39;aspect_ratio_threshold&#39;</span><span class="p">:</span>           <span class="mf">0.06241506363</span><span class="p">,</span>  <span class="c"># height/width = 1 mV/samples</span>
+                <span class="s">&#39;stop_after_s2_height&#39;</span><span class="p">:</span>             <span class="mf">624.150636300</span><span class="p">,</span>
+            <span class="p">}),</span>
+            <span class="p">(</span><span class="s">&#39;s1&#39;</span><span class="p">,</span> <span class="p">{</span>
+                <span class="s">&#39;threshold&#39;</span><span class="p">:</span>                        <span class="mf">0.1872451909</span><span class="p">,</span>
+                <span class="s">&#39;left_boundary_to_height_ratio&#39;</span><span class="p">:</span>    <span class="mf">0.005</span><span class="p">,</span>
+                <span class="s">&#39;right_boundary_to_height_ratio&#39;</span><span class="p">:</span>   <span class="mf">0.005</span><span class="p">,</span>
+                <span class="s">&#39;min_crossing_length&#39;</span><span class="p">:</span>              <span class="mi">3</span><span class="p">,</span>
+                <span class="s">&#39;test_before&#39;</span><span class="p">:</span>                      <span class="mi">50</span><span class="p">,</span>
+                <span class="s">&#39;test_after&#39;</span><span class="p">:</span>                       <span class="mi">10</span><span class="p">,</span>
+                <span class="s">&#39;before_avg_max_ratio&#39;</span><span class="p">:</span>             <span class="mf">0.01</span><span class="p">,</span>
+                <span class="s">&#39;after_avg_max_ratio&#39;</span><span class="p">:</span>              <span class="mf">0.04</span><span class="p">,</span>
+                <span class="s">&#39;stop_if_start_exceeded&#39;</span><span class="p">:</span>           <span class="bp">True</span><span class="p">,</span>
+                <span class="s">&#39;source_waveform&#39;</span><span class="p">:</span>                 <span class="s">&#39;uS1&#39;</span><span class="p">,</span>
+                <span class="s">&#39;max_filtered_width&#39;</span><span class="p">:</span>               <span class="mi">50</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                <span class="s">&#39;stop_after_s2_height&#39;</span><span class="p">:</span>             <span class="mf">3.1207531815</span><span class="p">,</span>
+                <span class="c"># The s1 candidate interval isn&#39;t tested:</span>
+                <span class="s">&#39;min_base_interval_length&#39;</span><span class="p">:</span>         <span class="mi">0</span><span class="p">,</span>
+                <span class="s">&#39;max_base_interval_length&#39;</span><span class="p">:</span>         <span class="nb">float</span><span class="p">(</span><span class="s">&#39;inf&#39;</span><span class="p">),</span>
+            <span class="p">}),</span>
+        <span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">seeker_position</span> <span class="o">=</span> <span class="bp">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">highest_s2_height_ever</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">peak_type</span><span class="p">,</span> <span class="n">settings</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings_for_peaks</span><span class="p">:</span>
+            <span class="c"># Get the signal out</span>
+            <span class="n">signal</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">get_sum_waveform</span><span class="p">(</span><span class="n">settings</span><span class="p">[</span><span class="s">&#39;source_waveform&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">samples</span>
+
+            <span class="c"># Delete peaks beyond the 32 with largest area - must do AFTER small s2 peakfinding</span>
+            <span class="k">if</span> <span class="n">peak_type</span> <span class="o">==</span> <span class="s">&#39;s1&#39;</span><span class="p">:</span>
+                <span class="n">event</span><span class="o">.</span><span class="n">peaks</span> <span class="o">=</span> <span class="n">sort_and_prune_by</span><span class="p">(</span>
+                    <span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">,</span>
+                    <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s">&#39;area&#39;</span><span class="p">),</span>
+                    <span class="n">keep_number</span><span class="o">=</span><span class="p">(</span><span class="mi">32</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;prune_peaks&#39;</span><span class="p">]</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;inf&#39;</span><span class="p">)),</span>
+                    <span class="n">reverse</span><span class="o">=</span><span class="bp">True</span>
+                <span class="p">)</span>
+
+            <span class="c">##</span>
+            <span class="c"># STAGE 1 - REGION FINDING</span>
+            <span class="c">##</span>
+            <span class="c"># Determines the regions in which to search for peak candidate intervals</span>
+            <span class="c">##</span>
+
+            <span class="c"># Determine when we should stop looking for this type of peaks</span>
+            <span class="n">stop_looking_after</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;inf&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">peak_type</span> <span class="o">==</span> <span class="s">&#39;small_s2&#39;</span><span class="p">:</span>
+                <span class="c"># For small s2s, we stop looking after a sufficiently large s2 (height in large_s2 waveform) is seen</span>
+                <span class="c"># Don&#39;t have to test these peaks are actually s2s, those are the only peaks in here</span>
+                <span class="n">stop_looking_after</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span>
+                    <span class="p">[</span><span class="n">stop_looking_after</span><span class="p">]</span> <span class="o">+</span>
+                    <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">left</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">peaks</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">height</span> <span class="o">&gt;</span> <span class="n">settings</span><span class="p">[</span><span class="s">&#39;stop_after_s2_height&#39;</span><span class="p">]]</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="n">peak_type</span> <span class="o">==</span> <span class="s">&#39;s1&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">:</span>
+                    <span class="n">stop_looking_after</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span>
+                        <span class="c"># We stop looking for s1s after the s2 with the largest area - undocumented!</span>
+                        <span class="p">[</span><span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">left</span><span class="p">]</span> <span class="o">+</span>
+                        <span class="c"># Also stop looking after s2s with large enough amplitude.</span>
+                        <span class="c"># Xerawdp redetermines the amplitude here, using the s1 peakfinding waveform!</span>
+                        <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">left</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">peaks</span>
+                         <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">get_sum_waveform</span><span class="p">(</span><span class="s">&#39;uS1&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">samples</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">index_of_maximum</span><span class="p">]</span>
+                         <span class="o">&gt;</span> <span class="n">settings</span><span class="p">[</span><span class="s">&#39;stop_after_s2_height&#39;</span><span class="p">]]</span>
+                    <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Starting </span><span class="si">%s</span><span class="s"> search, stop looking after </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">peak_type</span><span class="p">,</span> <span class="n">stop_looking_after</span><span class="p">))</span>
+
+            <span class="c"># Find the free regions - regions where peaks haven&#39;t yet been found</span>
+            <span class="c"># We could move this to the event class...</span>
+            <span class="n">lefts</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">left</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">])</span>
+            <span class="n">rights</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">p</span><span class="o">.</span><span class="n">right</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">event</span><span class="o">.</span><span class="n">length</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="c"># Assuming each peak&#39;s right &gt; left, we can simply split sorted(lefts+rights) in pairs:</span>
+            <span class="n">free_regions</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="nb">iter</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">lefts</span> <span class="o">+</span> <span class="n">rights</span><span class="p">))]</span> <span class="o">*</span> <span class="mi">2</span><span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Free regions: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">free_regions</span><span class="p">))</span>
+
+            <span class="c"># Construct search regions from the free regions</span>
+            <span class="n">search_regions</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">region_l</span><span class="p">,</span> <span class="n">region_r</span> <span class="ow">in</span> <span class="n">free_regions</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">region_l</span> <span class="o">&gt;=</span> <span class="n">stop_looking_after</span><span class="p">:</span>
+                    <span class="k">break</span>
+                <span class="c"># S1s have a protection against starting too soon</span>
+                <span class="c"># (I guess S2s don&#39;t need this because of the filters applied to the waveform)</span>
+                <span class="k">if</span> <span class="n">peak_type</span> <span class="o">==</span> <span class="s">&#39;s1&#39;</span> <span class="ow">and</span> <span class="n">region_l</span> <span class="o">&lt;</span> <span class="mi">12</span><span class="p">:</span>
+                    <span class="n">region_l</span> <span class="o">=</span> <span class="mi">12</span>
+                <span class="n">search_regions</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">region_l</span><span class="p">,</span> <span class="n">region_r</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Search regions: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">search_regions</span><span class="p">))</span>
+
+            <span class="c">##</span>
+            <span class="c"># STAGE 2 - FIND PEAK CANDIDATE INTERVALS</span>
+            <span class="c">##</span>
+            <span class="c"># Finds regions above threshold were peak candidates may be found</span>
+            <span class="c">##</span>
+            <span class="k">for</span> <span class="n">region_left</span><span class="p">,</span> <span class="n">region_right</span> <span class="ow">in</span> <span class="n">search_regions</span><span class="p">:</span>
+
+                <span class="c"># (re)set some bookkeeping variables, need these later</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">current_region_left</span> <span class="o">=</span> <span class="n">region_left</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">current_region_right</span> <span class="o">=</span> <span class="n">region_right</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">left_extent_small_s2_search_limit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_region_left</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">last_s1_rightmost_index</span> <span class="o">=</span> <span class="n">region_left</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">seeker_position</span> <span class="o">=</span> <span class="n">region_left</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">this_s1_alert_position</span> <span class="o">=</span> <span class="mi">0</span>
+
+                <span class="c"># Search for threshold crossings</span>
+                <span class="k">while</span> <span class="mi">1</span><span class="p">:</span>
+
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">seeker_position</span> <span class="o">&gt;=</span> <span class="n">region_right</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Seeker position ended up at </span><span class="si">%s</span><span class="s">, right region boundary is at </span><span class="si">%s</span><span class="s">!&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">seeker_position</span><span class="p">,</span> <span class="n">region_right</span><span class="p">,</span>
+                        <span class="p">))</span>
+                        <span class="k">break</span>
+
+                    <span class="c"># Find the left_boundary of the next peak candidate interval</span>
+                    <span class="k">if</span> <span class="n">signal</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">seeker_position</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">settings</span><span class="p">[</span><span class="s">&#39;threshold&#39;</span><span class="p">]:</span>
+                        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">                        We&#39;re already above threshold, this is the start of a new peak</span>
+<span class="sd">                            Note on XerawDP matching:</span>
+<span class="sd">                            If we&#39;re looking for s1s, the seeker position can count as starting an s1.</span>
+<span class="sd">                            For S2s, Xerawdp checks for an upwards threshold CROSSING, so you would think it can&#39;t...</span>
+<span class="sd">                            ... however, I believe this is only an issue after a peak that fails tests,</span>
+<span class="sd">                            in this case Xerawdp sets &quot;above-threshold&quot; to false manually.</span>
+<span class="sd">                        &quot;&quot;&quot;</span>
+                        <span class="n">left_boundary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">seeker_position</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c"># We&#39;re not currently above threshold, so find the next threshold crossing, if it exists</span>
+                        <span class="n">left_boundary</span> <span class="o">=</span> <span class="n">find_next_crossing</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="n">settings</span><span class="p">[</span><span class="s">&#39;threshold&#39;</span><span class="p">],</span>
+                                                           <span class="n">start</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">seeker_position</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="n">region_right</span><span class="p">)</span>
+
+                    <span class="c"># Was there another candidate interval?</span>
+                    <span class="k">if</span> <span class="n">left_boundary</span> <span class="o">==</span> <span class="n">region_right</span><span class="p">:</span>
+                        <span class="k">break</span>
+
+                    <span class="c"># Keep a record of the s1 alert positions: needed for isolation tests</span>
+                    <span class="k">if</span> <span class="n">peak_type</span> <span class="o">==</span> <span class="s">&#39;s1&#39;</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">this_s1_alert_position</span> <span class="o">=</span> <span class="n">left_boundary</span>
+
+                    <span class="c"># Determine the peak candidate interval boundaries</span>
+                    <span class="k">if</span> <span class="n">peak_type</span> <span class="o">==</span> <span class="s">&#39;s1&#39;</span><span class="p">:</span>
+                        <span class="c"># Determine the maximum in the next 60 samples that follows</span>
+                        <span class="n">max_pos</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">signal</span><span class="p">[</span><span class="n">left_boundary</span><span class="p">:</span><span class="nb">min</span><span class="p">(</span><span class="n">left_boundary</span> <span class="o">+</span> <span class="mi">60</span><span class="p">,</span> <span class="n">region_right</span><span class="p">)]))</span>
+                        <span class="n">max_idx</span> <span class="o">=</span> <span class="n">left_boundary</span> <span class="o">+</span> <span class="n">max_pos</span>
+                        <span class="c"># Set the peak candidate interval based on the max position</span>
+                        <span class="c"># NB this overwrites left_boundary!</span>
+
+                        <span class="n">left_boundary</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">max_idx</span> <span class="o">-</span> <span class="mi">10</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+                        <span class="n">right_boundary</span> <span class="o">=</span> <span class="n">max_idx</span> <span class="o">+</span> <span class="mi">60</span>
+                        <span class="c"># Xerawdp doesn&#39;t do proper bounds checking:</span>
+                        <span class="c">#   10 should be min(region_right, &quot;&quot;)</span>
+                        <span class="c">#   max_idx + 60 should be max(region_right, &quot;&quot;)</span>
+                        <span class="c"># I&#39;ll do only a check to prevent crashes:</span>
+                        <span class="k">if</span> <span class="n">right_boundary</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                            <span class="n">right_boundary</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+                        <span class="c"># Checking left boundary &lt;0 is unnecessary, Xerawdp starts S1 search at 12.</span>
+
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c"># For S2s, we simply find where we drop below threshold again</span>
+                        <span class="n">right_boundary</span> <span class="o">=</span> <span class="n">find_next_crossing</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="n">settings</span><span class="p">[</span><span class="s">&#39;threshold&#39;</span><span class="p">],</span>
+                                                            <span class="n">start</span><span class="o">=</span><span class="n">left_boundary</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="n">region_right</span><span class="p">)</span>
+                        <span class="n">max_idx</span> <span class="o">=</span> <span class="bp">None</span>  <span class="c"># This will be determined later</span>
+
+                    <span class="c"># Set the seeker position for the next peak search, if needed</span>
+                    <span class="k">if</span> <span class="n">peak_type</span> <span class="o">==</span> <span class="s">&#39;large_s2&#39;</span><span class="p">:</span>
+                        <span class="c"># Start looking for new intervals after this one (right_boundary itself is below threshold)</span>
+                        <span class="c"># In the rare case that peaks are found beyond which extent beyond the interval</span>
+                        <span class="c">#  it is their responsibility to update the seeker position</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">seeker_position</span> <span class="o">=</span> <span class="n">right_boundary</span>
+                    <span class="c"># For S1s and small s2s, the next seeker position will be set in find_peaks_in,</span>
+                    <span class="c"># based on the right extent of the peak found in the interval.</span>
+
+                    <span class="c"># Does th peak candidate interval actually end? (the tail of a big S2 sometimes doesn&#39;t)</span>
+                    <span class="k">if</span> <span class="n">right_boundary</span> <span class="o">==</span> <span class="n">region_right</span><span class="p">:</span>
+                        <span class="c"># No, it didn&#39;t.</span>
+                        <span class="k">if</span> <span class="n">peak_type</span> <span class="o">==</span> <span class="s">&#39;s2&#39;</span><span class="p">:</span>
+                            <span class="c"># Xerawdp should only &#39;see&#39; an S2 when it drops below threshold, (really? test this!)</span>
+                            <span class="c"># however, s2s at the end of the waveform will always end due to the Xerawdp convolution bug</span>
+                            <span class="k">if</span> <span class="n">right_boundary</span> <span class="o">==</span> <span class="n">event</span><span class="o">.</span><span class="n">length</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                                <span class="k">pass</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> starting at </span><span class="si">%s</span><span class="s"> didn&#39;t end at region boundary </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                                    <span class="n">peak_type</span><span class="p">,</span> <span class="n">left_boundary</span><span class="p">,</span> <span class="n">right_boundary</span>
+                                <span class="p">))</span>
+                                <span class="k">break</span>
+
+                    <span class="c"># Prepare for stage 3</span>
+
+                    <span class="c"># Hack for xerawdp matching: small s2 has wrong signal from here on</span>
+                    <span class="k">if</span> <span class="n">peak_type</span> <span class="o">==</span> <span class="s">&#39;small_s2&#39;</span><span class="p">:</span>
+                        <span class="n">signal_for_later_stages</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">get_sum_waveform</span><span class="p">(</span><span class="s">&#39;filtered_for_large_s2&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">samples</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">signal_for_later_stages</span> <span class="o">=</span> <span class="n">signal</span>
+
+                    <span class="c"># Hand over stage 3to a function: this is needed because Xerawdp recurses for large s2s</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">find_peaks_in</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">peak_type</span><span class="p">,</span> <span class="n">signal_for_later_stages</span><span class="p">,</span> <span class="n">settings</span><span class="p">,</span>
+                                       <span class="n">left_boundary</span><span class="p">,</span> <span class="n">right_boundary</span><span class="p">,</span>
+                                       <span class="n">toplevel</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">max_idx</span><span class="o">=</span><span class="n">max_idx</span><span class="p">)</span>
+
+                    <span class="c"># For large s2, update the dynamic threshold</span>
+                    <span class="c"># TODO: don&#39;t modify settings, so they don&#39;t have to be reloaded all the time!</span>
+                    <span class="k">if</span> <span class="n">peak_type</span> <span class="o">==</span> <span class="s">&#39;large_s2&#39;</span><span class="p">:</span>
+                        <span class="n">potential_new_threshold</span> <span class="o">=</span> <span class="mf">0.001</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">highest_s2_height_ever</span>
+                        <span class="k">if</span> <span class="n">potential_new_threshold</span> <span class="o">&gt;</span> <span class="n">settings</span><span class="p">[</span><span class="s">&#39;threshold&#39;</span><span class="p">]:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Dynamic threshold raised from </span><span class="si">%s</span><span class="s"> to </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                                <span class="n">settings</span><span class="p">[</span><span class="s">&#39;threshold&#39;</span><span class="p">],</span> <span class="n">potential_new_threshold</span><span class="p">))</span>
+                            <span class="n">settings</span><span class="p">[</span><span class="s">&#39;threshold&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">potential_new_threshold</span>
+
+        <span class="k">return</span> <span class="n">event</span>
+</div>
+<div class="viewcode-block" id="FindPeaksXeRawDPStyle.find_peaks_in"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.OldPeakFinder.FindPeaksXeRawDPStyle.find_peaks_in">[docs]</a>    <span class="k">def</span> <span class="nf">find_peaks_in</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">peak_type</span><span class="p">,</span> <span class="n">signal</span><span class="p">,</span> <span class="n">settings</span><span class="p">,</span>
+                      <span class="n">left_boundary</span><span class="p">,</span> <span class="n">right_boundary</span><span class="p">,</span> <span class="n">toplevel</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">max_idx</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+
+        <span class="c">##</span>
+        <span class="c"># STAGE 3 - FIND PEAK EXTENTS</span>
+        <span class="c">##</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> candidate interval </span><span class="si">%s</span><span class="s"> - </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">peak_type</span><span class="p">,</span> <span class="n">left_boundary</span><span class="p">,</span> <span class="n">right_boundary</span><span class="p">))</span>
+
+        <span class="c"># Check if the interval is large enough to contain a peak</span>
+        <span class="c"># We must start with this for large s2s, as it breaks the execution right here if it fails</span>
+        <span class="n">failed_interval_test</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">settings</span><span class="p">[</span><span class="s">&#39;min_base_interval_length&#39;</span><span class="p">]</span> <span class="o">&lt;=</span> \
+                <span class="n">right_boundary</span> <span class="o">-</span> <span class="n">left_boundary</span> <span class="o">&lt;=</span> <span class="n">settings</span><span class="p">[</span><span class="s">&#39;max_base_interval_length&#39;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;    Interval failed width test </span><span class="si">%s</span><span class="s"> &lt;= </span><span class="si">%s</span><span class="s"> &lt;= </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">settings</span><span class="p">[</span><span class="s">&#39;min_base_interval_length&#39;</span><span class="p">],</span>
+                <span class="n">right_boundary</span> <span class="o">-</span> <span class="n">left_boundary</span><span class="p">,</span>
+                <span class="n">settings</span><span class="p">[</span><span class="s">&#39;max_base_interval_length&#39;</span><span class="p">]</span>
+            <span class="p">))</span>
+            <span class="k">if</span> <span class="n">peak_type</span> <span class="o">==</span> <span class="s">&#39;large_s2&#39;</span><span class="p">:</span>
+                <span class="k">return</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c"># We can&#39;t return yet, we need the right extent of the never-to-be-accepted peak</span>
+                <span class="c"># for the new self.seeker_position for small_s2 and s1...</span>
+                <span class="n">failed_interval_test</span> <span class="o">=</span> <span class="bp">True</span>
+
+        <span class="c"># Find the maximum index and height (value at maximum)</span>
+        <span class="k">if</span> <span class="n">max_idx</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">max_idx</span> <span class="o">=</span> <span class="n">left_boundary</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">signal</span><span class="p">[</span><span class="n">left_boundary</span><span class="p">:</span><span class="n">right_boundary</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>  <span class="c"># Remember python indexing</span>
+        <span class="n">height</span> <span class="o">=</span> <span class="n">signal</span><span class="p">[</span><span class="n">max_idx</span><span class="p">]</span>
+
+        <span class="c"># Check for ghost peaks</span>
+        <span class="c"># Can happen for small S2s, as Xerawdp uses different waveform for peakfinding than extent computation</span>
+        <span class="c"># I don&#39;t see how Xerawdp can prevent seriously madhat behavior without checking this...</span>
+        <span class="k">if</span> <span class="n">height</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c"># ABORT ABORT ABORT</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Ghost peak (0 height) at </span><span class="si">%s</span><span class="s">, cannot compute extent!&quot;</span> <span class="o">%</span> <span class="n">max_idx</span><span class="p">)</span>
+            <span class="c"># Have to set seeker position... Guess:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">seeker_position</span> <span class="o">=</span> <span class="n">right_boundary</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="k">return</span>
+
+        <span class="c"># How is the point to stop looking for the peak&#39;s extent related to the interval we&#39;re searching in?</span>
+        <span class="c"># TODO: add more comments here</span>
+        <span class="k">if</span> <span class="n">peak_type</span> <span class="o">==</span> <span class="s">&#39;large_s2&#39;</span><span class="p">:</span>
+            <span class="n">left_extent_search_limit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nearest_s2_boundary</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">max_idx</span><span class="p">,</span> <span class="n">left_boundary</span><span class="p">,</span> <span class="s">&#39;left&#39;</span><span class="p">)</span>
+            <span class="n">right_extent_search_limit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nearest_s2_boundary</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">max_idx</span><span class="p">,</span> <span class="n">right_boundary</span><span class="p">,</span> <span class="s">&#39;right&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">peak_type</span> <span class="o">==</span> <span class="s">&#39;small_s2&#39;</span><span class="p">:</span>
+            <span class="n">left_extent_search_limit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">left_extent_small_s2_search_limit</span>
+            <span class="n">right_extent_search_limit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_region_right</span>
+        <span class="k">else</span><span class="p">:</span>       <span class="c"># peak_type == &#39;s1&#39;:</span>
+            <span class="c"># The interval has already been tailored for us in stage 2</span>
+            <span class="n">left_extent_search_limit</span> <span class="o">=</span> <span class="n">left_boundary</span>
+            <span class="n">right_extent_search_limit</span> <span class="o">=</span> <span class="n">right_boundary</span>
+
+        <span class="c"># Find the peak extent</span>
+        <span class="c"># Xerawdp arcana: the S1 extent will be extended by 2 in both directions when it is stored,</span>
+        <span class="c"># but the value we find here is used for tests etc.</span>
+        <span class="p">(</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">)</span> <span class="o">=</span> <span class="n">interval_until_threshold</span><span class="p">(</span>
+            <span class="n">signal</span><span class="p">,</span>
+            <span class="n">start</span><span class="o">=</span><span class="n">max_idx</span><span class="p">,</span>
+            <span class="n">left_threshold</span><span class="o">=</span><span class="n">settings</span><span class="p">[</span><span class="s">&#39;left_boundary_to_height_ratio&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">height</span><span class="p">,</span>
+            <span class="n">right_threshold</span><span class="o">=</span><span class="n">settings</span><span class="p">[</span><span class="s">&#39;right_boundary_to_height_ratio&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">height</span><span class="p">,</span>
+            <span class="n">left_limit</span><span class="o">=</span><span class="n">left_extent_search_limit</span><span class="p">,</span>
+            <span class="n">right_limit</span><span class="o">=</span><span class="n">right_extent_search_limit</span><span class="p">,</span>
+            <span class="n">stop_if_start_exceeded</span><span class="o">=</span><span class="n">settings</span><span class="p">[</span><span class="s">&#39;stop_if_start_exceeded&#39;</span><span class="p">],</span>
+            <span class="n">min_crossing_length</span><span class="o">=</span><span class="n">settings</span><span class="p">[</span><span class="s">&#39;min_crossing_length&#39;</span><span class="p">],</span>
+            <span class="n">activate_xerawdp_hacks_for</span><span class="o">=</span><span class="n">peak_type</span><span class="p">,</span>   <span class="c"># :-(</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> peak candidate: </span><span class="si">%s</span><span class="s">-</span><span class="si">%s</span><span class="s">-</span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">peak_type</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">max_idx</span><span class="p">,</span> <span class="n">right</span><span class="p">))</span>
+
+        <span class="c"># For s1 and small s2s, we now finally know where to start searching for the next peak candidate interval.</span>
+        <span class="c"># (for large s2s we knew it in stage 2 already)</span>
+        <span class="c"># Set the seeker position based on the right extent of the peak found</span>
+        <span class="c"># This is done even if a peak is rejected, so we do it before testing.</span>
+        <span class="k">if</span> <span class="n">peak_type</span> <span class="o">!=</span> <span class="s">&#39;large_s2&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">seeker_position</span> <span class="o">=</span> <span class="n">right</span> <span class="o">+</span> <span class="mi">1</span>
+
+        <span class="c">##</span>
+        <span class="c"># STAGE 4 - PEAK ACCEPTANCE TESTS</span>
+        <span class="c">##</span>
+        <span class="c"># Does a variety of tests to see if we accept the peak, or throwing it away silently...</span>
+        <span class="c"># I&#39;ll leave the judgement of this approach to the conscience of the reader.</span>
+        <span class="c">##</span>
+
+        <span class="c"># Finally, we can (and should) return if we failed the interval test already above.</span>
+        <span class="k">if</span> <span class="n">failed_interval_test</span><span class="p">:</span>
+            <span class="k">return</span>
+
+        <span class="c"># Check for pathological peaks; Xerawdp doesn&#39;t do this, I&#39;m going to because it prevents crashes</span>
+        <span class="c"># Hmm, that probably means you&#39;re wrong about other things, right?</span>
+        <span class="k">if</span> <span class="n">left</span> <span class="o">&gt;=</span> <span class="n">right</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                <span class="s">&quot;</span><span class="si">%s</span><span class="s"> at </span><span class="si">%s</span><span class="s">-</span><span class="si">%s</span><span class="s">-</span><span class="si">%s</span><span class="s"> has invalid extent -- not testing or appending it! Go debug the processor!&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                    <span class="n">peak_type</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">max_idx</span><span class="p">,</span> <span class="n">right</span>
+                <span class="p">))</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="n">left</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> at </span><span class="si">%s</span><span class="s">-</span><span class="si">%s</span><span class="s">-</span><span class="si">%s</span><span class="s"> starts before 0, making it start at 0 instead.&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">peak_type</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">max_idx</span><span class="p">,</span> <span class="n">right</span>
+            <span class="p">))</span>
+            <span class="n">left</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">right</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> at </span><span class="si">%s</span><span class="s">-</span><span class="si">%s</span><span class="s">-</span><span class="si">%s</span><span class="s"> ends after waveform end, making it end at waveform end instead.&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">peak_type</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">max_idx</span><span class="p">,</span> <span class="n">right</span>
+            <span class="p">))</span>
+            <span class="n">right</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+
+        <span class="c"># Store some quantities for large s2</span>
+        <span class="k">if</span> <span class="n">peak_type</span> <span class="o">==</span> <span class="s">&#39;large_s2&#39;</span><span class="p">:</span>
+            <span class="c"># Update highest s2 height ever for dynamic threshold determination.</span>
+            <span class="c"># This has to get done AFTER the interval test, but before the peak has a chance to fail any other test</span>
+            <span class="c"># TODO: Can we also update the threshold itself here, or does that give problems?</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">highest_s2_height_ever</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">highest_s2_height_ever</span><span class="p">,</span> <span class="n">height</span><span class="p">)</span>
+            <span class="c"># We need this for tests later</span>
+            <span class="c"># Specifically, to see if child intervals contain peaks which can skip some of the large_s2</span>
+            <span class="k">if</span> <span class="n">toplevel</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">last_toplevel_max_val</span> <span class="o">=</span> <span class="n">height</span>
+
+        <span class="c"># Apply various tests to the peaks</span>
+        <span class="k">if</span> <span class="n">peak_type</span> <span class="o">==</span> <span class="s">&#39;large_s2&#39;</span><span class="p">:</span>
+
+            <span class="c"># For large S2 from top-level interval: do the isolation check on the top interval</span>
+            <span class="k">if</span> <span class="n">toplevel</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">isolation_test</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">max_idx</span><span class="p">,</span>
+                                           <span class="n">right_edge_of_left_test_region</span><span class="o">=</span><span class="nb">min</span><span class="p">(</span><span class="n">left_boundary</span><span class="p">,</span> <span class="n">left</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                                           <span class="n">test_length_left</span><span class="o">=</span><span class="n">settings</span><span class="p">[</span><span class="s">&#39;test_around_interval&#39;</span><span class="p">],</span>
+                                           <span class="n">left_edge_of_right_test_region</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="n">right_boundary</span><span class="p">,</span> <span class="n">right</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                                           <span class="n">test_length_right</span><span class="o">=</span><span class="n">settings</span><span class="p">[</span><span class="s">&#39;test_around_interval&#39;</span><span class="p">],</span>
+                                           <span class="n">before_avg_max_ratio</span><span class="o">=</span><span class="n">settings</span><span class="p">[</span><span class="s">&#39;around_interval_to_height_ratio_max&#39;</span><span class="p">],</span>
+                                           <span class="n">after_avg_max_ratio</span><span class="o">=</span><span class="n">settings</span><span class="p">[</span><span class="s">&#39;around_interval_to_height_ratio_max&#39;</span><span class="p">],</span>
+                                           <span class="n">can_fail_one</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>  <span class="c"># NB Different from all the others!!!! (also s1?)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;    Toplevel interval failed isolation test&quot;</span><span class="p">)</span>
+                    <span class="k">return</span>
+
+            <span class="c"># The peak FWHM is tested only for lage s2s #TODO: HMMZ a duplicate fwhm computation...</span>
+            <span class="c"># Hack for Xerawdp matching: FWHM test now ends at boundaries, but this introduces missed peaks!</span>
+            <span class="n">fwhm</span> <span class="o">=</span> <span class="n">extent_until_threshold</span><span class="p">(</span><span class="n">signal</span><span class="p">[</span><span class="n">left</span><span class="p">:</span><span class="n">right</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="n">start</span><span class="o">=</span><span class="n">max_idx</span> <span class="o">-</span> <span class="n">left</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="n">height</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">settings</span><span class="p">[</span><span class="s">&#39;min_length&#39;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">fwhm</span> <span class="o">&lt;=</span> <span class="n">settings</span><span class="p">[</span><span class="s">&#39;max_length&#39;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;    Failed width test&quot;</span><span class="p">)</span>
+                <span class="k">return</span>
+
+            <span class="c"># An additional, different, isolation test is applied to every individual peak &lt; 0.05 the toplevel peak</span>
+            <span class="k">if</span> <span class="n">height</span> <span class="o">&lt;</span> <span class="mf">0.05</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_toplevel_max_val</span><span class="p">:</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">isolation_test</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">max_idx</span><span class="p">,</span>
+                                           <span class="n">right_edge_of_left_test_region</span><span class="o">=</span><span class="n">left</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                                           <span class="n">test_length_left</span><span class="o">=</span><span class="n">settings</span><span class="p">[</span><span class="s">&#39;test_around_peak&#39;</span><span class="p">],</span>
+                                           <span class="n">left_edge_of_right_test_region</span><span class="o">=</span><span class="n">right</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                                           <span class="n">test_length_right</span><span class="o">=</span><span class="n">settings</span><span class="p">[</span><span class="s">&#39;test_around_peak&#39;</span><span class="p">],</span>
+                                           <span class="n">before_avg_max_ratio</span><span class="o">=</span><span class="n">settings</span><span class="p">[</span><span class="s">&#39;around_peak_to_height_ratio_max&#39;</span><span class="p">],</span>
+                                           <span class="n">after_avg_max_ratio</span><span class="o">=</span><span class="n">settings</span><span class="p">[</span><span class="s">&#39;around_peak_to_height_ratio_max&#39;</span><span class="p">]):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;    Failed isolation test&quot;</span><span class="p">)</span>
+                    <span class="k">return</span>
+
+        <span class="k">elif</span> <span class="n">peak_type</span> <span class="o">==</span> <span class="s">&#39;small_s2&#39;</span><span class="p">:</span>
+
+            <span class="c"># Test for aspect ratio of the UNFILTERED WAVEFORM, probably to avoid misidentifying s1s as small s2s</span>
+            <span class="n">unfiltered_signal</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">get_sum_waveform</span><span class="p">(</span><span class="s">&#39;uS2&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">samples</span>
+            <span class="n">height_for_aspect_ratio_test</span> <span class="o">=</span> <span class="n">unfiltered_signal</span><span class="p">[</span><span class="n">left</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">unfiltered_signal</span><span class="p">[</span><span class="n">left</span><span class="p">:</span><span class="n">right</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]))]</span>
+            <span class="n">aspect_ratio_threshold</span> <span class="o">=</span> <span class="n">settings</span><span class="p">[</span><span class="s">&#39;aspect_ratio_threshold&#39;</span><span class="p">]</span>
+            <span class="n">peak_width</span> <span class="o">=</span> <span class="n">right</span> <span class="o">-</span> <span class="n">left</span>
+            <span class="n">aspect_ratio</span> <span class="o">=</span> <span class="n">height_for_aspect_ratio_test</span> <span class="o">/</span> <span class="n">peak_width</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;    Aspect ratio test: </span><span class="si">%s</span><span class="s"> &lt;? threshold </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">aspect_ratio</span><span class="p">,</span> <span class="n">aspect_ratio_threshold</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">aspect_ratio</span> <span class="o">&gt;</span> <span class="n">aspect_ratio_threshold</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;    Failed!&#39;</span><span class="p">)</span>
+                <span class="k">return</span>
+
+            <span class="c"># For small s2&#39;s the isolation test is slightly different</span>
+            <span class="c"># This is insane, and probably a bug, but I swear it&#39;s in Xerawdp</span>
+            <span class="n">left_isolation_test_window</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">settings</span><span class="p">[</span><span class="s">&#39;test_around&#39;</span><span class="p">],</span> <span class="n">right_boundary</span> <span class="o">-</span> <span class="n">left_extent_search_limit</span><span class="p">)</span>
+            <span class="n">right_isolation_test_window</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">settings</span><span class="p">[</span><span class="s">&#39;test_around&#39;</span><span class="p">],</span> <span class="n">right_extent_search_limit</span> <span class="o">-</span> <span class="n">right_boundary</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;    Isolation test windows used: left </span><span class="si">%s</span><span class="s">, right </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">left_isolation_test_window</span><span class="p">,</span> <span class="n">right_isolation_test_window</span>
+            <span class="p">))</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">isolation_test</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">max_idx</span><span class="p">,</span>
+                                       <span class="n">right_edge_of_left_test_region</span><span class="o">=</span><span class="n">left</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                                       <span class="n">left_edge_of_right_test_region</span><span class="o">=</span><span class="n">right</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                                       <span class="n">test_length_left</span><span class="o">=</span><span class="n">left_isolation_test_window</span><span class="p">,</span>
+                                       <span class="n">test_length_right</span><span class="o">=</span><span class="n">right_isolation_test_window</span><span class="p">,</span>
+                                       <span class="n">before_avg_max_ratio</span><span class="o">=</span><span class="n">settings</span><span class="p">[</span><span class="s">&#39;around_to_height_ratio_max&#39;</span><span class="p">],</span>
+                                       <span class="n">after_avg_max_ratio</span><span class="o">=</span><span class="n">settings</span><span class="p">[</span><span class="s">&#39;around_to_height_ratio_max&#39;</span><span class="p">]):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;    Failed the isolation test.&quot;</span><span class="p">)</span>
+                <span class="k">return</span>
+
+        <span class="k">elif</span> <span class="n">peak_type</span> <span class="o">==</span> <span class="s">&#39;s1&#39;</span><span class="p">:</span>
+            <span class="c"># Test for non-isolated peaks</span>
+            <span class="c"># TODO: dynamic window size if several s1s close together, check with Xerawdp now that free_regions</span>
+            <span class="n">left_isolation_test_window</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">settings</span><span class="p">[</span><span class="s">&#39;test_before&#39;</span><span class="p">],</span>
+                                             <span class="bp">self</span><span class="o">.</span><span class="n">this_s1_alert_position</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_s1_rightmost_index</span><span class="p">)</span>
+            <span class="n">right_isolation_test_window</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">settings</span><span class="p">[</span><span class="s">&#39;test_after&#39;</span><span class="p">],</span>
+                                              <span class="bp">self</span><span class="o">.</span><span class="n">current_region_right</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">this_s1_alert_position</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">isolation_test</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">max_idx</span><span class="p">,</span>
+                                       <span class="n">right_edge_of_left_test_region</span><span class="o">=</span><span class="n">left</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+                                       <span class="n">test_length_left</span><span class="o">=</span><span class="n">left_isolation_test_window</span><span class="p">,</span>
+                                       <span class="n">left_edge_of_right_test_region</span><span class="o">=</span><span class="n">right</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                                       <span class="n">test_length_right</span><span class="o">=</span><span class="n">right_isolation_test_window</span><span class="p">,</span>
+                                       <span class="n">before_avg_max_ratio</span><span class="o">=</span><span class="n">settings</span><span class="p">[</span><span class="s">&#39;before_avg_max_ratio&#39;</span><span class="p">],</span>
+                                       <span class="n">after_avg_max_ratio</span><span class="o">=</span><span class="n">settings</span><span class="p">[</span><span class="s">&#39;after_avg_max_ratio&#39;</span><span class="p">]):</span>
+                <span class="k">return</span>
+
+            <span class="c"># Test for nearby negative excursions #Xerawdp bug: no check if is actually negative..</span>
+            <span class="c"># Todo: check for off-by one errors...</span>
+            <span class="c"># Need +1 for python indexing? Xerawdp doesn&#39;t do 1-correction here?</span>
+            <span class="n">negex</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">signal</span><span class="p">[</span>
+                <span class="n">max_idx</span> <span class="o">-</span> <span class="n">left_isolation_test_window</span><span class="p">:</span>
+                <span class="n">max_idx</span> <span class="o">+</span> <span class="n">right_isolation_test_window</span>
+            <span class="p">])</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">height</span> <span class="o">&gt;</span> <span class="mi">3</span> <span class="o">*</span> <span class="nb">abs</span><span class="p">(</span><span class="n">negex</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;    Failed negative excursion test&#39;</span><span class="p">)</span>
+                <span class="k">return</span>
+
+            <span class="c"># Test for too wide s1s, using the FWQM of a filtered waveform made specially for this test</span>
+            <span class="c"># In reality this test is less strict than it seems:</span>
+            <span class="c">#  - the filtered waveform is mangled by the convolution bug, so the widths come out lower</span>
+            <span class="c">#  - Xerawdp limits the width search quite strictly, making it come out lower than the real FWQM</span>
+            <span class="n">filtered_wave</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">get_sum_waveform</span><span class="p">(</span><span class="s">&#39;filtered_for_s1_width_test&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">samples</span>
+            <span class="c"># not right+1, Xerawdp doesn&#39;t include it either</span>
+            <span class="n">max_in_filtered</span> <span class="o">=</span> <span class="n">left</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">filtered_wave</span><span class="p">[</span><span class="n">left</span><span class="p">:</span><span class="n">right</span><span class="p">]))</span>
+            <span class="k">if</span> <span class="n">filtered_wave</span><span class="p">[</span><span class="n">max_in_filtered</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c"># = 0 Happens due to Xerawdp&#39;s convolution bug, Xerawdp&#39;s width will return 0, passes test</span>
+                <span class="c"># &lt;0 happens for very short&amp;shallow s1s, it breaks my implementation of extent_until_threshold,</span>
+                <span class="c">#    since it searches for crossings, which it never finds). Xerawdp it should return a filtered</span>
+                <span class="c">#    width of 0 since it is already below threshold, so it always passes the test.</span>
+                <span class="k">pass</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">filtered_width</span> <span class="o">=</span> <span class="n">extent_until_threshold</span><span class="p">(</span><span class="n">filtered_wave</span><span class="p">[</span><span class="n">left_boundary</span><span class="p">:</span><span class="n">right_boundary</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span>
+                                                        <span class="n">start</span><span class="o">=</span><span class="n">max_in_filtered</span> <span class="o">-</span> <span class="n">left_boundary</span><span class="p">,</span>
+                                                        <span class="n">threshold</span><span class="o">=</span><span class="mf">0.25</span> <span class="o">*</span> <span class="n">filtered_wave</span><span class="p">[</span><span class="n">max_in_filtered</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">filtered_width</span> <span class="o">&gt;</span> <span class="n">settings</span><span class="p">[</span><span class="s">&#39;max_filtered_width&#39;</span><span class="p">]:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;    Filtered width </span><span class="si">%s</span><span class="s"> larger than </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span>
+                        <span class="n">filtered_width</span><span class="p">,</span> <span class="n">settings</span><span class="p">[</span><span class="s">&#39;max_filtered_width&#39;</span><span class="p">]))</span>
+                    <span class="k">return</span>
+
+        <span class="c"># Update values for later isolation tests</span>
+        <span class="c"># This gets done only if the current peak passes all tests!</span>
+        <span class="c"># It has to get done AFTER the isolation test of the current peak of course.</span>
+        <span class="c"># TODO: maybe we can keep track of these in a more intelligent way? They&#39;re both boundaries of last peak...</span>
+        <span class="k">if</span> <span class="n">peak_type</span> <span class="o">==</span> <span class="s">&#39;small_s2&#39;</span><span class="p">:</span>
+            <span class="c"># For small s2s, we need to store the right peak boundary as the left boundary for later isolation tests.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">left_extent_small_s2_search_limit</span> <span class="o">=</span> <span class="n">right</span>
+        <span class="k">elif</span> <span class="n">peak_type</span> <span class="o">==</span> <span class="s">&#39;s1&#39;</span><span class="p">:</span>
+            <span class="c"># For s1, update the last_s1_right_boundary, also used for later isolation tests</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">last_s1_rightmost_index</span> <span class="o">=</span> <span class="n">right</span>
+
+        <span class="c">##</span>
+        <span class="c"># STAGE 5 - STORING THE PEAK</span>
+        <span class="c">##</span>
+        <span class="c"># Does what it says on the tin.</span>
+        <span class="c">##</span>
+
+        <span class="c"># If we&#39;re still here, append the peak found</span>
+        <span class="k">if</span> <span class="n">peak_type</span> <span class="o">==</span> <span class="s">&#39;s1&#39;</span><span class="p">:</span>
+            <span class="c"># Arcane Xerawdp stuff, probably to compensate for after crossing timer stuff?</span>
+            <span class="n">left</span> <span class="o">-=</span> <span class="mi">2</span>
+            <span class="n">right</span> <span class="o">+=</span> <span class="mi">2</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;! Appending </span><span class="si">%s</span><span class="s"> (</span><span class="si">%s</span><span class="s">-</span><span class="si">%s</span><span class="s">-</span><span class="si">%s</span><span class="s">) to peaks&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">peak_type</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">max_idx</span><span class="p">,</span> <span class="n">right</span><span class="p">))</span>
+        <span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">datastructure</span><span class="o">.</span><span class="n">Peak</span><span class="p">({</span>
+            <span class="s">&#39;type&#39;</span><span class="p">:</span>             <span class="s">&#39;s1&#39;</span> <span class="k">if</span> <span class="n">peak_type</span> <span class="o">==</span> <span class="s">&#39;s1&#39;</span> <span class="k">else</span> <span class="s">&#39;s2&#39;</span><span class="p">,</span>    <span class="c"># Don&#39;t want large_s2 and small_s2 here</span>
+            <span class="s">&#39;area&#39;</span><span class="p">:</span>             <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">signal</span><span class="p">[</span><span class="n">left</span><span class="p">:</span><span class="n">right</span><span class="p">]),</span>   <span class="c"># Waste of time, only gets used for sorting s2s...</span>
+            <span class="s">&#39;index_of_maximum&#39;</span><span class="p">:</span> <span class="n">max_idx</span><span class="p">,</span>
+            <span class="s">&#39;height&#39;</span><span class="p">:</span>           <span class="n">height</span><span class="p">,</span>
+            <span class="s">&#39;left&#39;</span><span class="p">:</span>             <span class="n">left</span><span class="p">,</span>
+            <span class="s">&#39;right&#39;</span><span class="p">:</span>            <span class="n">right</span><span class="p">,</span>
+            <span class="s">&#39;detector&#39;</span><span class="p">:</span>         <span class="s">&#39;tpc&#39;</span><span class="p">,</span>
+        <span class="p">}))</span>
+
+        <span class="c"># Recursion for large s2s</span>
+        <span class="k">if</span> <span class="n">peak_type</span> <span class="o">==</span> <span class="s">&#39;large_s2&#39;</span><span class="p">:</span>
+            <span class="c"># For large s2s, ACCEPTED peaks beyond the interval get to set the next seeker position</span>
+            <span class="k">if</span> <span class="n">right</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">seeker_position</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">seeker_position</span> <span class="o">=</span> <span class="n">right</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="c"># Recurse on remaining intervals right, then left</span>
+            <span class="c"># Ordering is different from Xerawdp because it uses a stack, we use recursion</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">find_peaks_in</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">peak_type</span><span class="p">,</span> <span class="n">signal</span><span class="p">,</span> <span class="n">settings</span><span class="p">,</span>
+                               <span class="n">left_boundary</span><span class="o">=</span><span class="n">left_boundary</span><span class="p">,</span> <span class="n">right_boundary</span><span class="o">=</span><span class="n">left</span><span class="p">)</span>  <span class="c"># Not left-1? Who is off by one?</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">find_peaks_in</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">peak_type</span><span class="p">,</span> <span class="n">signal</span><span class="p">,</span> <span class="n">settings</span><span class="p">,</span>
+                               <span class="n">left_boundary</span><span class="o">=</span><span class="n">right</span><span class="p">,</span> <span class="n">right_boundary</span><span class="o">=</span><span class="n">right_boundary</span><span class="p">)</span>  <span class="c"># Not right+1? Who is off by one?</span>
+
+    <span class="c"># Helper methods used only in the peakfinding</span></div>
+<div class="viewcode-block" id="FindPeaksXeRawDPStyle.nearest_s2_boundary"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.OldPeakFinder.FindPeaksXeRawDPStyle.nearest_s2_boundary">[docs]</a>    <span class="k">def</span> <span class="nf">nearest_s2_boundary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">,</span> <span class="n">peak_position</span><span class="p">,</span> <span class="n">edge_position</span><span class="p">,</span> <span class="n">direction</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Finds the nearest s2 boundary according to arcane Xerawdp rules&quot;&quot;&quot;</span>
+        <span class="n">boundaries</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="s">&#39;left&#39;</span><span class="p">:</span>
+            <span class="c"># Will take the max of 0, edge_position-100, and any s2 right boundaries before peak</span>
+            <span class="n">boundaries</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">edge_position</span> <span class="o">-</span> <span class="mi">100</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">S2s</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">right</span> <span class="o">&lt;=</span> <span class="n">peak_position</span><span class="p">:</span>
+                    <span class="c"># The = case actually happens!</span>
+                    <span class="n">boundaries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">right</span><span class="p">)</span>
+            <span class="k">return</span> <span class="nb">max</span><span class="p">(</span><span class="n">boundaries</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">direction</span> <span class="o">==</span> <span class="s">&#39;right&#39;</span><span class="p">:</span>
+            <span class="c"># Will take the min of event_duration-1, edge_position+100, and any s2 left boundaries after peak</span>
+            <span class="n">boundaries</span> <span class="o">=</span> <span class="p">[</span><span class="n">event</span><span class="o">.</span><span class="n">length</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">edge_position</span> <span class="o">+</span> <span class="mi">100</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">S2s</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">peak_position</span> <span class="o">&lt;=</span> <span class="n">p</span><span class="o">.</span><span class="n">left</span><span class="p">:</span>
+                    <span class="c"># The = case actually happens!</span>
+                    <span class="n">boundaries</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">left</span><span class="p">)</span>  <span class="c"># TODO: Was this a Xerawdp bug? or should you now redo the matching?</span>
+            <span class="k">return</span> <span class="nb">min</span><span class="p">(</span><span class="n">boundaries</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Direction </span><span class="si">%s</span><span class="s"> isn&#39;t left or right&quot;</span> <span class="o">%</span> <span class="n">direction</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="FindPeaksXeRawDPStyle.isolation_test"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.OldPeakFinder.FindPeaksXeRawDPStyle.isolation_test">[docs]</a>    <span class="k">def</span> <span class="nf">isolation_test</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">signal</span><span class="p">,</span> <span class="n">max_idx</span><span class="p">,</span>
+        <span class="n">right_edge_of_left_test_region</span><span class="p">,</span> <span class="n">test_length_left</span><span class="p">,</span>
+        <span class="n">left_edge_of_right_test_region</span><span class="p">,</span> <span class="n">test_length_right</span><span class="p">,</span>
+        <span class="n">before_avg_max_ratio</span><span class="p">,</span>
+        <span class="n">after_avg_max_ratio</span><span class="p">,</span>
+        <span class="n">can_fail_one</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Does XerawDP&#39;s arcane isolation test. Returns if test is passed or not.</span>
+<span class="sd">        NB: edge = first index IN region to test!</span>
+<span class="sd">        TODO: Regions seem to come out empty sometimes, which triggers a numpy runtiome warning (only once though..)</span>
+
+<span class="sd">        If you compare the isolation test intervals with xerawdp, it looks like ours are too large.</span>
+<span class="sd">        In reality, Xerawdp&#39;s math is off, and we are testing the same intervals.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># Xerawdp off-by-one error:</span>
+        <span class="n">right_edge_of_left_test_region</span> <span class="o">-=</span> <span class="p">(</span><span class="mi">1</span> <span class="k">if</span> <span class="n">test_length_left</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="c"># Xerawdp reports 1 tighter boundaries in the debug output on both sides than it actually tests;</span>
+        <span class="c"># I could do the same to let the log files also match, but that&#39;s taking the whole matching idea too far..</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;        Running isolation test: RofLeft </span><span class="si">%s</span><span class="s">, LofRight </span><span class="si">%s</span><span class="s">, LengthLeft </span><span class="si">%s</span><span class="s">, LengthRight </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="n">right_edge_of_left_test_region</span><span class="p">,</span> <span class="n">left_edge_of_right_test_region</span><span class="p">,</span> <span class="n">test_length_left</span><span class="p">,</span> <span class="n">test_length_right</span>
+        <span class="p">))</span>
+        <span class="n">height</span> <span class="o">=</span> <span class="n">signal</span><span class="p">[</span><span class="n">max_idx</span><span class="p">]</span>
+        <span class="c"># For empty test regions, Xerawdp gives 0.0/0 = some kind of Nan for average, ensuring test always fails</span>
+        <span class="k">if</span> <span class="n">test_length_left</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;        Empty left test region! Auto-failing before-avg test.&quot;</span><span class="p">)</span>
+            <span class="n">failed_pre</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="n">pre_avg</span> <span class="o">=</span> <span class="s">&#39;not computed&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># +1s are to compensate for python&#39;s indexing conventions...</span>
+            <span class="n">pre_avg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">signal</span><span class="p">[</span>
+                <span class="n">right_edge_of_left_test_region</span> <span class="o">-</span> <span class="p">(</span><span class="n">test_length_left</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="n">right_edge_of_left_test_region</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="p">])</span>
+            <span class="n">failed_pre</span> <span class="o">=</span> <span class="n">pre_avg</span> <span class="o">&gt;</span> <span class="n">height</span> <span class="o">*</span> <span class="n">before_avg_max_ratio</span>
+        <span class="k">if</span> <span class="n">test_length_right</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;        Empty right test region! Auto-failing after-avg test.&quot;</span><span class="p">)</span>
+            <span class="n">failed_post</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="n">post_avg</span> <span class="o">=</span> <span class="s">&#39;not computed&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">post_avg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">signal</span><span class="p">[</span>
+                <span class="n">left_edge_of_right_test_region</span><span class="p">:</span>
+                <span class="n">left_edge_of_right_test_region</span> <span class="o">+</span> <span class="n">test_length_right</span>
+            <span class="p">])</span>
+            <span class="n">failed_post</span> <span class="o">=</span> <span class="n">post_avg</span> <span class="o">&gt;</span> <span class="n">height</span> <span class="o">*</span> <span class="n">after_avg_max_ratio</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;        Fail test if before avg </span><span class="si">%s</span><span class="s"> &gt; </span><span class="si">%s</span><span class="s"> and/or above avg </span><span class="si">%s</span><span class="s"> &gt; </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="n">pre_avg</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">before_avg_max_ratio</span><span class="p">,</span> <span class="n">post_avg</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">after_avg_max_ratio</span>
+        <span class="p">))</span>
+        <span class="k">if</span> <span class="n">can_fail_one</span><span class="p">:</span>
+            <span class="n">failed</span> <span class="o">=</span> <span class="n">failed_pre</span> <span class="ow">and</span> <span class="n">failed_post</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">failed</span> <span class="o">=</span> <span class="n">failed_pre</span> <span class="ow">or</span> <span class="n">failed_post</span>
+        <span class="k">if</span> <span class="n">failed</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;        Failed!&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;        Passed!&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">True</span>
+
+
+<span class="c"># Sort and prune a peak list - needed in peakfinder and ComputePeakProperties</span></div></div>
+<div class="viewcode-block" id="sort_and_prune_by"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.OldPeakFinder.sort_and_prune_by">[docs]</a><span class="k">def</span> <span class="nf">sort_and_prune_by</span><span class="p">(</span><span class="n">peak_list</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span> <span class="n">keep_number</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="s">&#39;inf&#39;</span><span class="p">),</span> <span class="n">reverse</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="n">peak_list</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="n">key</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="n">reverse</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">peak_list</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">keep_number</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">peak_list</span><span class="p">[:</span><span class="n">keep_number</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">peak_list</span>
+
+</div>
+<div class="viewcode-block" id="ComputePeakPropertiesXdpStyle"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.OldPeakFinder.ComputePeakPropertiesXdpStyle">[docs]</a><span class="k">class</span> <span class="nc">ComputePeakPropertiesXdpStyle</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;Compute various derived quantities of each peak (full width half maximum, etc.)</span>
+
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ComputePeakPropertiesXdpStyle.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.OldPeakFinder.ComputePeakPropertiesXdpStyle.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Only computes area for Xerawdp matching at the moment</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># Compute relevant peak quantities for each pmt&#39;s peak: height, FWHM, FWTM, area, ..</span>
+        <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">:</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">area_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">channel_waveforms</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s">&#39;float64&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">channel</span><span class="p">,</span> <span class="n">wave_data</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">channel_waveforms</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">channel</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_in_detector&#39;</span><span class="p">][</span><span class="s">&#39;tpc&#39;</span><span class="p">]</span> <span class="ow">or</span> \
+                   <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s">&#39;s1&#39;</span> <span class="ow">and</span> <span class="n">channel</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_excluded_for_s1&#39;</span><span class="p">]:</span>
+                    <span class="k">continue</span>
+                <span class="c"># No +1, Xerawdp forgets the right edge also:</span>
+                <span class="n">peak</span><span class="o">.</span><span class="n">area_per_channel</span><span class="p">[</span><span class="n">channel</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">wave_data</span><span class="p">[</span><span class="n">peak</span><span class="o">.</span><span class="n">left</span><span class="p">:</span><span class="n">peak</span><span class="o">.</span><span class="n">right</span><span class="p">])</span>
+            <span class="c"># Exclude negative areas</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">area</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">area</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">area</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">area_per_channel</span><span class="p">)</span> <span class="k">if</span> <span class="n">area</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">            The coincidence level is actually computed twice in Xerawdp: once before and once after gain correction</span>
+<span class="sd">            The coincidence computed before gain correction is used for sorting</span>
+<span class="sd">                (and saved in the peak data object, but not used (I think/hope so?))</span>
+<span class="sd">            The coincidence computed  after gain correction is stored in the root file</span>
+<span class="sd">            For now we&#39;ll compute only the one before gain correction, so we can implement the sorting</span>
+<span class="sd">            TODO: implement the other one too!</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+            <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s">&#39;s1&#39;</span><span class="p">:</span>
+                <span class="n">contributing_pmts</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">channel</span><span class="p">,</span> <span class="n">area</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">area_per_channel</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="n">channel</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_in_detector&#39;</span><span class="p">][</span><span class="s">&#39;tpc&#39;</span><span class="p">]</span> \
+                            <span class="ow">or</span> <span class="n">channel</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_excluded_for_s1&#39;</span><span class="p">]:</span>
+                        <span class="k">continue</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">continue</span>
+                    <span class="k">if</span> <span class="n">area</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;coincidence_threshold&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="mi">10</span> <span class="o">**</span> <span class="mi">6</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]):</span>
+                        <span class="n">contributing_pmts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span>
+                <span class="n">peak</span><span class="o">.</span><span class="n">does_channel_contribute</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                    <span class="p">[</span><span class="n">ch</span> <span class="ow">in</span> <span class="n">contributing_pmts</span> <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;n_channels&#39;</span><span class="p">])],</span>
+                    <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c"># Hack to ensure S2s won&#39;t get pruned:</span>
+                <span class="n">peak</span><span class="o">.</span><span class="n">does_channel_contribute</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;n_channels&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+
+        <span class="c"># Prune excess S1s</span>
+        <span class="n">event</span><span class="o">.</span><span class="n">peaks</span> <span class="o">=</span> <span class="n">sort_and_prune_by</span><span class="p">(</span>
+            <span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">,</span>
+            <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">number_of_contributing_channels</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">area</span><span class="p">),</span>
+            <span class="n">keep_number</span><span class="o">=</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">)</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">S1s</span><span class="p">())</span> <span class="o">+</span> <span class="mi">32</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;prune_peaks&#39;</span><span class="p">]</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;inf&#39;</span><span class="p">)),</span>
+            <span class="n">reverse</span><span class="o">=</span><span class="bp">True</span>
+        <span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">event</span>
+
+
+<span class="c"># Helper functions for peakfinding</span>
+<span class="c"># Can&#39;t yet put them in the peakfinding class, because extent_until_threshold is used by computequantities also...</span>
+</div></div>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;PeakFinding_find_next_crossing&#39;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="find_next_crossing"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.OldPeakFinder.find_next_crossing">[docs]</a><span class="k">def</span> <span class="nf">find_next_crossing</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">threshold</span><span class="p">,</span>
+                       <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">direction</span><span class="o">=</span><span class="s">&#39;right&#39;</span><span class="p">,</span> <span class="n">min_length</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                       <span class="n">stop</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">stop_if_start_exceeded</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">activate_xerawdp_hacks_for</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns first index in signal crossing threshold, searching from start in direction</span>
+<span class="sd">    A &#39;crossing&#39; is defined as a point where:</span>
+<span class="sd">        start_sample &lt; threshold &lt; this_sample OR start_sample &gt; threshold &gt; this_sample</span>
+
+<span class="sd">    Arguments:</span>
+<span class="sd">    signal            --  List of signal samples to search in</span>
+<span class="sd">    threshold         --  Threshold defining crossings</span>
+<span class="sd">    start             --  Index to start search from: defaults to 0</span>
+<span class="sd">    direction         --  Direction to search in: &#39;right&#39; (default) or &#39;left&#39;</span>
+<span class="sd">    min_length        --  Crossing only counts if stays above/below threshold for min_length</span>
+<span class="sd">                          Default: 1, i.e, a single sample on other side of threshold counts as a crossing</span>
+<span class="sd">                          The first index where a crossing happens is still returned.</span>
+<span class="sd">    stop_at           --  Stops search when this index is reached, THEN RETURNS THIS INDEX!!!</span>
+<span class="sd">    #Hack for Xerawdp matching:</span>
+<span class="sd">    stop_if_start_exceeded      -- If true and a value HIGHER than start is encountered, stop immediately</span>
+<span class="sd">    activate_xerawdp_hacks_for  -- Activates several hacks, for instance, slope checking for large s2</span>
+
+<span class="sd">    This is a pretty crucial function for several DSP routines; as such, it does extensive checking for</span>
+<span class="sd">    pathological cases. Please be very careful in making changes to this function, their effects could</span>
+<span class="sd">    be felt in unexpected ways in many places.</span>
+
+<span class="sd">    TODO: add lots of tests!!!</span>
+<span class="sd">    TODO: Allow specification of where start_sample should be (below or above treshold),</span>
+<span class="sd">          only use to throw error if it is not true? Or see start as starting crossing?</span>
+<span class="sd">           -&gt; If latter, can outsource to new function: find_next_crossing_above &amp; below</span>
+<span class="sd">              (can be two lines or so, just check start)</span>
+<span class="sd">    TODO: Allow user to specify that finding a crossing is mandatory / return None when none found?</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c"># Set stop to last index along given direction in signal</span>
+    <span class="k">if</span> <span class="n">stop</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">stop</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="s">&#39;left&#39;</span> <span class="k">else</span> <span class="nb">len</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+
+    <span class="c"># Check for errors in arguments</span>
+    <span class="c"># TEMP HACK, these should become errors... or at least stern warnings!</span>
+    <span class="n">warninghead</span> <span class="o">=</span> <span class="p">(</span><span class="s">&quot;Strange error during Xerawdp-imitation peakfinding: find_next_crossing was asked to search for &quot;</span> <span class="o">+</span>
+                   <span class="s">&quot;a threshold crossing for &gt;= </span><span class="si">%s</span><span class="s"> samples in the </span><span class="si">%s</span><span class="s"> direction starting from sample </span><span class="si">%s</span><span class="s"> and stopping &quot;</span> <span class="o">+</span>
+                   <span class="s">&quot;at sample </span><span class="si">%s</span><span class="s"> in a signal </span><span class="si">%s</span><span class="s"> samples in size.</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="n">min_length</span><span class="p">,</span> <span class="n">direction</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">signal</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">stop</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">warninghead</span> <span class="o">+</span> <span class="s">&quot;A negative stop point makes no sense, setting it to 0 instead.&quot;</span><span class="p">)</span>
+        <span class="n">stop</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">stop</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">stop</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">warninghead</span> <span class="o">+</span> <span class="s">&quot;A stop point beyond the signal extent makes no sense, setting </span><span class="si">%s</span><span class="s"> instead.&quot;</span> <span class="o">%</span> <span class="n">stop</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">start</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">warninghead</span> <span class="o">+</span> <span class="s">&quot;A negative start point makes no sense, setting </span><span class="si">%s</span><span class="s"> instead.&quot;</span> <span class="o">%</span> <span class="n">stop</span><span class="p">)</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="n">start</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">start</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">warninghead</span> <span class="o">+</span> <span class="s">&quot;A start point beyond the signal extent makes no sense, setting </span><span class="si">%s</span><span class="s"> instead.&quot;</span> <span class="o">%</span> <span class="n">start</span><span class="p">)</span>
+    <span class="c"># These are already errors</span>
+    <span class="k">if</span> <span class="n">direction</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&#39;left&#39;</span><span class="p">,</span> <span class="s">&#39;right&#39;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">warninghead</span> <span class="o">+</span> <span class="s">&quot;Direction </span><span class="si">%s</span><span class="s"> is not left or right&quot;</span> <span class="o">%</span> <span class="n">direction</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="mi">1</span> <span class="o">&lt;=</span> <span class="n">min_length</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="n">warninghead</span> <span class="o">+</span> <span class="s">&quot;Crossing for </span><span class="si">%s</span><span class="s"> samples makes no sense, should be &gt;= 1.&quot;</span> <span class="o">%</span> <span class="n">min_length</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">direction</span> <span class="o">==</span> <span class="s">&#39;left&#39;</span> <span class="ow">and</span> <span class="n">start</span> <span class="o">&lt;</span> <span class="n">stop</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">direction</span> <span class="o">==</span> <span class="s">&#39;right&#39;</span> <span class="ow">and</span> <span class="n">stop</span> <span class="o">&lt;</span> <span class="n">start</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Start and stop points are not in right order for search direction.&quot;</span><span class="p">)</span>
+
+    <span class="c"># Check for pathological cases which can arise, not serious enough to throw an exception</span>
+    <span class="c"># Can&#39;t raise a warning from here, as I don&#39;t have self.log...</span>
+    <span class="k">if</span> <span class="n">stop</span> <span class="o">==</span> <span class="n">start</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">stop</span>
+    <span class="k">if</span> <span class="n">signal</span><span class="p">[</span><span class="n">start</span><span class="p">]</span> <span class="o">==</span> <span class="n">threshold</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">((</span><span class="n">warninghead</span> <span class="o">+</span> <span class="s">&#39;However, the signal is EXACTLY equal to the threshold at the start position, so &#39;</span> <span class="o">+</span>
+                     <span class="s">&quot;the very idea of &#39;crossing&#39; is ambiguous. Will return </span><span class="si">%s</span><span class="s"> as the crossing position&quot;</span><span class="p">)</span> <span class="o">%</span> <span class="n">stop</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">stop</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">min_length</span> <span class="o">&lt;=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">start</span> <span class="o">-</span> <span class="n">stop</span><span class="p">):</span>
+        <span class="c"># This is probably ok, can happen, remove warning later on</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">((</span><span class="n">warninghead</span> <span class="o">+</span> <span class="s">&quot;The search region is too small for a threshold crossing of this length &quot;</span> <span class="o">+</span>
+                     <span class="s">&quot;to occur in it. Will return </span><span class="si">%s</span><span class="s"> as the crossing position. See issue #68.&quot;</span><span class="p">)</span> <span class="o">%</span> <span class="n">stop</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">stop</span>
+
+    <span class="c"># Do the search</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="n">start</span>
+    <span class="n">after_crossing_timer</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">start_sample</span> <span class="o">=</span> <span class="n">signal</span><span class="p">[</span><span class="n">start</span><span class="p">]</span>
+    <span class="k">while</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">this_sample</span> <span class="o">=</span> <span class="n">signal</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">stop</span><span class="p">:</span>
+            <span class="c"># stop_at reached, have to return something right now</span>
+            <span class="k">if</span> <span class="n">activate_xerawdp_hacks_for</span> <span class="o">==</span> <span class="s">&#39;large_s2&#39;</span><span class="p">:</span>
+                <span class="c"># We need to index of the minimum before &amp; including this point instead...</span>
+                <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="s">&#39;left&#39;</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">i</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">signal</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">start</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>    <span class="c"># direction==&#39;right&#39;</span>
+                    <span class="k">return</span> <span class="n">start</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">signal</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="n">activate_xerawdp_hacks_for</span> <span class="o">==</span> <span class="s">&#39;s1&#39;</span><span class="p">:</span>
+                <span class="c"># Xerawdp keeps going, but always increments after_crossing_timer, so we know what it&#39;ll give</span>
+                <span class="c"># This is a completely arcane hack due to several weird interactions of boundary cases</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">this_sample</span> <span class="o">&lt;</span> <span class="n">threshold</span><span class="p">:</span>
+                    <span class="c"># The counter gets reset on this sample</span>
+                    <span class="n">after_crossing_timer</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c"># This sample increments the counter</span>
+                    <span class="n">after_crossing_timer</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">return</span> <span class="n">stop</span> <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="o">+</span> <span class="n">after_crossing_timer</span> <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="s">&#39;left&#39;</span> <span class="k">else</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">after_crossing_timer</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">activate_xerawdp_hacks_for</span> <span class="o">==</span> <span class="s">&#39;small_s2&#39;</span><span class="p">:</span>  <span class="c"># small_s2</span>
+                <span class="k">return</span> <span class="n">stop</span> <span class="o">+</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="s">&#39;left&#39;</span> <span class="k">else</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">stop</span>     <span class="c"># Sane case, doesn&#39;t happen in Xerawdp I think</span>
+        <span class="k">if</span> <span class="n">stop_if_start_exceeded</span> <span class="ow">and</span> <span class="n">this_sample</span> <span class="o">&gt;</span> <span class="n">start_sample</span><span class="p">:</span>
+            <span class="c"># print(&quot;Emergency stop of search at %s: start value exceeded&quot; % i)</span>
+            <span class="k">return</span> <span class="n">i</span>
+        <span class="k">if</span> <span class="n">start_sample</span> <span class="o">&lt;</span> <span class="n">threshold</span> <span class="o">&lt;</span> <span class="n">this_sample</span> <span class="ow">or</span> <span class="n">start_sample</span> <span class="o">&gt;</span> <span class="n">threshold</span> <span class="o">&gt;</span> <span class="n">this_sample</span><span class="p">:</span>
+            <span class="c"># We&#39;re on the other side of the threshold that at the start!</span>
+            <span class="n">after_crossing_timer</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="n">after_crossing_timer</span> <span class="o">==</span> <span class="n">min_length</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">i</span> <span class="o">+</span> <span class="p">(</span><span class="n">min_length</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="s">&#39;left&#39;</span> <span class="k">else</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">min_length</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># We&#39;re back to the old side of threshold again</span>
+            <span class="n">after_crossing_timer</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c"># Dirty hack for Xerawdp matching</span>
+        <span class="k">if</span> <span class="n">activate_xerawdp_hacks_for</span> <span class="o">==</span> <span class="s">&#39;large_s2&#39;</span><span class="p">:</span>
+            <span class="c"># Check also for slope inversions</span>
+            <span class="k">if</span> <span class="n">this_sample</span> <span class="o">&gt;</span> <span class="mf">7.801887059</span><span class="p">:</span>  <span class="c"># &#39;0.125 V&#39;</span>
+                <span class="c"># We need to check for slope inversions. How bad is it allowed to be?</span>
+                <span class="k">if</span> <span class="n">this_sample</span> <span class="o">&lt;</span> <span class="mf">39.00943529</span><span class="p">:</span>  <span class="c"># &#39;0.625 V&#39;</span>
+                    <span class="n">log_slope_threshold</span> <span class="o">=</span> <span class="mf">0.02</span>  <span class="c"># Xerawdp says &#39;0.02 V/bin&#39;, but it is a log slope threshold...</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">log_slope_threshold</span> <span class="o">=</span> <span class="mf">0.005</span>  <span class="c"># Idem &#39;0.005 V/bin&#39;</span>
+
+                <span class="c"># Todo: check if enough samples exist to compute slope..</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="c"># Calculate the slope at this point using XeRawDP&#39;s &#39;9-tap derivative kernel&#39;</span>
+                    <span class="n">log_slope</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">signal</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">4</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="mi">5</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span>
+                        <span class="o">-</span><span class="mf">0.003059</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.035187</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.118739</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.143928</span><span class="p">,</span> <span class="mf">0.000000</span><span class="p">,</span> <span class="mf">0.143928</span><span class="p">,</span> <span class="mf">0.118739</span><span class="p">,</span> <span class="mf">0.035187</span><span class="p">,</span> <span class="mf">0.003059</span>
+                    <span class="p">]))</span> <span class="o">/</span> <span class="n">this_sample</span>
+                    <span class="c"># print(&quot;Slope is %s, threshold is %s&quot; % (slope, slope_threshold))</span>
+                    <span class="c"># Left slopes of peaks are positive, so a negative slope indicates inversion</span>
+                    <span class="c"># If slope inversions are seen, return index of the minimum before this.</span>
+                    <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="s">&#39;left&#39;</span> <span class="ow">and</span> <span class="n">log_slope</span> <span class="o">&lt;</span> <span class="o">-</span> <span class="n">log_slope_threshold</span><span class="p">:</span>
+                        <span class="c"># print(&quot;    ! Inversion found on rising (left) slope at %s:</span>
+                        <span class="c"># log_slope %s &lt; - %s. Started from %s&quot; %  (i, log_slope, log_slope_threshold, start))</span>
+                        <span class="k">return</span> <span class="n">i</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">signal</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">start</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+                    <span class="k">elif</span> <span class="n">direction</span> <span class="o">==</span> <span class="s">&#39;right&#39;</span> <span class="ow">and</span> <span class="n">log_slope</span> <span class="o">&gt;</span> <span class="n">log_slope_threshold</span><span class="p">:</span>
+                        <span class="c"># print(&quot;    ! Inversion found on falling (right) slope at %s:</span>
+                        <span class="c"># log_slope %s &gt; %s. started from %s&quot; % (i, log_slope, log_slope_threshold, start))</span>
+                        <span class="k">return</span> <span class="n">start</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">signal</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+                <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+                    <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;The slope inversion test crashed, tell Jelle he should not be lazy and check if &quot;</span> <span class="o">+</span>
+                                <span class="s">&quot;there are enough samples to use the derivative kernel.&quot;</span><span class="p">)</span>
+        <span class="c"># Increment the search position in the right direction</span>
+        <span class="n">i</span> <span class="o">+=</span> <span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="n">direction</span> <span class="o">==</span> <span class="s">&#39;left&#39;</span> <span class="k">else</span> <span class="mi">1</span>
+
+</div>
+<div class="viewcode-block" id="interval_until_threshold"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.OldPeakFinder.interval_until_threshold">[docs]</a><span class="k">def</span> <span class="nf">interval_until_threshold</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span>
+                             <span class="n">left_threshold</span><span class="p">,</span> <span class="n">right_threshold</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">left_limit</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">right_limit</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                             <span class="n">min_crossing_length</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">stop_if_start_exceeded</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">activate_xerawdp_hacks_for</span><span class="o">=</span><span class="bp">None</span>
+                             <span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns (l,r) indices of largest interval including start on same side of threshold</span>
+<span class="sd">    ... .bla... bla</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">right_threshold</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">right_threshold</span> <span class="o">=</span> <span class="n">left_threshold</span>
+    <span class="k">if</span> <span class="n">right_limit</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">right_limit</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">l_cross</span> <span class="o">=</span> <span class="n">find_next_crossing</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">left_threshold</span><span class="p">,</span>  <span class="n">start</span><span class="o">=</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="n">left_limit</span><span class="p">,</span>
+                                 <span class="n">direction</span><span class="o">=</span><span class="s">&#39;left&#39;</span><span class="p">,</span>  <span class="n">min_length</span><span class="o">=</span><span class="n">min_crossing_length</span><span class="p">,</span>
+                                 <span class="n">stop_if_start_exceeded</span><span class="o">=</span><span class="n">stop_if_start_exceeded</span><span class="p">,</span>
+                                 <span class="n">activate_xerawdp_hacks_for</span><span class="o">=</span><span class="n">activate_xerawdp_hacks_for</span><span class="p">)</span>
+    <span class="n">r_cross</span> <span class="o">=</span> <span class="n">find_next_crossing</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">right_threshold</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="n">right_limit</span><span class="p">,</span>
+                                 <span class="n">direction</span><span class="o">=</span><span class="s">&#39;right&#39;</span><span class="p">,</span> <span class="n">min_length</span><span class="o">=</span><span class="n">min_crossing_length</span><span class="p">,</span>
+                                 <span class="n">stop_if_start_exceeded</span><span class="o">=</span><span class="n">stop_if_start_exceeded</span><span class="p">,</span>
+                                 <span class="n">activate_xerawdp_hacks_for</span><span class="o">=</span><span class="n">activate_xerawdp_hacks_for</span><span class="p">)</span>
+    <span class="c"># BADNESS, but needed for Xerawdp matching: This ins&#39;t interval_until_threshold, but 1 more on each side!</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">l_cross</span><span class="p">,</span> <span class="n">r_cross</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="extent_until_threshold"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.OldPeakFinder.extent_until_threshold">[docs]</a><span class="k">def</span> <span class="nf">extent_until_threshold</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">threshold</span><span class="p">):</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">interval_until_threshold</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">threshold</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">a</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 1.4.0 documentation</a> &raquo;</li>
+          <li><a href="../../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Christopher Tunnell.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

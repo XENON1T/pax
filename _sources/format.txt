@@ -16,7 +16,7 @@ There are variables within the class that refer to :class:`pax.datastructure.Pea
 
 Waveforms, which are not typically saved, follow the following format.
 
-.. autoclass:: pax.datastructure.Waveform
+.. autoclass:: pax.datastructure.SumWaveform
     :members:
     :undoc-members:
 

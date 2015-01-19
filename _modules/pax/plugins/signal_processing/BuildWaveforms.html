@@ -1,0 +1,304 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pax.plugins.signal_processing.BuildWaveforms &mdash; Processor for Analyzing XENON1T 1.4.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '1.4.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <link rel="top" title="Processor for Analyzing XENON1T 1.4.0 documentation" href="../../../../index.html" />
+    <link rel="up" title="Module code" href="../../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 1.4.0 documentation</a> &raquo;</li>
+          <li><a href="../../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pax.plugins.signal_processing.BuildWaveforms</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">units</span><span class="p">,</span> <span class="n">datastructure</span><span class="p">,</span> <span class="n">exceptions</span>
+
+
+<div class="viewcode-block" id="BuildWaveforms"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.BuildWaveforms.BuildWaveforms">[docs]</a><span class="k">class</span> <span class="nc">BuildWaveforms</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    Waveforms that will be built:</span>
+<span class="sd">        tpc</span>
+<span class="sd">        top</span>
+<span class="sd">        bottom</span>
+<span class="sd">        NAME for each external detector named NAME (usually only the veto)</span>
+<span class="sd">    for Xerawdp matching also:</span>
+<span class="sd">        uS1</span>
+<span class="sd">        uS2</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="BuildWaveforms.startup"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.BuildWaveforms.BuildWaveforms.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">undead_channels</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span>
+
+        <span class="c"># Extract the number of PMTs from the configuration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_channels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;n_channels&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">truncate_occurrences_partially_outside</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;truncate_occurrences_partially_outside&#39;</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+
+        <span class="c"># Conversion factor from converting from ADC counts -&gt; pmt-electrons/bin</span>
+        <span class="c"># Still has to be divided by PMT gain to get pe/bin</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conversion_factor</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;sample_duration&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;digitizer_voltage_range&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span>
+            <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s">&#39;digitizer_bits&#39;</span><span class="p">])</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;pmt_circuit_load_resistor&#39;</span><span class="p">]</span>
+            <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;external_amplification&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">electron_charge</span>
+        <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">channel_groups</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s">&#39;top&#39;</span><span class="p">:</span>              <span class="n">c</span><span class="p">[</span><span class="s">&#39;channels_top&#39;</span><span class="p">],</span>
+            <span class="s">&#39;bottom&#39;</span><span class="p">:</span>           <span class="n">c</span><span class="p">[</span><span class="s">&#39;channels_bottom&#39;</span><span class="p">],</span>
+        <span class="p">}</span>
+        <span class="c"># Add each detector as a channel group</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">chs</span> <span class="ow">in</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;channels_in_detector&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">channel_groups</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">chs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">external_detectors</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;channels_in_detector&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s">&#39;tpc&#39;</span><span class="p">]</span>
+
+        <span class="c"># For Xerawdp matching: have to exclude some channels from S1 peakfinding and build sum wv with nominal gain</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xerawdp_matching</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;xerawdp_matching&#39;</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">xerawdp_matching</span><span class="p">:</span>
+            <span class="n">s1_channels</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span>
+                <span class="nb">set</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s">&#39;channels_top&#39;</span><span class="p">])</span> <span class="o">|</span> <span class="nb">set</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s">&#39;channels_bottom&#39;</span><span class="p">])</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s">&#39;channels_excluded_for_s1&#39;</span><span class="p">]))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">channel_groups</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+                <span class="s">&#39;s1_peakfinding&#39;</span><span class="p">:</span> <span class="n">s1_channels</span><span class="p">,</span>
+                <span class="s">&#39;uS1&#39;</span><span class="p">:</span>  <span class="n">s1_channels</span><span class="p">,</span>
+                <span class="s">&#39;uS2&#39;</span><span class="p">:</span>  <span class="n">c</span><span class="p">[</span><span class="s">&#39;channels_top&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;channels_bottom&#39;</span><span class="p">],</span>
+            <span class="p">})</span>
+</div>
+<div class="viewcode-block" id="BuildWaveforms.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.BuildWaveforms.BuildWaveforms.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+
+        <span class="c"># Sanity check</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;sample_duration&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">event</span><span class="o">.</span><span class="n">sample_duration</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Event </span><span class="si">%s</span><span class="s"> quotes sample duration = </span><span class="si">%s</span><span class="s"> ns, but sample_duration is set to </span><span class="si">%s</span><span class="s">!&#39;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">event</span><span class="o">.</span><span class="n">event_number</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">sample_duration</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;sample_duration&#39;</span><span class="p">]))</span>
+
+        <span class="c"># Initialize empty waveforms</span>
+        <span class="k">for</span> <span class="n">group</span><span class="p">,</span> <span class="n">members</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">channel_groups</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">event</span><span class="o">.</span><span class="n">sum_waveforms</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">datastructure</span><span class="o">.</span><span class="n">SumWaveform</span><span class="p">(</span>
+                <span class="n">samples</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">length</span><span class="p">()),</span>
+                <span class="n">name</span><span class="o">=</span><span class="n">group</span><span class="p">,</span>
+                <span class="n">channel_list</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">members</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">),</span>
+                <span class="n">detector</span><span class="o">=</span><span class="n">group</span> <span class="k">if</span> <span class="n">group</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">external_detectors</span> <span class="k">else</span> <span class="s">&#39;tpc&#39;</span>
+            <span class="p">))</span>
+
+        <span class="n">last_occurrence_in</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="k">for</span> <span class="n">occ_i</span><span class="p">,</span> <span class="n">occ</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">occurrences</span><span class="p">):</span>
+
+            <span class="n">channel</span> <span class="o">=</span> <span class="n">occ</span><span class="o">.</span><span class="n">channel</span>
+
+            <span class="c"># Check for undead channels</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">channel</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">undead_channels</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;zombie_paranoia&#39;</span><span class="p">]:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&#39;Undead channel </span><span class="si">%s</span><span class="s">: gain is set to 0, &#39;</span>
+                                         <span class="s">&#39;but it has a signal in this event!&#39;</span> <span class="o">%</span> <span class="n">channel</span><span class="p">)</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&#39;Further undead channel warnings for this channel will be suppressed.&#39;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">undead_channels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">xerawdp_matching</span><span class="p">:</span>
+                    <span class="c"># This channel won&#39;t add anything, so:</span>
+                    <span class="k">continue</span>
+
+            <span class="n">baseline_sample</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="n">start_index</span> <span class="o">=</span> <span class="n">occ</span><span class="o">.</span><span class="n">left</span>
+            <span class="n">length</span> <span class="o">=</span> <span class="n">occ</span><span class="o">.</span><span class="n">length</span>
+            <span class="n">end_index</span> <span class="o">=</span> <span class="n">occ</span><span class="o">.</span><span class="n">right</span>
+            <span class="n">occurrence_wave</span> <span class="o">=</span> <span class="n">occ</span><span class="o">.</span><span class="n">raw_data</span>
+
+            <span class="c"># Grab samples to compute baseline from</span>
+
+            <span class="c"># For pulses starting right after previous ones, we can keep the samples from the previous pulse</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;reuse_baseline_for_adjacent_occurrences&#39;</span><span class="p">]</span> \
+                    <span class="ow">and</span> <span class="n">channel</span> <span class="ow">in</span> <span class="n">last_occurrence_in</span> \
+                    <span class="ow">and</span> <span class="n">start_index</span> <span class="o">==</span> <span class="n">last_occurrence_in</span><span class="p">[</span><span class="n">channel</span><span class="p">]</span><span class="o">.</span><span class="n">right</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="c"># self.log.debug(&#39;Occurence %s in channel %s is adjacent to previous occurrence: reusing baseline&#39; %</span>
+                <span class="c">#               (i, channel))</span>
+                <span class="k">pass</span>
+
+            <span class="c"># For VERY short pulses, we are in trouble...</span>
+            <span class="k">elif</span> <span class="n">length</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;baseline_sample_length&#39;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                    <span class="p">(</span><span class="s">&quot;Occurrence </span><span class="si">%s</span><span class="s"> in channel </span><span class="si">%s</span><span class="s"> has too few samples (</span><span class="si">%s</span><span class="s">) to compute baseline:&quot;</span> <span class="o">+</span>
+                     <span class="s">&#39; reusing previous baseline in channel.&#39;</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span><span class="n">occ_i</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">length</span><span class="p">)</span>
+                <span class="p">)</span>
+                <span class="k">pass</span>
+
+            <span class="c"># For short pulses, we can take baseline samples from its rear.</span>
+            <span class="c"># The last occurrence is truncated in Xenon100, OK to use front-baselining even if short.</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;rear_baselining_for_short_occurrences&#39;</span><span class="p">]</span> <span class="ow">and</span>  \
+                    <span class="nb">len</span><span class="p">(</span><span class="n">occurrence_wave</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;rear_baselining_threshold_occurrence_length&#39;</span><span class="p">]</span> <span class="ow">and</span> \
+                    <span class="p">(</span><span class="ow">not</span> <span class="n">start_index</span> <span class="o">+</span> <span class="n">length</span> <span class="o">&gt;</span> <span class="n">event</span><span class="o">.</span><span class="n">length</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">occ_i</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Unexpected short occurrence </span><span class="si">%s</span><span class="s"> in channel </span><span class="si">%s</span><span class="s"> at </span><span class="si">%s</span><span class="s"> (</span><span class="si">%s</span><span class="s"> samples long)&quot;</span>
+                                     <span class="o">%</span> <span class="p">(</span><span class="n">occ_i</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">start_index</span><span class="p">,</span> <span class="n">length</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Short pulse, using rear-baselining&quot;</span><span class="p">)</span>
+                <span class="n">baseline_sample</span> <span class="o">=</span> <span class="n">occurrence_wave</span><span class="p">[</span><span class="n">length</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;baseline_sample_length&#39;</span><span class="p">]:]</span>
+
+            <span class="c"># Finally, the usual baselining case:</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">baseline_sample</span> <span class="o">=</span> <span class="n">occurrence_wave</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;baseline_sample_length&#39;</span><span class="p">]]</span>
+
+            <span class="c"># Compute the baseline from the baselining sample</span>
+            <span class="k">if</span> <span class="n">baseline_sample</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">channel</span> <span class="ow">in</span> <span class="n">last_occurrence_in</span><span class="p">:</span>
+                    <span class="n">baseline</span> <span class="o">=</span> <span class="n">last_occurrence_in</span><span class="p">[</span><span class="n">channel</span><span class="p">]</span><span class="o">.</span><span class="n">digitizer_baseline_used</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
+                        <span class="p">(</span><span class="s">&#39;DANGER: attempt to re-use baseline in channel </span><span class="si">%s</span><span class="s"> where none has previously been computed: &#39;</span> <span class="o">+</span>
+                         <span class="s">&#39; using default digitizer baseline </span><span class="si">%s</span><span class="s">.&#39;</span><span class="p">)</span> <span class="o">%</span>
+                        <span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;digitizer_baseline&#39;</span><span class="p">])</span>
+                    <span class="p">)</span>
+                    <span class="n">baseline</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;digitizer_baseline&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">baselining_method</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;find_baselines_using&#39;</span><span class="p">,</span> <span class="s">&#39;mean&#39;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">baselining_method</span> <span class="o">==</span> <span class="s">&#39;mean&#39;</span><span class="p">:</span>
+                    <span class="c"># Xerawdp behaviour</span>
+                    <span class="n">baseline</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">baseline_sample</span><span class="p">)</span>  <span class="c"># No floor, Xerawdp uses float arithmetic too. Good.</span>
+                <span class="k">elif</span> <span class="n">baselining_method</span> <span class="o">==</span> <span class="s">&#39;median&#39;</span><span class="p">:</span>
+                    <span class="c"># More robust against peaks in start of sample</span>
+                    <span class="n">baseline</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">baseline_sample</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Invalid find_baselines_using: should be &#39;mean&#39; or &#39;median&#39;&quot;</span><span class="p">)</span>
+
+            <span class="c"># Always throw error if occurrence is completely outside event -- see issue 43</span>
+            <span class="k">if</span> <span class="n">end_index</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">start_index</span> <span class="o">&gt;</span> <span class="n">event</span><span class="o">.</span><span class="n">length</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">OccurrenceBeyondEventError</span><span class="p">(</span>
+                    <span class="s">&#39;Occurrence </span><span class="si">%s</span><span class="s"> in channel </span><span class="si">%s</span><span class="s"> (</span><span class="si">%s</span><span class="s">-</span><span class="si">%s</span><span class="s">) is entirely outside event bounds (</span><span class="si">%s</span><span class="s">-</span><span class="si">%s</span><span class="s">)!&#39;</span> <span class="o">%</span> <span class="p">(</span>
+                        <span class="n">occ_i</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">start_index</span><span class="p">,</span> <span class="n">end_index</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">length</span><span class="p">()</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+
+            <span class="c"># Truncate occurrences starting too early -- see issue 43</span>
+            <span class="k">if</span> <span class="n">start_index</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">message_head</span> <span class="o">=</span> <span class="s">&quot;Occurrence </span><span class="si">%s</span><span class="s"> in channel </span><span class="si">%s</span><span class="s"> starts </span><span class="si">%s</span><span class="s"> samples before event starts (see issue #43)&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                    <span class="n">occ_i</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="o">-</span><span class="n">start_index</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">truncate_occurrences_partially_outside</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">OccurrenceBeyondEventError</span><span class="p">(</span><span class="n">message_head</span> <span class="o">+</span> <span class="s">&#39;!&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">message_head</span> <span class="o">+</span> <span class="s">&#39;: truncating.&#39;</span><span class="p">)</span>
+                <span class="n">occurrence_wave</span> <span class="o">=</span> <span class="n">occurrence_wave</span><span class="p">[</span><span class="o">-</span><span class="n">start_index</span><span class="p">:]</span>
+                <span class="c"># Update the start index</span>
+                <span class="n">start_index</span> <span class="o">=</span> <span class="mi">0</span>
+
+            <span class="c"># Truncate occurrences taking too long -- see issue 43</span>
+            <span class="n">overhang_length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">occurrence_wave</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">start_index</span> <span class="o">-</span> <span class="n">event</span><span class="o">.</span><span class="n">length</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">overhang_length</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">message_head</span> <span class="o">=</span> <span class="s">&quot;Occurrence </span><span class="si">%s</span><span class="s"> in channel </span><span class="si">%s</span><span class="s"> has overhang of </span><span class="si">%s</span><span class="s"> samples (see issue #43)&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                    <span class="n">occ_i</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">overhang_length</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">truncate_occurrences_partially_outside</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">OccurrenceBeyondEventError</span><span class="p">(</span><span class="n">message_head</span> <span class="o">+</span> <span class="s">&#39;!&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">message_head</span> <span class="o">+</span> <span class="s">&#39;: truncating.&#39;</span><span class="p">)</span>
+                <span class="n">occurrence_wave</span> <span class="o">=</span> <span class="n">occurrence_wave</span><span class="p">[:</span><span class="n">length</span> <span class="o">-</span> <span class="n">overhang_length</span><span class="p">]</span>
+                <span class="c"># Update the length &amp; end index</span>
+                <span class="n">length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">occurrence_wave</span><span class="p">)</span>
+                <span class="n">end_index</span> <span class="o">=</span> <span class="n">start_index</span> <span class="o">+</span> <span class="n">length</span> <span class="o">-</span> <span class="mi">1</span>
+
+            <span class="c"># Compute corrected pulse</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">xerawdp_matching</span><span class="p">:</span>
+                <span class="n">nominally_corrected_pulse</span> <span class="o">=</span> <span class="n">baseline</span> <span class="o">-</span> <span class="n">occurrence_wave</span>
+                <span class="n">nominally_corrected_pulse</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conversion_factor</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;nominal_gain&#39;</span><span class="p">]</span>
+                <span class="n">corrected_pulse</span> <span class="o">=</span> <span class="n">nominally_corrected_pulse</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">corrected_pulse</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;inf&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">corrected_pulse</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;nominal_gain&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">corrected_pulse</span> <span class="o">=</span> <span class="p">(</span><span class="n">baseline</span> <span class="o">-</span> <span class="n">occurrence_wave</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">conversion_factor</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]</span>
+
+            <span class="c"># Store the waveform in channel_waveforms</span>
+            <span class="c"># If the gain is 0, we can still be here if self.xerawdp_matching, don&#39;t want to store infs, so check first</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">event</span><span class="o">.</span><span class="n">channel_waveforms</span><span class="p">[</span><span class="n">channel</span><span class="p">][</span><span class="n">start_index</span><span class="p">:</span><span class="n">end_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">corrected_pulse</span>
+
+            <span class="c"># Add corrected pulse to all appropriate summed waveforms</span>
+            <span class="k">for</span> <span class="n">group</span><span class="p">,</span> <span class="n">members</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">channel_groups</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">channel</span> <span class="ow">in</span> <span class="n">members</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">xerawdp_matching</span> <span class="ow">and</span> <span class="n">group</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;u&#39;</span><span class="p">):</span>
+                        <span class="n">pulse_to_add</span> <span class="o">=</span> <span class="n">nominally_corrected_pulse</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">pulse_to_add</span> <span class="o">=</span> <span class="n">corrected_pulse</span>
+                    <span class="n">event</span><span class="o">.</span><span class="n">get_sum_waveform</span><span class="p">(</span><span class="n">group</span><span class="p">)</span><span class="o">.</span><span class="n">samples</span><span class="p">[</span><span class="n">start_index</span><span class="p">:</span><span class="n">end_index</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+=</span> <span class="n">pulse_to_add</span>
+
+            <span class="c"># Store some metadata for this occurrence</span>
+            <span class="n">occ</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">corrected_pulse</span><span class="p">)</span>
+            <span class="n">occ</span><span class="o">.</span><span class="n">digitizer_baseline_used</span> <span class="o">=</span> <span class="n">baseline</span>
+
+            <span class="n">last_occurrence_in</span><span class="p">[</span><span class="n">channel</span><span class="p">]</span> <span class="o">=</span> <span class="n">occ</span>
+
+        <span class="k">return</span> <span class="n">event</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 1.4.0 documentation</a> &raquo;</li>
+          <li><a href="../../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Christopher Tunnell.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

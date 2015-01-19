@@ -6,7 +6,6 @@ Subpackages
 
 .. toctree::
 
-    pax.micromodels
     pax.plugins
 
 Submodules
@@ -20,6 +19,14 @@ pax.core module
     :undoc-members:
     :show-inheritance:
 
+pax.data_model module
+---------------------
+
+.. automodule:: pax.data_model
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pax.datastructure module
 ------------------------
 
@@ -28,10 +35,10 @@ pax.datastructure module
     :undoc-members:
     :show-inheritance:
 
-pax.dsputils module
--------------------
+pax.exceptions module
+---------------------
 
-.. automodule:: pax.dsputils
+.. automodule:: pax.exceptions
     :members:
     :undoc-members:
     :show-inheritance:
@@ -56,6 +63,14 @@ pax.units module
 ----------------
 
 .. automodule:: pax.units
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.utils module
+----------------
+
+.. automodule:: pax.utils
     :members:
     :undoc-members:
     :show-inheritance:

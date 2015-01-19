@@ -1,0 +1,279 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pax.plugins.signal_processing.BigPeakfinder &mdash; Processor for Analyzing XENON1T 1.4.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '1.4.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <link rel="top" title="Processor for Analyzing XENON1T 1.4.0 documentation" href="../../../../index.html" />
+    <link rel="up" title="Module code" href="../../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 1.4.0 documentation</a> &raquo;</li>
+          <li><a href="../../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pax.plugins.signal_processing.BigPeakfinder</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">datastructure</span><span class="p">,</span> <span class="n">utils</span>
+
+
+<div class="viewcode-block" id="FindBigPeaks"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.BigPeakfinder.FindBigPeaks">[docs]</a><span class="k">class</span> <span class="nc">FindBigPeaks</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
+
+    <span class="sd">&quot;&quot;&quot;Find peaks in intervals above threshold in the sum waveform</span>
+<span class="sd">    This type of peakfinding is only reliable for peaks &gt;&gt; 1pe</span>
+<span class="sd">    (unless you have no noise, or use a battery of peak shape &amp; isolation tests)</span>
+
+<span class="sd">    If the low-energy peakfinder is good, this can be drastically simplified,</span>
+<span class="sd">    e.g. we could just do one pass at the filtered waveform, large S1s should trigger this too.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="FindBigPeaks.startup"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.BigPeakfinder.FindBigPeaks.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">derivative_kernel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;derivative_kernel&#39;</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="FindBigPeaks.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.BigPeakfinder.FindBigPeaks.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">pf</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;peakfinders&#39;</span><span class="p">]:</span>
+            <span class="n">pfwave_obj</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">get_sum_waveform</span><span class="p">(</span><span class="n">pf</span><span class="p">[</span><span class="s">&#39;peakfinding_wave&#39;</span><span class="p">])</span>
+            <span class="n">peakfinding_wave</span> <span class="o">=</span> <span class="n">pfwave_obj</span><span class="o">.</span><span class="n">samples</span>
+            <span class="n">detector</span> <span class="o">=</span> <span class="n">pfwave_obj</span><span class="o">.</span><span class="n">detector</span>
+            <span class="n">unfiltered_wave</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">get_sum_waveform</span><span class="p">(</span><span class="n">pf</span><span class="p">[</span><span class="s">&#39;unfiltered_wave&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">samples</span>
+
+            <span class="c"># Define the peak/valley tester for the peaksplitter this peakfinder</span>
+            <span class="k">def</span> <span class="nf">is_valid_p_v_pair</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">valley</span><span class="p">):</span>
+                <span class="k">return</span> <span class="p">(</span>
+                    <span class="nb">abs</span><span class="p">(</span><span class="n">peak</span> <span class="o">-</span> <span class="n">valley</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="n">pf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;min_p_v_distance&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span>
+                    <span class="n">signal</span><span class="p">[</span><span class="n">peak</span><span class="p">]</span> <span class="o">/</span> <span class="n">signal</span><span class="p">[</span><span class="n">valley</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">pf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;min_p_v_ratio&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">and</span>
+                    <span class="n">signal</span><span class="p">[</span><span class="n">peak</span><span class="p">]</span> <span class="o">-</span> <span class="n">signal</span><span class="p">[</span><span class="n">valley</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">pf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;min_p_v_difference&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+                <span class="p">)</span>
+
+            <span class="c"># Search for peaks in the free regions</span>
+            <span class="k">for</span> <span class="n">region_left</span><span class="p">,</span> <span class="n">region_right</span> <span class="ow">in</span> <span class="n">utils</span><span class="o">.</span><span class="n">free_regions</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">detector</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">itv_left</span><span class="p">,</span> <span class="n">itv_right</span> <span class="ow">in</span> <span class="n">utils</span><span class="o">.</span><span class="n">intervals_where</span><span class="p">(</span>
+                        <span class="n">peakfinding_wave</span><span class="p">[</span><span class="n">region_left</span><span class="p">:</span><span class="n">region_right</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">pf</span><span class="p">[</span><span class="s">&#39;threshold&#39;</span><span class="p">]):</span>
+
+                    <span class="n">peaks</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="n">peak_wave</span> <span class="o">=</span> <span class="n">peakfinding_wave</span><span class="p">[</span><span class="n">itv_left</span><span class="p">:</span><span class="n">itv_right</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">peak_wave</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">pf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;min_interval_width&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">):</span>
+                        <span class="k">continue</span>
+
+                    <span class="c"># We&#39;ve found an interval above threshold: should we split it?</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">peak_wave</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">pf</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;min_split_attempt_width&#39;</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;inf&#39;</span><span class="p">)):</span>
+                        <span class="c"># No, the interval is too small</span>
+                        <span class="n">peaks</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">peak_wave</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c"># Yes, try it</span>
+                        <span class="n">peak_indices</span><span class="p">,</span> <span class="n">valley_indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">peaks_and_valleys</span><span class="p">(</span><span class="n">peak_wave</span><span class="p">,</span>
+                                                                              <span class="n">test_function</span><span class="o">=</span><span class="n">is_valid_p_v_pair</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">peak_indices</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+                            <span class="c"># The peak was not split</span>
+                            <span class="n">peaks</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">peak_wave</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="c"># It was split, add the subpeaks</span>
+                            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">peak_indices</span><span class="p">):</span>
+                                <span class="n">left</span> <span class="o">=</span> <span class="n">valley_indices</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+                                <span class="n">right</span> <span class="o">=</span> <span class="n">valley_indices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">if</span> <span class="n">i</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">peak_indices</span><span class="p">)</span> <span class="k">else</span> <span class="nb">len</span><span class="p">(</span><span class="n">peak_wave</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+                                <span class="n">peaks</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">))</span>
+                            <span class="c"># Show peak splitting diagnostic plot</span>
+                            <span class="c"># TODO: Make option, or factor to separate plugin</span>
+                            <span class="c"># import matplotlib.pyplot as plt</span>
+                            <span class="c"># plt.plot(1+peak_wave)</span>
+                            <span class="c"># plt.plot(peak_indices,   1+peak_wave[np.array(peak_indices)], &#39;or&#39;)</span>
+                            <span class="c"># plt.plot(valley_indices, 1+peak_wave[np.array(valley_indices)], &#39;ob&#39;)</span>
+                            <span class="c"># plt.yscale(&#39;log&#39;)</span>
+                            <span class="c"># plt.ylabel(&#39;1+amplitude (pe)&#39;)</span>
+                            <span class="c"># plt.xlabel(&#39;time (digitizer bin = 10ns)&#39;)</span>
+                            <span class="c"># plt.show()</span>
+
+                    <span class="c"># Add all the found peaks to the event</span>
+                    <span class="k">for</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span> <span class="ow">in</span> <span class="n">peaks</span><span class="p">:</span>
+                        <span class="n">offset</span> <span class="o">=</span> <span class="n">region_left</span> <span class="o">+</span> <span class="n">itv_left</span> <span class="o">+</span> <span class="n">left</span>
+                        <span class="n">unfiltered_max_idx</span> <span class="o">=</span> <span class="n">offset</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">unfiltered_wave</span><span class="p">[</span><span class="n">offset</span><span class="p">:</span> <span class="n">offset</span> <span class="o">-</span> <span class="n">left</span> <span class="o">+</span> <span class="n">right</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+
+                        <span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">datastructure</span><span class="o">.</span><span class="n">Peak</span><span class="p">({</span>
+                            <span class="s">&#39;index_of_maximum&#39;</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">unfiltered_max_idx</span><span class="p">),</span>   <span class="c"># in unfiltered waveform!</span>
+                            <span class="s">&#39;height&#39;</span><span class="p">:</span>           <span class="n">unfiltered_wave</span><span class="p">[</span><span class="n">unfiltered_max_idx</span><span class="p">],</span>
+                            <span class="s">&#39;left&#39;</span><span class="p">:</span>             <span class="nb">int</span><span class="p">(</span><span class="n">region_left</span> <span class="o">+</span> <span class="n">itv_left</span> <span class="o">+</span> <span class="n">left</span><span class="p">),</span>
+                            <span class="s">&#39;right&#39;</span><span class="p">:</span>            <span class="nb">int</span><span class="p">(</span><span class="n">region_left</span> <span class="o">+</span> <span class="n">itv_left</span> <span class="o">+</span> <span class="n">right</span><span class="p">),</span>
+                            <span class="s">&#39;detector&#39;</span><span class="p">:</span>         <span class="n">detector</span><span class="p">}))</span>
+
+        <span class="k">return</span> <span class="n">event</span>
+</div>
+<div class="viewcode-block" id="FindBigPeaks.peaks_and_valleys"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.BigPeakfinder.FindBigPeaks.peaks_and_valleys">[docs]</a>    <span class="k">def</span> <span class="nf">peaks_and_valleys</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">signal</span><span class="p">,</span> <span class="n">test_function</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Find peaks and valleys based on derivative sign changes</span>
+<span class="sd">        :param signal: signal to search in</span>
+<span class="sd">        :param test_function: Function which accepts three args:</span>
+<span class="sd">                - signal, signal begin tested</span>
+<span class="sd">                - peak, index of peak</span>
+<span class="sd">                - valley, index of valley</span>
+<span class="sd">            must return True if peak/valley pair is acceptable, else False</span>
+<span class="sd">        :return: two sorted numpy arrays: peaks, valleys</span>
+<span class="sd">        The peaks always occur before the valleys.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">derivative_kernel</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span> <span class="o">==</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">derivative_kernel</span><span class="p">):</span>
+            <span class="c"># Signal is too small, can&#39;t calculate derivatives</span>
+            <span class="k">return</span> <span class="p">[],</span> <span class="p">[]</span>
+
+        <span class="n">slope</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">derivative_kernel</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;same&#39;</span><span class="p">)</span>
+
+        <span class="c"># Chop the invalid parts off - easier than mode=&#39;valid&#39; and adding offset</span>
+        <span class="c"># to results</span>
+        <span class="n">offset</span> <span class="o">=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">derivative_kernel</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+        <span class="n">slope</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">offset</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">offset</span><span class="p">)</span>
+        <span class="n">slope</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">slope</span><span class="p">)</span> <span class="o">-</span> <span class="n">offset</span><span class="p">:]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">offset</span><span class="p">)</span>
+
+        <span class="n">peaks</span><span class="p">,</span> <span class="n">valleys</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">where_changes</span><span class="p">(</span><span class="n">slope</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">peaks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">peaks</span><span class="p">))</span>
+        <span class="n">valleys</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">valleys</span><span class="p">))</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">peaks</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">valleys</span><span class="p">)</span>
+
+        <span class="c"># Remove coinciding peak&amp;valleys</span>
+        <span class="n">good_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">peaks</span> <span class="o">!=</span> <span class="n">valleys</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">peaks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">peaks</span><span class="p">[</span><span class="n">good_indices</span><span class="p">])</span>
+        <span class="n">valleys</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">valleys</span><span class="p">[</span><span class="n">good_indices</span><span class="p">])</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">valleys</span> <span class="o">&gt;</span> <span class="n">peaks</span><span class="p">):</span>   <span class="c"># Valleys are AFTER the peaks</span>
+            <span class="k">print</span><span class="p">(</span><span class="n">valleys</span> <span class="o">-</span> <span class="n">peaks</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Peak &amp; valley list weird!&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">peaks</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="c"># The peak is not split</span>
+            <span class="k">return</span> <span class="n">peaks</span><span class="p">,</span> <span class="n">valleys</span>
+
+        <span class="c"># Remove peaks and valleys which are too close to each other, or have too low a p/v ratio</span>
+        <span class="c"># This can&#39;t be a for-loop, as we are modifying the lists, and step back</span>
+        <span class="c"># to recheck peaks.</span>
+        <span class="n">now_at_peak</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">while</span> <span class="mi">1</span><span class="p">:</span>
+
+            <span class="c"># Find the next peak, if there is one</span>
+            <span class="k">if</span> <span class="n">now_at_peak</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">peaks</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">break</span>
+
+            <span class="n">peak</span> <span class="o">=</span> <span class="n">peaks</span><span class="p">[</span><span class="n">now_at_peak</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">math</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">peak</span><span class="p">):</span>
+                <span class="n">now_at_peak</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">continue</span>
+
+            <span class="c"># Check the valleys around this peak</span>
+            <span class="k">if</span> <span class="n">peak</span> <span class="o">&lt;</span> <span class="nb">min</span><span class="p">(</span><span class="n">valleys</span><span class="p">):</span>
+                <span class="n">fail_left</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">valley_left</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">valleys</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">valleys</span> <span class="o">&lt;</span> <span class="n">peak</span><span class="p">)[</span><span class="mi">0</span><span class="p">]])</span>
+                <span class="n">fail_left</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">test_function</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">valley_left</span><span class="p">)</span>
+            <span class="n">valley_right</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">valleys</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">valleys</span> <span class="o">&gt;</span> <span class="n">peak</span><span class="p">)[</span><span class="mi">0</span><span class="p">]])</span>
+            <span class="n">fail_right</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">test_function</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">peak</span><span class="p">,</span> <span class="n">valley_right</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">fail_left</span> <span class="ow">or</span> <span class="n">fail_right</span><span class="p">):</span>
+                <span class="c"># We&#39;re good, move along</span>
+                <span class="n">now_at_peak</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">continue</span>
+
+            <span class="c"># Some check failed: we must remove a peak/valley pair.</span>
+            <span class="c"># Which valley should we remove?</span>
+            <span class="k">if</span> <span class="n">fail_left</span> <span class="ow">and</span> <span class="n">fail_right</span><span class="p">:</span>
+                <span class="c"># Both valleys are bad! Remove the most shallow valley.</span>
+                <span class="n">valley_to_remove</span> <span class="o">=</span> <span class="n">valley_left</span> <span class="k">if</span> <span class="n">signal</span><span class="p">[</span>
+                    <span class="n">valley_left</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">signal</span><span class="p">[</span><span class="n">valley_right</span><span class="p">]</span> <span class="k">else</span> <span class="n">valley_right</span>
+            <span class="k">elif</span> <span class="n">fail_left</span><span class="p">:</span>
+                <span class="n">valley_to_remove</span> <span class="o">=</span> <span class="n">valley_left</span>
+            <span class="k">elif</span> <span class="n">fail_right</span><span class="p">:</span>
+                <span class="n">valley_to_remove</span> <span class="o">=</span> <span class="n">valley_right</span>
+
+            <span class="c"># Remove the shallowest peak near the valley marked for removal</span>
+            <span class="n">left_peak</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">peaks</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">peaks</span> <span class="o">&lt;</span> <span class="n">valley_to_remove</span><span class="p">)[</span><span class="mi">0</span><span class="p">]])</span>
+            <span class="k">if</span> <span class="n">valley_to_remove</span> <span class="o">&gt;</span> <span class="nb">max</span><span class="p">(</span><span class="n">peaks</span><span class="p">):</span>
+                <span class="c"># There is no right peak, so remove the left peak</span>
+                <span class="n">peaks</span> <span class="o">=</span> <span class="n">peaks</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">peaks</span> <span class="o">!=</span> <span class="n">left_peak</span><span class="p">)[</span><span class="mi">0</span><span class="p">]]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">right_peak</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">peaks</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">peaks</span> <span class="o">&gt;</span> <span class="n">valley_to_remove</span><span class="p">)[</span><span class="mi">0</span><span class="p">]])</span>
+                <span class="k">if</span> <span class="n">signal</span><span class="p">[</span><span class="n">left_peak</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">signal</span><span class="p">[</span><span class="n">right_peak</span><span class="p">]:</span>
+                    <span class="n">peaks</span> <span class="o">=</span> <span class="n">peaks</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">peaks</span> <span class="o">!=</span> <span class="n">left_peak</span><span class="p">)[</span><span class="mi">0</span><span class="p">]]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">peaks</span> <span class="o">=</span> <span class="n">peaks</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">peaks</span> <span class="o">!=</span> <span class="n">right_peak</span><span class="p">)[</span><span class="mi">0</span><span class="p">]]</span>
+
+            <span class="c"># Jump back a few peaks to be sure we repeat all checks,</span>
+            <span class="c"># even if we just removed a peak before the current peak</span>
+            <span class="n">now_at_peak</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">now_at_peak</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">valleys</span> <span class="o">=</span> <span class="n">valleys</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">valleys</span> <span class="o">!=</span> <span class="n">valley_to_remove</span><span class="p">)[</span><span class="mi">0</span><span class="p">]]</span>
+
+        <span class="n">peaks</span><span class="p">,</span> <span class="n">valleys</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">peaks</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">math</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">p</span><span class="p">)],</span> <span class="p">[</span><span class="n">v</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">valleys</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">math</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">v</span><span class="p">)]</span>
+
+        <span class="c"># Return all remaining peaks &amp; valleys</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">peaks</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">valleys</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 1.4.0 documentation</a> &raquo;</li>
+          <li><a href="../../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Christopher Tunnell.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,308 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pax.plugins.signal_processing.SmallPeakfinder &mdash; Processor for Analyzing XENON1T 1.4.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '1.4.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <link rel="top" title="Processor for Analyzing XENON1T 1.4.0 documentation" href="../../../../index.html" />
+    <link rel="up" title="Module code" href="../../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 1.4.0 documentation</a> &raquo;</li>
+          <li><a href="../../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pax.plugins.signal_processing.SmallPeakfinder</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">datastructure</span><span class="p">,</span> <span class="n">utils</span>
+
+<span class="c"># Used for diagnostic plotting only</span>
+<span class="c"># TODO: factor out to separate plugin?</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+
+<div class="viewcode-block" id="FindSmallPeaks"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.SmallPeakfinder.FindSmallPeaks">[docs]</a><span class="k">class</span> <span class="nc">FindSmallPeaks</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="FindSmallPeaks.startup"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.SmallPeakfinder.FindSmallPeaks.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+
+        <span class="c"># Get settings from configuration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_sigma</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;peak_minimum_sigma&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">initial_noise_sigma</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;noise_sigma_guess&#39;</span><span class="p">]</span>
+
+        <span class="c"># Optional settings</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filter_to_use</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;filter_to_use&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">give_up_after</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;give_up_after_peak_of_size&#39;</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;inf&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_noise_detection_passes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;max_noise_detection_passes&#39;</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;inf&#39;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;make_diagnostic_plots&#39;</span><span class="p">,</span> <span class="s">&#39;never&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots_in</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;make_diagnostic_plots_in&#39;</span><span class="p">,</span> <span class="s">&#39;small_pf_diagnostic_plots&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">!=</span> <span class="s">&#39;never&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots_in</span><span class="p">):</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots_in</span><span class="p">)</span>
+
+        <span class="n">noise_mode</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;noise_determination_method&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">noise_mode</span> <span class="o">==</span> <span class="s">&#39;std&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">noise_determination</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span>
+        <span class="k">elif</span> <span class="n">noise_mode</span> <span class="o">==</span> <span class="s">&#39;mad&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">noise_determination</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">mad</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;noise_determination_method must be std or mad, not </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">noise_mode</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="FindSmallPeaks.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.SmallPeakfinder.FindSmallPeaks.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="c"># ocs is shorthand for occurrences, as usual</span>
+
+        <span class="c"># Any ultra-large peaks after which we can give up?</span>
+        <span class="n">large_peak_start_points</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">left</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">peaks</span> <span class="k">if</span> <span class="n">p</span><span class="o">.</span><span class="n">area</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">give_up_after</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">large_peak_start_points</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">give_up_after</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">large_peak_start_points</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">give_up_after</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;inf&#39;</span><span class="p">)</span>
+
+        <span class="n">noise_count</span> <span class="o">=</span> <span class="p">{}</span>
+
+        <span class="c"># Handle each detector separately</span>
+        <span class="k">for</span> <span class="n">detector</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_in_detector&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Finding channel peaks in data from </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">detector</span><span class="p">)</span>
+
+            <span class="c"># Get all free regions before the give_up_after point</span>
+            <span class="k">for</span> <span class="n">region_left</span><span class="p">,</span> <span class="n">region_right</span> <span class="ow">in</span> <span class="n">utils</span><span class="o">.</span><span class="n">free_regions</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">detector</span><span class="p">):</span>
+
+                <span class="c"># Can we give up yet?</span>
+                <span class="k">if</span> <span class="n">region_left</span> <span class="o">&gt;=</span> <span class="n">give_up_after</span><span class="p">:</span>
+                    <span class="k">break</span>
+
+                <span class="c"># Find all occurrences completely enveloped in the free region.</span>
+                <span class="c"># TODO: we should put strict=False, so we&#39;re not relying on the zero-suppression to separate</span>
+                <span class="c"># small peaks close to a large peak. However, right now this brings in stuff from large peaks if their</span>
+                <span class="c"># boundsare not completely tight...</span>
+                <span class="n">ocs</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">get_occurrences_between</span><span class="p">(</span><span class="n">region_left</span><span class="p">,</span> <span class="n">region_right</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Free region </span><span class="si">%05d</span><span class="s">-</span><span class="si">%05d</span><span class="s">: process </span><span class="si">%s</span><span class="s"> occurrences&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">region_left</span><span class="p">,</span> <span class="n">region_right</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">ocs</span><span class="p">)))</span>
+
+                <span class="k">for</span> <span class="n">oc</span> <span class="ow">in</span> <span class="n">ocs</span><span class="p">:</span>
+                    <span class="c"># Focus only on the part of the occurrence inside the free region</span>
+                    <span class="c"># (superfluous as long as strict=True)</span>
+                    <span class="n">start</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">region_left</span><span class="p">,</span> <span class="n">oc</span><span class="o">.</span><span class="n">left</span><span class="p">)</span>
+                    <span class="n">stop</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">region_right</span><span class="p">,</span> <span class="n">oc</span><span class="o">.</span><span class="n">right</span><span class="p">)</span>
+                    <span class="n">channel</span> <span class="o">=</span> <span class="n">oc</span><span class="o">.</span><span class="n">channel</span>
+
+                    <span class="c"># Don&#39;t consider channels from other detectors</span>
+                    <span class="k">if</span> <span class="n">channel</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_in_detector&#39;</span><span class="p">][</span><span class="n">detector</span><span class="p">]:</span>
+                        <span class="k">continue</span>
+
+                    <span class="c"># Don&#39;t consider dead channels</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">continue</span>
+
+                    <span class="c"># Retrieve the waveform from channel_waveforms</span>
+                    <span class="n">w</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">channel_waveforms</span><span class="p">[</span><span class="n">channel</span><span class="p">,</span> <span class="n">start</span><span class="p">:</span> <span class="n">stop</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+
+                    <span class="c"># Keep the unfiltered waveform in origw</span>
+                    <span class="n">origw</span> <span class="o">=</span> <span class="n">w</span>
+
+                    <span class="c"># Apply the filter, if user wants to</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_to_use</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                        <span class="n">w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_to_use</span><span class="p">,</span> <span class="s">&#39;same&#39;</span><span class="p">)</span>
+
+                    <span class="c"># Use three passes to separate noise / peaks, see description in .... TODO</span>
+                    <span class="n">noise_sigma</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_noise_sigma</span>
+                    <span class="n">old_raw_peaks</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="n">pass_number</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="n">baseline_correction_delta</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="n">baseline_correction</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+                        <span class="c"># Determine the peaks based on the noise level</span>
+                        <span class="c"># Can&#39;t just use w &gt; self.min_sigma * noise_sigma here,</span>
+                        <span class="c"># want to extend peak bounds to noise_sigma</span>
+                        <span class="n">raw_peaks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">find_peaks</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">noise_sigma</span><span class="p">)</span>
+
+                        <span class="k">if</span> <span class="n">pass_number</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">raw_peaks</span> <span class="o">==</span> <span class="n">old_raw_peaks</span><span class="p">:</span>
+                            <span class="c"># No change in peakfinding, previous noise level is still valid</span>
+                            <span class="c"># That means there&#39;s no point in repeating peak finding either, and we can just:</span>
+                            <span class="k">break</span>
+                            <span class="c"># This saves about 25% of runtime</span>
+                            <span class="c"># You can&#39;t break if you find no peaks on the first pass:</span>
+                            <span class="c"># maybe the estimated noise level was too high</span>
+
+                        <span class="c"># Correct the baseline</span>
+                        <span class="c"># -- BuildWaveforms can get it wrong if there is a pe in the starting samples</span>
+                        <span class="n">baseline_correction_delta</span> <span class="o">=</span> <span class="n">w</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">samples_without_peaks</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">raw_peaks</span><span class="p">)]</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+                        <span class="n">w</span> <span class="o">-=</span> <span class="n">baseline_correction_delta</span>
+                        <span class="n">baseline_correction</span> <span class="o">+=</span> <span class="n">baseline_correction_delta</span>
+
+                        <span class="c"># Determine the new noise_sigma</span>
+                        <span class="n">noise_sigma</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">noise_determination</span><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">samples_without_peaks</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">raw_peaks</span><span class="p">)])</span>
+
+                        <span class="n">old_raw_peaks</span> <span class="o">=</span> <span class="n">raw_peaks</span>
+                        <span class="k">if</span> <span class="n">pass_number</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_noise_detection_passes</span><span class="p">:</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">((</span>
+                                <span class="s">&quot;In occurrence </span><span class="si">%s</span><span class="s">-</span><span class="si">%s</span><span class="s"> in channel </span><span class="si">%s</span><span class="s">, findSmallPeaks did not converge on peaks after </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">+</span>
+                                <span class="s">&quot; iterations. This could indicate a baseline problem in this occurrence. &quot;</span> <span class="o">+</span>
+                                <span class="s">&quot;Channel-based peakfinding in this occurrence may be less accurate.&quot;</span><span class="p">)</span> <span class="o">%</span> <span class="p">(</span>
+                                    <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">pass_number</span><span class="p">))</span>
+                            <span class="k">break</span>
+
+                        <span class="n">pass_number</span> <span class="o">+=</span> <span class="mi">1</span>
+
+                    <span class="c"># Update occurrence data</span>
+                    <span class="n">oc</span><span class="o">.</span><span class="n">noise_sigma</span> <span class="o">=</span> <span class="n">noise_sigma</span>
+                    <span class="n">oc</span><span class="o">.</span><span class="n">baseline_correction</span> <span class="o">=</span> <span class="n">baseline_correction</span>
+                    <span class="n">oc</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="n">oc</span><span class="o">.</span><span class="n">height</span> <span class="o">-</span> <span class="n">baseline_correction</span>
+
+                    <span class="c"># Update the noise occurrence count</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">raw_peaks</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">noise_count</span><span class="p">[</span><span class="n">channel</span><span class="p">]</span> <span class="o">=</span> <span class="n">noise_count</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
+
+                    <span class="c"># Store the found peaks in the datastructure</span>
+                    <span class="n">peaks</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">raw_peaks</span><span class="p">:</span>
+                        <span class="c"># TODO: Hmzz.. height is computed in unfiltered waveform, noise_level in filtered!</span>
+                        <span class="c"># TODO: height is wrong if baseline is corrected...</span>
+                        <span class="c"># TODO: are you sure it is ok to compute area in filtered waveform?</span>
+                        <span class="n">max_idx</span> <span class="o">=</span> <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">origw</span><span class="p">[</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+                        <span class="n">peaks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">datastructure</span><span class="o">.</span><span class="n">ChannelPeak</span><span class="p">({</span>
+                            <span class="c"># TODO: store occurrence index</span>
+                            <span class="s">&#39;channel&#39;</span><span class="p">:</span>             <span class="n">channel</span><span class="p">,</span>
+                            <span class="s">&#39;left&#39;</span><span class="p">:</span>                <span class="n">start</span> <span class="o">+</span> <span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                            <span class="c"># Compute index_of_maximum in the original waveform: the filter introduces a phase shift</span>
+                            <span class="s">&#39;index_of_maximum&#39;</span><span class="p">:</span>    <span class="n">start</span> <span class="o">+</span> <span class="n">max_idx</span><span class="p">,</span>
+                            <span class="s">&#39;right&#39;</span><span class="p">:</span>               <span class="n">start</span> <span class="o">+</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                            <span class="c"># NB: area and max are computed in filtered waveform, because</span>
+                            <span class="c"># the sliding window filter will shift the peak shape a bit</span>
+                            <span class="s">&#39;area&#39;</span><span class="p">:</span>                <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]),</span>
+                            <span class="s">&#39;height&#39;</span><span class="p">:</span>              <span class="n">origw</span><span class="p">[</span><span class="n">max_idx</span><span class="p">],</span>
+                            <span class="s">&#39;noise_sigma&#39;</span><span class="p">:</span>         <span class="n">noise_sigma</span><span class="p">,</span>
+                        <span class="p">}))</span>
+                    <span class="n">event</span><span class="o">.</span><span class="n">all_channel_peaks</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">peaks</span><span class="p">)</span>
+
+                    <span class="c"># TODO: move to separate plugin?</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">==</span> <span class="s">&#39;always&#39;</span> <span class="ow">or</span> \
+                       <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">==</span> <span class="s">&#39;no peaks&#39;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">peaks</span><span class="p">):</span>
+                        <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+                        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">filter_to_use</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                            <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">drawstyle</span><span class="o">=</span><span class="s">&#39;steps&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">&#39;data&#39;</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">drawstyle</span><span class="o">=</span><span class="s">&#39;steps&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">&#39;data (filtered)&#39;</span><span class="p">)</span>
+                            <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">origw</span><span class="p">,</span> <span class="n">drawstyle</span><span class="o">=</span><span class="s">&#39;steps&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">&#39;data (raw)&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">&#39;gray&#39;</span><span class="p">)</span>
+                        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">raw_peaks</span><span class="p">:</span>
+                            <span class="n">plt</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s">&#39;red&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+                        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">noise_sigma</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)),</span> <span class="s">&#39;--&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">&#39;1 sigma&#39;</span><span class="p">)</span>
+                        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">min_sigma</span> <span class="o">*</span> <span class="n">noise_sigma</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)),</span>
+                                 <span class="s">&#39;--&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">&#39;</span><span class="si">%s</span><span class="s"> sigma&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_sigma</span><span class="p">)</span>
+                        <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+                        <span class="n">bla</span> <span class="o">=</span> <span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">event_number</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">channel</span><span class="p">)</span>
+                        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">&#39;Event </span><span class="si">%s</span><span class="s">, occurrence </span><span class="si">%d</span><span class="s">-</span><span class="si">%d</span><span class="s">, Channel </span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">bla</span><span class="p">)</span>
+                        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots_in</span><span class="p">,</span>
+                                                 <span class="s">&#39;event</span><span class="si">%04d</span><span class="s">_occ</span><span class="si">%05d</span><span class="s">-</span><span class="si">%05d</span><span class="s">_ch</span><span class="si">%03d</span><span class="s">.png&#39;</span> <span class="o">%</span> <span class="n">bla</span><span class="p">))</span>
+                        <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="c"># Mark channels with an abnormally high noise rate as bad</span>
+        <span class="k">for</span> <span class="n">ch</span><span class="p">,</span> <span class="n">dc</span> <span class="ow">in</span> <span class="n">noise_count</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">dc</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;maximum_noise_occurrences_per_channel&#39;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
+                    <span class="s">&quot;Channel </span><span class="si">%s</span><span class="s"> shows an abnormally high rate of noise pulses (</span><span class="si">%s</span><span class="s">): its spe pulses will be excluded&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                        <span class="n">ch</span><span class="p">,</span> <span class="n">dc</span><span class="p">))</span>
+                <span class="n">event</span><span class="o">.</span><span class="n">is_channel_bad</span><span class="p">[</span><span class="n">ch</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+
+        <span class="k">return</span> <span class="n">event</span>
+</div>
+<div class="viewcode-block" id="FindSmallPeaks.find_peaks"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.SmallPeakfinder.FindSmallPeaks.find_peaks">[docs]</a>    <span class="k">def</span> <span class="nf">find_peaks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">noise_sigma</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Find all peaks at least self.min_sigma * noise_sigma above baseline.</span>
+<span class="sd">        Peak boundaries are last samples above noise_sigma</span>
+<span class="sd">        :param w: waveform to check for peaks</span>
+<span class="sd">        :param noise_sigma: noise level</span>
+<span class="sd">        :return: peaks as list of (left_index, max_index, right_index) tuples</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">peaks</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span> <span class="ow">in</span> <span class="n">utils</span><span class="o">.</span><span class="n">intervals_where</span><span class="p">(</span><span class="n">w</span> <span class="o">&gt;</span> <span class="n">noise_sigma</span><span class="p">):</span>
+            <span class="n">max_idx</span> <span class="o">=</span> <span class="n">left</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="n">left</span><span class="p">:</span><span class="n">right</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">height</span> <span class="o">=</span> <span class="n">w</span><span class="p">[</span><span class="n">max_idx</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">height</span> <span class="o">&lt;</span> <span class="n">noise_sigma</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_sigma</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="n">peaks</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">peaks</span>
+</div>
+<div class="viewcode-block" id="FindSmallPeaks.samples_without_peaks"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.SmallPeakfinder.FindSmallPeaks.samples_without_peaks">[docs]</a>    <span class="k">def</span> <span class="nf">samples_without_peaks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">peaks</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return array of bools of same size as w, True if none of peaks live there&quot;&quot;&quot;</span>
+        <span class="n">not_in_peak</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>    <span class="c"># All True</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">peaks</span><span class="p">:</span>
+            <span class="n">not_in_peak</span><span class="p">[</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">return</span> <span class="n">not_in_peak</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 1.4.0 documentation</a> &raquo;</li>
+          <li><a href="../../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Christopher Tunnell.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+    </div>
+  </body>
+</html>

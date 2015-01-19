@@ -4,22 +4,6 @@ pax.plugins.io package
 Submodules
 ----------
 
-pax.plugins.io.CSV module
--------------------------
-
-.. automodule:: pax.plugins.io.CSV
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pax.plugins.io.HDF5 module
---------------------------
-
-.. automodule:: pax.plugins.io.HDF5
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 pax.plugins.io.MongoDB module
 -----------------------------
 
@@ -36,10 +20,10 @@ pax.plugins.io.Music module
     :undoc-members:
     :show-inheritance:
 
-pax.plugins.io.OnlineMonitor module
------------------------------------
+pax.plugins.io.Pandas module
+----------------------------
 
-.. automodule:: pax.plugins.io.OnlineMonitor
+.. automodule:: pax.plugins.io.Pandas
     :members:
     :undoc-members:
     :show-inheritance:
@@ -56,14 +40,6 @@ pax.plugins.io.Plotting module
 ------------------------------
 
 .. automodule:: pax.plugins.io.Plotting
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pax.plugins.io.PrintToScreen module
------------------------------------
-
-.. automodule:: pax.plugins.io.PrintToScreen
     :members:
     :undoc-members:
     :show-inheritance:

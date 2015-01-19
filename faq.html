@@ -68,6 +68,32 @@ can check that it worked by running <cite>python</cite> then:</p>
 <p>Which should result in version 3 of Python being used and you should not get an
 error.</p>
 </div>
+<div class="section" id="how-do-i-run-pax-at-nikhef">
+<h2>How do I run <cite>pax</cite> at Nikhef?<a class="headerlink" href="#how-do-i-run-pax-at-nikhef" title="Permalink to this headline">¶</a></h2>
+<p>Running pax at Nikhef requires you to add python 3.4 to your path.
+This can be done by running the following command from a shell:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ export PATH=&quot;/data/xenon/bartp/anaconda3/bin:$PATH&quot;
+</pre></div>
+</div>
+<p>This can be added to your <cite>.bashrc</cite> to be run automatically when you login.
+After setting your environment you need a local copy of pax, clone it
+from github by executing:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ git clone https://github.com/XENON1T/pax.git
+</pre></div>
+</div>
+<p>After doing:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ cd pax/bin
+</pre></div>
+</div>
+<p>Setup pax by executing:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ python setup.py develop
+</pre></div>
+</div>
+<p>Pax should now work, test it by running:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ python paxer --plot
+</pre></div>
+</div>
+</div>
 <div class="section" id="how-do-i-run-git-at-lngs-on-xecluster">
 <h2>How do I run <cite>git</cite> at LNGS on xecluster<a class="headerlink" href="#how-do-i-run-git-at-lngs-on-xecluster" title="Permalink to this headline">¶</a></h2>
 <p>You can get <cite>git</cite> running by doing the following at the command line:</p>
@@ -118,6 +144,7 @@ with the other 433 output formats we have.</p>
   <ul>
 <li><a class="reference internal" href="#">Frequently Asked Questions</a><ul>
 <li><a class="reference internal" href="#how-do-i-run-pax-at-lngs-on-xecluster">How do I run <cite>pax</cite> at LNGS on xecluster?</a></li>
+<li><a class="reference internal" href="#how-do-i-run-pax-at-nikhef">How do I run <cite>pax</cite> at Nikhef?</a></li>
 <li><a class="reference internal" href="#how-do-i-run-git-at-lngs-on-xecluster">How do I run <cite>git</cite> at LNGS on xecluster</a></li>
 <li><a class="reference internal" href="#can-i-set-up-pax-on-my-windows-machine">Can I set up pax on my windows machine?</a></li>
 <li><a class="reference internal" href="#how-do-i-get-python-3-4-with-root-working-on-ubuntu-14">How do I get Python 3.4 with ROOT working on Ubuntu 14?</a></li>
