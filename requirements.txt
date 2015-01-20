@@ -8,3 +8,4 @@ tqdm                 # Progress bar library
 prettytable          # Timing report formatting
 pandas               # Used for various I/O stuff
 tables               # Used by pandas for HDF5 output
+flake8
