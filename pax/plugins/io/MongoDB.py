@@ -190,7 +190,7 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
             try:
                 self.connections[hostname] = pymongo.Connection(hostname)
 
-            except pymongo.errors.ConnectionFailure as e:
+            except pymongo.errors.ConnectionFailure:
                 self.log.fatal("Cannot connect to mongo at %s" % hostname)
 
         return self.connections[hostname]

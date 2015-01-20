@@ -9,7 +9,7 @@ class ClusterSmallPeaks(plugin.TransformPlugin):
     """
 
     def startup(self):
-        self.dt = dt = self.config['sample_duration']
+        self.dt = self.config['sample_duration']
         self.cluster_separation_length = self.config['cluster_separation_time']
 
     def transform_event(self, event):

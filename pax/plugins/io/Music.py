@@ -73,7 +73,7 @@ class WavOutput(plugin.OutputPlugin):
             self.log.error("Not known how many samples per event!")
 
         # Resample such that data plays at live speed
-        R = 10 ** 9 // self.rate
+        R = 10 ** 9 // self.rate  # noqa
 
         n = math.ceil((end - start) / R)
         data = np.zeros(n, dtype=np.int16)

@@ -90,7 +90,6 @@ class WaveformSimulator(plugin.InputPlugin):
     @plugin.BasePlugin._timeit
     def simulate_single_event(self, instructions):
         self.truth_peaks = []
-        dt = self.config['sample_duration']
 
         hitpatterns = []
         for q in instructions:

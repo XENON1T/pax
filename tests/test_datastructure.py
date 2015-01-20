@@ -19,7 +19,7 @@ class TestDatastructure(unittest.TestCase):
     def test_does_not_exist(self):
         e = empty_event()
         with self.assertRaises(AttributeError):
-            self.empty_event.does_not_exist = 3.0
+            e.does_not_exist = 3.0
 
     def test_good(self):
         e = empty_event()

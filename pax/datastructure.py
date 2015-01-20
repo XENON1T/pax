@@ -357,14 +357,14 @@ class Event(Model):
         """
         return int(self.duration() / self.sample_duration)
 
-    def S1s(self, detector='tpc', sort_key='area', reverse=True):
+    def S1s(self, detector='tpc', sort_key='area', reverse=True):  # noqa
         """List of S1 (scintillation) signals
 
         Returns an :class:`pax.datastructure.Peak` class.
         """
         return self._get_peaks_by_type('s1', sort_key, reverse, detector)
 
-    def S2s(self, detector='tpc', sort_key='area', reverse=True):
+    def S2s(self, detector='tpc', sort_key='area', reverse=True):  # noqa
         """List of S2 (ionization) signals
 
         Returns an :class:`pax.datastructure.Peak` class.

@@ -436,7 +436,7 @@ class Processor:
                 self.log.info("User-defined limit of %d events reached." % i)
                 break
 
-            _ = self.process_event(event)
+            self.process_event(event)
 
             self.log.debug("Event %d (%d processed)" % (event.event_number, i))
 

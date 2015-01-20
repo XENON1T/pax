@@ -5,7 +5,7 @@ Extends python object to do a few tricks
 import numpy as np
 import json
 
-from pax.utils import memoize
+from pax.utils import Memoize
 
 
 class Model(object):
@@ -34,7 +34,7 @@ class Model(object):
             setattr(self, k, v)
 
     @classmethod        # Use only in initialization (or if attributes are fixed, as for StrictModel)
-    @memoize            # Caching decorator, improves performance if a model is initialized often
+    @Memoize            # Caching decorator, improves performance if a model is initialized often
     def _get_list_field_names(cls):
         """Get the field names of all list fields in this class
         """

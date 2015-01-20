@@ -249,7 +249,9 @@ def width_at_fraction(peak_wave, fraction_of_max, max_idx, interpolate=False):
 
 def find_first_fast(a, threshold, chunk_size=128):
     """Returns the first index in a below threshold.
-    If a never goes below threshold, returns the last index in a."""
+
+    If a never goes below threshold, returns the last index in a.
+    """
     # Numpy 2.0 may get a builtin to do this.
     # I don't know of anything better than the below for now:
     indices = np.where(a < threshold)[0]
@@ -274,7 +276,7 @@ def find_first_fast(a, threshold, chunk_size=128):
 
 
 # Caching decorator
-class memoize:
+class Memoize:
     # from http://avinashv.net/2008/04/python-decorators-syntactic-sugar/
 
     def __init__(self, function):
@@ -288,10 +290,6 @@ class memoize:
             self.memoized[args] = self.function(*args)
             return self.memoized[args]
 
-
-##
-# Interpolating map class
-##
 
 class InterpolatingMap(object):
 
@@ -400,7 +398,8 @@ class InterpolatingMap(object):
             plt.show()
         plt.close()
 
+
 def empty_event():
-    # useful for testing     
+    # useful for testing
     from pax.datastructure import Event
     return Event(n_channels=1, start_time=0, length=1)

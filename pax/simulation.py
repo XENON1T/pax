@@ -11,7 +11,7 @@ import logging
 from scipy import stats
 
 from pax import units, utils, datastructure
-from pax.utils import memoize
+from pax.utils import Memoize
 
 log = logging.getLogger('SimulationCore')
 
@@ -211,19 +211,19 @@ class Simulator(object):
         rw = self.config['anode_wire_radius']
         if wire_par == 0:
             return x * l
-        totalArea = l + rm * (math.log(rm / rw) - 1)
-        relA_wd_region = rm * math.log(rm / rw) / totalArea
+        total_area = l + rm * (math.log(rm / rw) - 1)
+        rel_a_wd_region = rm * math.log(rm / rw) / total_area
         # This is a bit slower, not much though:
         # return np.array([
-        #     (l - np.exp(xi * totalArea / rm) * rw)
-        #     if xi < relA_wd_region
-        #     else l - (xi * totalArea + rm * (1 - math.log(rm / rw)))
+        #     (l - np.exp(xi * total_area / rm) * rw)
+        #     if xi < rel_a_wd_region
+        #     else l - (xi * total_area + rm * (1 - math.log(rm / rw)))
         #     for xi in x
         # ])
         result = np.zeros(n)
-        x_in_relA_wd_region = x < relA_wd_region
-        result[x_in_relA_wd_region] = (l - np.exp(x[x < relA_wd_region] * totalArea / rm) * rw)
-        result[-x_in_relA_wd_region] = l - (x[-x_in_relA_wd_region] * totalArea + rm * (1 - math.log(rm / rw)))
+        x_in_rel_a_wd_region = x < rel_a_wd_region
+        result[x_in_rel_a_wd_region] = (l - np.exp(x[x < rel_a_wd_region] * total_area / rm) * rw)
+        result[-x_in_rel_a_wd_region] = l - (x[-x_in_rel_a_wd_region] * total_area + rm * (1 - math.log(rm / rw)))
         return result
 
     def pmt_pulse_current(self, gain, offset=0):
@@ -262,7 +262,7 @@ class Simulator(object):
 
         # Convenience variables
         dt = self.config['sample_duration']
-        dV = self.config['digitizer_voltage_range'] / 2 ** (self.config['digitizer_bits'])
+        dV = self.config['digitizer_voltage_range'] / 2 ** (self.config['digitizer_bits'])  # noqa
 
         # Build waveform channel by channel
         for channel, photon_detection_times in hitpattern.arrival_times_per_channel.items():
@@ -460,10 +460,10 @@ class SimulatedHitpattern(object):
 # Photon pulse generation
 ##
 
-# I pulled this out of Simulator: caching using memoize gave me trouble on methods due to the self argument
+# I pulled this out of Simulator: caching using Memoize gave me trouble on methods due to the self argument
 # There's still a method pmt_pulse_current, but it just calls pmt_pulse_current_raw defined below
 
-@memoize
+@Memoize
 def pmt_pulse_current_raw(offset, dt, samples_before, samples_after, tr, tf):
     return np.diff(exp_pulse(
         np.linspace(
@@ -493,7 +493,7 @@ def exp_pulse(t, q, tr, tf):
         return q / (tr + tf) * (tr + tf * (1 - math.exp(-t / (c * tf))))
 
 
-@memoize
+@Memoize
 def _truncated_gauss(my_mean, my_std, left_boundary, right_boundary):
     return stats.truncnorm(
         (left_boundary - my_mean) / my_std,

@@ -135,8 +135,8 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
 
             # Start position for minimizer, if no weighted sum position is present
             # use max pmt location as minimizer start position
-            start_x = max_pmt_x = self.pmt_locations[max_pmt_id]['x']
-            start_y = max_pmt_y = self.pmt_locations[max_pmt_id]['y']
+            start_x = self.pmt_locations[max_pmt_id]['x']
+            start_y = self.pmt_locations[max_pmt_id]['y']
 
             if not self.mode == 'only_reconstruct':
                 # Check for reconstructed positions by other algorithms, if found, calculate chi_square_gamma for those
