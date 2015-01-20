@@ -400,10 +400,7 @@ class InterpolatingMap(object):
             plt.show()
         plt.close()
 
-
-# useful for testing
-from pax.datastructure import Event
-
-
 def empty_event():
+    # useful for testing     
+    from pax.datastructure import Event
     return Event(n_channels=1, start_time=0, length=1)
