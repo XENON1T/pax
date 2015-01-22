@@ -50,7 +50,25 @@ class Model(object):
     def get_fields_data(self):
         """Iterator over (key, value) tuples of all user-specified fields
         """
-        return self.__dict__.items()
+        # self.__dict__.items() does not return default values set in class declaration
+        # Hence we need something more complicated
+        class_dict = self.__class__.__dict__
+        self_dict = self.__dict__
+        for field_name in class_dict.keys():
+            if field_name in self_dict:
+                # The instance has a value for this field: return it
+                yield (field_name, self_dict[field_name])
+            else:
+                # ... it doesnt. Should we return its value?
+                if field_name.startswith('_'):
+                    continue    # No, is internal
+                value_in_class = class_dict[field_name]
+                if callable(value_in_class):
+                    continue    # No, is a method
+                if isinstance(value_in_class, property):
+                    continue    # No, is a property
+                # Yes, yield the class-level value
+                yield (field_name, value_in_class)
 
     def to_dict(self, json_compatible=False):
         result = {}
