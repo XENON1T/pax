@@ -18,6 +18,11 @@ from tqdm import tqdm                   # Progress bar
 import pax
 from pax import units, simulation
 
+# Uncomment for diagnosing memory leaks
+# Also uncomment code in process_event
+# import gc
+# import objgraph
+
 # Store the directory of pax (i.e. this file's directory) as PAX_DIR
 PAX_DIR = os.path.join(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))))
 
@@ -405,6 +410,10 @@ class Processor:
         for j, plugin in enumerate(self.action_plugins):
             self.log.debug("%s (step %d/%d)" % (plugin.__class__.__name__, j, total_plugins))
             event = plugin.process_event(event)
+
+        # Uncomment to diagnose memory leaks
+        # gc.collect()  # don't care about stuff that would be garbage collected properly
+        # objgraph.show_growth(limit=5)
 
         return event
 
