@@ -8,6 +8,7 @@ History
 ------------------
 
  * Minor bug fixes
+ * Travis CI continuous integration is enabled
 
 ------------------
 2.0.0 (2015-01-15)
