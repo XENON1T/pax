@@ -7,8 +7,12 @@ History
 2.0.1 (2015-01-26)
 ------------------
 
- * Minor bug fixes
  * Travis CI continuous integration is enabled
+ * Minor bug fixes
+
+   * Values missing from output if they were always default
+   * Memory leak after many events due to logger
+
 
 ------------------
 2.0.0 (2015-01-15)
@@ -22,8 +26,8 @@ History
 
  * New signal processing chain
 
+   * FindSmallPeaks, finds single-photon peaks in each channel (Default)
    * FindBigPeaks, a traditional sum-waveform peakfinder
-   * FindSmallPeaks, finds single-photon peaks in each channel
    * Supporting peak classification and property computation plugins
 
  * Chi-square gamma x,y position reconstruction
