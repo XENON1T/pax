@@ -4,7 +4,14 @@ History
 -------
 
 ------------------
-2.0.0 (2015-01-0?)
+2.0.1 (2015-01-26)
+------------------
+
+ * Minor bug fixes
+ * Travis CI continuous integration is enabled
+
+------------------
+2.0.0 (2015-01-15)
 ------------------
 
  * Changes to core
