@@ -84,7 +84,7 @@ class ClusterSmallPeaks(plugin.TransformPlugin):
 
                     # Compute some quantities summarizing the timing distributing
                     times = [s.index_of_maximum * self.dt for s in peak.channel_peaks]
-                    peak.mean_absolute_deviation = utils.mad(times)
+                    peak.median_absolute_deviation = utils.mad(times)
 
                     # Classification for noise and lone_pulse peaks
 
@@ -128,11 +128,11 @@ class AdHocClassification(plugin.TransformPlugin):
             if peak.type != 'unknown':
                 continue
 
-            if peak.mean_absolute_deviation < 60:
+            if peak.median_absolute_deviation < 60:
                 peak.type = 's1'
                 continue
 
-            elif peak.mean_absolute_deviation > 100 and peak.area > 8:
+            elif peak.median_absolute_deviation > 100 and peak.area > 8:
                 peak.type = 's2'
                 continue
 
