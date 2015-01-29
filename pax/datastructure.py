@@ -155,8 +155,8 @@ class Peak(Model):
 
     #: Variables indicating width of peak
 
-    #: Mean absolute deviation of photon arrival times (in ns)
-    mean_absolute_deviation = 0.0
+    #: Median absolute deviation of photon arrival times (in ns)
+    median_absolute_deviation = 0.0
     # standard_deviation = 0.0
     # half_area_range = 0.0
     # tenth_area_range = 0.0
