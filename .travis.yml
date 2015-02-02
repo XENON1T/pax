@@ -43,10 +43,12 @@ install:
   - time wget --no-check-certificate http://root.cern.ch/download/root_v${ROOT}.source.tar.gz
   - tar xfz root_v${ROOT}.source.tar.gz
   - cd root*
-  - find $HOME/miniconda/envs/test-environment/lib
-  - find $HOME/miniconda/envs/test-environment/include
-  - ./configure --enable-python --with-python-incdir=$HOME/miniconda/envs/test-environment/include/python3.4m --with-python-libdir=$HOME/miniconda/envs/test-environment/lib/config-3.4m
-  - make install
+  #- find $HOME/miniconda/envs/test-environment/lib
+  #- find $HOME/miniconda/envs/test-environment/include
+  - python3.4-config --configdir --includes --cflags --ldflags --exec-prefix
+  - ./configure --enable-python --with-python-incdir=$HOME/miniconda/envs/test-environment/include/python3.4m --with-python-libdir=`python3.4-config --configdir`
+  - cat config.log
+  #- make install
   #- sudo updatedb
   - python -m ROOT
 
