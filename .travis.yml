@@ -41,9 +41,11 @@ install:
   - sudo apt-get install git dpkg-dev make g++ gcc binutils libx11-dev libxpm-dev libxft-dev libxext-dev
   - time wget --no-check-certificate http://root.cern.ch/download/root_v${ROOT}.source.tar.gz
   - tar xfz root_v${ROOT}.source.tar.gz
+  - cd root-${ROOT}
+  - ./configure --enable-python --with-python-incdir=$HOME/miniconda/include/ --with-python-libdir=$HOME/miniconda/lib/
+  - make install
   #- sudo updatedb
-  - find $HOME/miniconda/lib
-  - find $HOME/miniconda/include
+  - python -m ROOT
 
 # command to run tests, e.g. python setup.py test
 script:
