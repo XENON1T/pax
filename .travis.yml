@@ -42,8 +42,8 @@ install:
   - time wget --no-check-certificate http://root.cern.ch/download/root_v${ROOT}.source.tar.gz
   - tar xfz root_v${ROOT}.source.tar.gz
   #- sudo updatedb
-  - ls $VIRTUALENV/lib
-  - ls $VIRTUALENV/include
+  - find $HOME/miniconda/lib
+  - find $HOME/miniconda/include
 
 # command to run tests, e.g. python setup.py test
 script:
