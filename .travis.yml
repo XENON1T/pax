@@ -45,7 +45,7 @@ install:
   - cd root*
   - find $HOME/miniconda/envs/test-environment/lib
   - find $HOME/miniconda/envs/test-environment/include
-  - ./configure --enable-python --with-python-incdir=$HOME/miniconda/envs/test-environment/include/python3.4m --with-python-libdir=$HOME/miniconda/envs/test-environment/lib
+  - ./configure --enable-python --with-python-incdir=$HOME/miniconda/envs/test-environment/include/python3.4m --with-python-libdir=$HOME/miniconda/envs/test-environment/lib/libpython3.4m.so
   - make install
   #- sudo updatedb
   - python -m ROOT
