@@ -44,6 +44,8 @@ install:
   - time wget --no-check-certificate http://root.cern.ch/download/root_v${ROOT}.source.tar.gz
   - tar xfz root_v${ROOT}.source.tar.gz
   - cd root*
+  - ls $HOME/miniconda/include/
+  - env
   - ./configure --enable-python --with-python-incdir=$HOME/miniconda/include/ --with-python-libdir=$HOME/miniconda/lib/
   - make install
   #- sudo updatedb
