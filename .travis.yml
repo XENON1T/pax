@@ -9,8 +9,8 @@ python:
 notifications:
   email:
     - ctunnell@nikhef.nl
-    - jaalbers@nikhef.nl
-    - bartp@nikhef.nl
+    #- jaalbers@nikhef.nl
+    #- bartp@nikhef.nl
 
 env:
   #- ROOT=5.32.04
