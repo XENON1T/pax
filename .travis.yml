@@ -42,8 +42,8 @@ install:
   - time wget --no-check-certificate http://root.cern.ch/download/root_v${ROOT}.source.tar.gz
   - tar xfz root_v${ROOT}.source.tar.gz
   #- sudo updatedb
-  - locate libpython
-  - locate Python.h
+  - ls $VIRTUALENV/lib
+  - ls $VIRTUALENV/include
 
 # command to run tests, e.g. python setup.py test
 script:
