@@ -40,8 +40,8 @@ install:
   # ROOT
   - sudo apt-get install git dpkg-dev make g++ gcc binutils libx11-dev libxpm-dev libxft-dev libxext-dev
   - time wget --no-check-certificate http://root.cern.ch/download/root_v${ROOT}.source.tar.gz
-  - tar xvfz root_v${ROOT}.source.tar.gz
-  - sudo updatedb
+  - tar xfz root_v${ROOT}.source.tar.gz
+  #- sudo updatedb
   - locate libpython
   - locate Python.h
 
