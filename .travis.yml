@@ -14,7 +14,7 @@ notifications:
 
 env:
   #- ROOT=5.32.04
-  - ROOT=5.34.08
+  - ROOT=5.34.25
   #- ROOT=6.02.04
 
 install:
