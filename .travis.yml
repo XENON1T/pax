@@ -35,7 +35,6 @@ install:
   # Replace dep1 dep2 ... with your dependencies
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib pandas pytables
   - source activate test-environment
-  - python setup.py install
 
   # ROOT
   - sudo apt-get update -qq
@@ -46,10 +45,13 @@ install:
   - cd root*
   - find $HOME/miniconda/envs/test-environment/lib
   - find $HOME/miniconda/envs/test-environment/include
-  - ./configure --enable-python --with-python-incdir=$HOME/miniconda/envs/test-environment/include/ --with-python-libdir=$HOME/miniconda/envs/test-environment/lib/
+  - ./configure --enable-python --with-python-incdir=$HOME/miniconda/envs/test-environment/include/python3.4m --with-python-libdir=$HOME/miniconda/envs/test-environment/lib
   - make install
   #- sudo updatedb
   - python -m ROOT
+
+  # Install pax
+  - python setup.py install
 
 # command to run tests, e.g. python setup.py test
 script:
