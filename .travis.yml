@@ -41,7 +41,7 @@ install:
   - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
   - sudo apt-get update -qq
   - sudo apt-get install -qq g++-4.8
-  - export CXX="g++-4.8" CC="gcc-4.8"
+  - export CXX="g++-4.8 -std=c++11" CC="gcc-4.8 -std=c++11"
   - sudo apt-get install git dpkg-dev make binutils libx11-dev libxpm-dev libxft-dev libxext-dev
   - time wget --no-check-certificate http://root.cern.ch/download/root_v${ROOT}.source.tar.gz
   - tar xfz root_v${ROOT}.source.tar.gz
