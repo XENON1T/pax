@@ -14,8 +14,8 @@ notifications:
 
 env:
   #- ROOT=5.32.04
-  #- ROOT=5.34.08
-  - ROOT=6.02.04
+  - ROOT=5.34.08
+  #- ROOT=6.02.04
 
 install:
   - sudo apt-get update
@@ -38,14 +38,12 @@ install:
   - python setup.py install
 
   # ROOT
-  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
   - sudo apt-get update -qq
-  - sudo apt-get install -qq g++-4.8
-  - export CXX="g++-4.8 -std=c++11" CC="gcc-4.8 -std=c++11"
+
   - sudo apt-get install git dpkg-dev make binutils libx11-dev libxpm-dev libxft-dev libxext-dev
   - time wget --no-check-certificate http://root.cern.ch/download/root_v${ROOT}.source.tar.gz
   - tar xfz root_v${ROOT}.source.tar.gz
-  - cd root-${ROOT}
+  - cd root*
   - ./configure --enable-python --with-python-incdir=$HOME/miniconda/include/ --with-python-libdir=$HOME/miniconda/lib/
   - make install
   #- sudo updatedb
