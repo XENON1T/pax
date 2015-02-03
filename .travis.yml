@@ -35,7 +35,7 @@ install:
   - source activate test-environment
 
   # ROOT
-  - sudo apt-get install -y git dpkg-dev make binutils libx11-dev libxpm-dev libxft-dev libxext-dev
+  - sudo apt-get install -y git dpkg-dev make binutils libx11-dev libxpm-dev libxft-dev libxext-dev gcc-multilib
   - time wget -nv --no-check-certificate http://root.cern.ch/download/root_v${ROOT}.source.tar.gz
   - tar xfz root_v${ROOT}.source.tar.gz root
   - cd root
