@@ -25,17 +25,17 @@ install:
   #- yes | sudo apt-get upgrade
 
   # MiniConda
-  #- wget -nv http://repo.continuum.io/miniconda/Miniconda3-3.8.3-Linux-x86_64.sh -O miniconda.sh
-  #- bash miniconda.sh -b -p $HOME/miniconda
-  #- export PATH="$HOME/miniconda/bin:$PATH"
-  #- hash -r
-  #- conda config --set always_yes yes --set changeps1 no
-  #- conda update -q conda
-  #- conda info -a # Useful for debugging any issues with conda
+  - wget -nv http://repo.continuum.io/miniconda/Miniconda3-3.8.3-Linux-x86_64.sh -O miniconda.sh
+  - bash miniconda.sh -b -p $HOME/miniconda
+  - export PATH="$HOME/miniconda/bin:$PATH"
+  - hash -r
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update -q conda
+  - conda info -a # Useful for debugging any issues with conda
 
   # Create environment
-  #- conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib pandas pytables
-  #- source activate test-environment
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib pandas pytables
+  - source activate test-environment
 
   # ROOT
 
@@ -45,8 +45,8 @@ install:
   #- find $HOME/miniconda/envs/test-environment/lib
   #- find $HOME/miniconda/envs/test-environment/include
   - python3.4-config --configdir --includes --cflags --ldflags --exec-prefix
-  #- ln -s `python3.4-config --exec-prefix`/lib/libpython3.4m.so  `python3.4-config --exec-prefix`/lib/libpython3.4.so
-  - ./configure --enable-python #--with-python-incdir=`python3.4-config --exec-prefix`/include/python3.4m --with-python-libdir=`python3.4-config --exec-prefix`/lib
+  - ln -s `python3.4-config --exec-prefix`/lib/libpython3.4m.so  `python3.4-config --exec-prefix`/lib/libpython3.4.so
+  - ./configure --cflags=-I/usr/include --with-python-incdir=`python3.4-config --exec-prefix`/include/python3.4m --with-python-libdir=`python3.4-config --exec-prefix`/lib
   - cat config.log
   - make install
   #- sudo updatedb
