@@ -13,9 +13,10 @@ notifications:
     #- bartp@nikhef.nl
 
 env:
+  - ROOT=6.02.04
   #- ROOT=5.32.04
   - ROOT=5.34.25
-  - ROOT=6.02.04
+
 
 install:
   # General update
@@ -40,8 +41,8 @@ install:
   # ROOT
 
   - time wget -nv --no-check-certificate http://root.cern.ch/download/root_v${ROOT}.source.tar.gz
-  - tar xfz root_v${ROOT}.source.tar.gz root
-  - cd root
+  - tar xfz root_v${ROOT}.source.tar.gz
+  - cd root*
   #- find $HOME/miniconda/envs/test-environment/lib
   #- find $HOME/miniconda/envs/test-environment/include
   - python3.4-config --configdir --includes --cflags --ldflags --exec-prefix
