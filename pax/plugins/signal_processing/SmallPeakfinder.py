@@ -155,6 +155,9 @@ class FindSmallPeaks(plugin.TransformPlugin):
                             # the sliding window filter will shift the peak shape a bit
                             'area':                np.sum(w[p[0]:p[1] + 1]),
                             'height':              origw[max_idx],
+                            # Also store height in filtered waveform:
+                            # useful to see what a higher threshold would have done
+                            'filtered_height':     np.max(w[p[0]:p[1] + 1]),
                             'noise_sigma':         noise_sigma,
                         }))
                     event.all_channel_peaks.extend(peaks)
@@ -199,7 +202,6 @@ class FindSmallPeaks(plugin.TransformPlugin):
         :return: peaks as list of (left_index, max_index, right_index) tuples
         """
         peaks = []
-
         for left, right in utils.intervals_where(w > noise_sigma):
             max_idx = left + np.argmax(w[left:right + 1])
             height = w[max_idx]

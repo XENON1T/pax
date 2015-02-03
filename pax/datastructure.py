@@ -69,8 +69,9 @@ class ChannelPeak(Model):
         return self.right - self.left + 1
 
     area = 0.0                   #: Area of the peak in photoelectrons
-    height = 0.0                 #: Height of highest point in peak (in pe/bin)
-    noise_sigma = 0.0            #: StDev of the noise in the occurrence (in pe/bin) where we found this peak
+    height = 0.0                 #: Height of highest point in peak (in pe/bin) in unfiltered waveform
+    filtered_height = 0.0        #: Height of highest point in peak (in pe/bin) in the filtered waveform
+    noise_sigma = 0.0            #: StDev of the noisin e (pe/bin) in the filtered waveform in this peak's occurrence
 
 
 class Peak(Model):
@@ -200,14 +201,14 @@ class Occurrence(Model):
     #: Channel the occurrence belongs to (integer)
     channel = 0
 
-    #: Maximum amplitude (in pe/bin; float)
+    #: Maximum amplitude (in pe/bin; float) in unfiltered waveform
     #: Will remain nan if channel's gain is 0
     #: baseline_correction, if any, has been substracted
-    # TODO: may not be equal to actual occurrence height,
-    # baseline correction is computed on 2-sample filtered wv. :-(
+    # TODO: may not be equal to actual occurrence height, baseline correction is computed on filtered wv. :-(
     height = float('nan')
 
-    #: Noise sigma for this occurrence
+    #: Noise sigma for this occurrence (in pe/bin)
+    #: Computed in the filtered channel waveform
     #: Will remain nan unless occurrence is processed by smallpeakfinder
     noise_sigma = float('nan')
 
