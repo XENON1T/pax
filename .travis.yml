@@ -20,6 +20,8 @@ env:
 install:
   # General update
   - sudo apt-get update -qq
+  - sudo apt-get install -y build-essential
+  - sudo apt-get install -y git dpkg-dev make binutils libx11-dev libxpm-dev libxft-dev libxext-dev gcc-multilib g++ gcc
   - yes | sudo apt-get upgrade
 
   # MiniConda
@@ -36,9 +38,7 @@ install:
   - source activate test-environment
 
   # ROOT
-  - sudo apt-get install -y git dpkg-dev make binutils libx11-dev libxpm-dev libxft-dev libxext-dev gcc-multilib
-  - sudo apt-get install git dpkg-dev make g++ gcc binutils libx11-dev libxpm-dev libxft-dev libxext-dev
-  #- sudo apt-get install gfortran libssl-dev libpcre3-dev xlibmesa-glu-dev libglew1.5-dev libftgl-dev libmysqlclient-dev libfftw3-dev cfitsio-dev graphviz-dev libavahi-compat-libdnssd-dev libldap2-dev python-dev libxml2-dev libkrb5-dev libgsl0-dev libqt4-dev
+
   - time wget -nv --no-check-certificate http://root.cern.ch/download/root_v${ROOT}.source.tar.gz
   - tar xfz root_v${ROOT}.source.tar.gz root
   - cd root
