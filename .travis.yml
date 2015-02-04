@@ -50,12 +50,14 @@ install:
   - ln -s `python3.4-config --exec-prefix`/lib/libpython3.4m.so  `python3.4-config --exec-prefix`/lib/libpython3.4.so
   - ./configure --with-python-incdir=`python3.4-config --exec-prefix`/include/python3.4m --with-python-libdir=`python3.4-config --exec-prefix`/lib
   - cat config.log
-  - export OLDPATH=$PATH
-  - export PATH=/usr/bin:$PATH
-  - make install
+  #- source deactivate
+  - make install || 1
   - export PATH=$OLDPATH
+  - source bin/thisroot.sh
   #- sudo updatedb
-  - python -m ROOT
+  #- python -m ROOT
+  - root -l -q
+  - python -c "import ROOT; ROOT.TBrowser()"
 
   # Install pax
   - python setup.py install
