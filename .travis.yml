@@ -50,6 +50,7 @@ install:
   - ln -s `python3.4-config --exec-prefix`/lib/libpython3.4m.so  `python3.4-config --exec-prefix`/lib/libpython3.4.so
   - ./configure --with-python-incdir=`python3.4-config --exec-prefix`/include/python3.4m --with-python-libdir=`python3.4-config --exec-prefix`/lib
   - cat config.log
+  - alias python=/usr/bin/python
   - make install
   #- sudo updatedb
   - python -m ROOT
