@@ -39,7 +39,8 @@ install:
   - source activate test-environment
 
   # ROOT
-  - conda install --channel numba llvmdev
+  #- conda install --channel numba llvmdev
+  - conda remove system
   - time wget -nv --no-check-certificate http://root.cern.ch/download/root_v${ROOT}.source.tar.gz
   - tar xfz root_v${ROOT}.source.tar.gz
   - cd root*
