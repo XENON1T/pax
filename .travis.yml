@@ -60,8 +60,7 @@ install:
   - root -l -q
   - python -c "import ROOT; ROOT.TBrowser()"
   - echo $PWD
-  - cd
-  - cd XENON1T/pax
+  - cd ..
   # Install pax
   - python setup.py install
 
