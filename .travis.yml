@@ -53,7 +53,7 @@ install:
   #- source deactivate
   #- make install || 1
   - make
-  - export PATH=$OLDPATH
+  #- export PATH=$OLDPATH
   - source bin/thisroot.sh
   #- sudo updatedb
   #- python -m ROOT
