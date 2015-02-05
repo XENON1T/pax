@@ -18,29 +18,39 @@ from pax import plugin
 import numpy as np
 from pax import datastructure
 
+
 class ReadAvro(plugin.InputPlugin):
+
     """Read raw Avro data to get PMT pulses
 
     This is the lowest level data stored.
     """
+
     def startup(self):
         self.reader = DataFileReader(open(self.config['input_name'],
                                           'rb'),
                                      DatumReader())
 
+        #  n_channels is needed to initialize pax events.
         self.n_channels = self.config['n_channels']
-        self.log.error("Assuming %d channels" % self.n_channels)
+        self.log.debug("Assuming %d channels",
+                       self.n_channels)
 
     def get_events(self):
-        """Generator of events from Mongo
+        """Fetch events from Avro file
+
+        This produces a generator for all the events within the file.  These
+        Events contain occurences, and the appropriate pax objects will be
+        built.
         """
-        for avro_event in self.reader:
-            self.log.error(avro_event.keys())
+        for avro_event in self.reader:  # For every event in file
+            # Make pax object
             pax_event = datastructure.Event(n_channels=self.n_channels,
                                             start_time=avro_event['start_time'],
                                             stop_time=avro_event['stop_time'],
                                             event_number=avro_event['number'])
 
+            # For all pulses/occurrences, add to pax event
             for pulse in avro_event['pulses']:
 
                 pulse = datastructure.Occurrence(channel=pulse['channel'],
@@ -54,14 +64,18 @@ class ReadAvro(plugin.InputPlugin):
     def shutdown(self):
         self.reader.close()
 
+
 class WriteAvro(plugin.OutputPlugin):
+
     """Write raw Avro data of PMT pulses
 
     This is the lowest level data stored.
     """
+
     def startup(self):
         #  The 'schema' stores how the data will be recorded to disk.  This is
-        #  also saved along with the output.
+        #  also saved along with the output.  The schema can be found in
+        # _base.ini and outlines what is stored.
         self.schema = avro.schema.Parse(self.config['raw_pulse_schema'])
 
         self.writer = DataFileWriter(open(self.config['output_name'],
@@ -90,5 +104,3 @@ class WriteAvro(plugin.OutputPlugin):
 
     def shutdown(self):
         self.writer.close()
-
-
