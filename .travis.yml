@@ -4,17 +4,14 @@ language: python
 
 python:
   - "3.4"
-#  - "pypy"
 
 notifications:
   email:
     - ctunnell@nikhef.nl
-    #- jaalbers@nikhef.nl
+    - jaalbers@nikhef.nl
     - bartp@nikhef.nl
 
 env:
-  #- ROOT=6.02.04
-  #- ROOT=5.32.04
   - ROOT=5.34.25
 
 
@@ -38,27 +35,6 @@ install:
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib pandas pytables
   - source activate test-environment
 
-  # ROOT
-  - conda remove system
-  - time wget -nv --no-check-certificate http://root.cern.ch/download/root_v${ROOT}.source.tar.gz
-  - tar xfz root_v${ROOT}.source.tar.gz
-  - cd root*
-  - python3.4-config --configdir --includes --cflags --ldflags --exec-prefix
-  - ln -s `python3.4-config --exec-prefix`/lib/libpython3.4m.so  `python3.4-config --exec-prefix`/lib/libpython3.4.so
-  - ./configure --with-python-incdir=`python3.4-config --exec-prefix`/include/python3.4m --with-python-libdir=`python3.4-config --exec-prefix`/lib
-  - cat config.log
-  #- source deactivate
-  #- make install || 1
-  - make
-  #- export PATH=$OLDPATH
-  - source bin/thisroot.sh
-  #- sudo updatedb
-  #- python -m ROOT
-  - root -l -q
-  - python -c "import ROOT; ROOT.TBrowser()"
-  - echo $PWD
-  - cd ..
-  - conda install system
   # Install pax
   - python setup.py install
 
