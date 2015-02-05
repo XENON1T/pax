@@ -68,14 +68,20 @@ Can I set up pax on my windows machine?
 
 Yes, in fact several of the developers do this, much to the sadness of the other developers...
 
-1. Unless you want to install lots of binary modules from `Christoph Gohlke's page <http://www.lfd.uci.edu/~gohlke/pythonlibs/>`_,
-   start by installing a good scientific python 3 distribution such as Anaconda or PythonXY.
-   (if the Anaconda website nags you for an email, enter your favourite fictional email address)
+1. Start with installing Anaconda for python 3 from their website. If the Anaconda website nags you for an email,
+   enter your favourite fictional email address
+2. Install python-snappy from `Christoph Gohlke's page <http://www.lfd.uci.edu/~gohlke/pythonlibs/>`_.
+   See installation instructions for the .whl file at the top of the page.
 2. Get pax using Github's nice point-and-click Github For Windows application.
    Ignore the haters who insist on doing everything by command line.
-3. Run ``python setup.py develop``. It will probably complain about some failed module installations, ignore that,
-   there are lots of arcane modules you'll almost never need (e.g. HTML templating for online monitor etc).
-4. Go to bin, run ``python paxer --plot``. If it shows a waveform, you are done.
+3. Run ``python setup.py develop``.
+   It may complain about some failed module installations.
+   If it looks like an important module, try `conda install important_module`.
+   If that fails, try `pip install important_module`
+   If that fails, try `easy_install important_module`
+   If that fails, look for important_module on `Christoph Gohlke's page <http://www.lfd.uci.edu/~gohlke/pythonlibs/>`_
+   If that fails, reboot, sacrifice a goat, then try again.
+4. Go to bin and run ``python paxer``. If it shows a waveform plot, you are done.
    If it complains about a missing module, I guess you shouldn't have ignored those warnings in step 3,
    install the missing module using easy_install, or Gohlke's page mentioned above.
 
