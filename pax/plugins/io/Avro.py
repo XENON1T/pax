@@ -11,16 +11,16 @@ information about Avro can be found at::
 This replaced 'xdio' from XENON100.
 """
 
+import numpy as np
+
 import avro.schema
 from avro.datafile import DataFileReader, DataFileWriter
 from avro.io import DatumReader, DatumWriter
 from pax import plugin
-import numpy as np
 from pax import datastructure
 
 
 class ReadAvro(plugin.InputPlugin):
-
     """Read raw Avro data to get PMT pulses
 
     This is the lowest level data stored.
@@ -31,7 +31,7 @@ class ReadAvro(plugin.InputPlugin):
                                           'rb'),
                                      DatumReader())
 
-        #  n_channels is needed to initialize pax events.
+        # n_channels is needed to initialize pax events.
         self.n_channels = self.config['n_channels']
         self.log.debug("Assuming %d channels",
                        self.n_channels)
@@ -56,8 +56,9 @@ class ReadAvro(plugin.InputPlugin):
 
                 pulse = datastructure.Occurrence(channel=pulse['channel'],
                                                  left=pulse['left'],
-                                                 raw_data=np.fromstring(pulse['payload'],
-                                                                        dtype=np.int16))
+                                                 raw_data=np.fromstring(
+                                                     pulse['payload'],
+                                                     dtype=np.int16))
                 pax_event.occurrences.append(pulse)
 
             yield pax_event
@@ -67,14 +68,13 @@ class ReadAvro(plugin.InputPlugin):
 
 
 class WriteAvro(plugin.OutputPlugin):
-
     """Write raw Avro data of PMT pulses
 
     This is the lowest level data stored.
     """
 
     def startup(self):
-        #  The 'schema' stores how the data will be recorded to disk.  This is
+        # The 'schema' stores how the data will be recorded to disk.  This is
         #  also saved along with the output.  The schema can be found in
         # _base.ini and outlines what is stored.
         self.schema = avro.schema.Parse(self.config['raw_pulse_schema'])
@@ -83,11 +83,11 @@ class WriteAvro(plugin.OutputPlugin):
                                           'wb'),
                                      DatumWriter(),
                                      self.schema)
-        self.writer.append({'number' : -1,
-                            'start_time' : -1,
-                            'stop_time' : -1,
-                            'pulses' : None,
-                            'meta' : "blahblah"})
+        self.writer.append({'number': -1,
+                            'start_time': -1,
+                            'stop_time': -1,
+                            'pulses': None,
+                            'meta': "blahblah"})
 
     def write_event(self, pax_event):
         self.log.debug('Writing event')
