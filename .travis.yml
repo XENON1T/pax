@@ -10,7 +10,7 @@ notifications:
   email:
     - ctunnell@nikhef.nl
     #- jaalbers@nikhef.nl
-    #- bartp@nikhef.nl
+    - bartp@nikhef.nl
 
 env:
   #- ROOT=6.02.04
@@ -51,7 +51,8 @@ install:
   - ./configure --with-python-incdir=`python3.4-config --exec-prefix`/include/python3.4m --with-python-libdir=`python3.4-config --exec-prefix`/lib
   - cat config.log
   #- source deactivate
-  - make install || 1
+  #- make install || 1
+  - make
   - export PATH=$OLDPATH
   - source bin/thisroot.sh
   #- sudo updatedb
