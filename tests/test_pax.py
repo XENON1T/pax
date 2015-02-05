@@ -91,6 +91,14 @@ class TestPax(unittest.TestCase):
         self.assertIsInstance(pl, plugin.TransformPlugin)
         self.assertEqual(pl.__class__.__name__, 'DummyTransform2')
 
+    def test_get_input_plugin_by_name(self):
+        mypax = core.Processor(config_dict={'pax': {'plugin_group_names':   ['input'],
+                                                    'input':                'Dummy.DummyInput'}},
+                               just_testing=True)
+        pl = mypax.get_plugin_by_name('DummyInput')
+        self.assertIsInstance(pl, plugin.InputPlugin)
+        self.assertEqual(pl.__class__.__name__, 'DummyInput')
+
     def test_evaluate_default_configuration(self):
         """ Test loading the entire default configuration & all its plugins
         Will trigger a warning: no configuration specified

@@ -397,7 +397,7 @@ class Processor:
         """Return plugin by class name. Use for testing."""
         plugins_by_name = {p.__class__.__name__: p for p in self.action_plugins}
         if self.input_plugin is not None:
-            plugins_by_name[self.input_plugin.__name__] = self.input_plugin
+            plugins_by_name[self.input_plugin.__class__.__name__] = self.input_plugin
         if name in plugins_by_name:
             return plugins_by_name[name]
         else:
