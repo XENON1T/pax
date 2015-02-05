@@ -39,28 +39,24 @@ install:
   - source activate test-environment
 
   # ROOT
-  #- conda install --channel numba llvmdev
-  - conda remove system
-  - time wget -nv --no-check-certificate http://root.cern.ch/download/root_v${ROOT}.source.tar.gz
-  - tar xfz root_v${ROOT}.source.tar.gz
-  - cd root*
-  #- find $HOME/miniconda/envs/test-environment/lib
-  #- find $HOME/miniconda/envs/test-environment/include
-  - python3.4-config --configdir --includes --cflags --ldflags --exec-prefix
-  - ln -s `python3.4-config --exec-prefix`/lib/libpython3.4m.so  `python3.4-config --exec-prefix`/lib/libpython3.4.so
-  - ./configure --with-python-incdir=`python3.4-config --exec-prefix`/include/python3.4m --with-python-libdir=`python3.4-config --exec-prefix`/lib
-  - cat config.log
-  #- source deactivate
-  #- make install || 1
-  - make
-  #- export PATH=$OLDPATH
-  - source bin/thisroot.sh
-  #- sudo updatedb
-  #- python -m ROOT
-  - root -l -q
-  - python -c "import ROOT; ROOT.TBrowser()"
-  - echo $PWD
-  - cd ..
+  - if [ -n "$ROOT" ]; then \
+    conda remove system; \
+    time wget -nv --no-check-certificate http://root.cern.ch/download/root_v${ROOT}.source.tar.gz; \
+    tar xfz root_v${ROOT}.source.tar.gz; \
+    cd root* ; \
+    python3.4-config --configdir --includes --cflags --ldflags --exec-prefix; \
+    ln -s `python3.4-config --exec-prefix`/lib/libpython3.4m.so  `python3.4-config --exec-prefix`/lib/libpython3.4.so; \
+    ./configure --with-python-incdir=`python3.4-config --exec-prefix`/include/python3.4m --with-python-libdir=`python3.4-config --exec-prefix`/lib; \
+    cat config.log; \
+    make; \
+    source bin/thisroot.sh; \
+    root -l -q; \
+    python -c "import ROOT; ROOT.TBrowser()"; \
+    echo $PWD; \
+    cd ..; \
+    conda install system; \
+    fi;
+
   # Install pax
   - python setup.py install
 
