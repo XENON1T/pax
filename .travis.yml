@@ -28,7 +28,7 @@ install:
   - conda info -a
 
   # Install snappy and python bindings
-  - sudo apt-get install python-snappy
+  - sudo apt-get install python-snappy libsnappy-dev 
 
   # Replace dep1 dep2 ... with your dependencies
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib pandas pytables
