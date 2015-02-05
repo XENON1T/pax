@@ -35,6 +35,7 @@ class ReadAvro(plugin.InputPlugin):
         self.n_channels = self.config['n_channels']
         self.log.debug("Assuming %d channels",
                        self.n_channels)
+        self.log.error(next(self.reader))
 
     def get_events(self):
         """Fetch events from Avro file
@@ -82,6 +83,11 @@ class WriteAvro(plugin.OutputPlugin):
                                           'wb'),
                                      DatumWriter(),
                                      self.schema)
+        self.writer.append({'number' : -1,
+                            'start_time' : -1,
+                            'stop_time' : -1,
+                            'pulses' : None,
+                            'meta' : "blahblah"})
 
     def write_event(self, pax_event):
         self.log.debug('Writing event')
