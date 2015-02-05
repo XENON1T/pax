@@ -77,4 +77,3 @@ class TestAvro(unittest.TestCase):
         self.assertListEqual(occurrence.raw_data[0:10].tolist(),
                              [16006, 16000, 15991, 16004, 16004, 16006, 16000, 16000,
                               15995, 16010])
-
