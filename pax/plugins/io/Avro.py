@@ -11,6 +11,8 @@ information about Avro can be found at::
 This replaced 'xdio' from XENON100.
 """
 
+import json
+
 import numpy as np
 
 import avro.schema
@@ -75,7 +77,7 @@ class WriteAvro(plugin.OutputPlugin):
 
     def startup(self):
         # The 'schema' stores how the data will be recorded to disk.  This is
-        #  also saved along with the output.  The schema can be found in
+        # also saved along with the output.  The schema can be found in
         # _base.ini and outlines what is stored.
         self.schema = avro.schema.Parse(self.config['raw_pulse_schema'])
 
@@ -83,11 +85,20 @@ class WriteAvro(plugin.OutputPlugin):
                                           'wb'),
                                      DatumWriter(),
                                      self.schema)
+
+        # Used for converting processor config to JSON string
+        def json_object_handler(obj):
+            if isinstance(obj, set):
+                return list(obj)
+            raise TypeError
+
+
         self.writer.append({'number': -1,
                             'start_time': -1,
                             'stop_time': -1,
                             'pulses': None,
-                            'meta': "blahblah"})
+                            'meta': json.dumps(self.processor.config,
+                                               default=json_object_handler)})
 
     def write_event(self, pax_event):
         self.log.debug('Writing event')
