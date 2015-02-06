@@ -1,7 +1,8 @@
 import unittest
 
 import ROOT
-import numpy as n
+import numpy as np
+
 
 class TestRoot(unittest.TestCase):
 
@@ -11,18 +12,17 @@ class TestRoot(unittest.TestCase):
         f = ROOT.TFile("tree.root", "recreate")
         t = ROOT.TTree("name_of_tree", "tree title")
 
-
         # create 1 dimensional float arrays (python's float datatype corresponds to c++ doubles)
         # as fill variables
-        n = n.zeros(1, dtype=float)
-        u = n.zeros(1, dtype=float)
+        n = np.zeros(1, dtype=float)
+        u = np.zeros(1, dtype=float)
 
         # create the branches and assign the fill-variables to them
         t.Branch('normal', n, 'normal/D')
         t.Branch('uniform', u, 'uniform/D')
 
         # create some random numbers, fill them into the fill varibles and call Fill()
-        for i in xrange(10):
+        for i in range(10):
             n[0] = ROOT.gRandom.Gaus()
             u[0] = ROOT.gRandom.Uniform()
             t.Fill()
@@ -33,3 +33,4 @@ class TestRoot(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+

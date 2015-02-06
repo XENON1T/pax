@@ -16,6 +16,8 @@ env:
   #- ROOT=6.02.04
   #- ROOT=5.32.04
   - ROOT=5.34.25
+  # To not install ROOT unset the variable
+  - unset ROOT
 
 
 install:
@@ -38,8 +40,9 @@ install:
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib pandas pytables
   - source activate test-environment
 
-  # ROOT
-  - if [ -n "$ROOT" ]; then source .travis-install-ROOT.sh; fi
+  # ROOT 
+  - if test -n "$ROOT"; then source .travis-install-ROOT.sh; fi
+  - conda install system
 
   # Install pax
   - python setup.py install

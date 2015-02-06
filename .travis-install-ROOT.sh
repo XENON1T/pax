@@ -23,5 +23,4 @@ root -l -q
 python -c "import ROOT; ROOT.TBrowser()"
 
 cd ..
-conda install system
 
