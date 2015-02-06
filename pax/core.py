@@ -116,7 +116,6 @@ class Processor:
             pc['plugin_group_names'] = []
 
         for plugin_group_name in pc['plugin_group_names']:
-
             if plugin_group_name not in pc:
                 raise ValueError('Invalid configuration: plugin group list %s missing' % plugin_group_name)
 
@@ -155,7 +154,6 @@ class Processor:
 
         # Load input plugin & setup the get_events generator
         if 'input' in pc['plugin_group_names']:
-
             if len(plugin_names['input']) != 1:
                 raise ValueError("Invalid configuration: there should be one input plugin listed, not %s" %
                                  len(plugin_names['input']))
@@ -176,18 +174,18 @@ class Processor:
                 def get_events():
                     for event_number in pc['events_to_process']:
                         yield self.input_plugin.get_single_event(event_number)
-
             else:
                 # Let the input plugin decide which events to process:
                 get_events = self.input_plugin.get_events
 
             self.get_events = get_events
-
-        # During tests there is often no input plugin, events are added manually
         else:
+            # During tests there is often no input plugin
+            # events are added manually
             self.input_plugin = None
             if not just_testing:
-                self.log.warning("No input plugin specified: how are you planning to get any events?")
+                self.log.warning("No input plugin specified: how are you"
+                                 "planning to get any events?")
 
         # Load the action plugins
         if len(action_plugin_names) > 0:
@@ -197,7 +195,8 @@ class Processor:
         else:
             self.action_plugins = []
             if not just_testing:
-                self.log.warning("No action plugins specified: this will be a pretty boring processing run...")
+                self.log.warning("No action plugins specified: this will be a"
+                                 "pretty boring processing run...")
 
     def load_configuration(self, config_names, config_paths, config_string, config_dict):
         """Load a configuration -- see init's docstring

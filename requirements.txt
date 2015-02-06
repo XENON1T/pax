@@ -8,4 +8,8 @@ prettytable          # Timing report formatting
 pandas               # Used for various I/O stuff
 tables               # Used by pandas for HDF5 output
 flake8
+<<<<<<< HEAD
+avro-python3          # Raw data format
+=======
 python-snappy
+>>>>>>> master
