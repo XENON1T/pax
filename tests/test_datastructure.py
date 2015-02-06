@@ -7,8 +7,9 @@ test_pax
 
 Tests for `pax` module.
 """
-import numpy as np
 import unittest
+
+import numpy as np
 
 from pax.datastructure import Peak, SumWaveform
 from pax.utils import empty_event

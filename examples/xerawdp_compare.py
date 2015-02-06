@@ -4,12 +4,15 @@ Please generate a ROOT file using the XeAnalaysiScripts.  Be sure to also have
 the file Loader.C whereever you run this file.  Also, you run this file in the
 directory containing all the h5 files.
 """
+import os
+import pickle
+
 from tables import openFile
 import matplotlib.pyplot as plt
 import numpy as np
-import os
+
 import ROOT
-import pickle
+
 
 def run_comparison():
     ROOT.gROOT.ProcessLine('.L Loader.C')

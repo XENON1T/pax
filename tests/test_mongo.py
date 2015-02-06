@@ -1,11 +1,7 @@
 import unittest
-import numpy as np
-
-from pax.datastructure import Event, Occurrence
-import tempfile
+import os
 
 from pax import core
-import os
 
 class TestMongo(unittest.TestCase):
     def setUp(self):  # noqa

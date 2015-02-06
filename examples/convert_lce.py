@@ -2,11 +2,12 @@
 
 import json
 import gzip
+
 import numpy as np
+
 from tqdm import tqdm
-from pax import units
-import math
 import time
+
 
 description = \
 """

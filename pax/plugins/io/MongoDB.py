@@ -4,14 +4,14 @@ The DAQ uses MongoDB for input and output.  The classes defined hear allow the
 user to read data from the DAQ and also inject raw occurences into the DAQ.
 
 """
-import time
 from datetime import datetime
 
+import numpy as np
+
+import time
 import pymongo
 import snappy
-import numpy as np
 from bson.binary import Binary
-
 from pax.datastructure import Event, Occurrence
 from pax import plugin, units
 

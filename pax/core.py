@@ -6,17 +6,18 @@ import logging
 import importlib
 import inspect
 from io import StringIO
-import itertools
 import os
 import re
-
 from configparser import ConfigParser, ExtendedInterpolation
+
 import numpy as np
+
+import itertools
 from prettytable import PrettyTable     # Timing report
 from tqdm import tqdm                   # Progress bar
-
 import pax
 from pax import units, simulation
+
 
 # Uncomment for diagnosing memory leaks
 # Also uncomment code in process_event

@@ -1,5 +1,7 @@
 import numpy as np
+
 from pax import plugin, datastructure, utils
+
 
 # Used for diagnostic plotting only
 # TODO: factor out to separate plugin?

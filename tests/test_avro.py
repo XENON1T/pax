@@ -1,9 +1,9 @@
 import unittest
+import tempfile
+
 import numpy as np
 
 from pax.datastructure import Event, Occurrence
-import tempfile
-
 from pax import core
 
 

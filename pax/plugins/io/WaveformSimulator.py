@@ -4,13 +4,12 @@ This is I/O stuff only: truth file writing, instruction reading, etc.
 There is no physics here, all that is in pax.simulation.
 """
 
-
 import os
 import csv
 
 import numpy as np
-import pandas
 
+import pandas
 from pax import core, plugin, units
 
 
