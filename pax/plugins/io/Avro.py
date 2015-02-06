@@ -10,19 +10,16 @@ information about Avro can be found at::
 
 This replaced 'xdio' from XENON100.
 """
-
-import json
-
 import numpy as np
 
 import avro.schema
 from avro.datafile import DataFileReader, DataFileWriter
 from avro.io import DatumReader, DatumWriter
-from pax import plugin
-from pax import datastructure
+import pax
 
 
-class ReadAvro(plugin.InputPlugin):
+class ReadAvro(pax.plugin.InputPlugin):
+
     """Read raw Avro data to get PMT pulses
 
     This is the lowest level data stored.
@@ -48,19 +45,20 @@ class ReadAvro(plugin.InputPlugin):
         """
         for avro_event in self.reader:  # For every event in file
             # Make pax object
-            pax_event = datastructure.Event(n_channels=self.n_channels,
-                                            start_time=avro_event['start_time'],
-                                            stop_time=avro_event['stop_time'],
-                                            event_number=avro_event['number'])
+            pax_event = pax.datastructure.Event(n_channels=self.n_channels,
+                                                start_time=avro_event[
+                                                    'start_time'],
+                                                stop_time=avro_event[
+                                                    'stop_time'],
+                                                event_number=avro_event['number'])
 
             # For all pulses/occurrences, add to pax event
             for pulse in avro_event['pulses']:
 
-                pulse = datastructure.Occurrence(channel=pulse['channel'],
-                                                 left=pulse['left'],
-                                                 raw_data=np.fromstring(
-                                                     pulse['payload'],
-                                                     dtype=np.int16))
+                pulse = pax.datastructure.Occurrence(channel=pulse['channel'],
+                                                     left=pulse['left'],
+                                                     raw_data=np.fromstring(pulse['payload'],
+                                                                            dtype=np.int16))
                 pax_event.occurrences.append(pulse)
 
             yield pax_event
@@ -69,7 +67,8 @@ class ReadAvro(plugin.InputPlugin):
         self.reader.close()
 
 
-class WriteAvro(plugin.OutputPlugin):
+class WriteAvro(pax.plugin.OutputPlugin):
+
     """Write raw Avro data of PMT pulses
 
     This is the lowest level data stored.
@@ -86,18 +85,14 @@ class WriteAvro(plugin.OutputPlugin):
                                      DatumWriter(),
                                      self.schema)
 
-        # Used for converting processor config to JSON string
-        def json_object_handler(obj):
-            if isinstance(obj, set):
-                return list(obj)
-            raise TypeError
-
         self.writer.append({'number': -1,
                             'start_time': -1,
                             'stop_time': -1,
                             'pulses': None,
-                            'meta': json.dumps(self.processor.config,
-                                               default=json_object_handler)})
+                            'meta': {'run_number': self.config['run_number'],
+                                     'tpc': self.config['tpc_name'],
+                                     'file_builder_version': pax.__version__
+                                     }})
 
     def write_event(self, pax_event):
         self.log.debug('Writing event')
