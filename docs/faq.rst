@@ -86,3 +86,11 @@ with the other 433 output formats we have.
 How do I get Python 3.4 with ROOT working on Ubuntu 14?
 ---------------------------------------
 * Just follow the instructions on `the PyROOT page <https://github.com/XENON1T/pax/blob/master/docs/pyroot.rst>`_.
+
+-------------
+Snappy on OSX
+-------------
+
+After instally snappy through macports, please run::
+
+  CFLAGS=-I/opt/local/include LDFLAGS=-L/opt/local/lib pip install python-snappy
