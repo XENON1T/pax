@@ -92,7 +92,6 @@ class WriteAvro(plugin.OutputPlugin):
                 return list(obj)
             raise TypeError
 
-
         self.writer.append({'number': -1,
                             'start_time': -1,
                             'stop_time': -1,
