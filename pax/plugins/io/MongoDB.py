@@ -41,10 +41,12 @@ class MongoDBInput(plugin.InputPlugin):
         self.cursor = self.collection.find()
         self.number_of_events = self.cursor.count()
 
-        self.mongo_time_unit = self.config.get('mongo_time_unit', 10 * units.ns)
+        self.mongo_time_unit = self.config.get('mongo_time_unit',
+                                               10 * units.ns)
 
         if self.number_of_events == 0:
-            raise RuntimeError("No events found... did you run the event builder?")
+            raise RuntimeError("No events found... did you run the event"
+                               "builder?")
 
     def number_events(self):
         return self.number_of_events
@@ -62,12 +64,11 @@ class MongoDBInput(plugin.InputPlugin):
             assert isinstance(doc_event['range'][1], int)
 
             # Convert from Mongo's time unit to pax units
-            event = Event(
-                n_channels=self.config['n_channels'],
-                start_time=int(doc_event['range'][0]) * self.mongo_time_unit,
-                sample_duration=self.config['sample_duration'],
-                stop_time=int(doc_event['range'][1]) * self.mongo_time_unit,
-            )
+            event = Event(n_channels=self.config['n_channels'],
+                          start_time=int(doc_event['range'][0]) * self.mongo_time_unit,
+                          sample_duration=self.config['sample_duration'],
+                          stop_time=int(doc_event['range'][1]) * self.mongo_time_unit)
+
             event.event_number = i  # TODO: should come from Mongo
 
             assert isinstance(event.start_time, int)
@@ -352,45 +353,48 @@ class MongoDBInputTriggered(plugin.InputPlugin):
                                                    10 * units.ns))
 
         if self.number_of_events == 0:
-            raise RuntimeError("No events found... did you run the event builder?")
-    
+            raise RuntimeError(
+                "No events found... did you run the event builder?")
+
     def total_number_events(self):
         return self.number_of_events
 
     def get_events(self):
-        for i, time in enumerate(self.trigger_times):
-            self.log.error("Time %d", time)
-            
-            cursor = self.collection.find({'time' : time})
-            self.log.error("Found %d occurrences", cursor.count())
-            
+        for i, trigger_time in enumerate(self.trigger_times):
+            self.log.info("Fetching trigger time %d",
+                          trigger_time)
+
+            cursor = self.collection.find({'time': trigger_time})
+            self.log.debug("Found %d occurrences",
+                           cursor.count())
+
             latest_time = []
             occurrence_objects = []
 
             for j, occurrence_doc in enumerate(cursor):
-                self.log.debug("Fetching document %s" % repr(occurrence_doc['_id']))
-                
-                data = occurrence_doc["data"]  
+                self.log.debug("Fetching document %s" %
+                               repr(occurrence_doc['_id']))
 
-                self.log.error(len(data)/2)
+                # Fetch raw data from document
+                data = occurrence_doc["data"]
 
-                latest_time.append(time + len(data)//2)
+                # Samples are stored as 16 bit numbers (i.e. 2 bytes).  Also
+                # note that // is an integer divide.
+                latest_time.append(trigger_time + len(data) // 2)
 
                 occurrence_objects.append(Occurrence(left=0,
                                                      raw_data=np.fromstring(data,
                                                                             dtype="<i2"),
                                                      channel=occurrence_doc['channel']))
 
-            self.log.error(type(self.mongo_time_unit))
-            earliest_time = time * self.mongo_time_unit
+            earliest_time = trigger_time * self.mongo_time_unit
             latest_time = max(latest_time) * self.mongo_time_unit
 
             self.log.debug("Building event in range [%d,%d]",
                            earliest_time,
                            latest_time)
-            yield Event(n_channels = self.config['n_channels'],
-                        start_time = earliest_time,
-                        sample_duration = self.config['sample_duration'],
-                        stop_time = latest_time,
-                        occurrences = occurrence_objects)
-
+            yield Event(n_channels=self.config['n_channels'],
+                        start_time=earliest_time,
+                        sample_duration=self.config['sample_duration'],
+                        stop_time=latest_time,
+                        occurrences=occurrence_objects)
