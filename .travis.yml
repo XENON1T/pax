@@ -39,7 +39,7 @@ install:
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib pandas pytables
   - source activate test-environment
 
-  #- pip install numexpr coveralls cython
+  - pip install coveralls
 
   # Install pax
   - python setup.py install
@@ -47,6 +47,7 @@ install:
 # command to run tests, e.g. python setup.py test
 script:
   - make test
+  - coverage run --source=pax setup.py test
   - make lint
 
 after_success:
