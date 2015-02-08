@@ -14,13 +14,15 @@ class PosRecNeuralNet(plugin.TransformPlugin):
     def startup(self):
         """ Initialize the neural net.
         """
-        self.nn = NeuralNet(
-            n_inputs=98,
-            n_hidden=30,
-            n_output=2,
-            weights=self.config['weights'],
-            biases=self.config['biases'],
-        )
+        self.input_channels = np.array(self.config['input_channels'])
+        self.nn_output_unit = self.config['nn_output_unit']
+        self.hidden_layer_neurons = self.config['hidden_layer_neurons']
+
+        self.nn = NeuralNet(n_inputs=len(self.input_channels),
+                            n_hidden=self.hidden_layer_neurons,
+                            n_output=2,
+                            weights=self.config['weights'],
+                            biases=self.config['biases'])
 
     def transform_event(self, event):
         """Reconstruct the position of S2s in an event.
@@ -29,19 +31,18 @@ class PosRecNeuralNet(plugin.TransformPlugin):
         # For every S2 peak found in the event
         for peak in event.S2s():
 
-            total_area_top = np.sum(peak.area_per_channel[1:98+1])
+            input_areas = peak.area_per_channel[self.input_channels]
 
             # Run the neural net on pmt 1-98
             # Input is fraction of top area (see PositionReconstruction.cpp, line 246)
             # Convert from mm (Xenon100 units) to pax units
-            nn_output = self.nn.run(peak.area_per_channel[1:98+1]/total_area_top) * units.mm
+            nn_output = self.nn.run(input_areas/np.sum(input_areas)) * self.nn_output_unit
 
             peak.reconstructed_positions.append(ReconstructedPosition({
                 'x': nn_output[0],
                 'y': nn_output[1],
                 'z': 42,
-                'algorithm': 'X100NeuralNet'
-            }))
+                'algorithm': 'NeuralNet'}))
 
         # Return the event such that the next processor can work on it
         return event
@@ -51,7 +52,7 @@ class NeuralNet():
     """Implementation of Alex Kish's Xenon100 neural net
      - Input layer without activation function
      - Hidden layer with atanh(sum + bias) activation function
-     - Output layer with sum + bias (i.e. identity) activation functoin
+     - Output layer with sum + bias (i.e. identity) activation function
     All neurons in a layer are connected to all neurons in the previous layer
     """
 
