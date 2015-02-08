@@ -1,91 +1,90 @@
 """Neural network reconstruction algorithms"""
-from pax import plugin
+import numpy as np
+
+from pax import plugin, units
 
 from pax.datastructure import ReconstructedPosition
 
 
 class PosRecNeuralNet(plugin.TransformPlugin):
 
-    """Please write one sentence here
-
-    Please write on 3 paragraphs here here here here here here here
-    here here here here here here here here here here here here here
-    here
-
-    and here here here here here here here here here here here here
-    here here here here here here here here here here here here here
-    here
-
-    and here here here here here here here here here here here here
-    here here here here here here here here here here here here here
-    here
+    """Reconstruct S2 x,y positions using Alex Kish's / Xenon 100 neural net
     """
 
     def startup(self):
-        """Initialize reconstruction algorithm
-
-        Determine which PMTs to use for reconstruction.
+        """ Initialize the neural net.
         """
-
-        # This can either be 'top' or 'bottom'.
-        self.which_pmts = 'pmts_%s' % self.config['channels_to_use_for_reconstruction']
-        if self.which_pmts not in self.config.keys():
-            raise RuntimeError("Bad choice 'channels_to_use_for_reconstruction'")
-
-        # List of integers of which PMTs to use
-        self.pmts = self.config[self.which_pmts]
-
-        # (x,y) locations of these PMTs.  This is stored as a dictionary such
-        # that self.pmt_locations[int] = {'x' : int, 'y' : int, 'z' : None}
-        self.pmt_locations = self.config['pmt_locations']
+        self.nn = NeuralNet(
+            n_inputs=98,
+            n_hidden=30,
+            n_output=2,
+            weights=self.config['weights'],
+            biases=self.config['biases'],
+        )
 
     def transform_event(self, event):
         """Reconstruct the position of S2s in an event.
-
-        Information on how to use the 'event' object is at:
-
-          http://xenon1t.github.io/pax/format.html
         """
 
         # For every S2 peak found in the event
         for peak in event.S2s():
-            # This is an array where every i-th element is how many pe
-            # were seen by the i-th PMT
-            hits = peak.area_per_channel
 
-            sum_x = 0  # sum of x positions
-            sum_y = 0  # sum of y positions
+            total_area_top = np.sum(peak.area_per_channel[1:98+1])
 
-            scale = 0  # Total q
+            # Run the neural net on pmt 1-98
+            # Input is fraction of top area (see PositionReconstruction.cpp, line 246)
+            # Convert from mm (Xenon100 units) to pax units
+            nn_output = self.nn.run(peak.area_per_channel[1:98+1]/total_area_top) * units.mm
 
-            # For every PMT
-            for pmt in self.pmts:  # 'pmt' is a PMT ID
-                value = self.pmt_locations[pmt]  # Dictionary {'x' : int, etc.}
-                Q = hits[pmt]  # Area of this S2 for this PMT # noqa
-
-                # Add this 'Q' to total Q 'scale'
-                scale += Q
-
-                # Add charge-weighted position to running sum
-                sum_x += Q * value['x']
-                sum_y += Q * value['y']
-
-            if scale != 0:  # If charge actually seen for this S2
-                # Compute the positions
-                peak_x = sum_x / scale
-                peak_y = sum_y / scale
-            else:
-                peak_x = peak_y = float('NaN')  # algorithm failed
-
-            # Create a reconstructed position object
-            rp = ReconstructedPosition({'x': peak_x,
-                                        'y': peak_y,
-                                        'z': 42,
-                                        'index_of_maximum': peak.index_of_maximum,
-                                        'algorithm': self.name})
-
-            # Append our reconstructed position object to the peak
-            peak.reconstructed_positions.append(rp)
+            peak.reconstructed_positions.append(ReconstructedPosition({
+                'x': nn_output[0],
+                'y': nn_output[1],
+                'z': 42,
+                'algorithm': 'X100NeuralNet'
+            }))
 
         # Return the event such that the next processor can work on it
         return event
+
+
+class NeuralNet():
+    """Implementation of Alex Kish's Xenon100 neural net
+     - Input layer without activation function
+     - Hidden layer with atanh(sum + bias) activation function
+     - Output layer with sum + bias (i.e. identity) activation functoin
+    All neurons in a layer are connected to all neurons in the previous layer
+    """
+
+    def __init__(self, n_inputs, n_hidden, n_output, weights, biases):
+
+        # Boilerplate for storing args...
+        self.n_inputs = n_inputs
+        self.n_hidden = n_hidden
+        self.n_output = n_output
+        self.weights = np.array(weights)
+        self.biases = np.array(biases)
+
+        # Sanity checks
+        if not len(biases) == n_inputs + n_hidden + n_output:
+            raise ValueError("Each neuron must have a bias!")
+        if not len(weights) == n_inputs * n_hidden + n_hidden * n_output:
+            raise ValueError("Invalid length of weights. I assumed all neurons are connected.")
+
+    def run(self, input_values):
+        assert len(input_values) == self.n_inputs
+
+        # Input layer is not run -- input neuron biases are unused!
+
+        # Run the hidden layer, apply tanh activation function
+        hidden_values = self.run_layer(input_values,
+                                       self.weights[:self.n_inputs * self.n_hidden])
+        hidden_values = np.tanh(hidden_values + self.biases[self.n_inputs:self.n_inputs + self.n_hidden])
+
+        # Run the output layer, apply identity activation function (just add bias)
+        output_values = self.run_layer(hidden_values, self.weights[self.n_inputs * self.n_hidden:])
+        return output_values + self.biases[self.n_inputs + self.n_hidden:]
+
+    @staticmethod
+    def run_layer(input_values, weights):
+        dendrite_values = np.tile(input_values, len(weights)/len(input_values)) * weights
+        return np.sum(dendrite_values.reshape(-1, len(input_values)), axis=1)
