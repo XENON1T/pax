@@ -25,8 +25,7 @@ class TestPosRecWeightedSum(unittest.TestCase):
                              'right': 9,
                              'type':  'S2',
                              'detector':  'tpc',
-                             'area_per_channel' : bla
-                              }))
+                             'area_per_channel': bla}))
         return e
 
     def test_get_nn_plugin(self):
