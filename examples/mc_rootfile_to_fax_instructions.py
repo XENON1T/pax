@@ -4,10 +4,10 @@ Useful if your pyRoot doesn't work with python 3.
 (If it does work, you can more easily use the WaveformSimulatorFromNEST plugin.)
 """
 
-
+import csv
 
 import ROOT
-import csv
+
 
 f = ROOT.TFile('Neutron-4FaX-10k.root')
 t = f.Get("t1") # For Xerawdp use T1, for MC t1

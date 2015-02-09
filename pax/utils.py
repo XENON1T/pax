@@ -6,13 +6,14 @@ Utilities for peakfinders etc.
 import re
 import json
 import gzip
-from itertools import zip_longest
+import logging
 
 import numpy as np
 from scipy import interpolate
 import matplotlib.pyplot as plt
 
-import logging
+from itertools import zip_longest
+
 log = logging.getLogger('dsputils')
 
 ##

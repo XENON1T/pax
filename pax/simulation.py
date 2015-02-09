@@ -3,15 +3,16 @@ Waveform simulator ("FaX") - physics backend
 The only I/O stuff here is pax event creation, everything else is in the WaveformSimulator plugins
 """
 
-import numpy as np
-import math
-import time
 import logging
 
+import numpy as np
 from scipy import stats
 
+import math
+import time
 from pax import units, utils, datastructure
 from pax.utils import Memoize
+
 
 log = logging.getLogger('SimulationCore')
 

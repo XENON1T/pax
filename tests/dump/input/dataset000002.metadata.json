@@ -1,0 +1,1 @@
+{ "options" : { "create" : "dataset000002", "size" : 10000000000, "capped" : true }, "indexes" : [ { "v" : 1, "key" : { "_id" : 1 }, "ns" : "input.dataset000002", "name" : "_id_" } ] }

@@ -9,11 +9,12 @@ releases.  Patch releases cannot modify this.
 """
 
 import inspect
-import math
 
 import numpy as np
 
+import math
 from pax import units
+
 # To turn off type-checking for all models, replace the line below with
 # from pax.data_model import Model
 # This will improve performance a bit (+ ~10% running time), but use at your own risk

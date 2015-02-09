@@ -5,7 +5,6 @@ it is not meant to replace Xerawdp, nor to be used unmodified by Xenon1T or any 
 
 """
 
-
 import numpy as np
 
 from pax import plugin, datastructure

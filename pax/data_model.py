@@ -2,8 +2,9 @@
 Python skeleton for data structure
 Extends python object to do a few tricks
 """
-import numpy as np
 import json
+
+import numpy as np
 
 from pax.utils import Memoize
 

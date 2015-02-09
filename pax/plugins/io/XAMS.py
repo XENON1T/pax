@@ -5,11 +5,13 @@ This plug-in reads raw waveform data from the Old XAMS Lecroy scope binary & tex
 import glob
 import re
 import struct
-import time
+
 import numpy as np
 
+import time
 from pax import plugin, units
 from pax.datastructure import Event, Occurrence
+
 
 
 # TODO: probably doesn't work anymore
