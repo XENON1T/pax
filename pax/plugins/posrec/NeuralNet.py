@@ -87,7 +87,8 @@ class NeuralNet():
         output_values = self.run_layer(hidden_values, self.weights[self.n_inputs * self.n_hidden:])
         return output_values + self.biases[self.n_hidden:]
 
-    @staticmethod
-    def run_layer(input_values, weights):
+    def run_layer(self, input_values, weights):
+        # Dendrite values: weighted inputs
         dendrite_values = np.tile(input_values, len(weights)/len(input_values)) * weights
+        # Sum weighted inputs for each hidden layer neuron separately
         return np.sum(dendrite_values.reshape(-1, len(input_values)), axis=1)
