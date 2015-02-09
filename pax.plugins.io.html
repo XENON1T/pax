@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.io package &mdash; Processor for Analyzing XENON1T 2.0.0 documentation</title>
+    <title>pax.plugins.io package &mdash; Processor for Analyzing XENON1T 2.0.1 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0.0',
+        VERSION:     '2.0.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 2.0.0 documentation" href="index.html" /> 
+    <link rel="top" title="Processor for Analyzing XENON1T 2.0.1 documentation" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -35,7 +35,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 2.0.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 2.0.1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -49,80 +49,71 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-pax.plugins.io.MongoDB">
-<span id="pax-plugins-io-mongodb-module"></span><h2>pax.plugins.io.MongoDB module<a class="headerlink" href="#module-pax.plugins.io.MongoDB" title="Permalink to this headline">¶</a></h2>
-<p>Interfacing to DAQ via MongoDB</p>
-<p>The DAQ uses MongoDB for input and output.  The classes defined hear allow the
-user to read data from the DAQ and also inject raw occurences into the DAQ.</p>
+<div class="section" id="module-pax.plugins.io.Avro">
+<span id="pax-plugins-io-avro-module"></span><h2>pax.plugins.io.Avro module<a class="headerlink" href="#module-pax.plugins.io.Avro" title="Permalink to this headline">¶</a></h2>
+<p>Avro is responsible for the raw digitizer data storage</p>
+<p>Avro is a remote procedure call and data serialization framework developed
+within Apache&#8217;s Hadoop project.  We use it within &#8216;pax&#8217; to store the raw data
+from the experiment to disk.  These classes are used, for example, by the data
+aquisition system to write the raw data coming from the experiment.  More
+information about Avro can be found at:</p>
+<div class="highlight-python"><div class="highlight"><pre>http://en.wikipedia.org/wiki/Apache_Avro
+</pre></div>
+</div>
+<p>This replaced &#8216;xdio&#8217; from XENON100.</p>
 <dl class="class">
-<dt id="pax.plugins.io.MongoDB.MongoDBFakeDAQOutput">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.MongoDB.</tt><tt class="descname">MongoDBFakeDAQOutput</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBFakeDAQOutput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBFakeDAQOutput" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.OutputPlugin" title="pax.plugin.OutputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.OutputPlugin</span></tt></a></p>
-<p>Inject PMT pulses into DAQ to test trigger.</p>
-<p>This plugin aims to emulate the DAQReader by creating run control documents
-and feeding raw data into the DAQ&#8217;s MongoDB format.  Consult here for more
-on formats:</p>
-<p><a class="reference external" href="https://docs.google.com/drawings/d/1dytKBmMARsZtuyUmLbzm9IbXM1hre">https://docs.google.com/drawings/d/1dytKBmMARsZtuyUmLbzm9IbXM1hre</a>
--knkEIU4X3Ot8U/edit</p>
-<p>Note: write run document after output collection created.</p>
-<dl class="staticmethod">
-<dt id="pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.chunks">
-<em class="property">static </em><tt class="descname">chunks</tt><big>(</big><em>l</em>, <em>n</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBFakeDAQOutput.chunks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.chunks" title="Permalink to this definition">¶</a></dt>
-<dd><p>Yield successive n-sized chunks from l.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.get_connection">
-<tt class="descname">get_connection</tt><big>(</big><em>hostname</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBFakeDAQOutput.get_connection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.get_connection" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.handle_occurences">
-<tt class="descname">handle_occurences</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBFakeDAQOutput.handle_occurences"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.handle_occurences" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.shutdown">
-<tt class="descname">shutdown</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBFakeDAQOutput.shutdown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.shutdown" title="Permalink to this definition">¶</a></dt>
-<dd><p>Notify run database that datataking stopped</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.startup">
-<tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBFakeDAQOutput.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.startup" title="Permalink to this definition">¶</a></dt>
-<dd><p>Setup</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.write_event">
-<tt class="descname">write_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBFakeDAQOutput.write_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.write_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.io.MongoDB.MongoDBInput">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.MongoDB.</tt><tt class="descname">MongoDBInput</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInput" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.plugins.io.Avro.ReadAvro">
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.Avro.</tt><tt class="descname">ReadAvro</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Avro.html#ReadAvro"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Avro.ReadAvro" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.InputPlugin" title="pax.plugin.InputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.InputPlugin</span></tt></a></p>
-<p>Read data from DAQ database</p>
+<p>Read raw Avro data to get PMT pulses</p>
+<p>This is the lowest level data stored.</p>
 <dl class="method">
-<dt id="pax.plugins.io.MongoDB.MongoDBInput.get_events">
-<tt class="descname">get_events</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInput.get_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInput.get_events" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generator of events from Mongo</p>
+<dt id="pax.plugins.io.Avro.ReadAvro.get_events">
+<tt class="descname">get_events</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Avro.html#ReadAvro.get_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Avro.ReadAvro.get_events" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fetch events from Avro file</p>
+<p>This produces a generator for all the events within the file.  These
+Events contain occurences, and the appropriate pax objects will be
+built.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pax.plugins.io.MongoDB.MongoDBInput.number_events">
-<tt class="descname">number_events</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInput.number_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInput.number_events" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.plugins.io.Avro.ReadAvro.shutdown">
+<tt class="descname">shutdown</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Avro.html#ReadAvro.shutdown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Avro.ReadAvro.shutdown" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="pax.plugins.io.MongoDB.MongoDBInput.startup">
-<tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInput.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInput.startup" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.plugins.io.Avro.ReadAvro.startup">
+<tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Avro.html#ReadAvro.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Avro.ReadAvro.startup" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
+<dl class="class">
+<dt id="pax.plugins.io.Avro.WriteAvro">
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.Avro.</tt><tt class="descname">WriteAvro</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Avro.html#WriteAvro"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Avro.WriteAvro" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.OutputPlugin" title="pax.plugin.OutputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.OutputPlugin</span></tt></a></p>
+<p>Write raw Avro data of PMT pulses</p>
+<p>This is the lowest level data stored.</p>
+<dl class="method">
+<dt id="pax.plugins.io.Avro.WriteAvro.shutdown">
+<tt class="descname">shutdown</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Avro.html#WriteAvro.shutdown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Avro.WriteAvro.shutdown" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.Avro.WriteAvro.startup">
+<tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Avro.html#WriteAvro.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Avro.WriteAvro.startup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.Avro.WriteAvro.write_event">
+<tt class="descname">write_event</tt><big>(</big><em>pax_event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Avro.html#WriteAvro.write_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Avro.WriteAvro.write_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="pax-plugins-io-mongodb-module">
+<h2>pax.plugins.io.MongoDB module<a class="headerlink" href="#pax-plugins-io-mongodb-module" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="module-pax.plugins.io.Music">
 <span id="pax-plugins-io-music-module"></span><h2>pax.plugins.io.Music module<a class="headerlink" href="#module-pax.plugins.io.Music" title="Permalink to this headline">¶</a></h2>
@@ -745,7 +736,8 @@ code for details.</p>
   <ul>
 <li><a class="reference internal" href="#">pax.plugins.io package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#module-pax.plugins.io.MongoDB">pax.plugins.io.MongoDB module</a></li>
+<li><a class="reference internal" href="#module-pax.plugins.io.Avro">pax.plugins.io.Avro module</a></li>
+<li><a class="reference internal" href="#pax-plugins-io-mongodb-module">pax.plugins.io.MongoDB module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.Music">pax.plugins.io.Music module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.Pandas">pax.plugins.io.Pandas module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.Pickle">pax.plugins.io.Pickle module</a></li>
@@ -790,12 +782,12 @@ code for details.</p>
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 2.0.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 2.0.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2014, Christopher Tunnell.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>

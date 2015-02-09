@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Frequently Asked Questions &mdash; Processor for Analyzing XENON1T 2.0.0 documentation</title>
+    <title>Frequently Asked Questions &mdash; Processor for Analyzing XENON1T 2.0.1 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0.0',
+        VERSION:     '2.0.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 2.0.0 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 2.0.1 documentation" href="index.html" />
     <link rel="next" title="Credits" href="authors.html" />
     <link rel="prev" title="Contributing" href="contributing.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="contributing.html" title="Contributing"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 2.0.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 2.0.1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -112,14 +112,22 @@ when you login.</p>
 <h2>Can I set up pax on my windows machine?<a class="headerlink" href="#can-i-set-up-pax-on-my-windows-machine" title="Permalink to this headline">¶</a></h2>
 <p>Yes, in fact several of the developers do this, much to the sadness of the other developers...</p>
 <ol class="arabic simple">
-<li>Unless you want to install lots of binary modules from <a class="reference external" href="http://www.lfd.uci.edu/~gohlke/pythonlibs/">Christoph Gohlke&#8217;s page</a>,
-start by installing a good scientific python 3 distribution such as Anaconda or PythonXY.
-(if the Anaconda website nags you for an email, enter your favourite fictional email address)</li>
+<li>Start with installing Anaconda for python 3 from their website. If the Anaconda website nags you for an email,
+enter your favourite fictional email address</li>
+<li>Install python-snappy from <a class="reference external" href="http://www.lfd.uci.edu/~gohlke/pythonlibs/">Christoph Gohlke&#8217;s page</a>.
+See installation instructions for the .whl file at the top of the page.</li>
+</ol>
+<ol class="arabic simple" start="2">
 <li>Get pax using Github&#8217;s nice point-and-click Github For Windows application.
 Ignore the haters who insist on doing everything by command line.</li>
-<li>Run <tt class="docutils literal"><span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">develop</span></tt>. It will probably complain about some failed module installations, ignore that,
-there are lots of arcane modules you&#8217;ll almost never need (e.g. HTML templating for online monitor etc).</li>
-<li>Go to bin, run <tt class="docutils literal"><span class="pre">python</span> <span class="pre">paxer</span> <span class="pre">--plot</span></tt>. If it shows a waveform, you are done.
+<li>Run <tt class="docutils literal"><span class="pre">python</span> <span class="pre">setup.py</span> <span class="pre">develop</span></tt>.
+It may complain about some failed module installations.
+If it looks like an important module, try <cite>conda install important_module</cite>.
+If that fails, try <cite>pip install important_module</cite>
+If that fails, try <cite>easy_install important_module</cite>
+If that fails, look for important_module on <a class="reference external" href="http://www.lfd.uci.edu/~gohlke/pythonlibs/">Christoph Gohlke&#8217;s page</a>
+If that fails, reboot, sacrifice a goat, then try again.</li>
+<li>Go to bin and run <tt class="docutils literal"><span class="pre">python</span> <span class="pre">paxer</span></tt>. If it shows a waveform plot, you are done.
 If it complains about a missing module, I guess you shouldn&#8217;t have ignored those warnings in step 3,
 install the missing module using easy_install, or Gohlke&#8217;s page mentioned above.</li>
 </ol>
@@ -131,6 +139,13 @@ with the other 433 output formats we have.</p>
 <ul class="simple">
 <li>Just follow the instructions on <a class="reference external" href="https://github.com/XENON1T/pax/blob/master/docs/pyroot.rst">the PyROOT page</a>.</li>
 </ul>
+</div>
+<div class="section" id="snappy-on-osx">
+<h2>Snappy on OSX<a class="headerlink" href="#snappy-on-osx" title="Permalink to this headline">¶</a></h2>
+<p>After instally snappy through macports, please run:</p>
+<div class="highlight-python"><div class="highlight"><pre>CFLAGS=-I/opt/local/include LDFLAGS=-L/opt/local/lib pip install python-snappy
+</pre></div>
+</div>
 </div>
 </div>
 
@@ -148,6 +163,7 @@ with the other 433 output formats we have.</p>
 <li><a class="reference internal" href="#how-do-i-run-git-at-lngs-on-xecluster">How do I run <cite>git</cite> at LNGS on xecluster</a></li>
 <li><a class="reference internal" href="#can-i-set-up-pax-on-my-windows-machine">Can I set up pax on my windows machine?</a></li>
 <li><a class="reference internal" href="#how-do-i-get-python-3-4-with-root-working-on-ubuntu-14">How do I get Python 3.4 with ROOT working on Ubuntu 14?</a></li>
+<li><a class="reference internal" href="#snappy-on-osx">Snappy on OSX</a></li>
 </ul>
 </li>
 </ul>
@@ -195,12 +211,12 @@ with the other 433 output formats we have.</p>
         <li class="right" >
           <a href="contributing.html" title="Contributing"
              >previous</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 2.0.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 2.0.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2014, Christopher Tunnell.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>

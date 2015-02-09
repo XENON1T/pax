@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.signal_processing.SmallPeakfinder &mdash; Processor for Analyzing XENON1T 2.0.0 documentation</title>
+    <title>pax.plugins.signal_processing.SmallPeakfinder &mdash; Processor for Analyzing XENON1T 2.0.1 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '2.0.0',
+        VERSION:     '2.0.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 2.0.0 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 2.0.1 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" /> 
   </head>
   <body>
@@ -36,7 +36,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 2.0.0 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 2.0.1 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -48,7 +48,9 @@
             
   <h1>Source code for pax.plugins.signal_processing.SmallPeakfinder</h1><div class="highlight"><pre>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
 <span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">datastructure</span><span class="p">,</span> <span class="n">utils</span>
+
 
 <span class="c"># Used for diagnostic plotting only</span>
 <span class="c"># TODO: factor out to separate plugin?</span>
@@ -204,6 +206,9 @@
                             <span class="c"># the sliding window filter will shift the peak shape a bit</span>
                             <span class="s">&#39;area&#39;</span><span class="p">:</span>                <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]),</span>
                             <span class="s">&#39;height&#39;</span><span class="p">:</span>              <span class="n">origw</span><span class="p">[</span><span class="n">max_idx</span><span class="p">],</span>
+                            <span class="c"># Also store height in filtered waveform:</span>
+                            <span class="c"># useful to see what a higher threshold would have done</span>
+                            <span class="s">&#39;filtered_height&#39;</span><span class="p">:</span>     <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]),</span>
                             <span class="s">&#39;noise_sigma&#39;</span><span class="p">:</span>         <span class="n">noise_sigma</span><span class="p">,</span>
                         <span class="p">}))</span>
                     <span class="n">event</span><span class="o">.</span><span class="n">all_channel_peaks</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">peaks</span><span class="p">)</span>
@@ -248,7 +253,6 @@
 <span class="sd">        :return: peaks as list of (left_index, max_index, right_index) tuples</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">peaks</span> <span class="o">=</span> <span class="p">[]</span>
-
         <span class="k">for</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span> <span class="ow">in</span> <span class="n">utils</span><span class="o">.</span><span class="n">intervals_where</span><span class="p">(</span><span class="n">w</span> <span class="o">&gt;</span> <span class="n">noise_sigma</span><span class="p">):</span>
             <span class="n">max_idx</span> <span class="o">=</span> <span class="n">left</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="n">left</span><span class="p">:</span><span class="n">right</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
             <span class="n">height</span> <span class="o">=</span> <span class="n">w</span><span class="p">[</span><span class="n">max_idx</span><span class="p">]</span>
@@ -296,13 +300,13 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 2.0.0 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 2.0.1 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2014, Christopher Tunnell.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>

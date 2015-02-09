@@ -4,6 +4,14 @@ pax.plugins.io package
 Submodules
 ----------
 
+pax.plugins.io.Avro module
+--------------------------
+
+.. automodule:: pax.plugins.io.Avro
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pax.plugins.io.MongoDB module
 -----------------------------
 

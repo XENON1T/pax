@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.core &mdash; Processor for Analyzing XENON1T 2.0.0 documentation</title>
+    <title>pax.core &mdash; Processor for Analyzing XENON1T 2.0.1 documentation</title>
     
     <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.0.0',
+        VERSION:     '2.0.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 2.0.0 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 2.0.1 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body>
@@ -36,7 +36,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">Processor for Analyzing XENON1T 2.0.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Processor for Analyzing XENON1T 2.0.1 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,17 +55,18 @@
 <span class="kn">import</span> <span class="nn">importlib</span>
 <span class="kn">import</span> <span class="nn">inspect</span>
 <span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">StringIO</span>
-<span class="kn">import</span> <span class="nn">itertools</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">re</span>
-
 <span class="kn">from</span> <span class="nn">configparser</span> <span class="kn">import</span> <span class="n">ConfigParser</span><span class="p">,</span> <span class="n">ExtendedInterpolation</span>
+
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">itertools</span>
 <span class="kn">from</span> <span class="nn">prettytable</span> <span class="kn">import</span> <span class="n">PrettyTable</span>     <span class="c"># Timing report</span>
 <span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>                   <span class="c"># Progress bar</span>
-
 <span class="kn">import</span> <span class="nn">pax</span>
 <span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">units</span><span class="p">,</span> <span class="n">simulation</span>
+
 
 <span class="c"># Uncomment for diagnosing memory leaks</span>
 <span class="c"># Also uncomment code in process_event</span>
@@ -165,7 +166,6 @@
             <span class="n">pc</span><span class="p">[</span><span class="s">&#39;plugin_group_names&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="k">for</span> <span class="n">plugin_group_name</span> <span class="ow">in</span> <span class="n">pc</span><span class="p">[</span><span class="s">&#39;plugin_group_names&#39;</span><span class="p">]:</span>
-
             <span class="k">if</span> <span class="n">plugin_group_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">pc</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Invalid configuration: plugin group list </span><span class="si">%s</span><span class="s"> missing&#39;</span> <span class="o">%</span> <span class="n">plugin_group_name</span><span class="p">)</span>
 
@@ -204,7 +204,6 @@
 
         <span class="c"># Load input plugin &amp; setup the get_events generator</span>
         <span class="k">if</span> <span class="s">&#39;input&#39;</span> <span class="ow">in</span> <span class="n">pc</span><span class="p">[</span><span class="s">&#39;plugin_group_names&#39;</span><span class="p">]:</span>
-
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">plugin_names</span><span class="p">[</span><span class="s">&#39;input&#39;</span><span class="p">])</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Invalid configuration: there should be one input plugin listed, not </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span>
                                  <span class="nb">len</span><span class="p">(</span><span class="n">plugin_names</span><span class="p">[</span><span class="s">&#39;input&#39;</span><span class="p">]))</span>
@@ -225,18 +224,18 @@
                 <span class="k">def</span> <span class="nf">get_events</span><span class="p">():</span>
                     <span class="k">for</span> <span class="n">event_number</span> <span class="ow">in</span> <span class="n">pc</span><span class="p">[</span><span class="s">&#39;events_to_process&#39;</span><span class="p">]:</span>
                         <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_plugin</span><span class="o">.</span><span class="n">get_single_event</span><span class="p">(</span><span class="n">event_number</span><span class="p">)</span>
-
             <span class="k">else</span><span class="p">:</span>
                 <span class="c"># Let the input plugin decide which events to process:</span>
                 <span class="n">get_events</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_plugin</span><span class="o">.</span><span class="n">get_events</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">get_events</span> <span class="o">=</span> <span class="n">get_events</span>
-
-        <span class="c"># During tests there is often no input plugin, events are added manually</span>
         <span class="k">else</span><span class="p">:</span>
+            <span class="c"># During tests there is often no input plugin</span>
+            <span class="c"># events are added manually</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">input_plugin</span> <span class="o">=</span> <span class="bp">None</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">just_testing</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;No input plugin specified: how are you planning to get any events?&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;No input plugin specified: how are you&quot;</span>
+                                 <span class="s">&quot;planning to get any events?&quot;</span><span class="p">)</span>
 
         <span class="c"># Load the action plugins</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">action_plugin_names</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -246,7 +245,8 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">action_plugins</span> <span class="o">=</span> <span class="p">[]</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">just_testing</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;No action plugins specified: this will be a pretty boring processing run...&quot;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;No action plugins specified: this will be a&quot;</span>
+                                 <span class="s">&quot;pretty boring processing run...&quot;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Processor.load_configuration"><a class="viewcode-back" href="../../pax.html#pax.core.Processor.load_configuration">[docs]</a>    <span class="k">def</span> <span class="nf">load_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_names</span><span class="p">,</span> <span class="n">config_paths</span><span class="p">,</span> <span class="n">config_string</span><span class="p">,</span> <span class="n">config_dict</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Load a configuration -- see init&#39;s docstring</span>
@@ -446,7 +446,7 @@
         <span class="sd">&quot;&quot;&quot;Return plugin by class name. Use for testing.&quot;&quot;&quot;</span>
         <span class="n">plugins_by_name</span> <span class="o">=</span> <span class="p">{</span><span class="n">p</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">:</span> <span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_plugins</span><span class="p">}</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_plugin</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="n">plugins_by_name</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">input_plugin</span><span class="o">.</span><span class="n">__name__</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_plugin</span>
+            <span class="n">plugins_by_name</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">input_plugin</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_plugin</span>
         <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">plugins_by_name</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">plugins_by_name</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
@@ -567,13 +567,13 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">Processor for Analyzing XENON1T 2.0.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Processor for Analyzing XENON1T 2.0.1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2014, Christopher Tunnell.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>

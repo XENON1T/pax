@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>History &mdash; Processor for Analyzing XENON1T 2.0.0 documentation</title>
+    <title>History &mdash; Processor for Analyzing XENON1T 2.0.1 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0.0',
+        VERSION:     '2.0.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 2.0.0 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 2.0.1 documentation" href="index.html" />
     <link rel="prev" title="Credits" href="authors.html" /> 
   </head>
   <body>
@@ -39,7 +39,7 @@
         <li class="right" >
           <a href="authors.html" title="Credits"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 2.0.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 2.0.1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -54,8 +54,12 @@
 <h2>2.0.1 (2015-01-26)<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
 <blockquote>
 <div><ul class="simple">
-<li>Minor bug fixes</li>
-<li>Travis CI continuous integration</li>
+<li>Travis CI continuous integration is enabled</li>
+<li>Minor bug fixes<ul>
+<li>Values missing from output if they were always default</li>
+<li>Memory leak after many events due to logger</li>
+</ul>
+</li>
 </ul>
 </div></blockquote>
 </div>
@@ -70,8 +74,8 @@
 </ul>
 </li>
 <li>New signal processing chain<ul>
+<li>FindSmallPeaks, finds single-photon peaks in each channel (Default)</li>
 <li>FindBigPeaks, a traditional sum-waveform peakfinder</li>
-<li>FindSmallPeaks, finds single-photon peaks in each channel</li>
 <li>Supporting peak classification and property computation plugins</li>
 </ul>
 </li>
@@ -341,12 +345,12 @@
         <li class="right" >
           <a href="authors.html" title="Credits"
              >previous</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 2.0.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 2.0.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2014, Christopher Tunnell.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>

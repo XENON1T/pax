@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax package &mdash; Processor for Analyzing XENON1T 2.0.0 documentation</title>
+    <title>pax package &mdash; Processor for Analyzing XENON1T 2.0.1 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0.0',
+        VERSION:     '2.0.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 2.0.0 documentation" href="index.html" /> 
+    <link rel="top" title="Processor for Analyzing XENON1T 2.0.1 documentation" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -35,7 +35,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 2.0.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 2.0.1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -66,7 +66,8 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="pax.plugins.io.html">pax.plugins.io package</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#submodules">Submodules</a></li>
-<li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.MongoDB">pax.plugins.io.MongoDB module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.Avro">pax.plugins.io.Avro module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#pax-plugins-io-mongodb-module">pax.plugins.io.MongoDB module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.Music">pax.plugins.io.Music module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.Pandas">pax.plugins.io.Pandas module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.Pickle">pax.plugins.io.Pickle module</a></li>
@@ -272,9 +273,15 @@ These are be clustered into ordinary peaks later</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="pax.datastructure.ChannelPeak.filtered_height">
+<tt class="descname">filtered_height</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.ChannelPeak.filtered_height" title="Permalink to this definition">¶</a></dt>
+<dd><p>Height of highest point in peak (in pe/bin) in the filtered waveform</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="pax.datastructure.ChannelPeak.height">
 <tt class="descname">height</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.ChannelPeak.height" title="Permalink to this definition">¶</a></dt>
-<dd><p>Height of highest point in peak (in pe/bin)</p>
+<dd><p>Height of highest point in peak (in pe/bin) in unfiltered waveform</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -297,7 +304,7 @@ These are be clustered into ordinary peaks later</p>
 <dl class="attribute">
 <dt id="pax.datastructure.ChannelPeak.noise_sigma">
 <tt class="descname">noise_sigma</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.ChannelPeak.noise_sigma" title="Permalink to this definition">¶</a></dt>
-<dd><p>StDev of the noise in the occurrence (in pe/bin) where we found this peak</p>
+<dd><p>StDev of the noisin e (pe/bin) in the filtered waveform in this peak&#8217;s occurrence</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -497,7 +504,7 @@ Will remain nan if channel&#8217;s gain is 0</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Occurrence.height">
 <tt class="descname">height</tt><em class="property"> = nan</em><a class="headerlink" href="#pax.datastructure.Occurrence.height" title="Permalink to this definition">¶</a></dt>
-<dd><p>Maximum amplitude (in pe/bin; float)
+<dd><p>Maximum amplitude (in pe/bin; float) in unfiltered waveform
 Will remain nan if channel&#8217;s gain is 0
 baseline_correction, if any, has been substracted</p>
 </dd></dl>
@@ -516,7 +523,8 @@ baseline_correction, if any, has been substracted</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Occurrence.noise_sigma">
 <tt class="descname">noise_sigma</tt><em class="property"> = nan</em><a class="headerlink" href="#pax.datastructure.Occurrence.noise_sigma" title="Permalink to this definition">¶</a></dt>
-<dd><p>Noise sigma for this occurrence
+<dd><p>Noise sigma for this occurrence (in pe/bin)
+Computed in the filtered channel waveform
 Will remain nan unless occurrence is processed by smallpeakfinder</p>
 </dd></dl>
 
@@ -647,10 +655,10 @@ Will remain nan unless occurrence is processed by smallpeakfinder</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pax.datastructure.Peak.mean_absolute_deviation">
-<tt class="descname">mean_absolute_deviation</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.mean_absolute_deviation" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.datastructure.Peak.median_absolute_deviation">
+<tt class="descname">median_absolute_deviation</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.median_absolute_deviation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Variables indicating width of peak
-Mean absolute deviation of photon arrival times (in ns)</p>
+Median absolute deviation of photon arrival times (in ns)</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -1221,12 +1229,12 @@ becomes_false: indices where x is False, and was True  one index before</td>
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 2.0.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 2.0.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2014, Christopher Tunnell.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>

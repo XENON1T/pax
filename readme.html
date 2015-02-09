@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Processor for Analyzing XENON &mdash; Processor for Analyzing XENON1T 2.0.0 documentation</title>
+    <title>Processor for Analyzing XENON &mdash; Processor for Analyzing XENON1T 2.0.1 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0.0',
+        VERSION:     '2.0.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 2.0.0 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 2.0.1 documentation" href="index.html" />
     <link rel="next" title="Usage" href="usage.html" />
     <link rel="prev" title="Welcome to processor for Analyzing XENON1T’s documentation!" href="index.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="index.html" title="Welcome to processor for Analyzing XENON1T’s documentation!"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 2.0.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 2.0.1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -61,6 +61,7 @@ processing and other data processing on the XENON100/XENON1T raw data.</p>
 <li>Documentation: <a class="reference external" href="http://xenon1t.github.io/pax/">http://xenon1t.github.io/pax/</a>.</li>
 </ul>
 <a class="reference external image-reference" href="https://magnum.travis-ci.com/XENON1T/pax"><img alt="https://magnum.travis-ci.com/XENON1T/pax.svg?token=8i3psWNJAskpVjC6qe3w&amp;branch=master" src="https://magnum.travis-ci.com/XENON1T/pax.svg?token=8i3psWNJAskpVjC6qe3w&amp;branch=master" /></a>
+<a class="reference external image-reference" href="https://coveralls.io/r/XENON1T/pax?branch=master"><img alt="https://coveralls.io/repos/XENON1T/pax/badge.svg?branch=master" src="https://coveralls.io/repos/XENON1T/pax/badge.svg?branch=master" /></a>
 <div class="section" id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
 <div class="section" id="installing-requirements">
@@ -75,6 +76,11 @@ $ export PATH=~/anaconda3/bin:$PATH  # If installed in default location
 </div>
 <p>Alternatively, you can install Python 3.4 from the <a class="reference external" href="https://www.python.org/">python webpage</a>
 or your OS&#8217;s package management system. You may have to install some additional modules manually.</p>
+<p>You must separately install the <a class="reference external" href="https://code.google.com/p/snappy/">snappy compression library</a>
+and its python bindings. For Ubuntu you can do:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ apt-get install python-snappy
+</pre></div>
+</div>
 <p>For installation on windows, see <a class="reference external" href="https://github.com/XENON1T/pax/blob/master/docs/faq.rst">the FAQ</a>.</p>
 </div>
 <div class="section" id="installing-pax">
@@ -227,12 +233,12 @@ configs available in config, which you can load using <cite>config</cite> option
         <li class="right" >
           <a href="index.html" title="Welcome to processor for Analyzing XENON1T’s documentation!"
              >previous</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 2.0.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 2.0.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2014, Christopher Tunnell.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>

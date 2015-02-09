@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.datastructure &mdash; Processor for Analyzing XENON1T 2.0.0 documentation</title>
+    <title>pax.datastructure &mdash; Processor for Analyzing XENON1T 2.0.1 documentation</title>
     
     <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.0.0',
+        VERSION:     '2.0.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 2.0.0 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 2.0.1 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body>
@@ -36,7 +36,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">Processor for Analyzing XENON1T 2.0.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Processor for Analyzing XENON1T 2.0.1 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -58,11 +58,12 @@
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">inspect</span>
-<span class="kn">import</span> <span class="nn">math</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 
+<span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">units</span>
+
 <span class="c"># To turn off type-checking for all models, replace the line below with</span>
 <span class="c"># from pax.data_model import Model</span>
 <span class="c"># This will improve performance a bit (+ ~10% running time), but use at your own risk</span>
@@ -118,8 +119,9 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">left</span> <span class="o">+</span> <span class="mi">1</span>
 </div>
     <span class="n">area</span> <span class="o">=</span> <span class="mf">0.0</span>                   <span class="c">#: Area of the peak in photoelectrons</span>
-    <span class="n">height</span> <span class="o">=</span> <span class="mf">0.0</span>                 <span class="c">#: Height of highest point in peak (in pe/bin)</span>
-    <span class="n">noise_sigma</span> <span class="o">=</span> <span class="mf">0.0</span>            <span class="c">#: StDev of the noise in the occurrence (in pe/bin) where we found this peak</span>
+    <span class="n">height</span> <span class="o">=</span> <span class="mf">0.0</span>                 <span class="c">#: Height of highest point in peak (in pe/bin) in unfiltered waveform</span>
+    <span class="n">filtered_height</span> <span class="o">=</span> <span class="mf">0.0</span>        <span class="c">#: Height of highest point in peak (in pe/bin) in the filtered waveform</span>
+    <span class="n">noise_sigma</span> <span class="o">=</span> <span class="mf">0.0</span>            <span class="c">#: StDev of the noisin e (pe/bin) in the filtered waveform in this peak&#39;s occurrence</span>
 
 </div>
 <div class="viewcode-block" id="Peak"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak">[docs]</a><span class="k">class</span> <span class="nc">Peak</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
@@ -204,8 +206,8 @@
 
     <span class="c">#: Variables indicating width of peak</span>
 
-    <span class="c">#: Mean absolute deviation of photon arrival times (in ns)</span></div>
-    <span class="n">mean_absolute_deviation</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="c">#: Median absolute deviation of photon arrival times (in ns)</span></div>
+    <span class="n">median_absolute_deviation</span> <span class="o">=</span> <span class="mf">0.0</span>
     <span class="c"># standard_deviation = 0.0</span>
     <span class="c"># half_area_range = 0.0</span>
     <span class="c"># tenth_area_range = 0.0</span>
@@ -249,14 +251,14 @@
     <span class="c">#: Channel the occurrence belongs to (integer)</span>
     <span class="n">channel</span> <span class="o">=</span> <span class="mi">0</span>
 
-    <span class="c">#: Maximum amplitude (in pe/bin; float)</span>
+    <span class="c">#: Maximum amplitude (in pe/bin; float) in unfiltered waveform</span>
     <span class="c">#: Will remain nan if channel&#39;s gain is 0</span>
     <span class="c">#: baseline_correction, if any, has been substracted</span>
-    <span class="c"># TODO: may not be equal to actual occurrence height,</span>
-    <span class="c"># baseline correction is computed on 2-sample filtered wv. :-(</span>
+    <span class="c"># TODO: may not be equal to actual occurrence height, baseline correction is computed on filtered wv. :-(</span>
     <span class="n">height</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
 
-    <span class="c">#: Noise sigma for this occurrence</span>
+    <span class="c">#: Noise sigma for this occurrence (in pe/bin)</span>
+    <span class="c">#: Computed in the filtered channel waveform</span>
     <span class="c">#: Will remain nan unless occurrence is processed by smallpeakfinder</span>
     <span class="n">noise_sigma</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
 
@@ -498,13 +500,13 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">Processor for Analyzing XENON1T 2.0.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Processor for Analyzing XENON1T 2.0.1 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2014, Christopher Tunnell.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>

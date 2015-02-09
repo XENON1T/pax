@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Event format &mdash; Processor for Analyzing XENON1T 2.0.0 documentation</title>
+    <title>Event format &mdash; Processor for Analyzing XENON1T 2.0.1 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0.0',
+        VERSION:     '2.0.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 2.0.0 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 2.0.1 documentation" href="index.html" />
     <link rel="next" title="Plugins" href="plugin.html" />
     <link rel="prev" title="Usage" href="usage.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="usage.html" title="Usage"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 2.0.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 2.0.1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -328,10 +328,10 @@ Or rather, it starts from January 1, 1970.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pax.datastructure.Peak.mean_absolute_deviation">
-<tt class="descname">mean_absolute_deviation</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.mean_absolute_deviation" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.datastructure.Peak.median_absolute_deviation">
+<tt class="descname">median_absolute_deviation</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.median_absolute_deviation" title="Permalink to this definition">¶</a></dt>
 <dd><p>Variables indicating width of peak
-Mean absolute deviation of photon arrival times (in ns)</p>
+Median absolute deviation of photon arrival times (in ns)</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -478,6 +478,66 @@ Mean absolute deviation of photon arrival times (in ns)</p>
 
 </dd></dl>
 
+<dl class="class">
+<dt id="pax.datastructure.ChannelPeak">
+<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">ChannelPeak</tt><big>(</big><em>kwargs_dict=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#ChannelPeak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.ChannelPeak" title="Permalink to this definition">¶</a></dt>
+<dd><p>Peaks found in individual channels
+These are be clustered into ordinary peaks later</p>
+<dl class="attribute">
+<dt id="pax.datastructure.ChannelPeak.area">
+<tt class="descname">area</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.ChannelPeak.area" title="Permalink to this definition">¶</a></dt>
+<dd><p>Area of the peak in photoelectrons</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.ChannelPeak.channel">
+<tt class="descname">channel</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.ChannelPeak.channel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Channel in which this peak was found</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.ChannelPeak.filtered_height">
+<tt class="descname">filtered_height</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.ChannelPeak.filtered_height" title="Permalink to this definition">¶</a></dt>
+<dd><p>Height of highest point in peak (in pe/bin) in the filtered waveform</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.ChannelPeak.height">
+<tt class="descname">height</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.ChannelPeak.height" title="Permalink to this definition">¶</a></dt>
+<dd><p>Height of highest point in peak (in pe/bin) in unfiltered waveform</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.ChannelPeak.index_of_maximum">
+<tt class="descname">index_of_maximum</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.ChannelPeak.index_of_maximum" title="Permalink to this definition">¶</a></dt>
+<dd><p>Index in the event at which this peak has its maximum.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.ChannelPeak.left">
+<tt class="descname">left</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.ChannelPeak.left" title="Permalink to this definition">¶</a></dt>
+<dd><p>Index of left bound (inclusive) of peak.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.ChannelPeak.length">
+<tt class="descname">length</tt><a class="reference internal" href="_modules/pax/datastructure.html#ChannelPeak.length"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.ChannelPeak.length" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.ChannelPeak.noise_sigma">
+<tt class="descname">noise_sigma</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.ChannelPeak.noise_sigma" title="Permalink to this definition">¶</a></dt>
+<dd><p>StDev of the noisin e (pe/bin) in the filtered waveform in this peak&#8217;s occurrence</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.ChannelPeak.right">
+<tt class="descname">right</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.ChannelPeak.right" title="Permalink to this definition">¶</a></dt>
+<dd><p>Index of right bound (INCLUSIVE!!) of peak</p>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 
 
@@ -529,12 +589,12 @@ Mean absolute deviation of photon arrival times (in ns)</p>
         <li class="right" >
           <a href="usage.html" title="Usage"
              >previous</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 2.0.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 2.0.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
         &copy; Copyright 2014, Christopher Tunnell.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.2.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
     </div>
   </body>
 </html>
