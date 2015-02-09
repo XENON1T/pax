@@ -139,7 +139,7 @@ class PlotBase(plugin.OutputPlugin):
                 plt.annotate('%s:%s' % (peak.type, int(peak.area)),
                              xy=(x, y),
                              xytext=(x, ytext),
-                             arrowprops = arrowprops,
+                             arrowprops=arrowprops,
                              color=textcolor)
 
         if show_legend:
