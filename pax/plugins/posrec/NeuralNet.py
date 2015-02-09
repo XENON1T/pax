@@ -16,7 +16,10 @@ class PosRecNeuralNet(plugin.TransformPlugin):
     def startup(self):
         """ Initialize the neural net.
         """
-        self.input_channels = np.array(self.config['channels_top'])
+        if self.config['pmt_0_is_fake']:
+            self.input_channels = np.array(self.config['channels_top'][1:])
+        else:
+            self.input_channels = np.array(self.config['channels_top'])
         self.nn_output_unit = self.config['nn_output_unit']
 
         self.nn = NeuralNet(n_inputs=len(self.input_channels),
