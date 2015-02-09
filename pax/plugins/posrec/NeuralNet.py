@@ -1,26 +1,27 @@
 """Neural network reconstruction algorithms"""
 import numpy as np
 
-from pax import plugin, units
-
+from pax import plugin
 from pax.datastructure import ReconstructedPosition
 
 
 class PosRecNeuralNet(plugin.TransformPlugin):
 
-    """Reconstruct S2 x,y positions using Alex Kish's / Xenon 100 neural net
+    """Reconstruct S2 x,y positions from top pmt hit pattern using a single hidden layer feed-foward neural net
+
+    See Alex Kish' thesis for details:
+    http://www.physik.uzh.ch/groups/groupbaudis/darkmatter/theses/xenon/Kish_THESISelectronic.pdf
     """
 
     def startup(self):
         """ Initialize the neural net.
         """
-        self.input_channels = np.array(self.config['input_channels'])
+        self.input_channels = np.array(self.config['channels_top'])
         self.nn_output_unit = self.config['nn_output_unit']
-        self.hidden_layer_neurons = self.config['hidden_layer_neurons']
 
         self.nn = NeuralNet(n_inputs=len(self.input_channels),
-                            n_hidden=self.hidden_layer_neurons,
-                            n_output=2,
+                            n_hidden=self.config['hidden_layer_neurons'],
+                            n_output=2,   # x, y
                             weights=self.config['weights'],
                             biases=self.config['biases'])
 
@@ -33,9 +34,9 @@ class PosRecNeuralNet(plugin.TransformPlugin):
 
             input_areas = peak.area_per_channel[self.input_channels]
 
-            # Run the neural net on pmt 1-98
-            # Input is fraction of top area (see PositionReconstruction.cpp, line 246)
-            # Convert from mm (Xenon100 units) to pax units
+            # Run the neural net
+            # Input is fraction of top area (see Xerawdp, PositionReconstruction.cpp, line 246)
+            # Convert from neural net's units to pax units
             nn_output = self.nn.run(input_areas/np.sum(input_areas)) * self.nn_output_unit
 
             peak.reconstructed_positions.append(ReconstructedPosition({
@@ -49,11 +50,11 @@ class PosRecNeuralNet(plugin.TransformPlugin):
 
 
 class NeuralNet():
-    """Implementation of Alex Kish's Xenon100 neural net
-     - Input layer without activation function
+    """Single hidden layer feed-forward neural net
+     - Input layer without activation function or bias
      - Hidden layer with atanh(sum + bias) activation function
      - Output layer with sum + bias (i.e. identity) activation function
-    All neurons in a layer are connected to all neurons in the previous layer
+    All neurons in a layer are connected to all neurons in the previous layer.
     """
 
     def __init__(self, n_inputs, n_hidden, n_output, weights, biases):
@@ -66,24 +67,25 @@ class NeuralNet():
         self.biases = np.array(biases)
 
         # Sanity checks
-        if not len(biases) == n_inputs + n_hidden + n_output:
-            raise ValueError("Each neuron must have a bias!")
+        if not len(biases) == n_hidden + n_output:
+            raise ValueError("Each hidden and output neuron must have a bias!")
         if not len(weights) == n_inputs * n_hidden + n_hidden * n_output:
-            raise ValueError("Invalid length of weights. I assumed all neurons are connected.")
+            raise ValueError("Invalid length of weights for totally connected neuron layers.")
 
     def run(self, input_values):
+        """Return the neural net's output (numpy array of output neuron values) on the input_values"""
         assert len(input_values) == self.n_inputs
 
-        # Input layer is not run -- input neuron biases are unused!
+        # Input layer neurons do nothing
 
         # Run the hidden layer, apply tanh activation function
         hidden_values = self.run_layer(input_values,
                                        self.weights[:self.n_inputs * self.n_hidden])
-        hidden_values = np.tanh(hidden_values + self.biases[self.n_inputs:self.n_inputs + self.n_hidden])
+        hidden_values = np.tanh(hidden_values + self.biases[:self.n_hidden])
 
         # Run the output layer, apply identity activation function (just add bias)
         output_values = self.run_layer(hidden_values, self.weights[self.n_inputs * self.n_hidden:])
-        return output_values + self.biases[self.n_inputs + self.n_hidden:]
+        return output_values + self.biases[self.n_hidden:]
 
     @staticmethod
     def run_layer(input_values, weights):
