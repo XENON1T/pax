@@ -10,22 +10,19 @@ is more under control.
 
 from pax import core, units
 
-print("Processing the real data...")
-core.Processor(config_names=['XENON100'], config_dict={
-    'pax' : {
-        'input_name'  :     'xe100_120402_2000_000000.xed',
-        'output_name' :     'xe100_120402_2000_000000',
-        'input' :           'XED.XedInput',
-        'output':           ['Pandas.WritePandas','Plotting.PlotEventSummary']
-    },
-    'Pandas.WritePandas' : {
-        'output_format': 'hdf',
-    },
-	'Plotting.PlotEventSummary' : {
-		'plot_every':	100,
-		'output_dir':	'real_data_waveforms'
-	}
-}).run()
+# print("Processing the real data...")
+# core.Processor(config_names=['XENON100'], config_dict={
+    # 'pax' : {
+        # 'input_name'  :     'xe100_120402_2000_000000.xed',
+        # 'output_name' :     'xe100_120402_2000_000000',
+        # 'input' :           'XED.XedInput',
+        # 'output':           ['BulkOutput.BulkOutput','Plotting.PlotEventSummary']
+    # },
+	# 'Plotting.PlotEventSummary' : {
+		# 'plot_every':	100,
+		# 'output_dir':	'real_data_waveforms'
+	# }
+# }).run()
 
 print("Simulating some fake data...")
 for simulation_name in ('fake_s1s', 'fake_s2s'):
@@ -33,7 +30,7 @@ for simulation_name in ('fake_s1s', 'fake_s2s'):
         'pax' : {
             'input_name'  :     simulation_name + '.csv',
             'input' :           'WaveformSimulator.WaveformSimulatorFromCSV',
-            'output':           ['Pandas.WritePandas','Plotting.PlotEventSummary'],
+            'output':           ['BulkOutput.BulkOutput','Plotting.PlotEventSummary'],
         },
         'WaveformSimulator' : {
             'event_repetitions' : 100,
@@ -41,9 +38,8 @@ for simulation_name in ('fake_s1s', 'fake_s2s'):
 			'wire_field_parameter': 0,
 			'drift_velocity_gas': 3*units.mm/units.us,
         },
-        'Pandas.WritePandas' : {
+        'BulkOutput.BulkOutput' : {
 			'output_name' :     simulation_name,
-            'output_format': 'hdf',
         },
 		'Plotting.PlotEventSummary' : {
 			'plot_every':	100,

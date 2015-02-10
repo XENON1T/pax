@@ -1,14 +1,25 @@
 import os
 import json
 import shutil
-
-import numpy as np
-
+import logging
 import time
 
+import numpy as np
 import h5py
+
 import pax
 from pax import plugin, exceptions
+
+# Import modules for optional formats
+log = logging.getLogger('BulkOutputInitialization')
+try:
+    import pandas
+except ImportError:
+    log.warning("You don't have pandas -- if you use the pandas output, pax will crash!")
+try:
+    import ROOT
+except ImportError:
+    log.warning("You don't have ROOT -- if you use the ROOT output, pax will crash!")
 
 
 class BulkOutput(plugin.OutputPlugin):
@@ -283,7 +294,10 @@ class HDF5Dump(BulkOutputFormat):
         for name, records in data.items():
             dataset = self.f.get(name)
             if dataset is None:
-                self.f.create_dataset(name, data=records, maxshape=(None,), compression="gzip")
+                self.f.create_dataset(name, data=records, maxshape=(None,),
+                                      compression="gzip",   # hdfview doesn't like lzf?
+                                      shuffle=True,
+                                      fletcher32=True)
             else:
                 oldlen = dataset.len()
                 dataset.resize((oldlen + len(records),))
