@@ -39,7 +39,7 @@ install:
   - sudo apt-get build-dep python-snappy
 
   # Replace dep1 dep2 ... with your dependencies
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib pandas pytables coveralls coverage nose
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib pandas pytables coveralls nose
   - source activate test-environment
 
   # Install pax
