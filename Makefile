@@ -35,7 +35,7 @@ test-all:
 	tox
 
 coverage:
-	nosetests --with-coverage --package pax tests
+	nosetests --with-coverage --cover-package=pax tests
 
 docs:
 
