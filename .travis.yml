@@ -45,8 +45,8 @@ install:
   # - unset ROOT # uncomment to not install ROOT
   - if test -n "$ROOT"; then source .travis-install-ROOT.sh; fi
 
-  # Convert ROOT.py from python 2 to 3
-  - 2to3 -w /home/travis/build/XENON1T/pax/root/lib/ROOT.py
+  # Copy custom ROOT.py to proper directory
+  - if test -n "$ROOT"; then mv /home/travis/build/XENON1T/pax/travis_custom_ROOT.py /home/travis/build/XENON1T/pax/root/lib/ROOT.py; fi
 
   - conda install system
 
