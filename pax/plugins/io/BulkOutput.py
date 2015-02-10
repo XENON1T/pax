@@ -1,12 +1,12 @@
 import os
 import json
 import shutil
-from collections import OrderedDict
 
 import numpy as np
 
 import time
-import pandas
+
+import h5py
 import pax
 from pax import plugin, exceptions
 
@@ -14,9 +14,11 @@ from pax import plugin, exceptions
 class BulkOutput(plugin.OutputPlugin):
 
     """
-    Convert our data structure to 'dataframes' (lists of dictionaries) then write to several output formats:
-        numpy record array dump
-        any container supported by pandas: HDF5, CSV, JSON, HTML, ...
+    Convert our data structure to numpy record arrays, one for each class.
+    Then output to one of several output formats:
+        NumpyDump:  numpy record array dump (compressed)
+        HDF5Dump:   h5py HDF5  (compressed)
+        PandasCSV, PandasJSON, PandasHTML
         (soon: ROOT)
         (soon: several at same time?)
 
@@ -53,21 +55,40 @@ class BulkOutput(plugin.OutputPlugin):
     """
 
     def startup(self):
-        # Dictionary to contain the data, which will later become pandas DataFrames.
-        # Keys are data frame names, values are lists of (index_tuple,dictionary) tuples
-        self.dataframes = {}
+        # Dictionary to contain the data
+        # Every class in the datastructure is a key; values are dicts:
+        # {
+        #   tuples  :       list of data tuples not yet converted to records,
+        #   records :       numpy record arrays,
+        #   dtype   :       dtype of numpy record (includes field names),
+        # }
 
-        self.events_ready_to_be_written = 0
+        configdump = json.dumps(self.processor.config)
+
+        self.data = {
+            # Write pax configuration and version to pax_info dataframe
+            # Will be a table with one row
+            # If you append to an existing HDF5 file, it will make a second row
+            # TODO: However, it will probably crash if the configuration is a longer string...
+            'pax_info': {
+                'tuples':       [(time.time(), str(pax.__version__), configdump)],
+                'records':      None,
+                'dtype':        [('timestamp', np.int),
+                                 ('pax_version', 'S32'),
+                                 ('configuration_json', 'S%d' % len(configdump))]}
+        }
+
+        self.events_ready_for_conversion = 0
 
         # Init the output format
         # globals()[classname]() instantiates class named in classname, saves us an eval
         self.output_format = of = globals()[self.config['output_format']](self.config, self.log)
 
         # Check if options are supported
-        if not of.supports_write_every and self.config['write_every'] != float('inf'):
-            self.log.warning('Output format %s does not support write_every: will write all at end.' %
+        if not of.supports_write_in_chunks and self.config['write_in_chunks']:
+            self.log.warning('Output format %s does not support write_in_chunks: will write all at end.' %
                              of.__class__.__name__)
-            self.config['write_every'] = float('inf')
+            self.config['write_in_chunks'] = False
 
         if self.config['append_data'] and not of.supports_append:
             self.log.warning('Output format %s does not support append: setting to False.')
@@ -84,7 +105,6 @@ class BulkOutput(plugin.OutputPlugin):
             if self.config['append_data'] and of.supports_append:
                 self.log.info('Output file/dir %s already exists: appending.' % outfile)
             elif self.config['overwrite_data']:
-                print("HALLOOO", self.__class__.__name__, of.file_extension, of.supports_write_every)
                 self.log.info('Output file/dir %s already exists, and you wanted to overwrite, so deleting it!'
                               % outfile)
                 if self.output_format.file_extension == 'DIRECTORY':
@@ -99,41 +119,74 @@ class BulkOutput(plugin.OutputPlugin):
             # We are a dir output format: dir must exist
             os.mkdir(outfile)
 
-        # Write pax configuration and version to pax_info dataframe
-        # Will be a dataframe with one row, indexed by timestamp
-        # If you append to an existing HDF5 file, it will make a second row
-        # TODO: However, it will probably crash if the configuration is a longer string...
-        self.append_to_df('pax_info', ([('timestamp', time.time()), ], {
-            'pax_version':             pax.__version__,
-            'configuration_json':      json.dumps(self.processor.config),
-        }))
-
         # Open the output file
         self.output_format.open()
 
     def write_event(self, event):
-        # Store all the event data in self.dataframes
-        self.model_to_dataframe(event, [('Event', event.event_number), ])
+        # Store all the event data internally, write to disk when appropriate
+        self.model_to_tuples(event, index_fields=[('Event', event.event_number), ])
+        self.events_ready_for_conversion += 1
 
-        # Write the data to file if needed
-        self.events_ready_to_be_written += 1
-        if self.events_ready_to_be_written == self.config['write_every']:
-            self.output_format.write_dataframes(self.dataframes)
+        if self.events_ready_for_conversion == self.config['convert_every']:
+            self.convert_to_records()
+            if self.config['write_in_chunks']:
+                self.write_to_disk()
+
+    def convert_to_records(self):
+        for dfname in self.data.keys():
+            self.log.debug("Converting %s " % dfname)
+            # Convert tuples to records
+            newrecords = np.array(self.data[dfname]['tuples'], self.data[dfname]['dtype'])
+            # Clear tuples. Enjoy the freed memory.
+            self.data[dfname]['tuples'] = []
+            # Append new records
+            if self.data[dfname]['records'] is None:
+                self.data[dfname]['records'] = newrecords
+            else:
+                self.data[dfname]['records'] = np.concatenate((self.data[dfname]['records'], newrecords))
+
+    def write_to_disk(self):
+        self.log.debug("Writing to disk...")
+        # If any records are present, call output format to write records to disk
+        if not 'Event' in self.data:
+            # The processor crashed, don't want to make things worse!
+            self.log.warning('No events to write: did you crash pax?')
+            return
+        if self.data['Event']['records'] is not None:
+            self.output_format.write_data({k: v['records'] for k, v in self.data.items()})
+        # Delete records we've just written to disk
+        for d in self.data.keys():
+            self.data[d]['records'] = None
 
     def shutdown(self):
-        if self.events_ready_to_be_written:
-            self.output_format.write_dataframes(self.dataframes)
+        if self.events_ready_for_conversion:
+            self.convert_to_records()
+        self.write_to_disk()
 
-    def model_to_dataframe(self, m, index_trail):
-        """Convert one of our data model instances to a 'dataframe' (data_dict with index_trail),
-        handling its subcollections recursively.
+    def model_to_tuples(self, m, index_fields):
+        """Convert one of our data model instances to a tuple while storing its field names & dtypes,
+           handling subcollections recursively, keeping track of index hierarchy
 
         :param m: instance to convert
-        :param index_trail: list of (index_name, index) tuples denoting multi-index trail
+        :param index_fields: list of (index_field_name, value) tuples denoting multi-index trail
         """
 
-        # Dict to contain data from this model instance, will be used in dataframe generation
-        data_dict = OrderedDict()
+        # List to contain data from this model, will be made into tuple later
+        m_name = m.__class__.__name__
+        m_indices = [x[1] for x in index_fields]
+        m_data = []
+
+        # Have we seen this model before? If not, initialize stuff
+        first_time_seen = False
+        if not m_name in self.data:
+            self.data[m_name] = {
+                'tuples':         [],
+                'records':        None,
+                # Initialize dtype with the index fields
+                'dtype':          [(x[0], np.int) for x in index_fields],
+                'index_depth':    len(m_indices),
+            }
+            first_time_seen = True
 
         # Grab all data into data_dict -- and more importantly, handle subcollections
         for field_name, field_value in m.get_fields_data():
@@ -149,34 +202,56 @@ class BulkOutput(plugin.OutputPlugin):
                 # Convert each child_model to a dataframe, with a new index appended to the index trail
                 element_type = type(field_value[0])
                 for new_index, child_model in enumerate(field_value):
-                    self.model_to_dataframe(child_model, index_trail + [(element_type.__name__,
-                                                                         new_index)])
+                    self.model_to_tuples(child_model, index_fields + [(element_type.__name__,
+                                                                       new_index)])
 
             elif isinstance(field_value, np.ndarray) and not self.output_format.supports_array_fields:
                 # NumpyArrayFields must get their own dataframe -- assumes field names are unique!
                 # dataframe columns = positions in the array
-                self.append_to_df(field_name, (index_trail,
-                                               {k: v for k, v in enumerate(field_value)}))
+
+                # Is this the first time we see this numpy array field?
+                if field_name not in self.data:
+                    assert first_time_seen    # Must be the first time we see dataframe as well
+                    self.data[field_name] = {
+                        'tuples':         [],
+                        'records':        None,
+                        # Initialize dtype with the index fields + every column in array becomes a field.... :-(
+                        'dtype':          [(x[0], np.int) for x in index_fields] +
+                                          [(str(i), field_value.dtype) for i in range(len(field_value))],
+                        'index_depth':    len(m_indices),
+                    }
+
+                self.data[field_name]['tuples'].append(tuple(m_indices + list(field_value)))
+
             else:
-                data_dict[field_name] = field_value
+                m_data.append(field_value)
+                if first_time_seen:
+                    # Store this field's data type
+                    self.data[m_name]['dtype'].append(self._numpy_field_dtype(field_name, field_value))
 
-        # Finally, append the instance we started with to its pre_dataframe
-        self.append_to_df(m.__class__.__name__, (index_trail, data_dict))
+        # Store m_indices + m_data in self.data['tuples']
+        self.data[m_name]['tuples'].append(tuple(m_indices + m_data))
 
-    def append_to_df(self, dfname, index_and_data_tuple):
-        """ Appends an (index, data_dict) tuple to self.dataframes[dfname]
-        """
-        if dfname in self.dataframes:
-            self.dataframes[dfname].append(index_and_data_tuple)
+    def _numpy_field_dtype(self, name, x):
+        if name == 'configuration_json':
+            return name, 'O'
+        if isinstance(x, int):
+            return name, np.int64
+        if isinstance(x, float):
+            return name, 'f'
+        if isinstance(x, str):
+            return name, 'S' + str(self.config['string_data_length'])
+        if isinstance(x, np.ndarray):
+            return name, x.dtype, x.shape
         else:
-            self.dataframes[dfname] = [index_and_data_tuple]
+            raise TypeError("Don't know numpy type code for %s" % type(x))
 
 
 class BulkOutputFormat(object):
     """Base class for output formats
     """
     supports_append = False
-    supports_write_every = False
+    supports_write_in_chunks = False
     supports_array_fields = False
     file_extension = 'DIRECTORY'   # Leave to None for database insertion or something
 
@@ -201,50 +276,33 @@ class NumpyDump(BulkOutputFormat):
     file_extension = 'npz'
     supports_array_fields = True
 
-    def write_dataframes(self, dataframes):
+    def write_data(self, data):
+        np.savez_compressed(self.config['output_name'], **data)
 
-        recarrays = {}
 
-        for df_name, df in dataframes.items():
-            # Convert to numpy record array
 
-            # Get the dtype from the first instance
-            dtype = []
-            index_trail, data = df[0]
-            for name, value in index_trail:
-                dtype.append(self.numpy_field_dtype(name, value))
-            for name, value in data.items():
-                dtype.append(self.numpy_field_dtype(name, value))
+class HDF5Dump(BulkOutputFormat):
+    file_extension = 'hdf5'
+    supports_array_fields = True
+    supports_write_in_chunks = True
 
-            # Make values list
-            df_values = []
-            for index_trail, data_dict in df:
-                df_values.append(
-                    tuple([x[1] for x in index_trail] + list(data_dict.values()))
-                )
+    def open(self):
+        self.f = h5py.File(self.config['output_name'], "w")
 
-            try:
-                recarrays[df_name] = np.array(df_values, dtype=dtype)
-            except OverflowError:
-                print(df_name, dtype)
-                raise
+    def write_data(self, data):
+        for name, records in data.items():
+            dataset = self.f.get(name)
+            if dataset is None:
+                self.f.create_dataset(name, data=records, maxshape=(None,), compression="gzip")
+            else:
+                oldlen = dataset.len()
+                dataset.resize((oldlen + len(records),))
+                dataset[oldlen:] = records
 
-        # Save all recarrays to file
-        np.savez_compressed(self.config['output_name'], **recarrays)
+    def close(self):
+        self.f.close()
 
-    def numpy_field_dtype(self, name, x):
-        if name == 'configuration_json':
-            return name, 'O'
-        if isinstance(x, int):
-            return name, np.int64
-        if isinstance(x, float):
-            return name, 'f'
-        if isinstance(x, str):
-            return name, 'S' + str(self.config['string_data_length'])
-        if isinstance(x, np.ndarray):
-            return name, x.dtype, x.shape
-        else:
-            raise TypeError("Don't know numpy type code for %s" % type(x))
+
 
 
 ##
@@ -255,31 +313,14 @@ class PandasFormat(BulkOutputFormat):
 
     pandas_format_key = None
 
-    def write_dataframes(self, dataframes):
-        for df_name, df in dataframes.items():
-            self.log.debug("Converting %s to pandas DataFrame" % df_name)
-
-            df_data = []
-            df_index = []
-            df_index_names = []
-
-            for index_trail, data in df:
-                df_data.append(data)
-                df_index.append([ind[1] for ind in index_trail])
-                if not df_index_names:
-                    # Should be the same for all rows, so do just once
-                    # ... too lazy to wrap & assert
-                    df_index_names = [ind[0] for ind in index_trail]
-
-            # Convert to pandas dataframe
-            pandas_df = pandas.DataFrame(df_data,
-                                         index=pandas.MultiIndex.from_tuples(df_index,
-                                                                             names=df_index_names))
+    def write_data(self, data):
+        for name, records in data.items():
             # Write pandas dataframe to container
-            self.write_pandas_dataframe(df_name, pandas_df)
+            self.write_pandas_dataframe(name,
+                                        pandas.DataFrame.from_records(records))
 
     def write_pandas_dataframe(self, df_name, df):
-        # Write each DataFrame to a file
+        # Write each DataFrame to file
         getattr(df, 'to_' + self.pandas_format_key)(
             os.path.join(self.config['output_name'], df_name + '.' + self.pandas_format_key))
 
@@ -294,30 +335,3 @@ class PandasHTML(PandasFormat):
 
 class PandasJSONPandasFormat(PandasFormat):
     pandas_format_key = 'json'
-
-
-class PandasHDF5(PandasFormat):
-
-    supports_append = True
-    supports_write_every = True
-    file_extension = 'hdf5'
-
-    def open(self):
-        self.store = pandas.HDFStore(self.config['output_name'], complevel=9, complib='blosc')
-
-    def write_pandas_dataframe(self, df_name, df):
-        # Write each pandas DataFrame to a table in the hdf
-        if df_name == 'pax_info':
-            # Don't worry about pre-setting string field lengths
-            self.store.append(df_name, df, format='table')
-
-        else:
-            # Look for string fields (dtype=object), we should pre-set a length for them
-            string_fields = df.select_dtypes(include=['object']).columns.values
-
-            self.store.append(df_name, df, format='table',
-                              min_itemsize={field_name: self.config['string_data_length']
-                                            for field_name in string_fields})
-
-    def close(self):
-        self.store.close()
