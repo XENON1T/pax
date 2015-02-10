@@ -29,8 +29,7 @@ class WaveformDumperBase(plugin.OutputPlugin):
                                 filename)
         waveform_to_dump = self.get_waveform_to_dump(event)
 
-        if 'dump_in_units' in self.config and \
-                        self.config['dump_in_units'] == 'voltage':
+        if 'dump_in_units' in self.config and self.config['dump_in_units'] == 'voltage':
             waveform_to_dump /= self.conversion_factor
 
         with open(filename, 'wb') as output:
