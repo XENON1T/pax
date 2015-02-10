@@ -20,6 +20,7 @@ env:
 
 install:
   # General update
+  - deactivate
   - sudo apt-get update -qq
   - sudo apt-get install -y build-essential
   - sudo apt-get install -y git dpkg-dev make binutils libx11-dev libxpm-dev libxft-dev libxext-dev gcc-multilib g++ gcc libsnappy1 libsnappy-dev
@@ -39,16 +40,21 @@ install:
   - sudo apt-get build-dep python-snappy
 
   # Replace dep1 dep2 ... with your dependencies
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib pandas pytables 
-  - source activate test-environment
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib pandas pytables pip
+  #- pip uninstall -y nose
 
-  # Install pax
+  - source activate test-environment
+  - pip install coveralls nose coverage
+
+   # Install pax
   - python setup.py install
 
 # command to run tests, e.g. python setup.py test
 script:
   - make test
+  - make coverage
   - make lint
 
 after_success:
   coveralls
+
