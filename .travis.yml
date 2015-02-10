@@ -39,10 +39,8 @@ install:
   - sudo apt-get build-dep python-snappy
 
   # Replace dep1 dep2 ... with your dependencies
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib pandas pytables
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib pandas pytables coveralls coverage nose
   - source activate test-environment
-
-  - pip install coveralls coverage nose
 
   # Install pax
   - python setup.py install
@@ -50,9 +48,6 @@ install:
 # command to run tests, e.g. python setup.py test
 script:
   - make test
-  - which nose
-  - which coverage
-  #- make coverage
   - make lint
 
 after_success:
