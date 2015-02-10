@@ -43,7 +43,7 @@ install:
   - pip uninstall -y nose
 
   - source activate test-environment
-  - pip install -y coveralls nose coverage
+  - pip install coveralls nose coverage
 
    # Install pax
   - python setup.py install
