@@ -6,13 +6,13 @@ Utilities for peakfinders etc.
 import re
 import json
 import gzip
-from itertools import zip_longest
+import logging
 
 import numpy as np
 from scipy import interpolate
 import matplotlib.pyplot as plt
 
-import logging
+from itertools import zip_longest
 log = logging.getLogger('dsputils')
 
 ##
@@ -338,9 +338,10 @@ class InterpolatingMap(object):
 
             # 2D interpolation
             elif self.dimensions == 2:
-                itp_fun = interpolate.interp2d(x=np.linspace(*(cs[0][1])),
-                                               y=np.linspace(*(cs[1][1])),
-                                               z=self.data[map_name])
+                itp_fun = interpolate.RectBivariateSpline(x=np.linspace(*(cs[0][1])),
+                                                          y=np.linspace(*(cs[1][1])),
+                                                          z=np.array(self.data[map_name]).T,
+                                                          s=0)
 
             # 3D interpolation
             elif self.dimensions == 3:

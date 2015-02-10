@@ -2,6 +2,7 @@
 Plugins for computing properties of peaks that have been found
 """
 import numpy as np
+
 from pax import utils, plugin
 import math
 

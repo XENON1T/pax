@@ -3,10 +3,13 @@ Script to generate example detector maps in the cwd.
 The maps can be loaded using InterpolatingMap in dsputils.
 """
 
-import numpy as np
 import json
+
+import numpy as np
+
 import time
 from pax import units
+
 
 coordinate_system = [
     # Left boundary, Right boundary (inclusive), number of points

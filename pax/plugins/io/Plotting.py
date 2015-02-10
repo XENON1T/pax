@@ -3,13 +3,14 @@
 Use matplotlib to display various things about the event.
 """
 
+import random
+import os
+
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
-import random
 import numpy as np
-import os
-import time
 
+import time
 from pax import plugin, units
 
 
@@ -138,7 +139,7 @@ class PlotBase(plugin.OutputPlugin):
                 plt.annotate('%s:%s' % (peak.type, int(peak.area)),
                              xy=(x, y),
                              xytext=(x, ytext),
-                             arrowprops = arrowprops,
+                             arrowprops=arrowprops,
                              color=textcolor)
 
         if show_legend:

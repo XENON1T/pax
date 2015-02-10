@@ -1,8 +1,8 @@
 """Position reconstruction algorithm using chi square gamma distribution minimization"""
+
 from scipy.optimize import fmin_powell
 
 from pax import plugin
-
 from pax.datastructure import ReconstructedPosition
 from pax.utils import InterpolatingMap
 from pax.core import data_file_name
