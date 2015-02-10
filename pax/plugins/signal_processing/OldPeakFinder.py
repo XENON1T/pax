@@ -4,7 +4,7 @@ Its only purpose is to show we understand Xerawdp enough to be able to reproduce
 it is not meant to replace Xerawdp, nor to be used unmodified by Xenon1T or any experiment.
 
 """
-
+import logging
 
 import numpy as np
 
@@ -682,7 +682,6 @@ class ComputePeakPropertiesXdpStyle(plugin.TransformPlugin):
 # Helper functions for peakfinding
 # Can't yet put them in the peakfinding class, because extent_until_threshold is used by computequantities also...
 
-import logging
 log = logging.getLogger('PeakFinding_find_next_crossing')
 
 

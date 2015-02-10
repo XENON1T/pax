@@ -1,5 +1,6 @@
-import numpy as np
 import unittest
+
+import numpy as np
 
 from pax import core, datastructure, exceptions
 
@@ -7,12 +8,14 @@ from pax import core, datastructure, exceptions
 class TestBuildWaveforms(unittest.TestCase):
 
     def setUp(self):  # noqa
-        self.pax = core.Processor(config_names='XENON100', just_testing=True, config_dict={
-            'pax': {
-                'plugin_group_names': ['test'],
-                'test':               'BuildWaveforms.BuildWaveforms'},
-            'BuildWaveforms.BuildWaveforms': {
-                'truncate_occurrences_partially_outside': False}})
+        self.pax = core.Processor(config_names='XENON100',
+                                  just_testing=True,
+                                  config_dict={
+                                      'pax': {
+                                          'plugin_group_names': ['test'],
+                                          'test':               'BuildWaveforms.BuildWaveforms'},
+                                      'BuildWaveforms.BuildWaveforms': {
+                                          'truncate_occurrences_partially_outside': False}})
         self.plugin = self.pax.get_plugin_by_name('BuildWaveforms')
         self.baseline = self.pax.config['DEFAULT']['digitizer_baseline']
 
@@ -53,7 +56,8 @@ class TestBuildWaveforms(unittest.TestCase):
         self.assertTrue(len(event.sum_waveforms) > 0)
 
     def test_occurrences_outside_event(self):
-        # TODO: Also add tests for truncation itself, in case it is allowed in the config
+        # TODO: Also add tests for truncation itself, in case it is allowed in
+        # the config
 
         event = self.make_single_occurrence_event(
             channel=1,

@@ -10,6 +10,8 @@ processing and other data processing on the XENON100/XENON1T raw data.
 
 .. image:: https://magnum.travis-ci.com/XENON1T/pax.svg?token=8i3psWNJAskpVjC6qe3w&branch=master
     :target: https://magnum.travis-ci.com/XENON1T/pax
+.. image:: https://coveralls.io/repos/XENON1T/pax/badge.svg?branch=master
+    :target: https://coveralls.io/r/XENON1T/pax?branch=master
 
 Installation
 =============
@@ -28,6 +30,12 @@ Use your package manager, or run::
 
 Alternatively, you can install Python 3.4 from the `python webpage <https://www.python.org/>`_ 
 or your OS's package management system. You may have to install some additional modules manually.
+
+You must separately install the `snappy compression library <https://code.google.com/p/snappy/>`_
+and its python bindings. For Ubuntu you can do::
+
+  $ sudo apt-get install python-snappy
+  $ sudo apt-get install libsnappy-dev
 
 For installation on windows, see `the FAQ <https://github.com/XENON1T/pax/blob/master/docs/faq.rst>`_.
 

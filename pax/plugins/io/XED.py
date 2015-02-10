@@ -18,12 +18,12 @@ code for details.
 """
 
 import glob
-import math
 import bz2
-
 import io
+
 import numpy as np
 
+import math
 from pax import core, plugin, units
 from pax.datastructure import Event, Occurrence
 

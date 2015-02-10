@@ -2,6 +2,7 @@
 Plugins for computing properties of peaks that have been found
 """
 import numpy as np
+
 from pax import utils, plugin
 import math
 
@@ -57,13 +58,12 @@ class ComputePeakAreasAndCoincidence(plugin.TransformPlugin):
 
             # Determine which channels contribute to the peak's total area
             channels = np.arange(self.config['n_channels'])
-            peak.does_channel_contribute = np.in1d(channels,
-                                                   np.array(list(self.config['channels_in_detector'][peak.detector]))) & \
+            channels_in_this_detector = np.array(list(self.config['channels_in_detector'][peak.detector]))
+            peak.does_channel_contribute = np.in1d(channels, channels_in_this_detector) & \
                 (peak.area_per_channel >= self.config['minimum_area'])
 
             # Other channels with nonzero area have noise
-            peak.does_channel_have_noise = np.in1d(channels,
-                                                   np.array(list(self.config['channels_in_detector'][peak.detector]))) & \
+            peak.does_channel_have_noise = np.in1d(channels, channels_in_this_detector) & \
                 (peak.area_per_channel != 0) & \
                 (np.invert(peak.does_channel_contribute))
 

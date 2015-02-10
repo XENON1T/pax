@@ -5,9 +5,10 @@ This plug-in reads raw waveform data from the Old XAMS Lecroy scope binary & tex
 import glob
 import re
 import struct
-import time
+
 import numpy as np
 
+import time
 from pax import plugin, units
 from pax.datastructure import Event, Occurrence
 
@@ -23,7 +24,8 @@ class DirWithWaveformFiles(plugin.InputPlugin):
         self.input_dirname = self.config['input_name']
         files = glob.glob(self.input_dirname + "/*.*")
         if len(files) == 0:
-            self.log.fatal("No files found in input directory %s!" % self.input_dirname)
+            self.log.fatal(
+                "No files found in input directory %s!" % self.input_dirname)
         # Load all events... ugly code
         self.events = {}
         for file in files:
@@ -38,12 +40,14 @@ class DirWithWaveformFiles(plugin.InputPlugin):
             # Store all regex fields, so we can find the file later
             self.events[idx][channel] = gd
         if len(self.events) == 0:
-            self.log.fatal("No valid event files found in input directory %s!" % self.input_dirname)
+            self.log.fatal(
+                "No valid event files found in input directory %s!" % self.input_dirname)
         # Maybe sort self.events by event index?
         # ????? self.get_next_event()
         self.first_event = min(self.events.keys())
         self.last_event = max(self.events.keys())
-        self.log.debug('Found events %s to %s in input directory' % (self.first_event, self.last_event))
+        self.log.debug('Found events %s to %s in input directory' %
+                       (self.first_event, self.last_event))
 
     def get_events(self):
         for index in self.events:
@@ -103,7 +107,8 @@ class XAMSBinary(DirWithWaveformFiles):
         filename = self.get_channel_filename(channel)
         with open(filename, 'rb') as input:
             input.seek(167)
-            # Set metadata (ideally we'd read this from some other file... but oh well)
+            # Set metadata (ideally we'd read this from some other file... but
+            # oh well)
             self.dV = struct.unpack('<f', input.read(4))[0] * units.mV
             print(self.dV, units.mV, type(self.dV))
             if not self.dV == self.config['digitizer_voltage_range'] / 2 ** (self.config['digitizer_bits']):

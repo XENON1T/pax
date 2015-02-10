@@ -3,7 +3,9 @@
 
 import argparse
 import os
+
 from pax import core
+
 
 ##
 # Parse command line arguments

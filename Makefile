@@ -35,10 +35,7 @@ test-all:
 	tox
 
 coverage:
-	coverage run --source pax setup.py test
-	coverage report -m
-	coverage html
-	open htmlcov/index.html
+	nosetests --with-coverage --cover-package=pax tests
 
 docs:
 
