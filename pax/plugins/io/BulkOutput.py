@@ -14,7 +14,7 @@ from pax import plugin, exceptions
 class BulkOutput(plugin.OutputPlugin):
 
     """
-    Convert our data structure to numpy record arrays, one for each class.
+    Convert our data structure to numpy record arrays, one for each class (Event, Peak, ReconstructedPosition, ...).
     Then output to one of several output formats:
         NumpyDump:  numpy record array dump (compressed)
         HDF5Dump:   h5py HDF5  (compressed)
@@ -22,25 +22,15 @@ class BulkOutput(plugin.OutputPlugin):
         (soon: ROOT)
         (soon: several at same time?)
 
-    We make a separate dataframe for each model type in our data structure
-    (Event, Peak, ReconstructedPosition, ...)
+    For each index, an extra column is added (eg. ReconstrucedPosition has an extra column 'Event', 'Peak'
+    and 'ReconstructedPosition', each restarting from 0 whenever the higher-level index changes)
 
-    The data frames have a hierarchical multi-index, e.g. for the ReconstrucedPosition DataFrame
-        the first  index is the event number
-        the second index is the Peak's index in event.peaks
-        the third  index is the ReconstructedPosition's index in peak.reconstructed_positions
-    Each index is also named (in this example, 'Event', 'Peak', 'ReconstructedPosition') for clarity.
-
-    Because pandas and numpy are optimized for working with large data structures, converting/appending each instance
-    to pandas/numpy separately would take long. Hence, we store data in lists of 'dtaframes' first, then convert those
-    to DataFrames or record arrays once we've collected a bunch of them.
+    Because numpy arrays are optimized for working with large data structures, converting/appending each instance
+    separately would take long. Hence, we store data in listsfirst, then convert those once we've collected a bunch.
 
     Available options:
 
-     - output_format:      If hdf, will produce an HDF5 file with tables for each dataframe.
-                           If csv, json, html, pickle, ... will produce a folder with files for each dataframe.
-                           See http://pandas.pydata.org/pandas-docs/dev/io.html for all possible options;
-                           I really just call pandas.to_FORMAT for each DataFrame.
+     - output_format:      Name of output format to produce. Must be child class of BulkOutputFormat
      - output_name:        The name of the output file or folder, WITHOUT file extension.
      - fields_to_ignore:   Fields which will not be stored.
 
@@ -206,8 +196,9 @@ class BulkOutput(plugin.OutputPlugin):
                                                                        new_index)])
 
             elif isinstance(field_value, np.ndarray) and not self.output_format.supports_array_fields:
-                # NumpyArrayFields must get their own dataframe -- assumes field names are unique!
-                # dataframe columns = positions in the array
+                # Hack for formats without array field support: NumpyArrayFields must get their own dataframe
+                #  -- assumes field names are unique!
+                # dataframe columns = str(positions in the array) ('0', '1', '2', ...)
 
                 # Is this the first time we see this numpy array field?
                 if field_name not in self.data:
@@ -244,11 +235,11 @@ class BulkOutput(plugin.OutputPlugin):
         if isinstance(x, np.ndarray):
             return name, x.dtype, x.shape
         else:
-            raise TypeError("Don't know numpy type code for %s" % type(x))
+            raise TypeError("Don't know numpy type code for %s!" % type(x))
 
 
 class BulkOutputFormat(object):
-    """Base class for output formats
+    """Base class for bulk output formats
     """
     supports_append = False
     supports_write_in_chunks = False
@@ -280,7 +271,6 @@ class NumpyDump(BulkOutputFormat):
         np.savez_compressed(self.config['output_name'], **data)
 
 
-
 class HDF5Dump(BulkOutputFormat):
     file_extension = 'hdf5'
     supports_array_fields = True
@@ -301,8 +291,6 @@ class HDF5Dump(BulkOutputFormat):
 
     def close(self):
         self.f.close()
-
-
 
 
 ##
