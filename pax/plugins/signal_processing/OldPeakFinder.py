@@ -7,6 +7,7 @@ it is not meant to replace Xerawdp, nor to be used unmodified by Xenon1T or any 
 
 
 import numpy as np
+import logging
 
 from pax import plugin, datastructure
 
@@ -682,7 +683,6 @@ class ComputePeakPropertiesXdpStyle(plugin.TransformPlugin):
 # Helper functions for peakfinding
 # Can't yet put them in the peakfinding class, because extent_until_threshold is used by computequantities also...
 
-import logging
 log = logging.getLogger('PeakFinding_find_next_crossing')
 
 

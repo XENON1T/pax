@@ -1,5 +1,3 @@
-__author__ = 'tunnell'
-
 """
 test_pax_configuration
 ----------------------------------
@@ -10,6 +8,8 @@ Tests for `pax.configuration` module.
 import unittest
 
 from pax import units
+
+__author__ = 'tunnell'
 
 
 class TestPaxUnits(unittest.TestCase):
