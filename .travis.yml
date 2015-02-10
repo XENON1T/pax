@@ -50,7 +50,9 @@ install:
 # command to run tests, e.g. python setup.py test
 script:
   - make test
-  - make coverage
+  - which nose
+  - which coverage
+  #- make coverage
   - make lint
 
 after_success:
