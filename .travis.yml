@@ -11,6 +11,9 @@ notifications:
     - jaalbers@nikhef.nl
     - bartp@nikhef.nl
 
+services:
+  - mongodb
+
 env:
   - ROOT=5.34.25
 
@@ -47,7 +50,7 @@ install:
 # command to run tests, e.g. python setup.py test
 script:
   - make test
-  - coverage run --source=pax setup.py test
+  #- coverage run --source=pax setup.py test
   - make lint
 
 after_success:

@@ -3,7 +3,9 @@ import os
 
 from pax import core
 
+
 class TestMongo(unittest.TestCase):
+
     def setUp(self):  # noqa
         os.system("mongorestore tests/dump")
 
@@ -17,7 +19,7 @@ class TestMongo(unittest.TestCase):
                 'collection': 'dataset000002',
             }
         }
-        
+
         pax_avro = core.Processor(config_names='NikhefLab',
                                   config_dict=config)
         self.read_plugin = pax_avro.input_plugin
@@ -34,4 +36,3 @@ class TestMongo(unittest.TestCase):
                          0)
         self.assertListEqual(occurrence.raw_data[0:10].tolist(),
                              [5648, 5647, 5648, 5643, 5648, 5646, 5648, 5647, 5647, 5641])
-                             
