@@ -135,7 +135,8 @@ class Peak(Model):
     full_width_tenth_max_filtered = 0.0     #: Full width at tenth of maximum in samples, in filtered waveform
 
     #: Array of squared signal entropies in each PMT.
-    entropy_per_channel = np.array([], dtype='float64')
+    # Unused
+    # entropy_per_channel = np.array([], dtype='float64')
 
     ##
     #   Fields present in peaks from single-channel peakfinding
