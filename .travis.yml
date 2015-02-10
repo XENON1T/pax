@@ -45,8 +45,21 @@ install:
   # - unset ROOT # uncomment to not install ROOT
   - if test -n "$ROOT"; then source .travis-install-ROOT.sh; fi
 
+  -echo test if ROOT is working...
+  -root -l -q
+  -python -c "import ROOT; ROOT.TBrowser()"
+
+  # What is the ROOT.py we are using?????????
+  -echo ROOT.py ==============================================================
+  -cat /home/travis/build/XENON1T/pax/root/lib/ROOT.py
+  -echo ======================================================================
+
   # Copy custom ROOT.py to proper directory
-  - if test -n "$ROOT"; then mv /home/travis/build/XENON1T/pax/travis_custom_ROOT.py /home/travis/build/XENON1T/pax/root/lib/ROOT.py; fi
+  - if test -n "$ROOT"; then cp /home/travis/build/XENON1T/pax/travis_custom_ROOT.py /home/travis/build/XENON1T/pax/root/lib/ROOT.py; fi
+
+  # Does pyROOT still work?
+  -root -l -q
+  -python -c "import ROOT; ROOT.TBrowser()"
 
   - conda install system
 

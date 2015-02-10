@@ -17,10 +17,4 @@ echo source ROOT environment...
 
 source bin/thisroot.sh
 
-echo test if ROOT is working...
-
-root -l -q
-python -c "import ROOT; ROOT.TBrowser()"
-
 cd ..
-
