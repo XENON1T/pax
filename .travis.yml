@@ -40,7 +40,7 @@ install:
 
   # Replace dep1 dep2 ... with your dependencies
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib pandas pytables
-  - pip uninstall -y coveralls nose coverage
+  - pip uninstall -y nose coverage
 
   - source activate test-environment
   - pip install -y coveralls nose coverage
