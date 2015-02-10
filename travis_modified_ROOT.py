@@ -2,20 +2,20 @@
 # @(#)root/pyroot:$Id$
 # Author: Wim Lavrijsen (WLavrijsen@lbl.gov)
 # Created: 02/20/03
-# Last: 06/29/14
+# Last: 11/17/14
 
 """PyROOT user module.
 
  o) install lazy ROOT class/variable lookup as appropriate
  o) feed gSystem and gInterpreter for display updates
  o) add readline completion (if supported by python build)
- o) enable some ROOT/Cling style commands
+ o) enable some ROOT/CINT style commands
  o) handle a few special cases such as gPad, STL, etc.
  o) execute rootlogon.py/.C scripts
 
 """
 
-__version__ = '7.0.0'
+__version__ = '6.2.0'
 __author__  = 'Wim Lavrijsen (WLavrijsen@lbl.gov)'
 
 
@@ -136,12 +136,11 @@ del isfunction, ismethod
 
 ### configuration ---------------------------------------------------------------
 class _Configuration( object ):
-   __slots__ = [ 'IgnoreCommandLineOptions', 'StartGuiThread', 'ExposeCppMacros', '_gts' ]
+   __slots__ = [ 'IgnoreCommandLineOptions', 'StartGuiThread', '_gts' ]
 
    def __init__( self ):
       self.IgnoreCommandLineOptions = 0
-      self.StartGuiThread = True
-      self.ExposeCppMacros = False
+      self.StartGuiThread = 1
       self._gts = []
 
    def __setGTS( self, value ):
@@ -225,8 +224,6 @@ class std( object, metaclass=_stdmeta ):
    for name in stlclasses:
       locals()[ name ] = Template( "std::%s" % name )
 
-   string = _root.MakeRootClass( 'string' )
-
 _root.std = std
 sys.modules['ROOT.std'] = std
 
@@ -243,10 +240,10 @@ class _ExpandMacroFunction( object ):
    def __cmp__( self, other ):
       return cmp( self.func(), other )
 
-   def __bool__( self ):
+   def __len__( self ):
       if self.func():
-         return True
-      return False
+         return 1
+      return 0
 
    def __repr__( self ):
       return repr( self.func() )
@@ -282,11 +279,11 @@ def _excepthook( exctype, value, traceb ):
    if isinstance( value, SyntaxError ) and value.text:
       cmd, arg = split( value.text[:-1] )
 
-    # mimic ROOT/Cling commands
+    # mimic ROOT/CINT commands
       if cmd == '.q':
          sys.exit( 0 )
       elif cmd == '.?' or cmd == '.help':
-         sys.stdout.write( """PyROOT emulation of Cling commands.
+         sys.stdout.write( """PyROOT emulation of CINT commands.
 All emulated commands must be preceded by a . (dot).
 ===========================================================================
 Help:        ?         : this help
@@ -340,7 +337,10 @@ def _displayhook( v ):
 
 
 ### set import hook to be able to trigger auto-loading as appropriate
-import builtins
+try:
+   import builtins
+except ImportError:
+   import builtins as __builtin__  # name change in p3
 _orig_ihook = builtins.__import__
 def _importhook( name, glbls = {}, lcls = {}, fromlist = [], level = -1 ):
    if name[0:5] == 'ROOT.':
@@ -448,7 +448,7 @@ class ModuleFacade( types.ModuleType ):
       return super( self.__class__, self ).__setattr__( name, value )
 
    def __getattr1( self, name ):             # "start-up" getattr
-    # special case, to allow "from ROOT import gROOT" w/o starting GUI thread
+    # special case, to allow "from ROOT import gROOT" w/o sending GUI events
       if name == '__path__':
          raise AttributeError( name )
 
@@ -484,7 +484,7 @@ class ModuleFacade( types.ModuleType ):
          return self.module.__all__
 
     # lookup into ROOT (which may cause python-side enum/class/global creation)
-      attr = _root.LookupRootEntity( name, PyConfig.ExposeCppMacros )
+      attr = _root.LookupRootEntity( name )
 
     # the call above will raise AttributeError as necessary; so if we get here,
     # attr is valid: cache as appropriate, so we don't come back
@@ -527,21 +527,20 @@ class ModuleFacade( types.ModuleType ):
       appc = _root.MakeRootClass( 'PyROOT::TPyROOTApplication' )
       if appc.CreatePyROOTApplication():
          appc.InitROOTGlobals()
-         # TODO Cling equivalent needed: appc.InitCINTMessageCallback();
+         appc.InitCINTMessageCallback();
          appc.InitROOTMessageCallback();
 
       if hasargv and PyConfig.IgnoreCommandLineOptions:
          sys.argv = argv
 
+    # now add 'string' to std so as to not confuse with module string
+      std.string = _root.MakeRootClass( 'string' )
+
     # must be called after gApplication creation:
       if '__IPYTHON__' in __builtins__:
-       # IPython's FakeModule hack otherwise prevents usage of python from Cling (TODO: verify necessity)
+       # IPython's FakeModule hack otherwise prevents usage of python from CINT
          _root.gROOT.ProcessLine( 'TPython::Exec( "" );' )
          sys.modules[ '__main__' ].__builtins__ = __builtins__
-
-    # special case for cout (backwards compatibility)
-    #  if hasattr( std, '__1' ):
-    #     self.__dict__[ 'cout' ] = getattr( std, '__1' ).cout
 
     # custom logon file (must be after creation of ROOT globals)
       if hasargv and not '-n' in sys.argv:
@@ -583,22 +582,16 @@ class ModuleFacade( types.ModuleType ):
             self.__dict__[ 'PyGUIThread' ] = \
                threading.Thread( None, _processRootEvents, None, ( self, ) )
 
-            def _finishSchedule( ROOT = self ):
-               import threading
-               if threading.currentThread() != self.PyGUIThread:
-                  while self.PyConfig.GUIThreadScheduleOnce:
-                     self.PyGUIThread.join( 0.1 )
-
-            self.PyGUIThread.finishSchedule = _finishSchedule
             self.PyGUIThread.setDaemon( 1 )
             self.PyGUIThread.start()
+
+            if threading.currentThread() != self.PyGUIThread:
+               while self.PyConfig.GUIThreadScheduleOnce:
+                  self.PyGUIThread.join( 0.1 )
 
     # store already available ROOT objects to prevent spurious lookups
       for name in self.module.__pseudo__all__ + _memPolicyAPI + _sigPolicyAPI:
          self.__dict__[ name ] = getattr( _root, name )
-
-    # the macro NULL is not available from Cling globals, but might be useful
-      setattr( _root, 'NULL', 0 )
 
       for name in std.stlclasses:
          setattr( _root, name, getattr( std, name ) )
@@ -615,10 +608,6 @@ del ModuleFacade
 import atexit
 def cleanup():
    return
-   # cleanup disabled!!!
-
- # save for later
-   isCocoa = _root.gSystem.InheritsFrom( 'TMacOSXSystem' )
 
  # restore hooks
    import sys
@@ -628,6 +617,9 @@ def cleanup():
    builtins.__import__ = _orig_ihook
 
    facade = sys.modules[ __name__ ]
+
+ # reset gRootModule on the C++ side to prevent fruther lookups
+   _root._ResetRootModule()
 
  # shutdown GUI thread, as appropriate (always save to call)
    _root.RemoveGUIEventInputHook()
@@ -662,7 +654,7 @@ def cleanup():
  # it is done before any ROOT libraries are off-loaded, with unspecified
  # order of static object destruction; 
    gROOT = sys.modules[ 'libPyROOT' ].gROOT
-   gROOT.EndOfProcessCleanups()
+   gROOT.EndOfProcessCleanups(True)
    del gROOT
 
  # cleanup cached python strings
