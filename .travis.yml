@@ -40,8 +40,11 @@ install:
 
   # Replace dep1 dep2 ... with your dependencies
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib pandas pytables coveralls coverage nose
+  - pip install coveralls nose coverage
   - source activate test-environment
+  - pip install coveralls nose coverage
   - echo $PATH
+  - which coverage
   - which pip
   # Install pax
   - python setup.py install
