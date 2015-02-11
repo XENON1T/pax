@@ -8,7 +8,7 @@ import numpy as np
 import h5py
 
 import pax
-from pax import plugin, exceptions
+from pax import plugin, exceptions, datastructure
 
 # Import modules for optional formats
 log = logging.getLogger('BulkOutputInitialization')
@@ -121,7 +121,7 @@ class BulkOutput(plugin.OutputPlugin):
             os.mkdir(outfile)
 
         # Open the output file
-        self.output_format.open()
+        self.output_format.open(self.config['output_name'], mode='w')
 
     def write_event(self, event):
         # Store all the event data internally, write to disk when appropriate
@@ -149,7 +149,7 @@ class BulkOutput(plugin.OutputPlugin):
     def write_to_disk(self):
         self.log.debug("Writing to disk...")
         # If any records are present, call output format to write records to disk
-        if not 'Event' in self.data:
+        if 'Event' not in self.data:
             # The processor crashed, don't want to make things worse!
             self.log.warning('No events to write: did you crash pax?')
             return
@@ -179,7 +179,7 @@ class BulkOutput(plugin.OutputPlugin):
 
         # Have we seen this model before? If not, initialize stuff
         first_time_seen = False
-        if not m_name in self.data:
+        if m_name not in self.data:
             self.data[m_name] = {
                 'tuples':         [],
                 'records':        None,
@@ -215,12 +215,12 @@ class BulkOutput(plugin.OutputPlugin):
                 if field_name not in self.data:
                     assert first_time_seen    # Must be the first time we see dataframe as well
                     self.data[field_name] = {
-                        'tuples':         [],
-                        'records':        None,
+                        'tuples':          [],
+                        'records':         None,
                         # Initialize dtype with the index fields + every column in array becomes a field.... :-(
-                        'dtype':          [(x[0], np.int) for x in index_fields] +
-                                          [(str(i), field_value.dtype) for i in range(len(field_value))],
-                        'index_depth':    len(m_indices),
+                        'dtype':           [(x[0], np.int) for x in index_fields] +
+                                           [(str(i), field_value.dtype) for i in range(len(field_value))],
+                        'index_depth':     len(m_indices),
                     }
 
                 self.data[field_name]['tuples'].append(tuple(m_indices + list(field_value)))
@@ -246,7 +246,113 @@ class BulkOutput(plugin.OutputPlugin):
         if isinstance(x, np.ndarray):
             return name, x.dtype, x.shape
         else:
-            raise TypeError("Don't know numpy type code for %s!" % type(x))
+            # Some weird numpy type, hopefully
+            return name, type(x)
+
+
+class NothingMoreToRead(Exception):
+    pass
+
+
+class InputFromBulkOutput(plugin.InputPlugin):
+
+    def startup(self):
+        self.output_format = of = globals()[self.config['output_format']](self.config, self.log)
+        if not of.supports_read_back:
+            raise NotImplementedError("Output format %s does not "
+                                      "support reading data back in!" % self.config['output_format'])
+        of.open(name=self.config['input_name'], mode='r')
+        self.chunk_size = 200
+        self.dnames = ('Event', 'Peak', 'ChannelPeak', 'ReconstructedPosition')
+        self.cache = {}        # Dict of numpy record arrays just read from disk, waiting to be sorted
+        self.max_n = {x: of.n_in_data(x) for x in self.dnames}
+        self.number_of_events = self.max_n['Event']
+        self.current_pos = {x: 0 for x in self.dnames}
+
+    def get_events(self):
+        of = self.output_format
+
+        for event_i in range(self.number_of_events):
+
+            # Get records belonging to this event
+            in_this_event = {}
+            for dname in self.dnames:
+
+                # Check if cache for is nonexistent, empty, or incomplete, if so, keep reading new chunks
+                while dname not in self.cache or len(self.cache[dname]) == 0 \
+                        or self.cache[dname][0]['Event'] == self.cache[dname][-1]['Event']:
+
+                    if self.current_pos[dname] == self.max_n[dname]:
+                        # No more data: this must be the last event
+                        # (or the second to last, if last has no e.g. ReconstructedPositions)
+                        break
+
+                    new_pos = min(self.max_n[dname], self.current_pos[dname] + self.chunk_size)
+                    new_chunk = of.read_data(dname, self.current_pos[dname], new_pos)
+                    self.current_pos[dname] = new_pos
+
+                    # Add new chunk to cache
+                    bla = np.concatenate((
+                        self.cache.get(dname, np.empty(0, dtype=new_chunk.dtype)),
+                        new_chunk))
+                    self.cache[dname] = bla
+
+            # What is this event?
+            this_event_i = self.cache['Event'][0]['Event']
+
+            # Get all records belonging to this event:
+            for dname in self.dnames:
+                mask = self.cache[dname]['Event'] == this_event_i
+                in_this_event[dname] = self.cache[dname][mask]
+
+                # Chop records in this event from cache
+                self.cache[dname] = self.cache[dname][True ^ mask]
+
+            # Convert records to pax data
+            assert len(in_this_event['Event']) == 1
+            e_record = in_this_event['Event'][0]
+            peaks = in_this_event['Peak']
+            rcps = in_this_event['ReconstructedPosition']
+            hits = in_this_event['ChannelPeak']
+
+            # We defined a nice custom init for event... ahem... now we have to do cumbersome stuff...
+            event = datastructure.Event(n_channels=len(e_record['is_channel_bad']),
+                                        start_time=e_record['start_time'],
+                                        stop_time=e_record['stop_time'])
+            for k, v in self._numpy_record_to_dict(e_record).items():
+                setattr(event, k, v)
+
+            for peak_i, p_record in enumerate(peaks):
+                peak = datastructure.Peak(self._numpy_record_to_dict(p_record))
+
+                for rp_record in rcps[(rcps['Peak'] == peak_i)]:
+                    peak.reconstructed_positions.append(
+                        datastructure.ReconstructedPosition(self._numpy_record_to_dict(rp_record))
+                    )
+
+                # TODO: Fill all_channel_peaks, so we can redo clustering
+                for hit_record in hits[(hits['Peak'] == peak_i)]:
+                    peak.channel_peaks.append(
+                        datastructure.ChannelPeak(self._numpy_record_to_dict(hit_record))
+                    )
+
+                event.peaks.append(peak)
+
+            yield event
+
+    def _numpy_record_to_dict(self, record):
+        names = record.dtype.names
+        result = {}
+        for k, v in zip(names, record):
+            # Skip index fields, if present
+            if k in ('Event', 'Peak', 'ChannelPeak', 'ReconstructedPosition'):
+                continue
+            if isinstance(v, np.bytes_):
+                v = v.decode("utf-8")
+            result[k] = v
+        return result
+
+# TODO: check if df_name absent, raise error??
 
 
 class BulkOutputFormat(object):
@@ -255,40 +361,67 @@ class BulkOutputFormat(object):
     supports_append = False
     supports_write_in_chunks = False
     supports_array_fields = False
+    supports_read_back = False
     file_extension = 'DIRECTORY'   # Leave to None for database insertion or something
 
     def __init__(self, config, log):
         self.config = config
         self.log = log
 
-    def open(self):
+    def open(self, name, mode):
         # Dir formats don't need to do anything here
         pass
-
-    def write_dataframe(self, df_name, df):
-        # Should be overridden by child class
-        raise NotImplementedError
 
     def close(self):
         # Dir formats don't need to do anything here
         pass
 
+    def read_data(self, df_name, start, end):
+        raise NotImplementedError
+
+    def write_data(self, data):
+        # Should be overridden by child class
+        raise NotImplementedError
+
+    def get_number_of_events(self):
+        raise NotImplementedError
+
 
 class NumpyDump(BulkOutputFormat):
     file_extension = 'npz'
     supports_array_fields = True
+    supports_read_back = True
+
+    def open(self, name, mode):
+        self.filename = name
+        if mode == 'r':
+            self.f = np.load(self.filename)
+
+    def close(self):
+        if hasattr(self, 'f'):
+            self.f.close()
 
     def write_data(self, data):
-        np.savez_compressed(self.config['output_name'], **data)
+        np.savez_compressed(self.filename, **data)
+
+    def read_data(self, df_name, start, end):
+        return self.f[df_name][start:end]
+
+    def n_in_data(self, df_name):
+        return len(self.f[df_name])
 
 
 class HDF5Dump(BulkOutputFormat):
     file_extension = 'hdf5'
     supports_array_fields = True
     supports_write_in_chunks = True
+    supports_read_back = True
 
-    def open(self):
-        self.f = h5py.File(self.config['output_name'], "w")
+    def open(self, name, mode):
+        self.f = h5py.File(name, mode)
+
+    def close(self):
+        self.f.close()
 
     def write_data(self, data):
         for name, records in data.items():
@@ -303,8 +436,11 @@ class HDF5Dump(BulkOutputFormat):
                 dataset.resize((oldlen + len(records),))
                 dataset[oldlen:] = records
 
-    def close(self):
-        self.f.close()
+    def read_data(self, df_name, start, end):
+        return self.f.get(df_name)[start:end]
+
+    def n_in_data(self, df_name):
+        return self.f[df_name].len()
 
 
 ##
