@@ -327,12 +327,14 @@ class Event(Model):
         if 'length' in kwargs and self.sample_duration and not self.stop_time:
             self.stop_time = int(self.start_time + kwargs['length'] * self.sample_duration)
 
-        if not self.length:
+        if not self.stop_time:
             raise ValueError("Cannot initialize an event with an unknown length: " +
                              "pass either stop_time or length and sample_duration")
 
         # Initialize numpy arrays -- need to have n_channels and self.length
         # This is the main reason for having Event.__init__
+        # TODO: don't initialize these is already in kwargs
+        # TODO: better yet, make an alternate init or something?
         self.channel_waveforms = np.zeros((n_channels, self.length()))
         self.is_channel_bad = np.zeros(n_channels, dtype=np.bool)
 
