@@ -65,3 +65,6 @@ install:
 script:
   - make test
   - make lint
+
+after_success:
+  - root -l -q check_generated_TFile.C
