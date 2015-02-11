@@ -4,7 +4,7 @@ import tempfile
 import numpy as np
 
 from pax.datastructure import Event, Occurrence
-from pax import core
+from pax import core, utils
 
 
 class TestAvro(unittest.TestCase):
@@ -24,7 +24,7 @@ class TestAvro(unittest.TestCase):
 
             write_plugin = proc.get_plugin_by_name('WriteAvro')
 
-            event = Event(n_channels=256, start_time=0)
+            event = utils.empty_event()
 
             event.occurrences = [Occurrence(left=i,
                                             raw_data=np.array(
