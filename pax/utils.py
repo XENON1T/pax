@@ -16,7 +16,6 @@ from itertools import zip_longest
 log = logging.getLogger('dsputils')
 
 from pax import units
-from pax.datastructure import Event
 
 ##
 # Peak finding helper routines
@@ -403,6 +402,8 @@ class InterpolatingMap(object):
         plt.close()
 
 
-def empty_event():
+def empty_event():     # NOQA
     # useful for testing
+    # DO NOT move the below import to the top of the file, will crash stuff due to circular imports
+    from pax.datastructure import Event     # NOQA
     return Event(n_channels=1, start_time=10, length=1, sample_duration=int(10*units.ns))
