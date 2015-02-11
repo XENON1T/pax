@@ -16,10 +16,10 @@ try:
     import pandas
 except ImportError:
     log.warning("You don't have pandas -- if you use the pandas output, pax will crash!")
-try:
-    import ROOT
-except ImportError:
-    log.warning("You don't have ROOT -- if you use the ROOT output, pax will crash!")
+# try:
+#     import ROOT
+# except ImportError:
+#     log.warning("You don't have ROOT -- if you use the ROOT output, pax will crash!")
 
 
 class BulkOutput(plugin.OutputPlugin):
