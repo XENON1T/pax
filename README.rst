@@ -34,7 +34,8 @@ or your OS's package management system. You may have to install some additional 
 You must separately install the `snappy compression library <https://code.google.com/p/snappy/>`_
 and its python bindings. For Ubuntu you can do::
 
-  $ apt-get install python-snappy
+  $ sudo apt-get install python-snappy
+  $ sudo apt-get install libsnappy-dev
 
 For installation on windows, see `the FAQ <https://github.com/XENON1T/pax/blob/master/docs/faq.rst>`_.
 
