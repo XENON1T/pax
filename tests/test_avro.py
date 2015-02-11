@@ -3,7 +3,7 @@ import tempfile
 
 import numpy as np
 
-from pax.datastructure import Event, Occurrence
+from pax.datastructure import Occurrence
 from pax import core, utils
 
 
