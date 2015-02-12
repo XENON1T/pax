@@ -35,7 +35,6 @@ class TestAvro(unittest.TestCase):
         write_plugin.write_event(event)
         write_plugin.shutdown()         # Needed to close the file in time for cleanup to remove it
 
-
     def test_write_read(self):
         config = {'pax': {
             'events_to_process': [0],

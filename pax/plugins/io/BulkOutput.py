@@ -250,20 +250,23 @@ class BulkOutput(plugin.OutputPlugin):
             return name, type(x)
 
 
-class NothingMoreToRead(Exception):
-    pass
-
-
 class InputFromBulkOutput(plugin.InputPlugin):
 
     def startup(self):
+        self.chunk_size = self.config['chunk_size']
+        self.read_hits = self.config['read_hits']
+
         self.output_format = of = globals()[self.config['output_format']](self.config, self.log)
         if not of.supports_read_back:
             raise NotImplementedError("Output format %s does not "
                                       "support reading data back in!" % self.config['output_format'])
+
         of.open(name=self.config['input_name'], mode='r')
-        self.chunk_size = 200
-        self.dnames = ('Event', 'Peak', 'ChannelPeak', 'ReconstructedPosition')
+
+        self.dnames = ['Event', 'Peak', 'ReconstructedPosition']
+        if self.read_hits:
+            self.dnames.append('ChannelPeak')
+
         self.cache = {}        # Dict of numpy record arrays just read from disk, waiting to be sorted
         self.max_n = {x: of.n_in_data(x) for x in self.dnames}
         self.number_of_events = self.max_n['Event']
@@ -273,6 +276,7 @@ class InputFromBulkOutput(plugin.InputPlugin):
         of = self.output_format
 
         for event_i in range(self.number_of_events):
+            ts = time.time()
 
             # Get records belonging to this event
             in_this_event = {}
@@ -313,7 +317,6 @@ class InputFromBulkOutput(plugin.InputPlugin):
             e_record = in_this_event['Event'][0]
             peaks = in_this_event['Peak']
             rcps = in_this_event['ReconstructedPosition']
-            hits = in_this_event['ChannelPeak']
 
             # We defined a nice custom init for event... ahem... now we have to do cumbersome stuff...
             event = datastructure.Event(n_channels=len(e_record['is_channel_bad']),
@@ -330,14 +333,15 @@ class InputFromBulkOutput(plugin.InputPlugin):
                         datastructure.ReconstructedPosition(self._numpy_record_to_dict(rp_record))
                     )
 
-                # TODO: Fill all_channel_peaks, so we can redo clustering
-                for hit_record in hits[(hits['Peak'] == peak_i)]:
-                    peak.channel_peaks.append(
-                        datastructure.ChannelPeak(self._numpy_record_to_dict(hit_record))
-                    )
+                if self.read_hits:
+                    for hit_record in in_this_event['ChannelPeak'][(in_this_event['ChannelPeak']['Peak'] == peak_i)]:
+                        cp = datastructure.ChannelPeak(self._numpy_record_to_dict(hit_record))
+                        peak.channel_peaks.append(cp)
+                        event.all_channel_peaks.append(cp)
 
                 event.peaks.append(peak)
 
+            self.total_time_taken += (time.time() - ts) * 1000
             yield event
 
     def _numpy_record_to_dict(self, record):
