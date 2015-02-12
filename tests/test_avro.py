@@ -1,21 +1,20 @@
 import unittest
-import tempfile
 
 import numpy as np
 
-from pax.datastructure import Occurrence
-from pax import core, utils
+from pax.datastructure import Event, Occurrence
+from pax import core
 
 
 class TestAvro(unittest.TestCase):
 
     def test_write_event(self):
-        with tempfile.NamedTemporaryFile() as file:
+        with open('avrotest_tempfile', 'w') as avro_file:
             config = {'pax': {
                 'plugin_group_names': ['output'],
                 'output': 'Avro.WriteAvro',
             },
-                'Avro': {'output_name': file.name}
+                'Avro': {'output_name': avro_file.name}
             }
 
             proc = core.Processor(config_names='XENON100',
@@ -24,7 +23,7 @@ class TestAvro(unittest.TestCase):
 
             write_plugin = proc.get_plugin_by_name('WriteAvro')
 
-            event = utils.empty_event()
+            event = Event.empty_event()
 
             event.occurrences = [Occurrence(left=i,
                                             raw_data=np.array(

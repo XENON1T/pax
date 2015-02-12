@@ -33,7 +33,7 @@ class FindBigPeaks(plugin.TransformPlugin):
                 )
 
             # Search for peaks in the free regions
-            for region_left, region_right in utils.free_regions(event, detector):
+            for region_left, region_right in event.free_regions(detector):
                 for itv_left, itv_right in utils.intervals_where(
                         peakfinding_wave[region_left:region_right + 1] > pf['threshold']):
 

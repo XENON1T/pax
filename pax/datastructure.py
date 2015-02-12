@@ -338,6 +338,12 @@ class Event(Model):
         self.channel_waveforms = np.zeros((n_channels, self.length()))
         self.is_channel_bad = np.zeros(n_channels, dtype=np.bool)
 
+    @classmethod
+    def empty_event(cls):
+        """Returns an empty example event: for testing purposes only!!
+        """
+        return Event(n_channels=1, start_time=10, length=1, sample_duration=int(10*units.ns))
+
     def duration(self):
         """Duration of event window in units of ns
         """
@@ -406,6 +412,15 @@ class Event(Model):
             return [oc for oc in self.occurrences if oc.left >= left and oc.right <= right]
         else:
             return [oc for oc in self.occurrences if oc.left <= right and oc.right >= left]
+
+    def free_regions(self, detector='tpc'):
+        """Find the free regions in the event's waveform - regions where peaks haven't yet been found
+            detector: give free regions wrt this detector
+        :returns list of 2-tuples (left index, right index) of regions where no peaks have been found
+        """
+        lefts = [0] + [p.left for p in self.peaks if p.detector == detector]
+        rights = [p.right for p in self.peaks if p.detector == detector] + [self.length() - 1]
+        return zip(lefts, rights)
 
 
 def _explain(class_name):

@@ -52,7 +52,7 @@ class FindSmallPeaks(plugin.TransformPlugin):
             self.log.debug("Finding channel peaks in data from %s" % detector)
 
             # Get all free regions before the give_up_after point
-            for region_left, region_right in utils.free_regions(event, detector):
+            for region_left, region_right in event.free_regions(detector):
 
                 # Can we give up yet?
                 if region_left >= give_up_after:

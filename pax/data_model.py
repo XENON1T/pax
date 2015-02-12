@@ -68,8 +68,8 @@ class Model(object):
                 value_in_class = class_dict[field_name]
                 if callable(value_in_class):
                     continue    # No, is a method
-                if isinstance(value_in_class, property):
-                    continue    # No, is a property
+                if isinstance(value_in_class, (property, classmethod)):
+                    continue    # No, is a property or classmethod
                 # Yes, yield the class-level value
                 yield (field_name, value_in_class)
 

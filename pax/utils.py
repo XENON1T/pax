@@ -15,9 +15,6 @@ import matplotlib.pyplot as plt
 from itertools import zip_longest
 log = logging.getLogger('dsputils')
 
-from pax import units
-from pax.datastructure import Event
-
 ##
 # Peak finding helper routines
 ##
@@ -113,16 +110,6 @@ def where_changes(x, report_first_index_if=None, separate_results=True):
 ##
 # Peak processing helper routines
 ##
-
-def free_regions(event, detector='tpc'):
-    """Find the free regions in the event's waveform - regions where peaks haven't yet been found
-        detector: give free regions wrt this detector
-    :returns list of 2-tuples (left index, right index) of regions where no peaks have been found
-    """
-    lefts = [0] + [p.left for p in event.peaks if p.detector == detector]
-    rights = [p.right for p in event.peaks if p.detector == detector] + [event.length() - 1]
-    # Assuming each peak's right > left, we can simply split sorted(lefts+rights) in pairs:
-    return chunk_in_ntuples(sorted(lefts + rights), n=2)
 
 
 def cluster_by_diff(x, diff_threshold, return_indices=False):
@@ -401,8 +388,3 @@ class InterpolatingMap(object):
         else:
             plt.show()
         plt.close()
-
-
-def empty_event():
-    # useful for testing
-    return Event(n_channels=1, start_time=10, length=1, sample_duration=int(10*units.ns))
