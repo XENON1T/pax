@@ -361,9 +361,6 @@ class MongoDBInputTriggered(plugin.InputPlugin):
 
     def get_events(self):
         for i, trigger_time in enumerate(self.trigger_times):
-            self.log.info("Fetching trigger time %d",
-                          trigger_time)
-
             cursor = self.collection.find({'time': trigger_time})
             self.log.debug("Found %d occurrences",
                            cursor.count())

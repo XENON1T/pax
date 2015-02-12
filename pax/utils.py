@@ -15,6 +15,7 @@ import matplotlib.pyplot as plt
 from itertools import zip_longest
 log = logging.getLogger('dsputils')
 
+
 ##
 # Peak finding helper routines
 ##
