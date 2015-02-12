@@ -7,7 +7,7 @@ import random
 import os
 
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+from mpl_toolkits.mplot3d import Axes3D  # noqa
 from matplotlib.patches import Rectangle
 import numpy as np
 
