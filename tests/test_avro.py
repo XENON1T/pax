@@ -1,4 +1,5 @@
 import unittest
+import os
 
 import numpy as np
 
@@ -9,28 +10,31 @@ from pax import core
 class TestAvro(unittest.TestCase):
 
     def test_write_event(self):
-        with open('avrotest_tempfile', 'w') as avro_file:
-            config = {'pax': {
-                'plugin_group_names': ['output'],
-                'output': 'Avro.WriteAvro',
-            },
-                'Avro': {'output_name': avro_file.name}
-            }
+        self.addCleanup(lambda: os.path.exists('avrotest_tempfile') and os.remove('avrotest_tempfile'))
 
-            proc = core.Processor(config_names='XENON100',
-                                  config_dict=config,
-                                  just_testing=True)
+        config = {'pax': {
+            'plugin_group_names': ['output'],
+            'output': 'Avro.WriteAvro',
+        },
+            'Avro': {'output_name': 'avrotest_tempfile'}
+        }
 
-            write_plugin = proc.get_plugin_by_name('WriteAvro')
+        proc = core.Processor(config_names='XENON100',
+                              config_dict=config,
+                              just_testing=True)
 
-            event = Event.empty_event()
+        write_plugin = proc.get_plugin_by_name('WriteAvro')
 
-            event.occurrences = [Occurrence(left=i,
-                                            raw_data=np.array(
-                                                [0, 1, 2, 3], dtype=np.int16),
-                                            channel=i) for i in range(10)]
+        event = Event.empty_event()
 
-            write_plugin.write_event(event)
+        event.occurrences = [Occurrence(left=i,
+                                        raw_data=np.array(
+                                            [0, 1, 2, 3], dtype=np.int16),
+                                        channel=i) for i in range(10)]
+
+        write_plugin.write_event(event)
+        write_plugin.shutdown()         # Needed to close the file in time for cleanup to remove it
+
 
     def test_write_read(self):
         config = {'pax': {
