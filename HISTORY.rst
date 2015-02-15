@@ -9,7 +9,7 @@ History
 
  * Avro raw data output
  * Neural net reconstruction
- * (And lots of meaningless commits to get Travis continuous integration and Coveralls code coverage to work!)
+ * And lots of meaningless commits to get Travis continuous integration and Coveralls code coverage to work!  (And ROOT, which will be in 2.2)
 
 ------------------
 2.0.1 (2015-01-26)
