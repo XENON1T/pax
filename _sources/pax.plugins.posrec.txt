@@ -4,6 +4,14 @@ pax.plugins.posrec package
 Submodules
 ----------
 
+pax.plugins.posrec.ComputeHitpatternSpread module
+-------------------------------------------------
+
+.. automodule:: pax.plugins.posrec.ComputeHitpatternSpread
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pax.plugins.posrec.NeuralNet module
 -----------------------------------
 

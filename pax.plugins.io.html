@@ -115,32 +115,6 @@ built.</p>
 <div class="section" id="pax-plugins-io-mongodb-module">
 <h2>pax.plugins.io.MongoDB module<a class="headerlink" href="#pax-plugins-io-mongodb-module" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-pax.plugins.io.Music">
-<span id="pax-plugins-io-music-module"></span><h2>pax.plugins.io.Music module<a class="headerlink" href="#module-pax.plugins.io.Music" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="pax.plugins.io.Music.WavOutput">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.Music.</tt><tt class="descname">WavOutput</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Music.html#WavOutput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Music.WavOutput" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.OutputPlugin" title="pax.plugin.OutputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.OutputPlugin</span></tt></a></p>
-<p>Convert sum waveforms of event and dataset to WAV file</p>
-<p>If we don&#8217;t find dark matter, at least we&#8217;ll have contemporary music.</p>
-<dl class="method">
-<dt id="pax.plugins.io.Music.WavOutput.shutdown">
-<tt class="descname">shutdown</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Music.html#WavOutput.shutdown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Music.WavOutput.shutdown" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.Music.WavOutput.startup">
-<tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Music.html#WavOutput.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Music.WavOutput.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.Music.WavOutput.write_event">
-<tt class="descname">write_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Music.html#WavOutput.write_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Music.WavOutput.write_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-</div>
 <div class="section" id="module-pax.plugins.io.Pandas">
 <span id="pax-plugins-io-pandas-module"></span><h2>pax.plugins.io.Pandas module<a class="headerlink" href="#module-pax.plugins.io.Pandas" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
@@ -580,78 +554,6 @@ Defaults to s1_default_recombination_time.</li>
 </dd></dl>
 
 </div>
-<div class="section" id="module-pax.plugins.io.XAMS">
-<span id="pax-plugins-io-xams-module"></span><h2>pax.plugins.io.XAMS module<a class="headerlink" href="#module-pax.plugins.io.XAMS" title="Permalink to this headline">¶</a></h2>
-<p>This plug-in reads raw waveform data from the Old XAMS Lecroy scope binary &amp; text files.</p>
-<dl class="class">
-<dt id="pax.plugins.io.XAMS.DirWithWaveformFiles">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.XAMS.</tt><tt class="descname">DirWithWaveformFiles</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/XAMS.html#DirWithWaveformFiles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.XAMS.DirWithWaveformFiles" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.InputPlugin" title="pax.plugin.InputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.InputPlugin</span></tt></a></p>
-<dl class="attribute">
-<dt id="pax.plugins.io.XAMS.DirWithWaveformFiles.filename_regexp">
-<tt class="descname">filename_regexp</tt><em class="property"> = None</em><a class="headerlink" href="#pax.plugins.io.XAMS.DirWithWaveformFiles.filename_regexp" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.XAMS.DirWithWaveformFiles.get_channel_data">
-<tt class="descname">get_channel_data</tt><big>(</big><em>channel</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/XAMS.html#DirWithWaveformFiles.get_channel_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.XAMS.DirWithWaveformFiles.get_channel_data" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.XAMS.DirWithWaveformFiles.get_channel_filename">
-<tt class="descname">get_channel_filename</tt><big>(</big><em>channel</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/XAMS.html#DirWithWaveformFiles.get_channel_filename"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.XAMS.DirWithWaveformFiles.get_channel_filename" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.XAMS.DirWithWaveformFiles.get_events">
-<tt class="descname">get_events</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/XAMS.html#DirWithWaveformFiles.get_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.XAMS.DirWithWaveformFiles.get_events" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.XAMS.DirWithWaveformFiles.get_single_event">
-<tt class="descname">get_single_event</tt><big>(</big><em>index</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/XAMS.html#DirWithWaveformFiles.get_single_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.XAMS.DirWithWaveformFiles.get_single_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.XAMS.DirWithWaveformFiles.startup">
-<tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/XAMS.html#DirWithWaveformFiles.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.XAMS.DirWithWaveformFiles.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.io.XAMS.LecroyScopeTxt">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.XAMS.</tt><tt class="descname">LecroyScopeTxt</tt><big>(</big><em>dir</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/XAMS.html#LecroyScopeTxt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.XAMS.LecroyScopeTxt" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.XAMS.DirWithWaveformFiles" title="pax.plugins.io.XAMS.DirWithWaveformFiles"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.XAMS.DirWithWaveformFiles</span></tt></a></p>
-<dl class="attribute">
-<dt id="pax.plugins.io.XAMS.LecroyScopeTxt.filename_regexp">
-<tt class="descname">filename_regexp</tt><em class="property"> = 'C(?P&lt;channel&gt;\\d+)_(?P&lt;voltage&gt;\\d+)V_(?P&lt;event_index&gt;\\d*).dat'</em><a class="headerlink" href="#pax.plugins.io.XAMS.LecroyScopeTxt.filename_regexp" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.XAMS.LecroyScopeTxt.get_channel_data">
-<tt class="descname">get_channel_data</tt><big>(</big><em>channel</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/XAMS.html#LecroyScopeTxt.get_channel_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.XAMS.LecroyScopeTxt.get_channel_data" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.io.XAMS.XAMSBinary">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.XAMS.</tt><tt class="descname">XAMSBinary</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/XAMS.html#XAMSBinary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.XAMS.XAMSBinary" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.XAMS.DirWithWaveformFiles" title="pax.plugins.io.XAMS.DirWithWaveformFiles"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.XAMS.DirWithWaveformFiles</span></tt></a></p>
-<dl class="attribute">
-<dt id="pax.plugins.io.XAMS.XAMSBinary.filename_regexp">
-<tt class="descname">filename_regexp</tt><em class="property"> = 'C(?P&lt;channel&gt;\\d+)_(?P&lt;voltage&gt;\\d+)V_(?P&lt;event_index&gt;\\d*).trc'</em><a class="headerlink" href="#pax.plugins.io.XAMS.XAMSBinary.filename_regexp" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.XAMS.XAMSBinary.get_channel_data">
-<tt class="descname">get_channel_data</tt><big>(</big><em>channel</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/XAMS.html#XAMSBinary.get_channel_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.XAMS.XAMSBinary.get_channel_data" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-</div>
 <div class="section" id="module-pax.plugins.io.XED">
 <span id="pax-plugins-io-xed-module"></span><h2>pax.plugins.io.XED module<a class="headerlink" href="#module-pax.plugins.io.XED" title="Permalink to this headline">¶</a></h2>
 <p>This plug-in reads raw waveform data from a Xenon100 XED file.
@@ -738,13 +640,11 @@ code for details.</p>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.Avro">pax.plugins.io.Avro module</a></li>
 <li><a class="reference internal" href="#pax-plugins-io-mongodb-module">pax.plugins.io.MongoDB module</a></li>
-<li><a class="reference internal" href="#module-pax.plugins.io.Music">pax.plugins.io.Music module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.Pandas">pax.plugins.io.Pandas module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.Pickle">pax.plugins.io.Pickle module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.Plotting">pax.plugins.io.Plotting module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.RawWaveformDump">pax.plugins.io.RawWaveformDump module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.WaveformSimulator">pax.plugins.io.WaveformSimulator module</a></li>
-<li><a class="reference internal" href="#module-pax.plugins.io.XAMS">pax.plugins.io.XAMS module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.XED">pax.plugins.io.XED module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io">Module contents</a></li>
 </ul>

@@ -48,96 +48,101 @@
             
   <h1>Source code for pax.plugins.posrec.NeuralNet</h1><div class="highlight"><pre>
 <span class="sd">&quot;&quot;&quot;Neural network reconstruction algorithms&quot;&quot;&quot;</span>
-<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 
+<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span>
 <span class="kn">from</span> <span class="nn">pax.datastructure</span> <span class="kn">import</span> <span class="n">ReconstructedPosition</span>
 
 
 <div class="viewcode-block" id="PosRecNeuralNet"><a class="viewcode-back" href="../../../../pax.plugins.posrec.html#pax.plugins.posrec.NeuralNet.PosRecNeuralNet">[docs]</a><span class="k">class</span> <span class="nc">PosRecNeuralNet</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
 
-    <span class="sd">&quot;&quot;&quot;Please write one sentence here</span>
+    <span class="sd">&quot;&quot;&quot;Reconstruct S2 x,y positions from top pmt hit pattern using a single hidden layer feed-foward neural net</span>
 
-<span class="sd">    Please write on 3 paragraphs here here here here here here here</span>
-<span class="sd">    here here here here here here here here here here here here here</span>
-<span class="sd">    here</span>
-
-<span class="sd">    and here here here here here here here here here here here here</span>
-<span class="sd">    here here here here here here here here here here here here here</span>
-<span class="sd">    here</span>
-
-<span class="sd">    and here here here here here here here here here here here here</span>
-<span class="sd">    here here here here here here here here here here here here here</span>
-<span class="sd">    here</span>
+<span class="sd">    See Alex Kish&#39; thesis for details:</span>
+<span class="sd">    http://www.physik.uzh.ch/groups/groupbaudis/darkmatter/theses/xenon/Kish_THESISelectronic.pdf</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="PosRecNeuralNet.startup"><a class="viewcode-back" href="../../../../pax.plugins.posrec.html#pax.plugins.posrec.NeuralNet.PosRecNeuralNet.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Initialize reconstruction algorithm</span>
-
-<span class="sd">        Determine which PMTs to use for reconstruction.</span>
+        <span class="sd">&quot;&quot;&quot; Initialize the neural net.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pmt_0_is_fake&#39;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">input_channels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_top&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">:])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">input_channels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_top&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nn_output_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;nn_output_unit&#39;</span><span class="p">]</span>
 
-        <span class="c"># This can either be &#39;top&#39; or &#39;bottom&#39;.</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">which_pmts</span> <span class="o">=</span> <span class="s">&#39;pmts_</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_to_use_for_reconstruction&#39;</span><span class="p">]</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">which_pmts</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Bad choice &#39;channels_to_use_for_reconstruction&#39;&quot;</span><span class="p">)</span>
-
-        <span class="c"># List of integers of which PMTs to use</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pmts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">which_pmts</span><span class="p">]</span>
-
-        <span class="c"># (x,y) locations of these PMTs.  This is stored as a dictionary such</span>
-        <span class="c"># that self.pmt_locations[int] = {&#39;x&#39; : int, &#39;y&#39; : int, &#39;z&#39; : None}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pmt_locations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pmt_locations&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nn</span> <span class="o">=</span> <span class="n">NeuralNet</span><span class="p">(</span><span class="n">n_inputs</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_channels</span><span class="p">),</span>
+                            <span class="n">n_hidden</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;hidden_layer_neurons&#39;</span><span class="p">],</span>
+                            <span class="n">n_output</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>   <span class="c"># x, y</span>
+                            <span class="n">weights</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">],</span>
+                            <span class="n">biases</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;biases&#39;</span><span class="p">])</span>
 </div>
 <div class="viewcode-block" id="PosRecNeuralNet.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.posrec.html#pax.plugins.posrec.NeuralNet.PosRecNeuralNet.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Reconstruct the position of S2s in an event.</span>
-
-<span class="sd">        Information on how to use the &#39;event&#39; object is at:</span>
-
-<span class="sd">          http://xenon1t.github.io/pax/format.html</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="c"># For every S2 peak found in the event</span>
         <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">S2s</span><span class="p">():</span>
-            <span class="c"># This is an array where every i-th element is how many pe</span>
-            <span class="c"># were seen by the i-th PMT</span>
-            <span class="n">hits</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">area_per_channel</span>
 
-            <span class="n">sum_x</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c"># sum of x positions</span>
-            <span class="n">sum_y</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c"># sum of y positions</span>
+            <span class="n">input_areas</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">area_per_channel</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">input_channels</span><span class="p">]</span>
 
-            <span class="n">scale</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c"># Total q</span>
+            <span class="c"># Run the neural net</span>
+            <span class="c"># Input is fraction of top area (see Xerawdp, PositionReconstruction.cpp, line 246)</span>
+            <span class="c"># Convert from neural net&#39;s units to pax units</span>
+            <span class="n">nn_output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">input_areas</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">input_areas</span><span class="p">))</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">nn_output_unit</span>
 
-            <span class="c"># For every PMT</span>
-            <span class="k">for</span> <span class="n">pmt</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmts</span><span class="p">:</span>  <span class="c"># &#39;pmt&#39; is a PMT ID</span>
-                <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmt_locations</span><span class="p">[</span><span class="n">pmt</span><span class="p">]</span>  <span class="c"># Dictionary {&#39;x&#39; : int, etc.}</span>
-                <span class="n">Q</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[</span><span class="n">pmt</span><span class="p">]</span>  <span class="c"># Area of this S2 for this PMT # noqa</span>
-
-                <span class="c"># Add this &#39;Q&#39; to total Q &#39;scale&#39;</span>
-                <span class="n">scale</span> <span class="o">+=</span> <span class="n">Q</span>
-
-                <span class="c"># Add charge-weighted position to running sum</span>
-                <span class="n">sum_x</span> <span class="o">+=</span> <span class="n">Q</span> <span class="o">*</span> <span class="n">value</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">]</span>
-                <span class="n">sum_y</span> <span class="o">+=</span> <span class="n">Q</span> <span class="o">*</span> <span class="n">value</span><span class="p">[</span><span class="s">&#39;y&#39;</span><span class="p">]</span>
-
-            <span class="k">if</span> <span class="n">scale</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>  <span class="c"># If charge actually seen for this S2</span>
-                <span class="c"># Compute the positions</span>
-                <span class="n">peak_x</span> <span class="o">=</span> <span class="n">sum_x</span> <span class="o">/</span> <span class="n">scale</span>
-                <span class="n">peak_y</span> <span class="o">=</span> <span class="n">sum_y</span> <span class="o">/</span> <span class="n">scale</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">peak_x</span> <span class="o">=</span> <span class="n">peak_y</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;NaN&#39;</span><span class="p">)</span>  <span class="c"># algorithm failed</span>
-
-            <span class="c"># Create a reconstructed position object</span>
-            <span class="n">rp</span> <span class="o">=</span> <span class="n">ReconstructedPosition</span><span class="p">({</span><span class="s">&#39;x&#39;</span><span class="p">:</span> <span class="n">peak_x</span><span class="p">,</span>
-                                        <span class="s">&#39;y&#39;</span><span class="p">:</span> <span class="n">peak_y</span><span class="p">,</span>
-                                        <span class="s">&#39;z&#39;</span><span class="p">:</span> <span class="mi">42</span><span class="p">,</span>
-                                        <span class="s">&#39;index_of_maximum&#39;</span><span class="p">:</span> <span class="n">peak</span><span class="o">.</span><span class="n">index_of_maximum</span><span class="p">,</span>
-                                        <span class="s">&#39;algorithm&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">})</span>
-
-            <span class="c"># Append our reconstructed position object to the peak</span>
-            <span class="n">peak</span><span class="o">.</span><span class="n">reconstructed_positions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rp</span><span class="p">)</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">reconstructed_positions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ReconstructedPosition</span><span class="p">({</span>
+                <span class="s">&#39;x&#39;</span><span class="p">:</span> <span class="n">nn_output</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                <span class="s">&#39;y&#39;</span><span class="p">:</span> <span class="n">nn_output</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                <span class="s">&#39;algorithm&#39;</span><span class="p">:</span> <span class="s">&#39;NeuralNet&#39;</span><span class="p">}))</span>
 
         <span class="c"># Return the event such that the next processor can work on it</span>
-        <span class="k">return</span> <span class="n">event</span></div></div>
+        <span class="k">return</span> <span class="n">event</span>
+
+</div></div>
+<div class="viewcode-block" id="NeuralNet"><a class="viewcode-back" href="../../../../pax.plugins.posrec.html#pax.plugins.posrec.NeuralNet.NeuralNet">[docs]</a><span class="k">class</span> <span class="nc">NeuralNet</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Single hidden layer feed-forward neural net</span>
+<span class="sd">     - Input layer without activation function or bias</span>
+<span class="sd">     - Hidden layer with atanh(sum + bias) activation function</span>
+<span class="sd">     - Output layer with sum + bias (i.e. identity) activation function</span>
+<span class="sd">    All neurons in a layer are connected to all neurons in the previous layer.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_inputs</span><span class="p">,</span> <span class="n">n_hidden</span><span class="p">,</span> <span class="n">n_output</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">biases</span><span class="p">):</span>
+
+        <span class="c"># Boilerplate for storing args...</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_inputs</span> <span class="o">=</span> <span class="n">n_inputs</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_hidden</span> <span class="o">=</span> <span class="n">n_hidden</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_output</span> <span class="o">=</span> <span class="n">n_output</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">biases</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">biases</span><span class="p">)</span>
+
+        <span class="c"># Sanity checks</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">biases</span><span class="p">)</span> <span class="o">==</span> <span class="n">n_hidden</span> <span class="o">+</span> <span class="n">n_output</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Each hidden and output neuron must have a bias!&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span> <span class="o">==</span> <span class="n">n_inputs</span> <span class="o">*</span> <span class="n">n_hidden</span> <span class="o">+</span> <span class="n">n_hidden</span> <span class="o">*</span> <span class="n">n_output</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Invalid length of weights for totally connected neuron layers.&quot;</span><span class="p">)</span>
+
+<div class="viewcode-block" id="NeuralNet.run"><a class="viewcode-back" href="../../../../pax.plugins.posrec.html#pax.plugins.posrec.NeuralNet.NeuralNet.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_values</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the neural net&#39;s output (numpy array of output neuron values) on the input_values&quot;&quot;&quot;</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_values</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_inputs</span>
+
+        <span class="c"># Input layer neurons do nothing</span>
+
+        <span class="c"># Run the hidden layer, apply tanh activation function</span>
+        <span class="n">hidden_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_layer</span><span class="p">(</span><span class="n">input_values</span><span class="p">,</span>
+                                       <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">n_inputs</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_hidden</span><span class="p">])</span>
+        <span class="n">hidden_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="n">hidden_values</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">biases</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">n_hidden</span><span class="p">])</span>
+
+        <span class="c"># Run the output layer, apply identity activation function (just add bias)</span>
+        <span class="n">output_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_layer</span><span class="p">(</span><span class="n">hidden_values</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">n_inputs</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_hidden</span><span class="p">:])</span>
+        <span class="k">return</span> <span class="n">output_values</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">biases</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">n_hidden</span><span class="p">:]</span>
+</div>
+<div class="viewcode-block" id="NeuralNet.run_layer"><a class="viewcode-back" href="../../../../pax.plugins.posrec.html#pax.plugins.posrec.NeuralNet.NeuralNet.run_layer">[docs]</a>    <span class="k">def</span> <span class="nf">run_layer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_values</span><span class="p">,</span> <span class="n">weights</span><span class="p">):</span>
+        <span class="c"># Dendrite values: weighted inputs</span>
+        <span class="n">dendrite_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">input_values</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">input_values</span><span class="p">))</span> <span class="o">*</span> <span class="n">weights</span>
+        <span class="c"># Sum weighted inputs for each hidden layer neuron separately</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dendrite_values</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_values</span><span class="p">)),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div></div>
 </pre></div>
 
           </div>

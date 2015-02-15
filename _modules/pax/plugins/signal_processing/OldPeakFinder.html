@@ -53,6 +53,7 @@
 <span class="sd">it is not meant to replace Xerawdp, nor to be used unmodified by Xenon1T or any experiment.</span>
 
 <span class="sd">&quot;&quot;&quot;</span>
+<span class="kn">import</span> <span class="nn">logging</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 
@@ -730,7 +731,6 @@
 <span class="c"># Helper functions for peakfinding</span>
 <span class="c"># Can&#39;t yet put them in the peakfinding class, because extent_until_threshold is used by computequantities also...</span>
 </div></div>
-<span class="kn">import</span> <span class="nn">logging</span>
 <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;PeakFinding_find_next_crossing&#39;</span><span class="p">)</span>
 
 

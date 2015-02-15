@@ -49,37 +49,81 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
+<div class="section" id="module-pax.plugins.posrec.ComputeHitpatternSpread">
+<span id="pax-plugins-posrec-computehitpatternspread-module"></span><h2>pax.plugins.posrec.ComputeHitpatternSpread module<a class="headerlink" href="#module-pax.plugins.posrec.ComputeHitpatternSpread" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pax.plugins.posrec.ComputeHitpatternSpread.ComputeHitpatternSpread">
+<em class="property">class </em><tt class="descclassname">pax.plugins.posrec.ComputeHitpatternSpread.</tt><tt class="descname">ComputeHitpatternSpread</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/posrec/ComputeHitpatternSpread.html#ComputeHitpatternSpread"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.posrec.ComputeHitpatternSpread.ComputeHitpatternSpread" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></tt></a></p>
+<p>Computes the weighted root mean square deviation of the top and bottom hitpattern for each peak</p>
+<dl class="method">
+<dt id="pax.plugins.posrec.ComputeHitpatternSpread.ComputeHitpatternSpread.startup">
+<tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/posrec/ComputeHitpatternSpread.html#ComputeHitpatternSpread.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.posrec.ComputeHitpatternSpread.ComputeHitpatternSpread.startup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.posrec.ComputeHitpatternSpread.ComputeHitpatternSpread.transform_event">
+<tt class="descname">transform_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/posrec/ComputeHitpatternSpread.html#ComputeHitpatternSpread.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.posrec.ComputeHitpatternSpread.ComputeHitpatternSpread.transform_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.plugins.posrec.ComputeHitpatternSpread.weighted_variance">
+<tt class="descclassname">pax.plugins.posrec.ComputeHitpatternSpread.</tt><tt class="descname">weighted_variance</tt><big>(</big><em>values</em>, <em>weights</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/posrec/ComputeHitpatternSpread.html#weighted_variance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.posrec.ComputeHitpatternSpread.weighted_variance" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the weighted sum square deviation from the weighted mean.
+values, weights &#8211; Numpy ndarrays with the same shape.
+Stolen from <a class="reference external" href="http://stackoverflow.com/questions/2413522/weighted-standard-deviation-in-numpy">http://stackoverflow.com/questions/2413522/weighted-standard-deviation-in-numpy</a></p>
+</dd></dl>
+
+</div>
 <div class="section" id="module-pax.plugins.posrec.NeuralNet">
 <span id="pax-plugins-posrec-neuralnet-module"></span><h2>pax.plugins.posrec.NeuralNet module<a class="headerlink" href="#module-pax.plugins.posrec.NeuralNet" title="Permalink to this headline">¶</a></h2>
 <p>Neural network reconstruction algorithms</p>
 <dl class="class">
+<dt id="pax.plugins.posrec.NeuralNet.NeuralNet">
+<em class="property">class </em><tt class="descclassname">pax.plugins.posrec.NeuralNet.</tt><tt class="descname">NeuralNet</tt><big>(</big><em>n_inputs</em>, <em>n_hidden</em>, <em>n_output</em>, <em>weights</em>, <em>biases</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/posrec/NeuralNet.html#NeuralNet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.posrec.NeuralNet.NeuralNet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
+<dl class="docutils">
+<dt>Single hidden layer feed-forward neural net</dt>
+<dd><ul class="first last simple">
+<li>Input layer without activation function or bias</li>
+<li>Hidden layer with atanh(sum + bias) activation function</li>
+<li>Output layer with sum + bias (i.e. identity) activation function</li>
+</ul>
+</dd>
+</dl>
+<p>All neurons in a layer are connected to all neurons in the previous layer.</p>
+<dl class="method">
+<dt id="pax.plugins.posrec.NeuralNet.NeuralNet.run">
+<tt class="descname">run</tt><big>(</big><em>input_values</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/posrec/NeuralNet.html#NeuralNet.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.posrec.NeuralNet.NeuralNet.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the neural net&#8217;s output (numpy array of output neuron values) on the input_values</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.posrec.NeuralNet.NeuralNet.run_layer">
+<tt class="descname">run_layer</tt><big>(</big><em>input_values</em>, <em>weights</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/posrec/NeuralNet.html#NeuralNet.run_layer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.posrec.NeuralNet.NeuralNet.run_layer" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
 <dt id="pax.plugins.posrec.NeuralNet.PosRecNeuralNet">
 <em class="property">class </em><tt class="descclassname">pax.plugins.posrec.NeuralNet.</tt><tt class="descname">PosRecNeuralNet</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/posrec/NeuralNet.html#PosRecNeuralNet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.posrec.NeuralNet.PosRecNeuralNet" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></tt></a></p>
-<p>Please write one sentence here</p>
-<p>Please write on 3 paragraphs here here here here here here here
-here here here here here here here here here here here here here
-here</p>
-<p>and here here here here here here here here here here here here
-here here here here here here here here here here here here here
-here</p>
-<p>and here here here here here here here here here here here here
-here here here here here here here here here here here here here
-here</p>
+<p>Reconstruct S2 x,y positions from top pmt hit pattern using a single hidden layer feed-foward neural net</p>
+<p>See Alex Kish&#8217; thesis for details:
+<a class="reference external" href="http://www.physik.uzh.ch/groups/groupbaudis/darkmatter/theses/xenon/Kish_THESISelectronic.pdf">http://www.physik.uzh.ch/groups/groupbaudis/darkmatter/theses/xenon/Kish_THESISelectronic.pdf</a></p>
 <dl class="method">
 <dt id="pax.plugins.posrec.NeuralNet.PosRecNeuralNet.startup">
 <tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/posrec/NeuralNet.html#PosRecNeuralNet.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.posrec.NeuralNet.PosRecNeuralNet.startup" title="Permalink to this definition">¶</a></dt>
-<dd><p>Initialize reconstruction algorithm</p>
-<p>Determine which PMTs to use for reconstruction.</p>
+<dd><p>Initialize the neural net.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="pax.plugins.posrec.NeuralNet.PosRecNeuralNet.transform_event">
 <tt class="descname">transform_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/posrec/NeuralNet.html#PosRecNeuralNet.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.posrec.NeuralNet.PosRecNeuralNet.transform_event" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reconstruct the position of S2s in an event.</p>
-<p>Information on how to use the &#8216;event&#8217; object is at:</p>
-<blockquote>
-<div><a class="reference external" href="http://xenon1t.github.io/pax/format.html">http://xenon1t.github.io/pax/format.html</a></div></blockquote>
 </dd></dl>
 
 </dd></dl>
@@ -176,6 +220,7 @@ positions using the weighted sum of PMTs in the top array.</p>
   <ul>
 <li><a class="reference internal" href="#">pax.plugins.posrec package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-pax.plugins.posrec.ComputeHitpatternSpread">pax.plugins.posrec.ComputeHitpatternSpread module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.posrec.NeuralNet">pax.plugins.posrec.NeuralNet module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.posrec.PosRecChiSquareGamma">pax.plugins.posrec.PosRecChiSquareGamma module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.posrec.PosSimple">pax.plugins.posrec.PosSimple module</a></li>

@@ -78,13 +78,9 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">x</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c">#: x position (cm)</span>
     <span class="n">y</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c">#: y position (cm)</span>
-    <span class="n">z</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c">#: z position (cm)</span>
 
     <span class="n">goodness_of_fit</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c">#: goodness-of-fit parameter generated with PosRecChiSquareGamma</span>
     <span class="n">ndf</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c"># : number of degrees of freedom calculated with PosRecChiSquareGamma</span>
-
-    <span class="c">#: For this reconstructed peak, index of maximum value within sum waveform.</span>
-    <span class="n">index_of_maximum</span> <span class="o">=</span> <span class="mi">0</span>
 
     <span class="c">#: Name of algorithm used for computation</span>
     <span class="n">algorithm</span> <span class="o">=</span> <span class="s">&#39;none&#39;</span>
@@ -164,6 +160,12 @@
     <span class="c">#:</span>
     <span class="c">#: Returns an :class:`pax.datastructure.ReconstructedPosition` class.</span>
     <span class="n">reconstructed_positions</span> <span class="o">=</span> <span class="p">(</span><span class="n">ReconstructedPosition</span><span class="p">,)</span>
+
+    <span class="c">#: Weighted root mean square deviation of top hitpattern (cm)</span>
+    <span class="n">hitpattern_top_spread</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="c">#: Weighted root mean square deviation of bottom hitpattern (cm)</span>
+    <span class="n">hitpattern_bottom_spread</span> <span class="o">=</span> <span class="mf">0.0</span>
 
     <span class="c">##</span>
     <span class="c">#   Fields present in sum-waveform peaks</span>

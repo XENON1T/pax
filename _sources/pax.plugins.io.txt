@@ -20,14 +20,6 @@ pax.plugins.io.MongoDB module
     :undoc-members:
     :show-inheritance:
 
-pax.plugins.io.Music module
----------------------------
-
-.. automodule:: pax.plugins.io.Music
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 pax.plugins.io.Pandas module
 ----------------------------
 
@@ -64,14 +56,6 @@ pax.plugins.io.WaveformSimulator module
 ---------------------------------------
 
 .. automodule:: pax.plugins.io.WaveformSimulator
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pax.plugins.io.XAMS module
---------------------------
-
-.. automodule:: pax.plugins.io.XAMS
     :members:
     :undoc-members:
     :show-inheritance:
