@@ -101,16 +101,6 @@ class FindSmallPeaks(plugin.TransformPlugin):
                                                               raw_peaks)
                         raw_peaks = raw_peaks[:n_raw_peaks_found]
 
-                        # Uncomment to check that numpa and python peakfinders give same result
-                        # raw_peaks_2 = np.array(self.find_peaks(w, noise_sigma))
-                        # if len(raw_peaks) != len(raw_peaks_2) \
-                        #         or (len(raw_peaks) > 0 and not np.all(raw_peaks == raw_peaks_2)):
-                        #     print("Numba and python peakfinders disagree")
-                        #     print("Numba pf found %s" % raw_peaks)
-                        #     print("Python pf found %s" % raw_peaks_2)
-                        #     print("Python pf found %s" % raw_peaks_2)
-                        #     raise RuntimeError
-
                         if pass_number != 0 and \
                                 len(raw_peaks) == len(old_raw_peaks) and \
                                 np.all(raw_peaks == old_raw_peaks):
@@ -126,23 +116,6 @@ class FindSmallPeaks(plugin.TransformPlugin):
                         mean_std_outside_peaks(w, raw_peaks, result)
                         baseline_correction_delta = result[0]
                         noise_sigma = result[1]
-
-                        # Uncomment to check numba routines against python routines
-                        # nb_mean = baseline_correction_delta
-                        # nb_std = noise_sigma
-                        # noise_sigma = np.std(w[self.samples_without_peaks(w, raw_peaks)])
-                        # baseline_correction_delta = w[self.samples_without_peaks(w, raw_peaks)].mean()
-                        # if np.abs(baseline_correction_delta) > 1e-6 and\
-                        #                 np.abs((nb_mean - baseline_correction_delta)/baseline_correction_delta) \
-                        #                 > 0.001:
-                        #     print("numba algo found wrong baseline: "
-                        #           "found %s, should be %s" % (nb_mean, baseline_correction_delta))
-                        #     raise RuntimeError
-                        # if np.abs((nb_std - noise_sigma)/noise_sigma) > 0.001:
-                        #     print("numba algo found wrong std: "
-                        #           "found %s, should be %s" % (nb_std, noise_sigma))
-                        #     print("peaks are %s" % raw_peaks)
-                        #     raise RuntimeError
 
                         # Perform the baseline correction
                         w -= baseline_correction_delta
@@ -223,30 +196,6 @@ class FindSmallPeaks(plugin.TransformPlugin):
                 event.is_channel_bad[ch] = True
 
         return event
-
-    # def find_peaks(self, w, noise_sigma):
-    #     """
-    #     Find all peaks at least self.min_sigma * noise_sigma above baseline.
-    #     Peak boundaries are last samples above noise_sigma
-    #     :param w: waveform to check for peaks
-    #     :param noise_sigma: noise level
-    #     :return: peaks as list of (left_index, max_index, right_index) tuples
-    #     """
-    #     peaks = []
-    #     for left, right in utils.intervals_where(w > noise_sigma):
-    #         max_idx = left + np.argmax(w[left:right + 1])
-    #         height = w[max_idx]
-    #         if height < noise_sigma * self.min_sigma:
-    #             continue
-    #         peaks.append((left, right))
-    #     return peaks
-    #
-    # def samples_without_peaks(self, w, peaks):
-    #     """Return array of bools of same size as w, True if none of peaks live there"""
-    #     not_in_peak = np.ones(len(w), dtype=np.bool)    # All True
-    #     for p in peaks:
-    #         not_in_peak[p[0]:p[1] + 1] = False
-    #     return not_in_peak
 
 
 @numba.jit(numba.void(numba.float64[:], numba.int64[:, :], numba.float64[:]), nopython=True)
