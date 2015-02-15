@@ -248,16 +248,6 @@ def width_at_fraction(peak_wave, fraction_of_max, max_idx, interpolate=False):
     return right - left + 1
 
 
-
-@numba.autojit
-def first_above_threshold(w, threshold):
-    """Returns first index in w above threshold, or None if w never exceeds threshold"""
-    for i, x in enumerate(w):
-        if x > threshold:
-            return i
-    return None
-
-
 @numba.autojit
 def first_below_threshold(w, threshold):
     """Returns first index in w below threshold, or None if w never below threshold"""
@@ -265,27 +255,6 @@ def first_below_threshold(w, threshold):
         if x < threshold:
             return i
     return None
-
-@numba.autojit
-def fast_std(data):
-    """Fast, stable algorithm for std.
-    Stolen from http://en.wikipedia.org/wiki/Algorithms_for_calculating_variance, "incremental algorithm"
-    """
-    n = 0
-    mean = 0
-    m2 = 0
-
-    for x in data:
-        n += 1
-        delta = x - mean
-        mean += delta/n
-        m2 += delta*(x - mean)
-
-    if n < 2:
-        return 0
-
-    variance = m2/n
-    return variance**0.5
 
 
 # Caching decorator
