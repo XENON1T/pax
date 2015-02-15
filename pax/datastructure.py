@@ -29,13 +29,9 @@ class ReconstructedPosition(Model):
     """
     x = 0.0  #: x position (cm)
     y = 0.0  #: y position (cm)
-    z = 0.0  #: z position (cm)
 
     goodness_of_fit = 0.0  #: goodness-of-fit parameter generated with PosRecChiSquareGamma
     ndf = 0.0  # : number of degrees of freedom calculated with PosRecChiSquareGamma
-
-    #: For this reconstructed peak, index of maximum value within sum waveform.
-    index_of_maximum = 0
 
     #: Name of algorithm used for computation
     algorithm = 'none'
