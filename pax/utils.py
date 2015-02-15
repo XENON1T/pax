@@ -7,12 +7,13 @@ import re
 import json
 import gzip
 import logging
+from itertools import zip_longest
 
 import numpy as np
 from scipy import interpolate
 import matplotlib.pyplot as plt
+import numba
 
-from itertools import zip_longest
 log = logging.getLogger('dsputils')
 
 ##
@@ -188,12 +189,12 @@ def peak_bounds(signal, fraction_of_max=None, max_idx=None, zero_level=0, inclus
         return (max_idx, max_idx)
 
     # Note reversion acts before indexing in numpy!
-    left = find_first_fast(signal[max_idx::-1], threshold)
+    left = first_below_threshold(signal[max_idx::-1], threshold)
     if left is None:
         left = 0
     else:
         left = max_idx - left
-    right = find_first_fast(signal[max_idx:], threshold)
+    right = first_below_threshold(signal[max_idx:], threshold)
     if right is None:
         right = len(signal) - 1
     else:
@@ -247,32 +248,44 @@ def width_at_fraction(peak_wave, fraction_of_max, max_idx, interpolate=False):
     return right - left + 1
 
 
-def find_first_fast(a, threshold, chunk_size=128):
-    """Returns the first index in a below threshold.
 
-    If a never goes below threshold, returns the last index in a.
+@numba.autojit
+def first_above_threshold(w, threshold):
+    """Returns first index in w above threshold, or None if w never exceeds threshold"""
+    for i, x in enumerate(w):
+        if x > threshold:
+            return i
+    return None
+
+
+@numba.autojit
+def first_below_threshold(w, threshold):
+    """Returns first index in w below threshold, or None if w never below threshold"""
+    for i, x in enumerate(w):
+        if x < threshold:
+            return i
+    return None
+
+@numba.autojit
+def fast_std(data):
+    """Fast, stable algorithm for std.
+    Stolen from http://en.wikipedia.org/wiki/Algorithms_for_calculating_variance, "incremental algorithm"
     """
-    # Numpy 2.0 may get a builtin to do this.
-    # I don't know of anything better than the below for now:
-    indices = np.where(a < threshold)[0]
-    if len(indices) > 0:
-        return indices[0]
-    else:
-        # None found, return last index
-        return len(a) - 1
-    # This was recommended by https://github.com/numpy/numpy/issues/2269
-    # It actually performs significantly worse in our case...
-    # Maybe I'm messing something up?
-    # threshold_test = np.vectorize(lambda x: x < threshold)
-    # i0 = 0
-    # chunk_inds = chain(range(chunk_size, a.size, chunk_size), [None])
-    # for i1 in chunk_inds:
-    #     chunk = a[i0:i1]
-    #     for inds in zip(*threshold_test(chunk).nonzero()):
-    #         return inds[0] + i0
-    #     i0 = i1
-    # HACK: None found... return the last index
-    # return len(a) - 1
+    n = 0
+    mean = 0
+    m2 = 0
+
+    for x in data:
+        n += 1
+        delta = x - mean
+        mean += delta/n
+        m2 += delta*(x - mean)
+
+    if n < 2:
+        return 0
+
+    variance = m2/n
+    return variance**0.5
 
 
 # Caching decorator
