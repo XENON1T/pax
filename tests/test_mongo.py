@@ -20,7 +20,7 @@ class TestMongo(unittest.TestCase):
             }
         }
 
-        pax_avro = core.Processor(config_names='NikhefLab',
+        pax_avro = core.Processor(config_names='XENON100',
                                   config_dict=config)
         self.read_plugin = pax_avro.input_plugin
 
