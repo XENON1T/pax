@@ -17,6 +17,7 @@ class FindSmallPeaks(plugin.TransformPlugin):
         # Get settings from configuration
         self.min_sigma = self.config['peak_minimum_sigma']
         self.initial_noise_sigma = self.config['noise_sigma_guess']
+        self.max_hits_per_occurrence = self.config['max_hits_per_occurrence']
 
         # Optional settings
         self.filter_to_use = self.config.get('filter_to_use', None)
@@ -90,15 +91,23 @@ class FindSmallPeaks(plugin.TransformPlugin):
                     baseline_correction_delta = 0
                     baseline_correction = 0
                     while True:
+
                         # Determine the peaks based on the noise level
                         # Can't just use w > self.min_sigma * noise_sigma here,
                         # want to extend peak bounds to noise_sigma
-                        # TODO: will probably crash if more than 100 peaks in an occurrence found!!
-                        raw_peaks = np.zeros((100, 2), dtype=np.int64)
+                        raw_peaks = np.zeros((self.max_hits_per_occurrence, 2), dtype=np.int64)
                         n_raw_peaks_found = _numba_find_peaks(w,
                                                               noise_sigma,
                                                               self.min_sigma * noise_sigma,
                                                               raw_peaks)
+                        if n_raw_peaks_found == -1:
+                            # Oops, we didn't allocate enough storage... try again with larger number
+                            self.log.warning("Occurrence %s-%s in channel %s has more than %s hits on peakfinding "
+                                             "pass %s! Probably the noise level is unusually high. Further hits "
+                                             "will be ignored." % (start, stop, channel,
+                                                                   self.max_hits_per_occurrence,
+                                                                   pass_number))
+                            n_raw_peaks_found = len(raw_peaks)
                         raw_peaks = raw_peaks[:n_raw_peaks_found]
 
                         if pass_number != 0 and \
@@ -250,11 +259,13 @@ def _numba_find_peaks(w, noise_sigma, threshold, intervals):
     """Fills intervals with left, right indices of intervals > noise_sigma which exceed threshold somewhere
      intervals: numpy () of [-1,-1] lists, will be filled by function.
     Returns: number of intervals found
+    Will stop search after intervals found reached length of intervals argument passed in
     """
 
     in_candidate_interval = False
     current_interval_passed_test = False
     current_interval = 0
+    max_intervals = len(intervals) - 1
 
     for i, x in enumerate(w):
 
@@ -274,6 +285,11 @@ def _numba_find_peaks(w, noise_sigma, threshold, intervals):
                 if current_interval_passed_test:
                     intervals[current_interval, 1] = i - 1
                     current_interval += 1
+                    if current_interval > max_intervals:
+                        # We found more peaks than we have room in our result array!
+                        # Would love to raise an exception, but can't...
+                        # Instead just return -1, caller will have to check this
+                        return -1
                 in_candidate_interval = False
                 current_interval_passed_test = False
 
