@@ -112,6 +112,12 @@ class Peak(Model):
     #: Returns an :class:`pax.datastructure.ReconstructedPosition` class.
     reconstructed_positions = (ReconstructedPosition,)
 
+    #: Weighted root mean square deviation of top hitpattern (cm)
+    hitpattern_top_spread = 0.0
+
+    #: Weighted root mean square deviation of bottom hitpattern (cm)
+    hitpattern_bottom_spread = 0.0
+
     ##
     #   Fields present in sum-waveform peaks
     ##
