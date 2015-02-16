@@ -28,11 +28,8 @@ class ClusterSmallPeaks(plugin.TransformPlugin):
                 dark_count = {}
 
                 # Get all single-pe data in a list of dicts, sorted by index_of_maximum
-                spes = sorted([
-                    p for p in event.all_channel_peaks
-                    if p.channel in self.config['channels_in_detector'][detector]
-                    and (not self.config['exclude_bad_channels'] or not event.is_channel_bad[p.channel])
-                ], key=lambda s: s.index_of_maximum)
+                spes = sorted([p for p in event.all_channel_peaks if p.channel in self.config['channels_in_detector'][detector] and (not self.config['exclude_bad_channels'] or not event.is_channel_bad[p.channel])],  # noqa, we're replacing this soon anyways
+                              key=lambda s: s.index_of_maximum)
                 self.log.debug("Found %s channel peaks" % len(spes))
 
                 if not spes:

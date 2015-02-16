@@ -13,10 +13,15 @@ class DeleteSmallPeaks(plugin.TransformPlugin):
 
     def transform_event(self, event):
         before = len(event.peaks)
+
+        c = self.config['prune_if_coincidence_lower_than']
         event.peaks = [p for p in event.peaks
-                       if p.number_of_contributing_channels >= self.config['prune_if_coincidence_lower_than']
-                       and p.area >= self.config['prune_if_area_lower_than']]
-        self.log.debug("Deleted %d peaks out of %d, %d left" % (before - len(event.peaks), before, len(event.peaks)))
+                       if p.number_of_contributing_channels >= c and p.area >= c]
+
+        self.log.debug("Deleted %d peaks out of %d, "
+                       "%d left" % (before - len(event.peaks),
+                                    before,
+                                    len(event.peaks)))
         return event
 
 
