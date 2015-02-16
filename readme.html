@@ -115,19 +115,20 @@ or via <a class="reference external" href="http://xenon1t.github.io/pax/faq.html
 </div>
 <p>If you want to do something nonstandard, you can create your own configuration file
 like <cite>my_file.ini</cite>:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="p">[</span><span class="n">pax</span><span class="p">]</span>
-<span class="n">parent_configuration</span> <span class="o">=</span> <span class="s">&#39;XENON100&#39;</span>
-<span class="n">output</span> <span class="o">=</span> <span class="p">[</span> <span class="s">&#39;Plotting.PlotChannelWaveforms3D&#39;</span><span class="p">,</span>
-           <span class="c">#&#39;Plotting.PlotEventSummary&#39;,</span>
-    <span class="p">]</span>
+<div class="highlight-python"><div class="highlight"><pre>[pax]
+ parent_configuration = &#39;XENON100&#39;
+ input = &#39;XED.XedInput&#39;
+ output = [ &#39;Plotting.PlotChannelWaveforms3D&#39;,
+            #&#39;Plotting.PlotEventSummary&#39;,
+     ]
 
-<span class="p">[</span><span class="n">Plotting</span><span class="p">]</span>
-<span class="c">#log_scale_entire_event = False</span>
-<span class="c">#output_dir = &#39;plots&#39;  # Uncomment to write plot to disk</span>
+ [Plotting]
+ log_scale_entire_event = False
+ #output_dir = &#39;plots&#39;  # Uncomment to write plot to disk
 </pre></div>
 </div>
 <p>You can load this file with <cite>paxer</cite> by doing the following:</p>
-<div class="highlight-python"><div class="highlight"><pre>paxer --config_path my_file --input /archive/data/xenon100/run_14/xe100_150213_1411/xe100_150213_1411_000000.xed --event 0
+<div class="highlight-python"><div class="highlight"><pre>paxer --config_path my_file.ini --input /archive/data/xenon100/run_14/xe100_150213_1411/xe100_150213_1411_000000.xed --event 0
 </pre></div>
 </div>
 <p>You can uncomment the <cite>output_dir</cite> line to write the plots to a file.  Also, try
