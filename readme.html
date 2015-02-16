@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Processor for Analyzing XENON &mdash; Processor for Analyzing XENON1T 2.0.1 documentation</title>
+    <title>Processor for Analyzing XENON &mdash; Processor for Analyzing XENON1T 2.1.0 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.0.1',
+        VERSION:     '2.1.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 2.0.1 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 2.1.0 documentation" href="index.html" />
     <link rel="next" title="Usage" href="usage.html" />
     <link rel="prev" title="Welcome to processor for Analyzing XENON1T’s documentation!" href="index.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="index.html" title="Welcome to processor for Analyzing XENON1T’s documentation!"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 2.0.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -82,7 +82,7 @@ and its python bindings. For Ubuntu you can do:</p>
 $ sudo apt-get install libsnappy-dev
 </pre></div>
 </div>
-<p>For installation on windows, see <a class="reference external" href="https://github.com/XENON1T/pax/blob/master/docs/faq.rst">the FAQ</a>.</p>
+<p>For installation on windows, see <a class="reference external" href="http://xenon1t.github.io/pax/faq.html#can-i-set-up-pax-on-my-windows-machine">the FAQ</a>.</p>
 </div>
 <div class="section" id="installing-pax">
 <h3>Installing pax<a class="headerlink" href="#installing-pax" title="Permalink to this headline">¶</a></h3>
@@ -101,10 +101,12 @@ installed, which you can test by running at the command line:</p>
 <a class="reference external" href="CONTRIBUTING.rst">relevant documentation section</a>.</p>
 </div>
 </div>
-<div class="section" id="usage">
-<h2>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="first-steps">
+<h2>First steps<a class="headerlink" href="#first-steps" title="Permalink to this headline">¶</a></h2>
+<p>This section assumes that pax is installed, either from the instructions above
+or via <a class="reference external" href="http://xenon1t.github.io/pax/faq.html#how-do-i-run-pax-at-lngs-on-xecluster">the FAQ on running the code at LNGS</a>.</p>
 <p>You can run the program by, for example, running:</p>
-<div class="highlight-python"><div class="highlight"><pre>paxer --config XED --input xe100_120402_2000_000000.xed
+<div class="highlight-python"><div class="highlight"><pre>paxer --config XED --input /archive/data/xenon100/run_14/xe100_150213_1411/xe100_150213_1411_000000.xed --event 0 --plot
 </pre></div>
 </div>
 <p>For other options and a list of command line arguments, please run:</p>
@@ -112,19 +114,31 @@ installed, which you can test by running at the command line:</p>
 </pre></div>
 </div>
 <p>If you want to do something nonstandard, you can create your own configuration file
-like:</p>
+like <cite>my_file.ini</cite>:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="p">[</span><span class="n">pax</span><span class="p">]</span>
-<span class="n">parent_configuration</span> <span class="o">=</span> <span class="s">&#39;XENON100&#39;</span>    <span class="c"># Inherit from the XENON100 configuration</span>
-<span class="nb">input</span> <span class="o">=</span> <span class="s">&#39;MongoDB.MongoDBInput&#39;</span>
-<span class="n">my_extra_transforms</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;PosSimple.PosRecWeightedSum&quot;</span><span class="p">]</span>
-<span class="n">output</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;Plotting.PlottingWaveform&quot;</span><span class="p">]</span>
+<span class="n">parent_configuration</span> <span class="o">=</span> <span class="s">&#39;XENON100&#39;</span>
+<span class="n">output</span> <span class="o">=</span> <span class="p">[</span> <span class="s">&#39;Plotting.PlotChannelWaveforms3D&#39;</span><span class="p">,</span>
+           <span class="c">#&#39;Plotting.PlotEventSummary&#39;,</span>
+    <span class="p">]</span>
+
+<span class="p">[</span><span class="n">Plotting</span><span class="p">]</span>
+<span class="c">#log_scale_entire_event = False</span>
+<span class="c">#output_dir = &#39;plots&#39;  # Uncomment to write plot to disk</span>
 </pre></div>
 </div>
-<p>and load it using the <cite>config_path</cite> command line option. We already have a few example
-configs available in config, which you can load using <cite>config</cite> option.</p>
+<p>You can load this file with <cite>paxer</cite> by doing the following:</p>
+<div class="highlight-python"><div class="highlight"><pre>paxer --config_path my_file --input /archive/data/xenon100/run_14/xe100_150213_1411/xe100_150213_1411_000000.xed --event 0
+</pre></div>
+</div>
+<p>You can uncomment the <cite>output_dir</cite> line to write the plots to a file.  Also, try
+playing with what is in the list of outputs.  For example, you can reactivate
+the <cite>PlotEventSummary</cite> that was produced in the first command from above.</p>
+<p>At this point, you can look through other configuration files and explore what
+plugins are in <cite>pax</cite> for doing more sophisticated things.</p>
 </div>
 <div class="section" id="features">
 <h2>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
+<p>Here is a list of some of the nice features you can play with:</p>
 <ul class="simple">
 <li>Digital signal processing</li>
 </ul>
@@ -142,11 +156,8 @@ configs available in config, which you can load using <cite>config</cite> option
 <div><ul class="simple">
 <li>ROOT</li>
 <li>MongoDB (used online for DAQ)</li>
-<li>XED (XENON100 format)</li>
-<li>HDF5</li>
-<li>Pickled waveforms output</li>
-<li>Plots of sum waveform and PMT hitpattern</li>
-<li>DAQ injector</li>
+<li>Raw data from XENON100 and XENON1T (XED and Avro)</li>
+<li>Plots</li>
 </ul>
 </div></blockquote>
 <ul class="simple">
@@ -156,6 +167,7 @@ configs available in config, which you can load using <cite>config</cite> option
 <div><ul class="simple">
 <li>Charge-weighted sum (x, y) reconstruction</li>
 <li>(x, y) Reconstruction using chi-square-gamma minimization</li>
+<li>Neural-net reconstruction</li>
 </ul>
 </div></blockquote>
 <ul class="simple">
@@ -165,7 +177,8 @@ configs available in config, which you can load using <cite>config</cite> option
 <div><ul class="simple">
 <li>Interactive waveform with peaks annotated</li>
 <li>PMT top layer hit pattern</li>
-<li>Display is web browser-based. Allows navigation (next event, switch plot) within browser</li>
+<li>Display is web browser-based. Allows navigation (next event, switch plot)
+within browser</li>
 </ul>
 </div></blockquote>
 </div>
@@ -185,7 +198,7 @@ configs available in config, which you can load using <cite>config</cite> option
 <li><a class="reference internal" href="#installing-pax">Installing pax</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#usage">Usage</a></li>
+<li><a class="reference internal" href="#first-steps">First steps</a></li>
 <li><a class="reference internal" href="#features">Features</a></li>
 </ul>
 </li>
@@ -234,7 +247,7 @@ configs available in config, which you can load using <cite>config</cite> option
         <li class="right" >
           <a href="index.html" title="Welcome to processor for Analyzing XENON1T’s documentation!"
              >previous</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 2.0.1 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">
