@@ -114,8 +114,8 @@ class BulkOutput(plugin.OutputPlugin):
                 else:
                     os.remove(outfile)
             else:
-                raise exceptions.OutputFileAlreadyExistsError(
-                    '%s already exists, and you did not specify append or overwrite...' % outfile)
+                raise exceptions.OutputFileAlreadyExistsError('%s already exists, and you did not specify append or '
+                                                              'overwrite...' % outfile)
         elif of.file_extension is 'DIRECTORY':
             # We are a dir output format: dir must exist
             os.mkdir(outfile)
@@ -125,15 +125,15 @@ class BulkOutput(plugin.OutputPlugin):
 
     def write_event(self, event):
         # Store all the event data internally, write to disk when appropriate
-        self.model_to_tuples(event, index_fields=[('Event', event.event_number), ])
+        self._model_to_tuples(event, index_fields=[('Event', event.event_number), ])
         self.events_ready_for_conversion += 1
 
         if self.events_ready_for_conversion == self.config['convert_every']:
-            self.convert_to_records()
+            self._convert_to_records()
             if self.config['write_in_chunks']:
-                self.write_to_disk()
+                self._write_to_disk()
 
-    def convert_to_records(self):
+    def _convert_to_records(self):
         for dfname in self.data.keys():
             self.log.debug("Converting %s " % dfname)
             # Convert tuples to records
@@ -146,7 +146,7 @@ class BulkOutput(plugin.OutputPlugin):
             else:
                 self.data[dfname]['records'] = np.concatenate((self.data[dfname]['records'], newrecords))
 
-    def write_to_disk(self):
+    def _write_to_disk(self):
         self.log.debug("Writing to disk...")
         # If any records are present, call output format to write records to disk
         if 'Event' not in self.data:
@@ -161,10 +161,10 @@ class BulkOutput(plugin.OutputPlugin):
 
     def shutdown(self):
         if self.events_ready_for_conversion:
-            self.convert_to_records()
-        self.write_to_disk()
+            self._convert_to_records()
+        self._write_to_disk()
 
-    def model_to_tuples(self, m, index_fields):
+    def _model_to_tuples(self, m, index_fields):
         """Convert one of our data model instances to a tuple while storing its field names & dtypes,
            handling subcollections recursively, keeping track of index hierarchy
 
@@ -203,7 +203,7 @@ class BulkOutput(plugin.OutputPlugin):
                 # Convert each child_model to a dataframe, with a new index appended to the index trail
                 element_type = type(field_value[0])
                 for new_index, child_model in enumerate(field_value):
-                    self.model_to_tuples(child_model, index_fields + [(element_type.__name__,
+                    self._model_to_tuples(child_model, index_fields + [(element_type.__name__,
                                                                        new_index)])
 
             elif isinstance(field_value, np.ndarray) and not self.output_format.supports_array_fields:
@@ -256,10 +256,10 @@ class InputFromBulkOutput(plugin.InputPlugin):
         self.chunk_size = self.config['chunk_size']
         self.read_hits = self.config['read_hits']
 
-        self.output_format = of = globals()[self.config['output_format']](self.config, self.log)
+        self.output_format = of = globals()[self.config['format']](self.config, self.log)
         if not of.supports_read_back:
             raise NotImplementedError("Output format %s does not "
-                                      "support reading data back in!" % self.config['output_format'])
+                                      "support reading data back in!" % self.config['format'])
 
         of.open(name=self.config['input_name'], mode='r')
 
@@ -280,25 +280,32 @@ class InputFromBulkOutput(plugin.InputPlugin):
 
             # Get records belonging to this event
             in_this_event = {}
-            for dname in self.dnames:
+            for dname in self.dnames:     # dname -> event, peak, etc.
 
-                # Check if cache for is nonexistent, empty, or incomplete, if so, keep reading new chunks
+                # Check if we should fill the cache.
+                #
+                # If what is stored in the cache for 'dname' is either
+                # nonexistent, empty, or incomplete.  If either of the three,
+                # keep reading new chunks of data to populate the cache.
                 while dname not in self.cache or len(self.cache[dname]) == 0 \
                         or self.cache[dname][0]['Event'] == self.cache[dname][-1]['Event']:
 
+                    # If no data left to read, so break.  This means that it is
+                    # the last event.  (or the second to last, if last has no
+                    # e.g. ReconstructedPosition).
                     if self.current_pos[dname] == self.max_n[dname]:
-                        # No more data: this must be the last event
-                        # (or the second to last, if last has no e.g. ReconstructedPositions)
                         break
 
-                    new_pos = min(self.max_n[dname], self.current_pos[dname] + self.chunk_size)
+                    new_pos = min(self.max_n[dname],
+                                  self.current_pos[dname] + self.chunk_size)
                     new_chunk = of.read_data(dname, self.current_pos[dname], new_pos)
                     self.current_pos[dname] = new_pos
 
                     # Add new chunk to cache
-                    bla = np.concatenate((
-                        self.cache.get(dname, np.empty(0, dtype=new_chunk.dtype)),
-                        new_chunk))
+                    bla = np.concatenate((self.cache.get(dname,
+                                                         np.empty(0,
+                                                                  dtype=new_chunk.dtype)),
+                                          new_chunk))
                     self.cache[dname] = bla
 
             # What is this event?
@@ -310,7 +317,8 @@ class InputFromBulkOutput(plugin.InputPlugin):
                 in_this_event[dname] = self.cache[dname][mask]
 
                 # Chop records in this event from cache
-                self.cache[dname] = self.cache[dname][True ^ mask]
+                inverted_mask = True ^ mask  # XOR
+                self.cache[dname] = self.cache[dname][inverted_mask]
 
             # Convert records to pax data
             assert len(in_this_event['Event']) == 1
