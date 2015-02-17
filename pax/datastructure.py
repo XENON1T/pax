@@ -28,13 +28,9 @@ class ReconstructedPosition(StrictModel):
     """
     x = 0.0  #: x position (cm)
     y = 0.0  #: y position (cm)
-    z = 0.0  #: z position (cm)
 
     goodness_of_fit = 0.0  #: goodness-of-fit parameter generated with PosRecChiSquareGamma
     ndf = 0.0  # : number of degrees of freedom calculated with PosRecChiSquareGamma
-
-    #: For this reconstructed peak, index of maximum value within sum waveform.
-    index_of_maximum = 0
 
     #: Name of algorithm used for computation
     algorithm = 'none'
@@ -114,6 +110,12 @@ class Peak(StrictModel):
     #:
     #: Returns an :class:`pax.datastructure.ReconstructedPosition` class.
     reconstructed_positions = (ReconstructedPosition,)
+
+    #: Weighted root mean square deviation of top hitpattern (cm)
+    hitpattern_top_spread = 0.0
+
+    #: Weighted root mean square deviation of bottom hitpattern (cm)
+    hitpattern_bottom_spread = 0.0
 
     ##
     #   Fields present in sum-waveform peaks

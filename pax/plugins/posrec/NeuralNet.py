@@ -45,7 +45,6 @@ class PosRecNeuralNet(plugin.TransformPlugin):
             peak.reconstructed_positions.append(ReconstructedPosition({
                 'x': nn_output[0],
                 'y': nn_output[1],
-                'z': 42,
                 'algorithm': 'NeuralNet'}))
 
         # Return the event such that the next processor can work on it

@@ -11,12 +11,12 @@ You should be able to run `pax` running at the shell the following command::
   export PATH=/home/tunnell/anaconda3/bin:$PATH
 
 This can be added to your `.bashrc` to be run automatically when you login.  You
-can check that it worked by running `python` then::
+can check that it worked the following command::
 
-  import pax
+  python -c "import pax; print(pax.__version__)"
 
-Which should result in version 3 of Python being used and you should not get an
-error.
+Which should result in Python3 being used to print the pax version.
+
 
 ----------------------------------------
 How do I run `pax` at Nikhef?
