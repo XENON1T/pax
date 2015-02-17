@@ -32,10 +32,10 @@ def chunk_in_ntuples(iterable, n, fillvalue=None):
     # Numpy solution -- without filling though
     # return np.reshape(iterable, (-1,n))
 
+
 ##
 # Peak processing helper routines
 ##
-
 def free_regions(event, detector='tpc'):
     """Find the free regions in the event's waveform - regions where peaks haven't yet been found
         detector: give free regions wrt this detector

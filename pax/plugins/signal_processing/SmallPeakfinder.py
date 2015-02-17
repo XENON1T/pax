@@ -96,10 +96,10 @@ class FindSmallPeaks(plugin.TransformPlugin):
                         # Can't just use w > self.min_sigma * noise_sigma here,
                         # want to extend peak bounds to noise_sigma
                         raw_peaks = np.zeros((self.max_hits_per_occurrence, 2), dtype=np.int64)
-                        n_raw_peaks_found = _numba_find_peaks(w,
-                                                              noise_sigma,
-                                                              self.min_sigma * noise_sigma,
-                                                              raw_peaks)
+                        n_raw_peaks_found = self._numba_find_peaks(w,
+                                                                   noise_sigma,
+                                                                   self.min_sigma * noise_sigma,
+                                                                   raw_peaks)
                         if n_raw_peaks_found == -1:
                             # Oops, we didn't allocate enough storage... try again with larger number
                             self.log.warning("Occurrence %s-%s in channel %s has more than %s hits on peakfinding "
@@ -122,7 +122,7 @@ class FindSmallPeaks(plugin.TransformPlugin):
                         # Compute the baseline correction and the new noise_sigma
                         # -- BuildWaveforms can get baseline wrong if there is a pe in the starting samples
                         result = np.zeros(2)
-                        mean_std_outside_peaks(w, raw_peaks, result)
+                        self._numba_mean_std_outside_peaks(w, raw_peaks, result)
                         baseline_correction_delta = result[0]
                         noise_sigma = result[1]
 
@@ -206,99 +206,99 @@ class FindSmallPeaks(plugin.TransformPlugin):
 
         return event
 
+    @staticmethod
+    @numba.jit(numba.void(numba.float64[:], numba.int64[:, :], numba.float64[:]), nopython=True)
+    def _numba_mean_std_outside_peaks(w, raw_peaks, result):
+        """Compute mean and std (rms) of samples w not in raw_peaks
 
-@numba.jit(numba.void(numba.float64[:], numba.int64[:, :], numba.float64[:]), nopython=True)
-def mean_std_outside_peaks(w, raw_peaks, result):
-    """Compute mean and std (rms) of samples w not in raw_peaks
+        Both mean and std are computed in a single pass using a clever algorithm from:
+        see http://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Online_algorithm
 
-    Both mean and std are computed in a single pass using a clever algorithm from:
-    see http://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Online_algorithm
+        :param w: waveform
+        :param raw_peaks: np.int64[n,2]: raw peak boundaries
+        :param result: np.array([0,0]) will contain result (mean, std) after evaluation
+        :return: nothing
+        """
 
-    :param w: waveform
-    :param raw_peaks: np.int64[n,2]: raw peak boundaries
-    :param result: np.array([0,0]) will contain result (mean, std) after evaluation
-    :return: nothing
-    """
+        n = 0           # Samples outside peak included so far
+        mean = 0        # Mean so far
+        m2 = 0          # Sm of squares of differences from the (current) mean
+        delta = 0       # Temp storage for x - mean
+        n_peaks = len(raw_peaks)
+        current_peak = 0
+        currently_in_peak = False
 
-    n = 0           # Samples outside peak included so far
-    mean = 0        # Mean so far
-    m2 = 0          # Sm of squares of differences from the (current) mean
-    delta = 0       # Temp storage for x - mean
-    n_peaks = len(raw_peaks)
-    current_peak = 0
-    currently_in_peak = False
+        for i, x in enumerate(w):
 
-    for i, x in enumerate(w):
+            if currently_in_peak:
+                if i > raw_peaks[current_peak, 1]:
+                    current_peak += 1
+                    currently_in_peak = False
 
-        if currently_in_peak:
-            if i > raw_peaks[current_peak, 1]:
-                current_peak += 1
-                currently_in_peak = False
+            # NOT else, currently_in_peak may have changed!
+            if not currently_in_peak:
+                if current_peak < n_peaks and i == raw_peaks[current_peak, 0]:
+                    currently_in_peak = True
+                else:
+                    delta = x - mean
+                    # Update n, mean and m2
+                    n += 1
+                    mean += delta/n
+                    m2 += delta*(x-mean)
 
-        # NOT else, currently_in_peak may have changed!
-        if not currently_in_peak:
-            if current_peak < n_peaks and i == raw_peaks[current_peak, 0]:
-                currently_in_peak = True
-            else:
-                delta = x - mean
-                # Update n, mean and m2
-                n += 1
-                mean += delta/n
-                m2 += delta*(x-mean)
+        # Put results in result
+        result[0] = mean
+        if n < 2:
+            result[1] = 0
+        else:
+            result[1] = (m2/n)**0.5
 
-    # Put results in result
-    result[0] = mean
-    if n < 2:
-        result[1] = 0
-    else:
-        result[1] = (m2/n)**0.5
+    @staticmethod
+    @numba.jit(numba.int64(numba.float64[:], numba.float64, numba.float64, numba.int64[:, :]), nopython=True)
+    def _numba_find_peaks(w, noise_sigma, threshold, intervals):
+        """Fills intervals with left, right indices of intervals > noise_sigma which exceed threshold somewhere
+         intervals: numpy () of [-1,-1] lists, will be filled by function.
+        Returns: number of intervals found
+        Will stop search after intervals found reached length of intervals argument passed in
+        """
 
+        in_candidate_interval = False
+        current_interval_passed_test = False
+        current_interval = 0
+        max_intervals = len(intervals) - 1
 
-@numba.jit(numba.int64(numba.float64[:], numba.float64, numba.float64, numba.int64[:, :]), nopython=True)
-def _numba_find_peaks(w, noise_sigma, threshold, intervals):
-    """Fills intervals with left, right indices of intervals > noise_sigma which exceed threshold somewhere
-     intervals: numpy () of [-1,-1] lists, will be filled by function.
-    Returns: number of intervals found
-    Will stop search after intervals found reached length of intervals argument passed in
-    """
+        for i, x in enumerate(w):
 
-    in_candidate_interval = False
-    current_interval_passed_test = False
-    current_interval = 0
-    max_intervals = len(intervals) - 1
+            if not in_candidate_interval and x > noise_sigma:
+                # Start of candidate interval
+                in_candidate_interval = True
+                intervals[current_interval, 0] = i
 
-    for i, x in enumerate(w):
+            # This must be if, not else: an interval can cross threshold in start sample
+            if in_candidate_interval:
 
-        if not in_candidate_interval and x > noise_sigma:
-            # Start of candidate interval
-            in_candidate_interval = True
-            intervals[current_interval, 0] = i
+                if x > threshold:
+                    current_interval_passed_test = True
 
-        # This must be if, not else: an interval can cross threshold in start sample
-        if in_candidate_interval:
+                if x < noise_sigma:
+                    # End of candidate interval
+                    if current_interval_passed_test:
+                        intervals[current_interval, 1] = i - 1
+                        current_interval += 1
+                        if current_interval > max_intervals:
+                            # We found more peaks than we have room in our result array!
+                            # Would love to raise an exception, but can't...
+                            # Instead just return -1, caller will have to check this
+                            return -1
+                    in_candidate_interval = False
+                    current_interval_passed_test = False
 
-            if x > threshold:
-                current_interval_passed_test = True
+        # Add last interval, if it didn't end
+        # TODO: Hmm, should this raise a warning?
+        if in_candidate_interval and current_interval_passed_test:
+            intervals[current_interval, 1] = len(w) - 1
+            current_interval += 1
+        else:
+            intervals[current_interval, 0] = 0
 
-            if x < noise_sigma:
-                # End of candidate interval
-                if current_interval_passed_test:
-                    intervals[current_interval, 1] = i - 1
-                    current_interval += 1
-                    if current_interval > max_intervals:
-                        # We found more peaks than we have room in our result array!
-                        # Would love to raise an exception, but can't...
-                        # Instead just return -1, caller will have to check this
-                        return -1
-                in_candidate_interval = False
-                current_interval_passed_test = False
-
-    # Add last interval, if it didn't end
-    # TODO: Hmm, should this raise a warning?
-    if in_candidate_interval and current_interval_passed_test:
-        intervals[current_interval, 1] = len(w) - 1
-        current_interval += 1
-    else:
-        intervals[current_interval, 0] = 0
-
-    return current_interval
+        return current_interval
