@@ -52,44 +52,6 @@ class TestSmallPeakfinder(unittest.TestCase):
         w[left:right + 1] = amplitude
         return w
 
-    # This won't work well: peak boundaries at 1 sigma, depend on noise...
-    #
-    # @staticmethod
-    # def example_event(waveform):
-    #     e = Event(n_channels=1,
-    #               start_time=0,
-    #               stop_time=int(100 * 10 * units.ns),
-    #               sample_duration=int(10 * units.ns))
-    #     # Need an occurrence, hitfinder will look for its presence
-    #     e.occurrences.append(Occurrence(
-    #         left=0,
-    #         channel=0,
-    #         right=99))
-    #     # Hit finder will use data in pmt_waveforms...
-    #     e.channel_waveforms[0] = waveform
-    #     return e
-    #
-    # def try_waveform(self, waveform, hit_boundaries):
-    #     e = self.example_event(waveform)
-    #     print("Transforming event now")
-    #     e = self.plugin.transform_event(e)
-    #     print("Blah")
-    #     cps = e.all_channel_peaks
-    #     self.assertEqual(len(cps), len(hit_boundaries))
-    #     print("peaks found: ", ', '.join(['[%d-%d]' % (cp.left, cp.right) for cp in cps]))
-    #     for i, (left, right) in enumerate(hit_boundaries):
-    #         self.assertEqual(left,  cps[i].left)
-    #         self.assertEqual(right, cps[i].right)
-    #
-    # def try_single_peak(self, left, right, inside=1, noise_sigma=0.05):
-    #     self.try_waveform(
-    #         self.peak_at(left, right, inside, noise_sigma),
-    #         [(left, right)]
-    #     )
-    #
-    # def test_one_hit(self):
-    #     self.try_single_peak(left=10, right=20, inside=100)
-
     def test_sanity(self):
         self.assertIsInstance(self.plugin, plugin.TransformPlugin)
         self.assertEqual(self.plugin.__class__.__name__, 'FindSmallPeaks')
