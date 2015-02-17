@@ -1,9 +1,7 @@
 import unittest
 import numpy as np
 
-from pax import core, plugin, units
-from pax.datastructure import Occurrence, Event
-from pax.utils import empty_event
+from pax import core, plugin
 
 # 100 normal(0,1)'s
 example_noise = np.array([
