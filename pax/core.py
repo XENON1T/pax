@@ -466,7 +466,7 @@ class Processor:
             timing_report.align["Plugin"] = "l"
             total_time = sum([plugin.total_time_taken for plugin in all_plugins])
             for plugin in all_plugins:
-                t = plugin.total_time_taken
+                t = max(1e-9, plugin.total_time_taken)
                 timing_report.add_row([plugin.__class__.__name__,
                                        round(100 * t / total_time, 1),
                                        round(t / events_actually_processed, 1),

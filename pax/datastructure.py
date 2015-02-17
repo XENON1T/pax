@@ -15,13 +15,12 @@ import numpy as np
 import math
 from pax import units
 
-# To turn off type-checking for all models, replace the line below with
-# from pax.data_model import Model
-# This will improve performance a bit (+ ~10% running time), but use at your own risk
-from pax.data_model import StrictModel as Model
+# To turn off type-checking, replace StrictModel with Model
+# This will improve performance, but use at your own risk
+from pax.data_model import StrictModel, Model
 
 
-class ReconstructedPosition(Model):
+class ReconstructedPosition(StrictModel):
 
     """Reconstructed position
 
@@ -71,7 +70,7 @@ class ChannelPeak(Model):
     noise_sigma = 0.0            #: StDev of the noisin e (pe/bin) in the filtered waveform in this peak's occurrence
 
 
-class Peak(Model):
+class Peak(StrictModel):
 
     """Peak object"""
 
@@ -166,7 +165,7 @@ class Peak(Model):
     # tenth_area_range = 0.0
 
 
-class SumWaveform(Model):
+class SumWaveform(StrictModel):
 
     """Class used to store sum (filtered or not) waveform information.
     """
@@ -190,7 +189,7 @@ class SumWaveform(Model):
             return False
 
 
-class Occurrence(Model):
+class Occurrence(StrictModel):
 
     """A DAQ occurrence
     """
@@ -248,7 +247,7 @@ class Occurrence(Model):
             self.right = self.left + len(self.raw_data) - 1
 
 
-class Event(Model):
+class Event(StrictModel):
 
     """Event class
     """

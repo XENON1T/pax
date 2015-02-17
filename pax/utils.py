@@ -7,40 +7,14 @@ import re
 import json
 import gzip
 import logging
+from itertools import zip_longest
 
 import numpy as np
 from scipy import interpolate
 import matplotlib.pyplot as plt
+import numba
 
-from itertools import zip_longest
 log = logging.getLogger('dsputils')
-
-##
-# Peak finding helper routines
-##
-
-
-def intervals_where(x):
-    """Given numpy array of bools, return list of (left, right) inclusive bounds of all intervals of True
-    """
-    # In principle, boundaries are just points of change...
-    start_points, end_points = where_changes(x, report_first_index_if=True)
-
-    # ... except that the right boundaries are 1 index BEFORE the array becomes False ...
-    end_points -= 1
-
-    # ... and if the last index is True, it is another endpoint
-    if x[-1]:
-        end_points = np.concatenate((end_points, np.array([len(x) - 1])))
-
-    return list(zip(
-        start_points.tolist(),
-        end_points.tolist()))
-
-    # I've been looking for a proper numpy solution. It should be something like:
-    # return np.vstack((cross_above, cross_below)).T
-    # But it appears to make the processor run slower! (a tiny bit)
-    # Maybe because we're dealing with many small arrays rather than big ones?
 
 
 def chunk_in_ntuples(iterable, n, fillvalue=None):
@@ -59,58 +33,9 @@ def chunk_in_ntuples(iterable, n, fillvalue=None):
     # return np.reshape(iterable, (-1,n))
 
 
-def where_changes(x, report_first_index_if=None, separate_results=True):
-    """Return indices where boolean array changes value.
-    :param x: ndarray or list of bools
-    :param report_first_index_if: When to report the first index in x.
-        If True,  0 is reported (in first returned array)  if it is true.
-        If False, 0 is reported (in second returned array) if it is false.
-        If None, 0 is never reported. (Default)
-    :param separate_results: If True (default), see returns. If False, returns single array of change points instead.
-    :returns: 2-tuple of integer ndarrays (becomes_true, becomes_false):
-        becomes_true:  indices where x is True,  and was False one index before
-        becomes_false: indices where x is False, and was True  one index before
-
-    report_first_index_if can be
-    """
-    x = np.array(x)
-
-    # To compare with the previous sample in a quick way, we use np.roll
-    previous_x = np.roll(x, 1)
-    points_of_difference = (x != previous_x)
-
-    # The last sample, however, has nothing to do with the first sample
-    # It can never be a point of difference, so we remove it:
-    points_of_difference[0] = False
-
-    if separate_results:
-        # Now we can find where the array becomes True or False
-        # Automatically come out sorted
-        becomes_true = np.where(points_of_difference & x)[0]
-        becomes_false = np.where(points_of_difference & (True ^ x))[0]
-
-        # In case the user set report_first_index_if, we have to manually add 0 if it is True or False
-        # Can't say x[0] is True, it is a numpy bool...
-        if report_first_index_if is True and x[0]:
-            becomes_true = np.concatenate((np.array([0]), becomes_true))
-        if report_first_index_if is False and not x[0]:
-            becomes_false = np.concatenate((np.array([0]), becomes_false))
-
-        return becomes_true, becomes_false
-
-    else:
-        # Faster, simpler, saves user a concatenate + sort
-        # Not actually used I believe... but is tested.
-        if report_first_index_if is not None and report_first_index_if == x[0]:
-            points_of_difference[0] = True
-
-        return np.where(points_of_difference)[0]
-
-
 ##
 # Peak processing helper routines
 ##
-
 def free_regions(event, detector='tpc'):
     """Find the free regions in the event's waveform - regions where peaks haven't yet been found
         detector: give free regions wrt this detector
@@ -188,12 +113,12 @@ def peak_bounds(signal, fraction_of_max=None, max_idx=None, zero_level=0, inclus
         return (max_idx, max_idx)
 
     # Note reversion acts before indexing in numpy!
-    left = find_first_fast(signal[max_idx::-1], threshold)
+    left = first_below_threshold(signal[max_idx::-1], threshold)
     if left is None:
         left = 0
     else:
         left = max_idx - left
-    right = find_first_fast(signal[max_idx:], threshold)
+    right = first_below_threshold(signal[max_idx:], threshold)
     if right is None:
         right = len(signal) - 1
     else:
@@ -247,32 +172,13 @@ def width_at_fraction(peak_wave, fraction_of_max, max_idx, interpolate=False):
     return right - left + 1
 
 
-def find_first_fast(a, threshold, chunk_size=128):
-    """Returns the first index in a below threshold.
-
-    If a never goes below threshold, returns the last index in a.
-    """
-    # Numpy 2.0 may get a builtin to do this.
-    # I don't know of anything better than the below for now:
-    indices = np.where(a < threshold)[0]
-    if len(indices) > 0:
-        return indices[0]
-    else:
-        # None found, return last index
-        return len(a) - 1
-    # This was recommended by https://github.com/numpy/numpy/issues/2269
-    # It actually performs significantly worse in our case...
-    # Maybe I'm messing something up?
-    # threshold_test = np.vectorize(lambda x: x < threshold)
-    # i0 = 0
-    # chunk_inds = chain(range(chunk_size, a.size, chunk_size), [None])
-    # for i1 in chunk_inds:
-    #     chunk = a[i0:i1]
-    #     for inds in zip(*threshold_test(chunk).nonzero()):
-    #         return inds[0] + i0
-    #     i0 = i1
-    # HACK: None found... return the last index
-    # return len(a) - 1
+@numba.autojit
+def first_below_threshold(w, threshold):
+    """Returns first index in w below threshold, or None if w never below threshold"""
+    for i, x in enumerate(w):
+        if x < threshold:
+            return i
+    return None
 
 
 # Caching decorator
