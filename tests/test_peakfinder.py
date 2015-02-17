@@ -58,13 +58,13 @@ class TestSmallPeakfinder(unittest.TestCase):
         raw_peaks = np.zeros((100, 2), dtype=np.int64)
         waveform = self.peak_at(left, right, amplitude=100, noise_sigma=0.05)
 
-        n_found = self.plugin._numba_find_peaks(waveform, float(1), float(3), raw_peaks)
+        n_found = self.plugin._find_peaks(waveform, float(3), float(1), raw_peaks)
         self.assertEqual(n_found, 1)
         self.assertEqual(raw_peaks[0, 0], left)
         self.assertEqual(raw_peaks[0, 1], right)
 
         mean_std_result = np.array([0, 0], dtype=np.float64)
-        self.plugin._numba_mean_std_outside_peaks(waveform, raw_peaks, mean_std_result)
+        self.plugin._mean_std_outside_peaks(waveform, raw_peaks, mean_std_result)
 
         mask = np.ones(100, dtype=np.bool)
         mask[left:right + 1] = False

@@ -476,7 +476,7 @@ class Processor:
                 else:
                     event_rate_hz = round(1000 * events_actually_processed / t, 1)
                     if event_rate_hz > 100:
-                        event_rate_hz = int(event_rate_hz)
+                        event_rate_hz = ''
 
                 timing_report.add_row([plugin.__class__.__name__,
                                        round(100 * t / total_time, 1),

@@ -66,7 +66,6 @@ class ChannelPeak(Model):
 
     area = 0.0                   #: Area of the peak in photoelectrons
     height = 0.0                 #: Height of highest point in peak (in pe/bin) in unfiltered waveform
-    filtered_height = 0.0        #: Height of highest point in peak (in pe/bin) in the filtered waveform
     noise_sigma = 0.0            #: StDev of the noisin e (pe/bin) in the filtered waveform in this peak's occurrence
 
 
