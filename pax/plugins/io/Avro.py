@@ -10,15 +10,18 @@ information about Avro can be found at::
 
 This replaced 'xdio' from XENON100.
 """
+import time
+
 import numpy as np
 
 import avro.schema
 from avro.datafile import DataFileReader, DataFileWriter
 from avro.io import DatumReader, DatumWriter
-import pax
+import pax      # For version
+from pax import plugin, datastructure
 
 
-class ReadAvro(pax.plugin.InputPlugin):
+class ReadAvro(plugin.InputPlugin):
 
     """Read raw Avro data to get PMT pulses
 
@@ -34,7 +37,7 @@ class ReadAvro(pax.plugin.InputPlugin):
         self.n_channels = self.config['n_channels']
         self.log.debug("Assuming %d channels",
                        self.n_channels)
-        self.log.error(next(self.reader))
+        self.log.info(next(self.reader))
 
     def get_events(self):
         """Fetch events from Avro file
@@ -43,23 +46,27 @@ class ReadAvro(pax.plugin.InputPlugin):
         Events contain occurences, and the appropriate pax objects will be
         built.
         """
+
         for avro_event in self.reader:  # For every event in file
+            # Start the clock
+            ts = time.time()
+
             # Make pax object
-            pax_event = pax.datastructure.Event(n_channels=self.n_channels,
-                                                start_time=avro_event[
-                                                    'start_time'],
-                                                stop_time=avro_event[
-                                                    'stop_time'],
-                                                event_number=avro_event['number'])
+            pax_event = datastructure.Event(n_channels=self.n_channels,
+                                            start_time=avro_event['start_time'],
+                                            stop_time=avro_event['stop_time'],
+                                            event_number=avro_event['number'])
 
             # For all pulses/occurrences, add to pax event
             for pulse in avro_event['pulses']:
 
-                pulse = pax.datastructure.Occurrence(channel=pulse['channel'],
-                                                     left=pulse['left'],
-                                                     raw_data=np.fromstring(pulse['payload'],
-                                                                            dtype=np.int16))
+                pulse = datastructure.Occurrence(channel=pulse['channel'],
+                                                 left=pulse['left'],
+                                                 raw_data=np.fromstring(pulse['payload'],
+                                                                        dtype=np.int16))
                 pax_event.occurrences.append(pulse)
+
+            self.total_time_taken += (time.time() - ts) * 1000
 
             yield pax_event
 
@@ -67,7 +74,7 @@ class ReadAvro(pax.plugin.InputPlugin):
         self.reader.close()
 
 
-class WriteAvro(pax.plugin.OutputPlugin):
+class WriteAvro(plugin.OutputPlugin):
 
     """Write raw Avro data of PMT pulses
 
