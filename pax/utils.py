@@ -16,33 +16,6 @@ import numba
 
 log = logging.getLogger('dsputils')
 
-##
-# Peak finding helper routines
-##
-
-
-def intervals_where(x):
-    """Given numpy array of bools, return list of (left, right) inclusive bounds of all intervals of True
-    """
-    # In principle, boundaries are just points of change...
-    start_points, end_points = where_changes(x, report_first_index_if=True)
-
-    # ... except that the right boundaries are 1 index BEFORE the array becomes False ...
-    end_points -= 1
-
-    # ... and if the last index is True, it is another endpoint
-    if x[-1]:
-        end_points = np.concatenate((end_points, np.array([len(x) - 1])))
-
-    return list(zip(
-        start_points.tolist(),
-        end_points.tolist()))
-
-    # I've been looking for a proper numpy solution. It should be something like:
-    # return np.vstack((cross_above, cross_below)).T
-    # But it appears to make the processor run slower! (a tiny bit)
-    # Maybe because we're dealing with many small arrays rather than big ones?
-
 
 def chunk_in_ntuples(iterable, n, fillvalue=None):
     """ Chunks an iterable into a list of tuples
@@ -58,55 +31,6 @@ def chunk_in_ntuples(iterable, n, fillvalue=None):
     return list(zip_longest(*[iter(iterable)] * n, fillvalue=fillvalue))
     # Numpy solution -- without filling though
     # return np.reshape(iterable, (-1,n))
-
-
-def where_changes(x, report_first_index_if=None, separate_results=True):
-    """Return indices where boolean array changes value.
-    :param x: ndarray or list of bools
-    :param report_first_index_if: When to report the first index in x.
-        If True,  0 is reported (in first returned array)  if it is true.
-        If False, 0 is reported (in second returned array) if it is false.
-        If None, 0 is never reported. (Default)
-    :param separate_results: If True (default), see returns. If False, returns single array of change points instead.
-    :returns: 2-tuple of integer ndarrays (becomes_true, becomes_false):
-        becomes_true:  indices where x is True,  and was False one index before
-        becomes_false: indices where x is False, and was True  one index before
-
-    report_first_index_if can be
-    """
-    x = np.array(x)
-
-    # To compare with the previous sample in a quick way, we use np.roll
-    previous_x = np.roll(x, 1)
-    points_of_difference = (x != previous_x)
-
-    # The last sample, however, has nothing to do with the first sample
-    # It can never be a point of difference, so we remove it:
-    points_of_difference[0] = False
-
-    if separate_results:
-        # Now we can find where the array becomes True or False
-        # Automatically come out sorted
-        becomes_true = np.where(points_of_difference & x)[0]
-        becomes_false = np.where(points_of_difference & (True ^ x))[0]
-
-        # In case the user set report_first_index_if, we have to manually add 0 if it is True or False
-        # Can't say x[0] is True, it is a numpy bool...
-        if report_first_index_if is True and x[0]:
-            becomes_true = np.concatenate((np.array([0]), becomes_true))
-        if report_first_index_if is False and not x[0]:
-            becomes_false = np.concatenate((np.array([0]), becomes_false))
-
-        return becomes_true, becomes_false
-
-    else:
-        # Faster, simpler, saves user a concatenate + sort
-        # Not actually used I believe... but is tested.
-        if report_first_index_if is not None and report_first_index_if == x[0]:
-            points_of_difference[0] = True
-
-        return np.where(points_of_difference)[0]
-
 
 ##
 # Peak processing helper routines
