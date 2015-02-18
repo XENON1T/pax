@@ -5,7 +5,7 @@ from pax import core, plugin
 from pax.datastructure import Event, Peak
 
 
-class TestPosRecWeightedSum(unittest.TestCase):
+class TestPosRecNeuralNet(unittest.TestCase):
 
     def setUp(self):
         self.pax = core.Processor(config_names='XENON100', just_testing=True, config_dict={'pax': {

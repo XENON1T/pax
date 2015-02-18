@@ -456,23 +456,41 @@ class Processor:
         events_actually_processed = i + 1
 
         if self.config['pax']['print_timing_report']:
+
             all_plugins = [self.input_plugin] + self.action_plugins
-            timing_report = PrettyTable(['Plugin', '%', 'Per event (ms)', 'Total (s)'])
+            timing_report = PrettyTable(['Plugin',
+                                         '%',
+                                         '/event (ms)',
+                                         '#/s',
+                                         'Total (s)'])
             timing_report.align = "r"
             timing_report.align["Plugin"] = "l"
             total_time = sum([plugin.total_time_taken for plugin in all_plugins])
+
             for plugin in all_plugins:
+
                 t = plugin.total_time_taken
-                timing_report.add_row([
-                    plugin.__class__.__name__,
-                    round(100 * t / total_time, 1),
-                    round(t / events_actually_processed, 1),
-                    round(t / 1000, 1)])
-            timing_report.add_row([
-                'TOTAL',
-                round(100., 1),
-                round(total_time / events_actually_processed, 1),
-                round(total_time / 1000, 1)])
+                time_per_event_ms = round(t / events_actually_processed, 1)
+                if t == 0:
+                    event_rate_hz = ''
+                else:
+                    event_rate_hz = round(1000 * events_actually_processed / t, 1)
+                    if event_rate_hz > 100:
+                        event_rate_hz = ''
+
+                timing_report.add_row([plugin.__class__.__name__,
+                                       round(100 * t / total_time, 1),
+                                       time_per_event_ms,
+                                       event_rate_hz,
+                                       round(t / 1000, 1)])
+
+            timing_report.add_row(['TOTAL',
+                                   round(100., 1),
+                                   round(total_time / events_actually_processed,
+                                         1),
+                                   round(1000 * events_actually_processed / total_time,
+                                         1),
+                                   round(total_time / 1000, 1)])
             self.log.info("Timing report:\n" + str(timing_report))
 
         # Shutdown all plugins now -- don't wait until this Processor instance gets deleted
