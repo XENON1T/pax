@@ -32,6 +32,7 @@ class BuildWaveformsFast(plugin.TransformPlugin):
             for ch in chs:
                 self.detector_by_channel[ch] = name
 
+        self.compute_occurrence_heights = c.get('compute_occurrence_heights', True)
 
     def transform_event(self, event):
         # Sanity check
@@ -141,7 +142,8 @@ class BuildWaveformsFast(plugin.TransformPlugin):
             event.get_sum_waveform(detector).samples[start_index:end_index + 1] += corrected_pulse
 
             # Store some metadata for this occurrence
-            occ.height = self._fast_max(corrected_pulse)
+            if self.compute_occurrence_heights:
+                occ.height = self._fast_max(corrected_pulse)
             occ.digitizer_baseline_used = baseline
 
             last_occurrence_in[channel] = occ
