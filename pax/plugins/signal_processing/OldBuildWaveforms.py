@@ -3,7 +3,7 @@ import numpy as np
 from pax import plugin, units, datastructure, exceptions
 
 
-class BuildWaveforms(plugin.TransformPlugin):
+class OldBuildWaveforms(plugin.TransformPlugin):
     """Construct waveforms from PMT channel pulses
 
     Waveforms that will be built:
