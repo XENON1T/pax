@@ -17,7 +17,6 @@ import numba
 log = logging.getLogger('dsputils')
 
 
-
 def chunk_in_ntuples(iterable, n, fillvalue=None):
     """ Chunks an iterable into a list of tuples
     :param iterable: input iterable
