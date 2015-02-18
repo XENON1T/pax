@@ -259,6 +259,7 @@ class InputFromBulkOutput(plugin.InputPlugin):
     def startup(self):
         self.chunk_size = self.config['chunk_size']
         self.read_hits = self.config['read_hits']
+        self.read_recposes = self.config['read_recposes']
 
         self.output_format = of = globals()[self.config['format']](self.config, self.log)
         if not of.supports_read_back:
@@ -325,7 +326,6 @@ class InputFromBulkOutput(plugin.InputPlugin):
             assert len(in_this_event['Event']) == 1
             e_record = in_this_event['Event'][0]
             peaks = in_this_event['Peak']
-            rcps = in_this_event['ReconstructedPosition']
 
             # We defined a nice custom init for event... ahem... now we have to do cumbersome stuff...
             event = datastructure.Event(n_channels=len(e_record['is_channel_bad']),
@@ -337,10 +337,12 @@ class InputFromBulkOutput(plugin.InputPlugin):
             for peak_i, p_record in enumerate(peaks):
                 peak = datastructure.Peak(self._numpy_record_to_dict(p_record))
 
-                for rp_record in rcps[(rcps['Peak'] == peak_i)]:
-                    peak.reconstructed_positions.append(
-                        datastructure.ReconstructedPosition(self._numpy_record_to_dict(rp_record))
-                    )
+                if self.read_recposes:
+                    for rp_record in in_this_event['ReconstructedPosition'][
+                            in_this_event['ReconstructedPosition']['Peak'] == peak_i]:
+                        peak.reconstructed_positions.append(
+                            datastructure.ReconstructedPosition(self._numpy_record_to_dict(rp_record))
+                        )
 
                 if self.read_hits:
                     for hit_record in in_this_event['ChannelPeak'][(in_this_event['ChannelPeak']['Peak'] == peak_i)]:
