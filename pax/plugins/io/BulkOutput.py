@@ -36,23 +36,22 @@ class BulkOutput(plugin.OutputPlugin):
     For each index, an extra column is added (eg. ReconstrucedPosition has an extra column 'Event', 'Peak'
     and 'ReconstructedPosition', each restarting from 0 whenever the higher-level index changes)
 
-    Because numpy arrays are optimized for working with large data structures, converting/appending each instance
-    separately would take long. Hence, we store data in listsfirst, then convert those once we've collected a bunch.
+    The timestamp, pax configuration and version number are stored in a separate table/array: pax_info.
 
-    Available options:
+    Because numpy arrays are optimized for working with large data structures, converting/appending each instance
+    separately would take long. Hence, we store data in lists first, then convert those once we've collected a bunch.
+
+    Available configuration options:
 
      - output_format:      Name of output format to produce. Must be child class of BulkOutputFormat
      - output_name:        The name of the output file or folder, WITHOUT file extension.
      - fields_to_ignore:   Fields which will not be stored.
-
-    Further options specific to some output formats:
-
+     - overwrite_data:     If True, overwrite if a file/directory with the same name exists
+     - string_data_length: Maximum length of strings in string data fields; longer strings will be truncated.
+                           (the pax configuration is always stored fully)
      - append_data:        Append data to an existing file, if output format supports it
-     - write_every:        Write data to disk after every nth event.
-                           (If not supported, all data is kept in memory, then written to disk on shutdown.)
-     - string_data_length: Maximum length of strings in string data fields.  If you try to store a longer string
-                           in any but the first write pass, it will crash!
-
+     - write_every:        Write data to disk after every nth event, if the output format supports it.
+                           If not supported, all data is kept in memory, then written to disk on shutdown.
     """
 
     def startup(self):
@@ -84,6 +83,9 @@ class BulkOutput(plugin.OutputPlugin):
         # Init the output format
         # globals()[classname]() instantiates class named in classname, saves us an eval
         self.output_format = of = globals()[self.config['output_format']](self.config, self.log)
+
+        if self.config['append_data'] and self.config['overwrite_data']:
+            raise ValueError('Invalid configuration for BulkOutput: Cannot both append and overwrite')
 
         # Check if options are supported
         if not of.supports_write_in_chunks and self.config['write_in_chunks']:
@@ -251,6 +253,8 @@ class BulkOutput(plugin.OutputPlugin):
 
 
 class InputFromBulkOutput(plugin.InputPlugin):
+    """Reprocess data from BulkOutput
+    """
 
     def startup(self):
         self.chunk_size = self.config['chunk_size']
@@ -276,23 +280,20 @@ class InputFromBulkOutput(plugin.InputPlugin):
         of = self.output_format
 
         for event_i in range(self.number_of_events):
-            ts = time.time()
+            ts = time.time()    # Start the clock
 
-            # Get records belonging to this event
             in_this_event = {}
+
+            # Check if we should fill the cache.
             for dname in self.dnames:     # dname -> event, peak, etc.
 
-                # Check if we should fill the cache.
-                #
-                # If what is stored in the cache for 'dname' is either
-                # nonexistent, empty, or incomplete.  If either of the three,
-                # keep reading new chunks of data to populate the cache.
+                # Check if what is stored in the cache for 'dname' is either
+                # nonexistent, empty, or incomplete.  If so, keep reading new
+                # chunks of data to populate the cache.
                 while dname not in self.cache or len(self.cache[dname]) == 0 \
                         or self.cache[dname][0]['Event'] == self.cache[dname][-1]['Event']:
 
-                    # If no data left to read, so break.  This means that it is
-                    # the last event.  (or the second to last, if last has no
-                    # e.g. ReconstructedPosition).
+                    # If no data of this dname left in the file, we of course stop filling the cache
                     if self.current_pos[dname] == self.max_n[dname]:
                         break
 
@@ -308,7 +309,7 @@ class InputFromBulkOutput(plugin.InputPlugin):
                                           new_chunk))
                     self.cache[dname] = bla
 
-            # What is this event?
+            # What number is the next event?
             this_event_i = self.cache['Event'][0]['Event']
 
             # Get all records belonging to this event:
