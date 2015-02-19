@@ -142,6 +142,7 @@ class TestPax(unittest.TestCase):
         # TODO: delete the HD5 file that is created by this
         mypax = core.Processor(config_names='XED', config_dict={'pax': {'events_to_process': [0]}})
         mypax.run()
+        self.assertEqual(1, 1)   # Check we did not crash, maybe helps coverage?
 
     def test_process_single_xed_event_olddsp(self):
         """ Process the first event from the XED file using Xerawdp matching config
@@ -149,6 +150,7 @@ class TestPax(unittest.TestCase):
         # TODO: delete the HD5 file that is created by this
         mypax = core.Processor(config_names=['XED', 'oldDSP'], config_dict={'pax': {'events_to_process': [0]}})
         mypax.run()
+        self.assertEqual(1, 1)   # Check we did not crash, maybe helps coverage?
 
 
 if __name__ == '__main__':
