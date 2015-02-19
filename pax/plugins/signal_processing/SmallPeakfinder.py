@@ -1,7 +1,7 @@
 import numpy as np
 import numba
 
-from pax import plugin, datastructure
+from pax import plugin, datastructure, units
 
 
 # Used for diagnostic plotting only
