@@ -413,15 +413,6 @@ class Event(StrictModel):
         else:
             return [oc for oc in self.occurrences if oc.left <= right and oc.right >= left]
 
-    def free_regions(self, detector='tpc'):
-        """Find the free regions in the event's waveform - regions where peaks haven't yet been found
-            detector: give free regions wrt this detector
-        :returns list of 2-tuples (left index, right index) of regions where no peaks have been found
-        """
-        lefts = [0] + [p.left for p in self.peaks if p.detector == detector]
-        rights = [p.right for p in self.peaks if p.detector == detector] + [self.length() - 1]
-        return zip(lefts, rights)
-
 
 def _explain(class_name):
     x = inspect.getmembers(class_name,

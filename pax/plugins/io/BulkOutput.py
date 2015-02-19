@@ -1,40 +1,32 @@
 import os
 import json
 import shutil
-import logging
 import time
 
 import numpy as np
-import h5py
 
 import pax
-from pax import plugin, exceptions, datastructure
+from pax import plugin, exceptions, datastructure, formats
 
-# Import modules for optional formats
-log = logging.getLogger('BulkOutputInitialization')
-try:
-    import pandas
-except ImportError:
-    log.warning("You don't have pandas -- if you use the pandas output, pax will crash!")
-# try:
-#     import ROOT
-# except ImportError:
-#     log.warning("You don't have ROOT -- if you use the ROOT output, pax will crash!")
+format_lookup_dict = {
+    'hdf5':         formats.HDF5Dump,
+    'numpy':        formats.NumpyDump,
+    'csv':          formats.PandasCSV,
+    'html':         formats.PandasHTML,
+    'json':         formats.PandasJSON,
+}
 
 
 class BulkOutput(plugin.OutputPlugin):
-
-    """
+    """Output data to flat table formats
     Convert our data structure to numpy record arrays, one for each class (Event, Peak, ReconstructedPosition, ...).
     Then output to one of several output formats:
         NumpyDump:  numpy record array dump (compressed)
         HDF5Dump:   h5py HDF5  (compressed)
         PandasCSV, PandasJSON, PandasHTML
-        (soon: ROOT)
-        (soon: several at same time?)
 
-    For each index, an extra column is added (eg. ReconstrucedPosition has an extra column 'Event', 'Peak'
-    and 'ReconstructedPosition', each restarting from 0 whenever the higher-level index changes)
+    For each index, an extra column is added (e.g. ReconstructedPosition has an extra column 'Event', 'Peak'
+    and 'ReconstructedPosition', each restarting from 0 whenever the higher-level index changes).
 
     The timestamp, pax configuration and version number are stored in a separate table/array: pax_info.
 
@@ -50,8 +42,9 @@ class BulkOutput(plugin.OutputPlugin):
      - string_data_length: Maximum length of strings in string data fields; longer strings will be truncated.
                            (the pax configuration is always stored fully)
      - append_data:        Append data to an existing file, if output format supports it
-     - write_every:        Write data to disk after every nth event, if the output format supports it.
-                           If not supported, all data is kept in memory, then written to disk on shutdown.
+     - buffer_size:        Convert to numpy record arrays after every nth event.
+     - write_in_chunks:    Write to disk every time after converting to numpy record arrays, if the output format
+                           supports it. Else all data is kept in memory, then written to disk on shutdown.
     """
 
     def startup(self):
@@ -81,8 +74,7 @@ class BulkOutput(plugin.OutputPlugin):
         self.events_ready_for_conversion = 0
 
         # Init the output format
-        # globals()[classname]() instantiates class named in classname, saves us an eval
-        self.output_format = of = globals()[self.config['output_format']](self.config, self.log)
+        self.output_format = of = format_lookup_dict[self.config['output_format']](self.config, self.log)
 
         if self.config['append_data'] and self.config['overwrite_data']:
             raise ValueError('Invalid configuration for BulkOutput: Cannot both append and overwrite')
@@ -108,10 +100,12 @@ class BulkOutput(plugin.OutputPlugin):
             if self.config['append_data'] and of.supports_append:
                 self.log.info('Output file/dir %s already exists: appending.' % outfile)
             elif self.config['overwrite_data']:
-                self.log.info('Output file/dir %s already exists, and you wanted to overwrite, so deleting it!'
-                              % outfile)
+                self.log.info('Output file/dir %s already exists, and you '
+                              'wanted to overwrite, so deleting it!' % outfile)
                 if self.output_format.file_extension == 'DIRECTORY':
-                    shutil.rmtree(outfile)
+                    self.log.warning('Deleting recursively %s...',
+                                     outfile)
+                    shutil.rmtree(outfile)  # Deletes directory and contents
                     os.mkdir(outfile)
                 else:
                     os.remove(outfile)
@@ -126,16 +120,22 @@ class BulkOutput(plugin.OutputPlugin):
         self.output_format.open(self.config['output_name'], mode='w')
 
     def write_event(self, event):
-        # Store all the event data internally, write to disk when appropriate
+        """Receive event and determine what to do with it
+
+        Store all the event data internally, write to disk when appropriate.
+        This function follows the plugin API.
+        """
         self._model_to_tuples(event, index_fields=[('Event', event.event_number), ])
         self.events_ready_for_conversion += 1
 
-        if self.events_ready_for_conversion == self.config['convert_every']:
+        if self.events_ready_for_conversion >= self.config['buffer_size']:
             self._convert_to_records()
             if self.config['write_in_chunks']:
                 self._write_to_disk()
 
     def _convert_to_records(self):
+        """Convert buffer data to numpy record arrays
+        """
         for dfname in self.data.keys():
             self.log.debug("Converting %s " % dfname)
             # Convert tuples to records
@@ -147,8 +147,11 @@ class BulkOutput(plugin.OutputPlugin):
                 self.data[dfname]['records'] = newrecords
             else:
                 self.data[dfname]['records'] = np.concatenate((self.data[dfname]['records'], newrecords))
+        self.events_ready_for_conversion = 0
 
     def _write_to_disk(self):
+        """Write buffered data to disk
+        """
         self.log.debug("Writing to disk...")
         # If any records are present, call output format to write records to disk
         if 'Event' not in self.data:
@@ -237,6 +240,8 @@ class BulkOutput(plugin.OutputPlugin):
         self.data[m_name]['tuples'].append(tuple(m_indices + m_data))
 
     def _numpy_field_dtype(self, name, x):
+        """Return field dtype of numpy record with field name name and value (of type of) x
+        """
         if name == 'configuration_json':
             return name, 'O'
         if isinstance(x, int):
@@ -252,8 +257,21 @@ class BulkOutput(plugin.OutputPlugin):
             return name, type(x)
 
 
-class InputFromBulkOutput(plugin.InputPlugin):
-    """Reprocess data from BulkOutput
+class ReadFromBulkOutput(plugin.InputPlugin):
+    """Read data from BulkOutput for reprocessing
+
+    'Reprocessing' means: reading in old processed data, then start somewhere in middle of processing chain,
+    (e.g. redo classification), and finally write to new file.
+
+    Reprocessing WITHOUT reading in the individual hits is very fast. This is fine for re-doing
+    peak classification and anything higher-level we may come up with.
+
+    For re-doing clustering and/or peak property computation you must read in the hits, which is slow.
+    The speed is set by overhead in the datastructure: 1/3 of runtime due to type checking, rest due to
+    converting between all the internal formats). We can try to optimize this at some point.
+
+    However, for this kind of reprocessing we may eventually need to read the raw data and build a sum waveform
+    as well, which takes time too.
     """
 
     def startup(self):
@@ -261,16 +279,18 @@ class InputFromBulkOutput(plugin.InputPlugin):
         self.read_hits = self.config['read_hits']
         self.read_recposes = self.config['read_recposes']
 
-        self.output_format = of = globals()[self.config['format']](self.config, self.log)
+        self.output_format = of = format_lookup_dict[self.config['format']](self.config, self.log)
         if not of.supports_read_back:
             raise NotImplementedError("Output format %s does not "
                                       "support reading data back in!" % self.config['format'])
 
         of.open(name=self.config['input_name'], mode='r')
 
-        self.dnames = ['Event', 'Peak', 'ReconstructedPosition']
+        self.dnames = ['Event', 'Peak']
         if self.read_hits:
             self.dnames.append('ChannelPeak')
+        if self.read_recposes:
+            self.dnames.append('ReconstructedPosition')
 
         self.cache = {}        # Dict of numpy record arrays just read from disk, waiting to be sorted
         self.max_n = {x: of.n_in_data(x) for x in self.dnames}
@@ -278,6 +298,9 @@ class InputFromBulkOutput(plugin.InputPlugin):
         self.current_pos = {x: 0 for x in self.dnames}
 
     def get_events(self):
+        """Get events from processed data source
+        Follows plugin API.
+        """
         of = self.output_format
 
         for event_i in range(self.number_of_events):
@@ -356,6 +379,8 @@ class InputFromBulkOutput(plugin.InputPlugin):
             yield event
 
     def _numpy_record_to_dict(self, record):
+        """Convert a single numpy record to a dict (keys=field names, values=values)
+        """
         names = record.dtype.names
         result = {}
         for k, v in zip(names, record):
@@ -368,123 +393,3 @@ class InputFromBulkOutput(plugin.InputPlugin):
         return result
 
 # TODO: check if df_name absent, raise error??
-
-
-class BulkOutputFormat(object):
-    """Base class for bulk output formats
-    """
-    supports_append = False
-    supports_write_in_chunks = False
-    supports_array_fields = False
-    supports_read_back = False
-    file_extension = 'DIRECTORY'   # Leave to None for database insertion or something
-
-    def __init__(self, config, log):
-        self.config = config
-        self.log = log
-
-    def open(self, name, mode):
-        # Dir formats don't need to do anything here
-        pass
-
-    def close(self):
-        # Dir formats don't need to do anything here
-        pass
-
-    def read_data(self, df_name, start, end):
-        raise NotImplementedError
-
-    def write_data(self, data):
-        # Should be overridden by child class
-        raise NotImplementedError
-
-    def get_number_of_events(self):
-        raise NotImplementedError
-
-
-class NumpyDump(BulkOutputFormat):
-    file_extension = 'npz'
-    supports_array_fields = True
-    supports_read_back = True
-
-    def open(self, name, mode):
-        self.filename = name
-        if mode == 'r':
-            self.f = np.load(self.filename)
-
-    def close(self):
-        if hasattr(self, 'f'):
-            self.f.close()
-
-    def write_data(self, data):
-        np.savez_compressed(self.filename, **data)
-
-    def read_data(self, df_name, start, end):
-        return self.f[df_name][start:end]
-
-    def n_in_data(self, df_name):
-        return len(self.f[df_name])
-
-
-class HDF5Dump(BulkOutputFormat):
-    file_extension = 'hdf5'
-    supports_array_fields = True
-    supports_write_in_chunks = True
-    supports_read_back = True
-
-    def open(self, name, mode):
-        self.f = h5py.File(name, mode)
-
-    def close(self):
-        self.f.close()
-
-    def write_data(self, data):
-        for name, records in data.items():
-            dataset = self.f.get(name)
-            if dataset is None:
-                self.f.create_dataset(name, data=records, maxshape=(None,),
-                                      compression="gzip",   # hdfview doesn't like lzf?
-                                      shuffle=True,
-                                      fletcher32=True)
-            else:
-                oldlen = dataset.len()
-                dataset.resize((oldlen + len(records),))
-                dataset[oldlen:] = records
-
-    def read_data(self, df_name, start, end):
-        return self.f.get(df_name)[start:end]
-
-    def n_in_data(self, df_name):
-        return self.f[df_name].len()
-
-
-##
-# Pandas output formats
-##
-
-class PandasFormat(BulkOutputFormat):
-
-    pandas_format_key = None
-
-    def write_data(self, data):
-        for name, records in data.items():
-            # Write pandas dataframe to container
-            self.write_pandas_dataframe(name,
-                                        pandas.DataFrame.from_records(records))
-
-    def write_pandas_dataframe(self, df_name, df):
-        # Write each DataFrame to file
-        getattr(df, 'to_' + self.pandas_format_key)(
-            os.path.join(self.config['output_name'], df_name + '.' + self.pandas_format_key))
-
-
-class PandasCSV(PandasFormat):
-    pandas_format_key = 'csv'
-
-
-class PandasHTML(PandasFormat):
-    pandas_format_key = 'html'
-
-
-class PandasJSONPandasFormat(PandasFormat):
-    pandas_format_key = 'json'
