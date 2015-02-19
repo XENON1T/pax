@@ -28,6 +28,7 @@ setup(
     packages=[
         'pax',
         'pax.config',
+        'pax.formats',
         'pax.plugins',
         'pax.plugins.corrections',
         'pax.plugins.signal_processing',
