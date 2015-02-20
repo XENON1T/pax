@@ -4,7 +4,6 @@ import numpy as np
 
 from pax import core, plugin
 from pax.datastructure import Event, Peak
-from pax.utils import empty_event
 
 
 class TestPosRecChiSquareGamma(unittest.TestCase):
@@ -17,11 +16,11 @@ class TestPosRecChiSquareGamma(unittest.TestCase):
                                                'PosRecChiSquareGamma.PosRecChiSquareGamma'}})
         self.plugin = self.pax.get_plugin_by_name('PosRecChiSquareGamma')
 
-        self.e = empty_event()
+        self.e = Event.empty_event()
 
     def example_event(self, channels_with_something):
         channels = np.array(channels_with_something, dtype='float64')
-        e = empty_event()
+        e = Event.empty_event()
         e.peaks.append(Peak({'left':  5,
                              'right': 9,
                              'type':  'S2',

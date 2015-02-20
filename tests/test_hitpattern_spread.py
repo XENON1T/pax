@@ -3,7 +3,6 @@ import numpy as np
 
 from pax import core, plugin, units
 from pax.datastructure import Peak, Event
-from pax.utils import empty_event
 
 
 class TestComputeHitpatternSpread(unittest.TestCase):
@@ -18,7 +17,7 @@ class TestComputeHitpatternSpread(unittest.TestCase):
     def example_event(channels_with_something):
         bla = np.zeros(242)
         bla[np.array(channels_with_something)] = 1
-        e = empty_event()
+        e = Event.empty_event()
         e.peaks.append(Peak({'left':  5,
                              'right': 9,
                              'type':  'unknown',

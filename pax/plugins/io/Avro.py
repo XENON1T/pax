@@ -22,7 +22,6 @@ from pax import plugin, datastructure
 
 
 class ReadAvro(plugin.InputPlugin):
-
     """Read raw Avro data to get PMT pulses
 
     This is the lowest level data stored.
@@ -90,7 +89,8 @@ class WriteAvro(plugin.OutputPlugin):
         self.writer = DataFileWriter(open(self.config['output_name'],
                                           'wb'),
                                      DatumWriter(),
-                                     self.schema)
+                                     self.schema,
+                                     codec=self.config['codec'])
 
         self.writer.append({'number': -1,
                             'start_time': -1,

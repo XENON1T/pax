@@ -36,15 +36,6 @@ def chunk_in_ntuples(iterable, n, fillvalue=None):
 ##
 # Peak processing helper routines
 ##
-def free_regions(event, detector='tpc'):
-    """Find the free regions in the event's waveform - regions where peaks haven't yet been found
-        detector: give free regions wrt this detector
-    :returns list of 2-tuples (left index, right index) of regions where no peaks have been found
-    """
-    lefts = [0] + [p.left for p in event.peaks if p.detector == detector]
-    rights = [p.right for p in event.peaks if p.detector == detector] + [event.length() - 1]
-    # Assuming each peak's right > left, we can simply split sorted(lefts+rights) in pairs:
-    return chunk_in_ntuples(sorted(lefts + rights), n=2)
 
 
 def cluster_by_diff(x, diff_threshold, return_indices=False):
@@ -304,9 +295,3 @@ class InterpolatingMap(object):
         else:
             plt.show()
         plt.close()
-
-
-def empty_event():
-    # useful for testing
-    from pax.datastructure import Event
-    return Event(n_channels=1, start_time=0, length=1)

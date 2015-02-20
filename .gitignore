@@ -7,6 +7,8 @@
 *.png
 *.h5
 *.hdf
+*.hdf5
+*.npz
 fax_truth.csv
 
 

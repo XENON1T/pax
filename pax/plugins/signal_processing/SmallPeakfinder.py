@@ -1,7 +1,7 @@
 import numpy as np
 import numba
 
-from pax import plugin, datastructure
+from pax import plugin, datastructure, units
 
 
 # Used for diagnostic plotting only
@@ -145,6 +145,8 @@ class FindSmallPeaks(plugin.TransformPlugin):
                 plt.legend()
                 bla = (event.event_number, start, stop, channel)
                 plt.title('Event %s, occurrence %d-%d, Channel %d' % bla)
+                plt.xlabel("Sample [%s ns]" % (event.sample_duration / units.ns))
+                plt.ylabel("Amplitude [pe]")
                 plt.savefig(os.path.join(self.make_diagnostic_plots_in,
                                          'event%04d_occ%05d-%05d_ch%03d.png' % bla))
                 plt.close()

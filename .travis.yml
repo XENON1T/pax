@@ -40,7 +40,8 @@ install:
   - sudo apt-get build-dep python-snappy
 
   # Replace dep1 dep2 ... with your dependencies
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib pandas pytables pip numba
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib pandas pytables cython h5py numba pip
+
   #- pip uninstall -y nose
 
   - source activate test-environment

@@ -3,7 +3,6 @@ import numpy as np
 
 from pax import core, plugin
 from pax.datastructure import Event, Peak
-from pax.utils import empty_event
 
 
 class TestPosRecNeuralNet(unittest.TestCase):
@@ -14,13 +13,11 @@ class TestPosRecNeuralNet(unittest.TestCase):
             'test':               'NeuralNet.PosRecNeuralNet'}})
         self.plugin = self.pax.get_plugin_by_name('PosRecNeuralNet')
 
-        self.e = empty_event()
-
     @staticmethod
     def example_event(channels_with_something):
         bla = np.zeros(243)
         bla[np.array(channels_with_something)] = 1
-        e = empty_event()
+        e = Event.empty_event()
         e.peaks.append(Peak({'left':  5,
                              'right': 9,
                              'type':  'S2',
