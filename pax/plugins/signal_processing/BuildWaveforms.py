@@ -68,38 +68,45 @@ class BuildWaveforms(plugin.TransformPlugin):
             occurrence_wave = occ.raw_data
 
             ##
-            #  Pulse bounds checking / truncation
+            #  Pulse bounds checking / truncation (see issue 43)
             ##
 
-            # Always throw error if occurrence is completely outside event -- see issue 43
-            if end_index < 0 or start_index > event_length - 1:
-                raise exceptions.OccurrenceBeyondEventError(
-                    'Occurrence %s in channel %s (%s-%s) is entirely outside event bounds (%s-%s)!' % (
-                        occ_i, channel, start_index, end_index, 0, event_length - 1))
+            overhang = end_index - (event_length - 1)
 
-            # Truncate occurrences starting too early -- see issue 43
-            if start_index < 0:
-                message_head = "Occurrence %s in channel %s starts %s samples before event starts (see issue #43)" % (
-                    occ_i, channel, -start_index)
-                if not self.truncate_occurrences_partially_outside:
-                    raise exceptions.OccurrenceBeyondEventError(message_head + '!')
-                self.log.warning(message_head + ': truncating.')
-                occurrence_wave = occurrence_wave[-start_index:]
-                # Update the start index
-                start_index = 0
+            if start_index < 0 or overhang > 0:
 
-            # Truncate occurrences taking too long -- see issue 43
-            overhang_length = length - 1 + start_index - event_length
-            if overhang_length > 0:
-                message_head = "Occurrence %s in channel %s has overhang of %s samples (see issue #43)" % (
-                    occ_i, channel, overhang_length)
+                # Always throw error if occurrence is completely outside event
+                if overhang >= length or start_index <= -length:
+                    raise exceptions.OccurrenceBeyondEventError(
+                        'Occurrence %s in channel %s (%s-%s) is entirely outside '
+                        'event bounds (%s-%s)! See issue #43.' % (
+                            occ_i, channel, start_index, end_index, 0, event_length - 1))
+
+                # If partially outside, truncate with warning, or give error, according to config
+                message = 'Occurrence %s in channel %s (%s-%s) is partially outside ' \
+                          'event bounds (%s-%s). See issue #43' % (
+                              occ_i, channel, start_index, end_index, 0, event_length - 1)
+
                 if not self.truncate_occurrences_partially_outside:
-                    raise exceptions.OccurrenceBeyondEventError(message_head + '!')
-                self.log.warning(message_head + ': truncating.')
-                occurrence_wave = occurrence_wave[:length - overhang_length]
-                # Update the length & end index
-                length = len(occurrence_wave)
-                end_index = start_index + length - 1
+                    raise exceptions.OccurrenceBeyondEventError(message)
+                self.log.warning(message)
+
+                # Truncate the occurrence. Remember start_index < 0!
+                if start_index < 0:
+                    occurrence_wave = occurrence_wave[-start_index:]
+                    start_index = 0
+                if overhang > 0:
+                    occurrence_wave = occurrence_wave[:-overhang]
+                    end_index = event_length - 1
+                length = end_index - start_index + 1
+
+                # Update the occurrence data, so hit finder won't look at old un-truncated occ
+                event.occurrences[occ_i] = occ = datastructure.Occurrence(
+                    left=start_index,
+                    right=end_index,
+                    channel=channel,
+                    raw_data=occurrence_wave
+                )
 
             ##
             #  Baseline determination
