@@ -272,6 +272,8 @@ class ReadFromBulkOutput(plugin.InputPlugin):
 
     However, for this kind of reprocessing we may eventually need to read the raw data and build a sum waveform
     as well, which takes time too.
+
+    TODO: Check if all the tables / dnames we want to read in are present in the file, else give error
     """
 
     def startup(self):
@@ -391,5 +393,3 @@ class ReadFromBulkOutput(plugin.InputPlugin):
                 v = v.decode("utf-8")
             result[k] = v
         return result
-
-# TODO: check if df_name absent, raise error??
