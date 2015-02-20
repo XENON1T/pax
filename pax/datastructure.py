@@ -135,7 +135,8 @@ class Peak(StrictModel):
     full_width_tenth_max_filtered = 0.0     #: Full width at tenth of maximum in samples, in filtered waveform
 
     #: Array of squared signal entropies in each PMT.
-    entropy_per_channel = np.array([], dtype='float64')
+    # Unused
+    # entropy_per_channel = np.array([], dtype='float64')
 
     ##
     #   Fields present in peaks from single-channel peakfinding
@@ -326,14 +327,22 @@ class Event(StrictModel):
         if 'length' in kwargs and self.sample_duration and not self.stop_time:
             self.stop_time = int(self.start_time + kwargs['length'] * self.sample_duration)
 
-        if not self.length:
+        if not self.stop_time:
             raise ValueError("Cannot initialize an event with an unknown length: " +
                              "pass either stop_time or length and sample_duration")
 
         # Initialize numpy arrays -- need to have n_channels and self.length
         # This is the main reason for having Event.__init__
+        # TODO: don't initialize these is already in kwargs
+        # TODO: better yet, make an alternate init or something?
         self.channel_waveforms = np.zeros((n_channels, self.length()))
         self.is_channel_bad = np.zeros(n_channels, dtype=np.bool)
+
+    @classmethod
+    def empty_event(cls):
+        """Returns an empty example event: for testing purposes only!!
+        """
+        return Event(n_channels=1, start_time=10, length=1, sample_duration=int(10*units.ns))
 
     def duration(self):
         """Duration of event window in units of ns
