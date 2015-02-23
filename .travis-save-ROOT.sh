@@ -9,7 +9,7 @@ rm root_v${ROOT}.source.tar.gz
 
 echo make new archive of current installation
 
-tar -cfz root_v${ROOT}_binaries.tar.gz root*
+tar cfz root_v${ROOT}_binaries.tar.gz root*
 
 echo print size of created file
 
