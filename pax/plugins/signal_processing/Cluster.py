@@ -137,6 +137,7 @@ class MeanShift(ClusterPlugin):
 
         new_cluster_indices = []
         for ci in cluster_indices:
+            ci = np.array(ci)
             channel_peak_objects = spes[[ci]]
 
             locations = np.arange(channel_peak_objects.size)
@@ -155,8 +156,8 @@ class MeanShift(ClusterPlugin):
                 continue
 
             x = data[0]
-            X = np.array(list(zip(x,np.zeros(len(x)))),
-                             dtype=np.int)
+            X = np.array(list(zip(x, np.zeros(len(x)))),
+                         dtype=np.int)
 
             ms = sklearn.cluster.MeanShift(bandwidth=self.bandwidth,
                                            bin_seeding=True,
@@ -169,14 +170,14 @@ class MeanShift(ClusterPlugin):
                     continue
                 peaks_in_cluster = np.unique(data[1,
                                                   (ms.labels_ == label)])
-                new_cluster_indices.append(peaks_in_cluster)
+                new_cluster_indices.append(ci[peaks_in_cluster])
 
         return new_cluster_indices
 
     @staticmethod
     def get_gap_probability(gap_width, s2_size,
                             s2_width, p_value_offset=0.0,
-                            n = 10000):
+                            n=10000):
         answer = 0.0
 
         for index in range(n):
@@ -192,7 +193,6 @@ class MeanShift(ClusterPlugin):
             if np.max(gap_sizes) < gap_width:
                 answer += 1
         return answer / n - p_value_offset
-
 
     def get_gap_size(self):
         return brenth(self.get_gap_probability,
@@ -211,8 +211,8 @@ class HitDifference(ClusterPlugin):
 
     def cluster_hits(self, hits):
         return utils.cluster_by_diff([s.index_of_maximum * self.dt for s in hits],
-                                      self.config['max_difference'],
-                                      return_indices=True)
+                                     self.config['max_difference'],
+                                     return_indices=True)
 
 
 class HitGap(ClusterPlugin):
