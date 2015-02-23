@@ -5,12 +5,12 @@ from pax import core, plugin, units
 from pax.datastructure import Peak, Event
 
 
-class TestComputeHitpatternSpread(unittest.TestCase):
+class TestComputeComputePeakProperties(unittest.TestCase):
 
     def setUp(self):
         self.pax = core.Processor(config_names='XENON100', just_testing=True, config_dict={'pax': {
             'plugin_group_names': ['test'],
-            'test':               'HitpatternSpread.HitpatternSpread'}})
+            'test':               'ComputePeakProperties.HitpatternSpread'}})
         self.plugin = self.pax.get_plugin_by_name('HitpatternSpread')
 
     @staticmethod

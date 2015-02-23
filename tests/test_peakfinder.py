@@ -28,13 +28,13 @@ example_noise = np.array([
 ], dtype=np.float64)
 
 
-class TestSmallPeakfinder(unittest.TestCase):
+class TestHitFinder(unittest.TestCase):
 
     def setUp(self):
         self.pax = core.Processor(config_names='XENON100', just_testing=True, config_dict={
             'pax': {
                 'plugin_group_names': ['test'],
-                'test':               'SmallPeakfinder.BaselineExcursionMethod',
+                'test':               'HitFinder.BaselineExcursionMethod',
                 # 'logging_level':      'DEBUG',
                 },
             'DEFAULT': {
