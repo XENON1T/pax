@@ -197,7 +197,7 @@ class Occurrence(StrictModel):
     digitizer_baseline_used = float('nan')
 
     #: Baseline correction computed by FindSmallpeaks (in pe/bin)
-    #: Will remain nan if channel is not processed by FindSmallPeaks
+    #: Will remain nan if channel is not processed by BaselineExcursionMethod
     baseline_correction = float('nan')
 
     #: Raw wave data (in ADC counts, NOT pe/bin!; numpy array of int16)

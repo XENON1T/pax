@@ -1,7 +1,7 @@
 from pax import plugin
 
 
-class AdHocClassification(plugin.TransformPlugin):
+class AreaMAD(plugin.TransformPlugin):
 
     def transform_event(self, event):
 

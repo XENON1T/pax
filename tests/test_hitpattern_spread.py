@@ -10,8 +10,8 @@ class TestComputeHitpatternSpread(unittest.TestCase):
     def setUp(self):
         self.pax = core.Processor(config_names='XENON100', just_testing=True, config_dict={'pax': {
             'plugin_group_names': ['test'],
-            'test':               'ComputeHitpatternSpread.ComputeHitpatternSpread'}})
-        self.plugin = self.pax.get_plugin_by_name('ComputeHitpatternSpread')
+            'test':               'HitpatternSpread.HitpatternSpread'}})
+        self.plugin = self.pax.get_plugin_by_name('HitpatternSpread')
 
     @staticmethod
     def example_event(channels_with_something):
@@ -28,7 +28,7 @@ class TestComputeHitpatternSpread(unittest.TestCase):
 
     def test_get_plugin(self):
         self.assertIsInstance(self.plugin, plugin.TransformPlugin)
-        self.assertEqual(self.plugin.__class__.__name__, 'ComputeHitpatternSpread')
+        self.assertEqual(self.plugin.__class__.__name__, 'HitpatternSpread')
 
     def test_compute_spread(self):
         e = self.example_event([1, 16])

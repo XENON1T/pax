@@ -619,7 +619,7 @@ class FindPeaks(plugin.TransformPlugin):
             return True
 
 
-# Sort and prune a peak list - needed in peakfinder and ComputePeakProperties
+# Sort and prune a peak list - needed in peakfinder and Basics
 def sort_and_prune_by(peak_list, key=lambda x: x, keep_number=float('inf'), reverse=False):
     peak_list.sort(key=key, reverse=reverse)
     if len(peak_list) > keep_number:
