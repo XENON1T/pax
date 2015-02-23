@@ -72,6 +72,17 @@ def mad(data, axis=None):
     return np.mean(np.absolute(data - np.median(data, axis)), axis)
 
 
+def weighted_mean_variance(values, weights):
+    """
+    Return the weighted mean, and the weighted sum square deviation from the weighted mean.
+    values, weights -- Numpy ndarrays with the same shape.
+    Stolen from http://stackoverflow.com/questions/2413522/weighted-standard-deviation-in-numpy
+    """
+    weighted_mean = np.average(values, weights=weights)
+    weighted_variance = np.average((values-weighted_mean)**2, weights=weights)  # Fast and numerically precise
+    return weighted_mean, weighted_variance
+
+
 def peak_bounds(signal, fraction_of_max=None, max_idx=None, zero_level=0, inclusive=True):
     """
     Return (left, right) indices closest to max_idx where signal drops below signal[max_idx]*fraction_of_max.

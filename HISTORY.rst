@@ -34,7 +34,7 @@ History
 
  * New signal processing chain
 
-   * FindSmallPeaks, finds single-photon peaks in each channel (Default)
+   * BaselineExcursionMethod, finds single-photon peaks in each channel (Default)
    * FindBigPeaks, a traditional sum-waveform peakfinder
    * Supporting peak classification and property computation plugins
 

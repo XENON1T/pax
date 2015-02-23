@@ -28,13 +28,13 @@ example_noise = np.array([
 ], dtype=np.float64)
 
 
-class TestSmallPeakfinder(unittest.TestCase):
+class TestHitFinder(unittest.TestCase):
 
     def setUp(self):
         self.pax = core.Processor(config_names='XENON100', just_testing=True, config_dict={
             'pax': {
                 'plugin_group_names': ['test'],
-                'test':               'SmallPeakfinder.FindSmallPeaks',
+                'test':               'HitFinder.BaselineExcursionMethod',
                 # 'logging_level':      'DEBUG',
                 },
             'DEFAULT': {
@@ -42,7 +42,7 @@ class TestSmallPeakfinder(unittest.TestCase):
                 'channels_top': [0],
                 'channels_bottom': [1],
                 'channels_in_detector': {'tpc': [0, 1]}}})
-        self.plugin = self.pax.get_plugin_by_name('FindSmallPeaks')
+        self.plugin = self.pax.get_plugin_by_name('BaselineExcursionMethod')
 
     @staticmethod
     def peak_at(left, right, amplitude, noise_sigma):
@@ -52,7 +52,7 @@ class TestSmallPeakfinder(unittest.TestCase):
 
     def test_sanity(self):
         self.assertIsInstance(self.plugin, plugin.TransformPlugin)
-        self.assertEqual(self.plugin.__class__.__name__, 'FindSmallPeaks')
+        self.assertEqual(self.plugin.__class__.__name__, 'BaselineExcursionMethod')
 
     def try_single_clear_peak(self, left, right):
         raw_peaks = np.zeros((100, 2), dtype=np.int64)

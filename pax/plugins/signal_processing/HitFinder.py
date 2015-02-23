@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 import os
 
 
-class FindSmallPeaks(plugin.TransformPlugin):
+class BaselineExcursionMethod(plugin.TransformPlugin):
 
     def startup(self):
 
