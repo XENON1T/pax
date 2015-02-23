@@ -32,9 +32,11 @@ class ClusterPlugin(plugin.TransformPlugin):
                 peaks = []
                 dark_count = {}
 
-                # Get all single-pe data in a list of dicts, sorted by index_of_maximum
-                spes = sorted([p for p in event.all_channel_peaks if p.channel in self.config['channels_in_detector'][detector] and (not self.config['exclude_bad_channels'] or not event.is_channel_bad[p.channel])],  # noqa, we're replacing this soon anyways
-                              key=lambda s: s.index_of_maximum)
+                # Get all single-pe data in a list of dicts, sorted by left
+                spes = sorted([p for p in event.all_channel_peaks
+                               if p.channel in self.config['channels_in_detector'][detector] and
+                               (not self.config['exclude_bad_channels'] or not event.is_channel_bad[p.channel])],
+                              key=lambda q: q.left)
                 self.log.debug("Found %s channel peaks" % len(spes))
 
                 if not spes:
@@ -215,11 +217,47 @@ class HitDifference(ClusterPlugin):
                                      return_indices=True)
 
 
-class HitGap(ClusterPlugin):
+class GapSize(ClusterPlugin):
     """Clusters hits based on gaps = times not covered by any hits.
     Any gap longer than max_gap_size starts a new cluster.
-    Difference with HitDifference: this interval nature of hits into account
+    Difference with HitDifference: this takes interval nature of hits into account
     """
+    def startup(self):
+        super().startup()
+        # Convert gap threshold to samples (is in time (ns) in config)
+        self.large_gap_threshold = self.config['large_gap_threshold'] / self.dt
+        self.small_gap_threshold = self.config['small_gap_threshold'] / self.dt
+        self.transition_point = self.config['transition_point']
 
     def cluster_hits(self, hits):
-        raise NotImplementedError
+        lefts = [h.left for h in hits]
+        rights = [h.right for h in hits]
+        areas = [h.area for h in hits]
+        clusters = []
+
+        # If a hit has a left > this, it will form a new cluster
+        boundary = -999999999
+
+        for i in range(len(hits)):
+
+            if lefts[i] > boundary:
+                # Hit starts after current boundary: new cluster
+                clusters.append([])
+                # (Re)set area and thresholds
+                area = 0
+                gap_size_threshold = self.large_gap_threshold
+                boundary = rights[i] + gap_size_threshold
+
+            # Add this hit to the cluster
+            clusters[-1].append(i)
+            area += areas[i]
+
+            # Can we start applying the tighter threshold?
+            if area > self.transition_point:
+                # Yes, there's no chance this is a single electron: use a tighter clustering boundary
+                gap_size_threshold = self.small_gap_threshold
+
+            # Extend the boundary at which a new clusters starts, if needed
+            boundary = max(boundary, rights[i] + gap_size_threshold)
+
+        return clusters
