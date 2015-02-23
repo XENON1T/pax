@@ -1,91 +1,96 @@
 """Neural network reconstruction algorithms"""
-from pax import plugin
+import numpy as np
 
+from pax import plugin
 from pax.datastructure import ReconstructedPosition
 
 
 class PosRecNeuralNet(plugin.TransformPlugin):
 
-    """Please write one sentence here
+    """Reconstruct S2 x,y positions from top pmt hit pattern using a single hidden layer feed-foward neural net
 
-    Please write on 3 paragraphs here here here here here here here
-    here here here here here here here here here here here here here
-    here
-
-    and here here here here here here here here here here here here
-    here here here here here here here here here here here here here
-    here
-
-    and here here here here here here here here here here here here
-    here here here here here here here here here here here here here
-    here
+    See Alex Kish' thesis for details:
+    http://www.physik.uzh.ch/groups/groupbaudis/darkmatter/theses/xenon/Kish_THESISelectronic.pdf
     """
 
     def startup(self):
-        """Initialize reconstruction algorithm
-
-        Determine which PMTs to use for reconstruction.
+        """ Initialize the neural net.
         """
+        if self.config['pmt_0_is_fake']:
+            self.input_channels = np.array(self.config['channels_top'][1:])
+        else:
+            self.input_channels = np.array(self.config['channels_top'])
+        self.nn_output_unit = self.config['nn_output_unit']
 
-        # This can either be 'top' or 'bottom'.
-        self.which_pmts = 'pmts_%s' % self.config['channels_to_use_for_reconstruction']
-        if self.which_pmts not in self.config.keys():
-            raise RuntimeError("Bad choice 'channels_to_use_for_reconstruction'")
-
-        # List of integers of which PMTs to use
-        self.pmts = self.config[self.which_pmts]
-
-        # (x,y) locations of these PMTs.  This is stored as a dictionary such
-        # that self.pmt_locations[int] = {'x' : int, 'y' : int, 'z' : None}
-        self.pmt_locations = self.config['pmt_locations']
+        self.nn = NeuralNet(n_inputs=len(self.input_channels),
+                            n_hidden=self.config['hidden_layer_neurons'],
+                            n_output=2,   # x, y
+                            weights=self.config['weights'],
+                            biases=self.config['biases'])
 
     def transform_event(self, event):
         """Reconstruct the position of S2s in an event.
-
-        Information on how to use the 'event' object is at:
-
-          http://xenon1t.github.io/pax/format.html
         """
 
         # For every S2 peak found in the event
         for peak in event.S2s():
-            # This is an array where every i-th element is how many pe
-            # were seen by the i-th PMT
-            hits = peak.area_per_channel
 
-            sum_x = 0  # sum of x positions
-            sum_y = 0  # sum of y positions
+            input_areas = peak.area_per_channel[self.input_channels]
 
-            scale = 0  # Total q
+            # Run the neural net
+            # Input is fraction of top area (see Xerawdp, PositionReconstruction.cpp, line 246)
+            # Convert from neural net's units to pax units
+            nn_output = self.nn.run(input_areas/np.sum(input_areas)) * self.nn_output_unit
 
-            # For every PMT
-            for pmt in self.pmts:  # 'pmt' is a PMT ID
-                value = self.pmt_locations[pmt]  # Dictionary {'x' : int, etc.}
-                Q = hits[pmt]  # Area of this S2 for this PMT # noqa
-
-                # Add this 'Q' to total Q 'scale'
-                scale += Q
-
-                # Add charge-weighted position to running sum
-                sum_x += Q * value['x']
-                sum_y += Q * value['y']
-
-            if scale != 0:  # If charge actually seen for this S2
-                # Compute the positions
-                peak_x = sum_x / scale
-                peak_y = sum_y / scale
-            else:
-                peak_x = peak_y = float('NaN')  # algorithm failed
-
-            # Create a reconstructed position object
-            rp = ReconstructedPosition({'x': peak_x,
-                                        'y': peak_y,
-                                        'z': 42,
-                                        'index_of_maximum': peak.index_of_maximum,
-                                        'algorithm': self.name})
-
-            # Append our reconstructed position object to the peak
-            peak.reconstructed_positions.append(rp)
+            peak.reconstructed_positions.append(ReconstructedPosition({
+                'x': nn_output[0],
+                'y': nn_output[1],
+                'algorithm': 'NeuralNet'}))
 
         # Return the event such that the next processor can work on it
         return event
+
+
+class NeuralNet():
+    """Single hidden layer feed-forward neural net
+     - Input layer without activation function or bias
+     - Hidden layer with atanh(sum + bias) activation function
+     - Output layer with sum + bias (i.e. identity) activation function
+    All neurons in a layer are connected to all neurons in the previous layer.
+    """
+
+    def __init__(self, n_inputs, n_hidden, n_output, weights, biases):
+
+        # Boilerplate for storing args...
+        self.n_inputs = n_inputs
+        self.n_hidden = n_hidden
+        self.n_output = n_output
+        self.weights = np.array(weights)
+        self.biases = np.array(biases)
+
+        # Sanity checks
+        if not len(biases) == n_hidden + n_output:
+            raise ValueError("Each hidden and output neuron must have a bias!")
+        if not len(weights) == n_inputs * n_hidden + n_hidden * n_output:
+            raise ValueError("Invalid length of weights for totally connected neuron layers.")
+
+    def run(self, input_values):
+        """Return the neural net's output (numpy array of output neuron values) on the input_values"""
+        assert len(input_values) == self.n_inputs
+
+        # Input layer neurons do nothing
+
+        # Run the hidden layer, apply tanh activation function
+        hidden_values = self.run_layer(input_values,
+                                       self.weights[:self.n_inputs * self.n_hidden])
+        hidden_values = np.tanh(hidden_values + self.biases[:self.n_hidden])
+
+        # Run the output layer, apply identity activation function (just add bias)
+        output_values = self.run_layer(hidden_values, self.weights[self.n_inputs * self.n_hidden:])
+        return output_values + self.biases[self.n_hidden:]
+
+    def run_layer(self, input_values, weights):
+        # Dendrite values: weighted inputs
+        dendrite_values = np.tile(input_values, len(weights)/len(input_values)) * weights
+        # Sum weighted inputs for each hidden layer neuron separately
+        return np.sum(dendrite_values.reshape(-1, len(input_values)), axis=1)

@@ -4,7 +4,6 @@ test_pax_configuration
 
 Tests for `pax.configuration` module.
 """
-
 import unittest
 
 from pax import units

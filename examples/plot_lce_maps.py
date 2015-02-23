@@ -1,11 +1,13 @@
 import os
-from tqdm import tqdm
+
 import numpy as np
 import matplotlib.pyplot as plt
 
+from tqdm import tqdm
 from pax.utils import InterpolatingMap
 from pax.core import data_file_name
 from pax import units
+
 
 map_file = 's2_xy_lce_map_XENON100_Xerawdp0.4.5'
 

@@ -1,7 +1,7 @@
 import numpy as np
+from scipy.signal import butter, filtfilt
 
 from pax import plugin, datastructure
-from scipy.signal import butter, filtfilt
 
 
 class Filtering(plugin.TransformPlugin):

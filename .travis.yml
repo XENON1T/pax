@@ -4,7 +4,6 @@ language: python
 
 python:
   - "3.4"
-#  - "pypy"
 
 notifications:
   email:
@@ -12,13 +11,15 @@ notifications:
     - jaalbers@nikhef.nl
     - bartp@nikhef.nl
 
+services:
+  - mongodb
+
 env:
-  #- ROOT=6.02.04
-  #- ROOT=5.32.04
   - ROOT=5.34.25
 
 install:
   # General update
+  - deactivate
   - sudo apt-get update -qq
   - sudo apt-get install -y build-essential
   - sudo apt-get install -y git dpkg-dev make binutils libx11-dev libxpm-dev libxft-dev libxext-dev gcc-multilib g++ gcc libsnappy1 libsnappy-dev
@@ -38,8 +39,11 @@ install:
   - sudo apt-get build-dep python-snappy
 
   # Create environment
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib pandas pytables
+  # Replace dep1 dep2 ... with your dependencies
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib pandas pytables cython h5py numba pip
+
   - source activate test-environment
+  - pip install coveralls nose coverage
 
   # ROOT 
   # - unset ROOT # uncomment to not install ROOT
@@ -59,12 +63,16 @@ install:
   - conda install system
 
   # Install pax
+
   - python setup.py install
 
 # command to run tests, e.g. python setup.py test
 script:
   - make test
+  - make coverage
   - make lint
 
 after_success:
   - root -l -q check_generated_TFile.C
+  - coveralls
+

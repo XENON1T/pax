@@ -3,15 +3,16 @@ Waveform simulator ("FaX") - physics backend
 The only I/O stuff here is pax event creation, everything else is in the WaveformSimulator plugins
 """
 
-import numpy as np
-import math
-import time
 import logging
 
+import numpy as np
 from scipy import stats
 
+import math
+import time
 from pax import units, utils, datastructure
 from pax.utils import Memoize
+
 
 log = logging.getLogger('SimulationCore')
 
@@ -87,11 +88,13 @@ class Simulator(object):
         drift_time_stdev /= self.config['drift_velocity_liquid']
 
         # Absorb electrons during the drift
-        electrons_seen = np.random.binomial(
-            n=electrons_generated,
-            p=self.config['electron_extraction_yield']
-            * math.exp(- drift_time_mean / self.config['electron_lifetime_liquid'])
-        )
+        electron_lifetime_correction = -1 * drift_time_mean / self.config['electron_lifetime_liquid']
+        electron_lifetime_correction = math.exp(electron_lifetime_correction)
+        prob = self.config['electron_extraction_yield'] * electron_lifetime_correction
+
+        electrons_seen = np.random.binomial(n=electrons_generated,
+                                            p=prob)
+
         log.debug("    %s electrons survive the drift." % electrons_generated)
 
         # Calculate electron arrival times in the ELR region
@@ -350,8 +353,10 @@ class Simulator(object):
                             raise RuntimeError("Invalid left index %s: can't be negative!" % left_index)
 
                         if righter_index >= len(current_wave):
-                            raise RuntimeError("Invalid right index %s: can't be longer than length of wave (%s)!" % (
-                                righter_index, len(current_wave)))
+                            raise RuntimeError("Invalid right index %s: can't "
+                                               "be longer than length of wave "
+                                               "(%s)!" % (righter_index,
+                                                          len(current_wave)))
 
                         current_wave[left_index: righter_index] += generated_pulse
 
@@ -359,17 +364,24 @@ class Simulator(object):
                 if self.config['white_noise_sigma'] is not None:
                     # / dt is for charge -> current conversion, as in pmt_pulse_current
                     noise_sigma_current = self.config['white_noise_sigma'] * self.config['gains'][channel] / dt,
-                    current_wave += np.random.normal(0, noise_sigma_current, len(current_wave))
+                    current_wave += np.random.normal(0,
+                                                     noise_sigma_current,
+                                                     len(current_wave))
 
-                # Convert current to digitizer count (should I trunc, ceil or floor?) and store
-                # Don't baseline correct, clip or flip down here, we do that at the
-                # very end when all signals are combined
-                temp = self.config['digitizer_baseline'] - np.trunc(
-                    self.config['pmt_circuit_load_resistor']
-                    * self.config['external_amplification'] / dV
-                    * current_wave
-                )
+                # Convert current to digitizer count and store.
+                # Don't baseline correct, clip or flip down here, we do that at
+                # the very end when all signals are combined. Think Ohm's law.
+                temp = current_wave
+                temp *= self.config['pmt_circuit_load_resistor']  # Resistance
+                temp *= self.config['external_amplification']    # k (scale)
+                temp /= dV  # Voltage
+
+                # PMT signals are 'up side down' when viewed on scope.
+                temp = self.config['digitizer_baseline'] - np.trunc(temp)
+
+                # Digitizers have finite number of bits per channel
                 temp = np.clip(temp, 0, 2 ** (self.config['digitizer_bits']))
+
                 event.occurrences.append(datastructure.Occurrence(
                     channel=channel,
                     left=start_index,
@@ -378,8 +390,8 @@ class Simulator(object):
         if len(event.occurrences) == 0:
             return None
 
-        log.debug("Simulated pax event of %s samples length and %s occurrences created." % (
-            event.length(), len(event.occurrences)))
+        log.debug("Simulated pax event of %s samples length and %s occurrences "
+                  "created." % (event.length(), len(event.occurrences)))
         return event
 
 
@@ -390,7 +402,8 @@ class SimulatedHitpattern(object):
         # TODO: specify x, y, z, let photon distribution depend on it
 
         if not len(photon_timings):
-            raise ValueError('Need at least 1 photon timing to produce a valid hitpattern')
+            raise ValueError('Need at least 1 photon timing to '
+                             'produce a valid hitpattern')
 
         # Correct for PMT TTS
         photon_timings += np.random.normal(
@@ -403,16 +416,22 @@ class SimulatedHitpattern(object):
         ch_for_photons = self.config['channels_for_photons']
         n_channels = len(ch_for_photons)
 
-        # First shuffle all timings in the array, so channel 1 doesn't always get the first photon
+        # First shuffle all timings in the array, so channel 1 doesn't always
+        # get the first photon
         np.random.shuffle(photon_timings)
 
-        # Now generate n_channels integers < n_channels to denote the splitting points
-        # TODO: think carefully about these +1 and -1's Without the +1 S1sClose failed
-        split_points = np.sort(np.random.randint(0, len(photon_timings) + 1, n_channels - 1))
+        # Now generate n_channels integers < n_channels to denote the splitting
+        # points
+        # TODO: think carefully about these +1 and -1's Without the +1 S1sClose
+        # failed
+        split_points = np.sort(np.random.randint(0,
+                                                 len(photon_timings) + 1,
+                                                 n_channels - 1))
 
         # Split the array according to the split points
         # numpy correctly inserts empty arrays if a split point occurs twice if split_points is sorted
-        photons_per_channel = np.split(photon_timings, split_points)
+        photons_per_channel = np.split(photon_timings,
+                                       split_points)
 
         # This distributes stuff in some pattern, favouring the center... odd
         # So: shuffle to randomize the photon distribution

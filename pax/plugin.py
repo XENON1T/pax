@@ -8,8 +8,8 @@ transform would modify the event object.
 See format for more information on the event object.
 """
 import logging
-import time
 
+import time
 from pax.datastructure import Event
 
 

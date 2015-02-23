@@ -7,40 +7,40 @@ test_pax
 
 Tests for `pax` module.
 """
-import numpy as np
 import unittest
 
-from pax.datastructure import Peak, SumWaveform
-from pax.utils import empty_event
+import numpy as np
+
+from pax.datastructure import Event, Peak, SumWaveform
 
 
 class TestDatastructure(unittest.TestCase):
 
     def test_does_not_exist(self):
-        e = empty_event()
+        e = Event.empty_event()
         with self.assertRaises(AttributeError):
             e.does_not_exist = 3.0
 
     def test_good(self):
-        e = empty_event()
+        e = Event.empty_event()
         e.event_number = 3
         self.assertEqual(e.event_number, 3)
 
     def test_to_json(self):
-        e = empty_event()
+        e = Event.empty_event()
         e.to_json()
 
     def test_to_dict(self):
-        e = empty_event()
+        e = Event.empty_event()
         e.to_dict()
 
     def test_defaults(self):
-        e = empty_event()
+        e = Event.empty_event()
         self.assertEqual(e.event_number, 0)
         self.assertEqual(e.peaks, [])
 
     def test_wrong_type(self):
-        e = empty_event()
+        e = Event.empty_event()
 
         with self.assertRaises(TypeError):
             e.event_number = "abc"
@@ -49,7 +49,7 @@ class TestDatastructure(unittest.TestCase):
             e.event_number = 3.0
 
     def test_peaks(self):
-        e = empty_event()
+        e = Event.empty_event()
         e.peaks = [Peak(
             area=0,
             index_of_maximum=0,
@@ -67,7 +67,7 @@ class TestDatastructure(unittest.TestCase):
         self.assertEqual(p.area, 3.0)
 
     def test_peaks_append(self):
-        e = empty_event()
+        e = Event.empty_event()
         e.peaks.append(Peak({'area': 2.0,
                              'index_of_maximum': 0,
                              'type': 'S1',
@@ -78,7 +78,7 @@ class TestDatastructure(unittest.TestCase):
         self.assertEqual(e.peaks[0].area, 2.0)
 
     def test_s1_helper_method(self):
-        e = empty_event()
+        e = Event.empty_event()
         e.peaks.append(Peak({'area': 2.0,
                              'index_of_maximum': 0,
                              'type': 'S1',
@@ -91,7 +91,7 @@ class TestDatastructure(unittest.TestCase):
     def test_s1_helper_method_sort(self):
         areas = [3.0, 1.0, 2.0, 1.2]
 
-        e = empty_event()
+        e = Event.empty_event()
         for area in areas:
             e.peaks.append(Peak({'area': area,
                                  'type': 'S2',

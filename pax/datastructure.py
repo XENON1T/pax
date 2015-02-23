@@ -9,18 +9,18 @@ releases.  Patch releases cannot modify this.
 """
 
 import inspect
-import math
 
 import numpy as np
 
+import math
 from pax import units
-# To turn off type-checking for all models, replace the line below with
-# from pax.data_model import Model
-# This will improve performance a bit (+ ~10% running time), but use at your own risk
-from pax.data_model import StrictModel as Model
+
+# To turn off type-checking, replace StrictModel with Model
+# This will improve performance, but use at your own risk
+from pax.data_model import StrictModel, Model
 
 
-class ReconstructedPosition(Model):
+class ReconstructedPosition(StrictModel):
 
     """Reconstructed position
 
@@ -28,13 +28,9 @@ class ReconstructedPosition(Model):
     """
     x = 0.0  #: x position (cm)
     y = 0.0  #: y position (cm)
-    z = 0.0  #: z position (cm)
 
     goodness_of_fit = 0.0  #: goodness-of-fit parameter generated with PosRecChiSquareGamma
     ndf = 0.0  # : number of degrees of freedom calculated with PosRecChiSquareGamma
-
-    #: For this reconstructed peak, index of maximum value within sum waveform.
-    index_of_maximum = 0
 
     #: Name of algorithm used for computation
     algorithm = 'none'
@@ -69,11 +65,11 @@ class ChannelPeak(Model):
         return self.right - self.left + 1
 
     area = 0.0                   #: Area of the peak in photoelectrons
-    height = 0.0                 #: Height of highest point in peak (in pe/bin)
-    noise_sigma = 0.0            #: StDev of the noise in the occurrence (in pe/bin) where we found this peak
+    height = 0.0                 #: Height of highest point in peak (in pe/bin) in unfiltered waveform
+    noise_sigma = 0.0            #: StDev of the noisin e (pe/bin) in the filtered waveform in this peak's occurrence
 
 
-class Peak(Model):
+class Peak(StrictModel):
 
     """Peak object"""
 
@@ -114,6 +110,12 @@ class Peak(Model):
     #: Returns an :class:`pax.datastructure.ReconstructedPosition` class.
     reconstructed_positions = (ReconstructedPosition,)
 
+    #: Weighted root mean square deviation of top hitpattern (cm)
+    hitpattern_top_spread = 0.0
+
+    #: Weighted root mean square deviation of bottom hitpattern (cm)
+    hitpattern_bottom_spread = 0.0
+
     ##
     #   Fields present in sum-waveform peaks
     ##
@@ -133,7 +135,8 @@ class Peak(Model):
     full_width_tenth_max_filtered = 0.0     #: Full width at tenth of maximum in samples, in filtered waveform
 
     #: Array of squared signal entropies in each PMT.
-    entropy_per_channel = np.array([], dtype='float64')
+    # Unused
+    # entropy_per_channel = np.array([], dtype='float64')
 
     ##
     #   Fields present in peaks from single-channel peakfinding
@@ -155,14 +158,14 @@ class Peak(Model):
 
     #: Variables indicating width of peak
 
-    #: Mean absolute deviation of photon arrival times (in ns)
-    mean_absolute_deviation = 0.0
+    #: Median absolute deviation of photon arrival times (in ns)
+    median_absolute_deviation = 0.0
     # standard_deviation = 0.0
     # half_area_range = 0.0
     # tenth_area_range = 0.0
 
 
-class SumWaveform(Model):
+class SumWaveform(StrictModel):
 
     """Class used to store sum (filtered or not) waveform information.
     """
@@ -186,7 +189,7 @@ class SumWaveform(Model):
             return False
 
 
-class Occurrence(Model):
+class Occurrence(StrictModel):
 
     """A DAQ occurrence
     """
@@ -200,14 +203,14 @@ class Occurrence(Model):
     #: Channel the occurrence belongs to (integer)
     channel = 0
 
-    #: Maximum amplitude (in pe/bin; float)
+    #: Maximum amplitude (in pe/bin; float) in unfiltered waveform
     #: Will remain nan if channel's gain is 0
     #: baseline_correction, if any, has been substracted
-    # TODO: may not be equal to actual occurrence height,
-    # baseline correction is computed on 2-sample filtered wv. :-(
+    # TODO: may not be equal to actual occurrence height, baseline correction is computed on filtered wv. :-(
     height = float('nan')
 
-    #: Noise sigma for this occurrence
+    #: Noise sigma for this occurrence (in pe/bin)
+    #: Computed in the filtered channel waveform
     #: Will remain nan unless occurrence is processed by smallpeakfinder
     noise_sigma = float('nan')
 
@@ -244,7 +247,7 @@ class Occurrence(Model):
             self.right = self.left + len(self.raw_data) - 1
 
 
-class Event(Model):
+class Event(StrictModel):
 
     """Event class
     """
@@ -324,14 +327,22 @@ class Event(Model):
         if 'length' in kwargs and self.sample_duration and not self.stop_time:
             self.stop_time = int(self.start_time + kwargs['length'] * self.sample_duration)
 
-        if not self.length:
+        if not self.stop_time:
             raise ValueError("Cannot initialize an event with an unknown length: " +
                              "pass either stop_time or length and sample_duration")
 
         # Initialize numpy arrays -- need to have n_channels and self.length
         # This is the main reason for having Event.__init__
+        # TODO: don't initialize these is already in kwargs
+        # TODO: better yet, make an alternate init or something?
         self.channel_waveforms = np.zeros((n_channels, self.length()))
         self.is_channel_bad = np.zeros(n_channels, dtype=np.bool)
+
+    @classmethod
+    def empty_event(cls):
+        """Returns an empty example event: for testing purposes only!!
+        """
+        return Event(n_channels=1, start_time=10, length=1, sample_duration=int(10*units.ns))
 
     def duration(self):
         """Duration of event window in units of ns

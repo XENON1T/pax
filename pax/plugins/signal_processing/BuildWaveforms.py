@@ -4,8 +4,7 @@ from pax import plugin, units, datastructure, exceptions
 
 
 class BuildWaveforms(plugin.TransformPlugin):
-
-    """
+    """Construct waveforms from PMT channel pulses
 
     Waveforms that will be built:
         tpc
@@ -27,18 +26,23 @@ class BuildWaveforms(plugin.TransformPlugin):
 
         # Conversion factor from converting from ADC counts -> pmt-electrons/bin
         # Still has to be divided by PMT gain to get pe/bin
-        self.conversion_factor = c['sample_duration'] * c['digitizer_voltage_range'] / (
-            2 ** (c['digitizer_bits']) * c['pmt_circuit_load_resistor']
-            * c['external_amplification'] * units.electron_charge
-        )
+        self.conversion_factor = 2 ** (c['digitizer_bits'])
+        self.conversion_factor *= c['pmt_circuit_load_resistor']
+        self.conversion_factor *= c['external_amplification']
+        self.conversion_factor *= units.electron_charge
+        self.conversion_factor = 1 / self.conversion_factor  # Invert!
+        self.conversion_factor *= c['sample_duration']
+        self.conversion_factor *= c['digitizer_voltage_range']
 
         self.channel_groups = {
             'top':              c['channels_top'],
             'bottom':           c['channels_bottom'],
         }
+
         # Add each detector as a channel group
         for name, chs in c['channels_in_detector'].items():
             self.channel_groups[name] = chs
+
         self.external_detectors = [k for k in c['channels_in_detector'].keys() if k != 'tpc']
 
         # For Xerawdp matching: have to exclude some channels from S1 peakfinding and build sum wv with nominal gain
@@ -53,7 +57,6 @@ class BuildWaveforms(plugin.TransformPlugin):
             })
 
     def transform_event(self, event):
-
         # Sanity check
         if not self.config['sample_duration'] == event.sample_duration:
             raise ValueError('Event %s quotes sample duration = %s ns, but sample_duration is set to %s!' % (

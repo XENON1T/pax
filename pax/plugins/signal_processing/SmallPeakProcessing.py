@@ -1,4 +1,5 @@
 import numpy as np
+
 from pax import plugin, datastructure, utils
 
 
@@ -27,11 +28,8 @@ class ClusterSmallPeaks(plugin.TransformPlugin):
                 dark_count = {}
 
                 # Get all single-pe data in a list of dicts, sorted by index_of_maximum
-                spes = sorted([
-                    p for p in event.all_channel_peaks
-                    if p.channel in self.config['channels_in_detector'][detector]
-                    and (not self.config['exclude_bad_channels'] or not event.is_channel_bad[p.channel])
-                ], key=lambda s: s.index_of_maximum)
+                spes = sorted([p for p in event.all_channel_peaks if p.channel in self.config['channels_in_detector'][detector] and (not self.config['exclude_bad_channels'] or not event.is_channel_bad[p.channel])],  # noqa, we're replacing this soon anyways
+                              key=lambda s: s.index_of_maximum)
                 self.log.debug("Found %s channel peaks" % len(spes))
 
                 if not spes:
@@ -84,7 +82,7 @@ class ClusterSmallPeaks(plugin.TransformPlugin):
 
                     # Compute some quantities summarizing the timing distributing
                     times = [s.index_of_maximum * self.dt for s in peak.channel_peaks]
-                    peak.mean_absolute_deviation = utils.mad(times)
+                    peak.median_absolute_deviation = utils.mad(times)
 
                     # Classification for noise and lone_pulse peaks
 
@@ -128,11 +126,11 @@ class AdHocClassification(plugin.TransformPlugin):
             if peak.type != 'unknown':
                 continue
 
-            if peak.mean_absolute_deviation < 60:
+            if peak.median_absolute_deviation < 60:
                 peak.type = 's1'
                 continue
 
-            elif peak.mean_absolute_deviation > 100 and peak.area > 8:
+            elif peak.median_absolute_deviation > 100 and peak.area > 8:
                 peak.type = 's2'
                 continue
 

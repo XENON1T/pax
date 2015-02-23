@@ -1,12 +1,12 @@
 """Read/write event class from/to gzip-compressed pickle files.
 """
 
-from pax import plugin
-
 import gzip
 import os
 import re
 import glob
+
+from pax import plugin
 try:
     import cPickle as pickle
 except:

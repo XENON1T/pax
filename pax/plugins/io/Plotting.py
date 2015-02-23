@@ -3,13 +3,15 @@
 Use matplotlib to display various things about the event.
 """
 
-import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle
 import random
-import numpy as np
 import os
-import time
 
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D  # noqa
+from matplotlib.patches import Rectangle
+import numpy as np
+
+import time
 from pax import plugin, units
 
 
@@ -304,7 +306,7 @@ class PlotChannelWaveforms3D(PlotBase):  # user sets variables xlim, ylim for 3D
         # Plot the sum waveform
         lefti = xlim_time_start * 100
         righti = xlim_time_end * 100
-        waveform = event.get_sum_waveform('uS2').samples[lefti:righti]
+        waveform = event.get_sum_waveform('tpc').samples[lefti:righti]
         scale = global_max_amplitude / np.max(waveform)
         time = np.array(np.linspace(lefti, righti, righti - lefti))
         ax.plot(

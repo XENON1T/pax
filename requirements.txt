@@ -1,11 +1,13 @@
 wheel>=0.23.0
 numpy>=1.9.0         # Needed for np.unique(a, return_counts=True) in waveform simulator
 pymongo
-bson                 # Needed for pymongo, pycharm complains if we don't put it in explicitly
 matplotlib>=1.3.0
 scipy>=0.14.0
 tqdm                 # Progress bar library
 prettytable          # Timing report formatting
-pandas               # Used for various I/O stuff
+pandas               # Used for some optional I/O stuff
 tables               # Used by pandas for HDF5 output
 flake8
+avro-python3          # Raw data format
+python-snappy
+numba

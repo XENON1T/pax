@@ -1,8 +1,8 @@
 """Position reconstruction algorithm using chi square gamma distribution minimization"""
+
 from scipy.optimize import fmin_powell
 
 from pax import plugin
-
 from pax.datastructure import ReconstructedPosition
 from pax.utils import InterpolatingMap
 from pax.core import data_file_name
@@ -198,10 +198,8 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
             # Create a reconstructed position object
             rp = ReconstructedPosition({'x': x,
                                         'y': y,
-                                        'z': float('nan'),
                                         'goodness_of_fit': chi_square_gamma,
                                         'ndf': self.ndf,
-                                        'index_of_maximum': peak.index_of_maximum,
                                         'algorithm': self.name})
 
             # Append our reconstructed position object to the peak
