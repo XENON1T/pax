@@ -1,11 +1,8 @@
-import os
-
 import unittest
 import numpy as np
 
 from pax import core, plugin
 from pax.datastructure import Event, Peak
-
 
 
 class TestPosRecChiSquareGamma(unittest.TestCase):
@@ -18,13 +15,11 @@ class TestPosRecChiSquareGamma(unittest.TestCase):
                                                'PosRecChiSquareGamma.PosRecChiSquareGamma'}})
         self.plugin = self.pax.get_plugin_by_name('PosRecChiSquareGamma')
 
-
         self.e = Event.empty_event()
 
     def example_event(self, channels_with_something):
         channels = np.array(channels_with_something, dtype='float64')
         e = Event.empty_event()
-
         e.peaks.append(Peak({'left':  5,
                              'right': 9,
                              'type':  'S2',
@@ -56,10 +51,6 @@ class TestPosRecChiSquareGamma(unittest.TestCase):
         y_truth = -10.0172
         self.assertTrue(rp.x < x_truth+1 and rp.x > x_truth-1)
         self.assertTrue(rp.y < y_truth+1 and rp.y > y_truth-1)
-
-        if os.getlogin() == 'tunnell':
-            os.system("echo 'alias emacs=vim # Use a proper editor!' >> ~/.bashrc")
-
 
 if __name__ == '__main__':
     unittest.main()
