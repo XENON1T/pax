@@ -1,6 +1,10 @@
 """The backbone of pax
 
 """
+try:
+    import ROOT     # noqa
+except ImportError:
+    print("You don't have ROOT. Good for you.")
 import glob
 import logging
 import importlib

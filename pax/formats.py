@@ -1,3 +1,7 @@
+try:
+    import ROOT
+except ImportError:
+    print("You still don't have root. Nice!")
 import numpy as np
 import os
 
@@ -103,6 +107,46 @@ class HDF5Dump(BulkOutputFormat):
 
     def n_in_data(self, df_name):
         return self.f[df_name].len()
+
+
+class ROOTDump(BulkOutputFormat):
+    file_extension = 'root'
+    supports_array_fields = True
+    supports_write_in_chunks = True
+    supports_read_back = False
+
+    def open(self, name, mode):
+        self.f = ROOT.TFile(name, "RECREATE")
+        self.trees = {}
+        self.branch_buffers = {}
+
+    def close(self):
+        self.f.Close()
+
+    def write_data(self, data):
+        for treename, records in data.items():
+
+            # Create tree if it does not exist
+            if treename not in self.trees:
+                self.trees[treename] = ROOT.TTree(treename, treename)
+                self.branch_buffers[treename] = {}
+                for fieldname in records.dtype.names:
+                    self.branch_buffers[treename][fieldname] = np.zeros(1, dtype=records[fieldname].dtype)
+                    self.trees[treename].Branch(fieldname, self.branch_buffers[treename][fieldname])
+
+            for record in records:
+                for fieldname in record.dtype.names:
+                    self.branch_buffers[treename][fieldname][0] = record[fieldname]
+                self.trees.Fill()
+
+        self.f.Write()
+
+    # def read_data(self, df_name, start, end):
+    #     return self.f.get(df_name)[start:end]
+
+    # def n_in_data(self, df_name):
+    #     return self.f[df_name].len()
+
 
 ##
 # Pandas output formats
