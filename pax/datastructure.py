@@ -73,22 +73,26 @@ class Peak(StrictModel):
 
     """Peak object"""
 
-    ##
-    #   Fields present in all peaks
-    ##
+    #: Peaks in individual channels that make up this peak
+    channel_peaks = (ChannelPeak,)
+
+    type = 'unknown'        #: Type of peak (e.g., 's1', 's2', ...)
+    detector = 'none'       #: e.g. tpc or veto
 
     left = 0                 #: Index of left bound (inclusive) in event.
     right = 0                #: Index of right bound (INCLUSIVE!!) in event.
     # For XDP matching rightmost sample is not in integral, so you could say it is exclusive then.
+
+    #: Array of areas in each PMT.
+    area_per_channel = np.array([], dtype='float64')
 
     #: Area of the pulse in photoelectrons.
     #:
     #: Includes only contributing pmts (see later) in the right detector
     area = 0.0
 
-    type = 'unknown'        #: Type of peak (e.g., 's1', 's2', ...)
-    subtype = 'unknown'     #: Subtype of peak
-    detector = 'none'  #: e.g. tpc or veto
+    #: Fraction of area in the top array
+    area_fraction_top = 0.0
 
     #: Does a PMT see 'something significant'? (thresholds configurable)
     does_channel_contribute = np.array([], dtype=np.bool)
@@ -102,49 +106,6 @@ class Peak(StrictModel):
         """ Number of PMTS which see something significant (depends on settings) """
         return len(self.contributing_channels)
 
-    #: Array of areas in each PMT.
-    area_per_channel = np.array([], dtype='float64')
-
-    #: Returns a list of reconstructed positions
-    #:
-    #: Returns an :class:`pax.datastructure.ReconstructedPosition` class.
-    reconstructed_positions = (ReconstructedPosition,)
-
-    #: Weighted root mean square deviation of top hitpattern (cm)
-    hitpattern_top_spread = 0.0
-
-    #: Weighted root mean square deviation of bottom hitpattern (cm)
-    hitpattern_bottom_spread = 0.0
-
-    ##
-    #   Fields present in sum-waveform peaks
-    ##
-
-    index_of_maximum = 0           #: Index in the event's sum waveform at which this peak has its maximum.
-    index_of_filtered_maximum = 0  #: same, but maximum in filtered (for S2) sum waveform
-
-    height = 0.0                 #: Height of highest point in peak (in pe/bin)
-    height_filtered = 0.0        #: Height of highest point in filtered waveform of peak (in pe/bin)
-
-    central_area = 0.0           #: Area in the central part of the peak (used for classification)
-
-    # Note these are floats -- the widths get interpolated
-    full_width_half_max = 0.0               #: Full width at half maximum in samples
-    full_width_tenth_max = 0.0              #: Full width at tenth of maximum in samples
-    full_width_half_max_filtered = 0.0      #: Full width at half of maximum in samples, in filtered waveform
-    full_width_tenth_max_filtered = 0.0     #: Full width at tenth of maximum in samples, in filtered waveform
-
-    #: Array of squared signal entropies in each PMT.
-    # Unused
-    # entropy_per_channel = np.array([], dtype='float64')
-
-    ##
-    #   Fields present in peaks from single-channel peakfinding
-    ##
-
-    #: Peaks in individual channels that make up this peak
-    channel_peaks = (ChannelPeak,)
-
     does_channel_have_noise = np.array([], dtype=np.bool)
 
     @property
@@ -156,13 +117,30 @@ class Peak(StrictModel):
         """ Number of channels which have noise during this peak """
         return len(self.noise_channels)
 
-    #: Variables indicating width of peak
+    #: Returns a list of reconstructed positions
+    #:
+    #: Returns an :class:`pax.datastructure.ReconstructedPosition` class.
+    reconstructed_positions = (ReconstructedPosition,)
+
+    #: Weighted root mean square deviation of top hitpattern (cm)
+    top_hitpattern_spread = 0.0
+
+    #: Weighted root mean square deviation of bottom hitpattern (cm)
+    bottom_hitpattern_spread = 0.0
 
     #: Median absolute deviation of photon arrival times (in ns)
+    # Deprecate this?
     median_absolute_deviation = 0.0
-    # standard_deviation = 0.0
-    # half_area_range = 0.0
-    # tenth_area_range = 0.0
+
+    #: Weighted (by area) mean and rms of hit maxima (in ns; mean is relative to event start)
+    hit_time_mean = 0.0
+    hit_time_std = 0.0
+
+    ##
+    # Deprecated sum-waveform stuff
+    ##
+    index_of_maximum = 0          #: Index in the event's sum waveform at which this peak has its maximum.
+    height = 0.0                  #: Height of highest point in peak (in pe/bin)
 
 
 class SumWaveform(StrictModel):

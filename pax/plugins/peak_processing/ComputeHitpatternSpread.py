@@ -1,6 +1,6 @@
 import numpy as np
 
-from pax import plugin
+from pax import plugin, utils
 
 
 class ComputeHitpatternSpread(plugin.TransformPlugin):
@@ -10,7 +10,7 @@ class ComputeHitpatternSpread(plugin.TransformPlugin):
 
     def startup(self):
 
-        # grab PMT numbers and x, y locations in each array
+        # Grab PMT numbers and x, y locations in each array
         self.pmts = {}
         self.locations = {}
         for array in ('top', 'bottom'):
@@ -38,20 +38,10 @@ class ComputeHitpatternSpread(plugin.TransformPlugin):
 
                 weighted_var = 0
                 for dim in ('x', 'y'):
-                    weighted_var += weighted_variance(self.locations[array][dim],
-                                                      weights=hitpattern)
+                    _, wv = utils.weighted_mean_variance(self.locations[array][dim],
+                                                         weights=hitpattern)
+                    weighted_var += wv
 
-                setattr(peak, 'hitpattern_%s_spread' % array, np.sqrt(weighted_var/2))
+                setattr(peak, '%s_hitpattern_spread' % array, np.sqrt(weighted_var/2))
 
         return event
-
-
-def weighted_variance(values, weights):
-    """
-    Return the weighted sum square deviation from the weighted mean.
-    values, weights -- Numpy ndarrays with the same shape.
-    Stolen from http://stackoverflow.com/questions/2413522/weighted-standard-deviation-in-numpy
-    """
-    weighted_average = np.average(values, weights=weights)
-    variance = np.average((values-weighted_average)**2, weights=weights)  # Fast and numerically precise
-    return variance
