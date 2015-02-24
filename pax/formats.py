@@ -119,6 +119,10 @@ class ROOTDump(BulkOutputFormat):
     supports_write_in_chunks = False
     supports_read_back = False
 
+    # This line makes sure all TTree objects are NOT owned
+    # by python, avoiding segfault when garbage collection
+    ROOT.TTree.__init__._creates = False
+
     def open(self, name, mode):
         self.f = ROOT.TFile(name, "RECREATE")
         self.trees = {}
