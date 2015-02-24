@@ -24,8 +24,6 @@ install:
   - sudo apt-get install -y build-essential
   - sudo apt-get install -y git dpkg-dev make binutils libx11-dev libxpm-dev libxft-dev libxext-dev gcc-multilib g++ gcc libsnappy1 libsnappy-dev
   #- yes | sudo apt-get upgrade
-  # only for the 'save-ROOT' script:
-  - sudo apt-get install -y putty-tools
 
   # MiniConda
   - wget -nv http://repo.continuum.io/miniconda/Miniconda3-3.8.3-Linux-x86_64.sh -O miniconda.sh
@@ -49,9 +47,8 @@ install:
 
   # ROOT 
   # - unset ROOT # uncomment to not install ROOT
-  - if test -n "$ROOT"; then source .travis-install-ROOT.sh; fi
-  # Test zipping and scping root folder very unsafely
-  - source .travis-save-ROOT.sh
+  # - if test -n "$ROOT"; then source .travis-install-ROOT; fi
+  - if test -n "$ROOT"; then source .travis-install-ROOT-binary.sh; fi
 
   - echo test if ROOT is working...
   - root -l -q
