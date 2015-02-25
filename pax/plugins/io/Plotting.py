@@ -14,7 +14,6 @@ import numpy as np
 import time
 from pax import plugin, units
 
-
 class PlotBase(plugin.OutputPlugin):
 
     def startup(self):

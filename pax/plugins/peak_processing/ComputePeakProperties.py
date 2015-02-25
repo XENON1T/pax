@@ -2,7 +2,7 @@ import numpy as np
 from pax import plugin, utils
 
 
-class Basics(plugin.TransformPlugin):
+class BasicProperties(plugin.TransformPlugin):
 
     """Computes basic peak properies such as area and hit time spread ("width")
     """

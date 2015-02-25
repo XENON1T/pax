@@ -66,7 +66,8 @@ class ChannelPeak(Model):
 
     area = 0.0                   #: Area of the peak in photoelectrons
     height = 0.0                 #: Height of highest point in peak (in pe/bin) in unfiltered waveform
-    noise_sigma = 0.0            #: StDev of the noisin e (pe/bin) in the filtered waveform in this peak's occurrence
+    noise_sigma = 0.0            #: Noise sigma of pulse in which peak was found    #TODO: superfluous?
+    found_in_pulse = 0           #: Index of pulse (in event.occurrences) in which peak was found
 
 
 class Peak(StrictModel):
@@ -193,12 +194,8 @@ class Occurrence(StrictModel):
     noise_sigma = float('nan')
 
     #: Baseline (in ADC counts, but float!)
-    #: Will remain nan if channel's gain is 0
-    digitizer_baseline_used = float('nan')
-
-    #: Baseline correction computed by FindSmallpeaks (in pe/bin)
-    #: Will remain nan if channel is not processed by BaselineExcursionMethod
-    baseline_correction = float('nan')
+    #: Will remain nan if occurrence is not processed by hitfinder
+    baseline = float('nan')
 
     #: Raw wave data (in ADC counts, NOT pe/bin!; numpy array of int16)
     raw_data = np.array([], np.int16)
