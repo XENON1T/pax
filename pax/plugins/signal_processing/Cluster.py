@@ -15,46 +15,59 @@ class ClusterPlugin(plugin.TransformPlugin):
         self.dt = self.config['sample_duration']
         self.n_channels = self.config['n_channels']
 
+        # Build the channel -> detector lookup dict
+        self.detector_by_channel = {}
+        for name, chs in self.config['channels_in_detector'].items():
+            for ch in chs:
+                self.detector_by_channel[ch] = name
+
     def cluster_hits(self, hits):
         raise NotImplementedError
 
     def transform_event(self, event):
 
+        # Sort hits by detector
+        detectors = self.config['channels_in_detector'].keys()
+        hits_per_detector = {detector: [] for detector in detectors}
+        for hit in event.all_channel_peaks:
+            channel = hit.channel
+            if self.config['exclude_bad_channels'] and event.is_channel_bad[channel]:
+                continue
+            hits_per_detector[self.detector_by_channel[channel]].append(hit)
+
         # Handle each detector separately
-        for detector in self.config['channels_in_detector'].keys():
+        for detector in detectors:
+
+            # Sort hits by left index
+            hits = hits_per_detector[detector]
+            hits.sort(key=lambda x: x.left)
+
             self.log.debug("Clustering channel peaks in data from %s" % detector)
-            peaks = []      # Superfluous, while loop is always run once... but pycharm complains if we omit
+            peaks = []      # Superfluous, while loop is always run at least once... but pycharm complains if we omit
 
             # Hmzz, python has no do_while, so..
-            redo_classification = True
-            while redo_classification:
-                redo_classification = False
+            redo_clustering = True
+            while redo_clustering:
+
+                # Do we actually have something to cluster?
+                self.log.debug("Found %s channel peaks" % len(hits))
+                if not hits:
+                    break
+
+                redo_clustering = False
                 peaks = []
                 dark_count = {}
 
-                # Get all single-pe data in a list of dicts, sorted by left
-                spes = sorted([p for p in event.all_channel_peaks
-                               if p.channel in self.config['channels_in_detector'][detector] and
-                               (not self.config['exclude_bad_channels'] or not event.is_channel_bad[p.channel])],
-                              key=lambda q: q.left)
-                self.log.debug("Found %s channel peaks" % len(spes))
-
-                if not spes:
-                    break
-
-                ##
-                # CALL THE CHILD CLASS' cluster_hits method
-                ##
-
-                # Cluster the single-pes in groups separated by >= self.s2_width
-                cluster_indices = self.cluster_hits(spes)
+                # Cluster the single-pes in groups which will become peaks
+                # CHILD CLASS IS CALLED HERE
+                cluster_indices = self.cluster_hits(hits)
                 self.log.debug("Made %s clusters" % len(cluster_indices))
 
                 # Each cluster becomes a peak
                 # Compute basic properties, check for too many lone pulses per channel
                 for ci in cluster_indices:
                     peak = datastructure.Peak({
-                        'channel_peaks':            [spes[cidx] for cidx in ci],
+                        'channel_peaks':            [hits[cidx] for cidx in ci],
                         'detector':                 detector,
                         'area_per_channel':         np.zeros(self.n_channels),
                         'does_channel_contribute':  np.zeros(self.n_channels, dtype='bool'),
@@ -101,8 +114,12 @@ class ClusterPlugin(plugin.TransformPlugin):
                             "Channel %s shows an abnormally high lone pulse rate (%s): marked as bad." % (ch, dc))
                         event.is_channel_bad[ch] = True
                         if self.config['exclude_bad_channels']:
-                            redo_classification = True
+                            redo_clustering = True
                             self.log.debug("Clustering has to be redone!!")
+
+                if redo_clustering:
+                    # Delete hits in bad channels
+                    hits = [h for h in hits if not event.is_channel_bad[h.channel]]
 
             # Add the peaks to the datastructure
             event.peaks.extend(peaks)
@@ -230,27 +247,24 @@ class GapSize(ClusterPlugin):
         self.transition_point = self.config['transition_point']
 
     def cluster_hits(self, hits):
-        lefts = [h.left for h in hits]
-        rights = [h.right for h in hits]
-        areas = [h.area for h in hits]
-        clusters = []
 
         # If a hit has a left > this, it will form a new cluster
         boundary = -999999999
+        clusters = []
 
-        for i in range(len(hits)):
+        for i, hit in enumerate(hits):
 
-            if lefts[i] > boundary:
+            if hit.left > boundary:
                 # Hit starts after current boundary: new cluster
                 clusters.append([])
                 # (Re)set area and thresholds
                 area = 0
                 gap_size_threshold = self.large_gap_threshold
-                boundary = rights[i] + gap_size_threshold
+                boundary = hit.right + gap_size_threshold
 
             # Add this hit to the cluster
             clusters[-1].append(i)
-            area += areas[i]
+            area += hit.area
 
             # Can we start applying the tighter threshold?
             if area > self.transition_point:
@@ -258,6 +272,6 @@ class GapSize(ClusterPlugin):
                 gap_size_threshold = self.small_gap_threshold
 
             # Extend the boundary at which a new clusters starts, if needed
-            boundary = max(boundary, rights[i] + gap_size_threshold)
+            boundary = max(boundary, hit.right + gap_size_threshold)
 
         return clusters
