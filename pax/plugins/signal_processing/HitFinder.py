@@ -20,6 +20,8 @@ class FindHits(plugin.TransformPlugin):
         self.max_hits_per_pulse = c['max_hits_per_pulse']
         self.max_passes = c.get('max_passes', float('inf'))
 
+        self.build_sum_waveforms = c.get('build_sum_waveforms', False)
+
         self.make_diagnostic_plots = c.get('make_diagnostic_plots', 'never')
         self.make_diagnostic_plots_in = c.get('make_diagnostic_plots_in', 'small_pf_diagnostic_plots')
         if self.make_diagnostic_plots != 'never':
@@ -28,11 +30,18 @@ class FindHits(plugin.TransformPlugin):
 
         # Conversion factor: multiply by this to convert from ADC counts above baseline -> electrons
         # Still has to be divided by PMT gain to go to photo-electrons (done below)
-        self.conversion_factor = c['sample_duration'] * c['digitizer_voltage_range'] / (
+        self.adc_to_e = c['sample_duration'] * c['digitizer_voltage_range'] / (
             2 ** (c['digitizer_bits'])
             * c['pmt_circuit_load_resistor']
             * c['external_amplification']
             * units.electron_charge)
+
+        # Build the channel -> detector lookup dict
+        # Only used for summing waveforms
+        self.detector_by_channel = {}
+        for name, chs in c['channels_in_detector'].items():
+            for ch in chs:
+                self.detector_by_channel[ch] = name
 
 
     def transform_event(self, event):
@@ -40,9 +49,21 @@ class FindHits(plugin.TransformPlugin):
         noise_pulses_in = np.zeros(self.config['n_channels'], dtype=np.int)
 
         # Allocate numpy arrays to hold numba peakfinder results
-        raw_peaks = -1 * np.ones((self.max_hits_per_pulse, 2), dtype=np.int64)
+        hits_buffer = -1 * np.ones((self.max_hits_per_pulse, 2), dtype=np.int64)
         argmaxes = np.zeros(self.max_hits_per_pulse, dtype=np.int64)
         areas = np.zeros(self.max_hits_per_pulse)
+
+        if self.build_sum_waveforms:
+            # Initialize empty waveforms for each detector
+            # One with only hits, one with raw data
+            for postfix in ('', '_raw'):
+                for detector, chs in self.config['channels_in_detector'].items():
+                    event.sum_waveforms.append(datastructure.SumWaveform(
+                        samples=np.zeros(event.length()),
+                        name=detector + postfix,
+                        channel_list=np.array(list(chs), dtype=np.uint16),
+                        detector=detector
+                    ))
 
         for pulse_i, pulse in enumerate(event.occurrences):
             start = pulse.left
@@ -57,25 +78,25 @@ class FindHits(plugin.TransformPlugin):
             w = self.reference_baseline - pulse.raw_data.astype(np.float64)
 
             # Call the numba hit finder -- see its documentation below
-            # Results stored in raw_peaks and extra_results; declared outside loop, see above
-            n_raw_peaks_found, baseline, noise_sigma = self._find_peaks(
+            # Results stored in hits_buffer and extra_results; declared outside loop, see above
+            n_hits_found, baseline, noise_sigma = self._find_peaks(
                 w, self.min_sigma, self.noise_sigma_guess, self.max_passes, self.initial_baseline_samples,
-                raw_peaks)
+                hits_buffer)
 
-            if n_raw_peaks_found == len(raw_peaks) - 1:
+            if n_hits_found == len(hits_buffer) - 1:
                 self.log.warning("Occurrence %s-%s in channel %s has more than %s hits!"
                                  "Probably the noise is unusually high. Further hits "
                                  "have been ignored." % (start, stop, channel,
                                                          self.max_hits_per_pulse))
-                n_raw_peaks_found = len(raw_peaks)
+                n_hits_found = len(hits_buffer)
 
             # Update the noise pulse count
-            if n_raw_peaks_found == 0:
+            if n_hits_found == 0:
                 noise_pulses_in[channel] += 1
 
-            # Only view the part of raw_peaks that contains peaks found in this event
-            # The rest of the array contains zeros orrandom stuff from previous events
-            fresh_peaks = raw_peaks[:n_raw_peaks_found]
+            # Only view the part of hits_buffer that contains peaks found in this event
+            # The rest of hits_buffer contains zeros or random junk from previous occurrences
+            hits_found = hits_buffer[:n_hits_found]
 
             # Update pulse data
             pulse.noise_sigma = noise_sigma
@@ -84,24 +105,32 @@ class FindHits(plugin.TransformPlugin):
 
             # Compute area and max of each hit
             # Results stored in argmaxes, areas; declared outside loop, see above
-            self._peak_argmax_and_area(w, fresh_peaks, argmaxes, areas)
+            self._peak_argmax_and_area(w, hits_found, argmaxes, areas)
 
             # Store the found peaks in the datastructure
-            # Convert area and height from adc counts -> pe
+            # Convert area, noise_sigma and height from adc counts -> pe
             peaks = []
-            conversion_factor = self.conversion_factor / self.config['gains'][channel]
-            for i, p in enumerate(fresh_peaks):
+            adc_to_pe = self.adc_to_e / self.config['gains'][channel]
+            for i, p in enumerate(hits_found):
                 max_idx = p[0] + argmaxes[i]
                 event.all_channel_peaks.append(datastructure.ChannelPeak({
                     'channel':             channel,
                     'left':                start + p[0],
                     'index_of_maximum':    start + max_idx,
                     'right':               start + p[1],
-                    'area':                areas[i] * conversion_factor,
-                    'height':              w[max_idx] * conversion_factor,
-                    'noise_sigma':         noise_sigma,
+                    'area':                areas[i] * adc_to_pe,
+                    'height':              w[max_idx] * adc_to_pe,
+                    'noise_sigma':         noise_sigma * adc_to_pe,
                     'found_in_pulse':      pulse_i,
                 }))
+
+            if self.build_sum_waveforms:
+                detector = self.detector_by_channel[channel]
+                sum_w = event.get_sum_waveform(detector).samples
+                for p in hits_found:
+                    sum_w[start+p[0]:start+p[1]+1] += w[p[0]:p[1]+1] * adc_to_pe
+                sum_w_raw = event.get_sum_waveform(detector+'_raw').samples
+                sum_w_raw[start:stop+1] += w * adc_to_pe
 
             # Diagnostic plotting
             # Can't more to plotting plugin: occurrence grouping of hits lost after clustering
@@ -109,13 +138,13 @@ class FindHits(plugin.TransformPlugin):
                self.make_diagnostic_plots == 'no peaks' and not len(peaks):
                 plt.figure()
                 plt.plot(w, drawstyle='steps', label='data')
-                for p in fresh_peaks:
+                for p in hits_found:
                     plt.axvspan(p[0] - 1, p[1], color='red', alpha=0.5)
                 plt.plot(noise_sigma * np.ones(len(w)), '--', label='1 sigma')
                 plt.plot(self.min_sigma * noise_sigma * np.ones(len(w)),
                          '--', label='%s sigma' % self.min_sigma)
                 # TODO: don't draw another line, draw another y-axis!
-                plt.plot(np.ones(len(w)) * self.config['gains'][channel] / self.conversion_factor,
+                plt.plot(np.ones(len(w)) * self.config['gains'][channel] / self.adc_to_e,
                          '--', label='1 pe/sample')
                 plt.legend()
                 bla = (event.event_number, start, stop, channel)
@@ -150,10 +179,9 @@ class FindHits(plugin.TransformPlugin):
 
 
     @staticmethod
-    # Metaresults: baseline correction, noise level,
     @numba.jit(numba.typeof((1.0, 2.0, 3.0))(
-                    numba.float64[:], numba.float64, numba.float64, numba.int64, numba.int64,
-                    numba.int64[:, :]), nopython=True)
+               numba.float64[:], numba.float64, numba.float64, numba.int64, numba.int64,
+               numba.int64[:, :]), nopython=True)
     def _find_peaks(w, threshold_sigmas, noise_sigma, max_passes, initial_baseline_samples, raw_peaks):
         """Fills raw_peaks with left, right indices of raw_peaks > bound_threshold which exceed threshold somewhere
          raw_peaks: numpy () of [-1,-1] lists, will be filled by function.
@@ -284,5 +312,5 @@ class FindHits(plugin.TransformPlugin):
             pass_number += 1
 
         # Return number of peaks found, put rest of info in extra_results
-        # Convert n_peaks_found to float, if you keep it int, it will sometimes be int32, sometimes64
-        return (float(n_peaks_found), baseline, noise_sigma)
+        # Convert n_peaks_found to float, if you keep it int, it will sometimes be int32, sometimes int64
+        return float(n_peaks_found), baseline, noise_sigma

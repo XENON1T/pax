@@ -66,7 +66,8 @@ class ChannelPeak(Model):
 
     area = 0.0                   #: Area of the peak in photoelectrons
     height = 0.0                 #: Height of highest point in peak (in pe/bin) in unfiltered waveform
-    noise_sigma = 0.0            #: Noise sigma of pulse in which peak was found    #TODO: superfluous?
+    noise_sigma = 0.0            #: Noise sigma in pe/bin of pulse in which peak was found.
+                                 #:   (note: in Pulse the same number is stored in ADC-counts)
     found_in_pulse = 0           #: Index of pulse (in event.occurrences) in which peak was found
 
 
@@ -182,13 +183,13 @@ class Occurrence(StrictModel):
     #: Channel the occurrence belongs to (integer)
     channel = 0
 
-    #: Maximum amplitude (in pe/bin; float) in unfiltered waveform
+    #: Maximum amplitude (in ADC counts; float) in unfiltered waveform
     #: Will remain nan if channel's gain is 0
     #: baseline_correction, if any, has been substracted
     # TODO: may not be equal to actual occurrence height, baseline correction is computed on filtered wv. :-(
     height = float('nan')
 
-    #: Noise sigma for this occurrence (in pe/bin)
+    #: Noise sigma for this occurrence (in ADC counts)
     #: Computed in the filtered channel waveform
     #: Will remain nan unless occurrence is processed by smallpeakfinder
     noise_sigma = float('nan')
@@ -266,20 +267,6 @@ class Event(StrictModel):
     #: Returns an :class:`pax.datastructure.SumWaveform` class.
     sum_waveforms = (SumWaveform,)
 
-    #: A 2D array of all the PMT waveforms, units of pe/bin.
-    #:
-    #: The first index is the PMT number (starting from zero), and the second
-    #: index is the sample number.  This must be a numpy array.  To access the
-    #: waveform for a specific PMT such as PMT 10, you can do::
-    #:
-    #:     event.channel_waveforms[10]
-    #:
-    #: which returns a 1D array of samples.
-    #:
-    #: The data type is a float32 since these numbers are already baseline
-    #: and gain corrected.
-    channel_waveforms = np.array([], dtype=np.float64)  # : Array of samples.
-
     #: A python list of all occurrences in the event (containing instances of the Occurrence class)
     #: An occurrence holds a stream of samples in one channel, as provided by the digitizer.
     occurrences = (Occurrence,)
@@ -307,10 +294,8 @@ class Event(StrictModel):
                              "pass either stop_time or length and sample_duration")
 
         # Initialize numpy arrays -- need to have n_channels and self.length
-        # This is the main reason for having Event.__init__
-        # TODO: don't initialize these is already in kwargs
+        # TODO: don't initialize these if is already in kwargs
         # TODO: better yet, make an alternate init or something?
-        self.channel_waveforms = np.zeros((n_channels, self.length()))
         self.is_channel_bad = np.zeros(n_channels, dtype=np.bool)
 
     @classmethod

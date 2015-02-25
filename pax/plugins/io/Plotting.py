@@ -97,11 +97,13 @@ class PlotBase(plugin.OutputPlugin):
         plt.xlabel('Time (us)')
 
         for w in self.config['waveforms_to_plot']:
-            waveform = event.get_sum_waveform(w['internal_name'])
-            plt.plot(xlabels,
-                     (waveform.samples[lefti:righti + 1] + y_offset) * scale,
-                     label=w['plot_label'],
-                     drawstyle=w.get('drawstyle'))
+                waveform = event.get_sum_waveform(w['internal_name'])
+                plt.plot(xlabels,
+                         (waveform.samples[lefti:righti + 1] + y_offset) * scale,
+                         label=w['plot_label'],
+                         color=w.get('color', None),
+                         drawstyle=w.get('drawstyle'),
+                         alpha=w.get('alpha', 1))
         if log_y_axis:
             plt.ylim((0.9, plt.ylim()[1]))
 
@@ -367,6 +369,7 @@ class PlotChannelWaveforms2D(PlotBase):
 
         result = []
         for p in event.all_channel_peaks:
+            noise_sigma = event.occurrences[p.found_in_pulse].noise_sigma
             if p.noise_sigma == 0:
                 # What perfect world are you living in? WaveformSimulator!
                 color_factor = 1
@@ -420,7 +423,7 @@ class PlotChannelWaveforms2D(PlotBase):
 
         # Make sure we always see all channels , even if there are few occurrences
         plt.xlim((0, event.length() * time_scale))
-        plt.ylim((0, len(event.channel_waveforms)))
+        plt.ylim((0, len(event.is_channel_bad)))
 
         plt.xlabel('Time (us)')
         plt.ylabel('PMT channel')
