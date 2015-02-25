@@ -34,7 +34,6 @@ or your OS's package management system. You may have to install some additional 
 You must separately install the `snappy compression library <https://code.google.com/p/snappy/>`_
 and its python bindings. For Ubuntu you can do::
 
-  $ sudo apt-get install python-snappy
   $ sudo apt-get install libsnappy-dev
 
 For installation on windows, see `the FAQ <http://xenon1t.github.io/pax/faq.html#can-i-set-up-pax-on-my-windows-machine>`_.
