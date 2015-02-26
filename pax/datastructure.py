@@ -271,9 +271,8 @@ class Event(StrictModel):
     #: An occurrence holds a stream of samples in one channel, as provided by the digitizer.
     occurrences = (Occurrence,)
 
-    #: List of channels which showed an increased dark rate
-    #: Declared as basefield as we want to store a list (it will get appended to constantly)
-    is_channel_bad = np.array([], dtype=np.bool)
+    #: Number of noise pulses detected in each channel
+    noise_pulses_in = np.array([], dtype=np.int)
 
     def __init__(self, n_channels, start_time, **kwargs):
 
@@ -296,7 +295,7 @@ class Event(StrictModel):
         # Initialize numpy arrays -- need to have n_channels and self.length
         # TODO: don't initialize these if is already in kwargs
         # TODO: better yet, make an alternate init or something?
-        self.is_channel_bad = np.zeros(n_channels, dtype=np.bool)
+        self.noise_pulses_in = np.zeros(self.config['n_channels'], dtype=np.int)
 
     @classmethod
     def empty_event(cls):

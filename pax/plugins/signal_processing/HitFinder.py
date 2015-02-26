@@ -67,9 +67,10 @@ class FindHits(plugin.TransformPlugin):
                                                          self.max_hits_per_pulse))
                 n_hits_found = len(hits_buffer)
 
-            # Update the noise pulse count
+            # If no hits were found, this is a noise pulse: update the noise pulse count
             if n_hits_found == 0:
-                noise_pulses_in[channel] += 1
+                event.noise_pulses_in[channel] += 1
+                # Don't 'continue' to the next pulse! There's stuff left to do!
 
             # Only view the part of hits_buffer that contains peaks found in this event
             # The rest of hits_buffer contains zeros or random junk from previous pulses
