@@ -190,14 +190,21 @@ class SumWaveform(StrictModel):
 
 
 class Occurrence(StrictModel):
-
     """A DAQ occurrence
+    
+    A DAQ occurrence can also be thought of as a pulse in a PMT. 
     """
 
-    #: First index (inclusive; integer)
+    #: Starttime of this occurence within event
+    #: 
+    #: Units are samples.  This nonnegative number starts at zero and is an integere because
+    #: it's an index.
     left = 0
 
-    #: Last index (inclusive; integer)
+    #: Stoptime of this occurence within event
+    #: 
+    #: Units are samples and this time is inclusive of last sample.  This nonnegative number
+    #: starts at zero and is an integere because it's an index.
     right = 0
 
     #: Channel the occurrence belongs to (integer)
@@ -254,17 +261,18 @@ class Event(StrictModel):
     dataset_name = 'Unknown'  # The name of the dataset this event belongs to
     event_number = 0    # A nonnegative integer that uniquely identifies the event within the dataset.
 
-    #: Start time of the event (time at which the first sample STARTS)
+    #: Integer start time of the event in nanoseconds
     #:
-    #: This is a 64-bit number in units of ns that follows the UNIX clock.
-    #: Or rather, it starts from January 1, 1970.
-    #: Must be an int!! large floats don't support precision arithmetic
+    #: Time that the first sample starts. This is a 64-bit number that follows the
+    #: UNIX clock. Or rather, it starts from January 1, 1970.  This must be an integer
+    #: because floats have rounding that result in imprecise times.
     start_time = 0
 
-    #: Stop time of the event (time at which the last sample ENDS).
-    #:
-    #: This is a 64-bit number in units of ns that follows the UNIX clock.
-    #: Or rather, it starts from January 1, 1970.
+    #: Integer stop time of the event in nanoseconds
+    # 
+    #: This stop time includes the last recorded sample.  Therefore, it's the right
+    #: edge of the last sample.  This is a 64-bit integer for the reasons explained
+    #: in 'start_time'.
     stop_time = 0
 
     #: Time duration of a sample (in pax units, i.e. ns)
