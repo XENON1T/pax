@@ -109,6 +109,7 @@ class TestPax(unittest.TestCase):
         self.assertTrue(len(mypax.action_plugins) > 0)
         for p in mypax.action_plugins:
             self.assertIsInstance(p, (plugin.TransformPlugin, plugin.OutputPlugin))
+            p.shutdown()    # To close output file we just wrote, normally happens after .run()
 
     ##
     # Test event processing

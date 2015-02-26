@@ -14,6 +14,7 @@ import numpy as np
 import time
 from pax import plugin, units
 
+
 class PlotBase(plugin.OutputPlugin):
 
     def startup(self):
@@ -380,11 +381,11 @@ class PlotChannelWaveforms2D(PlotBase):
                 10 * min(10, hit.area),                                # Size
                 (0.2 if hit.is_rejected else 1.0),                     # Alpha
             ])
-        rgba_colors = np.zeros((len(result),4))
+        rgba_colors = np.zeros((len(result), 4))
         result = np.array(result).T
-        rgba_colors[:,0] = result[2]
-        rgba_colors[:,2] = 1 - result[2]
-        rgba_colors[:,3] = result[4]
+        rgba_colors[:, 0] = result[2]
+        rgba_colors[:, 2] = 1 - result[2]
+        rgba_colors[:, 3] = result[4]
         plt.scatter(result[0], result[1], c=rgba_colors, s=result[3], lw=0)
 
         # Plot the bottom/top/veto boundaries

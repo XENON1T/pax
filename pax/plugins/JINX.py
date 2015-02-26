@@ -226,8 +226,6 @@ class BuildWaveforms(plugin.TransformPlugin):
         return event
 
 
-
-
 class FindPeaks(plugin.TransformPlugin):
 
     """NB: Does NOT do veto peakfinding!!!"""

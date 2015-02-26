@@ -83,9 +83,9 @@ class ClusterPlugin(plugin.TransformPlugin):
                     # If zero-length encoding is not used, all channels will have "noise" here
                     coincident_occurrences = event.get_occurrences_between(peak.left, peak.right, strict=False)
                     for oc in coincident_occurrences:
-                        ch = oc.channel
-                        if not peak.does_channel_contribute[ch]:
-                            peak.does_channel_have_noise[ch] = True
+                        channel = oc.channel
+                        if not peak.does_channel_contribute[channel]:
+                            peak.does_channel_have_noise[channel] = True
 
                     # Classify noise and lone hits
                     # TODO: Noise classification should be configurable!
@@ -94,7 +94,7 @@ class ClusterPlugin(plugin.TransformPlugin):
                     if is_noise:
                         peak.type = 'noise'
                         # TODO: Should we also reject all hits?
-                    elif is_lone_hit :
+                    elif is_lone_hit:
                         peak.type = 'lone_hit'
                     else:
                         # Proper peak, classification done later

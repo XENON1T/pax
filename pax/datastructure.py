@@ -64,14 +64,14 @@ class ChannelPeak(Model):
     def length(self):
         return self.right - self.left + 1
 
-    area = 0.0                   #: Area of the peak in photoelectrons
-    height = 0.0                 #: Height of highest point in peak (in pe/bin) in unfiltered waveform
-    noise_sigma = 0.0            #: Noise sigma in pe/bin of pulse in which peak was found.
-                                 #:   (note: in Pulse the same number is stored in ADC-counts)
+    area = 0.0                  #: Area of the peak in photoelectrons
+    height = 0.0                #: Height of highest point in peak (in pe/bin) in unfiltered waveform
+    noise_sigma = 0.0           #: Noise sigma in pe/bin of pulse in which peak was found.
+    # note: in Pulse the same number is stored in ADC-counts
 
-    found_in_pulse = 0           #: Index of pulse (in event.occurrences) in which peak was found
+    found_in_pulse = 0          #: Index of pulse (in event.occurrences) in which peak was found
 
-    is_rejected = False          #: Set to True if rejected by suspicious channel algorithm
+    is_rejected = False         #: Set to True if rejected by suspicious channel algorithm
 
 
 class Peak(StrictModel):

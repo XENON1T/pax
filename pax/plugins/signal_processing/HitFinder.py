@@ -12,7 +12,7 @@ class FindHits(plugin.TransformPlugin):
 
     def startup(self):
         c = self.config
-        
+
         self.min_sigma = c['peak_minimum_sigma']
         self.noise_sigma_guess = c['noise_sigma_guess']
         self.reference_baseline = c.get('digitizer_baseline', 16000)
@@ -143,7 +143,6 @@ class FindHits(plugin.TransformPlugin):
             argmaxes[peak_i] = current_argmax
             areas[peak_i] = current_area
 
-
     @staticmethod
     @numba.jit(numba.typeof((1.0, 2.0, 3.0))(
                numba.float64[:], numba.float64, numba.float64, numba.int64, numba.int64,
@@ -151,7 +150,7 @@ class FindHits(plugin.TransformPlugin):
     def _find_peaks(w, threshold_sigmas, noise_sigma, max_passes, initial_baseline_samples, raw_peaks):
         """Fills raw_peaks with left, right indices of raw_peaks > bound_threshold which exceed threshold somewhere
          raw_peaks: numpy () of [-1,-1] lists, will be filled by function.
-        Will modify w to do baseline correction
+        BE CAREFUL -- Will modify w IN PLACEto do baseline correction
         Returns: number of raw_peaks found, baseline, noise_sigma
         Will stop search after raw_peaks found reached length of raw_peaks argument passed in
         """
@@ -163,9 +162,9 @@ class FindHits(plugin.TransformPlugin):
         # TODO: Also determine a noise_sigma here? Factor out code from below to separate function?
         baseline = 0.0
         initial_baseline_samples = max(initial_baseline_samples, len(w))
-        for x in w[:initial_baseline_samples]:
+        for x in w[:initial_baseline_samples + 1]:     # AARGH stupid python indexing!!!
             baseline += x
-        baseline /= initial_baseline_samples
+        baseline = baseline/initial_baseline_samples
 
         # Correct for the initial baseline
         for i in range(len(w)):
@@ -210,11 +209,15 @@ class FindHits(plugin.TransformPlugin):
                         if current_interval_passed_test:
                             # We've found a new peak!
 
+                            # The interval ended just before this index
+                            # unless, of course, this is the last index
+                            itv_end = i if i == max_idx else i-1
+
                             # Add to raw_peaks, check if something has changed
-                            if i-1 != raw_peaks[current_peak, 1] \
+                            if itv_end != raw_peaks[current_peak, 1] \
                                     or current_candidate_interval_start != raw_peaks[current_peak, 0]:
                                 raw_peaks[current_peak, 0] = current_candidate_interval_start
-                                raw_peaks[current_peak, 1] = i - 1
+                                raw_peaks[current_peak, 1] = itv_end
                                 has_changed = True
 
                             # Check if we've reached the maximum # of peaks
@@ -230,20 +233,49 @@ class FindHits(plugin.TransformPlugin):
 
             n_peaks_found = current_peak
 
-            # If nothing has changed in peakfinding, no need to continue
-            # If we have reached the max pass_number, we should stop here, not recalculate noise sigma again
+            # If we have reached the max pass_number, we should stop BEFORE recalculate noise sigma again
             # (otherwise reported peaks will be inconsistent with reported baseline and noise)
-            if not has_changed or pass_number > max_passes:
+            # We can also stop if nothing has changed: baseline and noise will be the same as before
+            if pass_number > max_passes or not has_changed:
                 break
 
             ##
-            #   Noise sigma, baseline computation
+            #   Baseline computation
             ##
 
-            # Compute the baseline correction and the new noise_sigma
-            # -- BuildWaveforms can get baseline wrong if there is a pe in the starting samples
+            # Compute the baseline correction
             n = 0           # Samples outside peak included so far
             mean = 0        # Mean so far
+
+            current_peak = 0
+            currently_in_peak = False
+
+            for i, x in enumerate(w):
+
+                if currently_in_peak:
+                    if i > raw_peaks[current_peak, 1]:
+                        current_peak += 1
+                        currently_in_peak = False
+
+                # NOT else, currently_in_peak may have changed!
+                if not currently_in_peak:
+                    if current_peak < n_peaks_found and i == raw_peaks[current_peak, 0]:
+                        currently_in_peak = True
+                    else:
+                        # Update n, mean
+                        n += 1
+                        mean += (x - mean)/n
+
+            # Perform the baseline correction
+            baseline += mean
+            for i in range(len(w)):
+                w[i] -= mean
+
+            ##
+            #   Noise sigma computation
+            ##
+
+            # Must be in a second pass, since we want to include only samples BELOW baseline (which we just determined)
             m2 = 0          # Sum of squares of differences from the (current) mean
             n_negative = 0  # Samples below previously determined baseline so far
 
@@ -262,21 +294,11 @@ class FindHits(plugin.TransformPlugin):
                     if current_peak < n_peaks_found and i == raw_peaks[current_peak, 0]:
                         currently_in_peak = True
                     else:
-                        delta = x - mean
-                        # Update n, mean and m2
-                        n += 1
-                        mean += delta/n
                         if x < 0:
                             n_negative += 1
-                            m2 += delta*(x-mean)
+                            m2 += x*x
 
             noise_sigma = (m2/n_negative)**0.5
-
-            # Perform the baseline correction
-            baseline += mean
-            for i in range(len(w)):
-                w[i] -= mean
-
             has_changed = False
             pass_number += 1
 

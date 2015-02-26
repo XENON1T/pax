@@ -52,7 +52,6 @@ class SumWaveform(plugin.TransformPlugin):
             sum_w_raw = event.get_sum_waveform(detector+'_raw').samples
             sum_w_raw[pulse.left:pulse.right+1] += w * adc_to_pe
 
-
         # Build the hits-only sum waveform
         for hit in event.all_channel_peaks:
             channel = hit.channel
