@@ -68,7 +68,10 @@ class ChannelPeak(Model):
     height = 0.0                 #: Height of highest point in peak (in pe/bin) in unfiltered waveform
     noise_sigma = 0.0            #: Noise sigma in pe/bin of pulse in which peak was found.
                                  #:   (note: in Pulse the same number is stored in ADC-counts)
+
     found_in_pulse = 0           #: Index of pulse (in event.occurrences) in which peak was found
+
+    is_rejected = False          #: Set to True if rejected by suspicious channel algorithm
 
 
 class Peak(StrictModel):
@@ -271,8 +274,14 @@ class Event(StrictModel):
     #: An occurrence holds a stream of samples in one channel, as provided by the digitizer.
     occurrences = (Occurrence,)
 
-    #: Number of noise pulses detected in each channel
+    #: Number of noise pulses (pulses without any hits found) per channel
     noise_pulses_in = np.array([], dtype=np.int)
+
+    #: Was channel flagged as suspicious?
+    is_channel_suspicious = np.array([], dtype=np.bool)
+
+    #: Number of hits rejected in the suspicious channel algorithm
+    n_hits_rejected = np.array([], dtype=np.int)
 
     def __init__(self, n_channels, start_time, **kwargs):
 
@@ -295,7 +304,9 @@ class Event(StrictModel):
         # Initialize numpy arrays -- need to have n_channels and self.length
         # TODO: don't initialize these if is already in kwargs
         # TODO: better yet, make an alternate init or something?
-        self.noise_pulses_in = np.zeros(self.config['n_channels'], dtype=np.int)
+        self.noise_pulses_in = np.zeros(n_channels, dtype=np.int)
+        self.n_hits_rejected = np.zeros(n_channels, dtype=np.int)
+        self.is_channel_suspicious = np.zeros(n_channels, dtype=np.bool)
 
     @classmethod
     def empty_event(cls):

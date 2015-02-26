@@ -58,8 +58,8 @@ class SumWaveform(plugin.TransformPlugin):
             channel = hit.channel
             detector = self.detector_by_channel[channel]
 
-            # Don't include hits in bad channels - this is known only after clustering
-            if event.is_channel_bad[channel]:
+            # Don't include rejected hits - this is known only after clustering
+            if hit.is_rejected:
                 continue
 
             pulse = event.occurrences[hit.found_in_pulse]

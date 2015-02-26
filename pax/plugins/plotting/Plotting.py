@@ -34,7 +34,7 @@ class PlotBase(plugin.OutputPlugin):
         self.peak_colors = {
             's1':   'blue',
             's2':   'green',
-            'lone_pulse': '0.75'
+            'lone_hit': '0.75'
         }
 
         self.substartup()
@@ -114,7 +114,7 @@ class PlotBase(plugin.OutputPlugin):
             max_y = max([p.height for p in event.peaks])
 
             for peak in event.peaks:
-                if peak.type == 'lone_pulse':
+                if peak.type == 'lone_hit':
                     continue
                 textcolor = 'black' if peak.detector == 'tpc' else 'red'
 
@@ -152,11 +152,11 @@ class PlotBase(plugin.OutputPlugin):
     def color_peak_ranges(self, event):
         # Separated so PlotChannelWaveforms2D can also call it
         for peak in event.peaks:
-            shade_color = self.peak_colors.get(peak.type, 'gray') if peak.detector == 'tpc' else 'red'
+            shade_color = self.peak_colors.get(peak.type, 'black') if peak.detector == 'tpc' else 'red'
             plt.axvspan((peak.left - 1) * self.samples_to_us,
                         peak.right * self.samples_to_us,
                         color=shade_color,
-                        alpha=0.2)
+                        alpha=0.1)
 
 
 class PlotSumWaveformLargestS2(PlotBase):
@@ -361,26 +361,24 @@ class PlotChannelWaveforms2D(PlotBase):
             plt.gca().add_patch(Rectangle((oc.left * time_scale, oc.channel), oc.length * time_scale, 1,
                                           facecolor=plt.cm.gnuplot2(color_factor),
                                           edgecolor='none',
-                                          alpha=(0.1 if event.is_channel_bad[oc.channel] else 0.7)))
+                                          alpha=0.5))
 
         # Plot the channel peaks as dots
-        # All these for loops are slow -- hope we get by-column access some time
         self.log.debug('Plotting channel peaks...')
 
         result = []
-        for p in event.all_channel_peaks:
-            noise_sigma = event.occurrences[p.found_in_pulse].noise_sigma
-            if p.noise_sigma == 0:
-                # What perfect world are you living in? WaveformSimulator!
+        for hit in event.all_channel_peaks:
+            if hit.noise_sigma == 0:
+                # Could happen for simulated events
                 color_factor = 1
             else:
-                color_factor = min(max(p.height / (20 * p.noise_sigma), 0), 1)
+                color_factor = min(max(hit.height / (20 * hit.noise_sigma), 0), 1)
             result.append([
-                (0.5 + p.index_of_maximum) * time_scale,             # X
-                0.5 + p.channel,                                     # Y
-                color_factor,                                        # Color (in [0,1])
-                10 * min(10, p.area),                                # Size
-                (0.1 if event.is_channel_bad[p.channel] else 1.0),   # Alpha
+                (0.5 + hit.index_of_maximum) * time_scale,             # X
+                0.5 + hit.channel,                                     # Y
+                color_factor,                                          # Color (in [0,1])
+                10 * min(10, hit.area),                                # Size
+                (0.2 if hit.is_rejected else 1.0),                     # Alpha
             ])
         rgba_colors = np.zeros((len(result),4))
         result = np.array(result).T
@@ -413,17 +411,23 @@ class PlotChannelWaveforms2D(PlotBase):
                  ) / 2,
                 channel_ranges[i][0])
 
-        # Tell about the bad channels
-        bad_channels = np.where(event.is_channel_bad)[0]
-        if len(bad_channels):
-            plt.text(0, 0, 'Bad channels: ' + ', '.join(map(str, sorted(bad_channels))), {'size': 8})
+        # Information about suspicious channels
+        suspicious_channels = np.where(event.is_channel_suspicious)[0]
+        if len(suspicious_channels):
+            plt.text(
+                0,
+                0,
+                'Suspicious channels (# of hits rejected): ' + ', '.join([
+                    '%s (%s)' % (ch, event.n_hits_rejected[ch]) for ch in suspicious_channels
+                ]),
+                {'size': 8})
 
         # Color the peak ranges
         self.color_peak_ranges(event)
 
-        # Make sure we always see all channels , even if there are few occurrences
+        # Make sure we always see all channels
         plt.xlim((0, event.length() * time_scale))
-        plt.ylim((0, len(event.is_channel_bad)))
+        plt.ylim((0, self.config['n_channels']))
 
         plt.xlabel('Time (us)')
         plt.ylabel('PMT channel')
