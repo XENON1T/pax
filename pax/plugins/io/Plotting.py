@@ -97,13 +97,13 @@ class PlotBase(plugin.OutputPlugin):
         plt.xlabel('Time (us)')
 
         for w in self.config['waveforms_to_plot']:
-                waveform = event.get_sum_waveform(w['internal_name'])
-                plt.plot(xlabels,
-                         (waveform.samples[lefti:righti + 1] + y_offset) * scale,
-                         label=w['plot_label'],
-                         color=w.get('color', None),
-                         drawstyle=w.get('drawstyle'),
-                         alpha=w.get('alpha', 1))
+            waveform = event.get_sum_waveform(w['internal_name'])
+            plt.plot(xlabels,
+                     (waveform.samples[lefti:righti + 1] + y_offset) * scale,
+                     label=w['plot_label'],
+                     color=w.get('color', None),
+                     drawstyle=w.get('drawstyle'),
+                     alpha=w.get('alpha', 1))
         if log_y_axis:
             plt.ylim((0.9, plt.ylim()[1]))
 
@@ -387,7 +387,7 @@ class PlotChannelWaveforms2D(PlotBase):
         rgba_colors[:,0] = result[2]
         rgba_colors[:,2] = 1 - result[2]
         rgba_colors[:,3] = result[4]
-        plt.scatter(result[0], result[1], c=rgba_colors, s=result[3], edgecolor=None)
+        plt.scatter(result[0], result[1], c=rgba_colors, s=result[3], lw=0)
 
         # Plot the bottom/top/veto boundaries
         # Assumes the detector names' lexical order is the same as the channel order!

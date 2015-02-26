@@ -36,34 +36,11 @@ class FindHits(plugin.TransformPlugin):
             * c['external_amplification']
             * units.electron_charge)
 
-        # Build the channel -> detector lookup dict
-        # Only used for summing waveforms
-        self.detector_by_channel = {}
-        for name, chs in c['channels_in_detector'].items():
-            for ch in chs:
-                self.detector_by_channel[ch] = name
-
-
     def transform_event(self, event):
-        # Keep count of number of pulses without hits in each channel
-        noise_pulses_in = np.zeros(self.config['n_channels'], dtype=np.int)
-
         # Allocate numpy arrays to hold numba peakfinder results
         hits_buffer = -1 * np.ones((self.max_hits_per_pulse, 2), dtype=np.int64)
         argmaxes = np.zeros(self.max_hits_per_pulse, dtype=np.int64)
         areas = np.zeros(self.max_hits_per_pulse)
-
-        if self.build_sum_waveforms:
-            # Initialize empty waveforms for each detector
-            # One with only hits, one with raw data
-            for postfix in ('', '_raw'):
-                for detector, chs in self.config['channels_in_detector'].items():
-                    event.sum_waveforms.append(datastructure.SumWaveform(
-                        samples=np.zeros(event.length()),
-                        name=detector + postfix,
-                        channel_list=np.array(list(chs), dtype=np.uint16),
-                        detector=detector
-                    ))
 
         for pulse_i, pulse in enumerate(event.occurrences):
             start = pulse.left
@@ -95,7 +72,7 @@ class FindHits(plugin.TransformPlugin):
                 noise_pulses_in[channel] += 1
 
             # Only view the part of hits_buffer that contains peaks found in this event
-            # The rest of hits_buffer contains zeros or random junk from previous occurrences
+            # The rest of hits_buffer contains zeros or random junk from previous pulses
             hits_found = hits_buffer[:n_hits_found]
 
             # Update pulse data
@@ -124,14 +101,6 @@ class FindHits(plugin.TransformPlugin):
                     'found_in_pulse':      pulse_i,
                 }))
 
-            if self.build_sum_waveforms:
-                detector = self.detector_by_channel[channel]
-                sum_w = event.get_sum_waveform(detector).samples
-                for p in hits_found:
-                    sum_w[start+p[0]:start+p[1]+1] += w[p[0]:p[1]+1] * adc_to_pe
-                sum_w_raw = event.get_sum_waveform(detector+'_raw').samples
-                sum_w_raw[start:stop+1] += w * adc_to_pe
-
             # Diagnostic plotting
             # Can't more to plotting plugin: occurrence grouping of hits lost after clustering
             if self.make_diagnostic_plots == 'always' or \
@@ -154,10 +123,6 @@ class FindHits(plugin.TransformPlugin):
                 plt.savefig(os.path.join(self.make_diagnostic_plots_in,
                                          'event%04d_occ%05d-%05d_ch%03d.png' % bla))
                 plt.close()
-
-        # Mark channels with an abnormally high noise rate as bad
-        bad_channels = np.where(noise_pulses_in > self.config['maximum_noise_occurrences_per_channel'])[0]
-        event.is_channel_bad[bad_channels] = True
 
         return event
 
@@ -279,6 +244,7 @@ class FindHits(plugin.TransformPlugin):
             n = 0           # Samples outside peak included so far
             mean = 0        # Mean so far
             m2 = 0          # Sum of squares of differences from the (current) mean
+            n_negative = 0  # Samples below previously determined baseline so far
 
             current_peak = 0
             currently_in_peak = False
@@ -299,9 +265,11 @@ class FindHits(plugin.TransformPlugin):
                         # Update n, mean and m2
                         n += 1
                         mean += delta/n
-                        m2 += delta*(x-mean)
+                        if x < 0:
+                            n_negative += 1
+                            m2 += delta*(x-mean)
 
-            noise_sigma = (m2/n)**0.5
+            noise_sigma = (m2/n_negative)**0.5
 
             # Perform the baseline correction
             baseline += mean

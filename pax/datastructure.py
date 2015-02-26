@@ -194,7 +194,7 @@ class Occurrence(StrictModel):
     #: Will remain nan unless occurrence is processed by smallpeakfinder
     noise_sigma = float('nan')
 
-    #: Baseline (in ADC counts, but float!)
+    #: Baseline (in ADC counts, but float!) relative to configured reference baseline
     #: Will remain nan if occurrence is not processed by hitfinder
     baseline = float('nan')
 
