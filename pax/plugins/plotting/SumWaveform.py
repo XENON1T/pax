@@ -11,10 +11,10 @@ class SumWaveform(plugin.TransformPlugin):
         # Conversion factor: multiply by this to convert from ADC counts above baseline -> electrons
         # Still has to be divided by PMT gain to go to photo-electrons (done below)
         self.adc_to_e = c['sample_duration'] * c['digitizer_voltage_range'] / (
-            2 ** (c['digitizer_bits'])
-            * c['pmt_circuit_load_resistor']
-            * c['external_amplification']
-            * units.electron_charge)
+            2 ** (c['digitizer_bits']) *
+            c['pmt_circuit_load_resistor'] *
+            c['external_amplification'] *
+            units.electron_charge)
 
         # Build the channel -> detector lookup dict
         # Only used for summing waveforms

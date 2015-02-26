@@ -71,7 +71,7 @@ class TestHitFinder(unittest.TestCase):
 
         # Call syntax: _find_peaks(w, threshold_sigmas, noise_sigma, max_passes, initial_baseline_samples, raw_peaks)
 
-        n_hits_found, baseline, noise_sigma = self.plugin._find_peaks(
+        n_hits_found, baseline, noise_sigma, _ = self.plugin._find_peaks(
             waveform, 5, 3, 5, 20,
             hits_buffer)
 

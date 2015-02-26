@@ -110,8 +110,8 @@ class ClusterPlugin(plugin.TransformPlugin):
                 # Are there any suspicious channels? If not, we are done.
                 self.log.debug(', '.join(['%s: %s' % (ch, round(bad_area_per_channel[ch], 1))
                                           for ch in np.where(bad_area_per_channel > 0)[0]]))
-                suspicious_channels = np.where(bad_area_per_channel
-                                               > self.config['bad_area_above_this_is_suspicious'])[0]
+                suspicious_channels = np.where(bad_area_per_channel >
+                                               self.config['bad_area_above_this_is_suspicious'])[0]
                 event.is_channel_suspicious[suspicious_channels] = True
                 if len(suspicious_channels) == 0:
                     break
@@ -147,6 +147,8 @@ class ClusterPlugin(plugin.TransformPlugin):
                 # Delete rejected hits from hits_to_cluster, then redo clustering
                 # The rejected hits will remain in event.all_channel_peaks, of course
                 hits_to_cluster = [h for h in hits_to_cluster if not h.is_rejected]
+
+                break
 
             # Add the peaks to the datastructure
             event.peaks.extend(peaks)
