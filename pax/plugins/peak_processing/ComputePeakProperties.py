@@ -31,7 +31,7 @@ class BasicProperties(plugin.TransformPlugin):
             peak.area = np.sum(peak.area_per_channel)
 
             # Compute top fraction
-            peak.area_fraction_top = np.sum(peak.area_per_channel[:self.last_top_ch + 1])
+            peak.area_fraction_top = np.sum(peak.area_per_channel[:self.last_top_ch + 1])/peak.area
 
             # Compute timing quantities
             times = [s.index_of_maximum * self.dt for s in peak.channel_peaks]
