@@ -40,6 +40,9 @@ class ClusterPlugin(plugin.TransformPlugin):
             hits_to_cluster = hits_per_detector[detector]
             hits_to_cluster.sort(key=lambda x: x.left)
 
+            # Grab pulses in this detector
+            pulses = [oc for oc in event.occurrences if oc.channel in self.config['channels_in_detector'][detector]]
+
             self.log.debug("Clustering channel peaks in data from %s" % detector)
 
             clustering_pass = 0
@@ -90,18 +93,20 @@ class ClusterPlugin(plugin.TransformPlugin):
                         raise RuntimeError(
                             "Every peak should have at least one contributing channel... what's going on?")
 
-                    # Find how many channels show some data at the same time as this peak, but no hit
+                    # Find how many channels in this detector show some data at the same time as this peak, but no hit
                     # Maybe no hit was found, maybe hit was rejected by the suspicious channel algorithm
                     # If zero-length encoding is not used, all channels will have "noise" here
-                    coincident_occurrences = event.get_occurrences_between(peak.left, peak.right, strict=False)
-                    for oc in coincident_occurrences:
+                    coincident_pulses = [pulse for pulse in pulses
+                                         if pulse.left <= peak.right and pulse.right >= peak.left]
+                    for oc in coincident_pulses:
                         channel = oc.channel
                         if not peak.does_channel_contribute[channel]:
                             peak.does_channel_have_noise[channel] = True
 
                     # Classify noise and lone hits
                     # TODO: Noise classification should be configurable!
-                    is_noise = peak.number_of_noise_channels > 2 * peak.number_of_contributing_channels
+                    is_noise = peak.number_of_noise_channels / peak.number_of_contributing_channels > \
+                        self.config['max_noise_channels_over_contributing_channels']
                     is_lone_hit = peak.number_of_contributing_channels == 1
                     if is_noise:
                         peak.type = 'noise'

@@ -380,15 +380,6 @@ class Event(StrictModel):
 
         return peaks
 
-    def get_occurrences_between(self, left, right, strict=False):
-        """Returns all occurrences that overlap with [left, right]
-        If strict=True, only returns occurrences that are not outside [left, right]
-        """
-        if strict:
-            return [oc for oc in self.occurrences if oc.left >= left and oc.right <= right]
-        else:
-            return [oc for oc in self.occurrences if oc.left <= right and oc.right >= left]
-
 
 def _explain(class_name):
     x = inspect.getmembers(class_name,

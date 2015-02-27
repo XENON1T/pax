@@ -296,8 +296,8 @@ class FindHits(plugin.TransformPlugin):
             ##
 
             # Must be in a second pass, since we want to include only samples BELOW baseline (which we just determined)
-            m2 = 0          # Sum of squares of differences from the (current) mean
-            n_negative = 0  # Samples below previously determined baseline so far
+            m2 = 0             # Sum of squares of differences from the (current) mean
+            n_nonpositive = 0  # Number of samples <= baseline. <=, not < to avoid div0 error if no noise (if only..)
 
             current_peak = 0
             currently_in_peak = False
@@ -314,11 +314,11 @@ class FindHits(plugin.TransformPlugin):
                     if current_peak < n_peaks_found and i == hits_buffer[current_peak, 0]:
                         currently_in_peak = True
                     else:
-                        if x < 0:
-                            n_negative += 1
+                        if x <= 0:
+                            n_nonpositive += 1
                             m2 += x*x
 
-            noise_sigma = (m2/n_negative)**0.5
+            noise_sigma = (m2/n_nonpositive)**0.5
             has_changed = False
             pass_number += 1
 
