@@ -41,19 +41,19 @@ class ClusterPlugin(plugin.TransformPlugin):
             hits_to_cluster.sort(key=lambda x: x.left)
 
             self.log.debug("Clustering channel peaks in data from %s" % detector)
-            peaks = []      # Superfluous, while loop is always run at least once... but pycharm complains if we omit
 
-            # Hmzz, python has no do_while, so..
+            clustering_pass = 0
             while True:
+
+                peaks = []
 
                 # Do we actually have something to cluster?
                 self.log.debug("Found %s channel peaks" % len(hits_to_cluster))
                 if not hits_to_cluster:
                     break
 
-                peaks = []
-                # Reset bad area
-                bad_area_per_channel = event.noise_pulses_in * self.config['penalty_per_noise_pulse']
+                # Reset penalty
+                penalty_per_ch = event.noise_pulses_in * self.config['penalty_per_noise_pulse']
 
                 # Cluster the single-pes in groups /clusters which will become peaks
                 # CHILD CLASS IS CALLED HERE
@@ -63,6 +63,10 @@ class ClusterPlugin(plugin.TransformPlugin):
                 # Each cluster becomes a peak
                 # Compute basic properties, check for too many lone pulses per channel
                 for this_peak_s_hit_indices in indices_of_hits_per_peak:
+
+                    if len(this_peak_s_hit_indices) == 0:
+                        raise RuntimeError("Every peak should have a hit... what's going on?")
+
                     peak = datastructure.Peak({
                         'channel_peaks':            [hits_to_cluster[i] for i in this_peak_s_hit_indices],
                         'detector':                 detector,
@@ -71,9 +75,17 @@ class ClusterPlugin(plugin.TransformPlugin):
                         'does_channel_have_noise':  np.zeros(self.n_channels, dtype='bool'),
                     })
 
-                    # Compute contributing channels
-                    for h in peak.channel_peaks:
-                        peak.does_channel_contribute[h.channel] = True
+                    # Compute basic properties of peak, needed later in the plugin
+                    # For speed it would be better to compute as much as possible later..
+                    peak.left = peak.channel_peaks[0].left
+                    peak.right = peak.channel_peaks[0].right
+                    for hit in peak.channel_peaks:
+                        peak.left = min(peak.left, hit.left)
+                        peak.right = max(peak.right, hit.right)
+                        peak.does_channel_contribute[hit.channel] = True
+                        # peak.area_per_channel += hit.area
+                        # peak.area += hit.area
+
                     if peak.number_of_contributing_channels == 0:
                         raise RuntimeError(
                             "Every peak should have at least one contributing channel... what's going on?")
@@ -96,6 +108,9 @@ class ClusterPlugin(plugin.TransformPlugin):
                         # TODO: Should we also reject all hits?
                     elif is_lone_hit:
                         peak.type = 'lone_hit'
+                        # Don't reject the hit(s) in this peak
+                        # However, lone hits in suspicious channels will always be rejected later:
+                        # in the suspicious channel algorithm since their 'witness area' is 0
                     else:
                         # Proper peak, classification done later
                         peak.type = 'unknown'
@@ -103,15 +118,15 @@ class ClusterPlugin(plugin.TransformPlugin):
                     if is_noise or is_lone_hit:
                         # Add area of the hit(s) to the bad_area
                         for hit in peak.channel_peaks:
-                            bad_area_per_channel[hit.channel] += self.config['base_penalty_per_lone_hit'] + hit.area
+                            penalty_per_ch[hit.channel] += self.config['penalty_per_lone_hit'] + hit.area
 
                     peaks.append(peak)
 
                 # Are there any suspicious channels? If not, we are done.
-                self.log.debug(', '.join(['%s: %s' % (ch, round(bad_area_per_channel[ch], 1))
-                                          for ch in np.where(bad_area_per_channel > 0)[0]]))
-                suspicious_channels = np.where(bad_area_per_channel >
-                                               self.config['bad_area_above_this_is_suspicious'])[0]
+                self.log.debug(', '.join(['%s: %s' % (ch, round(penalty_per_ch[ch], 1))
+                                          for ch in np.where(penalty_per_ch > 0)[0]]))
+                suspicious_channels = np.where(penalty_per_ch >=
+                                               self.config['penalty_geq_this_is_suspicious'])[0]
                 event.is_channel_suspicious[suspicious_channels] = True
                 if len(suspicious_channels) == 0:
                     break
@@ -120,22 +135,22 @@ class ClusterPlugin(plugin.TransformPlugin):
                 # Good area: area in non-suspicious channels in same peak
                 # Bad area: area in lone pulses and noise in same channel + something extra for # of noise pulses
                 rejected_some_hits = False
-                for peak_i, peak in enumerate(peaks):
+                for peak in peaks:
 
                     # Compute area for this peak outside suspicious channels
-                    good_area = 0
-                    for h in peak.channel_peaks:
-                        if h.channel in suspicious_channels:
-                            continue
-                        good_area += h.area
+                    # a witness to this peak not being noise
+                    witness_area = 0
+                    for hit in peak.channel_peaks:
+                        if hit.channel not in suspicious_channels:
+                            witness_area += hit.area
+                    # witness_area = peak.area - np.sum(peak.area_per_channel[suspicious_channels])
 
-                    # Check each hit in suspicious channels for rejection
+                    # If the witness area for a hit is lower than the penalty in that channel, reject the hit
                     for hit in peak.channel_peaks:
                         if hit.channel not in suspicious_channels:
                             continue
                         channel = hit.channel
-                        if good_area == 0 or bad_area_per_channel[hit.channel] / good_area \
-                                > self.config['bad_over_good_area_threshold']:
+                        if witness_area == 0 or penalty_per_ch[hit.channel] > witness_area:
                             hit.is_rejected = True
                             rejected_some_hits = True
                             event.n_hits_rejected[channel] += 1
@@ -147,11 +162,11 @@ class ClusterPlugin(plugin.TransformPlugin):
                 # Delete rejected hits from hits_to_cluster, then redo clustering
                 # The rejected hits will remain in event.all_channel_peaks, of course
                 hits_to_cluster = [h for h in hits_to_cluster if not h.is_rejected]
-
-                break
+                clustering_pass += 1
 
             # Add the peaks to the datastructure
             event.peaks.extend(peaks)
+            self.log.debug("Clustering & bad channel rejection ended after %s passes" % (clustering_pass + 1))
 
         return event
 

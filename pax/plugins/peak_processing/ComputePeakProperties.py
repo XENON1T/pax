@@ -15,15 +15,12 @@ class BasicProperties(plugin.TransformPlugin):
 
         for peak in event.peaks:
 
-            peak.left = min([s.left for s in peak.channel_peaks])
-            peak.right = max([s.right for s in peak.channel_peaks])
-
             # For backwards compatibility with plotting code
             highest_peak_index = np.argmax([s.height for s in peak.channel_peaks])
             peak.index_of_maximum = peak.channel_peaks[highest_peak_index].index_of_maximum
             peak.height = peak.channel_peaks[highest_peak_index].height
 
-            # Compute the area per pmt. Store maxidx as well
+            # Compute the area per pmt.
             for s in peak.channel_peaks:
                 peak.area_per_channel[s.channel] += s.area
 

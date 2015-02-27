@@ -20,6 +20,9 @@ from pax import units
 from pax.data_model import StrictModel, Model
 
 
+INT_NAN = -424242
+
+
 class ReconstructedPosition(StrictModel):
 
     """Reconstructed position
@@ -178,13 +181,13 @@ class Occurrence(StrictModel):
     """
 
     #: First index (inclusive; integer)
-    left = 0
+    left = INT_NAN
 
     #: Last index (inclusive; integer)
-    right = 0
+    right = INT_NAN
 
     #: Channel the occurrence belongs to (integer)
-    channel = 0
+    channel = INT_NAN
 
     #: Maximum amplitude (in ADC counts; float) in unfiltered waveform
     #: Will remain nan if channel's gain is 0
@@ -218,11 +221,14 @@ class Occurrence(StrictModel):
         """
         super().__init__(**kwargs)
 
+        if self.channel == INT_NAN:
+            raise ValueError("Must specify channel to init Pulse")
+
         # Determine right from raw_data if needed
         # Don't want right as a property, we want it to be saved...
-        if self.right == 0:
+        if self.right == INT_NAN:
             if not len(self.raw_data):
-                raise ValueError('Must have right or raw_data to init Occurrence')
+                raise ValueError('Must have right or raw_data to init Pulse')
             self.right = self.left + len(self.raw_data) - 1
 
 

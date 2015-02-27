@@ -125,6 +125,14 @@ class TestCheckPulses(unittest.TestCase):
         self.assertRaises(exceptions.OccurrenceBeyondEventError,
                           self.plugin.transform_event, event)
 
+        # Occ entirely outside
+        event = self.make_single_occurrence_event(
+            channel=1,
+            left=-10000000,
+            raw_data=np.ones(1, dtype=np.int16) * self.baseline)
+        self.assertRaises(exceptions.OccurrenceBeyondEventError,
+                          self.plugin.transform_event, event)
+
 
 if __name__ == '__main__':
     unittest.main()

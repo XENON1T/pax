@@ -31,10 +31,10 @@ class CheckBounds(plugin.TransformPlugin):
 
             overhang = end_index - (event_length - 1)
 
-            if start_index < 0 or overhang > 0:
+            if start_index < 0 or end_index < 0 or overhang > 0:
 
                 # Always throw error if occurrence is completely outside event
-                if overhang >= length or start_index <= -length:
+                if overhang >= length or start_index <= -length or end_index < 0:
                     raise exceptions.OccurrenceBeyondEventError(
                         'Occurrence %s in channel %s (%s-%s) is entirely outside '
                         'event bounds (%s-%s)! See issue #43.' % (

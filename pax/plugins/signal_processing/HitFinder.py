@@ -170,7 +170,7 @@ class FindHits(plugin.TransformPlugin):
     def _find_peaks(w, threshold_sigmas, noise_sigma, max_passes, initial_baseline_samples, hits_buffer):
         """Fills raw_peaks with left, right indices of raw_peaks > bound_threshold which exceed threshold somewhere
          raw_peaks: numpy () of [-1,-1] lists, will be filled by function.
-        BE CAREFUL -- Will modify w IN PLACEto do baseline correction
+        BE CAREFUL -- Will modify w IN PLACE to do baseline correction
         Returns: number of raw_peaks found, baseline, noise_sigma
         Will stop search after raw_peaks found reached length of raw_peaks argument passed in
         """
