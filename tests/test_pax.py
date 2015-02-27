@@ -144,5 +144,26 @@ class TestPax(unittest.TestCase):
         mypax = core.Processor(config_names='XED', config_dict={'pax': {'events_to_process': [0]}})
         mypax.run()
 
+    def test_process_single_xed_event_olddsp(self):
+        """ Process the first event from the XED file using Xerawdp matching config
+        """
+        # TODO: delete the HD5 file that is created by this
+        mypax = core.Processor(config_names=['XED', 'JINX'],
+                               config_dict={'pax': {
+                                   'events_to_process': [0],
+                                   'output': 'Dummy.DummyOutput'}})
+        mypax.run()
+        pl = mypax.get_plugin_by_name('DummyOutput')
+        self.assertIsInstance(pl, plugin.OutputPlugin)
+        e = pl.last_event
+        self.assertIsInstance(e, datastructure.Event)
+        # Check that the peak areas remain the same
+        self.assertEqual([x.area for x in e.peaks],
+                         [176279.0866616674, 736.576200034518, 611.0961166092862,
+                          129.12023409842166, 88.43269016354068, 16.19189004866498,
+                          430.28177885354137, 1.9494012301013646, 1.52583418095758,
+                          1.5248293965443862, 1.5214431653719354, 1.1431245035453605,
+                          1.119126521198631, 0.8370846398458212, 0.3965132112382404])
+
 if __name__ == '__main__':
     unittest.main()

@@ -82,6 +82,11 @@ class BuildWaveforms(plugin.TransformPlugin):
                 detector=group if group in self.external_detectors else 'tpc'
             ))
 
+        # DIRTY HACK, DON'T TELL CHRIS
+        # Sneakily add channel_waveforms, no longer in our datastructure...
+        object.__setattr__(event, 'channel_waveforms',
+                           np.zeros((self.config['n_channels'], event.length()), dtype=np.float64))
+
         last_occurrence_in = {}
 
         for occ_i, occ in enumerate(event.occurrences):
@@ -142,7 +147,7 @@ class BuildWaveforms(plugin.TransformPlugin):
             # Compute the baseline from the baselining sample
             if baseline_sample is None:
                 if channel in last_occurrence_in:
-                    baseline = last_occurrence_in[channel].digitizer_baseline_used
+                    baseline = last_occurrence_in[channel].baseline
                 else:
                     self.log.warning(
                         ('DANGER: attempt to re-use baseline in channel %s where none has previously been computed: ' +
@@ -219,7 +224,7 @@ class BuildWaveforms(plugin.TransformPlugin):
 
             # Store some metadata for this occurrence
             occ.height = np.max(corrected_pulse)
-            occ.digitizer_baseline_used = baseline
+            occ.baseline = baseline
 
             last_occurrence_in[channel] = occ
 
