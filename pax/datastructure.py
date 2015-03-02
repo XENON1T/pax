@@ -191,18 +191,18 @@ class SumWaveform(StrictModel):
 
 class Occurrence(StrictModel):
     """A DAQ occurrence
-    
-    A DAQ occurrence can also be thought of as a pulse in a PMT. 
+
+    A DAQ occurrence can also be thought of as a pulse in a PMT.
     """
 
     #: Starttime of this occurence within event
-    #: 
+    #:
     #: Units are samples.  This nonnegative number starts at zero and is an integere because
     #: it's an index.
     left = 0
 
     #: Stoptime of this occurence within event
-    #: 
+    #:
     #: Units are samples and this time is inclusive of last sample.  This nonnegative number
     #: starts at zero and is an integere because it's an index.
     right = 0
@@ -269,7 +269,7 @@ class Event(StrictModel):
     start_time = 0
 
     #: Integer stop time of the event in nanoseconds
-    # 
+    #
     #: This stop time includes the last recorded sample.  Therefore, it's the right
     #: edge of the last sample.  This is a 64-bit integer for the reasons explained
     #: in 'start_time'.
