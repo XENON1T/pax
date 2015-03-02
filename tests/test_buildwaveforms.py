@@ -15,7 +15,7 @@ class TestBuildWaveforms(unittest.TestCase):
                                           'plugin_group_names': ['test'],
                                           'test':               'BuildWaveforms.BuildWaveforms'},
                                       'BuildWaveforms.BuildWaveforms': {
-                                          'truncate_occurrences_partially_outside': False}})
+                                          'truncate_occurrences_partially_outside': True}})
         self.plugin = self.pax.get_plugin_by_name('BuildWaveforms')
         self.baseline = self.pax.config['DEFAULT']['digitizer_baseline']
 
@@ -56,16 +56,48 @@ class TestBuildWaveforms(unittest.TestCase):
         self.assertTrue(len(event.sum_waveforms) > 0)
 
     def test_occurrences_outside_event(self):
-        # TODO: Also add tests for truncation itself, in case it is allowed in
-        # the config
 
+        # Occ starts to early
         event = self.make_single_occurrence_event(
             channel=1,
             left=-5,
             raw_data=np.ones(20, dtype=np.int16) * self.baseline)
-        self.assertRaises(exceptions.OccurrenceBeyondEventError,
-                          self.plugin.transform_event, event)
+        event = self.plugin.transform_event(event)
+        oc = event.occurrences[0]
+        self.assertEqual(oc.left, 0)
+        self.assertEqual(oc.right, 20-1-5)
 
+        # Occ starts to early
+        event = self.make_single_occurrence_event(
+            channel=1,
+            left=-1,
+            raw_data=np.ones(20, dtype=np.int16) * self.baseline)
+        event = self.plugin.transform_event(event)
+        oc = event.occurrences[0]
+        self.assertEqual(oc.left, 0)
+        self.assertEqual(oc.right, 20-1-1)
+
+        # Occ overhangs
+        event = self.make_single_occurrence_event(
+            channel=1,
+            left=90,
+            raw_data=np.ones(20, dtype=np.int16) * self.baseline)
+        event = self.plugin.transform_event(event)
+        oc = event.occurrences[0]
+        self.assertEqual(oc.left, 90)
+        self.assertEqual(oc.right, 99)
+
+        # Occ starts too early AND overhangs
+        event = self.make_single_occurrence_event(
+            channel=1,
+            left=-5,
+            raw_data=np.ones(200, dtype=np.int16) * self.baseline)
+        event = self.plugin.transform_event(event)
+        oc = event.occurrences[0]
+        self.assertEqual(oc.left, 0)
+        self.assertEqual(oc.right, 99)
+
+        # Occ entirely outside
         event = self.make_single_occurrence_event(
             channel=1,
             left=-5,
@@ -73,6 +105,7 @@ class TestBuildWaveforms(unittest.TestCase):
         self.assertRaises(exceptions.OccurrenceBeyondEventError,
                           self.plugin.transform_event, event)
 
+        # Occ entirely outside
         event = self.make_single_occurrence_event(
             channel=1,
             left=120,
@@ -80,16 +113,22 @@ class TestBuildWaveforms(unittest.TestCase):
         self.assertRaises(exceptions.OccurrenceBeyondEventError,
                           self.plugin.transform_event, event)
 
-        event = self.make_single_occurrence_event(
-            channel=1,
-            left=-5,
-            raw_data=np.ones(200, dtype=np.int16) * self.baseline)
-        self.assertRaises(exceptions.OccurrenceBeyondEventError,
-                          self.plugin.transform_event, event)
-
+        # Occ entirely outside
         event = self.make_single_occurrence_event(
             channel=1,
             left=100,
             raw_data=np.ones(1, dtype=np.int16) * self.baseline)
         self.assertRaises(exceptions.OccurrenceBeyondEventError,
                           self.plugin.transform_event, event)
+
+        # Occ entirely outside
+        event = self.make_single_occurrence_event(
+            channel=1,
+            left=-1,
+            raw_data=np.ones(1, dtype=np.int16) * self.baseline)
+        self.assertRaises(exceptions.OccurrenceBeyondEventError,
+                          self.plugin.transform_event, event)
+
+
+if __name__ == '__main__':
+    unittest.main()

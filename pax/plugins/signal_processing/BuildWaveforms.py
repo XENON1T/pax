@@ -1,19 +1,11 @@
 import numpy as np
+import numba
 
 from pax import plugin, units, datastructure, exceptions
 
 
 class BuildWaveforms(plugin.TransformPlugin):
-    """Construct waveforms from PMT channel pulses
-
-    Waveforms that will be built:
-        tpc
-        top
-        bottom
-        NAME for each external detector named NAME (usually only the veto)
-    for Xerawdp matching also:
-        uS1
-        uS2
+    """Construct sum waveforms from PMT channel pulses
     """
 
     def startup(self):
@@ -34,27 +26,13 @@ class BuildWaveforms(plugin.TransformPlugin):
         self.conversion_factor *= c['sample_duration']
         self.conversion_factor *= c['digitizer_voltage_range']
 
-        self.channel_groups = {
-            'top':              c['channels_top'],
-            'bottom':           c['channels_bottom'],
-        }
-
-        # Add each detector as a channel group
+        # Build the channel -> detector lookup dict
+        self.detector_by_channel = {}
         for name, chs in c['channels_in_detector'].items():
-            self.channel_groups[name] = chs
+            for ch in chs:
+                self.detector_by_channel[ch] = name
 
-        self.external_detectors = [k for k in c['channels_in_detector'].keys() if k != 'tpc']
-
-        # For Xerawdp matching: have to exclude some channels from S1 peakfinding and build sum wv with nominal gain
-        self.xerawdp_matching = c.get('xerawdp_matching', False)
-        if self.xerawdp_matching:
-            s1_channels = list(
-                set(c['channels_top']) | set(c['channels_bottom']) - set(c['channels_excluded_for_s1']))
-            self.channel_groups.update({
-                's1_peakfinding': s1_channels,
-                'uS1':  s1_channels,
-                'uS2':  c['channels_top'] + c['channels_bottom'],
-            })
+        self.compute_occurrence_heights = c.get('compute_occurrence_heights', True)
 
     def transform_event(self, event):
         # Sanity check
@@ -62,13 +40,15 @@ class BuildWaveforms(plugin.TransformPlugin):
             raise ValueError('Event %s quotes sample duration = %s ns, but sample_duration is set to %s!' % (
                 event.event_number, event.sample_duration, self.config['sample_duration']))
 
-        # Initialize empty waveforms
-        for group, members in self.channel_groups.items():
+        event_length = event.length()
+
+        # Initialize empty waveforms for each detector
+        for detector, chs in self.config['channels_in_detector'].items():
             event.sum_waveforms.append(datastructure.SumWaveform(
-                samples=np.zeros(event.length()),
-                name=group,
-                channel_list=np.array(list(members), dtype=np.uint16),
-                detector=group if group in self.external_detectors else 'tpc'
+                samples=np.zeros(event_length),
+                name=detector,
+                channel_list=np.array(list(chs), dtype=np.uint16),
+                detector=detector
             ))
 
         last_occurrence_in = {}
@@ -76,60 +56,71 @@ class BuildWaveforms(plugin.TransformPlugin):
         for occ_i, occ in enumerate(event.occurrences):
 
             channel = occ.channel
-
-            # Check for undead channels
-            if self.config['gains'][channel] == 0:
-                if channel not in self.undead_channels:
-                    if self.config['zombie_paranoia']:
-                        self.log.warning('Undead channel %s: gain is set to 0, '
-                                         'but it has a signal in this event!' % channel)
-                        self.log.warning('Further undead channel warnings for this channel will be suppressed.')
-                    self.undead_channels.append(channel)
-                if not self.xerawdp_matching:
-                    # This channel won't add anything, so:
-                    continue
-
-            baseline_sample = None
+            detector = self.detector_by_channel[channel]
             start_index = occ.left
             length = occ.length
             end_index = occ.right
+
+            # Ignore dead channels
+            if self.config['gains'][channel] == 0:
+                continue
+
             occurrence_wave = occ.raw_data
 
-            # Grab samples to compute baseline from
+            ##
+            #  Pulse bounds checking / truncation (see issue 43)
+            ##
 
-            # For pulses starting right after previous ones, we can keep the samples from the previous pulse
-            if self.config['reuse_baseline_for_adjacent_occurrences'] \
-                    and channel in last_occurrence_in \
-                    and start_index == last_occurrence_in[channel].right + 1:
-                # self.log.debug('Occurence %s in channel %s is adjacent to previous occurrence: reusing baseline' %
-                #               (i, channel))
-                pass
+            overhang = end_index - (event_length - 1)
 
-            # For VERY short pulses, we are in trouble...
-            elif length < self.config['baseline_sample_length']:
-                self.log.warning(
-                    ("Occurrence %s in channel %s has too few samples (%s) to compute baseline:" +
-                     ' reusing previous baseline in channel.') % (occ_i, channel, length)
+            if start_index < 0 or overhang > 0:
+
+                # Always throw error if occurrence is completely outside event
+                if overhang >= length or start_index <= -length:
+                    raise exceptions.OccurrenceBeyondEventError(
+                        'Occurrence %s in channel %s (%s-%s) is entirely outside '
+                        'event bounds (%s-%s)! See issue #43.' % (
+                            occ_i, channel, start_index, end_index, 0, event_length - 1))
+
+                # If partially outside, truncate with warning, or give error, according to config
+                message = 'Occurrence %s in channel %s (%s-%s) is partially outside ' \
+                          'event bounds (%s-%s). See issue #43' % (
+                              occ_i, channel, start_index, end_index, 0, event_length - 1)
+
+                if not self.truncate_occurrences_partially_outside:
+                    raise exceptions.OccurrenceBeyondEventError(message)
+                self.log.warning(message)
+
+                # Truncate the occurrence. Remember start_index < 0!
+                if start_index < 0:
+                    occurrence_wave = occurrence_wave[-start_index:]
+                    start_index = 0
+                if overhang > 0:
+                    occurrence_wave = occurrence_wave[:-overhang]
+                    end_index = event_length - 1
+                length = end_index - start_index + 1
+
+                # Update the occurrence data, so hit finder won't look at old un-truncated occ
+                event.occurrences[occ_i] = occ = datastructure.Occurrence(
+                    left=start_index,
+                    right=end_index,
+                    channel=channel,
+                    raw_data=occurrence_wave
                 )
-                pass
 
-            # For short pulses, we can take baseline samples from its rear.
-            # The last occurrence is truncated in Xenon100, OK to use front-baselining even if short.
-            elif self.config['rear_baselining_for_short_occurrences'] and  \
-                    len(occurrence_wave) < self.config['rear_baselining_threshold_occurrence_length'] and \
-                    (not start_index + length > event.length() - 1):
-                if occ_i > 0:
-                    self.log.warning("Unexpected short occurrence %s in channel %s at %s (%s samples long)"
-                                     % (occ_i, channel, start_index, length))
-                self.log.debug("Short pulse, using rear-baselining")
-                baseline_sample = occurrence_wave[length - self.config['baseline_sample_length']:]
+            ##
+            #  Baseline determination
+            ##
 
-            # Finally, the usual baselining case:
-            else:
-                baseline_sample = occurrence_wave[:self.config['baseline_sample_length']]
+            # For pulses starting right after previous ones, we may want to keep the baseline
+            reuse_baseline = self.config['reuse_baseline_for_adjacent_occurrences'] \
+                and channel in last_occurrence_in \
+                and start_index == last_occurrence_in[channel].right + 1
 
-            # Compute the baseline from the baselining sample
-            if baseline_sample is None:
+            # For very short pulses, we should certainly keep our previous baseline
+            reuse_baseline = reuse_baseline or (length < self.config['baseline_sample_length'])
+
+            if reuse_baseline:
                 if channel in last_occurrence_in:
                     baseline = last_occurrence_in[channel].digitizer_baseline_used
                 else:
@@ -139,77 +130,47 @@ class BuildWaveforms(plugin.TransformPlugin):
                         (channel, self.config['digitizer_baseline'])
                     )
                     baseline = self.config['digitizer_baseline']
+
             else:
-                baselining_method = self.config.get('find_baselines_using', 'mean')
-                if baselining_method == 'mean':
-                    # Xerawdp behaviour
-                    baseline = np.mean(baseline_sample)  # No floor, Xerawdp uses float arithmetic too. Good.
-                elif baselining_method == 'median':
-                    # More robust against peaks in start of sample
-                    baseline = np.median(baseline_sample)
-                else:
-                    raise ValueError("Invalid find_baselines_using: should be 'mean' or 'median'")
+                baseline_sample = occurrence_wave[:self.config['baseline_sample_length']]
+                baseline = self._fast_mean(baseline_sample)
 
-            # Always throw error if occurrence is completely outside event -- see issue 43
-            if end_index < 0 or start_index > event.length() - 1:
-                raise exceptions.OccurrenceBeyondEventError(
-                    'Occurrence %s in channel %s (%s-%s) is entirely outside event bounds (%s-%s)!' % (
-                        occ_i, channel, start_index, end_index, 0, event.length() - 1))
-
-            # Truncate occurrences starting too early -- see issue 43
-            if start_index < 0:
-                message_head = "Occurrence %s in channel %s starts %s samples before event starts (see issue #43)" % (
-                    occ_i, channel, -start_index)
-                if not self.truncate_occurrences_partially_outside:
-                    raise exceptions.OccurrenceBeyondEventError(message_head + '!')
-                self.log.warning(message_head + ': truncating.')
-                occurrence_wave = occurrence_wave[-start_index:]
-                # Update the start index
-                start_index = 0
-
-            # Truncate occurrences taking too long -- see issue 43
-            overhang_length = len(occurrence_wave) - 1 + start_index - event.length()
-            if overhang_length > 0:
-                message_head = "Occurrence %s in channel %s has overhang of %s samples (see issue #43)" % (
-                    occ_i, channel, overhang_length)
-                if not self.truncate_occurrences_partially_outside:
-                    raise exceptions.OccurrenceBeyondEventError(message_head + '!')
-                self.log.warning(message_head + ': truncating.')
-                occurrence_wave = occurrence_wave[:length - overhang_length]
-                # Update the length & end index
-                length = len(occurrence_wave)
-                end_index = start_index + length - 1
+            ##
+            # Apply baseline and gain correction, waveform summation
+            ##
 
             # Compute corrected pulse
-            if self.xerawdp_matching:
-                nominally_corrected_pulse = baseline - occurrence_wave
-                nominally_corrected_pulse *= self.conversion_factor / self.config['nominal_gain']
-                corrected_pulse = nominally_corrected_pulse
-                if self.config['gains'][channel] == 0:
-                    corrected_pulse = float('inf')
-                else:
-                    corrected_pulse *= self.config['nominal_gain'] / self.config['gains'][channel]
-            else:
-                corrected_pulse = (baseline - occurrence_wave) * self.conversion_factor / self.config['gains'][channel]
+            corrected_pulse = (baseline - occurrence_wave) * self.conversion_factor / self.config['gains'][channel]
 
             # Store the waveform in channel_waveforms
-            # If the gain is 0, we can still be here if self.xerawdp_matching, don't want to store infs, so check first
-            if self.config['gains'][channel] != 0:
-                event.channel_waveforms[channel][start_index:end_index + 1] = corrected_pulse
+            event.channel_waveforms[channel][start_index:end_index + 1] = corrected_pulse
 
-            # Add corrected pulse to all appropriate summed waveforms
-            for group, members in self.channel_groups.items():
-                if channel in members:
-                    if self.xerawdp_matching and group.startswith('u'):
-                        pulse_to_add = nominally_corrected_pulse
-                    else:
-                        pulse_to_add = corrected_pulse
-                    event.get_sum_waveform(group).samples[start_index:end_index + 1] += pulse_to_add
+            # Add corrected pulse to the summed waveform
+            event.get_sum_waveform(detector).samples[start_index:end_index + 1] += corrected_pulse
 
             # Store some metadata for this occurrence
-            occ.height = np.max(corrected_pulse)
+            if self.compute_occurrence_heights:
+                occ.height = self._fast_max(corrected_pulse)
             occ.digitizer_baseline_used = baseline
 
             last_occurrence_in[channel] = occ
 
         return event
+
+    @staticmethod
+    @numba.jit(numba.float64(numba.int16[:]))
+    def _fast_mean(w):
+        mean = 0
+        for x in w:
+            mean += x
+        mean /= len(w)
+        return mean
+
+    @staticmethod
+    @numba.jit(numba.float64(numba.float64[:]))
+    def _fast_max(w):
+        current_max = -999.9
+        for x in w:
+            if x > current_max:
+                current_max = x
+        return current_max

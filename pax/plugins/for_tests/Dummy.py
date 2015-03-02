@@ -8,7 +8,10 @@ class DummyInput(plugin.InputPlugin):
 
 
 class DummyOutput(plugin.OutputPlugin):
-    pass
+    "Stores last event in self.last_event, useful for testing"
+
+    def write_event(self, event):
+        self.last_event = event
 
 
 class DummyTransform(plugin.TransformPlugin):
