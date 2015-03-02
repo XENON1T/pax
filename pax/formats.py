@@ -120,7 +120,7 @@ class ROOTDump(BulkOutputFormat):
     supports_read_back = False
 
     # This line makes sure all TTree objects are NOT owned
-    # by python, avoiding segfault when garbage collection
+    # by python, avoiding segfaults when garbage collecting
     ROOT.TTree.__init__._creates = False
 
     def open(self, name, mode):
@@ -184,7 +184,9 @@ class ROOTDump(BulkOutputFormat):
                 self.trees[treename].Fill()
 
         # Write to file
+        self.log.debug("Writing out to TFile")
         self.f.Write()
+        self.log.debug("Done writing")
 
 ##
 # Pandas output formats
