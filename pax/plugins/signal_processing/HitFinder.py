@@ -296,27 +296,14 @@ class FindHits(plugin.TransformPlugin):
             ##
 
             # Must be in a second pass, since we want to include only samples BELOW baseline (which we just determined)
+            # Don't need to keep track of being in a peak or not: peaks are never below baseline :-)
             m2 = 0             # Sum of squares of differences from the (current) mean
             n_nonpositive = 0  # Number of samples <= baseline. <=, not < to avoid div0 error if no noise (if only..)
 
-            current_peak = 0
-            currently_in_peak = False
-
-            for i, x in enumerate(w):
-
-                if currently_in_peak:
-                    if i > hits_buffer[current_peak, 1]:
-                        current_peak += 1
-                        currently_in_peak = False
-
-                # NOT else, currently_in_peak may have changed!
-                if not currently_in_peak:
-                    if current_peak < n_peaks_found and i == hits_buffer[current_peak, 0]:
-                        currently_in_peak = True
-                    else:
-                        if x <= 0:
-                            n_nonpositive += 1
-                            m2 += x*x
+            for x in w:
+                if x <= 0:
+                    n_nonpositive += 1
+                    m2 += x*x
 
             noise_sigma = (m2/n_nonpositive)**0.5
             has_changed = False
