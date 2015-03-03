@@ -61,6 +61,13 @@ class FindHits(plugin.TransformPlugin):
                 w, self.min_sigma, self.noise_sigma_guess, self.max_passes, self.initial_baseline_samples,
                 hits_buffer)
 
+            if n_hits_found < 0:
+                raise RuntimeError("You found a hitfinder bug!\n"
+                                   "Event %d, channel %d, pulse %d.\n"
+                                   "Guru meditation: %d\n"
+                                   "Please tell Jelle!" % (
+                                       event.event_number, channel, pulse_i, n_hits_found))
+
             if n_hits_found >= self.max_hits_per_pulse:
                 self.log.warning("Pulse %s-%s in channel %s has more than %s hits!"
                                  "This usually indicates a zero-length encoding breakdown after a very large S2."
@@ -181,7 +188,7 @@ class FindHits(plugin.TransformPlugin):
         # the entire pulse could be above reference baseline, and we don't want toreport it all as one hit...
         # TODO: Also determine a noise_sigma here? Factor out code from below to separate function?
         baseline = 0.0
-        initial_baseline_samples = max(initial_baseline_samples, len(w))
+        initial_baseline_samples = min(initial_baseline_samples, len(w))
         for x in w[:initial_baseline_samples + 1]:     # AARGH stupid python indexing!!!
             baseline += x
         baseline = baseline/initial_baseline_samples
@@ -304,6 +311,12 @@ class FindHits(plugin.TransformPlugin):
                 if x <= 0:
                     n_nonpositive += 1
                     m2 += x*x
+
+            if n_nonpositive == 0:
+                # A pathological case when the entire pulse is indicated as a peak (for this pass)...
+                # I believe this can only happen if the baseline correction is bugged, so I'll raise an exception
+                # ... Wait,Numba doesn't allow this though, so...
+                return float(-41), 0.0, 0.0, 0.0
 
             noise_sigma = (m2/n_nonpositive)**0.5
             has_changed = False
