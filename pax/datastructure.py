@@ -255,7 +255,8 @@ class Event(StrictModel):
     #: Time duration of a sample (in pax units, i.e. ns)
     #: This is also in config, but we need it here too, to convert between event duration and length in samples
     #: Must be an int for same reason as start_time and stop_time
-    sample_duration = int(10 * units.ns)
+    #: DO NOT set to 10 ns as default, otherwise no way to check if it was given to constructor!
+    sample_duration = 0
 
     user_float_0 = 0.0  # : Unused float (useful for developing)
     user_float_1 = 0.0  # : Unused float (useful for developing)
@@ -303,7 +304,7 @@ class Event(StrictModel):
         if 'length' in kwargs and self.sample_duration and not self.stop_time:
             self.stop_time = int(self.start_time + kwargs['length'] * self.sample_duration)
 
-        if not self.stop_time:
+        if not self.stop_time or not self.sample_duration:
             raise ValueError("Cannot initialize an event with an unknown length: " +
                              "pass either stop_time or length and sample_duration")
 
