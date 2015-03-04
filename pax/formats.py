@@ -1,7 +1,7 @@
 try:
     import ROOT  # noqa
 except ImportError:
-    print("You still don't have root. Nice!")
+    print("ROOT module not imported")
 import numpy as np
 import os
 
@@ -157,7 +157,7 @@ class ROOTDump(BulkOutputFormat):
                         array_len = field_data.shape[1]
                         # Create buffer structure for arrays
                         self.branch_buffers[treename][fieldname] = np.zeros(1,
-                                                                            dtype=[('roothell', dtype, (array_len,),)])
+                                                                            dtype=[('temp_name', dtype, (array_len,),)])
                         # Set buffer to use this structure
                         self.trees[treename].Branch(fieldname,
                                                     self.branch_buffers[treename][fieldname],

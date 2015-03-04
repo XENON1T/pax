@@ -4,7 +4,7 @@
 try:
     import ROOT     # noqa
 except ImportError:
-    print("You don't have ROOT. Good for you.")
+    print("ROOT module not imported.")
 import glob
 import logging
 import importlib
