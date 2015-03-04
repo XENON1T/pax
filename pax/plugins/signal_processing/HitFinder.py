@@ -1,3 +1,11 @@
+"""Hit finding plugin
+
+If you get an error from either of the numba methods in this plugin (exception from native function blahblah)
+Try commenting the @jit decorators, which will run a slow, pure-python version of the methods, allowing you to debug.
+Don't forget to re-enable the @jit -- otherwise it will run quite slow!
+"""
+
+
 import numpy as np
 import numba
 
@@ -15,7 +23,7 @@ class FindHits(plugin.TransformPlugin):
 
         self.min_sigma = c['peak_minimum_sigma']
         self.noise_sigma_guess = c['noise_sigma_guess']
-        self.reference_baseline = c.get('digitizer_baseline', 16000)
+        self.reference_baseline = c.get('digitizer_reference_baseline', 16000)
         self.initial_baseline_samples = c.get('initial_baseline_samples', 50)
         self.max_hits_per_pulse = c['max_hits_per_pulse']
         self.max_passes = c.get('max_passes', float('inf'))
@@ -36,12 +44,15 @@ class FindHits(plugin.TransformPlugin):
             c['external_amplification'] *
             units.electron_charge)
 
+        # Keep track of how many times the "too many hits" warning has been shown
+        self.too_many_hits_warnings_shown = 0
+
     def transform_event(self, event):
         # Allocate numpy arrays to hold numba peakfinder results
-        # -42 is a placeholder for values that should never be displayed
-        hits_buffer = -42 * np.ones((self.max_hits_per_pulse, 2), dtype=np.int64)
-        argmaxes = -42 * np.zeros(self.max_hits_per_pulse, dtype=np.int64)
-        areas = -42 * np.ones(self.max_hits_per_pulse)
+        # -1 is a placeholder for values that should never be used
+        hits_buffer = -1 * np.ones((self.max_hits_per_pulse, 2), dtype=np.int64)
+        argmaxes = -1 * np.zeros(self.max_hits_per_pulse, dtype=np.int64)
+        areas = -1 * np.ones(self.max_hits_per_pulse)
 
         for pulse_i, pulse in enumerate(event.occurrences):
             start = pulse.left
@@ -61,17 +72,27 @@ class FindHits(plugin.TransformPlugin):
                 w, self.min_sigma, self.noise_sigma_guess, self.max_passes, self.initial_baseline_samples,
                 hits_buffer)
 
+            # Check for error return codes from the numba hitfinding
             if n_hits_found < 0:
                 raise RuntimeError("You found a hitfinder bug!\n"
                                    "Event %d, channel %d, pulse %d.\n"
                                    "Guru meditation: %d\n"
-                                   "Please tell Jelle!" % (
+                                   "Please file a bug report!" % (
                                        event.event_number, channel, pulse_i, n_hits_found))
 
+            # Show too-many hits message
             if n_hits_found >= self.max_hits_per_pulse:
-                self.log.warning("Pulse %s-%s in channel %s has more than %s hits!"
-                                 "This usually indicates a zero-length encoding breakdown after a very large S2."
-                                 "Further hits have been ignored." % (start, stop, channel, self.max_hits_per_pulse))
+                if self.too_many_hits_warnings_shown > 3:
+                    show_to = self.log.debug
+                else:
+                    show_to = self.log.info
+                show_to("Pulse %s-%s in channel %s has more than %s hits. "
+                        "This usually indicates a zero-length encoding breakdown after a very large S2. "
+                        "Further hits in this pulse have been ignored." % (start, stop, channel,
+                                                                           self.max_hits_per_pulse))
+                if self.too_many_hits_warnings_shown == 3:
+                    self.log.info('Further too-many hit messages will be suppressed')
+                    self.too_many_hits_warnings_shown += 1
 
             if passes_used >= self.max_passes:
                 self.log.debug("Hit finding in pulse %d-%d in channel %d did not converge after %d passes." % (
@@ -113,7 +134,7 @@ class FindHits(plugin.TransformPlugin):
                                        "Current hit %d-%d-%d, in event %s, channel %s, pulse %s.\n"
                                        "Indices in pulse: %s-%s-%s. Pulse bounds: %d-%d.\n"
                                        "Height is %s, noise sigma is %s, dynamic threshold at %s; Area is %d.\n"
-                                       "Please tell Jelle!" % (
+                                       "Please file a bug report!" % (
                                            left, max_idx, right, event.event_number, channel, pulse_i,
                                            hit[0], hit[0] + argmaxes[i], hit[1], start, stop,
                                            height, noise_sigma_pe, self.min_sigma * noise_sigma_pe, area))
@@ -158,6 +179,11 @@ class FindHits(plugin.TransformPlugin):
     @staticmethod
     @numba.jit(numba.void(numba.float64[:], numba.int64[:, :], numba.int64[:], numba.float64[:]), nopython=True)
     def _peak_argmax_and_area(w, raw_peaks, argmaxes, areas):
+        """Finds the maximum index and area of peaks in w indicated by (left, right) bounds in raw_peaks.
+        Will fill up argmaxes and areas with result.
+            raw_peaks should be a numpy array of (left, right) bounds (inclusive)
+        Returns nothing
+        """
         for peak_i in range(len(raw_peaks)):
             current_max = -999.9
             current_argmax = -1
@@ -185,7 +211,7 @@ class FindHits(plugin.TransformPlugin):
 
         # Determine an initial baseline from the first samples
         # We have to do this BEFORE the first hit finding pass:
-        # the entire pulse could be above reference baseline, and we don't want toreport it all as one hit...
+        # the entire pulse could be above reference baseline, and we don't want to report it all as one hit...
         # TODO: Also determine a noise_sigma here? Factor out code from below to separate function?
         baseline = 0.0
         initial_baseline_samples = min(initial_baseline_samples, len(w))

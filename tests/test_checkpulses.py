@@ -17,7 +17,7 @@ class TestCheckPulses(unittest.TestCase):
                                       'CheckPulses.CheckBounds': {
                                           'truncate_occurrences_partially_outside': True}})
         self.plugin = self.pax.get_plugin_by_name('CheckBounds')
-        self.baseline = self.pax.config['DEFAULT']['digitizer_baseline']
+        self.baseline = self.pax.config['DEFAULT']['digitizer_reference_baseline']
 
     def make_single_occurrence_event(self, **kwargs):
         event = datastructure.Event(

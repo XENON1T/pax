@@ -1,5 +1,5 @@
 """
-JINX - Jinx Is Not Xerawdp
+XerawdpImitation - XerawdpImitation Is Not Xerawdp
 This code imitates the peakfinding of Xerawdp (the Xenon100 processor)
 Its only purpose is to show we understand Xerawdp enough to be able to reproduce it,
 it is not meant to replace Xerawdp, nor to be used unmodified by Xenon1T or any experiment.
@@ -152,9 +152,9 @@ class BuildWaveforms(plugin.TransformPlugin):
                     self.log.warning(
                         ('DANGER: attempt to re-use baseline in channel %s where none has previously been computed: ' +
                          ' using default digitizer baseline %s.') %
-                        (channel, self.config['digitizer_baseline'])
+                        (channel, self.config['digitizer_reference_baseline'])
                     )
-                    baseline = self.config['digitizer_baseline']
+                    baseline = self.config['digitizer_reference_baseline']
             else:
                 baselining_method = self.config.get('find_baselines_using', 'mean')
                 if baselining_method == 'mean':

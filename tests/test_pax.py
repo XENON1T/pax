@@ -148,7 +148,7 @@ class TestPax(unittest.TestCase):
         """ Process the first event from the XED file using Xerawdp matching config
         """
         # TODO: delete the HD5 file that is created by this
-        mypax = core.Processor(config_names=['XED', 'JINX'],
+        mypax = core.Processor(config_names=['XED', 'XerawdpImitation'],
                                config_dict={'pax': {
                                    'events_to_process': [0],
                                    'output': 'Dummy.DummyOutput'}})
