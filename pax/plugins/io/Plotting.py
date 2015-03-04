@@ -375,18 +375,26 @@ class PlotChannelWaveforms2D(PlotBase):
         # All these for loops are slow -- hope we get by-column access some time
         self.log.debug('Plotting channel peaks...')
 
+        result = []
         for p in event.all_channel_peaks:
             if p.noise_sigma == 0:
                 # What perfect world are you living in? WaveformSimulator!
                 color_factor = 1
             else:
                 color_factor = min(max(p.height / (20 * p.noise_sigma), 0), 1)
-            plt.scatter([(0.5 + p.index_of_maximum) * time_scale],
-                        [0.5 + p.channel],
-                        c=(color_factor, 0, (1 - color_factor)),
-                        s=10 * min(10, p.area),
-                        edgecolor=(0.5 * color_factor, 0, 0.5 * (1 - color_factor)),
-                        alpha=(0.1 if event.is_channel_bad[p.channel] else 1.0))
+            result.append([
+                (0.5 + p.index_of_maximum) * time_scale,             # X
+                0.5 + p.channel,                                     # Y
+                color_factor,                                        # Color (in [0,1])
+                10 * min(10, p.area),                                # Size
+                (0.1 if event.is_channel_bad[p.channel] else 1.0),   # Alpha
+            ])
+        rgba_colors = np.zeros((len(result),4))
+        result = np.array(result).T
+        rgba_colors[:,0] = result[2]
+        rgba_colors[:,2] = 1 - result[2]
+        rgba_colors[:,3] = result[4]
+        plt.scatter(result[0], result[1], c=rgba_colors, s=result[3], edgecolor=None)
 
         # Plot the bottom/top/veto boundaries
         # Assumes the detector names' lexical order is the same as the channel order!
@@ -427,7 +435,6 @@ class PlotChannelWaveforms2D(PlotBase):
 
         plt.xlabel('Time (us)')
         plt.ylabel('PMT channel')
-        plt.tight_layout()
 
 
 class PlotEventSummary(PlotBase):
