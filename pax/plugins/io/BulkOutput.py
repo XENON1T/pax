@@ -356,7 +356,8 @@ class ReadFromBulkOutput(plugin.InputPlugin):
             # We defined a nice custom init for event... ahem... now we have to do cumbersome stuff...
             event = datastructure.Event(n_channels=self.config['n_channels'],
                                         start_time=e_record['start_time'],
-                                        stop_time=e_record['stop_time'])
+                                        stop_time=e_record['stop_time'],
+                                        sample_duration=e_record['sample_duration'])
             for k, v in self._numpy_record_to_dict(e_record).items():
                 setattr(event, k, v)
 
