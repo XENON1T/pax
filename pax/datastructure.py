@@ -73,22 +73,26 @@ class Peak(StrictModel):
 
     """Peak object"""
 
-    ##
-    #   Fields present in all peaks
-    ##
+    #: Peaks in individual channels that make up this peak
+    channel_peaks = (ChannelPeak,)
+
+    type = 'unknown'        #: Type of peak (e.g., 's1', 's2', ...)
+    detector = 'none'       #: e.g. tpc or veto
 
     left = 0                 #: Index of left bound (inclusive) in event.
     right = 0                #: Index of right bound (INCLUSIVE!!) in event.
     # For XDP matching rightmost sample is not in integral, so you could say it is exclusive then.
+
+    #: Array of areas in each PMT.
+    area_per_channel = np.array([], dtype='float64')
 
     #: Area of the pulse in photoelectrons.
     #:
     #: Includes only contributing pmts (see later) in the right detector
     area = 0.0
 
-    type = 'unknown'        #: Type of peak (e.g., 's1', 's2', ...)
-    subtype = 'unknown'     #: Subtype of peak
-    detector = 'none'  #: e.g. tpc or veto
+    #: Fraction of area in the top array
+    area_fraction_top = 0.0
 
     #: Does a PMT see 'something significant'? (thresholds configurable)
     does_channel_contribute = np.array([], dtype=np.bool)
@@ -102,49 +106,6 @@ class Peak(StrictModel):
         """ Number of PMTS which see something significant (depends on settings) """
         return len(self.contributing_channels)
 
-    #: Array of areas in each PMT.
-    area_per_channel = np.array([], dtype='float64')
-
-    #: Returns a list of reconstructed positions
-    #:
-    #: Returns an :class:`pax.datastructure.ReconstructedPosition` class.
-    reconstructed_positions = (ReconstructedPosition,)
-
-    #: Weighted root mean square deviation of top hitpattern (cm)
-    hitpattern_top_spread = 0.0
-
-    #: Weighted root mean square deviation of bottom hitpattern (cm)
-    hitpattern_bottom_spread = 0.0
-
-    ##
-    #   Fields present in sum-waveform peaks
-    ##
-
-    index_of_maximum = 0           #: Index in the event's sum waveform at which this peak has its maximum.
-    index_of_filtered_maximum = 0  #: same, but maximum in filtered (for S2) sum waveform
-
-    height = 0.0                 #: Height of highest point in peak (in pe/bin)
-    height_filtered = 0.0        #: Height of highest point in filtered waveform of peak (in pe/bin)
-
-    central_area = 0.0           #: Area in the central part of the peak (used for classification)
-
-    # Note these are floats -- the widths get interpolated
-    full_width_half_max = 0.0               #: Full width at half maximum in samples
-    full_width_tenth_max = 0.0              #: Full width at tenth of maximum in samples
-    full_width_half_max_filtered = 0.0      #: Full width at half of maximum in samples, in filtered waveform
-    full_width_tenth_max_filtered = 0.0     #: Full width at tenth of maximum in samples, in filtered waveform
-
-    #: Array of squared signal entropies in each PMT.
-    # Unused
-    # entropy_per_channel = np.array([], dtype='float64')
-
-    ##
-    #   Fields present in peaks from single-channel peakfinding
-    ##
-
-    #: Peaks in individual channels that make up this peak
-    channel_peaks = (ChannelPeak,)
-
     does_channel_have_noise = np.array([], dtype=np.bool)
 
     @property
@@ -156,13 +117,30 @@ class Peak(StrictModel):
         """ Number of channels which have noise during this peak """
         return len(self.noise_channels)
 
-    #: Variables indicating width of peak
+    #: Returns a list of reconstructed positions
+    #:
+    #: Returns an :class:`pax.datastructure.ReconstructedPosition` class.
+    reconstructed_positions = (ReconstructedPosition,)
+
+    #: Weighted root mean square deviation of top hitpattern (cm)
+    top_hitpattern_spread = 0.0
+
+    #: Weighted root mean square deviation of bottom hitpattern (cm)
+    bottom_hitpattern_spread = 0.0
 
     #: Median absolute deviation of photon arrival times (in ns)
+    # Deprecate this?
     median_absolute_deviation = 0.0
-    # standard_deviation = 0.0
-    # half_area_range = 0.0
-    # tenth_area_range = 0.0
+
+    #: Weighted (by area) mean and rms of hit maxima (in ns; mean is relative to event start)
+    hit_time_mean = 0.0
+    hit_time_std = 0.0
+
+    ##
+    # Deprecated sum-waveform stuff
+    ##
+    index_of_maximum = 0          #: Index in the event's sum waveform at which this peak has its maximum.
+    height = 0.0                  #: Height of highest point in peak (in pe/bin)
 
 
 class SumWaveform(StrictModel):
@@ -190,14 +168,21 @@ class SumWaveform(StrictModel):
 
 
 class Occurrence(StrictModel):
-
     """A DAQ occurrence
+
+    A DAQ occurrence can also be thought of as a pulse in a PMT.
     """
 
-    #: First index (inclusive; integer)
+    #: Starttime of this occurence within event
+    #:
+    #: Units are samples.  This nonnegative number starts at zero and is an integere because
+    #: it's an index.
     left = 0
 
-    #: Last index (inclusive; integer)
+    #: Stoptime of this occurence within event
+    #:
+    #: Units are samples and this time is inclusive of last sample.  This nonnegative number
+    #: starts at zero and is an integere because it's an index.
     right = 0
 
     #: Channel the occurrence belongs to (integer)
@@ -219,7 +204,7 @@ class Occurrence(StrictModel):
     digitizer_baseline_used = float('nan')
 
     #: Baseline correction computed by FindSmallpeaks (in pe/bin)
-    #: Will remain nan if channel is not processed by FindSmallPeaks
+    #: Will remain nan if channel is not processed by BaselineExcursionMethod
     baseline_correction = float('nan')
 
     #: Raw wave data (in ADC counts, NOT pe/bin!; numpy array of int16)
@@ -254,17 +239,18 @@ class Event(StrictModel):
     dataset_name = 'Unknown'  # The name of the dataset this event belongs to
     event_number = 0    # A nonnegative integer that uniquely identifies the event within the dataset.
 
-    #: Start time of the event (time at which the first sample STARTS)
+    #: Integer start time of the event in nanoseconds
     #:
-    #: This is a 64-bit number in units of ns that follows the UNIX clock.
-    #: Or rather, it starts from January 1, 1970.
-    #: Must be an int!! large floats don't support precision arithmetic
+    #: Time that the first sample starts. This is a 64-bit number that follows the
+    #: UNIX clock. Or rather, it starts from January 1, 1970.  This must be an integer
+    #: because floats have rounding that result in imprecise times.
     start_time = 0
 
-    #: Stop time of the event (time at which the last sample ENDS).
-    #:
-    #: This is a 64-bit number in units of ns that follows the UNIX clock.
-    #: Or rather, it starts from January 1, 1970.
+    #: Integer stop time of the event in nanoseconds
+    #
+    #: This stop time includes the last recorded sample.  Therefore, it's the right
+    #: edge of the last sample.  This is a 64-bit integer for the reasons explained
+    #: in 'start_time'.
     stop_time = 0
 
     #: Time duration of a sample (in pax units, i.e. ns)
