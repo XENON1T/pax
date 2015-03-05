@@ -86,8 +86,6 @@ class ClusterPlugin(plugin.TransformPlugin):
                         peak.left = min(peak.left, hit.left)
                         peak.right = max(peak.right, hit.right)
                         peak.does_channel_contribute[hit.channel] = True
-                        # peak.area_per_channel += hit.area
-                        # peak.area += hit.area
 
                     if peak.number_of_contributing_channels == 0:
                         raise RuntimeError(
@@ -120,10 +118,10 @@ class ClusterPlugin(plugin.TransformPlugin):
                         # Proper peak, classification done later
                         peak.type = 'unknown'
 
+                    # Add a penalty for each hit, if the peak was lone / noise
                     if is_noise or is_lone_hit:
-                        # Add area of the hit(s) to the bad_area
                         for hit in peak.channel_peaks:
-                            penalty_per_ch[hit.channel] += self.config['penalty_per_lone_hit'] + hit.area
+                            penalty_per_ch[hit.channel] += self.config['penalty_per_lone_hit']
 
                     peaks.append(peak)
 
