@@ -81,12 +81,13 @@ class PlotBase(plugin.OutputPlugin):
         nsamples = 1 + righti - lefti
         dt = event.sample_duration * units.ns
 
-        xlabels = np.arange(lefti * dt / units.us,  # 10+ labels will be cut later, prevents off by one errors
+        xvalues = np.arange(lefti * dt / units.us,  # 10+ labels will be cut later, prevents off by one errors
                             (10 + righti) * dt / units.us,
                             dt / units.us)
-        xlabels = xlabels[:nsamples]
+        xvalues = xvalues[:nsamples]
 
-        plt.autoscale(True, axis='both', tight=True)
+        plt.autoscale(True, axis='y', tight=True)
+        plt.xlim((xvalues[0], xvalues[-1]))
 
         if log_y_axis:
             plt.yscale('log')
@@ -99,7 +100,7 @@ class PlotBase(plugin.OutputPlugin):
 
         for w in self.config['waveforms_to_plot']:
             waveform = event.get_sum_waveform(w['internal_name'])
-            plt.plot(xlabels,
+            plt.plot(xvalues,
                      (waveform.samples[lefti:righti + 1] + y_offset) * scale,
                      label=w['plot_label'],
                      color=w.get('color', None),
@@ -107,6 +108,8 @@ class PlotBase(plugin.OutputPlugin):
                      alpha=w.get('alpha', 1))
         if log_y_axis:
             plt.ylim((0.9, plt.ylim()[1]))
+
+        self.draw_trigger_mark(1 if log_y_axis else 0)
 
         if show_peaks and event.peaks:
             self.color_peak_ranges(event)
@@ -158,6 +161,12 @@ class PlotBase(plugin.OutputPlugin):
                         peak.right * self.samples_to_us,
                         color=shade_color,
                         alpha=0.1)
+
+    def draw_trigger_mark(self, y=0):
+        # Draw a marker (orange star) indicating the event's trigger time
+        trigger_time = self.config.get('trigger_time_in_event', None)
+        if trigger_time is not None:
+            plt.gca().plot([trigger_time / units.us], [y], '*', color='orange', markersize=10)
 
 
 class PlotSumWaveformLargestS2(PlotBase):
@@ -386,7 +395,7 @@ class PlotChannelWaveforms2D(PlotBase):
         rgba_colors[:, 0] = result[2]
         rgba_colors[:, 2] = 1 - result[2]
         rgba_colors[:, 3] = result[4]
-        plt.scatter(result[0], result[1], c=rgba_colors, s=result[3], lw=0)
+        plt.scatter(result[0], result[1], c=rgba_colors, s=result[3], edgecolor=None, lw=0)
 
         # Plot the bottom/top/veto boundaries
         # Assumes the detector names' lexical order is the same as the channel order!
@@ -423,8 +432,9 @@ class PlotChannelWaveforms2D(PlotBase):
                 ]),
                 {'size': 8})
 
-        # Color the peak ranges
+        # Color the peak ranges, place the trigger mark
         self.color_peak_ranges(event)
+        self.draw_trigger_mark(0)
 
         # Make sure we always see all channels
         plt.xlim((0, event.length() * time_scale))
@@ -447,10 +457,14 @@ class PlotEventSummary(PlotBase):
             rows -= 1
 
         plt.figure(figsize=(self.horizontal_size_multiplier * self.size_multiplier * cols, self.size_multiplier * rows))
-        title = 'Event %s from %s -- recorded at %s UTC, %09dns' % (
+
+        # Show the title
+        # If there is no trigger time, show the event start time in the title
+        trigger_time_ns = (event.start_time + self.config.get('trigger_time_in_event', 0)) / units.ns
+        title = 'Event %s from %s -- recorded at %s UTC, %09d ns' % (
             event.event_number, event.dataset_name,
-            time.strftime("%Y/%m/%d, %H:%M:%S", time.gmtime(event.start_time / 10 ** 9)),
-            event.start_time % (10 ** 9))
+            time.strftime("%Y/%m/%d, %H:%M:%S", time.gmtime(trigger_time_ns / 10 ** 9)),
+            trigger_time_ns % (10 ** 9))
         plt.suptitle(title, fontsize=18)
 
         if self.config['plot_largest_peaks']:

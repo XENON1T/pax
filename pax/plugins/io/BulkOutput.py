@@ -14,6 +14,7 @@ format_lookup_dict = {
     'csv':          formats.PandasCSV,
     'html':         formats.PandasHTML,
     'json':         formats.PandasJSON,
+    'root':         formats.ROOTDump
 }
 
 

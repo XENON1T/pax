@@ -1,6 +1,10 @@
 """The backbone of pax
 
 """
+try:
+    import ROOT     # noqa
+except ImportError:
+    print("ROOT module not imported.")
 import glob
 import logging
 import importlib

@@ -189,9 +189,9 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
             if not warnflag:
                 self.total_rec_success += 1
 
-            x = xopt[0]
-            y = xopt[1]
-            chi_square_gamma = fopt
+            x = float(xopt[0])
+            y = float(xopt[1])
+            chi_square_gamma = float(fopt)
 
             # Correct strange error where numpy arrays are passed as fopt
             if isinstance(chi_square_gamma, np.ndarray):
