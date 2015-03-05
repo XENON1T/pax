@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.optimize import brenth
 import sklearn.cluster
+
 from pax import plugin, datastructure, utils
 
 
@@ -30,99 +31,147 @@ class ClusterPlugin(plugin.TransformPlugin):
         detectors = self.config['channels_in_detector'].keys()
         hits_per_detector = {detector: [] for detector in detectors}
         for hit in event.all_channel_peaks:
-            channel = hit.channel
-            if self.config['exclude_bad_channels'] and event.is_channel_bad[channel]:
-                continue
-            hits_per_detector[self.detector_by_channel[channel]].append(hit)
+            hits_per_detector[self.detector_by_channel[hit.channel]].append(hit)
 
         # Handle each detector separately
         for detector in detectors:
 
             # Sort hits by left index
-            hits = hits_per_detector[detector]
-            hits.sort(key=lambda x: x.left)
+            hits_to_cluster = hits_per_detector[detector]
+            hits_to_cluster.sort(key=lambda x: x.left)
+
+            # Grab pulses in this detector
+            pulses = [oc for oc in event.occurrences if oc.channel in self.config['channels_in_detector'][detector]]
 
             self.log.debug("Clustering channel peaks in data from %s" % detector)
-            peaks = []      # Superfluous, while loop is always run at least once... but pycharm complains if we omit
 
-            # Hmzz, python has no do_while, so..
-            redo_clustering = True
-            while redo_clustering:
+            clustering_pass = 0
+            while True:
+
+                peaks = []
 
                 # Do we actually have something to cluster?
-                self.log.debug("Found %s channel peaks" % len(hits))
-                if not hits:
+                self.log.debug("Found %s channel peaks" % len(hits_to_cluster))
+                if not hits_to_cluster:
                     break
 
-                redo_clustering = False
-                peaks = []
-                dark_count = {}
+                # Reset penalty
+                penalty_per_ch = event.noise_pulses_in * self.config['penalty_per_noise_pulse']
 
-                # Cluster the single-pes in groups which will become peaks
+                # Cluster the single-pes in groups /clusters which will become peaks
                 # CHILD CLASS IS CALLED HERE
-                cluster_indices = self.cluster_hits(hits)
-                self.log.debug("Made %s clusters" % len(cluster_indices))
+                indices_of_hits_per_peak = self.cluster_hits(hits_to_cluster)
+                self.log.debug("Made %s clusters" % len(indices_of_hits_per_peak))
 
                 # Each cluster becomes a peak
                 # Compute basic properties, check for too many lone pulses per channel
-                for ci in cluster_indices:
+                for this_peak_s_hit_indices in indices_of_hits_per_peak:
+
+                    if len(this_peak_s_hit_indices) == 0:
+                        raise RuntimeError("Every peak should have a hit... what's going on?")
+
                     peak = datastructure.Peak({
-                        'channel_peaks':            [hits[cidx] for cidx in ci],
+                        'channel_peaks':            [hits_to_cluster[i] for i in this_peak_s_hit_indices],
                         'detector':                 detector,
                         'area_per_channel':         np.zeros(self.n_channels),
                         'does_channel_contribute':  np.zeros(self.n_channels, dtype='bool'),
                         'does_channel_have_noise':  np.zeros(self.n_channels, dtype='bool'),
                     })
 
-                    # Compute contributing and noise channels - needed for bad channel rejection
-
-                    # Contributing channels are in the detector and have an spe
-                    # (not in a bad channel, but those spes have already been filtered out)
-                    for s in peak.channel_peaks:
-                        peak.does_channel_contribute[s.channel] = True
+                    # Compute basic properties of peak, needed later in the plugin
+                    # For speed it would be better to compute as much as possible later..
+                    peak.left = peak.channel_peaks[0].left
+                    peak.right = peak.channel_peaks[0].right
+                    for hit in peak.channel_peaks:
+                        peak.left = min(peak.left, hit.left)
+                        peak.right = max(peak.right, hit.right)
+                        peak.does_channel_contribute[hit.channel] = True
+                        # peak.area_per_channel += hit.area
+                        # peak.area += hit.area
 
                     if peak.number_of_contributing_channels == 0:
                         raise RuntimeError(
                             "Every peak should have at least one contributing channel... what's going on?")
 
-                    # Find how many channels show some data, but no spe
-                    coincident_occurrences = event.get_occurrences_between(peak.left, peak.right, strict=False)
-                    for oc in coincident_occurrences:
-                        ch = oc.channel
-                        if not peak.does_channel_contribute[ch]:
-                            peak.does_channel_have_noise[ch] = True
+                    # Find how many channels in this detector show some data at the same time as this peak, but no hit
+                    # Maybe no hit was found, maybe hit was rejected by the suspicious channel algorithm
+                    # If zero-length encoding is not used, all channels will have "noise" here
+                    coincident_pulses = [pulse for pulse in pulses
+                                         if pulse.left <= peak.right and pulse.right >= peak.left]
+                    for oc in coincident_pulses:
+                        channel = oc.channel
+                        if not peak.does_channel_contribute[channel]:
+                            peak.does_channel_have_noise[channel] = True
 
-                    # Classification for noise and lone_pulse peaks
-                    if peak.number_of_noise_channels > 2 * peak.number_of_contributing_channels:
+                    # Classify noise and lone hits
+                    # TODO: Noise classification should be configurable!
+                    is_noise = peak.number_of_noise_channels / peak.number_of_contributing_channels > \
+                        self.config['max_noise_channels_over_contributing_channels']
+                    is_lone_hit = peak.number_of_contributing_channels == 1
+                    if is_noise:
                         peak.type = 'noise'
-
-                    elif peak.number_of_contributing_channels == 1:
-                        peak.type = 'lone_pulse'
-                        channel = peak.channel_peaks[0].channel
-                        dark_count[channel] = dark_count.get(channel, 0) + 1
-
+                        # TODO: Should we also reject all hits?
+                    elif is_lone_hit:
+                        peak.type = 'lone_hit'
+                        # Don't reject the hit(s) in this peak
+                        # However, lone hits in suspicious channels will always be rejected later:
+                        # in the suspicious channel algorithm since their 'witness area' is 0
                     else:
                         # Proper peak, classification done later
                         peak.type = 'unknown'
 
+                    if is_noise or is_lone_hit:
+                        # Add area of the hit(s) to the bad_area
+                        for hit in peak.channel_peaks:
+                            penalty_per_ch[hit.channel] += self.config['penalty_per_lone_hit'] + hit.area
+
                     peaks.append(peak)
 
-                # Look for channels with abnormal dark rate
-                for ch, dc in dark_count.items():
-                    if dc > self.config['maximum_lone_pulses_per_channel']:
-                        self.log.debug(
-                            "Channel %s shows an abnormally high lone pulse rate (%s): marked as bad." % (ch, dc))
-                        event.is_channel_bad[ch] = True
-                        if self.config['exclude_bad_channels']:
-                            redo_clustering = True
-                            self.log.debug("Clustering has to be redone!!")
+                # Are there any suspicious channels? If not, we are done.
+                self.log.debug(', '.join(['%s: %s' % (ch, round(penalty_per_ch[ch], 1))
+                                          for ch in np.where(penalty_per_ch > 0)[0]]))
+                suspicious_channels = np.where(penalty_per_ch >=
+                                               self.config['penalty_geq_this_is_suspicious'])[0]
+                event.is_channel_suspicious[suspicious_channels] = True
+                if len(suspicious_channels) == 0:
+                    break
 
-                if redo_clustering:
-                    # Delete hits in bad channels
-                    hits = [h for h in hits if not event.is_channel_bad[h.channel]]
+                # Compute good/bad area balance for each hit in a suspicious channel
+                # Good area: area in non-suspicious channels in same peak
+                # Bad area: area in lone pulses and noise in same channel + something extra for # of noise pulses
+                rejected_some_hits = False
+                for peak in peaks:
+
+                    # Compute area for this peak outside suspicious channels
+                    # a witness to this peak not being noise
+                    witness_area = 0
+                    for hit in peak.channel_peaks:
+                        if hit.channel not in suspicious_channels:
+                            witness_area += hit.area
+                    # witness_area = peak.area - np.sum(peak.area_per_channel[suspicious_channels])
+
+                    # If the witness area for a hit is lower than the penalty in that channel, reject the hit
+                    for hit in peak.channel_peaks:
+                        if hit.channel not in suspicious_channels:
+                            continue
+                        channel = hit.channel
+                        if witness_area == 0 or penalty_per_ch[hit.channel] > witness_area:
+                            hit.is_rejected = True
+                            rejected_some_hits = True
+                            event.n_hits_rejected[channel] += 1
+
+                # If no new hits were rejected, we are done
+                if not rejected_some_hits:
+                    break
+
+                # Delete rejected hits from hits_to_cluster, then redo clustering
+                # The rejected hits will remain in event.all_channel_peaks, of course
+                hits_to_cluster = [h for h in hits_to_cluster if not h.is_rejected]
+                clustering_pass += 1
 
             # Add the peaks to the datastructure
             event.peaks.extend(peaks)
+            self.log.debug("Clustering & bad channel rejection ended after %s passes" % (clustering_pass + 1))
 
         return event
 
@@ -247,11 +296,9 @@ class GapSize(ClusterPlugin):
         self.transition_point = self.config['transition_point']
 
     def cluster_hits(self, hits):
-
         # If a hit has a left > this, it will form a new cluster
         boundary = -999999999
         clusters = []
-
         for i, hit in enumerate(hits):
 
             if hit.left > boundary:
@@ -273,5 +320,4 @@ class GapSize(ClusterPlugin):
 
             # Extend the boundary at which a new clusters starts, if needed
             boundary = max(boundary, hit.right + gap_size_threshold)
-
         return clusters

@@ -5,7 +5,7 @@ import h5py
 from pax import core
 
 
-class TestPosRecNeuralNet(unittest.TestCase):
+class TestReprocessing(unittest.TestCase):
 
     # TODO: delete the HDF5 files
     def test_reprocessing(self):

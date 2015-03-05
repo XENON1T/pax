@@ -1,6 +1,5 @@
 import unittest
 
-import ROOT
 import numpy as np
 
 
@@ -9,6 +8,7 @@ class TestRoot(unittest.TestCase):
     """
 
     def test_root_write(self):
+        import ROOT
         file_out = ROOT.TFile("test_tree.root", "recreate")
         t = ROOT.TTree("name_of_tree", "tree title")
 

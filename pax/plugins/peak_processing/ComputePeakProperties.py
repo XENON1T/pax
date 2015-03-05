@@ -2,7 +2,7 @@ import numpy as np
 from pax import plugin, utils
 
 
-class Basics(plugin.TransformPlugin):
+class BasicProperties(plugin.TransformPlugin):
 
     """Computes basic peak properies such as area and hit time spread ("width")
     """
@@ -15,15 +15,12 @@ class Basics(plugin.TransformPlugin):
 
         for peak in event.peaks:
 
-            peak.left = min([s.left for s in peak.channel_peaks])
-            peak.right = max([s.right for s in peak.channel_peaks])
-
             # For backwards compatibility with plotting code
             highest_peak_index = np.argmax([s.height for s in peak.channel_peaks])
             peak.index_of_maximum = peak.channel_peaks[highest_peak_index].index_of_maximum
             peak.height = peak.channel_peaks[highest_peak_index].height
 
-            # Compute the area per pmt. Store maxidx as well
+            # Compute the area per pmt.
             for s in peak.channel_peaks:
                 peak.area_per_channel[s.channel] += s.area
 
@@ -31,7 +28,7 @@ class Basics(plugin.TransformPlugin):
             peak.area = np.sum(peak.area_per_channel)
 
             # Compute top fraction
-            peak.area_fraction_top = np.sum(peak.area_per_channel[:self.last_top_ch + 1])
+            peak.area_fraction_top = np.sum(peak.area_per_channel[:self.last_top_ch + 1])/peak.area
 
             # Compute timing quantities
             times = [s.index_of_maximum * self.dt for s in peak.channel_peaks]

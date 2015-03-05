@@ -377,7 +377,7 @@ class Simulator(object):
                 temp /= dV  # Voltage
 
                 # PMT signals are 'up side down' when viewed on scope.
-                temp = self.config['digitizer_baseline'] - np.trunc(temp)
+                temp = self.config['digitizer_reference_baseline'] - np.trunc(temp)
 
                 # Digitizers have finite number of bits per channel
                 temp = np.clip(temp, 0, 2 ** (self.config['digitizer_bits']))
