@@ -4,11 +4,10 @@ Its only purpose is to show we understand Xerawdp enough to be able to reproduce
 it is not meant to replace Xerawdp, nor to be used unmodified by Xenon1T or any experiment.
 
 """
+import numpy as np
 import logging
 
-import numpy as np
 from scipy.signal import butter, filtfilt
-
 from pax import plugin, datastructure
 
 

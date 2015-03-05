@@ -188,9 +188,9 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
             if not warnflag:
                 self.total_rec_success += 1
 
-            x = xopt[0]
-            y = xopt[1]
-            chi_square_gamma = fopt
+            x = float(xopt[0])
+            y = float(xopt[1])
+            chi_square_gamma = float(fopt)
 
             self.log.debug("Reconstructed event at x: %f y: %f chi_square_gamma:"
                            " %f ndf: %d" % (x, y, chi_square_gamma, self.ndf))
