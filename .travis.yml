@@ -31,7 +31,7 @@ install:
 
   # update gcc to 4.8 via toolchain
   - sudo apt-get install -y python-software-properties
-  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test
+  - yes "" | sudo add-apt-repository ppa:ubuntu-toolchain-r/test
   - sudo apt-get update
   - sudo apt-get install -y gcc-4.8 g++-4.8
   - sudo update-alternatives --remove-all gcc
