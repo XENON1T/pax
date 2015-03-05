@@ -19,6 +19,6 @@ echo send file to temporary server, hopefully one time will do
 
 # make sure putty-tools in installed when calling pscp
 
-# yes | pscp -q -pw speakfriendandenter root_v${ROOT}_binaries.tar.gz dropoff@electro.dyndns-server.com:/home/dropoff/
+yes | pscp -q -pw speakfriendandenter root_v${ROOT}_binaries.tar.gz dropoff@electro.dyndns-server.com:/home/dropoff/
 
 echo done travis-save-ROOT
