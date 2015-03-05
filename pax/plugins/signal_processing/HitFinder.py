@@ -90,9 +90,9 @@ class FindHits(plugin.TransformPlugin):
                         "This usually indicates a zero-length encoding breakdown after a very large S2. "
                         "Further hits in this pulse have been ignored." % (start, stop, channel,
                                                                            self.max_hits_per_pulse))
+                self.too_many_hits_warnings_shown += 1
                 if self.too_many_hits_warnings_shown == 3:
-                    self.log.info('Further too-many hit messages will be suppressed')
-                    self.too_many_hits_warnings_shown += 1
+                    self.log.info('Further too-many hit messages will be suppressed!')
 
             if passes_used >= self.max_passes:
                 self.log.debug("Hit finding in pulse %d-%d in channel %d did not converge after %d passes." % (
