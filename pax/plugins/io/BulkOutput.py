@@ -6,16 +6,8 @@ import time
 import numpy as np
 
 import pax
-from pax import plugin, exceptions, datastructure, formats
-
-format_lookup_dict = {
-    'hdf5':         formats.HDF5Dump,
-    'numpy':        formats.NumpyDump,
-    'csv':          formats.PandasCSV,
-    'html':         formats.PandasHTML,
-    'json':         formats.PandasJSON,
-    'root':         formats.ROOTDump
-}
+from pax import plugin, exceptions, datastructure
+from pax.formats import flat_data_formats
 
 
 class BulkOutput(plugin.OutputPlugin):
@@ -75,7 +67,7 @@ class BulkOutput(plugin.OutputPlugin):
         self.events_ready_for_conversion = 0
 
         # Init the output format
-        self.output_format = of = format_lookup_dict[self.config['output_format']](self.config, self.log)
+        self.output_format = of = flat_data_formats[self.config['output_format']](self.config, self.log)
 
         if self.config['append_data'] and self.config['overwrite_data']:
             raise ValueError('Invalid configuration for BulkOutput: Cannot both append and overwrite')
@@ -283,7 +275,7 @@ class ReadFromBulkOutput(plugin.InputPlugin):
         self.read_hits = self.config['read_hits']
         self.read_recposes = self.config['read_recposes']
 
-        self.output_format = of = format_lookup_dict[self.config['format']](self.config, self.log)
+        self.output_format = of = flat_data_formats[self.config['format']](self.config, self.log)
         if not of.supports_read_back:
             raise NotImplementedError("Output format %s does not "
                                       "support reading data back in!" % self.config['format'])

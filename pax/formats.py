@@ -1,19 +1,25 @@
-try:
-    import ROOT  # noqa
-except ImportError:
-    print("ROOT module not imported")
 import numpy as np
 import os
 
-import h5py
 import logging
 
 log = logging.getLogger('BulkOutputInitialization')
 
 try:
+    import ROOT  # noqa
+except ImportError:
+    log.warning("ROOT module not imported - if you use the ROOT output, pax will crash!")
+
+try:
     import pandas
 except ImportError:
     log.warning("You don't have pandas -- if you use the pandas output, pax will crash!")
+
+
+try:
+    import h5py
+except ImportError:
+    log.warning("You don't have the HDF5 output -- if you use the hdf5 output, pax will crash!")
 
 
 class BulkOutputFormat(object):
@@ -221,3 +227,14 @@ class PandasHTML(PandasFormat):
 
 class PandasJSON(PandasFormat):
     pandas_format_key = 'json'
+
+
+# List of data formats, pax / analysis code can import this
+flat_data_formats = {
+    'hdf5':         HDF5Dump,
+    'numpy':        NumpyDump,
+    'csv':          PandasCSV,
+    'html':         PandasHTML,
+    'json':         PandasJSON,
+    'root':         ROOTDump
+}
