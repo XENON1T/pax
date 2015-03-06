@@ -85,7 +85,6 @@ class BulkOutput(plugin.OutputPlugin):
         # Append extension to outfile, if this format has one
         if of.file_extension and of.file_extension != 'DIRECTORY':
             self.config['output_name'] += '.' + of.file_extension
-            self.output_format.config['output_name'] = self.config['output_name']
 
         # Deal with existing files or non-existing dirs
         outfile = self.config['output_name']
