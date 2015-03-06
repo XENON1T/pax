@@ -3,23 +3,23 @@ import os
 
 import logging
 
-log = logging.getLogger('BulkOutputInitialization')
+base_logger = logging.getLogger('BulkOutput')
 
 try:
     import ROOT  # noqa
 except ImportError:
-    log.warning("ROOT module not imported - if you use the ROOT output, pax will crash!")
+    base_logger.warning("ROOT module not imported - if you use the ROOT output, pax will crash!")
 
 try:
     import pandas
 except ImportError:
-    log.warning("You don't have pandas -- if you use the pandas output, pax will crash!")
+    base_logger.warning("You don't have pandas -- if you use the pandas output, pax will crash!")
 
 
 try:
     import h5py
 except ImportError:
-    log.warning("You don't have the HDF5 output -- if you use the hdf5 output, pax will crash!")
+    base_logger.warning("You don't have the HDF5 output -- if you use the hdf5 output, pax will crash!")
 
 
 class BulkOutputFormat(object):
@@ -31,8 +31,10 @@ class BulkOutputFormat(object):
     supports_read_back = False
     file_extension = 'DIRECTORY'   # Leave to None for database insertion or something
 
-    def __init__(self, config, log):
-        self.config = config
+    def __init__(self, log=base_logger):
+        """Initialize the output format
+        log is optional, so you can load these in- and outside of the of pax
+        """
         self.log = log
 
     def open(self, name, mode):
@@ -72,7 +74,9 @@ class NumpyDump(BulkOutputFormat):
     def write_data(self, data):
         np.savez_compressed(self.filename, **data)
 
-    def read_data(self, df_name, start, end):
+    def read_data(self, df_name, start=0, end=None):
+        if end is None:
+            end = self.n_in_data(df_name)
         return self.f[df_name][start:end]
 
     def n_in_data(self, df_name):
@@ -104,7 +108,9 @@ class HDF5Dump(BulkOutputFormat):
                 dataset.resize((oldlen + len(records),))
                 dataset[oldlen:] = records
 
-    def read_data(self, df_name, start, end):
+    def read_data(self, df_name, start=0, end=None):
+        if end is None:
+            end = self.n_in_data(df_name)
         return self.f.get(df_name)[start:end]
 
     def n_in_data(self, df_name):
@@ -214,7 +220,7 @@ class PandasFormat(BulkOutputFormat):
     def write_pandas_dataframe(self, df_name, df):
         # Write each DataFrame to file
         getattr(df, 'to_' + self.pandas_format_key)(
-            os.path.join(self.config['output_name'], df_name + '.' + self.pandas_format_key))
+            os.path.join(self.filename, df_name + '.' + self.pandas_format_key))
 
 
 class PandasCSV(PandasFormat):
