@@ -1,4 +1,5 @@
 import glob
+import os
 
 from pax import core, plugin
 
@@ -14,7 +15,10 @@ class InputFromFolder(plugin.InputPlugin):
         self.current_filename = None
         self.current_first_event = None
         self.current_last_event = None
+
         input_name = core.data_file_name(self.config['input_name'])
+        if not os.path.exists(input_name):
+            raise ValueError("Can't read from %s: it does not exist!" % input_name)
 
         if input_name.endswith('.' + self.file_extension):
             self.log.debug("InputFromFolder: Single file mode")
@@ -22,7 +26,7 @@ class InputFromFolder(plugin.InputPlugin):
         else:
             self.log.debug("InputFromFolder: Directory mode")
 
-            file_names = glob.glob(input_name + "/*.xed")
+            file_names = glob.glob(os.path.join(input_name, "*." + self.file_extension))
             file_names.sort()
 
             self.log.debug("InputFromFolder: Found these files: %s", str(file_names))
