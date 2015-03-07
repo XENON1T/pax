@@ -17,18 +17,19 @@ Some metadata from the XED file is stored in event['metadata'], see the end of t
 code for details.
 """
 
-import glob
 import bz2
 import io
 
 import numpy as np
 
 import math
-from pax import core, plugin, units
+from pax import units
 from pax.datastructure import Event, Occurrence
 
+from pax.plugins.io.InputFromFolder import InputFromFolder
 
-class XedInput(plugin.InputPlugin):
+
+class XedInput(InputFromFolder):
     file_header = np.dtype([
         ("dataset_name", "S64"),
         ("creation_time", "<u4"),
@@ -56,115 +57,45 @@ class XedInput(plugin.InputPlugin):
         ("channels", "<u4"),
     ])
 
-    def startup(self):
-        self.xedfiles = []
-        self.input = None
-        self.number_of_events = 0  # Updated by init_xedfile
-        filename = core.data_file_name(self.config['input_name'])
+    file_extension = 'xed'
 
-        if filename[-4:] == '.xed':
-            self.log.debug("Single file mode")
-            self.init_xedfile(filename)
-        else:
-            self.log.debug("Directory mode")
+    def get_first_and_last_event_number(self, filename):
+        """Return the first and last event number in file specified by filename"""
+        with open(filename, 'rb') as xedfile:
+            fmd = np.fromfile(xedfile, dtype=XedInput.file_header, count=1)[0]
+            return fmd['first_event_number'], fmd['first_event_number'] + fmd['events_in_file'] - 1
 
-            xed_file_names = glob.glob(filename + "/*.xed")
-            xed_file_names.sort()
+    def close_current_file(self):
+        """Close the currently open file"""
+        self.current_xedfile.close()
 
-            self.log.debug("Found these files: %s", str(xed_file_names))
+    def start_to_read_file(self, filename):
+        """Opens an XED file so we can start reading events"""
+        self.current_xedfile = open(filename, 'rb')
 
-            if len(xed_file_names) == 0:
-                raise ValueError("No XED files found in input directory %s!" % filename)
-
-            for xf in xed_file_names:
-                self.log.debug("Initiailizing %s" % xf)
-                self.init_xedfile(xf)
-
-        # Select the first XED file
-        self.select_xedfile(0)
-
-    def init_xedfile(self, filename):
-        """Loads in an XED file header, so we can look up which events are in it"""
-        self.log.info("Opening %s", filename)
-        input = open(filename, 'rb')
-
-        self.xedfiles.append({'filename': filename})
-
-        # File meta data
-        fmd = np.fromfile(input, dtype=XedInput.file_header, count=1)[0]
-
-        self.xedfiles[-1]['first_event'] = fmd['first_event_number']
-        self.xedfiles[-1]['last_event'] = fmd['first_event_number'] + fmd['events_in_file'] - 1
-
-        # Read metadata and event positions from the XED file
-        self.event_positions = np.fromfile(input, dtype=np.dtype("<u4"),
-                                           count=fmd['event_index_size'])
-        if fmd['events_in_file'] > fmd['event_index_size']:
-            raise RuntimeError("The XED file claims there are %s events in the file, "
-                               "but the event position index has only %s entries!" % (fmd['events_in_file'],
-                                                                                      fmd['event_index_size']))
-
-        self.log.debug('Found XED file %s containing events %s-%s' % (
-            filename, self.xedfiles[-1]['first_event'],
-            self.xedfiles[-1]['last_event']
-        ))
-
-        self.number_of_events += int(fmd['events_in_file'])
-
-        input.close()
-
-    def select_xedfile(self, i):
-        """Selects an XED file previously loaded by init_xedfile, so we can start reading events"""
-        if self.input is not None:
-            self.input.close()
-        try:
-            xedfile = self.xedfiles[i]
-        except IndexError:
-            raise RuntimeError("Invalid XED file index %s: %s XED files loaded" % (i, len(self.xedfiles)))
-        self.input = open(xedfile['filename'], 'rb')
-        # We already read in file metadata in init_xedfile, but didn't store it
-        # We have to read it in here again anyway to get input in the right position...
-        self.file_metadata = np.fromfile(self.input, dtype=XedInput.file_header, count=1)[0]
-        self.event_positions = np.fromfile(self.input, dtype=np.dtype("<u4"),
+        # Read in the file metadata
+        self.file_metadata = np.fromfile(self.current_xedfile, dtype=XedInput.file_header, count=1)[0]
+        self.event_positions = np.fromfile(self.current_xedfile, dtype=np.dtype("<u4"),
                                            count=self.file_metadata['event_index_size'])
+
+        # Handle for special case of last XED file
+        # it seems event_index_size is not (always) adjusted properly
         if self.file_metadata['events_in_file'] < self.file_metadata['event_index_size']:
-            self.log.debug(
-                ("The XED file claims there are %s events in the file, "
-                 "while the event position index has %s entries. \n"
+            self.log.info(
+                ("The XED file claims there are %d events in the file, "
+                 "while the event position index has %d entries. \n"
                  "Is this the last XED file of a dataset?") %
                 (self.file_metadata['events_in_file'], self.file_metadata['event_index_size'])
             )
             self.event_positions = self.event_positions[:self.file_metadata['events_in_file']]
-        self.first_event = xedfile['first_event']
-        self.last_event = xedfile['last_event']
 
-    def shutdown(self):
-        self.input.close()
-
-    # Temp for old API compatibility
-    def get_events(self):
-        for xed_i, xed_dict in enumerate(self.xedfiles):
-            self.select_xedfile(xed_i)
-            for event_position_i, event_position in enumerate(self.event_positions):
-                yield self.get_single_event(self.file_metadata['first_event_number'] + event_position_i)
-
-    @plugin.BasePlugin._timeit
-    def get_single_event(self, event_number):
-
-        if not self.first_event <= event_number <= self.last_event:
-            # Time to open a new XED file!
-            for i, xedfile in enumerate(self.xedfiles):
-                if xedfile['first_event'] <= event_number <= xedfile['last_event']:
-                    self.select_xedfile(i)
-                    break
-            else:
-                raise ValueError("None of the loaded XED-files contains event %s!" % event_number)
+    def get_single_event_in_current_file(self, event_position):
 
         # Seek to the requested event
-        self.input.seek(self.event_positions[event_number - self.first_event])
+        self.current_xedfile.seek(self.event_positions[event_position])
 
         # Read event metadata, check if we can read this event type.
-        event_layer_metadata = np.fromfile(self.input,
+        event_layer_metadata = np.fromfile(self.current_xedfile,
                                            dtype=XedInput.event_header,
                                            count=1)[0]
         if event_layer_metadata['chunks'] != 1:
@@ -194,7 +125,7 @@ class XedInput(plugin.InputPlugin):
         # Checked (for 14 events); agrees with channels from
         # LibXDIO->Moxie->MongoDB->MongoDBInput plugin
         mask_bytes = 4 * math.ceil(event_layer_metadata['channels'] / 32)
-        mask_bits = np.unpackbits(np.fromfile(self.input,
+        mask_bits = np.unpackbits(np.fromfile(self.current_xedfile,
                                               dtype='uint8',
                                               count=mask_bytes))
         # +1 as first pmt is 1 in Xenon100
@@ -204,7 +135,7 @@ class XedInput(plugin.InputPlugin):
         # Decompress the event data (actually, the data from a single 'chunk')
         # into fake binary file
         # 28 is the chunk header size.
-        data_to_decompress = self.input.read(event_layer_metadata['size'] - 28 - mask_bytes)
+        data_to_decompress = self.current_xedfile.read(event_layer_metadata['size'] - 28 - mask_bytes)
         try:
             chunk_fake_file = io.BytesIO(bz2.decompress(data_to_decompress))
         except OSError:
