@@ -2,16 +2,56 @@
 """
 
 import gzip
-import os
-import re
 import glob
+import os
+import pickle
+import re
+
 
 from pax import plugin
-try:
-    import cPickle as pickle
-except:
-    import pickle
 
+from pax.plugins.io.FolderIO import InputFromFolder, WriteToFolder
+
+
+class WriteToStackedPickleFolder(WriteToFolder):
+
+    file_extension = 'stackedpickle'
+
+    def start_writing_file(self, filename):
+        self.current_file = open(filename, 'wb')
+        # self.current_file = gzip.open(filename,
+        #                               'wb',
+        #                               compresslevel=self.config.get('compression_level', 4))
+
+    def write_event_to_current_file(self, event):
+        pickle.dump(event, self.current_file)
+
+    def stop_writing_current_file(self):
+        self.current_file.close()
+
+
+class ReadFromStackedPickleFolder(InputFromFolder):
+
+    file_extension = 'stackedpickle'
+
+    def start_to_read_file(self, filename):
+        self.current_file = gzip.open(filename, "rb")
+
+    def get_all_events_in_current_file(self):
+        while True:
+            try:
+                event = pickle.load(self.current_file)
+            except EOFError:
+                break
+            yield event
+
+    def close_current_file(self):
+        self.current_file.close()
+
+
+##
+# Single events to pickles
+##
 
 class WriteToPickleFile(plugin.OutputPlugin):
 

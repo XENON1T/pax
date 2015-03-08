@@ -26,43 +26,45 @@ import math
 from pax import units
 from pax.datastructure import Event, Occurrence
 
-from pax.plugins.io.InputFromFolder import InputFromFolder
+from pax.plugins.io.FolderIO import InputFromFolder
+
+
+xed_file_header = np.dtype([
+    ("dataset_name", "S64"),
+    ("creation_time", "<u4"),
+    ("first_event_number", "<u4"),
+    ("events_in_file", "<u4"),
+    ("event_index_size", "<u4")
+])
+
+xed_event_header = np.dtype([
+    ("dataset_name", "S64"),
+    ("utc_time", "<u4"),
+    ("utc_time_usec", "<u4"),
+    ("event_number", "<u4"),
+    ("chunks", "<u4"),
+    # This is where the 'chunk layer' starts... but there always seems to be one chunk per event
+    # I'll always assume this is true and raise an exception otherwise
+    ("type", "S4"),
+    ("size", "<u4"),
+    ("sample_precision", "<i2"),
+    # indicating compression type.. I'll assume bzip2 always
+    ("flags", "<u2"),
+    ("samples_in_event", "<u4"),
+    ("voltage_range", "<f4"),
+    ("sampling_frequency", "<f4"),
+    ("channels", "<u4"),
+])
 
 
 class XedInput(InputFromFolder):
-    file_header = np.dtype([
-        ("dataset_name", "S64"),
-        ("creation_time", "<u4"),
-        ("first_event_number", "<u4"),
-        ("events_in_file", "<u4"),
-        ("event_index_size", "<u4")
-    ])
-
-    event_header = np.dtype([
-        ("dataset_name", "S64"),
-        ("utc_time", "<u4"),
-        ("utc_time_usec", "<u4"),
-        ("event_number", "<u4"),
-        ("chunks", "<u4"),
-        # This is where the 'chunk layer' starts... but there always seems to be one chunk per event
-        # I'll always assume this is true and raise an exception otherwise
-        ("type", "S4"),
-        ("size", "<u4"),
-        ("sample_precision", "<i2"),
-        # indicating compression type.. I'll assume bzip2 always
-        ("flags", "<u2"),
-        ("samples_in_event", "<u4"),
-        ("voltage_range", "<f4"),
-        ("sampling_frequency", "<f4"),
-        ("channels", "<u4"),
-    ])
 
     file_extension = 'xed'
 
     def get_first_and_last_event_number(self, filename):
         """Return the first and last event number in file specified by filename"""
         with open(filename, 'rb') as xedfile:
-            fmd = np.fromfile(xedfile, dtype=XedInput.file_header, count=1)[0]
+            fmd = np.fromfile(xedfile, dtype=xed_file_header, count=1)[0]
             return fmd['first_event_number'], fmd['first_event_number'] + fmd['events_in_file'] - 1
 
     def close_current_file(self):
@@ -74,12 +76,13 @@ class XedInput(InputFromFolder):
         self.current_xedfile = open(filename, 'rb')
 
         # Read in the file metadata
-        self.file_metadata = np.fromfile(self.current_xedfile, dtype=XedInput.file_header, count=1)[0]
+        self.file_metadata = np.fromfile(self.current_xedfile, dtype=xed_file_header, count=1)[0]
         self.event_positions = np.fromfile(self.current_xedfile, dtype=np.dtype("<u4"),
                                            count=self.file_metadata['event_index_size'])
 
         # Handle for special case of last XED file
-        # it seems event_index_size is not (always) adjusted properly
+        # Index size is larger than the actual number of events written:
+        # The writer didn't know how many events there were left at s
         if self.file_metadata['events_in_file'] < self.file_metadata['event_index_size']:
             self.log.info(
                 ("The XED file claims there are %d events in the file, "
@@ -96,7 +99,7 @@ class XedInput(InputFromFolder):
 
         # Read event metadata, check if we can read this event type.
         event_layer_metadata = np.fromfile(self.current_xedfile,
-                                           dtype=XedInput.event_header,
+                                           dtype=xed_event_header,
                                            count=1)[0]
         if event_layer_metadata['chunks'] != 1:
             raise NotImplementedError("Can't read this XED file: event with %s chunks found!"
@@ -203,3 +206,69 @@ class XedInput(InputFromFolder):
                     sample_position += len(samples_occurrence)
 
         return event
+
+
+# import time
+# from pax.plugins.io.FolderIO import WriteToFolder
+#
+# class WriteXED(WriteToFolder):
+#
+#       UNFINISHED UNTESTED DRAFT
+#
+#     file_extension = 'xed'
+#
+#     def start_writing_file(self, filename):
+#
+#         self.current_xed = open(filename, 'wb')
+#
+#         # Write file header
+#         np.array(dict(dataset_name='bla',
+#                       creation_time=time.now(),
+#                       first_event_number=0,                             # Should be updated on first write / at end
+#                       events_in_file=self.config['events_per_file'],    # Should be updated at end
+#                       event_index_size=self.config['events_per_file']).items(),
+#                  dtype=xed_event_header).tofile(self.current_xed)
+#
+#         # Reserve space for event index
+#         self.event_index = []
+#         np.zeros(self.config['events_per_file'], dtype=np.dtype("<u4")).tofile(self.current_xed)
+#
+#     def write_event_to_current_file(self, event):
+#
+#         # Store current position in event index
+#         self.event_index.append(self.current_xed.tell())
+#
+#         # Write event header
+#         np.array(dict(dataset_name='bla',
+#                       creation_time=time.now(),   # Is this right??
+#                       utc_time=0,            # TODO: fix
+#                       utc_time_usec=0,       # TODO: fix
+#                       event_number=event.event_number,
+#                       chunks=1,
+#                       type='',  #??
+#                       size=0,   #Should be updated at end
+#                       sample_precision=0,    # TODO: fix
+#                       flags=0,               # fix??
+#                       samples_in_event=event.length(),
+#                       voltage_range=self.config['digitizer_voltage_range'],
+#                       sampling_frequency=0,  # TODO: fix
+#                       channels=self.config['n_channels']).items(),
+#                  dtype=xed_event_header).tofile(self.current_xed)
+#
+#         # Write channel mask field
+#         # +1 as first pmt is 1 in Xenon100
+#         # TODO: reverse this code
+#         # channels_included = [i + 1 for i, bit in enumerate(reversed(mask_bits))
+#         #                      if bit == 1]
+#         # mask_bytes = 4 * math.ceil(event_layer_metadata['channels'] / 32)
+#         # mask_bits = np.unpackbits(np.fromfile(self.current_xedfile,
+#         #                                       dtype='uint8',
+#         #                                       count=mask_bytes))
+#
+#         # TODO: Go back to event header to update size etc
+#
+#     def stop_writing_current_file(self):
+#
+#         # TODO: Go back to start, write event index, i.e. event position lookup table
+#
+#         self.current_xed.close()

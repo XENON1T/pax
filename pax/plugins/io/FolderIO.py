@@ -1,10 +1,12 @@
 import glob
 import os
+import time
 
 from pax import core, plugin
 
 
 class InputFromFolder(plugin.InputPlugin):
+    """Read from a folder containing several small files, each containing with events"""
 
     ##
     # Base class methods you don't need to override
@@ -65,16 +67,16 @@ class InputFromFolder(plugin.InputPlugin):
             raise RuntimeError("Invalid file index %s: %s files loaded" % (i,
                                                                            len(self.raw_data_files)))
 
-        self.log.info("InputFromFolder: Selecting file %s "
-                      "(number %d/%d in folder) for reading" % (self.current_filename,
-                                                                i + 1,
-                                                                len(self.raw_data_files)))
-
         self.current_file_number = i
         f_info = self.raw_data_files[i]
         self.current_filename = f_info['filename']
         self.current_first_event = f_info['first_event']
         self.current_last_event = f_info['last_event']
+
+        self.log.info("InputFromFolder: Selecting file %s "
+                      "(number %d/%d in folder) for reading" % (self.current_filename,
+                                                                i + 1,
+                                                                len(self.raw_data_files)))
 
         self.start_to_read_file(self.current_filename)
 
@@ -83,10 +85,13 @@ class InputFromFolder(plugin.InputPlugin):
 
     def get_events(self):
         """Iterate through all events in the file / folder"""
+        self.ts = time.time()   # We must keep track of time ourselves, BasePlugin.timeit is a function decorator
         for file_i, file_info in enumerate(self.raw_data_files):
             self.select_file(file_i)
             for event in self.get_all_events_in_current_file():
+                self.total_time_taken += (time.time() - self.ts) * 1000
                 yield event
+                self.ts = time.time()       # Restart clock
 
     @plugin.BasePlugin._timeit
     def get_single_event(self, event_number):
@@ -106,15 +111,18 @@ class InputFromFolder(plugin.InputPlugin):
 
         return self.get_single_event_in_current_file(event_number - self.current_first_event)
 
+    # If reaading in from a folder-of-files format not written by FolderIO,
+    # you'll probably have to overwrite this. (e.g. XED does)
+    def get_first_and_last_event_number(self, filename):
+        """Return the first and last event number in file specified by filename"""
+        _, _, first_event, last_event = os.path.splitext(filename)[0].split('-')
+        return int(first_event), int(last_event)
+
     ##
     # Child class should override these
     ##
 
-    file_extension = '.xed'
-
-    def get_first_and_last_event_number(self, filename):
-        """Return the first and last event number in file specified by filename"""
-        raise NotImplementedError()
+    file_extension = None
 
     def start_to_read_file(self, filename):
         """Opens the file specified by filename for reading"""
@@ -144,3 +152,75 @@ class InputFromFolder(plugin.InputPlugin):
         """Uses random access to iterate over all events"""
         for event_i in range(self.current_first_event, self.current_last_event + 1):
             yield self.get_single_event_in_current_file(event_i - self.current_first_event)
+
+
+class WriteToFolder(plugin.OutputPlugin):
+    """Write to a folder containing several small files, each containing a <= a fixed number of events"""
+
+    def startup(self):
+        self.events_per_file = self.config['events_per_file']
+        self.first_event_in_current_file = None
+        self.last_event_written = None
+
+        self.output_dir = self.config['output_name']
+        if os.path.exists(self.output_dir):
+            raise ValueError("Output directory %s already exists, can't write your %ss there!" % (
+                self.output_dir, self.file_extension))
+        else:
+            os.mkdir(self.output_dir)
+
+        self.tempfile = os.path.join(self.output_dir, 'temp.' + self.file_extension)
+
+    def open_new_file(self, first_event_number):
+        """Opens a new file, closing any old open ones"""
+        if self.last_event_written is not None:
+            self.close_current_file()
+        self.first_event_in_current_file = first_event_number
+        self.events_written_to_current_file = 0
+        self.start_writing_file(filename=self.tempfile)
+
+    def write_event(self, event):
+        """Write one more event to the folder, opening/closing files as needed"""
+        if self.last_event_written is None \
+                or self.events_written_to_current_file >= self.events_per_file:
+            self.open_new_file(first_event_number=event.event_number)
+
+        self.write_event_to_current_file(event)
+
+        self.events_written_to_current_file += 1
+        self.last_event_written = event.event_number
+
+    def close_current_file(self):
+        """Closes the currently open file, if there is one"""
+        if self.last_event_written is None:
+            self.log.info("You didn't write any events... Did you crash pax?")
+            return
+
+        self.stop_writing_current_file()
+
+        # Rename the temporary file to reflect the events we've written to it
+        os.rename(self.tempfile,
+                  os.path.join(self.output_dir,
+                               '%s-%d-%06d-%06d.%s' % (self.config['tpc_name'],
+                                                       self.config['run_number'],
+                                                       self.first_event_in_current_file,
+                                                       self.last_event_written,
+                                                       self.file_extension)))
+
+    def shutdown(self):
+        self.close_current_file()
+
+    ##
+    # Child class should override these
+    ##
+
+    file_extension = None
+
+    def start_writing_file(self, filename):
+        raise NotImplementedError
+
+    def write_event_to_current_file(self, event):
+        raise NotImplementedError
+
+    def stop_writing_current_file(self):
+        raise NotImplementedError
