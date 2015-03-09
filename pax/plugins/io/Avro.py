@@ -10,11 +10,14 @@ information about Avro can be found at::
 
 This replaced 'xdio' from XENON100.
 """
-import numpy as np
+import bz2
+import gzip
+from io import BytesIO
 
 import avro.schema
 from avro.datafile import DataFileReader, DataFileWriter
 from avro.io import DatumReader, DatumWriter
+import numpy as np
 
 import pax      # For version number
 from pax import datastructure
@@ -27,9 +30,22 @@ class ReadAvro(InputFromFolder):
     file_extension = 'avro'
 
     def start_to_read_file(self, filename):
-        self.reader = DataFileReader(open(filename, 'rb'),
-                                     DatumReader())
-        next(self.reader)   # Skips the metadata, which is in the first event
+
+        # Open file
+        if self.config['codec'] == 'gzip':
+            # Gzip is a stream compression algorithm, while Avro requires seeking
+            # (which makes its lack of random access support ever weirder...)
+            # so we need to uncompress the entire file into memory
+            # (BytesIO is a 'fake in-memory binary file')
+            with gzip.open(filename, mode='rb') as infile:
+                f = BytesIO(infile.read())
+        elif self.config['codec'] == 'bz2':
+            f = bz2.open(filename, mode='rb')
+        else:
+            f = open(filename, mode='rb')
+
+        self.reader = DataFileReader(f, DatumReader())
+        next(self.reader)   # The first datum is a fake "event" containing metadata
 
     def close_current_file(self):
         """Close the currently open file"""
@@ -73,10 +89,20 @@ class WriteAvro(WriteToFolder):
         super().startup()
 
     def start_writing_file(self, filename):
-        self.writer = DataFileWriter(open(filename, 'wb'),
-                                     DatumWriter(),
-                                     self.schema,
-                                     codec=self.config['codec'])
+
+        # Open file and set codec
+        if self.config['codec'] == 'gzip':
+            f = gzip.open(filename, mode='wb', compresslevel=self.config.get('compresslevel', 4))
+            codec = 'null'
+        elif self.config['codec'] == 'bz2':
+            f = bz2.open(filename, mode='wb', compresslevel=self.config.get('compresslevel', 4))
+            codec = 'null'
+        else:
+            f = open(filename, 'wb')
+            codec = self.config['codec']
+
+        # Start avro writer
+        self.writer = DataFileWriter(f, DatumWriter(), self.schema, codec=codec)
 
         # Store the metadata as a "first event"
         self.writer.append(dict(number=-1,
