@@ -115,7 +115,7 @@ class InputFromFolder(plugin.InputPlugin):
     # you'll probably have to overwrite this. (e.g. XED does)
     def get_first_and_last_event_number(self, filename):
         """Return the first and last event number in file specified by filename"""
-        _, _, first_event, last_event = os.path.splitext(filename)[0].split('-')
+        _, _, first_event, last_event = os.path.splitext(os.path.basename(filename))[0].split('-')
         return int(first_event), int(last_event)
 
     ##
