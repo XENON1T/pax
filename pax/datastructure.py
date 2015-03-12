@@ -20,7 +20,7 @@ from pax import units
 from pax.data_model import StrictModel, Model
 
 
-INT_NAN = -424242
+INT_NAN = -99999 # Do not change without talking to me. -Tunnell 12/3/2015
 
 
 class ReconstructedPosition(StrictModel):
@@ -181,12 +181,16 @@ class Occurrence(StrictModel):
     A DAQ occurrence can also be thought of as a pulse in a PMT.
     """
 
-    #: First index of occurrence in event (inclusive)
-    #: 'index' means: the index where you'd start putting the waveform data for this occurrence
-    #: if you were building a sum waveform.
+    #: Starttime of this occurence within event
+    #:
+    #: Units are samples.  This nonnegative number starts at zero and is an integere because
+    #: it's an index.
     left = INT_NAN
 
-    #: Last index of occurrence in event (INCLUSIVE!)
+    #: Stoptime of this occurence within event
+    #:
+    #: Units are samples and this time is inclusive of last sample.  This nonnegative number
+    #: starts at zero and is an integere because it's an index.
     right = INT_NAN
 
     #: Channel the occurrence belongs to (integer)
