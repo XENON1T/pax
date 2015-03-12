@@ -54,7 +54,9 @@ class ReadAvro(plugin.InputPlugin):
             pax_event = datastructure.Event(n_channels=self.n_channels,
                                             start_time=avro_event['start_time'],
                                             stop_time=avro_event['stop_time'],
-                                            event_number=avro_event['number'])
+                                            event_number=avro_event['number'],
+                                            # TODO: This belongs in Avro file!
+                                            sample_duration=self.config['sample_duration'])
 
             # For all pulses/occurrences, add to pax event
             for pulse in avro_event['pulses']:

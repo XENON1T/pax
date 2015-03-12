@@ -11,3 +11,4 @@ flake8
 avro-python3          # Raw data format
 python-snappy
 numba
+scikit-learn

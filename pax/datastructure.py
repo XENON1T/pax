@@ -20,6 +20,9 @@ from pax import units
 from pax.data_model import StrictModel, Model
 
 
+INT_NAN = -99999 # Do not change without talking to me. -Tunnell 12/3/2015
+
+
 class ReconstructedPosition(StrictModel):
 
     """Reconstructed position
@@ -64,31 +67,40 @@ class ChannelPeak(Model):
     def length(self):
         return self.right - self.left + 1
 
-    area = 0.0                   #: Area of the peak in photoelectrons
-    height = 0.0                 #: Height of highest point in peak (in pe/bin) in unfiltered waveform
-    noise_sigma = 0.0            #: StDev of the noisin e (pe/bin) in the filtered waveform in this peak's occurrence
+    area = 0.0                  #: Area of the peak in photoelectrons
+    height = 0.0                #: Height of highest point in peak (in pe/bin) in unfiltered waveform
+    noise_sigma = 0.0           #: Noise sigma in pe/bin of pulse in which peak was found.
+    # note: in Pulse the same number is stored in ADC-counts
+
+    found_in_pulse = 0          #: Index of pulse (in event.occurrences) in which peak was found
+
+    is_rejected = False         #: Set to True if rejected by suspicious channel algorithm
 
 
 class Peak(StrictModel):
 
     """Peak object"""
 
-    ##
-    #   Fields present in all peaks
-    ##
+    #: Peaks in individual channels that make up this peak
+    channel_peaks = (ChannelPeak,)
+
+    type = 'unknown'        #: Type of peak (e.g., 's1', 's2', ...)
+    detector = 'none'       #: e.g. tpc or veto
 
     left = 0                 #: Index of left bound (inclusive) in event.
     right = 0                #: Index of right bound (INCLUSIVE!!) in event.
     # For XDP matching rightmost sample is not in integral, so you could say it is exclusive then.
+
+    #: Array of areas in each PMT.
+    area_per_channel = np.array([], dtype='float64')
 
     #: Area of the pulse in photoelectrons.
     #:
     #: Includes only contributing pmts (see later) in the right detector
     area = 0.0
 
-    type = 'unknown'        #: Type of peak (e.g., 's1', 's2', ...)
-    subtype = 'unknown'     #: Subtype of peak
-    detector = 'none'  #: e.g. tpc or veto
+    #: Fraction of area in the top array
+    area_fraction_top = 0.0
 
     #: Does a PMT see 'something significant'? (thresholds configurable)
     does_channel_contribute = np.array([], dtype=np.bool)
@@ -102,49 +114,6 @@ class Peak(StrictModel):
         """ Number of PMTS which see something significant (depends on settings) """
         return len(self.contributing_channels)
 
-    #: Array of areas in each PMT.
-    area_per_channel = np.array([], dtype='float64')
-
-    #: Returns a list of reconstructed positions
-    #:
-    #: Returns an :class:`pax.datastructure.ReconstructedPosition` class.
-    reconstructed_positions = (ReconstructedPosition,)
-
-    #: Weighted root mean square deviation of top hitpattern (cm)
-    hitpattern_top_spread = 0.0
-
-    #: Weighted root mean square deviation of bottom hitpattern (cm)
-    hitpattern_bottom_spread = 0.0
-
-    ##
-    #   Fields present in sum-waveform peaks
-    ##
-
-    index_of_maximum = 0           #: Index in the event's sum waveform at which this peak has its maximum.
-    index_of_filtered_maximum = 0  #: same, but maximum in filtered (for S2) sum waveform
-
-    height = 0.0                 #: Height of highest point in peak (in pe/bin)
-    height_filtered = 0.0        #: Height of highest point in filtered waveform of peak (in pe/bin)
-
-    central_area = 0.0           #: Area in the central part of the peak (used for classification)
-
-    # Note these are floats -- the widths get interpolated
-    full_width_half_max = 0.0               #: Full width at half maximum in samples
-    full_width_tenth_max = 0.0              #: Full width at tenth of maximum in samples
-    full_width_half_max_filtered = 0.0      #: Full width at half of maximum in samples, in filtered waveform
-    full_width_tenth_max_filtered = 0.0     #: Full width at tenth of maximum in samples, in filtered waveform
-
-    #: Array of squared signal entropies in each PMT.
-    # Unused
-    # entropy_per_channel = np.array([], dtype='float64')
-
-    ##
-    #   Fields present in peaks from single-channel peakfinding
-    ##
-
-    #: Peaks in individual channels that make up this peak
-    channel_peaks = (ChannelPeak,)
-
     does_channel_have_noise = np.array([], dtype=np.bool)
 
     @property
@@ -156,13 +125,30 @@ class Peak(StrictModel):
         """ Number of channels which have noise during this peak """
         return len(self.noise_channels)
 
-    #: Variables indicating width of peak
+    #: Returns a list of reconstructed positions
+    #:
+    #: Returns an :class:`pax.datastructure.ReconstructedPosition` class.
+    reconstructed_positions = (ReconstructedPosition,)
+
+    #: Weighted root mean square deviation of top hitpattern (cm)
+    top_hitpattern_spread = 0.0
+
+    #: Weighted root mean square deviation of bottom hitpattern (cm)
+    bottom_hitpattern_spread = 0.0
 
     #: Median absolute deviation of photon arrival times (in ns)
+    # Deprecate this?
     median_absolute_deviation = 0.0
-    # standard_deviation = 0.0
-    # half_area_range = 0.0
-    # tenth_area_range = 0.0
+
+    #: Weighted (by area) mean and rms of hit maxima (in ns; mean is relative to event start)
+    hit_time_mean = 0.0
+    hit_time_std = 0.0
+
+    ##
+    # Deprecated sum-waveform stuff
+    ##
+    index_of_maximum = 0          #: Index in the event's sum waveform at which this peak has its maximum.
+    height = 0.0                  #: Height of highest point in peak (in pe/bin)
 
 
 class SumWaveform(StrictModel):
@@ -199,35 +185,31 @@ class Occurrence(StrictModel):
     #:
     #: Units are samples.  This nonnegative number starts at zero and is an integere because
     #: it's an index.
-    left = 0
+    left = INT_NAN
 
     #: Stoptime of this occurence within event
     #:
     #: Units are samples and this time is inclusive of last sample.  This nonnegative number
     #: starts at zero and is an integere because it's an index.
-    right = 0
+    right = INT_NAN
 
     #: Channel the occurrence belongs to (integer)
-    channel = 0
+    channel = INT_NAN
 
-    #: Maximum amplitude (in pe/bin; float) in unfiltered waveform
+    #: Maximum amplitude (in ADC counts; float) in unfiltered waveform
     #: Will remain nan if channel's gain is 0
     #: baseline_correction, if any, has been substracted
     # TODO: may not be equal to actual occurrence height, baseline correction is computed on filtered wv. :-(
     height = float('nan')
 
-    #: Noise sigma for this occurrence (in pe/bin)
+    #: Noise sigma for this occurrence (in ADC counts)
     #: Computed in the filtered channel waveform
     #: Will remain nan unless occurrence is processed by smallpeakfinder
     noise_sigma = float('nan')
 
-    #: Baseline (in ADC counts, but float!)
-    #: Will remain nan if channel's gain is 0
-    digitizer_baseline_used = float('nan')
-
-    #: Baseline correction computed by FindSmallpeaks (in pe/bin)
-    #: Will remain nan if channel is not processed by FindSmallPeaks
-    baseline_correction = float('nan')
+    #: Baseline (in ADC counts, but float!) relative to configured reference baseline
+    #: Will remain nan if occurrence is not processed by hitfinder
+    baseline = float('nan')
 
     #: Raw wave data (in ADC counts, NOT pe/bin!; numpy array of int16)
     raw_data = np.array([], np.int16)
@@ -246,11 +228,14 @@ class Occurrence(StrictModel):
         """
         super().__init__(**kwargs)
 
+        if self.channel == INT_NAN:
+            raise ValueError("Must specify channel to init Pulse")
+
         # Determine right from raw_data if needed
         # Don't want right as a property, we want it to be saved...
-        if self.right == 0:
+        if self.right == INT_NAN:
             if not len(self.raw_data):
-                raise ValueError('Must have right or raw_data to init Occurrence')
+                raise ValueError('Must have right or raw_data to init Pulse')
             self.right = self.left + len(self.raw_data) - 1
 
 
@@ -278,7 +263,8 @@ class Event(StrictModel):
     #: Time duration of a sample (in pax units, i.e. ns)
     #: This is also in config, but we need it here too, to convert between event duration and length in samples
     #: Must be an int for same reason as start_time and stop_time
-    sample_duration = int(10 * units.ns)
+    #: DO NOT set to 10 ns as default, otherwise no way to check if it was given to constructor!
+    sample_duration = 0
 
     user_float_0 = 0.0  # : Unused float (useful for developing)
     user_float_1 = 0.0  # : Unused float (useful for developing)
@@ -299,27 +285,18 @@ class Event(StrictModel):
     #: Returns an :class:`pax.datastructure.SumWaveform` class.
     sum_waveforms = (SumWaveform,)
 
-    #: A 2D array of all the PMT waveforms, units of pe/bin.
-    #:
-    #: The first index is the PMT number (starting from zero), and the second
-    #: index is the sample number.  This must be a numpy array.  To access the
-    #: waveform for a specific PMT such as PMT 10, you can do::
-    #:
-    #:     event.channel_waveforms[10]
-    #:
-    #: which returns a 1D array of samples.
-    #:
-    #: The data type is a float32 since these numbers are already baseline
-    #: and gain corrected.
-    channel_waveforms = np.array([], dtype=np.float64)  # : Array of samples.
-
     #: A python list of all occurrences in the event (containing instances of the Occurrence class)
     #: An occurrence holds a stream of samples in one channel, as provided by the digitizer.
     occurrences = (Occurrence,)
 
-    #: List of channels which showed an increased dark rate
-    #: Declared as basefield as we want to store a list (it will get appended to constantly)
-    is_channel_bad = np.array([], dtype=np.bool)
+    #: Number of noise pulses (pulses without any hits found) per channel
+    noise_pulses_in = np.array([], dtype=np.int)
+
+    #: Was channel flagged as suspicious?
+    is_channel_suspicious = np.array([], dtype=np.bool)
+
+    #: Number of hits rejected in the suspicious channel algorithm
+    n_hits_rejected = np.array([], dtype=np.int)
 
     def __init__(self, n_channels, start_time, **kwargs):
 
@@ -335,16 +312,16 @@ class Event(StrictModel):
         if 'length' in kwargs and self.sample_duration and not self.stop_time:
             self.stop_time = int(self.start_time + kwargs['length'] * self.sample_duration)
 
-        if not self.stop_time:
+        if not self.stop_time or not self.sample_duration:
             raise ValueError("Cannot initialize an event with an unknown length: " +
                              "pass either stop_time or length and sample_duration")
 
         # Initialize numpy arrays -- need to have n_channels and self.length
-        # This is the main reason for having Event.__init__
-        # TODO: don't initialize these is already in kwargs
+        # TODO: don't initialize these if is already in kwargs
         # TODO: better yet, make an alternate init or something?
-        self.channel_waveforms = np.zeros((n_channels, self.length()))
-        self.is_channel_bad = np.zeros(n_channels, dtype=np.bool)
+        self.noise_pulses_in = np.zeros(n_channels, dtype=np.int)
+        self.n_hits_rejected = np.zeros(n_channels, dtype=np.int)
+        self.is_channel_suspicious = np.zeros(n_channels, dtype=np.bool)
 
     @classmethod
     def empty_event(cls):
@@ -411,15 +388,6 @@ class Event(StrictModel):
                        reverse=reverse)
 
         return peaks
-
-    def get_occurrences_between(self, left, right, strict=False):
-        """Returns all occurrences that overlap with [left, right]
-        If strict=True, only returns occurrences that are not outside [left, right]
-        """
-        if strict:
-            return [oc for oc in self.occurrences if oc.left >= left and oc.right <= right]
-        else:
-            return [oc for oc in self.occurrences if oc.left <= right and oc.right >= left]
 
 
 def _explain(class_name):

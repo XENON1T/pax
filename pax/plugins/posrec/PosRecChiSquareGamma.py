@@ -1,5 +1,6 @@
 """Position reconstruction algorithm using chi square gamma distribution minimization"""
 
+import numpy as np
 from scipy.optimize import fmin_powell
 
 from pax import plugin
@@ -188,9 +189,15 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
             if not warnflag:
                 self.total_rec_success += 1
 
-            x = xopt[0]
-            y = xopt[1]
-            chi_square_gamma = fopt
+            x = float(xopt[0])
+            y = float(xopt[1])
+            chi_square_gamma = float(fopt)
+
+            # Correct strange error where numpy arrays are passed as fopt
+            if isinstance(chi_square_gamma, np.ndarray):
+                self.log.warning("Help! Optimizer gave me an ndarray instead of float... "
+                                 "To be precise, I got this: %s" % str(chi_square_gamma))
+                chi_square_gamma = float('nan')
 
             self.log.debug("Reconstructed event at x: %f y: %f chi_square_gamma:"
                            " %f ndf: %d" % (x, y, chi_square_gamma, self.ndf))

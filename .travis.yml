@@ -17,7 +17,6 @@ services:
 env:
   - ROOT=5.34.25
 
-
 install:
   # General update
   - deactivate
@@ -39,23 +38,36 @@ install:
   - sudo apt-get install libsnappy-dev
   - sudo apt-get build-dep python-snappy
 
+  # Create environment
   # Replace dep1 dep2 ... with your dependencies
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib pandas pytables cython h5py numba pip
-
-  #- pip uninstall -y nose
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib pandas pytables cython h5py numba pip scikit-learn
 
   - source activate test-environment
   - pip install coveralls nose coverage
 
-   # Install pax
+  # ROOT 
+  # - unset ROOT # uncomment to not install ROOT
+  # - if test -n "$ROOT"; then source travis/travis-install-ROOT; fi
+  - if test -n "$ROOT"; then source travis/travis-install-ROOT-binary.sh; fi
+
+  # Copy modified ROOT.py to proper directory
+  - cp /home/travis/build/XENON1T/pax/travis/travis_modified_ROOT.py /home/travis/build/XENON1T/pax/root/lib/ROOT.py
+
+  # Does pyROOT still work?
+  - root -l -q
+  - python -c "import ROOT; ROOT.TBrowser()"
+
+  - conda install system
+
+  # Install pax
   - python setup.py install
 
 # command to run tests, e.g. python setup.py test
 script:
   - make test
-  - make coverage
+  #- make coverage
   - make lint
 
 after_success:
-  coveralls
+  #- coveralls
 

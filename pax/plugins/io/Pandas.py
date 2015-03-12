@@ -47,6 +47,8 @@ class WritePandas(plugin.OutputPlugin):
     """
 
     def startup(self):
+        self.log.warning('This Pandas IO is DEPRECATED and will be removed soon -- '
+                         'you can produce pandas formats with BulkOutput now.')
         # Dictionary to contain the data, which will later become pandas DataFrames.
         # Keys are data frame names, values are lists of (index_tuple,dictionary) tuples
         self.dataframes = {}

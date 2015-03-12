@@ -28,13 +28,13 @@ example_noise = np.array([
 ], dtype=np.float64)
 
 
-class TestSmallPeakfinder(unittest.TestCase):
+class TestHitFinder(unittest.TestCase):
 
     def setUp(self):
         self.pax = core.Processor(config_names='XENON100', just_testing=True, config_dict={
             'pax': {
                 'plugin_group_names': ['test'],
-                'test':               'SmallPeakfinder.FindSmallPeaks',
+                'test':               'HitFinder.FindHits',
                 # 'logging_level':      'DEBUG',
                 },
             'DEFAULT': {
@@ -42,7 +42,7 @@ class TestSmallPeakfinder(unittest.TestCase):
                 'channels_top': [0],
                 'channels_bottom': [1],
                 'channels_in_detector': {'tpc': [0, 1]}}})
-        self.plugin = self.pax.get_plugin_by_name('FindSmallPeaks')
+        self.plugin = self.pax.get_plugin_by_name('FindHits')
 
     @staticmethod
     def peak_at(left, right, amplitude, noise_sigma):
@@ -52,29 +52,38 @@ class TestSmallPeakfinder(unittest.TestCase):
 
     def test_sanity(self):
         self.assertIsInstance(self.plugin, plugin.TransformPlugin)
-        self.assertEqual(self.plugin.__class__.__name__, 'FindSmallPeaks')
+        self.assertEqual(self.plugin.__class__.__name__, 'FindHits')
 
     def try_single_clear_peak(self, left, right):
-        raw_peaks = np.zeros((100, 2), dtype=np.int64)
-        waveform = self.peak_at(left, right, amplitude=100, noise_sigma=0.05)
+        hits_buffer = np.zeros((100, 2), dtype=np.int64)
+        waveform = self.peak_at(left, right, amplitude=100, noise_sigma=1)
 
-        n_found = self.plugin._find_peaks(waveform, float(3), float(1), raw_peaks)
-        self.assertEqual(n_found, 1)
-        self.assertEqual(raw_peaks[0, 0], left)
-        self.assertEqual(raw_peaks[0, 1], right)
-
-        mean_std_result = np.array([0, 0], dtype=np.float64)
-        self.plugin._mean_std_outside_peaks(waveform, raw_peaks, mean_std_result)
-
+        # Calculate baseline and noise before peakfinding - it modifies the waveform in-place!
         mask = np.ones(100, dtype=np.bool)
         mask[left:right + 1] = False
-        mean_should_be = np.mean(waveform[mask])
-        self.assertAlmostEqual(mean_std_result[0], mean_should_be)
-        std_should_be = np.std(waveform[mask])
-        self.assertAlmostEqual(mean_std_result[1], std_should_be)
+        baseline_should_be = np.mean(waveform[mask])
+
+        # We now determine baseline on negative samples only, so:
+        for i, x in enumerate(waveform):
+            if x >= baseline_should_be:
+                mask[i] = False
+        noise_sigma_should_be = (np.mean((waveform[mask] - baseline_should_be)**2))**0.5
+
+        # Call syntax: _find_peaks(w, threshold_sigmas, noise_sigma, max_passes, initial_baseline_samples, raw_peaks)
+
+        n_hits_found, baseline, noise_sigma, _ = self.plugin._find_peaks(
+            waveform, 5, 3, 5, 100,
+            hits_buffer)
+
+        self.assertEqual(n_hits_found, 1)
+        self.assertEqual(hits_buffer[0, 0], left)
+        self.assertEqual(hits_buffer[0, 1], right)
+        self.assertAlmostEqual(baseline, baseline_should_be)
+        self.assertAlmostEqual(noise_sigma, noise_sigma_should_be)
 
     def test_single_peaks(self):
         # 10 samples wide
+        self.try_single_clear_peak(50, 60)
         self.try_single_clear_peak(10, 20)
         self.try_single_clear_peak(0, 20)
         self.try_single_clear_peak(80, 99)
