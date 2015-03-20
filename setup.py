@@ -30,6 +30,8 @@ setup(
         'pax.config',
         'pax.plugins',
         'pax.plugins.corrections',
+        'pax.plugins.peak_processing',
+        'pax.plugins.plotting',
         'pax.plugins.signal_processing',
         'pax.plugins.for_tests',
         'pax.plugins.io',

@@ -103,7 +103,7 @@ class PlotBase(plugin.OutputPlugin):
             plt.plot(xvalues,
                      (waveform.samples[lefti:righti + 1] + y_offset) * scale,
                      label=w['plot_label'],
-                     color=w.get('color', None),
+                     color=w.get('color', 'gray'),
                      drawstyle=w.get('drawstyle'),
                      alpha=w.get('alpha', 1))
         if log_y_axis:
@@ -366,7 +366,8 @@ class PlotChannelWaveforms2D(PlotBase):
                 continue
 
             # Choose a color for this occurrence based on amplitude
-            color_factor = np.clip(np.log10(oc.height) / 2, 0, 1)
+            #color_factor = np.clip(np.log10(oc.height) / 2, 0, 1)
+            color_factor = 0
 
             plt.gca().add_patch(Rectangle((oc.left * time_scale, oc.channel), oc.length * time_scale, 1,
                                           facecolor=plt.cm.gnuplot2(color_factor),
@@ -378,24 +379,22 @@ class PlotChannelWaveforms2D(PlotBase):
 
         result = []
         for hit in event.all_channel_peaks:
-            if hit.noise_sigma == 0:
-                # Could happen for simulated events
-                color_factor = 1
-            else:
-                color_factor = min(max(hit.height / (20 * hit.noise_sigma), 0), 1)
+            color_factor = min(hit.height / hit.noise_sigma, 15)/15
             result.append([
                 (0.5 + hit.index_of_maximum) * time_scale,             # X
                 0.5 + hit.channel,                                     # Y
-                color_factor,                                          # Color (in [0,1])
+                color_factor,                                          # Color (in [0,1] -> [Blue, Red])
                 10 * min(10, hit.area),                                # Size
-                (0.2 if hit.is_rejected else 1.0),                     # Alpha
+                (1 if hit.is_rejected else 0),                         # Is rejected? If not, will make green
             ])
-        rgba_colors = np.zeros((len(result), 4))
-        result = np.array(result).T
-        rgba_colors[:, 0] = result[2]
-        rgba_colors[:, 2] = 1 - result[2]
-        rgba_colors[:, 3] = result[4]
-        plt.scatter(result[0], result[1], c=rgba_colors, s=result[3], edgecolor=None, lw=0)
+        if len(result) != 0:
+            rgba_colors = np.zeros((len(result), 4))
+            result = np.array(result).T
+            rgba_colors[:, 0] = (1 - result[4]) * result[2]                     # R
+            rgba_colors[:, 1] = result[4]                 # G
+            rgba_colors[:, 2] = (1 - result[4]) * (1 - result[2])                 # B
+            rgba_colors[:, 3] = 1                             # A
+            plt.scatter(result[0], result[1], c=rgba_colors, s=result[3], edgecolor=None, lw=0)
 
         # Plot the bottom/top/veto boundaries
         # Assumes the detector names' lexical order is the same as the channel order!

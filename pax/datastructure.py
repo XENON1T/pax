@@ -20,7 +20,7 @@ from pax import units
 from pax.data_model import StrictModel, Model
 
 
-INT_NAN = -424242
+INT_NAN = -99999  # Do not change without talking to me. -Tunnell 12/3/2015
 
 
 class ReconstructedPosition(StrictModel):
@@ -32,8 +32,10 @@ class ReconstructedPosition(StrictModel):
     x = 0.0  #: x position (cm)
     y = 0.0  #: y position (cm)
 
-    goodness_of_fit = 0.0  #: goodness-of-fit parameter generated with PosRecChiSquareGamma
-    ndf = 0.0  # : number of degrees of freedom calculated with PosRecChiSquareGamma
+    #: goodness-of-fit parameter generated with PosRecChiSquareGamma
+    goodness_of_fit = 0.0
+    # : number of degrees of freedom calculated with PosRecChiSquareGamma
+    ndf = 0.0
 
     #: Name of algorithm used for computation
     algorithm = 'none'
@@ -42,7 +44,8 @@ class ReconstructedPosition(StrictModel):
     # error_matrix = np.array([], dtype=np.float64)
 
     # For convenience: cylindrical coordinates
-    # Must be properties so InterpolatingDetectorMap can transparently use cylindrical coordinates
+    # Must be properties so InterpolatingDetectorMap can transparently use
+    # cylindrical coordinates
     @property
     def r(self):
         return math.sqrt(self.x ** 2 + self.y ** 2)
@@ -58,7 +61,8 @@ class ChannelPeak(Model):
     These are be clustered into ordinary peaks later
     """
     channel = 0              #: Channel in which this peak was found
-    index_of_maximum = 0     #: Index in the event at which this peak has its maximum.
+    #: Index in the event at which this peak has its maximum.
+    index_of_maximum = 0
 
     left = 0                 #: Index of left bound (inclusive) of peak.
     right = 0                #: Index of right bound (INCLUSIVE!!) of peak
@@ -68,13 +72,17 @@ class ChannelPeak(Model):
         return self.right - self.left + 1
 
     area = 0.0                  #: Area of the peak in photoelectrons
-    height = 0.0                #: Height of highest point in peak (in pe/bin) in unfiltered waveform
-    noise_sigma = 0.0           #: Noise sigma in pe/bin of pulse in which peak was found.
+    #: Height of highest point in peak (in pe/bin) in unfiltered waveform
+    height = 0.0
+    #: Noise sigma in pe/bin of pulse in which peak was found.
+    noise_sigma = 0.0
     # note: in Pulse the same number is stored in ADC-counts
 
-    found_in_pulse = 0          #: Index of pulse (in event.occurrences) in which peak was found
+    #: Index of pulse (in event.occurrences) in which peak was found
+    found_in_pulse = 0
 
-    is_rejected = False         #: Set to True if rejected by suspicious channel algorithm
+    #: Set to True if rejected by suspicious channel algorithm
+    is_rejected = False
 
 
 class Peak(StrictModel):
@@ -89,7 +97,8 @@ class Peak(StrictModel):
 
     left = 0                 #: Index of left bound (inclusive) in event.
     right = 0                #: Index of right bound (INCLUSIVE!!) in event.
-    # For XDP matching rightmost sample is not in integral, so you could say it is exclusive then.
+    # For XDP matching rightmost sample is not in integral, so you could say
+    # it is exclusive then.
 
     #: Array of areas in each PMT.
     area_per_channel = np.array([], dtype='float64')
@@ -147,8 +156,10 @@ class Peak(StrictModel):
     ##
     # Deprecated sum-waveform stuff
     ##
-    index_of_maximum = 0          #: Index in the event's sum waveform at which this peak has its maximum.
-    height = 0.0                  #: Height of highest point in peak (in pe/bin)
+    #: Index in the event's sum waveform at which this peak has its maximum.
+    index_of_maximum = 0
+    #: Height of highest point in peak (in pe/bin)
+    height = 0.0
 
 
 class SumWaveform(StrictModel):
@@ -160,7 +171,8 @@ class SumWaveform(StrictModel):
     name_of_filter = 'none'
     #: Name of this sum waveform
     name = 'none'
-    detector = 'none'  #: Name of the detector this waveform belongs to (e.g. tpc or veto)
+    #: Name of the detector this waveform belongs to (e.g. tpc or veto)
+    detector = 'none'
 
     #: Array of PMT numbers included in this waveform
     channel_list = np.array([], dtype=np.uint16)
@@ -176,17 +188,22 @@ class SumWaveform(StrictModel):
 
 
 class Occurrence(StrictModel):
+
     """A DAQ occurrence
 
     A DAQ occurrence can also be thought of as a pulse in a PMT.
     """
 
-    #: First index of occurrence in event (inclusive)
-    #: 'index' means: the index where you'd start putting the waveform data for this occurrence
-    #: if you were building a sum waveform.
+    #: Starttime of this occurence within event
+    #:
+    #: Units are samples.  This nonnegative number starts at zero and is an integere because
+    #: it's an index.
     left = INT_NAN
 
-    #: Last index of occurrence in event (INCLUSIVE!)
+    #: Stoptime of this occurence within event
+    #:
+    #: Units are samples and this time is inclusive of last sample.  This nonnegative number
+    #: starts at zero and is an integere because it's an index.
     right = INT_NAN
 
     #: Channel the occurrence belongs to (integer)
@@ -195,7 +212,8 @@ class Occurrence(StrictModel):
     #: Maximum amplitude (in ADC counts; float) in unfiltered waveform
     #: Will remain nan if channel's gain is 0
     #: baseline_correction, if any, has been substracted
-    # TODO: may not be equal to actual occurrence height, baseline correction is computed on filtered wv. :-(
+    # TODO: may not be equal to actual occurrence height, baseline correction
+    # is computed on filtered wv. :-(
     height = float('nan')
 
     #: Noise sigma for this occurrence (in ADC counts)
@@ -240,7 +258,9 @@ class Event(StrictModel):
     """Event class
     """
     dataset_name = 'Unknown'  # The name of the dataset this event belongs to
-    event_number = 0    # A nonnegative integer that uniquely identifies the event within the dataset.
+    # A nonnegative integer that uniquely identifies the event within the
+    # dataset.
+    event_number = 0
 
     #: Integer start time of the event in nanoseconds
     #:
@@ -306,7 +326,8 @@ class Event(StrictModel):
 
         # Cheat to init stop_time from length and duration
         if 'length' in kwargs and self.sample_duration and not self.stop_time:
-            self.stop_time = int(self.start_time + kwargs['length'] * self.sample_duration)
+            self.stop_time = int(
+                self.start_time + kwargs['length'] * self.sample_duration)
 
         if not self.stop_time or not self.sample_duration:
             raise ValueError("Cannot initialize an event with an unknown length: " +
@@ -323,7 +344,7 @@ class Event(StrictModel):
     def empty_event(cls):
         """Returns an empty example event: for testing purposes only!!
         """
-        return Event(n_channels=1, start_time=10, length=1, sample_duration=int(10*units.ns))
+        return Event(n_channels=1, start_time=10, length=1, sample_duration=int(10 * units.ns))
 
     def duration(self):
         """Duration of event window in units of ns
