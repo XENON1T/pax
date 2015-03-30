@@ -366,7 +366,7 @@ class PlotChannelWaveforms2D(PlotBase):
                 continue
 
             # Choose a color for this occurrence based on amplitude
-            #color_factor = np.clip(np.log10(oc.height) / 2, 0, 1)
+            # color_factor = np.clip(np.log10(oc.height) / 2, 0, 1)
             color_factor = 0
 
             plt.gca().add_patch(Rectangle((oc.left * time_scale, oc.channel), oc.length * time_scale, 1,

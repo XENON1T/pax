@@ -34,6 +34,9 @@ base_units['J'] = base_units['eV'] / electron_charge_SI
 base_units['g'] = 10**(-3) * base_units['J'] * base_units['s'] ** 2 / base_units['m'] ** 2
 base_units['V'] = base_units['J'] / base_units['C']
 base_units['A'] = base_units['C'] / base_units['s']
+base_units['N'] = base_units['J'] / base_units['m']
+base_units['Pa'] = base_units['N'] / base_units['m'] ** 2
+base_units['bar'] = 10**5 * base_units['Pa']
 base_units['Ohm'] = base_units['V'] / base_units['A']
 electron_charge = electron_charge_SI * base_units['C']
 boltzmannConstant = boltzmannConstant_SI * base_units['J'] / base_units['K']
@@ -45,6 +48,9 @@ for (name, value) in list(base_units.items()):
         # Float makes sure units might work even for poor fellas who forget to
         # from __future__ import division -- not tested though
         vars()[p_name + name] = float(10 ** (p_factor) * value)
+
+# Townsend (unit for reduced electric field)
+Td = 10**(-17) * V / cm ** 2    # noqa
 
 
 def unit_name(unit, base_unit):
