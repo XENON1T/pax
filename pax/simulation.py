@@ -281,6 +281,7 @@ class Simulator(object):
             n_channels=self.config['n_channels'],
             start_time=start_time,
             stop_time=start_time + int(hitpattern.max + 2 * self.config['event_padding']),
+            sample_duration=self.config['sample_duration'],
         )
 
         log.debug("Now performing hitpattern to waveform conversion for %s photons" % hitpattern.n_photons)

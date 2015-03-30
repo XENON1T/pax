@@ -331,7 +331,7 @@ class Event(StrictModel):
 
         if not self.stop_time or not self.sample_duration:
             raise ValueError("Cannot initialize an event with an unknown length: " +
-                             "pass either stop_time or length and sample_duration")
+                             "pass sample_duration and either stop_time or length")
 
         # Initialize numpy arrays -- need to have n_channels and self.length
         # TODO: don't initialize these if is already in kwargs
