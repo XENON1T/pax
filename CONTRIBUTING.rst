@@ -57,7 +57,7 @@ Ready to contribute? Here's how to set up `pax` for local development.  If you g
 
 1. Clone locally::
 
-    $ git clone git@github.com:your_name_here/pax.git
+    $ git clone https://github.com/XENON1T/pax.git
 
 2. Install your local copy.  (If you chose not to use Anaconda, you may want to
 install in a virtual environment.)  This is how you set up your fork for local
