@@ -50,47 +50,46 @@ If you are proposing a feature:
 * Remember that this is a volunteer-driven project, and that contributions
   are welcome :)
 
-Get Started!
-------------
+Get Started with developing!
+----------------------------
 
 Ready to contribute? Here's how to set up `pax` for local development.  If you get lost, feel free to ask the developers for help or explore the extensive documentation that exists for github.
 
-1. Fork the `pax` repo on GitHub.  (More information can be found at <https://help.github.com/articles/working-with-repositories>)
-2. Clone your fork locally::
+1. Clone locally::
 
     $ git clone git@github.com:your_name_here/pax.git
 
-3. Install your local copy.  (If you chose not to use Anaconda, you may want to
+2. Install your local copy.  (If you chose not to use Anaconda, you may want to
 install in a virtual environment.)  This is how you set up your fork for local
 development::
 
     $ cd pax/
     $ python setup.py develop
 
-4. Create a branch for local development::
+3. Create a branch for local development::
 
     $ git checkout -b name-of-your-bugfix-or-feature
 
    Now you can make your changes locally.
 
-5. When you're done making changes, check that your changes pass flake8 and the tests, including testing other Python versions with tox::
+4. When you're done making changes, check that your changes pass flake8 and the tests, including testing other Python versions with tox::
 
     $ make lint
     $ make test
 
    This runs flake8 for style testing.  To get flake8, just pip install them into your virtualenv.
    
-6.  Check that the documentation is still up-to-date.  You may need to add another 'rst' file in docs or
+5.  Check that the documentation is still up-to-date.  You may need to add another 'rst' file in docs or
 update one of the files that are already written.  Please specifically check README.rst (for new features)
 and AUTHORS.rst (if you are a new contributor)
 
-7. Commit your changes and push your branch to GitHub::
+6. Commit your changes and push your branch to GitHub::
 
     $ git add .
     $ git commit -m "Your detailed description of your changes."
     $ git push origin name-of-your-bugfix-or-feature
 
-8. Submit a pull request through the GitHub website.
+7. Submit a pull request through the GitHub website.
 
 Pull Request Guidelines
 -----------------------
