@@ -1,96 +1,337 @@
-"""Interfacing to DAQ via MongoDB
+"""Interfacing to MongoDB
 
-The DAQ uses MongoDB for input and output.  The classes defined hear allow the
-user to read data from the DAQ and also inject raw occurences into the DAQ.
-
+MongoDB is used as a data backend within the DAQ.  For example, 'kodiaq', which
+reads out the digitizers, will write data to MongoDB.  This data from kodiaq can
+either be triggered or untriggered. In the case of untriggered, an event builder
+must be run on the data and will result in triggered data.  Input and output
+classes are provided for MongoDB access.  More information is in the docstrings.
 """
 from datetime import datetime
-
 import numpy as np
 
 import time
 import pymongo
 import snappy
+
 from bson.binary import Binary
 from pax.datastructure import Event, Occurrence
 from pax import plugin, units
 
 
-START_TIME_KEY = 'time_min'
+START_KEY = 'start_time'
+STOP_KEY = 'stop_time'
 
-
-class MongoDBInput(plugin.InputPlugin):
-
-    """Read data from DAQ database
-
-    This assumes that an event builder has run.
-    """
-
+class IOMongoDB():
     def startup(self):
-        self.log.debug("Connecting to %s" % self.config['address'])
+        self.number_of_events = 0
+
+        self.connections = {}  # MongoClient objects
+        self.mongo = {}        #
+
+        #self.setup_access('run')
+
+        self.sort_key = [(START_KEY, 1),
+                         (START_KEY, 1)]
+        self.mongo_time_unit = int(self.config.get('sample_duration'))
+
+    def setup_access(self, name):
+        wc = pymongo.write_concern.WriteConcern(w=0)
+
+        m = {}  # Holds connection, database info, and collection info
         try:
-            self.client = pymongo.MongoClient(self.config['address'])
-            self.database = self.client[self.config['database']]
-            self.collection = self.database[self.config['collection']]
+            # Used for coordinating which runs to analyze
+            self.log.debug("Connecting to %s" % self.config['%s_address' % name])
+            m['client'] = self._get_connection(self.config['%s_address' % name])
+            m['database'] = m['client'].get_database(self.config['%s_database' % name],
+                                                     write_concern=wc)
+            m['collection'] = m['database'].get_collection(self.config['%s_collection' % name],
+                                                           write_concern=wc)
         except pymongo.errors.ConnectionFailure as e:
-            self.log.fatal("Cannot connect to database")
+            self.log.fatal("Cannot connect to MongoDB!")
             self.log.exception(e)
             raise
 
-        # TODO (tunnell): Sort by event number
-        self.cursor = self.collection.find()
-        self.number_of_events = self.cursor.count()
+        self.mongo[name] = m
 
-        self.mongo_time_unit = self.config.get('mongo_time_unit',
-                                               10 * units.ns)
 
-        if self.number_of_events == 0:
-            raise RuntimeError("No events found... did you run the event"
-                               "builder?")
+    def _get_connection(self, hostname):
+        if hostname not in self.connections:
+            try:
+                self.connections[hostname] = pymongo.MongoClient(hostname)
+            except pymongo.errors.ConnectionFailure:
+                self.log.fatal("Cannot connect to MongoDB at %s" % hostname)
+
+        return self.connections[hostname]
 
     def number_events(self):
         return self.number_of_events
 
-    def get_events(self):
-        """Generator of events from Mongo
+    @staticmethod
+    def chunks(l, n):
+        """ Yield successive n-sized chunks from l.
         """
-        for i, doc_event in enumerate(self.collection.find()):
-            self.log.debug("Fetching document %s" % repr(doc_event['_id']))
+        for i in range(0, len(l), n):
+            yield l[i:i + n]
 
-            # Store channel waveform-occurrences by iterating over all
-            # occurrences.
-            # This involves parsing MongoDB documents using WAX output format
-            assert isinstance(doc_event['range'][0], int)
-            assert isinstance(doc_event['range'][1], int)
 
-            # Convert from Mongo's time unit to pax units
-            event = Event(n_channels=self.config['n_channels'],
-                          start_time=int(doc_event['range'][0]) * self.mongo_time_unit,
-                          sample_duration=self.config['sample_duration'],
-                          stop_time=int(doc_event['range'][1]) * self.mongo_time_unit)
+class MongoDBReadUntriggered(plugin.InputPlugin,
+                             IOMongoDB):
+    def startup(self):
+        IOMongoDB.startup(self) # Setup with baseclass
+        self.setup_access('input')
 
-            event.event_number = i  # TODO: should come from Mongo
+        # Load constants from config
+        self.window = self.config['window']
+        self.multiplicity =self.config['multiplicity']
+        self.left = self.config['left_extension']
+        self.right = self.config['right_extension']
 
-            assert isinstance(event.start_time, int)
-            assert isinstance(event.stop_time, int)
+        self.log.info("Building events with:")
+        self.log.info("\tSliding window: %0.2f us", self.window / units.us)
+        self.log.info("\tMultiplicity: %d hits", self.multiplicity)
+        self.log.info("\tLeft extension: %0.2f us", self.left / units.us)
+        self.log.info("\tRight extension: %0.2f us", self.right / units.us)
 
-            for doc_occurrence in doc_event['docs']:
+        c = self.mongo['input']['collection']
 
-                assert isinstance(doc_occurrence['time'], int)
-                assert isinstance(doc_event['range'][0], int)
+        c.ensure_index(self.sort_key)
 
-                data = snappy.compress(doc_occurrence['data'])
+        times = list(c.find(projection=[START_KEY, STOP_KEY],
+                                 sort=self.sort_key,
+                                 cursor_type=pymongo.cursor.EXHAUST))
 
-                event.occurrences.append(Occurrence(
-                    left=doc_occurrence['time'] - doc_event['range'][0],
-                    raw_data=np.fromstring(data, dtype="<i2"),
-                    channel=doc_occurrence['channel']
-                ))
 
-            if event.length() == 0:
-                raise RuntimeWarning("Empty event")
+        x = self.extract_times_from_occurrences(times,
+                                                self.mongo_time_unit)
+        self.log.debug(x[0:10])  # x in ns
 
-            yield event
+        self.ranges = self.sliding_window(x,
+                                         window=self.window,
+                                         multiplicity=self.multiplicity,
+                                         left=self.left,
+                                         right=self.right)
+
+        self.log.info("Found %d events", len(self.ranges))
+        self.number_of_events = len(self.ranges)
+
+    @staticmethod
+    def extract_times_from_occurrences(times, sample_duration):
+        x = [[doc[START_KEY], doc[STOP_KEY]] for doc in times]
+        x = np.array(x) * sample_duration
+        x = x.mean(axis=1)
+        return x
+
+    @staticmethod
+    def sliding_window(x, window=1000, multiplicity=3, left=-10, right=7):
+        """Sliding window cluster finder (with range extension)
+
+        x is a list of times.  A window will slide over the values in x and
+        this function will return all event ranges with more than 'multiplicity'
+        of occurrences.  We assume that any occurrence will have ~1 pe area.
+        Also, left and right will be added to ranges, where left can be the
+        drift length.
+        """
+        if left > 0:
+            raise ValueError("Left offset must be negative")
+        ranges = []
+
+        i = 0  # Start of range to test
+        j = 0  # End of range to test
+
+        while j < x.size:  # For every occureence... extend end
+            if x[j] - x[i] > window:  # If time diff greater than window, form new cluster
+                if j - i > multiplicity:  # If more than 100 occurences, trigger
+                    if len(ranges) > 0 and ranges[-1][1] + window > x[i]:
+                        ranges[-1][1] = x[j-1] + right
+                    else:
+                        ranges.append([x[i] + left, x[j-1] + right])
+                i+= 1
+            else:
+                j += 1
+
+        if j - i > multiplicity:  # If more than 10 occurences, trigger
+            ranges.append([x[i] + left, x[j-1] + right])
+
+        return ranges
+
+    def get_events(self): # {"$lt": d}
+        for i, this_range in enumerate(self.ranges):
+            # Start pax's timer so we can measure how fast this plugin goes
+            ts = time.time()
+            t0, t1 = [int(x) for x in this_range]
+
+            self.total_time_taken += (time.time() - ts) * 1000
+
+            yield Event(n_channels=self.config['n_channels'],
+                        start_time=t0,
+                        sample_duration=self.mongo_time_unit,
+                        stop_time=t1,
+                        partial=True
+                        #occurrences=occurrence_objects
+            )
+
+class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, IOMongoDB):
+    def startup(self):
+        IOMongoDB.startup(self) # Setup with baseclass
+        self.setup_access('input')
+
+    def process_event(self, event):
+        t0, t1 = event.start_time, event.stop_time
+
+        event = Event(start_time = event.start_time,
+                      stop_time = event.stop_time,
+                      n_channels=self.config['n_channels'],
+                      sample_duration=self.mongo_time_unit)
+
+        self.log.debug("Building event in range [%d,%d]", t0, t1)
+
+        query = {START_KEY : {"$gte" : t0 / self.mongo_time_unit},
+                 STOP_KEY : {"$lte" : t1 / self.mongo_time_unit}}
+
+        self.mongo_iterator = self.mongo['input']['collection'].find(query)
+                                                                     #exhaust = True)
+        occurrence_objects = []
+
+        for i, occurrence_doc in enumerate(self.mongo_iterator):
+            # Fetch raw data from document
+            data = occurrence_doc["data"]
+
+            time_within_event = int(occurrence_doc[START_KEY]) - (t0 // self.mongo_time_unit)
+            self.log.debug(time_within_event)
+            self.log.debug(t0)
+
+            occurrence_objects.append(Occurrence(left=(time_within_event),
+                                                 raw_data=np.fromstring(data,
+                                                                        dtype="<i2"),
+                                                 channel=int(occurrence_doc['channel'])))
+
+        event.occurrences = occurrence_objects
+        return event
+
+
+class MongoDBWriteUntriggered(plugin.OutputPlugin,
+                              IOMongoDB):
+    """Inject PMT pulses into DAQ to test trigger.
+
+    This plugin aims to emulate the DAQReader by creating run control documents
+    and feeding raw data into the DAQ's MongoDB format.  Consult here for more
+    on formats:
+
+    https://docs.google.com/drawings/d/1dytKBmMARsZtuyUmLbzm9IbXM1hre
+    -knkEIU4X3Ot8U/edit
+
+    Note: write run document after output collection created.
+    """
+
+    def startup(self):
+        """Setup"""
+        IOMongoDB.startup(self) # Setup with baseclass
+
+        self.setup_access('run')
+        self.setup_access('raw')
+
+        self.mongo['raw']['collection'].ensure_index(self.sort_key)
+
+        self.mongo['raw']['collection'].ensure_index([('_id', pymongo.HASHED)])
+
+        # self.log.info("Sharding %s" % str(c))
+        # self.raw_client.admin.command('shardCollection',
+        #                              '%s.%s' % (self.config['raw_database'], self.config['raw_collection']),
+        #                              key = {'_id': pymongo.HASHED})
+
+        # Send run doc
+        self.query = {"name": self.config['raw_collection'],
+                      "starttimestamp": str(datetime.now()),
+                      "runmode": "calibration",
+                      "reader": {
+                          "compressed": False,
+                          "starttimestamp": str(datetime.now()),
+                          "data_taking_ended": False,
+                          "options": {},
+                          "storage_buffer": {
+                              "dbaddr": self.config['raw_address'],
+                              "dbname": self.config['raw_database'],
+                              "dbcollection": self.config['raw_collection'],
+                              },
+                          },
+                      "trigger": {
+                          "mode": "calibration",
+                          "status": "waiting_to_be_processed",
+                          },
+                      "processor": {"mode": "something"},
+                      "comments": [],
+                      }
+
+        self.log.info("Injecting run control document")
+        self.mongo['run']['collection'].insert(self.query)
+
+        self.bob = pymongo.bulk.BulkOperationBuilder(self.mongo['raw']['collection'],
+                                                     ordered=False)
+        self.bobi = 0
+
+    def shutdown(self):
+        """Notify run database that datataking stopped
+        """
+        self.handle_occurrences()  # write remaining data
+
+        # Update runs DB
+        self.query['reader']['stoptimestamp'] = str(datetime.now())
+        self.query['reader']['data_taking_ended'] = True
+        self.mongo['run']['collection'].save(self.query)
+
+    def write_event(self, event):
+        self.log.debug('Writing event')
+
+        # We have to divide by the sample duration because the DAQ expects units
+        # of 10 ns.  However, note that the division is done with a // operator.
+        # This is an integer divide, thus gives an integer back.  If you do not
+        # do this, you will store the time as a float, which will lead to
+        # problems with the time precision (and weird errors in the DSP).  See
+        # issue #35 for more info.
+        time = event.start_time // event.sample_duration
+        assert self.mongo_time_unit == event.sample_duration
+        assert isinstance(time, int)
+
+        for oc in event.occurrences:
+            occurence_doc = {}
+
+            # occurence_doc['_id'] = uuid.uuid4()
+            occurence_doc['module'] = oc.channel  # TODO: fix wax
+            occurence_doc['channel'] = oc.channel
+
+            occurence_doc[START_KEY] = time + oc.left
+            occurence_doc[STOP_KEY] = time + oc.right
+
+
+            data = np.array(oc.raw_data,
+                            dtype=np.int16).tostring()
+            if self.query['reader']['compressed']:
+                data = snappy.compress(data)
+
+            # Convert raw samples into BSON format
+            occurence_doc['data'] = Binary(data, 0)
+            self.bob.insert(occurence_doc)
+            self.bobi += 1
+
+        self.handle_occurrences()
+
+    def handle_occurrences(self):
+        if self.bobi > 10000:
+            self.bob.execute(write_concern={'w':0})
+            self.bob = pymongo.bulk.BulkOperationBuilder(self.mongo['raw']['collection'],
+                                                         ordered=False)
+            self.bobi = 0
+
+class MongoDBWriteTriggered(plugin.OutputPlugin,
+                            IOMongoDB):
+    def startup(self):
+        IOMongoDB.startup(self) # Setup with baseclass
+        self.setup_access('output')
+        self.c = self.mongo['output']['collection']
+
+    def write_event(self, event):
+        # Write the data to database
+        self.c.write(event.to_dict(json_compatible=True))
 
 
 class MongoDBFakeDAQOutput(plugin.OutputPlugin):
@@ -325,73 +566,3 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
 
         self.occurences = []
 
-
-class MongoDBInputTriggered(plugin.InputPlugin):
-
-    """Read triggered data produced by kodiaq with MongoDB output
-
-    This must be run after the data aquisition is finished.
-    """
-
-    def startup(self):
-        self.log.debug("Connecting to %s" % self.config['address'])
-        try:
-            self.client = pymongo.MongoClient(self.config['address'])
-            self.database = self.client[self.config['database']]
-            self.collection = self.database[self.config['collection']]
-        except pymongo.errors.ConnectionFailure as e:
-            self.log.fatal("Cannot connect to database")
-            self.log.exception(e)
-            raise
-
-        # All of the channel pulses (/occurences) will have the same
-        # time if they came from the same trigger.
-        self.trigger_times = self.collection.distinct('time')
-        self.number_of_events = len(self.trigger_times)
-
-        self.mongo_time_unit = int(self.config.get('mongo_time_unit',
-                                                   10 * units.ns))
-
-        if self.number_of_events == 0:
-            raise RuntimeError(
-                "No events found... did you run the event builder?")
-
-    def total_number_events(self):
-        return self.number_of_events
-
-    def get_events(self):
-        for i, trigger_time in enumerate(self.trigger_times):
-            cursor = self.collection.find({'time': trigger_time})
-            self.log.debug("Found %d occurrences",
-                           cursor.count())
-
-            latest_time = []
-            occurrence_objects = []
-
-            for j, occurrence_doc in enumerate(cursor):
-                self.log.debug("Fetching document %s" %
-                               repr(occurrence_doc['_id']))
-
-                # Fetch raw data from document
-                data = occurrence_doc["data"]
-
-                # Samples are stored as 16 bit numbers (i.e. 2 bytes).  Also
-                # note that // is an integer divide.
-                latest_time.append(trigger_time + len(data) // 2)
-
-                occurrence_objects.append(Occurrence(left=0,
-                                                     raw_data=np.fromstring(data,
-                                                                            dtype="<i2"),
-                                                     channel=occurrence_doc['channel']))
-
-            earliest_time = trigger_time * self.mongo_time_unit
-            latest_time = max(latest_time) * self.mongo_time_unit
-
-            self.log.debug("Building event in range [%d,%d]",
-                           earliest_time,
-                           latest_time)
-            yield Event(n_channels=self.config['n_channels'],
-                        start_time=earliest_time,
-                        sample_duration=self.config['sample_duration'],
-                        stop_time=latest_time,
-                        occurrences=occurrence_objects)
