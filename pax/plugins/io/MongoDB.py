@@ -18,8 +18,8 @@ from pax.datastructure import Event, Occurrence
 from pax import plugin, units
 
 
-START_KEY = 'start_time'
-STOP_KEY = 'stop_time'
+START_KEY = 'time'
+STOP_KEY = 'time'
 
 class IOMongoDB():
     def startup(self):
@@ -28,23 +28,32 @@ class IOMongoDB():
         self.connections = {}  # MongoClient objects
         self.mongo = {}        #
 
-        #self.setup_access('run')
+        self.run_doc_id = None
+        self.setup_access('run', **self.config['runs_database_location'])
 
         self.sort_key = [(START_KEY, 1),
                          (START_KEY, 1)]
         self.mongo_time_unit = int(self.config.get('sample_duration'))
 
-    def setup_access(self, name):
+    def setup_access(self, name,
+                     address,
+                     database,
+                     collection):
         wc = pymongo.write_concern.WriteConcern(w=0)
 
         m = {}  # Holds connection, database info, and collection info
+
         try:
             # Used for coordinating which runs to analyze
-            self.log.debug("Connecting to %s" % self.config['%s_address' % name])
-            m['client'] = self._get_connection(self.config['%s_address' % name])
-            m['database'] = m['client'].get_database(self.config['%s_database' % name],
+            self.log.debug("Connecting to: %s" % address)
+            m['client'] = self._get_connection(address)
+
+            self.log.debug('Fetching databases: %s', database)
+            m['database'] = m['client'].get_database(database,
                                                      write_concern=wc)
-            m['collection'] = m['database'].get_collection(self.config['%s_collection' % name],
+
+            self.log.debug('Getting collection: %s', collection)
+            m['collection'] = m['database'].get_collection(collection,
                                                            write_concern=wc)
         except pymongo.errors.ConnectionFailure as e:
             self.log.fatal("Cannot connect to MongoDB!")
@@ -56,10 +65,15 @@ class IOMongoDB():
 
     def _get_connection(self, hostname):
         if hostname not in self.connections:
+            self.connections[hostname] = pymongo.MongoClient(hostname,
+                                                             serverSelectionTimeoutMS=500)
+                
             try:
-                self.connections[hostname] = pymongo.MongoClient(hostname)
+                self.connections[hostname].admin.command('ping')
+                self.log.debug("Connection succesful")
             except pymongo.errors.ConnectionFailure:
                 self.log.fatal("Cannot connect to MongoDB at %s" % hostname)
+                raise
 
         return self.connections[hostname]
 
@@ -78,7 +92,6 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
                              IOMongoDB):
     def startup(self):
         IOMongoDB.startup(self) # Setup with baseclass
-        self.setup_access('input')
 
         # Load constants from config
         self.window = self.config['window']
@@ -92,27 +105,10 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
         self.log.info("\tLeft extension: %0.2f us", self.left / units.us)
         self.log.info("\tRight extension: %0.2f us", self.right / units.us)
 
-        c = self.mongo['input']['collection']
+        self.query = {"trigger.status" : "waiting_to_be_processed"}
 
-        c.ensure_index(self.sort_key)
+        self.wait_time = 1
 
-        times = list(c.find(projection=[START_KEY, STOP_KEY],
-                                 sort=self.sort_key,
-                                 cursor_type=pymongo.cursor.EXHAUST))
-
-
-        x = self.extract_times_from_occurrences(times,
-                                                self.mongo_time_unit)
-        self.log.debug(x[0:10])  # x in ns
-
-        self.ranges = self.sliding_window(x,
-                                         window=self.window,
-                                         multiplicity=self.multiplicity,
-                                         left=self.left,
-                                         right=self.right)
-
-        self.log.info("Found %d events", len(self.ranges))
-        self.number_of_events = len(self.ranges)
 
     @staticmethod
     def extract_times_from_occurrences(times, sample_duration):
@@ -154,26 +150,103 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
 
         return ranges
 
-    def get_events(self): # {"$lt": d}
-        for i, this_range in enumerate(self.ranges):
-            # Start pax's timer so we can measure how fast this plugin goes
-            ts = time.time()
-            t0, t1 = [int(x) for x in this_range]
+    def get_events(self):
+       self.last_time = 0
+       while 1:
+            if self.run_doc_id is None:
+                self.log.fatal("Searching for run")
+                self.last_time = 0
 
-            self.total_time_taken += (time.time() - ts) * 1000
+                doc = self.mongo['run']['collection'].find_one_and_update(self.query,
+                                                                          {'$set': {'trigger.status' : 'in_progress'}})
 
-            yield Event(n_channels=self.config['n_channels'],
-                        start_time=t0,
-                        sample_duration=self.mongo_time_unit,
-                        stop_time=t1,
-                        partial=True
-                        #occurrences=occurrence_objects
-            )
+                if doc is None:
+                    self.log.fatal("Nothing found, waiting %d seconds...",
+                                   self.wait_time)
+                    time.sleep(self.wait_time)
+                    continue
+
+                self.run_doc_id = doc['_id']
+
+                buff = doc['reader']['storage_buffer']
+
+                # Delete after Dan's change in kodiaq issue #48
+                buff2 = {}
+                buff2['address'] = buff['dbaddr']
+                buff2['database'] = buff['dbname']
+                buff2['collection'] = buff['dbcollection']
+                buff = buff2
+
+                self.setup_access('input',
+                                  **buff)
+                self.mongo['input']['collection'].ensure_index(self.sort_key)
+
+            self.ranges = []
+
+            c = self.mongo['input']['collection']
+
+            delay = 0
+
+            times = list(c.find({'time' : {'$gt' : (self.last_time - delay)}},
+                                projection=[START_KEY, STOP_KEY],
+                                sort=self.sort_key,
+                                #cursor_type=pymongo.cursor.EXHAUST
+                            ))
+
+            if len(times) == 0:
+                self.log.fatal("Nothing found, continue")
+                continue
+
+            x = self.extract_times_from_occurrences(times,
+                                                    self.mongo_time_unit)
+
+            self.log.info("Processing range [%d, %d]",
+                          x[0], x[-1])
+
+            self.last_time = x[-1]  # TODO race condition? subtract second?
+
+            self.ranges = self.sliding_window(x,
+                                             window=self.window,
+                                             multiplicity=self.multiplicity,
+                                             left=self.left,
+                                             right=self.right)
+
+            self.log.info("Found %d events", len(self.ranges))
+            self.number_of_events = len(self.ranges)
+
+            for i, this_range in enumerate(self.ranges):
+                # Start pax's timer so we can measure how fast this plugin goes
+                ts = time.time()
+                t0, t1 = [int(x) for x in this_range]
+
+                self.total_time_taken += (time.time() - ts) * 1000
+
+                yield Event(n_channels=self.config['n_channels'],
+                            start_time=t0,
+                            sample_duration=self.mongo_time_unit,
+                            stop_time=t1,
+                            partial=True)
+
+            # Check if run ended.  If so, end processing.  Otherwise, retry.
+            # Update run document
+            doc = self.mongo['run']['collection'].find_one({'_id' : self.run_doc_id})
+
+            # Has data aquisition ended
+            data_taking_ended = doc['reader']['data_taking_ended']
+
+            if data_taking_ended:
+                self.log.fatal("Data taking ended.")
+                status = self.mongo['run']['collection'].update_one({'_id' : self.run_doc_id},
+                                      {'$set' : {'trigger.status' : 'processed',
+                                                 'trigger.ended' : True}})
+                self.log.debug("Updated rundoc")
+                self.run_doc_id = None
 
 class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, IOMongoDB):
     def startup(self):
         IOMongoDB.startup(self) # Setup with baseclass
-        self.setup_access('input')
+        self.setup_access('run')
+        #self.setup_access('input')
 
     def process_event(self, event):
         t0, t1 = event.start_time, event.stop_time
@@ -209,119 +282,6 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, IOMongoDB):
         return event
 
 
-class MongoDBWriteUntriggered(plugin.OutputPlugin,
-                              IOMongoDB):
-    """Inject PMT pulses into DAQ to test trigger.
-
-    This plugin aims to emulate the DAQReader by creating run control documents
-    and feeding raw data into the DAQ's MongoDB format.  Consult here for more
-    on formats:
-
-    https://docs.google.com/drawings/d/1dytKBmMARsZtuyUmLbzm9IbXM1hre
-    -knkEIU4X3Ot8U/edit
-
-    Note: write run document after output collection created.
-    """
-
-    def startup(self):
-        """Setup"""
-        IOMongoDB.startup(self) # Setup with baseclass
-
-        self.setup_access('run')
-        self.setup_access('raw')
-
-        self.mongo['raw']['collection'].ensure_index(self.sort_key)
-
-        self.mongo['raw']['collection'].ensure_index([('_id', pymongo.HASHED)])
-
-        # self.log.info("Sharding %s" % str(c))
-        # self.raw_client.admin.command('shardCollection',
-        #                              '%s.%s' % (self.config['raw_database'], self.config['raw_collection']),
-        #                              key = {'_id': pymongo.HASHED})
-
-        # Send run doc
-        self.query = {"name": self.config['raw_collection'],
-                      "starttimestamp": str(datetime.now()),
-                      "runmode": "calibration",
-                      "reader": {
-                          "compressed": False,
-                          "starttimestamp": str(datetime.now()),
-                          "data_taking_ended": False,
-                          "options": {},
-                          "storage_buffer": {
-                              "dbaddr": self.config['raw_address'],
-                              "dbname": self.config['raw_database'],
-                              "dbcollection": self.config['raw_collection'],
-                              },
-                          },
-                      "trigger": {
-                          "mode": "calibration",
-                          "status": "waiting_to_be_processed",
-                          },
-                      "processor": {"mode": "something"},
-                      "comments": [],
-                      }
-
-        self.log.info("Injecting run control document")
-        self.mongo['run']['collection'].insert(self.query)
-
-        self.bob = pymongo.bulk.BulkOperationBuilder(self.mongo['raw']['collection'],
-                                                     ordered=False)
-        self.bobi = 0
-
-    def shutdown(self):
-        """Notify run database that datataking stopped
-        """
-        self.handle_occurrences()  # write remaining data
-
-        # Update runs DB
-        self.query['reader']['stoptimestamp'] = str(datetime.now())
-        self.query['reader']['data_taking_ended'] = True
-        self.mongo['run']['collection'].save(self.query)
-
-    def write_event(self, event):
-        self.log.debug('Writing event')
-
-        # We have to divide by the sample duration because the DAQ expects units
-        # of 10 ns.  However, note that the division is done with a // operator.
-        # This is an integer divide, thus gives an integer back.  If you do not
-        # do this, you will store the time as a float, which will lead to
-        # problems with the time precision (and weird errors in the DSP).  See
-        # issue #35 for more info.
-        time = event.start_time // event.sample_duration
-        assert self.mongo_time_unit == event.sample_duration
-        assert isinstance(time, int)
-
-        for oc in event.occurrences:
-            occurence_doc = {}
-
-            # occurence_doc['_id'] = uuid.uuid4()
-            occurence_doc['module'] = oc.channel  # TODO: fix wax
-            occurence_doc['channel'] = oc.channel
-
-            occurence_doc[START_KEY] = time + oc.left
-            occurence_doc[STOP_KEY] = time + oc.right
-
-
-            data = np.array(oc.raw_data,
-                            dtype=np.int16).tostring()
-            if self.query['reader']['compressed']:
-                data = snappy.compress(data)
-
-            # Convert raw samples into BSON format
-            occurence_doc['data'] = Binary(data, 0)
-            self.bob.insert(occurence_doc)
-            self.bobi += 1
-
-        self.handle_occurrences()
-
-    def handle_occurrences(self):
-        if self.bobi > 10000:
-            self.bob.execute(write_concern={'w':0})
-            self.bob = pymongo.bulk.BulkOperationBuilder(self.mongo['raw']['collection'],
-                                                         ordered=False)
-            self.bobi = 0
-
 class MongoDBWriteTriggered(plugin.OutputPlugin,
                             IOMongoDB):
     def startup(self):
@@ -332,237 +292,4 @@ class MongoDBWriteTriggered(plugin.OutputPlugin,
     def write_event(self, event):
         # Write the data to database
         self.c.write(event.to_dict(json_compatible=True))
-
-
-class MongoDBFakeDAQOutput(plugin.OutputPlugin):
-
-    """Inject PMT pulses into DAQ to test trigger.
-
-    This plugin aims to emulate the DAQReader by creating run control documents
-    and feeding raw data into the DAQ's MongoDB format.  Consult here for more
-    on formats:
-
-    https://docs.google.com/drawings/d/1dytKBmMARsZtuyUmLbzm9IbXM1hre
-    -knkEIU4X3Ot8U/edit
-
-    Note: write run document after output collection created.
-    """
-
-    def startup(self):
-        """Setup"""
-
-        # Collect all events in a buffer, then inject them at the end.
-        self.collect_then_dump = self.config['collect_then_dump']
-        self.repeater = int(self.config['repeater'])  # Hz repeater
-        self.runtime = int(self.config['runtime'])  # How long run repeater
-
-        # Schema for input collection
-        self.start_time_key = START_TIME_KEY
-        self.stop_time_key = 'time_max'
-        self.bulk_key = 'bulk'
-
-        self.connections = {}
-
-        try:
-            self.client = pymongo.MongoClient(self.config['run_address'])
-
-            # Used for coordinating which runs to analyze
-            self.log.debug("Connecting to %s" % self.config['run_address'])
-            self.run_client = self.get_connection(self.config['run_address'])
-
-            # Used for storing the binary output from digitizers
-            self.log.debug("Connecting to %s" % self.config['raw_address'])
-            self.raw_client = self.get_connection(self.config['raw_address'])
-
-        except pymongo.errors.ConnectionFailure as e:
-            self.log.fatal("Cannot connect to database")
-            self.log.exception(e)
-            raise
-
-        self.run_database = self.run_client[self.config['run_database']]
-        self.raw_database = self.raw_client[self.config['raw_database']]
-
-        self.run_collection = self.run_database[self.config['run_collection']]
-        self.raw_collection = self.raw_database[self.config['raw_collection']]
-
-        self.raw_collection.ensure_index([(self.start_time_key, -1)])
-        self.raw_collection.ensure_index([(self.start_time_key, 1)])
-        self.raw_collection.ensure_index([(self.stop_time_key, -1)])
-        self.raw_collection.ensure_index([(self.stop_time_key, 1)])
-
-        self.raw_collection.ensure_index([('_id', pymongo.HASHED)])
-
-        # self.log.info("Sharding %s" % str(c))
-        # self.raw_client.admin.command('shardCollection',
-        #                              '%s.%s' % (self.config['raw_database'], self.config['raw_collection']),
-        #                              key = {'_id': pymongo.HASHED})
-
-        # Send run doc
-        self.query = {"name": self.config['name'],
-                      "starttimestamp": str(datetime.now()),
-                      "runmode": "calibration",
-                      "reader": {
-                          "compressed": True,
-                          "starttimestamp": 0,
-                          "data_taking_ended": False,
-                          "options": {},
-                          "storage_buffer": {
-                              "dbaddr": self.config['raw_address'],
-                              "dbname": self.config['raw_database'],
-                              "dbcollection": self.config['raw_collection'],
-                          },
-        },
-            "trigger": {
-                          "mode": "calibration",
-                          "status": "waiting_to_be_processed",
-        },
-            "processor": {"mode": "something"},
-            "comments": [],
-        }
-
-        self.log.info("Injecting run control document")
-        self.run_collection.insert(self.query)
-
-        # Used for computing offsets so reader starts from zero time
-        self.starttime = None
-
-        self.occurences = []
-
-    def get_connection(self, hostname):
-        if hostname not in self.connections:
-            try:
-                self.connections[hostname] = pymongo.Connection(hostname)
-
-            except pymongo.errors.ConnectionFailure:
-                self.log.fatal("Cannot connect to mongo at %s" % hostname)
-
-        return self.connections[hostname]
-
-    def shutdown(self):
-        """Notify run database that datataking stopped
-        """
-        self.handle_occurences()  # write remaining data
-
-        # Update runs DB
-        self.query['reader']['stoptimestamp'] = str(datetime.now())
-        self.query['reader']['data_taking_ended'] = True
-        self.run_collection.save(self.query)
-
-    @staticmethod
-    def chunks(l, n):
-        """ Yield successive n-sized chunks from l.
-        """
-        for i in range(0, len(l), n):
-            yield l[i:i + n]
-
-    def write_event(self, event):
-        self.log.debug('Writing event')
-
-        # We have to divide by the sample duration because the DAQ expects units
-        # of 10 ns.  However, note that the division is done with a // operator.
-        # This is an integer divide, thus gives an integer back.  If you do not
-        # do this, you will store the time as a float, which will lead to
-        # problems with the time precision (and weird errors in the DSP).  See
-        # issue #35 for more info.
-        time = event.start_time // event.sample_duration
-
-        assert isinstance(time, int)
-
-        if self.starttime is None:
-            self.starttime = time
-        elif time < self.starttime:
-            error = "Found events before start of run"
-            self.log.fatal(error)
-            raise RuntimeError(error)
-
-        for oc in event.occurrences:
-            pmt_num = oc.channel
-            sample_position = oc.left
-            samples_occurrence = oc.raw_data
-
-            assert isinstance(sample_position, int)
-
-            occurence_doc = {}
-
-            # occurence_doc['_id'] = uuid.uuid4()
-            occurence_doc['module'] = pmt_num  # TODO: fix wax
-            occurence_doc['channel'] = pmt_num
-
-            occurence_doc['time'] = time + sample_position - self.starttime
-
-            data = np.array(samples_occurrence, dtype=np.int16).tostring()
-            if self.query['reader']['compressed']:
-                data = snappy.compress(data)
-
-            # Convert raw samples into BSON format
-            occurence_doc['data'] = Binary(data, 0)
-
-            self.occurences.append(occurence_doc)
-
-        if not self.collect_then_dump:
-            self.handle_occurences()
-
-    def handle_occurences(self):
-        docs = self.occurences  # []
-        # for occurences in list(self.chunks(self.occurences,
-        # 1000)):
-
-        # docs.append({'test' : 0,
-        #                     'docs' : occurences})
-
-        i = 0
-        t0 = time.time()  # start time
-        t1 = time.time()  # last time
-
-        if self.repeater > 0:
-            while (t1 - t0) < self.runtime:
-                this_time = time.time()
-                n = int((this_time - t1) * self.repeater)
-                if n == 0:
-                    continue
-
-                t1 = this_time
-                self.log.fatal('How many events to inject %d', n)
-
-                modified_docs = []
-                min_time = None
-                max_time = None
-
-                for _ in range(n):
-                    i += 1
-                    for doc in self.occurences:
-                        # doc['_id'] = uuid.uuid4()
-                        doc['time'] += i * (t1 - t0) / self.repeater
-
-                        if min_time is None or doc['time'] < min_time:
-                            min_time = doc['time']
-                        if max_time is None or doc['time'] > max_time:
-                            max_time = doc['time']
-
-                        modified_docs.append(doc.copy())
-
-                        if len(modified_docs) > 1000:
-                            self.raw_collection.insert({self.start_time_key: min_time,
-                                                        self.stop_time_key: max_time,
-                                                        self.bulk_key: modified_docs},
-                                                       w=0)
-                            modified_docs = []
-                            min_time = None
-                            max_time = None
-
-        elif len(docs) > 0:
-            times = [doc['time'] for doc in docs]
-            min_time = min(times)
-            max_time = max(times)
-
-            t0 = time.time()
-
-            self.raw_collection.insert({self.start_time_key: min_time,
-                                        self.stop_time_key: max_time,
-                                        self.bulk_key: docs},
-                                       w=0)
-
-            t1 = time.time()
-
-        self.occurences = []
 
