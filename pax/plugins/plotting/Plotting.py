@@ -61,7 +61,10 @@ class PlotBase(plugin.OutputPlugin):
         """Finalize plotting, send to screen/file, then closes plot properly (avoids runtimewarning / memory leak).
         """
         if self.output_dir:
-            plt.savefig(self.output_dir + '/%06d.png' % event_number)
+            if self.plot_format == 'pdf':
+                plt.savefig(self.output_dir + '/%06d.pdf' % event_number, format='pdf')
+            else:
+                plt.savefig(self.output_dir + '/%06d.png' % event_number)
         else:
             plt.show(block=False)
             self.log.info("Hit enter to continue...")
