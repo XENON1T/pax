@@ -24,7 +24,6 @@ INT_NAN = -99999  # Do not change without talking to me. -Tunnell 12/3/2015
 
 
 class ReconstructedPosition(StrictModel):
-
     """Reconstructed position
 
     Each reconstruction algorithm creates one of these.
@@ -56,9 +55,10 @@ class ReconstructedPosition(StrictModel):
 
 
 class ChannelPeak(Model):
-
     """Peaks found in individual channels
-    These are be clustered into ordinary peaks later
+
+    These are be clustered into ordinary peaks later. This is commonly
+    called a 'hit' in particle physics detectors.
     """
     channel = 0              #: Channel in which this peak was found
     #: Index in the event at which this peak has its maximum.
@@ -86,8 +86,10 @@ class ChannelPeak(Model):
 
 
 class Peak(StrictModel):
+    """Peak
 
-    """Peak object"""
+    A peak will be, e.g., S1 or S2.
+    """
 
     #: Peaks in individual channels that make up this peak
     channel_peaks = (ChannelPeak,)
@@ -163,7 +165,6 @@ class Peak(StrictModel):
 
 
 class SumWaveform(StrictModel):
-
     """Class used to store sum (filtered or not) waveform information.
     """
 
@@ -188,7 +189,6 @@ class SumWaveform(StrictModel):
 
 
 class Occurrence(StrictModel):
-
     """A DAQ occurrence
 
     A DAQ occurrence can also be thought of as a pulse in a PMT.
@@ -254,8 +254,9 @@ class Occurrence(StrictModel):
 
 
 class Event(StrictModel):
-
     """Event class
+
+    Stores high level information about the triggered event.
     """
     dataset_name = 'Unknown'  # The name of the dataset this event belongs to
     # A nonnegative integer that uniquely identifies the event within the

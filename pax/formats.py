@@ -1,3 +1,9 @@
+"""Formats that pax can read and write
+
+Here are the definitions of how to serialize our data structure to various formats.  Both
+read and write routines are required.
+"""
+
 import numpy as np
 import os
 
