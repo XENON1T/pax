@@ -894,10 +894,12 @@ class ComputePeakProperties(plugin.TransformPlugin):
                 # Hack to ensure S2s won't get pruned:
                 peak.does_channel_contribute = np.ones(self.config['n_channels'], dtype=np.bool)
 
+            peak.n_contributing_channels = len(peak.contributing_channels)
+
         # Prune excess S1s
         event.peaks = sort_and_prune_by(
             event.peaks,
-            key=lambda x: (x.number_of_contributing_channels, x.area),
+            key=lambda x: (x.n_contributing_channels, x.area),
             keep_number=(len(event.peaks) - len(event.S1s()) + 32 if self.config['prune_peaks'] else float('inf')),
             reverse=True
         )

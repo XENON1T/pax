@@ -34,10 +34,9 @@ class ClusterPlugin(plugin.TransformPlugin):
             hits_per_detector[self.detector_by_channel[hit.channel]].append(hit)
 
         # Handle each detector separately
-        for detector in detectors:
+        for detector, hits_to_cluster in hits_per_detector.items():
 
             # Sort hits by left index
-            hits_to_cluster = hits_per_detector[detector]
             hits_to_cluster.sort(key=lambda x: x.left)
 
             # Grab pulses in this detector
@@ -59,7 +58,7 @@ class ClusterPlugin(plugin.TransformPlugin):
                 penalty_per_ch = event.noise_pulses_in * self.config['penalty_per_noise_pulse']
 
                 # Cluster the single-pes in groups /clusters which will become peaks
-                # CHILD CLASS IS CALLED HERE
+                # CHILD CLASS CONTAINING CLUSTERING ALGORITHM IS CALLED HERE
                 indices_of_hits_per_peak = self.cluster_hits(hits_to_cluster)
                 self.log.debug("Made %s clusters" % len(indices_of_hits_per_peak))
 
@@ -86,8 +85,9 @@ class ClusterPlugin(plugin.TransformPlugin):
                         peak.left = min(peak.left, hit.left)
                         peak.right = max(peak.right, hit.right)
                         peak.does_channel_contribute[hit.channel] = True
+                    peak.n_contributing_channels = len(peak.contributing_channels)
 
-                    if peak.number_of_contributing_channels == 0:
+                    if peak.n_contributing_channels == 0:
                         raise RuntimeError(
                             "Every peak should have at least one contributing channel... what's going on?")
 
@@ -100,12 +100,13 @@ class ClusterPlugin(plugin.TransformPlugin):
                         channel = oc.channel
                         if not peak.does_channel_contribute[channel]:
                             peak.does_channel_have_noise[channel] = True
+                    peak.n_noise_channels = len(peak.noise_channels)
 
                     # Classify noise and lone hits
                     # TODO: Noise classification should be configurable!
-                    is_noise = peak.number_of_noise_channels / peak.number_of_contributing_channels > \
+                    is_noise = peak.n_noise_channels / peak.n_contributing_channels > \
                         self.config['max_noise_channels_over_contributing_channels']
-                    is_lone_hit = peak.number_of_contributing_channels == 1
+                    is_lone_hit = peak.n_contributing_channels == 1
                     if is_noise:
                         peak.type = 'noise'
                         # TODO: Should we also reject all hits?
@@ -282,6 +283,46 @@ class HitDifference(ClusterPlugin):
 
 
 class GapSize(ClusterPlugin):
+    """Clusters hits based on gaps = times not covered by any hits.
+    Any gap longer than max_gap_size starts a new cluster.
+    Difference with HitDifference: this takes interval nature of hits into account
+    """
+    def startup(self):
+        super().startup()
+        # Convert gap threshold to samples (is in time (ns) in config)
+        self.large_gap_threshold = self.config['large_gap_threshold'] / self.dt
+        self.small_gap_threshold = self.config['small_gap_threshold'] / self.dt
+        self.transition_point = self.config['transition_point']
+
+    def cluster_hits(self, hits):
+        # If a hit has a left > this, it will form a new cluster
+        boundary = -999999999
+        clusters = []
+        for i, hit in enumerate(hits):
+
+            if hit.left > boundary:
+                # Hit starts after current boundary: new cluster
+                clusters.append([])
+                # (Re)set area and thresholds
+                area = 0
+                gap_size_threshold = self.large_gap_threshold
+                boundary = hit.right + gap_size_threshold
+
+            # Add this hit to the cluster
+            clusters[-1].append(i)
+            area += hit.area
+
+            # Can we start applying the tighter threshold?
+            if area > self.transition_point:
+                # Yes, there's no chance this is a single electron: use a tighter clustering boundary
+                gap_size_threshold = self.small_gap_threshold
+
+            # Extend the boundary at which a new clusters starts, if needed
+            boundary = max(boundary, hit.right + gap_size_threshold)
+        return clusters
+
+
+class GapSize2(ClusterPlugin):
     """Clusters hits based on gaps = times not covered by any hits.
     Any gap longer than max_gap_size starts a new cluster.
     Difference with HitDifference: this takes interval nature of hits into account

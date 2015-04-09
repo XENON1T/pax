@@ -56,7 +56,7 @@ class ReconstructedPosition(StrictModel):
 
 class ChannelPeak(Model):
     """Peaks found in individual channels
-    
+
     These are be clustered into ordinary peaks later. This is commonly
     called a 'hit' in particle physics detectors.
     """
@@ -72,11 +72,13 @@ class ChannelPeak(Model):
         return self.right - self.left + 1
 
     area = 0.0                  #: Area of the peak in photoelectrons
+
     #: Height of highest point in peak (in pe/bin) in unfiltered waveform
     height = 0.0
+
     #: Noise sigma in pe/bin of pulse in which peak was found.
+    #: Note: in Pulse the same number is stored in ADC-counts
     noise_sigma = 0.0
-    # note: in Pulse the same number is stored in ADC-counts
 
     #: Index of pulse (in event.occurrences) in which peak was found
     found_in_pulse = 0
@@ -87,31 +89,33 @@ class ChannelPeak(Model):
 
 class Peak(StrictModel):
     """Peak
-    
+
     A peak will be, e.g., S1 or S2.
     """
 
-    #: Peaks in individual channels that make up this peak
-    channel_peaks = (ChannelPeak,)
+    ##
+    # Basics
+    ##
 
     type = 'unknown'        #: Type of peak (e.g., 's1', 's2', ...)
     detector = 'none'       #: e.g. tpc or veto
 
-    left = 0                 #: Index of left bound (inclusive) in event.
-    right = 0                #: Index of right bound (INCLUSIVE!!) in event.
-    # For XDP matching rightmost sample is not in integral, so you could say
-    # it is exclusive then.
+    #: Area of the pulse in photoelectrons. Includes only contributing pmts in the right detector.
+    #: For XDP matching rightmost sample is not included in area integral.
+    area = 0.0
+
+    ##
+    #  Low-level data
+    ##
+
+    #: Peaks in individual channels that make up this peak
+    channel_peaks = (ChannelPeak,)
 
     #: Array of areas in each PMT.
     area_per_channel = np.array([], dtype='float64')
 
-    #: Area of the pulse in photoelectrons.
-    #:
-    #: Includes only contributing pmts (see later) in the right detector
-    area = 0.0
-
-    #: Fraction of area in the top array
-    area_fraction_top = 0.0
+    #: Does a channel have no hits, but digitizer shows data?
+    does_channel_have_noise = np.array([], dtype=np.bool)
 
     #: Does a PMT see 'something significant'? (thresholds configurable)
     does_channel_contribute = np.array([], dtype=np.bool)
@@ -121,24 +125,27 @@ class Peak(StrictModel):
         return np.where(self.does_channel_contribute)[0]
 
     @property
-    def number_of_contributing_channels(self):
-        """ Number of PMTS which see something significant (depends on settings) """
-        return len(self.contributing_channels)
-
-    does_channel_have_noise = np.array([], dtype=np.bool)
-
-    @property
     def noise_channels(self):
         return np.where(self.does_channel_have_noise)[0]
 
-    @property
-    def number_of_noise_channels(self):
-        """ Number of channels which have noise during this peak """
-        return len(self.noise_channels)
+    ##
+    # Time distribution information
+    ##
 
-    #: Returns a list of reconstructed positions
-    #:
-    #: Returns an :class:`pax.datastructure.ReconstructedPosition` class.
+    left = 0                 #: Index of left bound (inclusive) in event.
+    right = 0                #: Index of right bound (INCLUSIVE) in event.
+
+    #: Weighted (by area) mean of hit times (since event start)
+    hit_time_mean = 0.0
+
+    #: Weighted (by area) std of hit times
+    hit_time_std = 0.0
+
+    ##
+    # Spatial pattern information
+    ##
+
+    #: List of reconstructed positions (instances of :class:`pax.datastructure.ReconstructedPosition`)
     reconstructed_positions = (ReconstructedPosition,)
 
     #: Weighted root mean square deviation of top hitpattern (cm)
@@ -147,20 +154,31 @@ class Peak(StrictModel):
     #: Weighted root mean square deviation of bottom hitpattern (cm)
     bottom_hitpattern_spread = 0.0
 
-    #: Median absolute deviation of photon arrival times (in ns)
-    # Deprecate this?
-    median_absolute_deviation = 0.0
-
-    #: Weighted (by area) mean and rms of hit maxima (in ns; mean is relative to event start)
-    hit_time_mean = 0.0
-    hit_time_std = 0.0
+    #: Fraction of area in the top array
+    area_fraction_top = 0.0
 
     ##
-    # Deprecated sum-waveform stuff
+    # Signal / noise info
     ##
+
+    #: Number of PMTS which see something significant (depends on settings) ~~ "coincidence level"
+    n_contributing_channels = 0
+
+    #: Number of channels that show no hits, but digitizer shows data
+    n_noise_channels = 0
+
+    #: Weighted (by area) mean hit amplitude / noise level in that hit's channel
+    mean_amplitude_to_noise = 0.0
+
+    ##
+    # Deprecated sum-waveform stuff, needed for Xerawdp matching??
+    ##
+
     #: Index in the event's sum waveform at which this peak has its maximum.
     index_of_maximum = 0
+
     #: Height of highest point in peak (in pe/bin)
+    #: In new pax, is height of highest hit
     height = 0.0
 
 
@@ -254,8 +272,8 @@ class Occurrence(StrictModel):
 
 
 class Event(StrictModel):
-    """Event class
-    
+    """Event object
+
     Stores high level information about the triggered event.
     """
     dataset_name = 'Unknown'  # The name of the dataset this event belongs to

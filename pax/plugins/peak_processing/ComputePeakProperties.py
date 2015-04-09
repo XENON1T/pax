@@ -32,10 +32,14 @@ class BasicProperties(plugin.TransformPlugin):
 
             # Compute timing quantities
             times = [s.index_of_maximum * self.dt for s in peak.channel_peaks]
-            peak.median_absolute_deviation = utils.mad(times)
             peak.hit_time_mean, peak.hit_time_std = utils.weighted_mean_variance(times,
                                                                                  [s.area for s in peak.channel_peaks])
-            peak.hit_time_std **= 0.5   # We stored variance in the line above
+            peak.hit_time_std **= 0.5   # Convert variance to std
+
+            # Compute mean amplitude / noise
+            peak.mean_amplitude_to_noise = np.average([hit.height / hit.noise_sigma
+                                                       for hit in peak.channel_peaks],
+                                                      weights=[hit.area for hit in peak.channel_peaks])
 
         return event
 
@@ -79,6 +83,6 @@ class HitpatternSpread(plugin.TransformPlugin):
                                                          weights=hitpattern)
                     weighted_var += wv
 
-                setattr(peak, '%s_hitpattern_spread' % array, np.sqrt(weighted_var/2))
+                setattr(peak, '%s_hitpattern_spread' % array, np.sqrt(weighted_var))
 
         return event
