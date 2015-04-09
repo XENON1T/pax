@@ -19,7 +19,7 @@ from pax import plugin, units
 
 
 START_KEY = 'time'
-STOP_KEY = 'time'
+STOP_KEY = 'endtime'
 
 class IOMongoDB():
     def startup(self):
@@ -28,12 +28,21 @@ class IOMongoDB():
         self.connections = {}  # MongoClient objects
         self.mongo = {}        #
 
-        self.run_doc_id = None
-        self.setup_access('run', **self.config['runs_database_location'])
+        self.run_doc_id = self.config['run_doc']
+        self.setup_access('run',
+                          **self.config['runs_database_location'])
 
+        self.log.info("Fetching run document %s",
+                      self.run_doc_id)
+        self.query = {'_id' : self.run_doc_id}
+        update = {'$set': {'trigger.status' : 'processing'}}
+        self.run_doc = self.mongo['run']['collection'].find_one_and_update(self.query,
+                                                                           update)
         self.sort_key = [(START_KEY, 1),
                          (START_KEY, 1)]
-        self.mongo_time_unit = int(self.config.get('sample_duration'))
+        self.mongo_time_unit = 2 # int(self.config.get('sample_duration'))
+        self.data_taking_ended = False
+
 
     def setup_access(self, name,
                      address,
@@ -43,39 +52,33 @@ class IOMongoDB():
 
         m = {}  # Holds connection, database info, and collection info
 
-        try:
-            # Used for coordinating which runs to analyze
-            self.log.debug("Connecting to: %s" % address)
-            m['client'] = self._get_connection(address)
+        # Used for coordinating which runs to analyze
+        self.log.debug("Connecting to: %s" % address)
+        if address not in self.connections:
+            self.connections[address] = pymongo.MongoClient(address,
+                                                            serverSelectionTimeoutMS=500)
 
-            self.log.debug('Fetching databases: %s', database)
-            m['database'] = m['client'].get_database(database,
-                                                     write_concern=wc)
-
-            self.log.debug('Getting collection: %s', collection)
-            m['collection'] = m['database'].get_collection(collection,
-                                                           write_concern=wc)
-        except pymongo.errors.ConnectionFailure as e:
-            self.log.fatal("Cannot connect to MongoDB!")
-            self.log.exception(e)
-            raise
-
-        self.mongo[name] = m
-
-
-    def _get_connection(self, hostname):
-        if hostname not in self.connections:
-            self.connections[hostname] = pymongo.MongoClient(hostname,
-                                                             serverSelectionTimeoutMS=500)
-                
             try:
-                self.connections[hostname].admin.command('ping')
+                self.connections[address].admin.command('ping')
                 self.log.debug("Connection succesful")
             except pymongo.errors.ConnectionFailure:
-                self.log.fatal("Cannot connect to MongoDB at %s" % hostname)
+                self.log.fatal("Cannot connect to MongoDB at %s" % address)
                 raise
 
-        return self.connections[hostname]
+        m['client'] = self.connections[address]
+
+        self.log.debug('Fetching databases: %s', database)
+        m['database'] = m['client'].get_database(database,
+                                                 write_concern=wc)
+
+        self.log.debug('Getting collection: %s', collection)
+        m['collection'] = m['database'].get_collection(collection,
+                                                       write_concern=wc)
+        self.mongo[name] = m
+
+    def update_run_doc(self):
+        self.run_doc = self.mongo['run']['collection'].find_one(self.query)
+        self.data_taking_ended = self.run_doc['reader']['data_taking_ended']
 
     def number_events(self):
         return self.number_of_events
@@ -105,10 +108,18 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
         self.log.info("\tLeft extension: %0.2f us", self.left / units.us)
         self.log.info("\tRight extension: %0.2f us", self.right / units.us)
 
-        self.query = {"trigger.status" : "waiting_to_be_processed"}
+        buff = self.run_doc['reader']['storage_buffer']
 
-        self.wait_time = 1
+        # Delete after Dan's change in kodiaq issue #48
+        buff2 = {}
+        buff2['address'] = buff['dbaddr']
+        buff2['database'] = buff['dbname']
+        buff2['collection'] = buff['dbcollection']
+        buff = buff2
 
+        self.setup_access('input',
+                          **buff)
+        self.mongo['input']['collection'].ensure_index(self.sort_key)
 
     @staticmethod
     def extract_times_from_occurrences(times, sample_duration):
@@ -151,35 +162,14 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
         return ranges
 
     def get_events(self):
-       self.last_time = 0
-       while 1:
-            if self.run_doc_id is None:
-                self.log.fatal("Searching for run")
-                self.last_time = 0
+        self.last_time = 0
 
-                doc = self.mongo['run']['collection'].find_one_and_update(self.query,
-                                                                          {'$set': {'trigger.status' : 'in_progress'}})
-
-                if doc is None:
-                    self.log.fatal("Nothing found, waiting %d seconds...",
-                                   self.wait_time)
-                    time.sleep(self.wait_time)
-                    continue
-
-                self.run_doc_id = doc['_id']
-
-                buff = doc['reader']['storage_buffer']
-
-                # Delete after Dan's change in kodiaq issue #48
-                buff2 = {}
-                buff2['address'] = buff['dbaddr']
-                buff2['database'] = buff['dbname']
-                buff2['collection'] = buff['dbcollection']
-                buff = buff2
-
-                self.setup_access('input',
-                                  **buff)
-                self.mongo['input']['collection'].ensure_index(self.sort_key)
+        while not self.data_taking_ended:
+            # Grab new run document in case run ended.  This much happen before
+            # processing data to avoid a race condition where the run ends
+            # between processing and checking that the run has ended
+            #
+            self.update_run_doc()
 
             self.ranges = []
 
@@ -187,29 +177,33 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
 
             delay = 0
 
+            # Consider faster implementation here since requires much
+            # type conversion.  e.g. monary.
+            self.log.info("Searching for times after %d" % self.last_time)
             times = list(c.find({'time' : {'$gt' : (self.last_time - delay)}},
                                 projection=[START_KEY, STOP_KEY],
                                 sort=self.sort_key,
-                                #cursor_type=pymongo.cursor.EXHAUST
-                            ))
+                                cursor_type=pymongo.cursor.CursorType.EXHAUST))
 
-            if len(times) == 0:
+            n = len(times)
+            if n == 0:
                 self.log.fatal("Nothing found, continue")
+                time.sleep(1)  # todo: configure
                 continue
 
             x = self.extract_times_from_occurrences(times,
                                                     self.mongo_time_unit)
-
+#221425631010
             self.log.info("Processing range [%d, %d]",
                           x[0], x[-1])
 
-            self.last_time = x[-1]  # TODO race condition? subtract second?
+            self.last_time = x[-1] / self.mongo_time_unit  # TODO race condition? subtract second?
 
             self.ranges = self.sliding_window(x,
-                                             window=self.window,
-                                             multiplicity=self.multiplicity,
-                                             left=self.left,
-                                             right=self.right)
+                                              window=self.window,
+                                              multiplicity=self.multiplicity,
+                                              left=self.left,
+                                              right=self.right)
 
             self.log.info("Found %d events", len(self.ranges))
             self.number_of_events = len(self.ranges)
@@ -227,26 +221,20 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
                             stop_time=t1,
                             partial=True)
 
-            # Check if run ended.  If so, end processing.  Otherwise, retry.
-            # Update run document
-            doc = self.mongo['run']['collection'].find_one({'_id' : self.run_doc_id})
 
-            # Has data aquisition ended
-            data_taking_ended = doc['reader']['data_taking_ended']
-
-            if data_taking_ended:
+            # If run ended, begin cleanup
+            #
+            # This variable is updated at the start of while loop.
+            if self.data_taking_ended:
                 self.log.fatal("Data taking ended.")
                 status = self.mongo['run']['collection'].update_one({'_id' : self.run_doc_id},
                                       {'$set' : {'trigger.status' : 'processed',
                                                  'trigger.ended' : True}})
-                self.log.debug("Updated rundoc")
-                self.run_doc_id = None
+                self.log.debug(status)
 
 class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, IOMongoDB):
     def startup(self):
         IOMongoDB.startup(self) # Setup with baseclass
-        self.setup_access('run')
-        #self.setup_access('input')
 
     def process_event(self, event):
         t0, t1 = event.start_time, event.stop_time
