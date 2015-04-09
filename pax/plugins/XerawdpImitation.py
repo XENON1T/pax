@@ -33,7 +33,7 @@ class BuildWaveforms(plugin.TransformPlugin):
 
         # Extract the number of PMTs from the configuration
         self.n_channels = self.config['n_channels']
-        self.truncate_occurrences_partially_outside = self.config.get('truncate_occurrences_partially_outside', False)
+        self.truncate_pulses_partially_outside = self.config.get('truncate_pulses_partially_outside', False)
 
         # Conversion factor from converting from ADC counts -> pmt-electrons/bin
         # Still has to be divided by PMT gain to get pe/bin
@@ -87,9 +87,9 @@ class BuildWaveforms(plugin.TransformPlugin):
         object.__setattr__(event, 'channel_waveforms',
                            np.zeros((self.config['n_channels'], event.length()), dtype=np.float64))
 
-        last_occurrence_in = {}
+        last_pulse_in = {}
 
-        for occ_i, occ in enumerate(event.occurrences):
+        for occ_i, occ in enumerate(event.pulses):
 
             channel = occ.channel
 
@@ -109,45 +109,45 @@ class BuildWaveforms(plugin.TransformPlugin):
             start_index = occ.left
             length = occ.length
             end_index = occ.right
-            occurrence_wave = occ.raw_data
+            pulse_wave = occ.raw_data
 
             # Grab samples to compute baseline from
 
             # For pulses starting right after previous ones, we can keep the samples from the previous pulse
-            if self.config['reuse_baseline_for_adjacent_occurrences'] \
-                    and channel in last_occurrence_in \
-                    and start_index == last_occurrence_in[channel].right + 1:
-                # self.log.debug('Occurence %s in channel %s is adjacent to previous occurrence: reusing baseline' %
+            if self.config['reuse_baseline_for_adjacent_pulses'] \
+                    and channel in last_pulse_in \
+                    and start_index == last_pulse_in[channel].right + 1:
+                # self.log.debug('Occurence %s in channel %s is adjacent to previous pulse: reusing baseline' %
                 #               (i, channel))
                 pass
 
             # For VERY short pulses, we are in trouble...
             elif length < self.config['baseline_sample_length']:
                 self.log.warning(
-                    ("Occurrence %s in channel %s has too few samples (%s) to compute baseline:" +
+                    ("Pulse %s in channel %s has too few samples (%s) to compute baseline:" +
                      ' reusing previous baseline in channel.') % (occ_i, channel, length)
                 )
                 pass
 
             # For short pulses, we can take baseline samples from its rear.
-            # The last occurrence is truncated in Xenon100, OK to use front-baselining even if short.
-            elif self.config['rear_baselining_for_short_occurrences'] and  \
-                    len(occurrence_wave) < self.config['rear_baselining_threshold_occurrence_length'] and \
+            # The last pulse is truncated in Xenon100, OK to use front-baselining even if short.
+            elif self.config['rear_baselining_for_short_pulses'] and  \
+                    len(pulse_wave) < self.config['rear_baselining_threshold_pulse_length'] and \
                     (not start_index + length > event.length() - 1):
                 if occ_i > 0:
-                    self.log.warning("Unexpected short occurrence %s in channel %s at %s (%s samples long)"
+                    self.log.warning("Unexpected short pulse %s in channel %s at %s (%s samples long)"
                                      % (occ_i, channel, start_index, length))
                 self.log.debug("Short pulse, using rear-baselining")
-                baseline_sample = occurrence_wave[length - self.config['baseline_sample_length']:]
+                baseline_sample = pulse_wave[length - self.config['baseline_sample_length']:]
 
             # Finally, the usual baselining case:
             else:
-                baseline_sample = occurrence_wave[:self.config['baseline_sample_length']]
+                baseline_sample = pulse_wave[:self.config['baseline_sample_length']]
 
             # Compute the baseline from the baselining sample
             if baseline_sample is None:
-                if channel in last_occurrence_in:
-                    baseline = last_occurrence_in[channel].baseline
+                if channel in last_pulse_in:
+                    baseline = last_pulse_in[channel].baseline
                 else:
                     self.log.warning(
                         ('DANGER: attempt to re-use baseline in channel %s where none has previously been computed: ' +
@@ -166,39 +166,39 @@ class BuildWaveforms(plugin.TransformPlugin):
                 else:
                     raise ValueError("Invalid find_baselines_using: should be 'mean' or 'median'")
 
-            # Always throw error if occurrence is completely outside event -- see issue 43
+            # Always throw error if pulse is completely outside event -- see issue 43
             if end_index < 0 or start_index > event.length() - 1:
-                raise exceptions.OccurrenceBeyondEventError(
-                    'Occurrence %s in channel %s (%s-%s) is entirely outside event bounds (%s-%s)!' % (
+                raise exceptions.PulseBeyondEventError(
+                    'Pulse %s in channel %s (%s-%s) is entirely outside event bounds (%s-%s)!' % (
                         occ_i, channel, start_index, end_index, 0, event.length() - 1))
 
-            # Truncate occurrences starting too early -- see issue 43
+            # Truncate pulses starting too early -- see issue 43
             if start_index < 0:
-                message_head = "Occurrence %s in channel %s starts %s samples before event starts (see issue #43)" % (
+                message_head = "Pulse %s in channel %s starts %s samples before event starts (see issue #43)" % (
                     occ_i, channel, -start_index)
-                if not self.truncate_occurrences_partially_outside:
-                    raise exceptions.OccurrenceBeyondEventError(message_head + '!')
+                if not self.truncate_pulses_partially_outside:
+                    raise exceptions.PulseBeyondEventError(message_head + '!')
                 self.log.warning(message_head + ': truncating.')
-                occurrence_wave = occurrence_wave[-start_index:]
+                pulse_wave = pulse_wave[-start_index:]
                 # Update the start index
                 start_index = 0
 
-            # Truncate occurrences taking too long -- see issue 43
-            overhang_length = len(occurrence_wave) - 1 + start_index - event.length()
+            # Truncate pulses taking too long -- see issue 43
+            overhang_length = len(pulse_wave) - 1 + start_index - event.length()
             if overhang_length > 0:
-                message_head = "Occurrence %s in channel %s has overhang of %s samples (see issue #43)" % (
+                message_head = "Pulse %s in channel %s has overhang of %s samples (see issue #43)" % (
                     occ_i, channel, overhang_length)
-                if not self.truncate_occurrences_partially_outside:
-                    raise exceptions.OccurrenceBeyondEventError(message_head + '!')
+                if not self.truncate_pulses_partially_outside:
+                    raise exceptions.PulseBeyondEventError(message_head + '!')
                 self.log.warning(message_head + ': truncating.')
-                occurrence_wave = occurrence_wave[:length - overhang_length]
+                pulse_wave = pulse_wave[:length - overhang_length]
                 # Update the length & end index
-                length = len(occurrence_wave)
+                length = len(pulse_wave)
                 end_index = start_index + length - 1
 
             # Compute corrected pulse
             if self.xerawdp_matching:
-                nominally_corrected_pulse = baseline - occurrence_wave
+                nominally_corrected_pulse = baseline - pulse_wave
                 nominally_corrected_pulse *= self.conversion_factor / self.config['nominal_gain']
                 corrected_pulse = nominally_corrected_pulse
                 if self.config['gains'][channel] == 0:
@@ -206,7 +206,7 @@ class BuildWaveforms(plugin.TransformPlugin):
                 else:
                     corrected_pulse *= self.config['nominal_gain'] / self.config['gains'][channel]
             else:
-                corrected_pulse = (baseline - occurrence_wave) * self.conversion_factor / self.config['gains'][channel]
+                corrected_pulse = (baseline - pulse_wave) * self.conversion_factor / self.config['gains'][channel]
 
             # Store the waveform in channel_waveforms
             # If the gain is 0, we can still be here if self.xerawdp_matching, don't want to store infs, so check first
@@ -222,11 +222,11 @@ class BuildWaveforms(plugin.TransformPlugin):
                         pulse_to_add = corrected_pulse
                     event.get_sum_waveform(group).samples[start_index:end_index + 1] += pulse_to_add
 
-            # Store some metadata for this occurrence
+            # Store some metadata for this pulse
             occ.height = np.max(corrected_pulse)
             occ.baseline = baseline
 
-            last_occurrence_in[channel] = occ
+            last_pulse_in[channel] = occ
 
         return event
 
@@ -1175,7 +1175,7 @@ class Filtering(plugin.TransformPlugin):
                 # This dirty code hack implements the Xerawdp convolution bug
                 # DO NOT USE except for Xerawdp matching!
                 ##
-                # TODO: could be done more straightforwardly now that we've stored occurrences properly
+                # TODO: could be done more straightforwardly now that we've stored pulses properly
                 filter_length = len(f['impulse_response'])
 
                 # Determine the pulse boundaries

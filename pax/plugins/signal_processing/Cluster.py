@@ -30,7 +30,7 @@ class ClusterPlugin(plugin.TransformPlugin):
         # Sort hits by detector
         detectors = self.config['channels_in_detector'].keys()
         hits_per_detector = {detector: [] for detector in detectors}
-        for hit in event.all_channel_peaks:
+        for hit in event.all_hits:
             hits_per_detector[self.detector_by_channel[hit.channel]].append(hit)
 
         # Handle each detector separately
@@ -40,7 +40,7 @@ class ClusterPlugin(plugin.TransformPlugin):
             hits_to_cluster.sort(key=lambda x: x.left)
 
             # Grab pulses in this detector
-            pulses = [oc for oc in event.occurrences if oc.channel in self.config['channels_in_detector'][detector]]
+            pulses = [oc for oc in event.pulses if oc.channel in self.config['channels_in_detector'][detector]]
 
             self.log.debug("Clustering channel peaks in data from %s" % detector)
 
@@ -164,7 +164,7 @@ class ClusterPlugin(plugin.TransformPlugin):
                     break
 
                 # Delete rejected hits from hits_to_cluster, then redo clustering
-                # The rejected hits will remain in event.all_channel_peaks, of course
+                # The rejected hits will remain in event.all_hits, of course
                 hits_to_cluster = [h for h in hits_to_cluster if not h.is_rejected]
                 clustering_pass += 1
 

@@ -12,7 +12,7 @@ import time
 import pymongo
 import snappy
 from bson.binary import Binary
-from pax.datastructure import Event, Occurrence
+from pax.datastructure import Event, Pulse
 from pax import plugin, units
 
 
@@ -57,8 +57,8 @@ class MongoDBInput(plugin.InputPlugin):
         for i, doc_event in enumerate(self.collection.find()):
             self.log.debug("Fetching document %s" % repr(doc_event['_id']))
 
-            # Store channel waveform-occurrences by iterating over all
-            # occurrences.
+            # Store channel waveform-pulses by iterating over all
+            # pulses.
             # This involves parsing MongoDB documents using WAX output format
             assert isinstance(doc_event['range'][0], int)
             assert isinstance(doc_event['range'][1], int)
@@ -74,17 +74,17 @@ class MongoDBInput(plugin.InputPlugin):
             assert isinstance(event.start_time, int)
             assert isinstance(event.stop_time, int)
 
-            for doc_occurrence in doc_event['docs']:
+            for doc_pulse in doc_event['docs']:
 
-                assert isinstance(doc_occurrence['time'], int)
+                assert isinstance(doc_pulse['time'], int)
                 assert isinstance(doc_event['range'][0], int)
 
-                data = snappy.compress(doc_occurrence['data'])
+                data = snappy.compress(doc_pulse['data'])
 
-                event.occurrences.append(Occurrence(
-                    left=doc_occurrence['time'] - doc_event['range'][0],
+                event.pulses.append(Pulse(
+                    left=doc_pulse['time'] - doc_event['range'][0],
                     raw_data=np.fromstring(data, dtype="<i2"),
-                    channel=doc_occurrence['channel']
+                    channel=doc_pulse['channel']
                 ))
 
             if event.length() == 0:
@@ -185,7 +185,7 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
         # Used for computing offsets so reader starts from zero time
         self.starttime = None
 
-        self.occurences = []
+        self.pulses = []
 
     def get_connection(self, hostname):
         if hostname not in self.connections:
@@ -234,10 +234,10 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
             self.log.fatal(error)
             raise RuntimeError(error)
 
-        for oc in event.occurrences:
+        for oc in event.pulses:
             pmt_num = oc.channel
             sample_position = oc.left
-            samples_occurrence = oc.raw_data
+            samples_pulse = oc.raw_data
 
             assert isinstance(sample_position, int)
 
@@ -249,25 +249,25 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
 
             occurence_doc['time'] = time + sample_position - self.starttime
 
-            data = np.array(samples_occurrence, dtype=np.int16).tostring()
+            data = np.array(samples_pulse, dtype=np.int16).tostring()
             if self.query['reader']['compressed']:
                 data = snappy.compress(data)
 
             # Convert raw samples into BSON format
             occurence_doc['data'] = Binary(data, 0)
 
-            self.occurences.append(occurence_doc)
+            self.pulses.append(occurence_doc)
 
         if not self.collect_then_dump:
             self.handle_occurences()
 
     def handle_occurences(self):
-        docs = self.occurences  # []
-        # for occurences in list(self.chunks(self.occurences,
+        docs = self.pulses  # []
+        # for pulses in list(self.chunks(self.pulses,
         # 1000)):
 
         # docs.append({'test' : 0,
-        #                     'docs' : occurences})
+        #                     'docs' : pulses})
 
         i = 0
         t0 = time.time()  # start time
@@ -289,7 +289,7 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
 
                 for _ in range(n):
                     i += 1
-                    for doc in self.occurences:
+                    for doc in self.pulses:
                         # doc['_id'] = uuid.uuid4()
                         doc['time'] += i * (t1 - t0) / self.repeater
 
@@ -323,7 +323,7 @@ class MongoDBFakeDAQOutput(plugin.OutputPlugin):
 
             t1 = time.time()
 
-        self.occurences = []
+        self.pulses = []
 
 
 class MongoDBInputTriggered(plugin.InputPlugin):
@@ -344,7 +344,7 @@ class MongoDBInputTriggered(plugin.InputPlugin):
             self.log.exception(e)
             raise
 
-        # All of the channel pulses (/occurences) will have the same
+        # All of the channel pulses (/pulses) will have the same
         # time if they came from the same trigger.
         self.trigger_times = self.collection.distinct('time')
         self.number_of_events = len(self.trigger_times)
@@ -362,27 +362,26 @@ class MongoDBInputTriggered(plugin.InputPlugin):
     def get_events(self):
         for i, trigger_time in enumerate(self.trigger_times):
             cursor = self.collection.find({'time': trigger_time})
-            self.log.debug("Found %d occurrences",
+            self.log.debug("Found %d pulses",
                            cursor.count())
 
             latest_time = []
-            occurrence_objects = []
+            pulse_objects = []
 
-            for j, occurrence_doc in enumerate(cursor):
+            for j, pulse_doc in enumerate(cursor):
                 self.log.debug("Fetching document %s" %
-                               repr(occurrence_doc['_id']))
+                               repr(pulse_doc['_id']))
 
                 # Fetch raw data from document
-                data = occurrence_doc["data"]
+                data = pulse_doc["data"]
 
                 # Samples are stored as 16 bit numbers (i.e. 2 bytes).  Also
                 # note that // is an integer divide.
                 latest_time.append(trigger_time + len(data) // 2)
 
-                occurrence_objects.append(Occurrence(left=0,
-                                                     raw_data=np.fromstring(data,
-                                                                            dtype="<i2"),
-                                                     channel=occurrence_doc['channel']))
+                pulse_objects.append(Pulse(left=0,
+                                           raw_data=np.fromstring(data, dtype="<i2"),
+                                           channel=pulse_doc['channel']))
 
             earliest_time = trigger_time * self.mongo_time_unit
             latest_time = max(latest_time) * self.mongo_time_unit
@@ -394,4 +393,4 @@ class MongoDBInputTriggered(plugin.InputPlugin):
                         start_time=earliest_time,
                         sample_duration=self.config['sample_duration'],
                         stop_time=latest_time,
-                        occurrences=occurrence_objects)
+                        pulses=pulse_objects)

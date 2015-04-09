@@ -54,7 +54,7 @@ class ReconstructedPosition(StrictModel):
         return math.atan2(self.y, self.x)
 
 
-class ChannelPeak(Model):
+class Hit(Model):
     """Peaks found in individual channels
 
     These are be clustered into ordinary peaks later. This is commonly
@@ -80,7 +80,7 @@ class ChannelPeak(Model):
     #: Note: in Pulse the same number is stored in ADC-counts
     noise_sigma = 0.0
 
-    #: Index of pulse (in event.occurrences) in which peak was found
+    #: Index of pulse (in event.pulses) in which peak was found
     found_in_pulse = 0
 
     #: Set to True if rejected by suspicious channel algorithm
@@ -109,7 +109,7 @@ class Peak(StrictModel):
     ##
 
     #: Peaks in individual channels that make up this peak
-    channel_peaks = (ChannelPeak,)
+    channel_peaks = (Hit,)
 
     #: Array of areas in each PMT.
     area_per_channel = np.array([], dtype='float64')
@@ -206,10 +206,10 @@ class SumWaveform(StrictModel):
             return False
 
 
-class Occurrence(StrictModel):
-    """A DAQ occurrence
+class Pulse(StrictModel):
+    """A DAQ pulse
 
-    A DAQ occurrence can also be thought of as a pulse in a PMT.
+    A DAQ pulse can also be thought of as a pulse in a PMT.
     """
 
     #: Starttime of this occurence within event
@@ -224,23 +224,23 @@ class Occurrence(StrictModel):
     #: starts at zero and is an integere because it's an index.
     right = INT_NAN
 
-    #: Channel the occurrence belongs to (integer)
+    #: Channel the pulse belongs to (integer)
     channel = INT_NAN
 
     #: Maximum amplitude (in ADC counts; float) in unfiltered waveform
     #: Will remain nan if channel's gain is 0
     #: baseline_correction, if any, has been substracted
-    # TODO: may not be equal to actual occurrence height, baseline correction
+    # TODO: may not be equal to actual pulse height, baseline correction
     # is computed on filtered wv. :-(
     height = float('nan')
 
-    #: Noise sigma for this occurrence (in ADC counts)
+    #: Noise sigma for this pulse (in ADC counts)
     #: Computed in the filtered channel waveform
-    #: Will remain nan unless occurrence is processed by smallpeakfinder
+    #: Will remain nan unless pulse is processed by smallpeakfinder
     noise_sigma = float('nan')
 
     #: Baseline (in ADC counts, but float!) relative to configured reference baseline
-    #: Will remain nan if occurrence is not processed by hitfinder
+    #: Will remain nan if pulse is not processed by hitfinder
     baseline = float('nan')
 
     #: Raw wave data (in ADC counts, NOT pe/bin!; numpy array of int16)
@@ -251,7 +251,7 @@ class Occurrence(StrictModel):
         return self.right - self.left + 1
 
     def __init__(self, **kwargs):
-        """Initialize an occurrence
+        """Initialize an pulse
         You must specify at least:
          - left (first index)
         And one of
@@ -312,17 +312,17 @@ class Event(StrictModel):
     #: Returns a list of :class:`pax.datastructure.Peak` classes.
     peaks = (Peak,)
 
-    #: Temporary list of channel peaks -- will be shipped off to peaks later
-    all_channel_peaks = (ChannelPeak,)
+    #: Temporary list of hits -- will be shipped off to peaks later
+    all_hits = (Hit,)
 
     #: Returns a list of sum waveforms
     #:
     #: Returns an :class:`pax.datastructure.SumWaveform` class.
     sum_waveforms = (SumWaveform,)
 
-    #: A python list of all occurrences in the event (containing instances of the Occurrence class)
-    #: An occurrence holds a stream of samples in one channel, as provided by the digitizer.
-    occurrences = (Occurrence,)
+    #: A python list of all pulses in the event (containing instances of the Pulse class)
+    #: An pulse holds a stream of samples in one channel, as provided by the digitizer.
+    pulses = (Pulse,)
 
     #: Number of noise pulses (pulses without any hits found) per channel
     noise_pulses_in = np.array([], dtype=np.int)

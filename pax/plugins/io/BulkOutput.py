@@ -283,7 +283,7 @@ class ReadFromBulkOutput(plugin.InputPlugin):
 
         self.dnames = ['Event', 'Peak']
         if self.read_hits:
-            self.dnames.append('ChannelPeak')
+            self.dnames.append('Hit')
         if self.read_recposes:
             self.dnames.append('ReconstructedPosition')
 
@@ -364,10 +364,10 @@ class ReadFromBulkOutput(plugin.InputPlugin):
                         )
 
                 if self.read_hits:
-                    for hit_record in in_this_event['ChannelPeak'][(in_this_event['ChannelPeak']['Peak'] == peak_i)]:
-                        cp = datastructure.ChannelPeak(self._numpy_record_to_dict(hit_record))
+                    for hit_record in in_this_event['Hit'][(in_this_event['Hit']['Peak'] == peak_i)]:
+                        cp = datastructure.Hit(self._numpy_record_to_dict(hit_record))
                         peak.channel_peaks.append(cp)
-                        event.all_channel_peaks.append(cp)
+                        event.all_hits.append(cp)
 
                 event.peaks.append(peak)
 
@@ -381,7 +381,7 @@ class ReadFromBulkOutput(plugin.InputPlugin):
         result = {}
         for k, v in zip(names, record):
             # Skip index fields, if present
-            if k in ('Event', 'Peak', 'ChannelPeak', 'ReconstructedPosition'):
+            if k in ('Event', 'Peak', 'Hit', 'ReconstructedPosition'):
                 continue
             if isinstance(v, np.bytes_):
                 v = v.decode("utf-8")

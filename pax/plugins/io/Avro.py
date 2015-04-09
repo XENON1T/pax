@@ -42,7 +42,7 @@ class ReadAvro(plugin.InputPlugin):
         """Fetch events from Avro file
 
         This produces a generator for all the events within the file.  These
-        Events contain occurences, and the appropriate pax objects will be
+        Events contain pulses, and the appropriate pax objects will be
         built.
         """
 
@@ -58,14 +58,14 @@ class ReadAvro(plugin.InputPlugin):
                                             # TODO: This belongs in Avro file!
                                             sample_duration=self.config['sample_duration'])
 
-            # For all pulses/occurrences, add to pax event
+            # For all pulses/pulses, add to pax event
             for pulse in avro_event['pulses']:
 
-                pulse = datastructure.Occurrence(channel=pulse['channel'],
-                                                 left=pulse['left'],
-                                                 raw_data=np.fromstring(pulse['payload'],
-                                                                        dtype=np.int16))
-                pax_event.occurrences.append(pulse)
+                pulse = datastructure.Pulse(channel=pulse['channel'],
+                                            left=pulse['left'],
+                                            raw_data=np.fromstring(pulse['payload'],
+                                                                   dtype=np.int16))
+                pax_event.pulses.append(pulse)
 
             self.total_time_taken += (time.time() - ts) * 1000
 
@@ -111,7 +111,7 @@ class WriteAvro(plugin.OutputPlugin):
         avro_event['stop_time'] = pax_event.stop_time
         avro_event['pulses'] = []
 
-        for pax_pulse in pax_event.occurrences:
+        for pax_pulse in pax_event.pulses:
             avro_pulse = {}
 
             avro_pulse['payload'] = pax_pulse.raw_data.tobytes()

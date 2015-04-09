@@ -1,5 +1,5 @@
 
-class OccurrenceBeyondEventError(Exception):
+class PulseBeyondEventError(Exception):
     pass
 
 
