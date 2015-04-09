@@ -70,7 +70,7 @@ class ClusterPlugin(plugin.TransformPlugin):
                         raise RuntimeError("Every peak should have a hit... what's going on?")
 
                     peak = datastructure.Peak({
-                        'channel_peaks':            [hits_to_cluster[i] for i in this_peak_s_hit_indices],
+                        'hits':            [hits_to_cluster[i] for i in this_peak_s_hit_indices],
                         'detector':                 detector,
                         'area_per_channel':         np.zeros(self.n_channels),
                         'does_channel_contribute':  np.zeros(self.n_channels, dtype='bool'),
@@ -79,9 +79,9 @@ class ClusterPlugin(plugin.TransformPlugin):
 
                     # Compute basic properties of peak, needed later in the plugin
                     # For speed it would be better to compute as much as possible later..
-                    peak.left = peak.channel_peaks[0].left
-                    peak.right = peak.channel_peaks[0].right
-                    for hit in peak.channel_peaks:
+                    peak.left = peak.hits[0].left
+                    peak.right = peak.hits[0].right
+                    for hit in peak.hits:
                         peak.left = min(peak.left, hit.left)
                         peak.right = max(peak.right, hit.right)
                         peak.does_channel_contribute[hit.channel] = True
@@ -121,7 +121,7 @@ class ClusterPlugin(plugin.TransformPlugin):
 
                     # Add a penalty for each hit, if the peak was lone / noise
                     if is_noise or is_lone_hit:
-                        for hit in peak.channel_peaks:
+                        for hit in peak.hits:
                             penalty_per_ch[hit.channel] += self.config['penalty_per_lone_hit']
 
                     peaks.append(peak)
@@ -144,13 +144,13 @@ class ClusterPlugin(plugin.TransformPlugin):
                     # Compute area for this peak outside suspicious channels
                     # a witness to this peak not being noise
                     witness_area = 0
-                    for hit in peak.channel_peaks:
+                    for hit in peak.hits:
                         if hit.channel not in suspicious_channels:
                             witness_area += hit.area
                     # witness_area = peak.area - np.sum(peak.area_per_channel[suspicious_channels])
 
                     # If the witness area for a hit is lower than the penalty in that channel, reject the hit
-                    for hit in peak.channel_peaks:
+                    for hit in peak.hits:
                         if hit.channel not in suspicious_channels:
                             continue
                         channel = hit.channel

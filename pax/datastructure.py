@@ -109,7 +109,7 @@ class Peak(StrictModel):
     ##
 
     #: Peaks in individual channels that make up this peak
-    channel_peaks = (Hit,)
+    hits = (Hit,)
 
     #: Array of areas in each PMT.
     area_per_channel = np.array([], dtype='float64')
@@ -135,11 +135,16 @@ class Peak(StrictModel):
     left = 0                 #: Index of left bound (inclusive) in event.
     right = 0                #: Index of right bound (INCLUSIVE) in event.
 
-    #: Weighted (by area) mean of hit times (since event start)
+    #: Weighted (by hit area) mean of hit times (since event start)
     hit_time_mean = 0.0
 
-    #: Weighted (by area) std of hit times
+    #: Weighted (by hit area) std of hit times
     hit_time_std = 0.0
+
+    #: Time range of centermost hits containing at least 50% / 90% of area (with center at hit_time_mean)
+    #: (rightmostright - leftmostleft + 1) * sample_duration
+    range_50p_area = 0.0
+    range_90p_area = 0.0
 
     ##
     # Spatial pattern information

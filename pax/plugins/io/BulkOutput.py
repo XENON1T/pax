@@ -366,7 +366,7 @@ class ReadFromBulkOutput(plugin.InputPlugin):
                 if self.read_hits:
                     for hit_record in in_this_event['Hit'][(in_this_event['Hit']['Peak'] == peak_i)]:
                         cp = datastructure.Hit(self._numpy_record_to_dict(hit_record))
-                        peak.channel_peaks.append(cp)
+                        peak.hits.append(cp)
                         event.all_hits.append(cp)
 
                 event.peaks.append(peak)
