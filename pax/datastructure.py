@@ -56,7 +56,7 @@ class ReconstructedPosition(StrictModel):
 
 class ChannelPeak(Model):
     """Peaks found in individual channels
-    
+
     These are be clustered into ordinary peaks later. This is commonly
     called a 'hit' in particle physics detectors.
     """
@@ -87,7 +87,7 @@ class ChannelPeak(Model):
 
 class Peak(StrictModel):
     """Peak
-    
+
     A peak will be, e.g., S1 or S2.
     """
 
@@ -255,7 +255,7 @@ class Occurrence(StrictModel):
 
 class Event(StrictModel):
     """Event class
-    
+
     Stores high level information about the triggered event.
     """
     dataset_name = 'Unknown'  # The name of the dataset this event belongs to
