@@ -7,16 +7,26 @@ class AdHocClassification(plugin.TransformPlugin):
 
         for peak in event.peaks:
 
-            # Work only on unknown peaks - not noise, lone_pulse, and big peaks (which are already s1 or s2)
+            width = peak.hit_time_std
+
+            # Work only on unknown peaks - not noise and lone_hit
             if peak.type != 'unknown':
                 continue
 
-            if peak.median_absolute_deviation < 60:
-                peak.type = 's1'
-                continue
+            if peak.area > 30:
 
-            elif peak.median_absolute_deviation > 100 and peak.area > 8:
-                peak.type = 's2'
-                continue
+                if width < 120:
+                    peak.type = 's1'
+                elif width > 200:
+                    peak.type = 's2'
+
+            else:
+                # For smaller peaks, hit_time_std is a bit less.
+                # Also have to worry about single electrons.
+
+                if width < 80:
+                    peak.type = 's1'
+                elif width > 140 and peak.area > 8:
+                    peak.type = 's2'
 
         return event

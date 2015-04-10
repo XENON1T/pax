@@ -54,7 +54,7 @@ class ReconstructedPosition(StrictModel):
         return math.atan2(self.y, self.x)
 
 
-class ChannelPeak(Model):
+class Hit(Model):
     """Peaks found in individual channels
 
     These are be clustered into ordinary peaks later. This is commonly
@@ -72,13 +72,15 @@ class ChannelPeak(Model):
         return self.right - self.left + 1
 
     area = 0.0                  #: Area of the peak in photoelectrons
+
     #: Height of highest point in peak (in pe/bin) in unfiltered waveform
     height = 0.0
-    #: Noise sigma in pe/bin of pulse in which peak was found.
-    noise_sigma = 0.0
-    # note: in Pulse the same number is stored in ADC-counts
 
-    #: Index of pulse (in event.occurrences) in which peak was found
+    #: Noise sigma in pe/bin of pulse in which peak was found.
+    #: Note: in Pulse the same number is stored in ADC-counts
+    noise_sigma = 0.0
+
+    #: Index of pulse (in event.pulses) in which peak was found
     found_in_pulse = 0
 
     #: Set to True if rejected by suspicious channel algorithm
@@ -91,27 +93,29 @@ class Peak(StrictModel):
     A peak will be, e.g., S1 or S2.
     """
 
-    #: Peaks in individual channels that make up this peak
-    channel_peaks = (ChannelPeak,)
+    ##
+    # Basics
+    ##
 
     type = 'unknown'        #: Type of peak (e.g., 's1', 's2', ...)
     detector = 'none'       #: e.g. tpc or veto
 
-    left = 0                 #: Index of left bound (inclusive) in event.
-    right = 0                #: Index of right bound (INCLUSIVE!!) in event.
-    # For XDP matching rightmost sample is not in integral, so you could say
-    # it is exclusive then.
+    #: Area of the pulse in photoelectrons. Includes only contributing pmts in the right detector.
+    #: For XDP matching rightmost sample is not included in area integral.
+    area = 0.0
+
+    ##
+    #  Low-level data
+    ##
+
+    #: Peaks in individual channels that make up this peak
+    hits = (Hit,)
 
     #: Array of areas in each PMT.
     area_per_channel = np.array([], dtype='float64')
 
-    #: Area of the pulse in photoelectrons.
-    #:
-    #: Includes only contributing pmts (see later) in the right detector
-    area = 0.0
-
-    #: Fraction of area in the top array
-    area_fraction_top = 0.0
+    #: Does a channel have no hits, but digitizer shows data?
+    does_channel_have_noise = np.array([], dtype=np.bool)
 
     #: Does a PMT see 'something significant'? (thresholds configurable)
     does_channel_contribute = np.array([], dtype=np.bool)
@@ -121,24 +125,32 @@ class Peak(StrictModel):
         return np.where(self.does_channel_contribute)[0]
 
     @property
-    def number_of_contributing_channels(self):
-        """ Number of PMTS which see something significant (depends on settings) """
-        return len(self.contributing_channels)
-
-    does_channel_have_noise = np.array([], dtype=np.bool)
-
-    @property
     def noise_channels(self):
         return np.where(self.does_channel_have_noise)[0]
 
-    @property
-    def number_of_noise_channels(self):
-        """ Number of channels which have noise during this peak """
-        return len(self.noise_channels)
+    ##
+    # Time distribution information
+    ##
 
-    #: Returns a list of reconstructed positions
-    #:
-    #: Returns an :class:`pax.datastructure.ReconstructedPosition` class.
+    left = 0                 #: Index of left bound (inclusive) in event.
+    right = 0                #: Index of right bound (INCLUSIVE) in event.
+
+    #: Weighted (by hit area) mean of hit times (since event start)
+    hit_time_mean = 0.0
+
+    #: Weighted (by hit area) std of hit times
+    hit_time_std = 0.0
+
+    #: Time range of centermost hits containing at least 50% / 90% of area (with center at hit_time_mean)
+    #: (rightmostright - leftmostleft + 1) * sample_duration
+    range_50p_area = 0.0
+    range_90p_area = 0.0
+
+    ##
+    # Spatial pattern information
+    ##
+
+    #: List of reconstructed positions (instances of :class:`pax.datastructure.ReconstructedPosition`)
     reconstructed_positions = (ReconstructedPosition,)
 
     #: Weighted root mean square deviation of top hitpattern (cm)
@@ -147,20 +159,31 @@ class Peak(StrictModel):
     #: Weighted root mean square deviation of bottom hitpattern (cm)
     bottom_hitpattern_spread = 0.0
 
-    #: Median absolute deviation of photon arrival times (in ns)
-    # Deprecate this?
-    median_absolute_deviation = 0.0
-
-    #: Weighted (by area) mean and rms of hit maxima (in ns; mean is relative to event start)
-    hit_time_mean = 0.0
-    hit_time_std = 0.0
+    #: Fraction of area in the top array
+    area_fraction_top = 0.0
 
     ##
-    # Deprecated sum-waveform stuff
+    # Signal / noise info
     ##
+
+    #: Number of PMTS which see something significant (depends on settings) ~~ "coincidence level"
+    n_contributing_channels = 0
+
+    #: Number of channels that show no hits, but digitizer shows data
+    n_noise_channels = 0
+
+    #: Weighted (by area) mean hit amplitude / noise level in that hit's channel
+    mean_amplitude_to_noise = 0.0
+
+    ##
+    # Deprecated sum-waveform stuff, needed for Xerawdp matching??
+    ##
+
     #: Index in the event's sum waveform at which this peak has its maximum.
     index_of_maximum = 0
+
     #: Height of highest point in peak (in pe/bin)
+    #: In new pax, is height of highest hit
     height = 0.0
 
 
@@ -188,10 +211,10 @@ class SumWaveform(StrictModel):
             return False
 
 
-class Occurrence(StrictModel):
-    """A DAQ occurrence
+class Pulse(StrictModel):
+    """A DAQ pulse
 
-    A DAQ occurrence can also be thought of as a pulse in a PMT.
+    A DAQ pulse can also be thought of as a pulse in a PMT.
     """
 
     #: Starttime of this occurence within event
@@ -206,23 +229,23 @@ class Occurrence(StrictModel):
     #: starts at zero and is an integere because it's an index.
     right = INT_NAN
 
-    #: Channel the occurrence belongs to (integer)
+    #: Channel the pulse belongs to (integer)
     channel = INT_NAN
 
     #: Maximum amplitude (in ADC counts; float) in unfiltered waveform
     #: Will remain nan if channel's gain is 0
     #: baseline_correction, if any, has been substracted
-    # TODO: may not be equal to actual occurrence height, baseline correction
+    # TODO: may not be equal to actual pulse height, baseline correction
     # is computed on filtered wv. :-(
     height = float('nan')
 
-    #: Noise sigma for this occurrence (in ADC counts)
+    #: Noise sigma for this pulse (in ADC counts)
     #: Computed in the filtered channel waveform
-    #: Will remain nan unless occurrence is processed by smallpeakfinder
+    #: Will remain nan unless pulse is processed by smallpeakfinder
     noise_sigma = float('nan')
 
     #: Baseline (in ADC counts, but float!) relative to configured reference baseline
-    #: Will remain nan if occurrence is not processed by hitfinder
+    #: Will remain nan if pulse is not processed by hitfinder
     baseline = float('nan')
 
     #: Raw wave data (in ADC counts, NOT pe/bin!; numpy array of int16)
@@ -233,7 +256,7 @@ class Occurrence(StrictModel):
         return self.right - self.left + 1
 
     def __init__(self, **kwargs):
-        """Initialize an occurrence
+        """Initialize an pulse
         You must specify at least:
          - left (first index)
         And one of
@@ -255,6 +278,8 @@ class Occurrence(StrictModel):
 
 class Event(StrictModel):
     """Event class
+
+    """Event object
 
     Stores high level information about the triggered event.
     """
@@ -294,17 +319,17 @@ class Event(StrictModel):
     #: Returns a list of :class:`pax.datastructure.Peak` classes.
     peaks = (Peak,)
 
-    #: Temporary list of channel peaks -- will be shipped off to peaks later
-    all_channel_peaks = (ChannelPeak,)
+    #: Temporary list of hits -- will be shipped off to peaks later
+    all_hits = (Hit,)
 
     #: Returns a list of sum waveforms
     #:
     #: Returns an :class:`pax.datastructure.SumWaveform` class.
     sum_waveforms = (SumWaveform,)
 
-    #: A python list of all occurrences in the event (containing instances of the Occurrence class)
-    #: An occurrence holds a stream of samples in one channel, as provided by the digitizer.
-    occurrences = (Occurrence,)
+    #: A python list of all pulses in the event (containing instances of the Pulse class)
+    #: An pulse holds a stream of samples in one channel, as provided by the digitizer.
+    pulses = (Pulse,)
 
     #: Number of noise pulses (pulses without any hits found) per channel
     noise_pulses_in = np.array([], dtype=np.int)

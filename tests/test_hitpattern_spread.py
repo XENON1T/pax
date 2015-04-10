@@ -38,7 +38,7 @@ class TestComputeComputePeakProperties(unittest.TestCase):
         p = e.peaks[0]
 
         # PMT 1 and 16 are aligned in y, 166.84 mm from center in x on opposite sides
-        self.assertAlmostEqual(p.top_hitpattern_spread, 166.84 * units.mm / 2**0.5)
+        self.assertAlmostEqual(p.top_hitpattern_spread, 166.84 * units.mm)
 
         # If no hits, hitpattern spread should be nan
         self.assertEqual(p.bottom_hitpattern_spread, 0)

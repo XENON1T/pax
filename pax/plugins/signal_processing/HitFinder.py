@@ -54,7 +54,7 @@ class FindHits(plugin.TransformPlugin):
         argmaxes = -1 * np.zeros(self.max_hits_per_pulse, dtype=np.int64)
         areas = -1 * np.ones(self.max_hits_per_pulse)
 
-        for pulse_i, pulse in enumerate(event.occurrences):
+        for pulse_i, pulse in enumerate(event.pulses):
             start = pulse.left
             stop = pulse.right
             channel = pulse.channel
@@ -139,7 +139,7 @@ class FindHits(plugin.TransformPlugin):
                                            hit[0], hit[0] + argmaxes[i], hit[1], start, stop,
                                            height, noise_sigma_pe, self.min_sigma * noise_sigma_pe, area))
 
-                event.all_channel_peaks.append(datastructure.ChannelPeak({
+                event.all_hits.append(datastructure.Hit({
                     'channel':             channel,
                     'left':                left,
                     'index_of_maximum':    max_idx,
@@ -151,7 +151,7 @@ class FindHits(plugin.TransformPlugin):
                 }))
 
             # Diagnostic plotting
-            # Can't more to plotting plugin: occurrence grouping of hits lost after clustering
+            # Can't more to plotting plugin: pulse grouping of hits lost after clustering
             if self.make_diagnostic_plots == 'always' or \
                self.make_diagnostic_plots == 'no peaks' and not len(peaks):
                 plt.figure()
@@ -166,7 +166,7 @@ class FindHits(plugin.TransformPlugin):
                          '--', label='1 pe/sample')
                 plt.legend()
                 bla = (event.event_number, start, stop, channel)
-                plt.title('Event %s, occurrence %d-%d, Channel %d' % bla)
+                plt.title('Event %s, pulse %d-%d, Channel %d' % bla)
                 plt.xlabel("Sample number (%s ns)" % event.sample_duration)
                 plt.ylabel("Amplitude (ADC counts above baseline)")
                 plt.savefig(os.path.join(self.make_diagnostic_plots_in,

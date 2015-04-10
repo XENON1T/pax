@@ -315,9 +315,9 @@ class Simulator(object):
 
                 start_index = np.min(center_index) - int(self.config['zle_padding'] / dt)
                 end_index = max(center_index) + int(self.config['zle_padding'] / dt)
-                occurrence_length = end_index - start_index + 1
+                pulse_length = end_index - start_index + 1
 
-                current_wave = np.zeros(occurrence_length)
+                current_wave = np.zeros(pulse_length)
 
                 if len(center_index) > self.config['use_simplified_simulator_from']:
 
@@ -407,16 +407,16 @@ class Simulator(object):
                 # Digitizers have finite number of bits per channel
                 temp = np.clip(temp, 0, 2 ** (self.config['digitizer_bits']))
 
-                event.occurrences.append(datastructure.Occurrence(
+                event.pulses.append(datastructure.Pulse(
                     channel=channel,
                     left=start_index,
                     raw_data=temp.astype(np.int16)))
 
-        if len(event.occurrences) == 0:
+        if len(event.pulses) == 0:
             return None
 
-        log.debug("Simulated pax event of %s samples length and %s occurrences "
-                  "created." % (event.length(), len(event.occurrences)))
+        log.debug("Simulated pax event of %s samples length and %s pulses "
+                  "created." % (event.length(), len(event.pulses)))
         return event
 
 

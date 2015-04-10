@@ -28,11 +28,11 @@ class TestMongo(unittest.TestCase):
         self.assertEqual(len(events), 146)
 
         event = events[0]
-        self.assertEqual(len(event.occurrences), 8)
+        self.assertEqual(len(event.pulses), 8)
 
-        occurrence = event.occurrences[0]
+        pulse = event.pulses[0]
 
-        self.assertEqual(occurrence.channel,
+        self.assertEqual(pulse.channel,
                          0)
-        self.assertListEqual(occurrence.raw_data[0:10].tolist(),
+        self.assertListEqual(pulse.raw_data[0:10].tolist(),
                              [5648, 5647, 5648, 5643, 5648, 5646, 5648, 5647, 5647, 5641])
