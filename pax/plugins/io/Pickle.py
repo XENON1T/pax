@@ -17,7 +17,7 @@ class WriteToStackedPickleFolder(WriteToFolder):
 
     file_extension = 'stackedpickle'
 
-    def start_writing_file(self, filename):
+    def open(self, filename):
         self.current_file = open(filename, 'wb')
         # self.current_file = gzip.open(filename,
         #                               'wb',
@@ -26,7 +26,7 @@ class WriteToStackedPickleFolder(WriteToFolder):
     def write_event_to_current_file(self, event):
         pickle.dump(event, self.current_file)
 
-    def stop_writing_current_file(self):
+    def close(self):
         self.current_file.close()
 
 
@@ -34,7 +34,7 @@ class ReadFromStackedPickleFolder(InputFromFolder):
 
     file_extension = 'stackedpickle'
 
-    def start_to_read_file(self, filename):
+    def open(self, filename):
         self.current_file = gzip.open(filename, "rb")
 
     def get_all_events_in_current_file(self):
@@ -45,7 +45,7 @@ class ReadFromStackedPickleFolder(InputFromFolder):
                 break
             yield event
 
-    def close_current_file(self):
+    def close(self):
         self.current_file.close()
 
 

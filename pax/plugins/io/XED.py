@@ -67,11 +67,11 @@ class XedInput(InputFromFolder):
             fmd = np.fromfile(xedfile, dtype=xed_file_header, count=1)[0]
             return fmd['first_event_number'], fmd['first_event_number'] + fmd['events_in_file'] - 1
 
-    def close_current_file(self):
+    def close(self):
         """Close the currently open file"""
         self.current_xedfile.close()
 
-    def start_to_read_file(self, filename):
+    def open(self, filename):
         """Opens an XED file so we can start reading events"""
         self.current_xedfile = open(filename, 'rb')
 

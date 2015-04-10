@@ -62,7 +62,7 @@ class InputFromFolder(plugin.InputPlugin):
         Will be called by get_single_event (and once by startup)
         """
         if self.current_file_number is not None:
-            self.close_current_file()
+            self.close()
         if i < 0 or i >= len(self.raw_data_files):
             raise RuntimeError("Invalid file index %s: %s files loaded" % (i,
                                                                            len(self.raw_data_files)))
@@ -78,10 +78,10 @@ class InputFromFolder(plugin.InputPlugin):
                                                                 i + 1,
                                                                 len(self.raw_data_files)))
 
-        self.start_to_read_file(self.current_filename)
+        self.open(self.current_filename)
 
     def shutdown(self):
-        self.close_current_file()
+        self.close()
 
     def get_events(self):
         """Iterate through all events in the file / folder"""
@@ -124,11 +124,11 @@ class InputFromFolder(plugin.InputPlugin):
 
     file_extension = None
 
-    def start_to_read_file(self, filename):
+    def open(self, filename):
         """Opens the file specified by filename for reading"""
         raise NotImplementedError()
 
-    def close_current_file(self):
+    def close(self):
         """Close the currently open file"""
         pass
 
@@ -177,7 +177,7 @@ class WriteToFolder(plugin.OutputPlugin):
             self.close_current_file()
         self.first_event_in_current_file = first_event_number
         self.events_written_to_current_file = 0
-        self.start_writing_file(filename=self.tempfile)
+        self.open(filename=self.tempfile)
 
     def write_event(self, event):
         """Write one more event to the folder, opening/closing files as needed"""
@@ -191,12 +191,12 @@ class WriteToFolder(plugin.OutputPlugin):
         self.last_event_written = event.event_number
 
     def close_current_file(self):
-        """Closes the currently open file, if there is one"""
+        """Closes the currently open file, if there is one. Also handles temporary file renaming. """
         if self.last_event_written is None:
             self.log.info("You didn't write any events... Did you crash pax?")
             return
 
-        self.stop_writing_current_file()
+        self.close()
 
         # Rename the temporary file to reflect the events we've written to it
         os.rename(self.tempfile,
@@ -216,11 +216,11 @@ class WriteToFolder(plugin.OutputPlugin):
 
     file_extension = None
 
-    def start_writing_file(self, filename):
+    def open(self, filename):
         raise NotImplementedError
 
     def write_event_to_current_file(self, event):
         raise NotImplementedError
 
-    def stop_writing_current_file(self):
+    def close(self):
         raise NotImplementedError
