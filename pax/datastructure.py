@@ -279,8 +279,6 @@ class Pulse(StrictModel):
 class Event(StrictModel):
     """Event class
 
-    """Event object
-
     Stores high level information about the triggered event.
     """
     dataset_name = 'Unknown'  # The name of the dataset this event belongs to

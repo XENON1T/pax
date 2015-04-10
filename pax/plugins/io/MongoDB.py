@@ -14,7 +14,7 @@ import pymongo
 import snappy
 
 from bson.binary import Binary
-from pax.datastructure import Event, Occurrence
+from pax.datastructure import Event, Pulse
 from pax import plugin, units
 
 
@@ -135,7 +135,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
         self.setup_input()
 
     @staticmethod
-    def extract_times_from_occurrences(times, sample_duration):
+    def extract_times_from_pulses(times, sample_duration):
         x = [[doc[START_KEY], doc[STOP_KEY]] for doc in times]
         x = np.array(x) * sample_duration
         x = x.mean(axis=1)
@@ -147,7 +147,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
 
         x is a list of times.  A window will slide over the values in x and
         this function will return all event ranges with more than 'multiplicity'
-        of occurrences.  We assume that any occurrence will have ~1 pe area.
+        of pulses.  We assume that any pulses will have ~1 pe area.
         Also, left and right will be added to ranges, where left can be the
         drift length.
         """
@@ -158,9 +158,9 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
         i = 0  # Start of range to test
         j = 0  # End of range to test
 
-        while j < x.size:  # For every occureence... extend end
+        while j < x.size:  # For every pulse... extend end
             if x[j] - x[i] > window:  # If time diff greater than window, form new cluster
-                if j - i > multiplicity:  # If more than 100 occurences, trigger
+                if j - i > multiplicity:  # If more than 100 pulses, trigger
                     if len(ranges) > 0 and ranges[-1][1] + window > x[i]:
                         ranges[-1][1] = x[j-1] + right
                     else:
@@ -169,7 +169,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
             else:
                 j += 1
 
-        if j - i > multiplicity:  # If more than 10 occurences, trigger
+        if j - i > multiplicity:  # If more than 10 pulses, trigger
             ranges.append([x[i] + left, x[j-1] + right])
 
         return ranges
@@ -204,9 +204,9 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
                 time.sleep(1)  # todo: configure
                 continue
 
-            x = self.extract_times_from_occurrences(times,
+            x = self.extract_times_from_pulses(times,
                                                     self.mongo_time_unit)
-#221425631010
+
             self.log.info("Processing range [%s, %s]",
                           sampletime_fmt(x[0]),
                           sampletime_fmt(x[-1]))
@@ -272,25 +272,25 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, IOMongoDB):
 
         self.mongo_iterator = self.mongo['input']['collection'].find(query)
                                                                      #exhaust = True)
-        occurrence_objects = []
+        pulse_objects = []
 
-        for i, occurrence_doc in enumerate(self.mongo_iterator):
+        for i, pulse_doc in enumerate(self.mongo_iterator):
             # Fetch raw data from document
-            data = occurrence_doc['data']
+            data = pulse_doc['data']
 
-            time_within_event = int(occurrence_doc[START_KEY]) - (t0 // self.mongo_time_unit)
+            time_within_event = int(pulse_doc[START_KEY]) - (t0 // self.mongo_time_unit)
             self.log.debug(time_within_event)
             self.log.debug(t0)
 
             if self.compressed:
                 data = snappy.decompress(data)
 
-            occurrence_objects.append(Occurrence(left=(time_within_event),
+            pulse_objects.append(Pulse(left=(time_within_event),
                                                  raw_data=np.fromstring(data,
                                                                         dtype="<i2"),
-                                                 channel=int(occurrence_doc['channel'])))
+                                                 channel=int(pulse_doc['channel'])))
 
-        event.occurrences = occurrence_objects
+        event.pulses = pulse_objects
         return event
 
 
