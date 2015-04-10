@@ -352,10 +352,6 @@ class PlotChannelWaveforms2D(PlotBase):
 
     Circles in the bottom subplot show when individual photo-electrons arrived in each channel .
     Circle color indicates log(peak amplitude / noise amplitude), size indicates peak integral.
-    For large peaks you see no dots; single-channel peakfinding is skipped for performance reasons.
-
-    Some channels are grayed out: these are excluded from low-energy peakfinding because they show an
-    unusual rate of lone pulses or pure-noise pulses in this event.
     """
 
     def plot_event(self, event):
@@ -444,6 +440,7 @@ class PlotChannelWaveforms2D(PlotBase):
 
         plt.xlabel('Time (us)')
         plt.ylabel('PMT channel')
+        plt.gca().invert_yaxis()    # To ensure top channels (low numbers) appear above bottom channels (high numbers)
 
 
 class PlotEventSummary(PlotBase):
