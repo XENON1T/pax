@@ -19,10 +19,10 @@ from pax import plugin, units
 
 
 START_KEY = 'time'
-STOP_KEY = 'endtime'
+STOP_KEY = 'time' # 'endtime'
 
 def sampletime_fmt(num):
-    """num is in 10s of ns"""
+    """num is in 1s of ns"""
     for x in ['ns', 'us', 'ms', 's', 'ks', 'Ms', 'G', 'T']:
         if num < 1000.0:
             return "%3.1f %s" % (num, x)
@@ -48,7 +48,7 @@ class IOMongoDB():
                                                                            update)
         self.sort_key = [(START_KEY, 1),
                          (START_KEY, 1)]
-        self.mongo_time_unit = int(2*units.ns) # int(self.config.get('sample_duration'))
+        self.mongo_time_unit = self.config.get('sample_duration')
         self.data_taking_ended = False
 
 
@@ -135,13 +135,6 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
         self.setup_input()
 
     @staticmethod
-    def extract_times_from_pulses(times, sample_duration):
-        x = [[doc[START_KEY], doc[STOP_KEY]] for doc in times]
-        x = np.array(x) * sample_duration
-        x = x.mean(axis=1)
-        return x
-
-    @staticmethod
     def sliding_window(x, window=1000, multiplicity=3, left=-10, right=7):
         """Sliding window cluster finder (with range extension)
 
@@ -175,7 +168,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
         return ranges
 
     def get_events(self):
-        self.last_time = 0
+        self.last_time = 0 * units.ns# ns
 
         while not self.data_taking_ended:
             # Grab new run document in case run ended.  This much happen before
@@ -188,12 +181,16 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
 
             c = self.mongo['input']['collection']
 
-            delay = 0
+            delay = 0 * units.ns # ns
 
             # Consider faster implementation here since requires much
             # type conversion.  e.g. monary.
-            self.log.info("Searching for times after %d" % self.last_time)
-            times = list(c.find({'time' : {'$gt' : (self.last_time - delay)}},
+
+            # times is in digitizer samples
+            search_after = self.last_time - delay # ns
+            self.log.info("Searching for pulses after %s",
+                          sampletime_fmt(search_after))
+            times = list(c.find({'time' : {'$gt' : search_after/self.mongo_time_unit}},
                                 projection=[START_KEY, STOP_KEY],
                                 sort=self.sort_key,
                                 cursor_type=pymongo.cursor.CursorType.EXHAUST))
@@ -204,19 +201,15 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
                 time.sleep(1)  # todo: configure
                 continue
 
-            x = self.extract_times_from_pulses(times,
-                                                    self.mongo_time_unit)
+            x = [[doc[START_KEY], doc[STOP_KEY]] for doc in times]  # in digitizer units
+            x = np.array(x) / self.mongo_time_unit
+            x = x.mean(axis=1)  # in ns
 
             self.log.info("Processing range [%s, %s]",
                           sampletime_fmt(x[0]),
                           sampletime_fmt(x[-1]))
 
-            print("double check",
-                  np.array([z[START_KEY] for z in times]).max()/self.mongo_time_unit,
-                  np.array([z[START_KEY] for z in times]).min()/self.mongo_time_unit,
-                  x[0], x[-1])
-
-            self.last_time = x[-1] / self.mongo_time_unit  # TODO race condition? subtract second?
+            self.last_time = x[-1]   # TODO race condition? subtract second?
 
             self.ranges = self.sliding_window(x,
                                               window=self.window,
@@ -279,8 +272,6 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, IOMongoDB):
             data = pulse_doc['data']
 
             time_within_event = int(pulse_doc[START_KEY]) - (t0 // self.mongo_time_unit)
-            self.log.debug(time_within_event)
-            self.log.debug(t0)
 
             if self.compressed:
                 data = snappy.decompress(data)

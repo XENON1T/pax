@@ -4,6 +4,7 @@
 import argparse
 import logging
 import pymongo
+import sys
 import time
 from pax import core
 
@@ -81,8 +82,6 @@ def main():
 
     log.debug('Getting collection: %s', args.collection)
     collection = db.get_collection(args.collection)
-    import itertools, sys
-
 
     while 1:
         run_doc = collection.find_one_and_update(query,
@@ -92,11 +91,11 @@ def main():
             log.info("No data to process... waiting %d seconds",
                          args.wait)
             def spinning_cursor(n):
-                for i in range(n):
+                for i in range(n//4):
                     for cursor in '|/-\\':
                         yield cursor
 
-            n = 10
+            n = 12
             for cursor in spinning_cursor(n):
                 sys.stdout.write(cursor)  # write the next character
                 sys.stdout.flush()                # flush stdout buffer (actual character display)
@@ -104,13 +103,14 @@ def main():
                 time.sleep(args.wait/n)
             sys.stdout.flush()
 
-            continue
         else:
             log.info("Building events for %s",
                          run_doc['name'])
 
-        core.Processor(config_names='eventbuilder_standalone',
-                       config_dict={'DEFAULT' : {'run_doc' : run_doc['_id']}}).run()
+            filename = 'raw_%s.avro' % run_doc['name']
+            core.Processor(config_names='eventbuilder_standalone',
+                           config_dict={'DEFAULT' : {'run_doc' : run_doc['_id']},
+                                        'output_name' : filename}).run()
 
 if __name__ == "__main__":
     main()
