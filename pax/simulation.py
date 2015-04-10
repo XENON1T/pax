@@ -231,8 +231,8 @@ class Simulator(object):
         dw = dg - self.config['anode_wire_radius']
 
         # How many photons are produced in the uniform part?
-        n_uniform = np.random.binomial(n, 1 / (1 + (dg - du) / du
-                                               * math.log((dg - du) / (dg - dw))))
+        n_uniform = np.random.binomial(n, 1 / (1 + (dg - du) / du *
+                                               math.log((dg - du) / (dg - dw))))
 
         # Sample the luminescence times in the uniform part
         pos_uniform = np.random.uniform(0, du, n_uniform)

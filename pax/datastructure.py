@@ -277,7 +277,7 @@ class Pulse(StrictModel):
 
 
 class Event(StrictModel):
-    """Event object
+    """Event class
 
     Stores high level information about the triggered event.
     """
