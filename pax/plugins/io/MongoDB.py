@@ -21,6 +21,14 @@ from pax import plugin, units
 START_KEY = 'time'
 STOP_KEY = 'endtime'
 
+def sampletime_fmt(num):
+    """num is in 10s of ns"""
+    for x in ['ns', 'us', 'ms', 's', 'ks', 'Ms', 'G', 'T']:
+        if num < 1000.0:
+            return "%3.1f %s" % (num, x)
+        num /= 1000.0
+    return "%3.1f %s" % (num, 's')
+
 class IOMongoDB():
     def startup(self):
         self.number_of_events = 0
@@ -40,7 +48,7 @@ class IOMongoDB():
                                                                            update)
         self.sort_key = [(START_KEY, 1),
                          (START_KEY, 1)]
-        self.mongo_time_unit = 2 # int(self.config.get('sample_duration'))
+        self.mongo_time_unit = int(2*units.ns) # int(self.config.get('sample_duration'))
         self.data_taking_ended = False
 
 
@@ -76,6 +84,22 @@ class IOMongoDB():
                                                        write_concern=wc)
         self.mongo[name] = m
 
+    def setup_input(self):
+        buff = self.run_doc['reader']['storage_buffer']
+
+        # Delete after Dan's change in kodiaq issue #48
+        buff2 = {}
+        buff2['address'] = buff['dbaddr']
+        buff2['database'] = buff['dbname']
+        buff2['collection'] = buff['dbcollection']
+        buff = buff2
+
+        self.setup_access('input',
+                          **buff)
+        self.mongo['input']['collection'].ensure_index(self.sort_key)
+
+        self.compressed = self.run_doc['reader']['compressed']
+
     def update_run_doc(self):
         self.run_doc = self.mongo['run']['collection'].find_one(self.query)
         self.data_taking_ended = self.run_doc['reader']['data_taking_ended']
@@ -108,18 +132,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
         self.log.info("\tLeft extension: %0.2f us", self.left / units.us)
         self.log.info("\tRight extension: %0.2f us", self.right / units.us)
 
-        buff = self.run_doc['reader']['storage_buffer']
-
-        # Delete after Dan's change in kodiaq issue #48
-        buff2 = {}
-        buff2['address'] = buff['dbaddr']
-        buff2['database'] = buff['dbname']
-        buff2['collection'] = buff['dbcollection']
-        buff = buff2
-
-        self.setup_access('input',
-                          **buff)
-        self.mongo['input']['collection'].ensure_index(self.sort_key)
+        self.setup_input()
 
     @staticmethod
     def extract_times_from_occurrences(times, sample_duration):
@@ -194,8 +207,14 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
             x = self.extract_times_from_occurrences(times,
                                                     self.mongo_time_unit)
 #221425631010
-            self.log.info("Processing range [%d, %d]",
-                          x[0], x[-1])
+            self.log.info("Processing range [%s, %s]",
+                          sampletime_fmt(x[0]),
+                          sampletime_fmt(x[-1]))
+
+            print("double check",
+                  np.array([z[START_KEY] for z in times]).max()/self.mongo_time_unit,
+                  np.array([z[START_KEY] for z in times]).min()/self.mongo_time_unit,
+                  x[0], x[-1])
 
             self.last_time = x[-1] / self.mongo_time_unit  # TODO race condition? subtract second?
 
@@ -236,6 +255,8 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, IOMongoDB):
     def startup(self):
         IOMongoDB.startup(self) # Setup with baseclass
 
+        self.setup_input()
+
     def process_event(self, event):
         t0, t1 = event.start_time, event.stop_time
 
@@ -255,11 +276,14 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, IOMongoDB):
 
         for i, occurrence_doc in enumerate(self.mongo_iterator):
             # Fetch raw data from document
-            data = occurrence_doc["data"]
+            data = occurrence_doc['data']
 
             time_within_event = int(occurrence_doc[START_KEY]) - (t0 // self.mongo_time_unit)
             self.log.debug(time_within_event)
             self.log.debug(t0)
+
+            if self.compressed:
+                data = snappy.decompress(data)
 
             occurrence_objects.append(Occurrence(left=(time_within_event),
                                                  raw_data=np.fromstring(data,
