@@ -1,4 +1,4 @@
-.. image:: pax_logo_bw_cropped.png
+.. image:: docs/pax_logo_bw_cropped.png
 
 The Processor for Analyzing XENON (PAX) is used for doing digital signal
 processing and other data processing on the XENON100/XENON1T raw data.
