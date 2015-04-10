@@ -26,7 +26,7 @@ class Model(object):
 
         # Initialize the list fields
         # super() is needed to bypass type checking in StrictModel
-        for field_name in self._get_list_field_names():
+        for field_name in self.get_list_field_names():
             super().__setattr__(field_name, [])
 
         # Initialize all attributes from kwargs and kwargs_dict
@@ -36,8 +36,8 @@ class Model(object):
 
     @classmethod        # Use only in initialization (or if attributes are fixed, as for StrictModel)
     @Memoize            # Caching decorator, improves performance if a model is initialized often
-    def _get_list_field_names(cls):
-        """Get the field names of all list fields in this class
+    def get_list_field_names(cls):
+        """Get the field names of all list / collection fields in this class
         """
         list_field_names = []
         for k, v in cls.__dict__.items():

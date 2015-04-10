@@ -13,13 +13,10 @@ from pax.formats import flat_data_formats
 class BulkOutput(plugin.OutputPlugin):
     """Output data to flat table formats
     Convert our data structure to numpy record arrays, one for each class (Event, Peak, ReconstructedPosition, ...).
-    Then output to one of several output formats:
-        NumpyDump:  numpy record array dump (compressed)
-        HDF5Dump:   h5py HDF5  (compressed)
-        PandasCSV, PandasJSON, PandasHTML
+    Then output to one of several output formats (see formats.py)
 
     For each index, an extra column is added (e.g. ReconstructedPosition has an extra column 'Event', 'Peak'
-    and 'ReconstructedPosition', each restarting from 0 whenever the higher-level index changes).
+    and 'ReconstructedPosition', each restarting from 0 whenever the corresponding higher-level entity changes).
 
     The timestamp, pax configuration and version number are stored in a separate table/array: pax_info.
 
@@ -130,6 +127,8 @@ class BulkOutput(plugin.OutputPlugin):
         """
         for dfname in self.data.keys():
             self.log.debug("Converting %s " % dfname)
+            # Set index at which next set of tuples begins
+            self.data[dfname]['first_index'] = len(self.data[dfname]['tuples'])
             # Convert tuples to records
             newrecords = np.array(self.data[dfname]['tuples'], self.data[dfname]['dtype'])
             # Clear tuples. Enjoy the freed memory.
@@ -162,6 +161,13 @@ class BulkOutput(plugin.OutputPlugin):
         self._write_to_disk()
         self.output_format.close()
 
+    def get_index_of(self, mname):
+        # Returns index +1 of last last entry in self.data[mname]. Returns -1 if no mname seen before.
+        if mname not in self.data:
+            return 0
+        else:
+            return self.data[mname]['first_index'] + len(self.data[mname]['tuples'])
+
     def _model_to_tuples(self, m, index_fields):
         """Convert one of our data model instances to a tuple while storing its field names & dtypes,
            handling subcollections recursively, keeping track of index hierarchy
@@ -184,6 +190,13 @@ class BulkOutput(plugin.OutputPlugin):
                 # Initialize dtype with the index fields
                 'dtype':          [(x[0], np.int) for x in index_fields],
                 'index_depth':    len(m_indices),
+                # Dictionary of collection field's field_names: collection class name
+                # Remember if cf is a collection field,
+                # then the model has a classattribute 'cf' = (ChildClassName, ): see data_model.py
+                'subcollection_fields': {
+                    fieldn: getattr(m.__class__, fieldn)[0].__name__
+                    for fieldn in m.get_list_field_names()},
+                'first_index':      0
             }
             first_time_seen = True
 
@@ -194,14 +207,26 @@ class BulkOutput(plugin.OutputPlugin):
                 continue
 
             if isinstance(field_value, list):
-                if not len(field_value):
-                    continue
 
-                # We'll ship model collections off to their own pre-dataframes
+                assert field_name in self.data[m_name]['subcollection_fields']
+                child_class_name = self.data[m_name]['subcollection_fields'][field_name]
+
+                # Store the absolute start index & number of children
+                child_start = self.get_index_of(child_class_name)
+                n_children = len(field_value)
+                if first_time_seen:
+                    # Store this field's data type
+                    self.data[m_name]['dtype'].append(
+                        self._numpy_field_dtype('n_%s' % field_name, 0))    # 0 to ensure integer type
+                    self.data[m_name]['dtype'].append(
+                        self._numpy_field_dtype('%s_start' % field_name, 0))
+                m_data.append(n_children)
+                m_data.append(child_start)
+
+                # We'll ship model collections off to their own tuples (later record arrays)
                 # Convert each child_model to a dataframe, with a new index appended to the index trail
-                element_type = type(field_value[0])
                 for new_index, child_model in enumerate(field_value):
-                    self._model_to_tuples(child_model, index_fields + [(element_type.__name__,
+                    self._model_to_tuples(child_model, index_fields + [(type(child_model).__name__,
                                                                        new_index)])
 
             elif isinstance(field_value, np.ndarray) and not self.output_format.supports_array_fields:
@@ -220,8 +245,6 @@ class BulkOutput(plugin.OutputPlugin):
                                            [(str(i), field_value.dtype) for i in range(len(field_value))],
                         'index_depth':     len(m_indices),
                     }
-
-                self.data[field_name]['tuples'].append(tuple(m_indices + list(field_value)))
 
             else:
                 m_data.append(field_value)
@@ -345,27 +368,21 @@ class ReadFromBulkOutput(plugin.InputPlugin):
             e_record = in_this_event['Event'][0]
             peaks = in_this_event['Peak']
 
-            # We defined a nice custom init for event... ahem... now we have to do cumbersome stuff...
-            event = datastructure.Event(n_channels=self.config['n_channels'],
-                                        start_time=e_record['start_time'],
-                                        stop_time=e_record['stop_time'],
-                                        sample_duration=e_record['sample_duration'])
-            for k, v in self._numpy_record_to_dict(e_record).items():
-                setattr(event, k, v)
+            event = self.convert_record(datastructure.Event, e_record)
 
             for peak_i, p_record in enumerate(peaks):
-                peak = datastructure.Peak(self._numpy_record_to_dict(p_record))
+                peak = self.convert_record(datastructure.Peak, p_record)
 
                 if self.read_recposes:
                     for rp_record in in_this_event['ReconstructedPosition'][
                             in_this_event['ReconstructedPosition']['Peak'] == peak_i]:
                         peak.reconstructed_positions.append(
-                            datastructure.ReconstructedPosition(self._numpy_record_to_dict(rp_record))
+                            self.convert_record(datastructure.ReconstructedPosition, rp_record)
                         )
 
                 if self.read_hits:
                     for hit_record in in_this_event['Hit'][(in_this_event['Hit']['Peak'] == peak_i)]:
-                        cp = datastructure.Hit(self._numpy_record_to_dict(hit_record))
+                        cp = self.convert_record(datastructure.Hit, self._numpy_record_to_dict(hit_record))
                         peak.hits.append(cp)
                         event.all_hits.append(cp)
 
@@ -373,6 +390,22 @@ class ReadFromBulkOutput(plugin.InputPlugin):
 
             self.total_time_taken += (time.time() - ts) * 1000
             yield event
+
+    def convert_record(self, class_to_load_to, record):
+        # We defined a nice custom init for event... ahem... now we have to do cumbersome stuff...
+        if class_to_load_to == datastructure.Event:
+            result = datastructure.Event(n_channels=self.config['n_channels'],
+                                         start_time=record['start_time'],
+                                         stop_time=record['stop_time'],
+                                         sample_duration=record['sample_duration'])
+        else:
+            result = class_to_load_to()
+        for k, v in self._numpy_record_to_dict(record).items():
+            # If result doesn't have this attribute, ignore it
+            # This happens for n_peaks etc. and attributes that have been removed
+            if hasattr(result, k):
+                setattr(result, k, v)
+        return result
 
     def _numpy_record_to_dict(self, record):
         """Convert a single numpy record to a dict (keys=field names, values=values)
