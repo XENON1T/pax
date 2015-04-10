@@ -30,18 +30,17 @@ class ClusterPlugin(plugin.TransformPlugin):
         # Sort hits by detector
         detectors = self.config['channels_in_detector'].keys()
         hits_per_detector = {detector: [] for detector in detectors}
-        for hit in event.all_channel_peaks:
+        for hit in event.all_hits:
             hits_per_detector[self.detector_by_channel[hit.channel]].append(hit)
 
         # Handle each detector separately
-        for detector in detectors:
+        for detector, hits_to_cluster in hits_per_detector.items():
 
             # Sort hits by left index
-            hits_to_cluster = hits_per_detector[detector]
             hits_to_cluster.sort(key=lambda x: x.left)
 
             # Grab pulses in this detector
-            pulses = [oc for oc in event.occurrences if oc.channel in self.config['channels_in_detector'][detector]]
+            pulses = [oc for oc in event.pulses if oc.channel in self.config['channels_in_detector'][detector]]
 
             self.log.debug("Clustering channel peaks in data from %s" % detector)
 
@@ -59,7 +58,7 @@ class ClusterPlugin(plugin.TransformPlugin):
                 penalty_per_ch = event.noise_pulses_in * self.config['penalty_per_noise_pulse']
 
                 # Cluster the single-pes in groups /clusters which will become peaks
-                # CHILD CLASS IS CALLED HERE
+                # CHILD CLASS CONTAINING CLUSTERING ALGORITHM IS CALLED HERE
                 indices_of_hits_per_peak = self.cluster_hits(hits_to_cluster)
                 self.log.debug("Made %s clusters" % len(indices_of_hits_per_peak))
 
@@ -71,7 +70,7 @@ class ClusterPlugin(plugin.TransformPlugin):
                         raise RuntimeError("Every peak should have a hit... what's going on?")
 
                     peak = datastructure.Peak({
-                        'channel_peaks':            [hits_to_cluster[i] for i in this_peak_s_hit_indices],
+                        'hits':            [hits_to_cluster[i] for i in this_peak_s_hit_indices],
                         'detector':                 detector,
                         'area_per_channel':         np.zeros(self.n_channels),
                         'does_channel_contribute':  np.zeros(self.n_channels, dtype='bool'),
@@ -80,14 +79,15 @@ class ClusterPlugin(plugin.TransformPlugin):
 
                     # Compute basic properties of peak, needed later in the plugin
                     # For speed it would be better to compute as much as possible later..
-                    peak.left = peak.channel_peaks[0].left
-                    peak.right = peak.channel_peaks[0].right
-                    for hit in peak.channel_peaks:
+                    peak.left = peak.hits[0].left
+                    peak.right = peak.hits[0].right
+                    for hit in peak.hits:
                         peak.left = min(peak.left, hit.left)
                         peak.right = max(peak.right, hit.right)
                         peak.does_channel_contribute[hit.channel] = True
+                    peak.n_contributing_channels = len(peak.contributing_channels)
 
-                    if peak.number_of_contributing_channels == 0:
+                    if peak.n_contributing_channels == 0:
                         raise RuntimeError(
                             "Every peak should have at least one contributing channel... what's going on?")
 
@@ -100,12 +100,13 @@ class ClusterPlugin(plugin.TransformPlugin):
                         channel = oc.channel
                         if not peak.does_channel_contribute[channel]:
                             peak.does_channel_have_noise[channel] = True
+                    peak.n_noise_channels = len(peak.noise_channels)
 
                     # Classify noise and lone hits
                     # TODO: Noise classification should be configurable!
-                    is_noise = peak.number_of_noise_channels / peak.number_of_contributing_channels > \
+                    is_noise = peak.n_noise_channels / peak.n_contributing_channels > \
                         self.config['max_noise_channels_over_contributing_channels']
-                    is_lone_hit = peak.number_of_contributing_channels == 1
+                    is_lone_hit = peak.n_contributing_channels == 1
                     if is_noise:
                         peak.type = 'noise'
                         # TODO: Should we also reject all hits?
@@ -120,7 +121,7 @@ class ClusterPlugin(plugin.TransformPlugin):
 
                     # Add a penalty for each hit, if the peak was lone / noise
                     if is_noise or is_lone_hit:
-                        for hit in peak.channel_peaks:
+                        for hit in peak.hits:
                             penalty_per_ch[hit.channel] += self.config['penalty_per_lone_hit']
 
                     peaks.append(peak)
@@ -143,13 +144,13 @@ class ClusterPlugin(plugin.TransformPlugin):
                     # Compute area for this peak outside suspicious channels
                     # a witness to this peak not being noise
                     witness_area = 0
-                    for hit in peak.channel_peaks:
+                    for hit in peak.hits:
                         if hit.channel not in suspicious_channels:
                             witness_area += hit.area
                     # witness_area = peak.area - np.sum(peak.area_per_channel[suspicious_channels])
 
                     # If the witness area for a hit is lower than the penalty in that channel, reject the hit
-                    for hit in peak.channel_peaks:
+                    for hit in peak.hits:
                         if hit.channel not in suspicious_channels:
                             continue
                         channel = hit.channel
@@ -163,7 +164,7 @@ class ClusterPlugin(plugin.TransformPlugin):
                     break
 
                 # Delete rejected hits from hits_to_cluster, then redo clustering
-                # The rejected hits will remain in event.all_channel_peaks, of course
+                # The rejected hits will remain in event.all_hits, of course
                 hits_to_cluster = [h for h in hits_to_cluster if not h.is_rejected]
                 clustering_pass += 1
 
@@ -282,6 +283,46 @@ class HitDifference(ClusterPlugin):
 
 
 class GapSize(ClusterPlugin):
+    """Clusters hits based on gaps = times not covered by any hits.
+    Any gap longer than max_gap_size starts a new cluster.
+    Difference with HitDifference: this takes interval nature of hits into account
+    """
+    def startup(self):
+        super().startup()
+        # Convert gap threshold to samples (is in time (ns) in config)
+        self.large_gap_threshold = self.config['large_gap_threshold'] / self.dt
+        self.small_gap_threshold = self.config['small_gap_threshold'] / self.dt
+        self.transition_point = self.config['transition_point']
+
+    def cluster_hits(self, hits):
+        # If a hit has a left > this, it will form a new cluster
+        boundary = -999999999
+        clusters = []
+        for i, hit in enumerate(hits):
+
+            if hit.left > boundary:
+                # Hit starts after current boundary: new cluster
+                clusters.append([])
+                # (Re)set area and thresholds
+                area = 0
+                gap_size_threshold = self.large_gap_threshold
+                boundary = hit.right + gap_size_threshold
+
+            # Add this hit to the cluster
+            clusters[-1].append(i)
+            area += hit.area
+
+            # Can we start applying the tighter threshold?
+            if area > self.transition_point:
+                # Yes, there's no chance this is a single electron: use a tighter clustering boundary
+                gap_size_threshold = self.small_gap_threshold
+
+            # Extend the boundary at which a new clusters starts, if needed
+            boundary = max(boundary, hit.right + gap_size_threshold)
+        return clusters
+
+
+class GapSize2(ClusterPlugin):
     """Clusters hits based on gaps = times not covered by any hits.
     Any gap longer than max_gap_size starts a new cluster.
     Difference with HitDifference: this takes interval nature of hits into account

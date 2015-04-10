@@ -217,6 +217,10 @@ class PandasFormat(BulkOutputFormat):
 
     pandas_format_key = None
 
+    def open(self, name, mode):
+        # Don't do anything here: just store filename
+        self.filename = name
+
     def write_data(self, data):
         for name, records in data.items():
             # Write pandas dataframe to container

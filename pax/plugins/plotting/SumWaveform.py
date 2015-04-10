@@ -36,7 +36,7 @@ class SumWaveform(plugin.TransformPlugin):
                 ))
 
         # Build the raw sum waveform
-        for pulse in event.occurrences:
+        for pulse in event.pulses:
             channel = pulse.channel
             detector = self.detector_by_channel[channel]
 
@@ -57,7 +57,7 @@ class SumWaveform(plugin.TransformPlugin):
             sum_w_raw[pulse.left:pulse.right+1] += w * adc_to_pe
 
         # Build the hits-only sum waveform
-        for hit in event.all_channel_peaks:
+        for hit in event.all_hits:
             channel = hit.channel
             detector = self.detector_by_channel[channel]
 
@@ -65,7 +65,7 @@ class SumWaveform(plugin.TransformPlugin):
             if hit.is_rejected:
                 continue
 
-            pulse = event.occurrences[hit.found_in_pulse]
+            pulse = event.pulses[hit.found_in_pulse]
 
             # Retrieve the waveform, subtract baseline, invert
             left_in_pulse = hit.left - pulse.left
