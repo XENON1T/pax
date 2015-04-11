@@ -118,7 +118,6 @@ class FindHits(plugin.TransformPlugin):
 
             # Store the found peaks in the datastructure
             # Convert area, noise_sigma and height from adc counts -> pe
-            peaks = []
             adc_to_pe = self.adc_to_e / self.config['gains'][channel]
             for i, hit in enumerate(hits_found):
 
@@ -151,24 +150,37 @@ class FindHits(plugin.TransformPlugin):
                 }))
 
             # Diagnostic plotting
-            # Can't more to plotting plugin: pulse grouping of hits lost after clustering
+            # Bit difficult to move to separate plugin: would have to re-group hits by pulse
             if self.make_diagnostic_plots == 'always' or \
-               self.make_diagnostic_plots == 'no peaks' and not len(peaks):
-                plt.figure()
-                plt.plot(w, drawstyle='steps', label='data')
+               self.make_diagnostic_plots == 'no peaks' and len(hits_found) == 0 or \
+               self.make_diagnostic_plots == 'tricky cases' and (
+                   len(hits_found) == 0 or
+                   len(hits_found) == 1 and event.all_hits[-1].height < 8 * event.all_hits[-1].noise_sigma or
+                   event.all_hits[-1].noise_sigma > 1):
+
+                # Setup the twin-y-axis plot
+                fig, ax1 = plt.subplots(figsize=(10, 7))
+                ax2 = ax1.twinx()
+                ax1.set_xlabel("Sample number (%s ns)" % event.sample_duration)
+                ax1.set_ylabel("ADC counts above baseline")
+                ax2.set_ylabel("pe / sample")
+
+                # Plot the signal and noise levels
+                noise_sigma = event.all_hits[-1].noise_sigma / adc_to_pe    # Noise sigma level in ADC counts
+                ax1.plot(w, drawstyle='steps', label='Data')
+                ax1.plot(np.ones_like(w) * self.min_sigma * noise_sigma, '--', label='Threshold', color='red')
                 for hit in hits_found:
-                    plt.axvspan(hit[0] - 1, hit[1], color='red', alpha=0.5)
-                plt.plot(noise_sigma * np.ones(len(w)), '--', label='1 sigma')
-                plt.plot(self.min_sigma * noise_sigma * np.ones(len(w)),
-                         '--', label='%s sigma' % self.min_sigma)
-                # TODO: don't draw another line, draw another y-axis!
-                plt.plot(np.ones(len(w)) * self.config['gains'][channel] / self.adc_to_e,
-                         '--', label='1 pe/sample')
-                plt.legend()
+                    ax1.axvspan(hit[0] - 1, hit[1], color='red', alpha=0.2)
+                ax1.plot(np.ones_like(w) * noise_sigma, '--', label='Noise level', color='gray')
+
+                # Make sure the y-scales match
+                ax2.set_ylim(ax1.get_ylim()[0] * adc_to_pe, ax1.get_ylim()[1] * adc_to_pe)
+
+                # Finish the plot, save, close
+                leg = ax1.legend()
+                leg.get_frame().set_alpha(0.5)
                 bla = (event.event_number, start, stop, channel)
-                plt.title('Event %s, pulse %d-%d, Channel %d' % bla)
-                plt.xlabel("Sample number (%s ns)" % event.sample_duration)
-                plt.ylabel("Amplitude (ADC counts above baseline)")
+                plt.title('Event %s, occurrence %d-%d, Channel %d' % bla)
                 plt.savefig(os.path.join(self.make_diagnostic_plots_in,
                                          'event%04d_occ%05d-%05d_ch%03d.png' % bla))
                 plt.close()
