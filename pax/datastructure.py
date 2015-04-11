@@ -73,7 +73,7 @@ class Hit(Model):
 
     area = 0.0                  #: Area of the peak in photoelectrons
 
-    #: Height of highest point in peak (in pe/bin) in unfiltered waveform
+    #: Height of highest point in peak (in pe/bin)
     height = 0.0
 
     #: Noise sigma in pe/bin of pulse in which peak was found.
@@ -232,16 +232,13 @@ class Pulse(StrictModel):
     #: Channel the pulse belongs to (integer)
     channel = INT_NAN
 
-    #: Maximum amplitude (in ADC counts; float) in unfiltered waveform
+    #: Maximum amplitude (in ADC counts; float)
     #: Will remain nan if channel's gain is 0
     #: baseline_correction, if any, has been substracted
-    # TODO: may not be equal to actual pulse height, baseline correction
-    # is computed on filtered wv. :-(
     height = float('nan')
 
     #: Noise sigma for this pulse (in ADC counts)
-    #: Computed in the filtered channel waveform
-    #: Will remain nan unless pulse is processed by smallpeakfinder
+    #: Will remain nan unless pulse is processed by hitfinder
     noise_sigma = float('nan')
 
     #: Baseline (in ADC counts, but float!) relative to configured reference baseline
