@@ -335,7 +335,7 @@ class GapSize2(ClusterPlugin):
         self.transition_point = self.config['transition_point']
 
     def cluster_hits(self, hits):
-        # If a hit has a left > this, it will form a new cluster
+        # If the next hit starts at a sample > this, start a new cluster
         boundary = -999999999
         clusters = []
         for i, hit in enumerate(hits):
