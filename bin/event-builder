@@ -19,6 +19,13 @@ def main():
                         type=int,
                         help="Wait time between searching if no data")
 
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument('--master',
+                       action='store_true')
+
+    group.add_argument('--standalone',
+                       action='store_true')
+
     run_db_group = parser.add_argument_group(title='Runs database settings',
                                              description='The runs database stores '
                                                          'all metadata about runs, '
@@ -52,7 +59,7 @@ def main():
     console = logging.StreamHandler()
     console.setLevel(logging.DEBUG)
     # set a format which is simpler for console use
-    formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+    formatter = logging.Formatter('%(asctime)s %(name)-12s: %(levelname)-8s %(message)s')
     # tell the handler to use this format
     console.setFormatter(formatter)
     # add the handler to the root logger
@@ -60,21 +67,23 @@ def main():
     log = logging.getLogger('eb')
 
     args = parser.parse_args()
-
+    print(args)
     query = {"trigger.status" : "waiting_to_be_processed"}
 
 
     log.info("Searching for run")
 
     client = pymongo.MongoClient(args.address,
-                                args.port,
-                                serverSelectionTimeoutMS=500)
+                                 args.port,
+                                 serverSelectionTimeoutMS=500)
     try:
         client.admin.command('ping')
-        log.debug("Connection successful")
+        log.debug("Connection successful to %s:%d",
+                  args.address,
+                  args.port)
     except pymongo.errors.ConnectionFailure:
-        log.fatal("Cannot connect to MongoDB at %s:%d" % (args.hostname,
-                                                               args.port))
+        log.fatal("Cannot connect to MongoDB at %s:%d" % (args.address,
+                                                          args.port))
         raise
 
     log.debug('Fetching databases: %s', args.database)
@@ -90,31 +99,25 @@ def main():
         if run_doc is None:
             log.info("No data to process... waiting %d seconds",
                          args.wait)
-            def spinning_cursor(n):
-                for i in range(n//4):
-                    for cursor in '|/-\\':
-                        yield cursor
-
-            n = 12
-            for cursor in spinning_cursor(n):
-                sys.stdout.write(cursor)  # write the next character
-                sys.stdout.flush()                # flush stdout buffer (actual character display)
-                sys.stdout.write('\b')            # erase the last written char
-                time.sleep(args.wait/n)
-            sys.stdout.flush()
-
+            time.sleep(args.wait)
         else:
             log.info("Building events for %s",
                          run_doc['name'])
 
             filename = 'raw_%s.avro' % run_doc['name']
-            core.Processor(config_names='eventbuilder_standalone',
+            try:
+                p = core.Processor(config_names='eventbuilder_standalone',
                            config_dict={'DEFAULT' : {'run_doc' : run_doc['_id']},
-                                        'output_name' : filename}).run()
+                                        'output_name' : filename,
+                                        'MongoDB' : {'runs_database_location' : {'address' : args.address,
+                                                                                 'database' : args.database,
+                                                                                 'collection' : args.collection}}})
+
+                p.run()
+            except pymongo.errors.ServerSelectionTimeoutError as e:
+                log.exception(e)
+                collection.update(query,
+                                  {'$set': {'trigger.status' : 'error'}})
 
 if __name__ == "__main__":
     main()
-
-# Load configuration and run the processor
-##
-#

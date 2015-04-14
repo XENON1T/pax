@@ -36,7 +36,11 @@ class IOMongoDB():
         self.connections = {}  # MongoClient objects
         self.mongo = {}        #
 
+        # Each MongoDB class must acquire the run database document that
+        # describes this acquisition.  This is partly because the state can
+        # change midrun.  For example, the run can end.
         self.run_doc_id = self.config['run_doc']
+        self.log.debug("Run doc %s", self.run_doc_id)
         self.setup_access('run',
                           **self.config['runs_database_location'])
 
@@ -48,7 +52,14 @@ class IOMongoDB():
                                                                            update)
         self.sort_key = [(START_KEY, 1),
                          (START_KEY, 1)]
+
+        self.mongo_find_options = {'sort': self.sort_key,
+                                   'cursor_type' : pymongo.cursor.CursorType.EXHAUST}
+
+        # Digitizer bins
         self.mongo_time_unit = self.config.get('sample_duration')
+
+        # Retrieved from runs database
         self.data_taking_ended = False
 
 
@@ -85,6 +96,9 @@ class IOMongoDB():
         self.mongo[name] = m
 
     def setup_input(self):
+        self.log.info("run_doc")
+        self.log.info(self.run_doc['reader'])
+
         buff = self.run_doc['reader']['storage_buffer']
 
         # Delete after Dan's change in kodiaq issue #48
@@ -190,10 +204,9 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
             search_after = self.last_time - delay # ns
             self.log.info("Searching for pulses after %s",
                           sampletime_fmt(search_after))
-            times = list(c.find({'time' : {'$gt' : search_after/self.mongo_time_unit}},
+            times = list(c.find({'time' : {'$gt' : search_after * (self.mongo_time_unit / units.ns)}},
                                 projection=[START_KEY, STOP_KEY],
-                                sort=self.sort_key,
-                                cursor_type=pymongo.cursor.CursorType.EXHAUST))
+                                **self.mongo_find_options))
 
             n = len(times)
             if n == 0:
@@ -202,7 +215,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
                 continue
 
             x = [[doc[START_KEY], doc[STOP_KEY]] for doc in times]  # in digitizer units
-            x = np.array(x) / self.mongo_time_unit
+            x = np.array(x) * (units.ns / self.mongo_time_unit)
             x = x.mean(axis=1)  # in ns
 
             self.log.info("Processing range [%s, %s]",
@@ -251,32 +264,35 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, IOMongoDB):
         self.setup_input()
 
     def process_event(self, event):
-        t0, t1 = event.start_time, event.stop_time
+        t0, t1 = event.start_time, event.stop_time  # ns
 
         event = Event(start_time = event.start_time,
                       stop_time = event.stop_time,
                       n_channels=self.config['n_channels'],
                       sample_duration=self.mongo_time_unit)
 
-        self.log.debug("Building event in range [%d,%d]", t0, t1)
+        self.log.info("Building event in range [%s, %s]",
+                          sampletime_fmt(t0),
+                          sampletime_fmt(t1))
 
-        query = {START_KEY : {"$gte" : t0 / self.mongo_time_unit},
-                 STOP_KEY : {"$lte" : t1 / self.mongo_time_unit}}
+        query = {START_KEY : {"$gte" : t0 * (self.mongo_time_unit/units.ns)},
+                 STOP_KEY : {"$lte" : t1 * (self.mongo_time_unit/units.ns)}}
 
-        self.mongo_iterator = self.mongo['input']['collection'].find(query)
-                                                                     #exhaust = True)
+        self.mongo_iterator = self.mongo['input']['collection'].find(query,
+                                                                     **self.mongo_find_options)
         pulse_objects = []
 
         for i, pulse_doc in enumerate(self.mongo_iterator):
             # Fetch raw data from document
             data = pulse_doc['data']
 
-            time_within_event = int(pulse_doc[START_KEY]) - (t0 // self.mongo_time_unit)
+            time_within_event = pulse_doc[START_KEY] - (t0 * (self.mongo_time_unit // units.ns))
+
 
             if self.compressed:
                 data = snappy.decompress(data)
 
-            pulse_objects.append(Pulse(left=(time_within_event),
+            pulse_objects.append(Pulse(left=int(time_within_event),
                                                  raw_data=np.fromstring(data,
                                                                         dtype="<i2"),
                                                  channel=int(pulse_doc['channel'])))
