@@ -7,14 +7,17 @@ import os
 from pax import core
 
 
+
+
+
 ##
 # Parse command line arguments
 ##
-parser = argparse.ArgumentParser(description="Process XENON1 data")
+parser = argparse.ArgumentParser(description="Process XENON1T events.")
 
 # Input and output overrides
-parser.add_argument('--input',  default=None, help="File, database or directory to read events from", nargs='?')
-parser.add_argument('--output', default=None, help="File, database or directory to write events to",  nargs='?')
+parser.add_argument('--input', default=None, help="File, database or directory to read events from", nargs='?')
+parser.add_argument('--output', default=None, help="File, database or directory to write events to", nargs='?')
 
 # Log level control
 parser.add_argument('--log', default=None, help="Set log level, e.g. 'debug'")
@@ -70,6 +73,7 @@ args = parser.parse_args()
 if args.redo:
     from pandas import HDFStore
     import json
+
     file_to_redo = core.data_file_name(args.redo)
     store = HDFStore(file_to_redo)
     if len(store['pax_info']) > 1:
@@ -77,7 +81,7 @@ if args.redo:
     override_dict = json.loads(store['pax_info'].iloc[-1]['configuration_json'])
     # Add _redone to output name, unless user has specified an output name
     if not args.output:
-        redo_path, ext = os.path.splitext(args.redo)    # Remove .hdf from path
+        redo_path, ext = os.path.splitext(args.redo)  # Remove .hdf from path
         redo_path += '_redone'
         print("Output path of redone processing not specified: will write to %s\n" % redo_path)
         args.output = redo_path
@@ -86,18 +90,18 @@ else:
     override_dict = {'pax': {}}
 
 for argname, configname in (
-        ('input',      'input_name'),
-        ('output',     'output_name'),
-        ('log',        'logging_level'),
+        ('input', 'input_name'),
+        ('output', 'output_name'),
+        ('log', 'logging_level'),
         ('stop_after', 'stop_after'),
-        ('event',      'events_to_process'),
-    ):
+        ('event', 'events_to_process'),
+):
     value = getattr(args, argname)
     if value is not None:
         override_dict['pax'][configname] = value
 
 # Overrides for plotting
-if args.plot_to_dir or args.plot :
+if args.plot_to_dir or args.plot:
     override_dict['pax']['output'] = 'Plotting.PlotEventSummary'
     if args.plot_to_dir:
         override_dict['Plotting.PlotEventSummary'] = {'output_dir': args.plot_to_dir}

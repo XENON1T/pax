@@ -335,7 +335,7 @@ class Event(StrictModel):
     #: Number of hits rejected in the suspicious channel algorithm
     n_hits_rejected = np.array([], dtype=np.int)
 
-    def __init__(self, n_channels, start_time, **kwargs):
+    def __init__(self, n_channels, start_time, partial=False, **kwargs):
 
         # Start time is mandatory, so it is not in kwargs
         kwargs['start_time'] = start_time
@@ -354,12 +354,13 @@ class Event(StrictModel):
             raise ValueError("Cannot initialize an event with an unknown length: " +
                              "pass sample_duration and either stop_time or length")
 
-        # Initialize numpy arrays -- need to have n_channels and self.length
-        # TODO: don't initialize these if is already in kwargs
-        # TODO: better yet, make an alternate init or something?
-        self.noise_pulses_in = np.zeros(n_channels, dtype=np.int)
-        self.n_hits_rejected = np.zeros(n_channels, dtype=np.int)
-        self.is_channel_suspicious = np.zeros(n_channels, dtype=np.bool)
+        if not partial:
+            # Initialize numpy arrays -- need to have n_channels and self.length
+            # TODO: don't initialize these if is already in kwargs
+            # TODO: better yet, make an alternate init or something?
+            self.noise_pulses_in = np.zeros(n_channels, dtype=np.int)
+            self.n_hits_rejected = np.zeros(n_channels, dtype=np.int)
+            self.is_channel_suspicious = np.zeros(n_channels, dtype=np.bool)
 
     @classmethod
     def empty_event(cls):
