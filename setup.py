@@ -27,6 +27,7 @@ setup(
     url='https://github.com/XENON1T/pax',
     packages=['pax',
               'pax.config',
+              'pax.trigger',
               'pax.plugins',
               'pax.plugins.corrections',
               'pax.plugins.peak_processing',

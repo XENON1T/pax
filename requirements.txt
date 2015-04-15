@@ -13,3 +13,4 @@ python-snappy
 numba
 scikit-learn
 h5py
+celery # trigger
