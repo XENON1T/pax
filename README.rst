@@ -35,7 +35,7 @@ Though most of our dependencies are solved by using Anaconda, there is one
 dependency that often cannot be installed on olders machiens. You must separately 
 install the `snappy compression library <https://code.google.com/p/snappy/>`_,
 which is C++ code that must be compiled and is used for raw data access. If 
-you're using Ubuntu and have super user permissions, you could just run `sudo apt-get install libsnappy-dev`.  
+you're using Ubuntu and have super user permissions, you could just install the libsnappy-dev package.  
 However, we recommend you do the following::
 
   $ wget https://snappy.googlecode.com/files/snappy-1.1.1.tar.gz
