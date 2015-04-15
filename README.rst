@@ -17,24 +17,42 @@ Installation
 Installing requirements
 -----------------------
 
-We require Python 3.4 and several python modules. The easiest way to install these 
-is to get a scientific python distribution such as `Anaconda <https://store.continuum.io/cshop/anaconda/>`_.
-Use your package manager, or run::
+We use Python 3.4 and several python modules. To allow people to run `pax` from
+their home directory and to ease people using pax, we recommend they setup the
+scientific python distribution `Anaconda <https://store.continuum.io/cshop/anaconda/>`_.
+This should make it easier to install our code than typical experiments, and if this
+isn't true, please let us know (See `relevant documentation section`_).  To set this
+up, run::
 
   $ wget http://repo.continuum.io/anaconda3/Anaconda3-2.1.0-Linux-x86_64.sh
   $ bash Anaconda3-2.1.0-Linux-x86_64.sh
   $ export PATH=~/anaconda3/bin:$PATH  # If installed in default location
 
-
 Alternatively, you can install Python 3.4 from the `python webpage <https://www.python.org/>`_ 
-or your OS's package management system. You may have to install some additional modules manually.
+or your OS's package management system. See the FAQ for more information.
 
-You must separately install the `snappy compression library <https://code.google.com/p/snappy/>`_
-and its python bindings. For Ubuntu you can do::
+Though most of our dependencies are solved by using Anaconda, there is one
+dependency that often cannot be installed on olders machiens. You must separately 
+install the `snappy compression library <https://code.google.com/p/snappy/>`_,
+which is C++ code that must be compiled and is used for raw data access. If 
+you're using Ubuntu and have super user permissions, you could just run `sudo apt-get install libsnappy-dev`.  
+However, we recommend you do the following::
 
-  $ sudo apt-get install libsnappy-dev
+  $ wget https://snappy.googlecode.com/files/snappy-1.1.1.tar.gz
+  $ tar xvfz snappy-1.1.1.tar.gz 
+  $ cd snappy-1.1.1
+  $ ./configure --prefix=`conda info --root`
+  $ make install
+  $ cd ~
+  $ CFLAGS=-I`conda info --root`/include LDFLAGS=-L`conda info --root`/lib pip install python-snappy
+  
+You should now be able to run the following command::
 
-For installation on windows, see `the FAQ <http://xenon1t.github.io/pax/faq.html#can-i-set-up-pax-on-my-windows-machine>`_.
+  $ python -m snappy
+
+
+For installation on Windows, see `the FAQ <http://xenon1t.github.io/pax/faq.html#can-i-set-up-pax-on-my-windows-machine>`_. 
+Also within the FAQs, you can find other useful hints.
 
 
 Installing pax
