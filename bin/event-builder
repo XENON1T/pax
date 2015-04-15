@@ -12,26 +12,40 @@ from pax import core
 # Parse command line arguments
 ##
 def main():
-    parser = argparse.ArgumentParser(description="Build XENON1T events from the data aquisiton.")
+    parser = argparse.ArgumentParser(description="Build XENON1T events from the"
+                                                 " data aquisiton. This tools "
+                                                 "starts the distributed "
+                                                 "processing of events.")
 
-    parser.add_argument('--wait',
-                        default=1,
-                        type=int,
-                        help="Wait time between searching if no data")
 
-    group = parser.add_mutually_exclusive_group()
+
+    mode_group = parser.add_argument_group(title='Event builder modes',
+                                           description='The event builder can '
+                                                        'be started in various '
+                                                        'different '
+                                                        'configurations.')
+    group = mode_group.add_mutually_exclusive_group(required=True)
     group.add_argument('--master',
-                       action='store_true')
+                       action='store_true',
+                       help='Start master that feeds the workers.')
+    group.add_argument('--worker',
+                       action='store_true',
+                       help='Information on starting worker nodes')
 
     group.add_argument('--standalone',
-                       action='store_true')
+                       action='store_true',
+                       help='Run event builder in single threaded mode '
+                            '(for testing)')
+
+
+
+    run_db_str = 'The runs database stores all metadata about runs, including'\
+                 ' which are waiting to be triggered. Communication is ' \
+                 'required to find data.  More information on the MongoDB ' \
+                 'jargon (e.g., "collection") can be found in their docs.'
 
     run_db_group = parser.add_argument_group(title='Runs database settings',
-                                             description='The runs database stores '
-                                                         'all metadata about runs, '
-                                                         'including which are '
-                                                         'waiting to be '
-                                                         'triggered.')
+                                             description=run_db_str)
     run_db_group.add_argument('--address',
                               default='127.0.0.1',
                               help='Address or hostname of MongoDB instance.')
@@ -46,6 +60,11 @@ def main():
                               type=int,
                               help='Listening port of MongoDB.')
 
+
+    parser.add_argument('--wait',
+                        default=1,
+                        type=int,
+                        help="Wait time between searching if no data")
     # Log level control
     parser.add_argument('--log', default=None, help="Set log level, e.g. 'debug'")
 
@@ -67,7 +86,18 @@ def main():
     log = logging.getLogger('eb')
 
     args = parser.parse_args()
+
+    if args.worker:
+        log.info("To start a worker, you have to initialize pax via celery.")
+        log.info("This can be done with the following command:")
+        log.info("\tcelery -A pax.event_builder worker")
+        return
+
     print(args)
+
+
+
+
     query = {"trigger.status" : "waiting_to_be_processed"}
 
 
