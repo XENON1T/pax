@@ -72,7 +72,7 @@ information about Avro can be found at:</p>
 <tt class="descname">get_events</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Avro.html#ReadAvro.get_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Avro.ReadAvro.get_events" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fetch events from Avro file</p>
 <p>This produces a generator for all the events within the file.  These
-Events contain occurences, and the appropriate pax objects will be
+Events contain pulses, and the appropriate pax objects will be
 built.</p>
 </dd></dl>
 
@@ -112,8 +112,207 @@ built.</p>
 </dd></dl>
 
 </div>
-<div class="section" id="pax-plugins-io-mongodb-module">
-<h2>pax.plugins.io.MongoDB module<a class="headerlink" href="#pax-plugins-io-mongodb-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-pax.plugins.io.BulkOutput">
+<span id="pax-plugins-io-bulkoutput-module"></span><h2>pax.plugins.io.BulkOutput module<a class="headerlink" href="#module-pax.plugins.io.BulkOutput" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pax.plugins.io.BulkOutput.BulkOutput">
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.BulkOutput.</tt><tt class="descname">BulkOutput</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BulkOutput.html#BulkOutput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BulkOutput.BulkOutput" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.OutputPlugin" title="pax.plugin.OutputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.OutputPlugin</span></tt></a></p>
+<p>Output data to flat table formats
+Convert our data structure to numpy record arrays, one for each class (Event, Peak, ReconstructedPosition, ...).
+Then output to one of several output formats (see formats.py)</p>
+<p>For each index, an extra column is added (e.g. ReconstructedPosition has an extra column &#8216;Event&#8217;, &#8216;Peak&#8217;
+and &#8216;ReconstructedPosition&#8217;, each restarting from 0 whenever the corresponding higher-level entity changes).</p>
+<p>The timestamp, pax configuration and version number are stored in a separate table/array: pax_info.</p>
+<p>Because numpy arrays are optimized for working with large data structures, converting/appending each instance
+separately would take long. Hence, we store data in lists first, then convert those once we&#8217;ve collected a bunch.</p>
+<p>Available configuration options:</p>
+<blockquote>
+<div><ul>
+<li><p class="first">output_format:      Name of output format to produce. Must be child class of BulkOutputFormat</p>
+</li>
+<li><p class="first">output_name:        The name of the output file or folder, WITHOUT file extension.</p>
+</li>
+<li><p class="first">fields_to_ignore:   Fields which will not be stored.</p>
+</li>
+<li><p class="first">overwrite_data:     If True, overwrite if a file/directory with the same name exists</p>
+</li>
+<li><dl class="first docutils">
+<dt>string_data_length: Maximum length of strings in string data fields; longer strings will be truncated.</dt>
+<dd><p class="first last">(the pax configuration is always stored fully)</p>
+</dd>
+</dl>
+</li>
+<li><p class="first">append_data:        Append data to an existing file, if output format supports it</p>
+</li>
+<li><p class="first">buffer_size:        Convert to numpy record arrays after every nth event.</p>
+</li>
+<li><dl class="first docutils">
+<dt>write_in_chunks:    Write to disk every time after converting to numpy record arrays, if the output format</dt>
+<dd><p class="first last">supports it. Else all data is kept in memory, then written to disk on shutdown.</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div></blockquote>
+<dl class="method">
+<dt id="pax.plugins.io.BulkOutput.BulkOutput.get_index_of">
+<tt class="descname">get_index_of</tt><big>(</big><em>mname</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BulkOutput.html#BulkOutput.get_index_of"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BulkOutput.BulkOutput.get_index_of" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.BulkOutput.BulkOutput.shutdown">
+<tt class="descname">shutdown</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BulkOutput.html#BulkOutput.shutdown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BulkOutput.BulkOutput.shutdown" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.BulkOutput.BulkOutput.startup">
+<tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BulkOutput.html#BulkOutput.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BulkOutput.BulkOutput.startup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.BulkOutput.BulkOutput.write_event">
+<tt class="descname">write_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BulkOutput.html#BulkOutput.write_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BulkOutput.BulkOutput.write_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Receive event and determine what to do with it</p>
+<p>Store all the event data internally, write to disk when appropriate.
+This function follows the plugin API.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.plugins.io.BulkOutput.ReadFromBulkOutput">
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.BulkOutput.</tt><tt class="descname">ReadFromBulkOutput</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BulkOutput.html#ReadFromBulkOutput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BulkOutput.ReadFromBulkOutput" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.InputPlugin" title="pax.plugin.InputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.InputPlugin</span></tt></a></p>
+<p>Read data from BulkOutput for reprocessing</p>
+<p>&#8216;Reprocessing&#8217; means: reading in old processed data, then start somewhere in middle of processing chain,
+(e.g. redo classification), and finally write to new file.</p>
+<p>Reprocessing WITHOUT reading in the individual hits is very fast. This is fine for re-doing
+peak classification and anything higher-level we may come up with.</p>
+<p>For re-doing clustering and/or peak property computation you must read in the hits, which is slow.
+The speed is set by overhead in the datastructure: 1/3 of runtime due to type checking, rest due to
+converting between all the internal formats). We can try to optimize this at some point.</p>
+<p>However, for this kind of reprocessing we may eventually need to read the raw data and build a sum waveform
+as well, which takes time too.</p>
+<p>TODO: Check if all the tables / dnames we want to read in are present in the file, else give error</p>
+<dl class="method">
+<dt id="pax.plugins.io.BulkOutput.ReadFromBulkOutput.convert_record">
+<tt class="descname">convert_record</tt><big>(</big><em>class_to_load_to</em>, <em>record</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BulkOutput.html#ReadFromBulkOutput.convert_record"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BulkOutput.ReadFromBulkOutput.convert_record" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.BulkOutput.ReadFromBulkOutput.get_events">
+<tt class="descname">get_events</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BulkOutput.html#ReadFromBulkOutput.get_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BulkOutput.ReadFromBulkOutput.get_events" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get events from processed data source
+Follows plugin API.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.BulkOutput.ReadFromBulkOutput.startup">
+<tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BulkOutput.html#ReadFromBulkOutput.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BulkOutput.ReadFromBulkOutput.startup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-pax.plugins.io.MongoDB">
+<span id="pax-plugins-io-mongodb-module"></span><h2>pax.plugins.io.MongoDB module<a class="headerlink" href="#module-pax.plugins.io.MongoDB" title="Permalink to this headline">¶</a></h2>
+<p>Interfacing to DAQ via MongoDB</p>
+<p>The DAQ uses MongoDB for input and output.  The classes defined hear allow the
+user to read data from the DAQ and also inject raw occurences into the DAQ.</p>
+<dl class="class">
+<dt id="pax.plugins.io.MongoDB.MongoDBFakeDAQOutput">
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.MongoDB.</tt><tt class="descname">MongoDBFakeDAQOutput</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBFakeDAQOutput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBFakeDAQOutput" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.OutputPlugin" title="pax.plugin.OutputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.OutputPlugin</span></tt></a></p>
+<p>Inject PMT pulses into DAQ to test trigger.</p>
+<p>This plugin aims to emulate the DAQReader by creating run control documents
+and feeding raw data into the DAQ&#8217;s MongoDB format.  Consult here for more
+on formats:</p>
+<p><a class="reference external" href="https://docs.google.com/drawings/d/1dytKBmMARsZtuyUmLbzm9IbXM1hre">https://docs.google.com/drawings/d/1dytKBmMARsZtuyUmLbzm9IbXM1hre</a>
+-knkEIU4X3Ot8U/edit</p>
+<p>Note: write run document after output collection created.</p>
+<dl class="staticmethod">
+<dt id="pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.chunks">
+<em class="property">static </em><tt class="descname">chunks</tt><big>(</big><em>l</em>, <em>n</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBFakeDAQOutput.chunks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.chunks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Yield successive n-sized chunks from l.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.get_connection">
+<tt class="descname">get_connection</tt><big>(</big><em>hostname</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBFakeDAQOutput.get_connection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.get_connection" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.handle_occurences">
+<tt class="descname">handle_occurences</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBFakeDAQOutput.handle_occurences"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.handle_occurences" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.shutdown">
+<tt class="descname">shutdown</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBFakeDAQOutput.shutdown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.shutdown" title="Permalink to this definition">¶</a></dt>
+<dd><p>Notify run database that datataking stopped</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.startup">
+<tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBFakeDAQOutput.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.startup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setup</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.write_event">
+<tt class="descname">write_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBFakeDAQOutput.write_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.write_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.plugins.io.MongoDB.MongoDBInput">
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.MongoDB.</tt><tt class="descname">MongoDBInput</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInput" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.InputPlugin" title="pax.plugin.InputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.InputPlugin</span></tt></a></p>
+<p>Read data from DAQ database</p>
+<p>This assumes that an event builder has run.</p>
+<dl class="method">
+<dt id="pax.plugins.io.MongoDB.MongoDBInput.get_events">
+<tt class="descname">get_events</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInput.get_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInput.get_events" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generator of events from Mongo</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.MongoDB.MongoDBInput.number_events">
+<tt class="descname">number_events</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInput.number_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInput.number_events" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.MongoDB.MongoDBInput.startup">
+<tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInput.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInput.startup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.plugins.io.MongoDB.MongoDBInputTriggered">
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.MongoDB.</tt><tt class="descname">MongoDBInputTriggered</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInputTriggered"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInputTriggered" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.InputPlugin" title="pax.plugin.InputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.InputPlugin</span></tt></a></p>
+<p>Read triggered data produced by kodiaq with MongoDB output</p>
+<p>This must be run after the data aquisition is finished.</p>
+<dl class="method">
+<dt id="pax.plugins.io.MongoDB.MongoDBInputTriggered.get_events">
+<tt class="descname">get_events</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInputTriggered.get_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInputTriggered.get_events" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.MongoDB.MongoDBInputTriggered.startup">
+<tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInputTriggered.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInputTriggered.startup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.MongoDB.MongoDBInputTriggered.total_number_events">
+<tt class="descname">total_number_events</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInputTriggered.total_number_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInputTriggered.total_number_events" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </div>
 <div class="section" id="module-pax.plugins.io.Pandas">
 <span id="pax-plugins-io-pandas-module"></span><h2>pax.plugins.io.Pandas module<a class="headerlink" href="#module-pax.plugins.io.Pandas" title="Permalink to this headline">¶</a></h2>
@@ -249,145 +448,6 @@ handling its subcollections recursively.</p>
 <dl class="method">
 <dt id="pax.plugins.io.Pickle.WriteToPickleFile.write_event">
 <tt class="descname">write_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Pickle.html#WriteToPickleFile.write_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Pickle.WriteToPickleFile.write_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-</div>
-<div class="section" id="module-pax.plugins.io.Plotting">
-<span id="pax-plugins-io-plotting-module"></span><h2>pax.plugins.io.Plotting module<a class="headerlink" href="#module-pax.plugins.io.Plotting" title="Permalink to this headline">¶</a></h2>
-<p>Interactive plotting</p>
-<p>Use matplotlib to display various things about the event.</p>
-<dl class="class">
-<dt id="pax.plugins.io.Plotting.PlotBase">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlotBase</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotBase" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.OutputPlugin" title="pax.plugin.OutputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.OutputPlugin</span></tt></a></p>
-<dl class="method">
-<dt id="pax.plugins.io.Plotting.PlotBase.color_peak_ranges">
-<tt class="descname">color_peak_ranges</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotBase.color_peak_ranges"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotBase.color_peak_ranges" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.Plotting.PlotBase.finalize_plot">
-<tt class="descname">finalize_plot</tt><big>(</big><em>event_number=0</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotBase.finalize_plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotBase.finalize_plot" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finalize plotting, send to screen/file, then closes plot properly (avoids runtimewarning / memory leak).</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.Plotting.PlotBase.plot_event">
-<tt class="descname">plot_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotBase.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotBase.plot_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.Plotting.PlotBase.plot_waveform">
-<tt class="descname">plot_waveform</tt><big>(</big><em>event</em>, <em>left=0</em>, <em>right=None</em>, <em>pad=0</em>, <em>show_peaks=False</em>, <em>show_legend=True</em>, <em>log_y_axis=False</em>, <em>scale=1</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotBase.plot_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotBase.plot_waveform" title="Permalink to this definition">¶</a></dt>
-<dd><p>Plot part of an event&#8217;s sum waveform. Defined in base class to ensure a uniform style</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.Plotting.PlotBase.startup">
-<tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotBase.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotBase.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.Plotting.PlotBase.substartup">
-<tt class="descname">substartup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotBase.substartup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotBase.substartup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.Plotting.PlotBase.write_event">
-<tt class="descname">write_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotBase.write_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotBase.write_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.io.Plotting.PlotChannelWaveforms2D">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlotChannelWaveforms2D</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotChannelWaveforms2D"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotChannelWaveforms2D" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.Plotting.PlotBase" title="pax.plugins.io.Plotting.PlotBase"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.Plotting.PlotBase</span></tt></a></p>
-<p>Plots the occurrences in each channel, like like PlotChannelWaveforms3D, but seen from above</p>
-<p>Circles in the bottom subplot show when individual photo-electrons arrived in each channel .
-Circle color indicates log(peak amplitude / noise amplitude), size indicates peak integral.
-For large peaks you see no dots; single-channel peakfinding is skipped for performance reasons.</p>
-<p>Some channels are grayed out: these are excluded from low-energy peakfinding because they show an
-unusual rate of lone pulses or pure-noise occurrences in this event.</p>
-<dl class="method">
-<dt id="pax.plugins.io.Plotting.PlotChannelWaveforms2D.plot_event">
-<tt class="descname">plot_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotChannelWaveforms2D.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotChannelWaveforms2D.plot_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.io.Plotting.PlotChannelWaveforms3D">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlotChannelWaveforms3D</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotChannelWaveforms3D"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotChannelWaveforms3D" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.Plotting.PlotBase" title="pax.plugins.io.Plotting.PlotBase"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.Plotting.PlotBase</span></tt></a></p>
-<p>Plot an event</p>
-<p>Will make a fancy &#8216;3D&#8217; plot with different y positions for all channels. User sets variables for plot.</p>
-<dl class="method">
-<dt id="pax.plugins.io.Plotting.PlotChannelWaveforms3D.plot_event">
-<tt class="descname">plot_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotChannelWaveforms3D.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotChannelWaveforms3D.plot_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.io.Plotting.PlotEventSummary">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlotEventSummary</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotEventSummary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotEventSummary" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.Plotting.PlotBase" title="pax.plugins.io.Plotting.PlotBase"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.Plotting.PlotBase</span></tt></a></p>
-<dl class="method">
-<dt id="pax.plugins.io.Plotting.PlotEventSummary.plot_event">
-<tt class="descname">plot_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotEventSummary.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotEventSummary.plot_event" title="Permalink to this definition">¶</a></dt>
-<dd><p>Combines several plots into a nice summary plot</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.io.Plotting.PlotSumWaveformEntireEvent">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlotSumWaveformEntireEvent</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotSumWaveformEntireEvent"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotSumWaveformEntireEvent" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.Plotting.PlotBase" title="pax.plugins.io.Plotting.PlotBase"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.Plotting.PlotBase</span></tt></a></p>
-<dl class="method">
-<dt id="pax.plugins.io.Plotting.PlotSumWaveformEntireEvent.plot_event">
-<tt class="descname">plot_event</tt><big>(</big><em>event</em>, <em>show_legend=True</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotSumWaveformEntireEvent.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotSumWaveformEntireEvent.plot_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.io.Plotting.PlotSumWaveformLargestS1">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlotSumWaveformLargestS1</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotSumWaveformLargestS1"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotSumWaveformLargestS1" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.Plotting.PlotBase" title="pax.plugins.io.Plotting.PlotBase"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.Plotting.PlotBase</span></tt></a></p>
-<dl class="method">
-<dt id="pax.plugins.io.Plotting.PlotSumWaveformLargestS1.plot_event">
-<tt class="descname">plot_event</tt><big>(</big><em>event</em>, <em>show_legend=False</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotSumWaveformLargestS1.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotSumWaveformLargestS1.plot_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.io.Plotting.PlotSumWaveformLargestS2">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlotSumWaveformLargestS2</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotSumWaveformLargestS2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotSumWaveformLargestS2" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.Plotting.PlotBase" title="pax.plugins.io.Plotting.PlotBase"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.Plotting.PlotBase</span></tt></a></p>
-<dl class="method">
-<dt id="pax.plugins.io.Plotting.PlotSumWaveformLargestS2.plot_event">
-<tt class="descname">plot_event</tt><big>(</big><em>event</em>, <em>show_legend=False</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlotSumWaveformLargestS2.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlotSumWaveformLargestS2.plot_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.io.Plotting.PlottingHitPattern">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.Plotting.</tt><tt class="descname">PlottingHitPattern</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlottingHitPattern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlottingHitPattern" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.Plotting.PlotBase" title="pax.plugins.io.Plotting.PlotBase"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.Plotting.PlotBase</span></tt></a></p>
-<dl class="method">
-<dt id="pax.plugins.io.Plotting.PlottingHitPattern.plot_event">
-<tt class="descname">plot_event</tt><big>(</big><em>event</em>, <em>show=('S1'</em>, <em>'S2')</em>, <em>show_dominant_array_only=True</em>, <em>subplots_to_use=None</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlottingHitPattern.plot_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlottingHitPattern.plot_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.Plotting.PlottingHitPattern.substartup">
-<tt class="descname">substartup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Plotting.html#PlottingHitPattern.substartup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Plotting.PlottingHitPattern.substartup" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -639,10 +699,10 @@ code for details.</p>
 <li><a class="reference internal" href="#">pax.plugins.io package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.Avro">pax.plugins.io.Avro module</a></li>
-<li><a class="reference internal" href="#pax-plugins-io-mongodb-module">pax.plugins.io.MongoDB module</a></li>
+<li><a class="reference internal" href="#module-pax.plugins.io.BulkOutput">pax.plugins.io.BulkOutput module</a></li>
+<li><a class="reference internal" href="#module-pax.plugins.io.MongoDB">pax.plugins.io.MongoDB module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.Pandas">pax.plugins.io.Pandas module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.Pickle">pax.plugins.io.Pickle module</a></li>
-<li><a class="reference internal" href="#module-pax.plugins.io.Plotting">pax.plugins.io.Plotting module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.RawWaveformDump">pax.plugins.io.RawWaveformDump module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.WaveformSimulator">pax.plugins.io.WaveformSimulator module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.XED">pax.plugins.io.XED module</a></li>

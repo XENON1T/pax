@@ -75,7 +75,7 @@
 
         <span class="c"># Initialize the list fields</span>
         <span class="c"># super() is needed to bypass type checking in StrictModel</span>
-        <span class="k">for</span> <span class="n">field_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_list_field_names</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">field_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_list_field_names</span><span class="p">():</span>
             <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="n">field_name</span><span class="p">,</span> <span class="p">[])</span>
 
         <span class="c"># Initialize all attributes from kwargs and kwargs_dict</span>
@@ -85,26 +85,28 @@
 
     <span class="nd">@classmethod</span>        <span class="c"># Use only in initialization (or if attributes are fixed, as for StrictModel)</span>
     <span class="nd">@Memoize</span>            <span class="c"># Caching decorator, improves performance if a model is initialized often</span>
-    <span class="k">def</span> <span class="nf">_get_list_field_names</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Get the field names of all list fields in this class</span>
+<div class="viewcode-block" id="Model.get_list_field_names"><a class="viewcode-back" href="../../pax.html#pax.data_model.Model.get_list_field_names">[docs]</a>    <span class="k">def</span> <span class="nf">get_list_field_names</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get the field names of all list / collection fields in this class</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">list_field_names</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">cls</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="nb">type</span><span class="p">:</span>
                 <span class="n">list_field_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">list_field_names</span>
-
+</div>
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">)</span>
 
 <div class="viewcode-block" id="Model.get_fields_data"><a class="viewcode-back" href="../../pax.html#pax.data_model.Model.get_fields_data">[docs]</a>    <span class="k">def</span> <span class="nf">get_fields_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Iterator over (key, value) tuples of all user-specified fields</span>
+<span class="sd">        Returns keys in lexical order</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c"># TODO: increase performance by pre-sorting keys?</span>
         <span class="c"># self.__dict__.items() does not return default values set in class declaration</span>
         <span class="c"># Hence we need something more complicated</span>
         <span class="n">class_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__dict__</span>
         <span class="n">self_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span>
-        <span class="k">for</span> <span class="n">field_name</span> <span class="ow">in</span> <span class="n">class_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">field_name</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">class_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
             <span class="k">if</span> <span class="n">field_name</span> <span class="ow">in</span> <span class="n">self_dict</span><span class="p">:</span>
                 <span class="c"># The instance has a value for this field: return it</span>
                 <span class="k">yield</span> <span class="p">(</span><span class="n">field_name</span><span class="p">,</span> <span class="n">self_dict</span><span class="p">[</span><span class="n">field_name</span><span class="p">])</span>
@@ -115,8 +117,8 @@
                 <span class="n">value_in_class</span> <span class="o">=</span> <span class="n">class_dict</span><span class="p">[</span><span class="n">field_name</span><span class="p">]</span>
                 <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">value_in_class</span><span class="p">):</span>
                     <span class="k">continue</span>    <span class="c"># No, is a method</span>
-                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value_in_class</span><span class="p">,</span> <span class="nb">property</span><span class="p">):</span>
-                    <span class="k">continue</span>    <span class="c"># No, is a property</span>
+                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value_in_class</span><span class="p">,</span> <span class="p">(</span><span class="nb">property</span><span class="p">,</span> <span class="nb">classmethod</span><span class="p">)):</span>
+                    <span class="k">continue</span>    <span class="c"># No, is a property or classmethod</span>
                 <span class="c"># Yes, yield the class-level value</span>
                 <span class="k">yield</span> <span class="p">(</span><span class="n">field_name</span><span class="p">,</span> <span class="n">value_in_class</span><span class="p">)</span>
 </div>

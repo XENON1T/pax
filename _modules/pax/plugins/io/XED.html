@@ -74,7 +74,7 @@
 
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">core</span><span class="p">,</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">units</span>
-<span class="kn">from</span> <span class="nn">pax.datastructure</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">Occurrence</span>
+<span class="kn">from</span> <span class="nn">pax.datastructure</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">Pulse</span>
 
 
 <div class="viewcode-block" id="XedInput"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.XedInput">[docs]</a><span class="k">class</span> <span class="nc">XedInput</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">InputPlugin</span><span class="p">):</span>
@@ -274,7 +274,7 @@
         <span class="n">event</span><span class="o">.</span><span class="n">dataset_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_metadata</span><span class="p">[</span><span class="s">&#39;dataset_name&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s">&quot;utf-8&quot;</span><span class="p">)</span>
         <span class="n">event</span><span class="o">.</span><span class="n">event_number</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">event_layer_metadata</span><span class="p">[</span><span class="s">&#39;event_number&#39;</span><span class="p">])</span>
 
-        <span class="c"># Loop over all channels in the event to get the occurrences</span>
+        <span class="c"># Loop over all channels in the event to get the pulses</span>
         <span class="k">for</span> <span class="n">channel_id</span> <span class="ow">in</span> <span class="n">channels_included</span><span class="p">:</span>
 
             <span class="c"># Read channel size (in 4bit words), subtract header size, convert</span>
@@ -288,7 +288,7 @@
 
             <span class="c"># Read the channel data control word by control word.</span>
             <span class="c"># sample_position keeps track of where in the waveform a new</span>
-            <span class="c"># occurrence should be placed.</span>
+            <span class="c"># pulse should be placed.</span>
             <span class="n">sample_position</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="k">while</span> <span class="mi">1</span><span class="p">:</span>
 
@@ -310,15 +310,15 @@
                     <span class="n">data_samples</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">control_word</span> <span class="o">-</span> <span class="p">(</span><span class="mi">2</span> <span class="o">**</span> <span class="mi">31</span><span class="p">))</span>
 
                     <span class="c"># Note endianness</span>
-                    <span class="n">samples_occurrence</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">channel_fake_file</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">data_samples</span><span class="p">),</span>
-                                                       <span class="n">dtype</span><span class="o">=</span><span class="s">&quot;&lt;i2&quot;</span><span class="p">)</span>
+                    <span class="n">samples_pulse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">channel_fake_file</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">data_samples</span><span class="p">),</span>
+                                                  <span class="n">dtype</span><span class="o">=</span><span class="s">&quot;&lt;i2&quot;</span><span class="p">)</span>
 
-                    <span class="n">event</span><span class="o">.</span><span class="n">occurrences</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Occurrence</span><span class="p">(</span>
+                    <span class="n">event</span><span class="o">.</span><span class="n">pulses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Pulse</span><span class="p">(</span>
                         <span class="n">channel</span><span class="o">=</span><span class="n">channel_id</span><span class="p">,</span>
                         <span class="n">left</span><span class="o">=</span><span class="n">sample_position</span><span class="p">,</span>
-                        <span class="n">raw_data</span><span class="o">=</span><span class="n">samples_occurrence</span>
+                        <span class="n">raw_data</span><span class="o">=</span><span class="n">samples_pulse</span>
                     <span class="p">))</span>
-                    <span class="n">sample_position</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">samples_occurrence</span><span class="p">)</span>
+                    <span class="n">sample_position</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">samples_pulse</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">event</span></div></div>
 </pre></div>

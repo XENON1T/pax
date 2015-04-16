@@ -1,0 +1,514 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pax.plugins.io.BulkOutput &mdash; Processor for Analyzing XENON1T 2.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '2.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <link rel="top" title="Processor for Analyzing XENON1T 2.1.0 documentation" href="../../../../index.html" />
+    <link rel="up" title="Module code" href="../../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li>
+          <li><a href="../../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pax.plugins.io.BulkOutput</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
+<span class="kn">import</span> <span class="nn">time</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">pax</span>
+<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">exceptions</span><span class="p">,</span> <span class="n">datastructure</span>
+<span class="kn">from</span> <span class="nn">pax.formats</span> <span class="kn">import</span> <span class="n">flat_data_formats</span>
+
+
+<div class="viewcode-block" id="BulkOutput"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BulkOutput.BulkOutput">[docs]</a><span class="k">class</span> <span class="nc">BulkOutput</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">OutputPlugin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Output data to flat table formats</span>
+<span class="sd">    Convert our data structure to numpy record arrays, one for each class (Event, Peak, ReconstructedPosition, ...).</span>
+<span class="sd">    Then output to one of several output formats (see formats.py)</span>
+
+<span class="sd">    For each index, an extra column is added (e.g. ReconstructedPosition has an extra column &#39;Event&#39;, &#39;Peak&#39;</span>
+<span class="sd">    and &#39;ReconstructedPosition&#39;, each restarting from 0 whenever the corresponding higher-level entity changes).</span>
+
+<span class="sd">    The timestamp, pax configuration and version number are stored in a separate table/array: pax_info.</span>
+
+<span class="sd">    Because numpy arrays are optimized for working with large data structures, converting/appending each instance</span>
+<span class="sd">    separately would take long. Hence, we store data in lists first, then convert those once we&#39;ve collected a bunch.</span>
+
+<span class="sd">    Available configuration options:</span>
+
+<span class="sd">     - output_format:      Name of output format to produce. Must be child class of BulkOutputFormat</span>
+<span class="sd">     - output_name:        The name of the output file or folder, WITHOUT file extension.</span>
+<span class="sd">     - fields_to_ignore:   Fields which will not be stored.</span>
+<span class="sd">     - overwrite_data:     If True, overwrite if a file/directory with the same name exists</span>
+<span class="sd">     - string_data_length: Maximum length of strings in string data fields; longer strings will be truncated.</span>
+<span class="sd">                           (the pax configuration is always stored fully)</span>
+<span class="sd">     - append_data:        Append data to an existing file, if output format supports it</span>
+<span class="sd">     - buffer_size:        Convert to numpy record arrays after every nth event.</span>
+<span class="sd">     - write_in_chunks:    Write to disk every time after converting to numpy record arrays, if the output format</span>
+<span class="sd">                           supports it. Else all data is kept in memory, then written to disk on shutdown.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="BulkOutput.startup"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BulkOutput.BulkOutput.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c"># Dictionary to contain the data</span>
+        <span class="c"># Every class in the datastructure is a key; values are dicts:</span>
+        <span class="c"># {</span>
+        <span class="c">#   tuples  :       list of data tuples not yet converted to records,</span>
+        <span class="c">#   records :       numpy record arrays,</span>
+        <span class="c">#   dtype   :       dtype of numpy record (includes field names),</span>
+        <span class="c"># }</span>
+
+        <span class="n">configdump</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="c"># Write pax configuration and version to pax_info dataframe</span>
+            <span class="c"># Will be a table with one row</span>
+            <span class="c"># If you append to an existing HDF5 file, it will make a second row</span>
+            <span class="c"># TODO: However, it will probably crash if the configuration is a longer string...</span>
+            <span class="s">&#39;pax_info&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s">&#39;tuples&#39;</span><span class="p">:</span>       <span class="p">[(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span> <span class="nb">str</span><span class="p">(</span><span class="n">pax</span><span class="o">.</span><span class="n">__version__</span><span class="p">),</span> <span class="n">configdump</span><span class="p">)],</span>
+                <span class="s">&#39;records&#39;</span><span class="p">:</span>      <span class="bp">None</span><span class="p">,</span>
+                <span class="s">&#39;dtype&#39;</span><span class="p">:</span>        <span class="p">[(</span><span class="s">&#39;timestamp&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">),</span>
+                                 <span class="p">(</span><span class="s">&#39;pax_version&#39;</span><span class="p">,</span> <span class="s">&#39;S32&#39;</span><span class="p">),</span>
+                                 <span class="p">(</span><span class="s">&#39;configuration_json&#39;</span><span class="p">,</span> <span class="s">&#39;S</span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">configdump</span><span class="p">))]}</span>
+        <span class="p">}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">events_ready_for_conversion</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="c"># Init the output format</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_format</span> <span class="o">=</span> <span class="n">of</span> <span class="o">=</span> <span class="n">flat_data_formats</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;output_format&#39;</span><span class="p">]](</span><span class="n">log</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;append_data&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;overwrite_data&#39;</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Invalid configuration for BulkOutput: Cannot both append and overwrite&#39;</span><span class="p">)</span>
+
+        <span class="c"># Check if options are supported</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">of</span><span class="o">.</span><span class="n">supports_write_in_chunks</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;write_in_chunks&#39;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&#39;Output format </span><span class="si">%s</span><span class="s"> does not support write_in_chunks: will write all at end.&#39;</span> <span class="o">%</span>
+                             <span class="n">of</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;write_in_chunks&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;append_data&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">of</span><span class="o">.</span><span class="n">supports_append</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&#39;Output format </span><span class="si">%s</span><span class="s"> does not support append: setting to False.&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;append_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">False</span>
+
+        <span class="c"># Append extension to outfile, if this format has one</span>
+        <span class="k">if</span> <span class="n">of</span><span class="o">.</span><span class="n">file_extension</span> <span class="ow">and</span> <span class="n">of</span><span class="o">.</span><span class="n">file_extension</span> <span class="o">!=</span> <span class="s">&#39;DIRECTORY&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;output_name&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="s">&#39;.&#39;</span> <span class="o">+</span> <span class="n">of</span><span class="o">.</span><span class="n">file_extension</span>
+
+        <span class="c"># Deal with existing files or non-existing dirs</span>
+        <span class="n">outfile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;output_name&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">outfile</span><span class="p">):</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;append_data&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">of</span><span class="o">.</span><span class="n">supports_append</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Output file/dir </span><span class="si">%s</span><span class="s"> already exists: appending.&#39;</span> <span class="o">%</span> <span class="n">outfile</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;overwrite_data&#39;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Output file/dir </span><span class="si">%s</span><span class="s"> already exists, and you &#39;</span>
+                              <span class="s">&#39;wanted to overwrite, so deleting it!&#39;</span> <span class="o">%</span> <span class="n">outfile</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_format</span><span class="o">.</span><span class="n">file_extension</span> <span class="o">==</span> <span class="s">&#39;DIRECTORY&#39;</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&#39;Deleting recursively </span><span class="si">%s</span><span class="s">...&#39;</span><span class="p">,</span>
+                                     <span class="n">outfile</span><span class="p">)</span>
+                    <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">outfile</span><span class="p">)</span>  <span class="c"># Deletes directory and contents</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">outfile</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">outfile</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">OutputFileAlreadyExistsError</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s"> already exists, and you did not specify append or &#39;</span>
+                                                              <span class="s">&#39;overwrite...&#39;</span> <span class="o">%</span> <span class="n">outfile</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">of</span><span class="o">.</span><span class="n">file_extension</span> <span class="ow">is</span> <span class="s">&#39;DIRECTORY&#39;</span><span class="p">:</span>
+            <span class="c"># We are a dir output format: dir must exist</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">outfile</span><span class="p">)</span>
+
+        <span class="c"># Open the output file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_format</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;output_name&#39;</span><span class="p">],</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="BulkOutput.write_event"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BulkOutput.BulkOutput.write_event">[docs]</a>    <span class="k">def</span> <span class="nf">write_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Receive event and determine what to do with it</span>
+
+<span class="sd">        Store all the event data internally, write to disk when appropriate.</span>
+<span class="sd">        This function follows the plugin API.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_model_to_tuples</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">index_fields</span><span class="o">=</span><span class="p">[(</span><span class="s">&#39;Event&#39;</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">event_number</span><span class="p">),</span> <span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">events_ready_for_conversion</span> <span class="o">+=</span> <span class="mi">1</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">events_ready_for_conversion</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;buffer_size&#39;</span><span class="p">]:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_convert_to_records</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;write_in_chunks&#39;</span><span class="p">]:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_write_to_disk</span><span class="p">()</span>
+</div>
+    <span class="k">def</span> <span class="nf">_convert_to_records</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert buffer data to numpy record arrays</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">dfname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Converting </span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="n">dfname</span><span class="p">)</span>
+            <span class="c"># Set index at which next set of tuples begins</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">dfname</span><span class="p">][</span><span class="s">&#39;first_index&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">dfname</span><span class="p">][</span><span class="s">&#39;tuples&#39;</span><span class="p">])</span>
+            <span class="c"># Convert tuples to records</span>
+            <span class="n">newrecords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">dfname</span><span class="p">][</span><span class="s">&#39;tuples&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">dfname</span><span class="p">][</span><span class="s">&#39;dtype&#39;</span><span class="p">])</span>
+            <span class="c"># Clear tuples. Enjoy the freed memory.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">dfname</span><span class="p">][</span><span class="s">&#39;tuples&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="c"># Append new records</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">dfname</span><span class="p">][</span><span class="s">&#39;records&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">dfname</span><span class="p">][</span><span class="s">&#39;records&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">newrecords</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">dfname</span><span class="p">][</span><span class="s">&#39;records&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">dfname</span><span class="p">][</span><span class="s">&#39;records&#39;</span><span class="p">],</span> <span class="n">newrecords</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">events_ready_for_conversion</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span> <span class="nf">_write_to_disk</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Write buffered data to disk</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Writing to disk...&quot;</span><span class="p">)</span>
+        <span class="c"># If any records are present, call output format to write records to disk</span>
+        <span class="k">if</span> <span class="s">&#39;Event&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="c"># The processor crashed, don&#39;t want to make things worse!</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&#39;No events to write: did you crash pax?&#39;</span><span class="p">)</span>
+            <span class="k">return</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;Event&#39;</span><span class="p">][</span><span class="s">&#39;records&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output_format</span><span class="o">.</span><span class="n">write_data</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="p">[</span><span class="s">&#39;records&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
+        <span class="c"># Delete records we&#39;ve just written to disk</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">d</span><span class="p">][</span><span class="s">&#39;records&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
+
+<div class="viewcode-block" id="BulkOutput.shutdown"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BulkOutput.BulkOutput.shutdown">[docs]</a>    <span class="k">def</span> <span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">events_ready_for_conversion</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_convert_to_records</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_write_to_disk</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_format</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="BulkOutput.get_index_of"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BulkOutput.BulkOutput.get_index_of">[docs]</a>    <span class="k">def</span> <span class="nf">get_index_of</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mname</span><span class="p">):</span>
+        <span class="c"># Returns index +1 of last last entry in self.data[mname]. Returns -1 if no mname seen before.</span>
+        <span class="k">if</span> <span class="n">mname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="k">return</span> <span class="mi">0</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">mname</span><span class="p">][</span><span class="s">&#39;first_index&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">mname</span><span class="p">][</span><span class="s">&#39;tuples&#39;</span><span class="p">])</span>
+</div>
+    <span class="k">def</span> <span class="nf">_model_to_tuples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">m</span><span class="p">,</span> <span class="n">index_fields</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert one of our data model instances to a tuple while storing its field names &amp; dtypes,</span>
+<span class="sd">           handling subcollections recursively, keeping track of index hierarchy</span>
+
+<span class="sd">        :param m: instance to convert</span>
+<span class="sd">        :param index_fields: list of (index_field_name, value) tuples denoting multi-index trail</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># List to contain data from this model, will be made into tuple later</span>
+        <span class="n">m_name</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
+        <span class="n">m_indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">index_fields</span><span class="p">]</span>
+        <span class="n">m_data</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="c"># Have we seen this model before? If not, initialize stuff</span>
+        <span class="n">first_time_seen</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="k">if</span> <span class="n">m_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">m_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s">&#39;tuples&#39;</span><span class="p">:</span>         <span class="p">[],</span>
+                <span class="s">&#39;records&#39;</span><span class="p">:</span>        <span class="bp">None</span><span class="p">,</span>
+                <span class="c"># Initialize dtype with the index fields</span>
+                <span class="s">&#39;dtype&#39;</span><span class="p">:</span>          <span class="p">[(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">index_fields</span><span class="p">],</span>
+                <span class="s">&#39;index_depth&#39;</span><span class="p">:</span>    <span class="nb">len</span><span class="p">(</span><span class="n">m_indices</span><span class="p">),</span>
+                <span class="c"># Dictionary of collection field&#39;s field_names: collection class name</span>
+                <span class="c"># Remember if cf is a collection field,</span>
+                <span class="c"># then the model has a classattribute &#39;cf&#39; = (ChildClassName, ): see data_model.py</span>
+                <span class="s">&#39;subcollection_fields&#39;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="n">fieldn</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">__class__</span><span class="p">,</span> <span class="n">fieldn</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">__name__</span>
+                    <span class="k">for</span> <span class="n">fieldn</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">get_list_field_names</span><span class="p">()},</span>
+                <span class="s">&#39;first_index&#39;</span><span class="p">:</span>      <span class="mi">0</span>
+            <span class="p">}</span>
+            <span class="n">first_time_seen</span> <span class="o">=</span> <span class="bp">True</span>
+
+        <span class="c"># Grab all data into data_dict -- and more importantly, handle subcollections</span>
+        <span class="k">for</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">field_value</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">get_fields_data</span><span class="p">():</span>
+
+            <span class="k">if</span> <span class="n">field_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;fields_to_ignore&#39;</span><span class="p">]:</span>
+                <span class="k">continue</span>
+
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">field_value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+
+                <span class="k">assert</span> <span class="n">field_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">m_name</span><span class="p">][</span><span class="s">&#39;subcollection_fields&#39;</span><span class="p">]</span>
+                <span class="n">child_class_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">m_name</span><span class="p">][</span><span class="s">&#39;subcollection_fields&#39;</span><span class="p">][</span><span class="n">field_name</span><span class="p">]</span>
+
+                <span class="c"># Store the absolute start index &amp; number of children</span>
+                <span class="n">child_start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_index_of</span><span class="p">(</span><span class="n">child_class_name</span><span class="p">)</span>
+                <span class="n">n_children</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">field_value</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">first_time_seen</span><span class="p">:</span>
+                    <span class="c"># Store this field&#39;s data type</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">m_name</span><span class="p">][</span><span class="s">&#39;dtype&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_numpy_field_dtype</span><span class="p">(</span><span class="s">&#39;n_</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">field_name</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>    <span class="c"># 0 to ensure integer type</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">m_name</span><span class="p">][</span><span class="s">&#39;dtype&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_numpy_field_dtype</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">_start&#39;</span> <span class="o">%</span> <span class="n">field_name</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+                <span class="n">m_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">n_children</span><span class="p">)</span>
+                <span class="n">m_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">child_start</span><span class="p">)</span>
+
+                <span class="c"># We&#39;ll ship model collections off to their own tuples (later record arrays)</span>
+                <span class="c"># Convert each child_model to a dataframe, with a new index appended to the index trail</span>
+                <span class="k">for</span> <span class="n">new_index</span><span class="p">,</span> <span class="n">child_model</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">field_value</span><span class="p">):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_model_to_tuples</span><span class="p">(</span><span class="n">child_model</span><span class="p">,</span> <span class="n">index_fields</span> <span class="o">+</span> <span class="p">[(</span><span class="nb">type</span><span class="p">(</span><span class="n">child_model</span><span class="p">)</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                                                                       <span class="n">new_index</span><span class="p">)])</span>
+
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">field_value</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_format</span><span class="o">.</span><span class="n">supports_array_fields</span><span class="p">:</span>
+                <span class="c"># Hack for formats without array field support: NumpyArrayFields must get their own dataframe</span>
+                <span class="c">#  -- assumes field names are unique!</span>
+                <span class="c"># dataframe columns = str(positions in the array) (&#39;0&#39;, &#39;1&#39;, &#39;2&#39;, ...)</span>
+
+                <span class="c"># Is this the first time we see this numpy array field?</span>
+                <span class="k">if</span> <span class="n">field_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+                    <span class="k">assert</span> <span class="n">first_time_seen</span>    <span class="c"># Must be the first time we see dataframe as well</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">field_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s">&#39;tuples&#39;</span><span class="p">:</span>          <span class="p">[],</span>
+                        <span class="s">&#39;records&#39;</span><span class="p">:</span>         <span class="bp">None</span><span class="p">,</span>
+                        <span class="c"># Initialize dtype with the index fields + every column in array becomes a field.... :-(</span>
+                        <span class="s">&#39;dtype&#39;</span><span class="p">:</span>           <span class="p">[(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">index_fields</span><span class="p">]</span> <span class="o">+</span>
+                                           <span class="p">[(</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">field_value</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">field_value</span><span class="p">))],</span>
+                        <span class="s">&#39;index_depth&#39;</span><span class="p">:</span>     <span class="nb">len</span><span class="p">(</span><span class="n">m_indices</span><span class="p">),</span>
+                    <span class="p">}</span>
+
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">m_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">field_value</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">first_time_seen</span><span class="p">:</span>
+                    <span class="c"># Store this field&#39;s data type</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">m_name</span><span class="p">][</span><span class="s">&#39;dtype&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_numpy_field_dtype</span><span class="p">(</span><span class="n">field_name</span><span class="p">,</span> <span class="n">field_value</span><span class="p">))</span>
+
+        <span class="c"># Store m_indices + m_data in self.data[&#39;tuples&#39;]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">m_name</span><span class="p">][</span><span class="s">&#39;tuples&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">m_indices</span> <span class="o">+</span> <span class="n">m_data</span><span class="p">))</span>
+
+    <span class="k">def</span> <span class="nf">_numpy_field_dtype</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return field dtype of numpy record with field name name and value (of type of) x</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s">&#39;configuration_json&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">name</span><span class="p">,</span> <span class="s">&#39;O&#39;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">name</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">name</span><span class="p">,</span> <span class="s">&#39;f&#39;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">name</span><span class="p">,</span> <span class="s">&#39;S&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;string_data_length&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">name</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># Some weird numpy type, hopefully</span>
+            <span class="k">return</span> <span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="ReadFromBulkOutput"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BulkOutput.ReadFromBulkOutput">[docs]</a><span class="k">class</span> <span class="nc">ReadFromBulkOutput</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">InputPlugin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Read data from BulkOutput for reprocessing</span>
+
+<span class="sd">    &#39;Reprocessing&#39; means: reading in old processed data, then start somewhere in middle of processing chain,</span>
+<span class="sd">    (e.g. redo classification), and finally write to new file.</span>
+
+<span class="sd">    Reprocessing WITHOUT reading in the individual hits is very fast. This is fine for re-doing</span>
+<span class="sd">    peak classification and anything higher-level we may come up with.</span>
+
+<span class="sd">    For re-doing clustering and/or peak property computation you must read in the hits, which is slow.</span>
+<span class="sd">    The speed is set by overhead in the datastructure: 1/3 of runtime due to type checking, rest due to</span>
+<span class="sd">    converting between all the internal formats). We can try to optimize this at some point.</span>
+
+<span class="sd">    However, for this kind of reprocessing we may eventually need to read the raw data and build a sum waveform</span>
+<span class="sd">    as well, which takes time too.</span>
+
+<span class="sd">    TODO: Check if all the tables / dnames we want to read in are present in the file, else give error</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ReadFromBulkOutput.startup"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BulkOutput.ReadFromBulkOutput.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">chunk_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;chunk_size&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">read_hits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;read_hits&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">read_recposes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;read_recposes&#39;</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_format</span> <span class="o">=</span> <span class="n">of</span> <span class="o">=</span> <span class="n">flat_data_formats</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;format&#39;</span><span class="p">]](</span><span class="n">log</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">of</span><span class="o">.</span><span class="n">supports_read_back</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Output format </span><span class="si">%s</span><span class="s"> does not &quot;</span>
+                                      <span class="s">&quot;support reading data back in!&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;format&#39;</span><span class="p">])</span>
+
+        <span class="n">of</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;input_name&#39;</span><span class="p">],</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">dnames</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Event&#39;</span><span class="p">,</span> <span class="s">&#39;Peak&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_hits</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dnames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;Hit&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_recposes</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dnames</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&#39;ReconstructedPosition&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="p">{}</span>        <span class="c"># Dict of numpy record arrays just read from disk, waiting to be sorted</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_n</span> <span class="o">=</span> <span class="p">{</span><span class="n">x</span><span class="p">:</span> <span class="n">of</span><span class="o">.</span><span class="n">n_in_data</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dnames</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">number_of_events</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_n</span><span class="p">[</span><span class="s">&#39;Event&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_pos</span> <span class="o">=</span> <span class="p">{</span><span class="n">x</span><span class="p">:</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dnames</span><span class="p">}</span>
+</div>
+<div class="viewcode-block" id="ReadFromBulkOutput.get_events"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BulkOutput.ReadFromBulkOutput.get_events">[docs]</a>    <span class="k">def</span> <span class="nf">get_events</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get events from processed data source</span>
+<span class="sd">        Follows plugin API.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">of</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_format</span>
+
+        <span class="k">for</span> <span class="n">event_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">number_of_events</span><span class="p">):</span>
+            <span class="n">ts</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>    <span class="c"># Start the clock</span>
+
+            <span class="n">in_this_event</span> <span class="o">=</span> <span class="p">{}</span>
+
+            <span class="c"># Check if we should fill the cache.</span>
+            <span class="k">for</span> <span class="n">dname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dnames</span><span class="p">:</span>     <span class="c"># dname -&gt; event, peak, etc.</span>
+
+                <span class="c"># Check if what is stored in the cache for &#39;dname&#39; is either</span>
+                <span class="c"># nonexistent, empty, or incomplete.  If so, keep reading new</span>
+                <span class="c"># chunks of data to populate the cache.</span>
+                <span class="k">while</span> <span class="n">dname</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">dname</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span> \
+                        <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">dname</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s">&#39;Event&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">dname</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s">&#39;Event&#39;</span><span class="p">]:</span>
+
+                    <span class="c"># If no data of this dname left in the file, we of course stop filling the cache</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_pos</span><span class="p">[</span><span class="n">dname</span><span class="p">]</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_n</span><span class="p">[</span><span class="n">dname</span><span class="p">]:</span>
+                        <span class="k">break</span>
+
+                    <span class="n">new_pos</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_n</span><span class="p">[</span><span class="n">dname</span><span class="p">],</span>
+                                  <span class="bp">self</span><span class="o">.</span><span class="n">current_pos</span><span class="p">[</span><span class="n">dname</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunk_size</span><span class="p">)</span>
+                    <span class="n">new_chunk</span> <span class="o">=</span> <span class="n">of</span><span class="o">.</span><span class="n">read_data</span><span class="p">(</span><span class="n">dname</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_pos</span><span class="p">[</span><span class="n">dname</span><span class="p">],</span> <span class="n">new_pos</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">current_pos</span><span class="p">[</span><span class="n">dname</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_pos</span>
+
+                    <span class="c"># Add new chunk to cache</span>
+                    <span class="n">bla</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">dname</span><span class="p">,</span>
+                                                         <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span>
+                                                                  <span class="n">dtype</span><span class="o">=</span><span class="n">new_chunk</span><span class="o">.</span><span class="n">dtype</span><span class="p">)),</span>
+                                          <span class="n">new_chunk</span><span class="p">))</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">dname</span><span class="p">]</span> <span class="o">=</span> <span class="n">bla</span>
+
+            <span class="c"># What number is the next event?</span>
+            <span class="n">this_event_i</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="s">&#39;Event&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">][</span><span class="s">&#39;Event&#39;</span><span class="p">]</span>
+
+            <span class="c"># Get all records belonging to this event:</span>
+            <span class="k">for</span> <span class="n">dname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">dnames</span><span class="p">:</span>
+                <span class="n">mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">dname</span><span class="p">][</span><span class="s">&#39;Event&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">this_event_i</span>
+                <span class="n">in_this_event</span><span class="p">[</span><span class="n">dname</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">dname</span><span class="p">][</span><span class="n">mask</span><span class="p">]</span>
+
+                <span class="c"># Chop records in this event from cache</span>
+                <span class="n">inverted_mask</span> <span class="o">=</span> <span class="bp">True</span> <span class="o">^</span> <span class="n">mask</span>  <span class="c"># XOR</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">dname</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="p">[</span><span class="n">dname</span><span class="p">][</span><span class="n">inverted_mask</span><span class="p">]</span>
+
+            <span class="c"># Convert records to pax data</span>
+            <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">in_this_event</span><span class="p">[</span><span class="s">&#39;Event&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">1</span>
+            <span class="n">e_record</span> <span class="o">=</span> <span class="n">in_this_event</span><span class="p">[</span><span class="s">&#39;Event&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">peaks</span> <span class="o">=</span> <span class="n">in_this_event</span><span class="p">[</span><span class="s">&#39;Peak&#39;</span><span class="p">]</span>
+
+            <span class="n">event</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convert_record</span><span class="p">(</span><span class="n">datastructure</span><span class="o">.</span><span class="n">Event</span><span class="p">,</span> <span class="n">e_record</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">peak_i</span><span class="p">,</span> <span class="n">p_record</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">peaks</span><span class="p">):</span>
+                <span class="n">peak</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convert_record</span><span class="p">(</span><span class="n">datastructure</span><span class="o">.</span><span class="n">Peak</span><span class="p">,</span> <span class="n">p_record</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_recposes</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">rp_record</span> <span class="ow">in</span> <span class="n">in_this_event</span><span class="p">[</span><span class="s">&#39;ReconstructedPosition&#39;</span><span class="p">][</span>
+                            <span class="n">in_this_event</span><span class="p">[</span><span class="s">&#39;ReconstructedPosition&#39;</span><span class="p">][</span><span class="s">&#39;Peak&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">peak_i</span><span class="p">]:</span>
+                        <span class="n">peak</span><span class="o">.</span><span class="n">reconstructed_positions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">convert_record</span><span class="p">(</span><span class="n">datastructure</span><span class="o">.</span><span class="n">ReconstructedPosition</span><span class="p">,</span> <span class="n">rp_record</span><span class="p">)</span>
+                        <span class="p">)</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_hits</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">hit_record</span> <span class="ow">in</span> <span class="n">in_this_event</span><span class="p">[</span><span class="s">&#39;Hit&#39;</span><span class="p">][(</span><span class="n">in_this_event</span><span class="p">[</span><span class="s">&#39;Hit&#39;</span><span class="p">][</span><span class="s">&#39;Peak&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">peak_i</span><span class="p">)]:</span>
+                        <span class="n">cp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convert_record</span><span class="p">(</span><span class="n">datastructure</span><span class="o">.</span><span class="n">Hit</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_numpy_record_to_dict</span><span class="p">(</span><span class="n">hit_record</span><span class="p">))</span>
+                        <span class="n">peak</span><span class="o">.</span><span class="n">hits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cp</span><span class="p">)</span>
+                        <span class="n">event</span><span class="o">.</span><span class="n">all_hits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cp</span><span class="p">)</span>
+
+                <span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">peak</span><span class="p">)</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">total_time_taken</span> <span class="o">+=</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">ts</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1000</span>
+            <span class="k">yield</span> <span class="n">event</span>
+</div>
+<div class="viewcode-block" id="ReadFromBulkOutput.convert_record"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BulkOutput.ReadFromBulkOutput.convert_record">[docs]</a>    <span class="k">def</span> <span class="nf">convert_record</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">class_to_load_to</span><span class="p">,</span> <span class="n">record</span><span class="p">):</span>
+        <span class="c"># We defined a nice custom init for event... ahem... now we have to do cumbersome stuff...</span>
+        <span class="k">if</span> <span class="n">class_to_load_to</span> <span class="o">==</span> <span class="n">datastructure</span><span class="o">.</span><span class="n">Event</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">datastructure</span><span class="o">.</span><span class="n">Event</span><span class="p">(</span><span class="n">n_channels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;n_channels&#39;</span><span class="p">],</span>
+                                         <span class="n">start_time</span><span class="o">=</span><span class="n">record</span><span class="p">[</span><span class="s">&#39;start_time&#39;</span><span class="p">],</span>
+                                         <span class="n">stop_time</span><span class="o">=</span><span class="n">record</span><span class="p">[</span><span class="s">&#39;stop_time&#39;</span><span class="p">],</span>
+                                         <span class="n">sample_duration</span><span class="o">=</span><span class="n">record</span><span class="p">[</span><span class="s">&#39;sample_duration&#39;</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">class_to_load_to</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_numpy_record_to_dict</span><span class="p">(</span><span class="n">record</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c"># If result doesn&#39;t have this attribute, ignore it</span>
+            <span class="c"># This happens for n_peaks etc. and attributes that have been removed</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">k</span><span class="p">):</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">result</span>
+</div>
+    <span class="k">def</span> <span class="nf">_numpy_record_to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">record</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Convert a single numpy record to a dict (keys=field names, values=values)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">names</span> <span class="o">=</span> <span class="n">record</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">record</span><span class="p">):</span>
+            <span class="c"># Skip index fields, if present</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&#39;Event&#39;</span><span class="p">,</span> <span class="s">&#39;Peak&#39;</span><span class="p">,</span> <span class="s">&#39;Hit&#39;</span><span class="p">,</span> <span class="s">&#39;ReconstructedPosition&#39;</span><span class="p">):</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">bytes_</span><span class="p">):</span>
+                <span class="n">v</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s">&quot;utf-8&quot;</span><span class="p">)</span>
+            <span class="n">result</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+        <span class="k">return</span> <span class="n">result</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li>
+          <li><a href="../../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Christopher Tunnell.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

@@ -49,34 +49,6 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-pax.plugins.posrec.ComputeHitpatternSpread">
-<span id="pax-plugins-posrec-computehitpatternspread-module"></span><h2>pax.plugins.posrec.ComputeHitpatternSpread module<a class="headerlink" href="#module-pax.plugins.posrec.ComputeHitpatternSpread" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="pax.plugins.posrec.ComputeHitpatternSpread.ComputeHitpatternSpread">
-<em class="property">class </em><tt class="descclassname">pax.plugins.posrec.ComputeHitpatternSpread.</tt><tt class="descname">ComputeHitpatternSpread</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/posrec/ComputeHitpatternSpread.html#ComputeHitpatternSpread"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.posrec.ComputeHitpatternSpread.ComputeHitpatternSpread" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></tt></a></p>
-<p>Computes the weighted root mean square deviation of the top and bottom hitpattern for each peak</p>
-<dl class="method">
-<dt id="pax.plugins.posrec.ComputeHitpatternSpread.ComputeHitpatternSpread.startup">
-<tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/posrec/ComputeHitpatternSpread.html#ComputeHitpatternSpread.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.posrec.ComputeHitpatternSpread.ComputeHitpatternSpread.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.posrec.ComputeHitpatternSpread.ComputeHitpatternSpread.transform_event">
-<tt class="descname">transform_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/posrec/ComputeHitpatternSpread.html#ComputeHitpatternSpread.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.posrec.ComputeHitpatternSpread.ComputeHitpatternSpread.transform_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="function">
-<dt id="pax.plugins.posrec.ComputeHitpatternSpread.weighted_variance">
-<tt class="descclassname">pax.plugins.posrec.ComputeHitpatternSpread.</tt><tt class="descname">weighted_variance</tt><big>(</big><em>values</em>, <em>weights</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/posrec/ComputeHitpatternSpread.html#weighted_variance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.posrec.ComputeHitpatternSpread.weighted_variance" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the weighted sum square deviation from the weighted mean.
-values, weights &#8211; Numpy ndarrays with the same shape.
-Stolen from <a class="reference external" href="http://stackoverflow.com/questions/2413522/weighted-standard-deviation-in-numpy">http://stackoverflow.com/questions/2413522/weighted-standard-deviation-in-numpy</a></p>
-</dd></dl>
-
-</div>
 <div class="section" id="module-pax.plugins.posrec.NeuralNet">
 <span id="pax-plugins-posrec-neuralnet-module"></span><h2>pax.plugins.posrec.NeuralNet module<a class="headerlink" href="#module-pax.plugins.posrec.NeuralNet" title="Permalink to this headline">¶</a></h2>
 <p>Neural network reconstruction algorithms</p>
@@ -220,7 +192,6 @@ positions using the weighted sum of PMTs in the top array.</p>
   <ul>
 <li><a class="reference internal" href="#">pax.plugins.posrec package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#module-pax.plugins.posrec.ComputeHitpatternSpread">pax.plugins.posrec.ComputeHitpatternSpread module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.posrec.NeuralNet">pax.plugins.posrec.NeuralNet module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.posrec.PosRecChiSquareGamma">pax.plugins.posrec.PosRecChiSquareGamma module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.posrec.PosSimple">pax.plugins.posrec.PosSimple module</a></li>

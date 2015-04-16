@@ -47,19 +47,22 @@
           <div class="body">
             
   <h1>Source code for pax.plugins.for_tests.Dummy</h1><div class="highlight"><pre>
-<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">utils</span>
+<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">datastructure</span>
 
 
 <div class="viewcode-block" id="DummyInput"><a class="viewcode-back" href="../../../../pax.plugins.for_tests.html#pax.plugins.for_tests.Dummy.DummyInput">[docs]</a><span class="k">class</span> <span class="nc">DummyInput</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">InputPlugin</span><span class="p">):</span>
 
 <div class="viewcode-block" id="DummyInput.get_events"><a class="viewcode-back" href="../../../../pax.plugins.for_tests.html#pax.plugins.for_tests.Dummy.DummyInput.get_events">[docs]</a>    <span class="k">def</span> <span class="nf">get_events</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">yield</span> <span class="n">utils</span><span class="o">.</span><span class="n">empty_event</span><span class="p">()</span>
+        <span class="k">yield</span> <span class="n">datastructure</span><span class="o">.</span><span class="n">Event</span><span class="o">.</span><span class="n">empty_event</span><span class="p">()</span>
 
 </div></div>
 <div class="viewcode-block" id="DummyOutput"><a class="viewcode-back" href="../../../../pax.plugins.for_tests.html#pax.plugins.for_tests.Dummy.DummyOutput">[docs]</a><span class="k">class</span> <span class="nc">DummyOutput</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">OutputPlugin</span><span class="p">):</span>
-    <span class="k">pass</span>
+    <span class="s">&quot;Stores last event in self.last_event, useful for testing&quot;</span>
 
-</div>
+<div class="viewcode-block" id="DummyOutput.write_event"><a class="viewcode-back" href="../../../../pax.plugins.for_tests.html#pax.plugins.for_tests.Dummy.DummyOutput.write_event">[docs]</a>    <span class="k">def</span> <span class="nf">write_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">last_event</span> <span class="o">=</span> <span class="n">event</span>
+
+</div></div>
 <div class="viewcode-block" id="DummyTransform"><a class="viewcode-back" href="../../../../pax.plugins.for_tests.html#pax.plugins.for_tests.Dummy.DummyTransform">[docs]</a><span class="k">class</span> <span class="nc">DummyTransform</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
     <span class="k">pass</span>
 

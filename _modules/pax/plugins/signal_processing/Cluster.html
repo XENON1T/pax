@@ -1,0 +1,454 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pax.plugins.signal_processing.Cluster &mdash; Processor for Analyzing XENON1T 2.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '2.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <link rel="top" title="Processor for Analyzing XENON1T 2.1.0 documentation" href="../../../../index.html" />
+    <link rel="up" title="Module code" href="../../../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li>
+          <li><a href="../../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pax.plugins.signal_processing.Cluster</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="kn">import</span> <span class="n">brenth</span>
+<span class="kn">import</span> <span class="nn">sklearn.cluster</span>
+
+<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">datastructure</span><span class="p">,</span> <span class="n">utils</span>
+
+
+<div class="viewcode-block" id="ClusterPlugin"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Cluster.ClusterPlugin">[docs]</a><span class="k">class</span> <span class="nc">ClusterPlugin</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base plugin for clustering</span>
+
+<span class="sd">    Individual channel peaks into groups, and labels them as noise / lone_pulse / unknown</span>
+<span class="sd">    &#39;unknown&#39; means an S1 or S2, which will be decided by a later plugin</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="ClusterPlugin.startup"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Cluster.ClusterPlugin.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;sample_duration&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_channels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;n_channels&#39;</span><span class="p">]</span>
+
+        <span class="c"># Build the channel -&gt; detector lookup dict</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detector_by_channel</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">chs</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_in_detector&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">chs</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">detector_by_channel</span><span class="p">[</span><span class="n">ch</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
+</div>
+<div class="viewcode-block" id="ClusterPlugin.cluster_hits"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Cluster.ClusterPlugin.cluster_hits">[docs]</a>    <span class="k">def</span> <span class="nf">cluster_hits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hits</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</div>
+<div class="viewcode-block" id="ClusterPlugin.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Cluster.ClusterPlugin.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+
+        <span class="c"># Sort hits by detector</span>
+        <span class="n">detectors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_in_detector&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="n">hits_per_detector</span> <span class="o">=</span> <span class="p">{</span><span class="n">detector</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">detector</span> <span class="ow">in</span> <span class="n">detectors</span><span class="p">}</span>
+        <span class="k">for</span> <span class="n">hit</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">all_hits</span><span class="p">:</span>
+            <span class="n">hits_per_detector</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">detector_by_channel</span><span class="p">[</span><span class="n">hit</span><span class="o">.</span><span class="n">channel</span><span class="p">]]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hit</span><span class="p">)</span>
+
+        <span class="c"># Handle each detector separately</span>
+        <span class="k">for</span> <span class="n">detector</span><span class="p">,</span> <span class="n">hits_to_cluster</span> <span class="ow">in</span> <span class="n">hits_per_detector</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+
+            <span class="c"># Sort hits by left index</span>
+            <span class="n">hits_to_cluster</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">left</span><span class="p">)</span>
+
+            <span class="c"># Grab pulses in this detector</span>
+            <span class="n">pulses</span> <span class="o">=</span> <span class="p">[</span><span class="n">oc</span> <span class="k">for</span> <span class="n">oc</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">pulses</span> <span class="k">if</span> <span class="n">oc</span><span class="o">.</span><span class="n">channel</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_in_detector&#39;</span><span class="p">][</span><span class="n">detector</span><span class="p">]]</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Clustering channel peaks in data from </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">detector</span><span class="p">)</span>
+
+            <span class="n">clustering_pass</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+
+                <span class="n">peaks</span> <span class="o">=</span> <span class="p">[]</span>
+
+                <span class="c"># Do we actually have something to cluster?</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Found </span><span class="si">%s</span><span class="s"> channel peaks&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">hits_to_cluster</span><span class="p">))</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">hits_to_cluster</span><span class="p">:</span>
+                    <span class="k">break</span>
+
+                <span class="c"># Reset penalty</span>
+                <span class="n">penalty_per_ch</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">noise_pulses_in</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;penalty_per_noise_pulse&#39;</span><span class="p">]</span>
+
+                <span class="c"># Cluster the single-pes in groups /clusters which will become peaks</span>
+                <span class="c"># CHILD CLASS CONTAINING CLUSTERING ALGORITHM IS CALLED HERE</span>
+                <span class="n">indices_of_hits_per_peak</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster_hits</span><span class="p">(</span><span class="n">hits_to_cluster</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Made </span><span class="si">%s</span><span class="s"> clusters&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">indices_of_hits_per_peak</span><span class="p">))</span>
+
+                <span class="c"># Each cluster becomes a peak</span>
+                <span class="c"># Compute basic properties, check for too many lone pulses per channel</span>
+                <span class="k">for</span> <span class="n">this_peak_s_hit_indices</span> <span class="ow">in</span> <span class="n">indices_of_hits_per_peak</span><span class="p">:</span>
+
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">this_peak_s_hit_indices</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Every peak should have a hit... what&#39;s going on?&quot;</span><span class="p">)</span>
+
+                    <span class="n">peak</span> <span class="o">=</span> <span class="n">datastructure</span><span class="o">.</span><span class="n">Peak</span><span class="p">({</span>
+                        <span class="s">&#39;hits&#39;</span><span class="p">:</span>            <span class="p">[</span><span class="n">hits_to_cluster</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">this_peak_s_hit_indices</span><span class="p">],</span>
+                        <span class="s">&#39;detector&#39;</span><span class="p">:</span>                 <span class="n">detector</span><span class="p">,</span>
+                        <span class="s">&#39;area_per_channel&#39;</span><span class="p">:</span>         <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_channels</span><span class="p">),</span>
+                        <span class="s">&#39;does_channel_contribute&#39;</span><span class="p">:</span>  <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_channels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s">&#39;bool&#39;</span><span class="p">),</span>
+                        <span class="s">&#39;does_channel_have_noise&#39;</span><span class="p">:</span>  <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_channels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s">&#39;bool&#39;</span><span class="p">),</span>
+                    <span class="p">})</span>
+
+                    <span class="c"># Compute basic properties of peak, needed later in the plugin</span>
+                    <span class="c"># For speed it would be better to compute as much as possible later..</span>
+                    <span class="n">peak</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">hits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">left</span>
+                    <span class="n">peak</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">hits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">right</span>
+                    <span class="k">for</span> <span class="n">hit</span> <span class="ow">in</span> <span class="n">peak</span><span class="o">.</span><span class="n">hits</span><span class="p">:</span>
+                        <span class="n">peak</span><span class="o">.</span><span class="n">left</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">hit</span><span class="o">.</span><span class="n">left</span><span class="p">)</span>
+                        <span class="n">peak</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">right</span><span class="p">,</span> <span class="n">hit</span><span class="o">.</span><span class="n">right</span><span class="p">)</span>
+                        <span class="n">peak</span><span class="o">.</span><span class="n">does_channel_contribute</span><span class="p">[</span><span class="n">hit</span><span class="o">.</span><span class="n">channel</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+                    <span class="n">peak</span><span class="o">.</span><span class="n">n_contributing_channels</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">contributing_channels</span><span class="p">)</span>
+
+                    <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">n_contributing_channels</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                            <span class="s">&quot;Every peak should have at least one contributing channel... what&#39;s going on?&quot;</span><span class="p">)</span>
+
+                    <span class="c"># Find how many channels in this detector show some data at the same time as this peak, but no hit</span>
+                    <span class="c"># Maybe no hit was found, maybe hit was rejected by the suspicious channel algorithm</span>
+                    <span class="c"># If zero-length encoding is not used, all channels will have &quot;noise&quot; here</span>
+                    <span class="n">coincident_pulses</span> <span class="o">=</span> <span class="p">[</span><span class="n">pulse</span> <span class="k">for</span> <span class="n">pulse</span> <span class="ow">in</span> <span class="n">pulses</span>
+                                         <span class="k">if</span> <span class="n">pulse</span><span class="o">.</span><span class="n">left</span> <span class="o">&lt;=</span> <span class="n">peak</span><span class="o">.</span><span class="n">right</span> <span class="ow">and</span> <span class="n">pulse</span><span class="o">.</span><span class="n">right</span> <span class="o">&gt;=</span> <span class="n">peak</span><span class="o">.</span><span class="n">left</span><span class="p">]</span>
+                    <span class="k">for</span> <span class="n">oc</span> <span class="ow">in</span> <span class="n">coincident_pulses</span><span class="p">:</span>
+                        <span class="n">channel</span> <span class="o">=</span> <span class="n">oc</span><span class="o">.</span><span class="n">channel</span>
+                        <span class="k">if</span> <span class="ow">not</span> <span class="n">peak</span><span class="o">.</span><span class="n">does_channel_contribute</span><span class="p">[</span><span class="n">channel</span><span class="p">]:</span>
+                            <span class="n">peak</span><span class="o">.</span><span class="n">does_channel_have_noise</span><span class="p">[</span><span class="n">channel</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+                    <span class="n">peak</span><span class="o">.</span><span class="n">n_noise_channels</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">noise_channels</span><span class="p">)</span>
+
+                    <span class="c"># Classify noise and lone hits</span>
+                    <span class="c"># TODO: Noise classification should be configurable!</span>
+                    <span class="n">is_noise</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">n_noise_channels</span> <span class="o">/</span> <span class="n">peak</span><span class="o">.</span><span class="n">n_contributing_channels</span> <span class="o">&gt;</span> \
+                        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;max_noise_channels_over_contributing_channels&#39;</span><span class="p">]</span>
+                    <span class="n">is_lone_hit</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">n_contributing_channels</span> <span class="o">==</span> <span class="mi">1</span>
+                    <span class="k">if</span> <span class="n">is_noise</span><span class="p">:</span>
+                        <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s">&#39;noise&#39;</span>
+                        <span class="c"># TODO: Should we also reject all hits?</span>
+                    <span class="k">elif</span> <span class="n">is_lone_hit</span><span class="p">:</span>
+                        <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s">&#39;lone_hit&#39;</span>
+                        <span class="c"># Don&#39;t reject the hit(s) in this peak</span>
+                        <span class="c"># However, lone hits in suspicious channels will always be rejected later:</span>
+                        <span class="c"># in the suspicious channel algorithm since their &#39;witness area&#39; is 0</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="c"># Proper peak, classification done later</span>
+                        <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s">&#39;unknown&#39;</span>
+
+                    <span class="c"># Add a penalty for each hit, if the peak was lone / noise</span>
+                    <span class="k">if</span> <span class="n">is_noise</span> <span class="ow">or</span> <span class="n">is_lone_hit</span><span class="p">:</span>
+                        <span class="k">for</span> <span class="n">hit</span> <span class="ow">in</span> <span class="n">peak</span><span class="o">.</span><span class="n">hits</span><span class="p">:</span>
+                            <span class="n">penalty_per_ch</span><span class="p">[</span><span class="n">hit</span><span class="o">.</span><span class="n">channel</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;penalty_per_lone_hit&#39;</span><span class="p">]</span>
+
+                    <span class="n">peaks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">peak</span><span class="p">)</span>
+
+                <span class="c"># Are there any suspicious channels? If not, we are done.</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">ch</span><span class="p">,</span> <span class="nb">round</span><span class="p">(</span><span class="n">penalty_per_ch</span><span class="p">[</span><span class="n">ch</span><span class="p">],</span> <span class="mi">1</span><span class="p">))</span>
+                                          <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">penalty_per_ch</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]]))</span>
+                <span class="n">suspicious_channels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">penalty_per_ch</span> <span class="o">&gt;=</span>
+                                               <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;penalty_geq_this_is_suspicious&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="n">event</span><span class="o">.</span><span class="n">is_channel_suspicious</span><span class="p">[</span><span class="n">suspicious_channels</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">suspicious_channels</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">break</span>
+
+                <span class="c"># Compute good/bad area balance for each hit in a suspicious channel</span>
+                <span class="c"># Good area: area in non-suspicious channels in same peak</span>
+                <span class="c"># Bad area: area in lone pulses and noise in same channel + something extra for # of noise pulses</span>
+                <span class="n">rejected_some_hits</span> <span class="o">=</span> <span class="bp">False</span>
+                <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">peaks</span><span class="p">:</span>
+
+                    <span class="c"># Compute area for this peak outside suspicious channels</span>
+                    <span class="c"># a witness to this peak not being noise</span>
+                    <span class="n">witness_area</span> <span class="o">=</span> <span class="mi">0</span>
+                    <span class="k">for</span> <span class="n">hit</span> <span class="ow">in</span> <span class="n">peak</span><span class="o">.</span><span class="n">hits</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">hit</span><span class="o">.</span><span class="n">channel</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">suspicious_channels</span><span class="p">:</span>
+                            <span class="n">witness_area</span> <span class="o">+=</span> <span class="n">hit</span><span class="o">.</span><span class="n">area</span>
+                    <span class="c"># witness_area = peak.area - np.sum(peak.area_per_channel[suspicious_channels])</span>
+
+                    <span class="c"># If the witness area for a hit is lower than the penalty in that channel, reject the hit</span>
+                    <span class="k">for</span> <span class="n">hit</span> <span class="ow">in</span> <span class="n">peak</span><span class="o">.</span><span class="n">hits</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">hit</span><span class="o">.</span><span class="n">channel</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">suspicious_channels</span><span class="p">:</span>
+                            <span class="k">continue</span>
+                        <span class="n">channel</span> <span class="o">=</span> <span class="n">hit</span><span class="o">.</span><span class="n">channel</span>
+                        <span class="k">if</span> <span class="n">witness_area</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">penalty_per_ch</span><span class="p">[</span><span class="n">hit</span><span class="o">.</span><span class="n">channel</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">witness_area</span><span class="p">:</span>
+                            <span class="n">hit</span><span class="o">.</span><span class="n">is_rejected</span> <span class="o">=</span> <span class="bp">True</span>
+                            <span class="n">rejected_some_hits</span> <span class="o">=</span> <span class="bp">True</span>
+                            <span class="n">event</span><span class="o">.</span><span class="n">n_hits_rejected</span><span class="p">[</span><span class="n">channel</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+
+                <span class="c"># If no new hits were rejected, we are done</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">rejected_some_hits</span><span class="p">:</span>
+                    <span class="k">break</span>
+
+                <span class="c"># Delete rejected hits from hits_to_cluster, then redo clustering</span>
+                <span class="c"># The rejected hits will remain in event.all_hits, of course</span>
+                <span class="n">hits_to_cluster</span> <span class="o">=</span> <span class="p">[</span><span class="n">h</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">hits_to_cluster</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">h</span><span class="o">.</span><span class="n">is_rejected</span><span class="p">]</span>
+                <span class="n">clustering_pass</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="c"># Add the peaks to the datastructure</span>
+            <span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">peaks</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Clustering &amp; bad channel rejection ended after </span><span class="si">%s</span><span class="s"> passes&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">clustering_pass</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">event</span>
+
+</div></div>
+<div class="viewcode-block" id="MeanShift"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Cluster.MeanShift">[docs]</a><span class="k">class</span> <span class="nc">MeanShift</span><span class="p">(</span><span class="n">ClusterPlugin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Clusters hits using mean-shift algorithm</span>
+
+<span class="sd">    http://en.wikipedia.org/wiki/Mean_shift</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="MeanShift.startup"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Cluster.MeanShift.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">startup</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">s2_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;s2_size&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">s2_width</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;s2_width&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">p_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;p_value&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cluster_all</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;cluster_all&#39;</span><span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">bandwidth</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_gap_size</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Using bandwidth of </span><span class="si">%0.2f</span><span class="s"> ns&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">bandwidth</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="MeanShift.cluster_hits"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Cluster.MeanShift.cluster_hits">[docs]</a>    <span class="k">def</span> <span class="nf">cluster_hits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spes</span><span class="p">):</span>
+        <span class="c"># Cluster the single-pes in groups separated by &gt;= self.s2_width</span>
+        <span class="n">cluster_indices</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">cluster_by_diff</span><span class="p">([</span><span class="n">s</span><span class="o">.</span><span class="n">index_of_maximum</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">spes</span><span class="p">],</span>
+                                                <span class="bp">self</span><span class="o">.</span><span class="n">s2_width</span><span class="p">,</span>
+                                                <span class="n">return_indices</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Pre-clustering made </span><span class="si">%s</span><span class="s"> clusters&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">cluster_indices</span><span class="p">))</span>
+
+        <span class="c"># Make spes a numpy array, so we can do list-based indexing</span>
+        <span class="n">spes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">spes</span><span class="p">)</span>
+
+        <span class="n">new_cluster_indices</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">ci</span> <span class="ow">in</span> <span class="n">cluster_indices</span><span class="p">:</span>
+            <span class="n">ci</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ci</span><span class="p">)</span>
+            <span class="n">channel_peak_objects</span> <span class="o">=</span> <span class="n">spes</span><span class="p">[[</span><span class="n">ci</span><span class="p">]]</span>
+
+            <span class="n">locations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">channel_peak_objects</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+            <span class="n">areas</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">area</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">channel_peak_objects</span><span class="p">]</span>
+
+            <span class="n">times_repeated</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">channel_peak_objects</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">s</span><span class="o">.</span><span class="n">right</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">s</span><span class="o">.</span><span class="n">area</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)):</span>
+                    <span class="n">times_repeated</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span><span class="p">)</span>
+            <span class="n">times_repeated</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">times_repeated</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+            <span class="n">locations_repeated</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">locations</span><span class="p">,</span> <span class="n">areas</span><span class="p">)</span>
+
+            <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">((</span><span class="n">times_repeated</span><span class="p">,</span>
+                              <span class="n">locations_repeated</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">data</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="n">x</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)))),</span>
+                         <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+
+            <span class="n">ms</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">cluster</span><span class="o">.</span><span class="n">MeanShift</span><span class="p">(</span><span class="n">bandwidth</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bandwidth</span><span class="p">,</span>
+                                           <span class="n">bin_seeding</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                                           <span class="n">cluster_all</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cluster_all</span><span class="p">)</span>
+
+            <span class="n">ms</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">ms</span><span class="o">.</span><span class="n">labels_</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">label</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>  <span class="c"># Means no peak</span>
+                    <span class="k">continue</span>
+                <span class="n">peaks_in_cluster</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span>
+                                                  <span class="p">(</span><span class="n">ms</span><span class="o">.</span><span class="n">labels_</span> <span class="o">==</span> <span class="n">label</span><span class="p">)])</span>
+                <span class="n">new_cluster_indices</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ci</span><span class="p">[</span><span class="n">peaks_in_cluster</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">new_cluster_indices</span>
+</div>
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="MeanShift.get_gap_probability"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Cluster.MeanShift.get_gap_probability">[docs]</a>    <span class="k">def</span> <span class="nf">get_gap_probability</span><span class="p">(</span><span class="n">gap_width</span><span class="p">,</span> <span class="n">s2_size</span><span class="p">,</span>
+                            <span class="n">s2_width</span><span class="p">,</span> <span class="n">p_value_offset</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+                            <span class="n">n</span><span class="o">=</span><span class="mi">10000</span><span class="p">):</span>
+        <span class="n">answer</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+        <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n</span><span class="p">):</span>
+            <span class="n">this_mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">poisson</span><span class="p">(</span><span class="n">s2_size</span><span class="p">)</span>
+
+            <span class="n">rand_numbers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">this_mu</span><span class="p">)</span>
+            <span class="n">rand_numbers</span> <span class="o">*=</span> <span class="n">s2_width</span>
+            <span class="n">rand_numbers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">rand_numbers</span><span class="p">,</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">s2_width</span><span class="p">])</span>
+            <span class="n">rand_numbers</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+
+            <span class="n">gap_sizes</span> <span class="o">=</span> <span class="n">rand_numbers</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">-</span> <span class="n">rand_numbers</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">gap_sizes</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">gap_width</span><span class="p">:</span>
+                <span class="n">answer</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">return</span> <span class="n">answer</span> <span class="o">/</span> <span class="n">n</span> <span class="o">-</span> <span class="n">p_value_offset</span>
+</div>
+<div class="viewcode-block" id="MeanShift.get_gap_size"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Cluster.MeanShift.get_gap_size">[docs]</a>    <span class="k">def</span> <span class="nf">get_gap_size</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">brenth</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_gap_probability</span><span class="p">,</span>
+                      <span class="mf">0.0</span><span class="p">,</span>
+                      <span class="bp">self</span><span class="o">.</span><span class="n">s2_width</span><span class="p">,</span>
+                      <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">s2_size</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">s2_width</span><span class="p">,</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">p_value</span><span class="p">))</span>
+
+</div></div>
+<div class="viewcode-block" id="HitDifference"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Cluster.HitDifference">[docs]</a><span class="k">class</span> <span class="nc">HitDifference</span><span class="p">(</span><span class="n">ClusterPlugin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Clusters hits based on times between their maxima</span>
+<span class="sd">    If any hit maximum is separated by more than max_difference from the next,</span>
+<span class="sd">    it starts a new cluster.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="HitDifference.cluster_hits"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Cluster.HitDifference.cluster_hits">[docs]</a>    <span class="k">def</span> <span class="nf">cluster_hits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hits</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">cluster_by_diff</span><span class="p">([</span><span class="n">s</span><span class="o">.</span><span class="n">index_of_maximum</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">hits</span><span class="p">],</span>
+                                     <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;max_difference&#39;</span><span class="p">],</span>
+                                     <span class="n">return_indices</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="GapSize"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Cluster.GapSize">[docs]</a><span class="k">class</span> <span class="nc">GapSize</span><span class="p">(</span><span class="n">ClusterPlugin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Clusters hits based on gaps = times not covered by any hits.</span>
+<span class="sd">    Any gap longer than max_gap_size starts a new cluster.</span>
+<span class="sd">    Difference with HitDifference: this takes interval nature of hits into account</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="GapSize.startup"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Cluster.GapSize.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">startup</span><span class="p">()</span>
+        <span class="c"># Convert gap threshold to samples (is in time (ns) in config)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">large_gap_threshold</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;large_gap_threshold&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">small_gap_threshold</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;small_gap_threshold&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transition_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;transition_point&#39;</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="GapSize.cluster_hits"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Cluster.GapSize.cluster_hits">[docs]</a>    <span class="k">def</span> <span class="nf">cluster_hits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hits</span><span class="p">):</span>
+        <span class="c"># If a hit has a left &gt; this, it will form a new cluster</span>
+        <span class="n">boundary</span> <span class="o">=</span> <span class="o">-</span><span class="mi">999999999</span>
+        <span class="n">clusters</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">hit</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">hits</span><span class="p">):</span>
+
+            <span class="k">if</span> <span class="n">hit</span><span class="o">.</span><span class="n">left</span> <span class="o">&gt;</span> <span class="n">boundary</span><span class="p">:</span>
+                <span class="c"># Hit starts after current boundary: new cluster</span>
+                <span class="n">clusters</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
+                <span class="c"># (Re)set area and thresholds</span>
+                <span class="n">area</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">gap_size_threshold</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">large_gap_threshold</span>
+                <span class="n">boundary</span> <span class="o">=</span> <span class="n">hit</span><span class="o">.</span><span class="n">right</span> <span class="o">+</span> <span class="n">gap_size_threshold</span>
+
+            <span class="c"># Add this hit to the cluster</span>
+            <span class="n">clusters</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">area</span> <span class="o">+=</span> <span class="n">hit</span><span class="o">.</span><span class="n">area</span>
+
+            <span class="c"># Can we start applying the tighter threshold?</span>
+            <span class="k">if</span> <span class="n">area</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_point</span><span class="p">:</span>
+                <span class="c"># Yes, there&#39;s no chance this is a single electron: use a tighter clustering boundary</span>
+                <span class="n">gap_size_threshold</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">small_gap_threshold</span>
+
+            <span class="c"># Extend the boundary at which a new clusters starts, if needed</span>
+            <span class="n">boundary</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">boundary</span><span class="p">,</span> <span class="n">hit</span><span class="o">.</span><span class="n">right</span> <span class="o">+</span> <span class="n">gap_size_threshold</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">clusters</span>
+
+</div></div>
+<div class="viewcode-block" id="GapSize2"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Cluster.GapSize2">[docs]</a><span class="k">class</span> <span class="nc">GapSize2</span><span class="p">(</span><span class="n">ClusterPlugin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Clusters hits based on gaps = times not covered by any hits.</span>
+<span class="sd">    Any gap longer than max_gap_size starts a new cluster.</span>
+<span class="sd">    Difference with HitDifference: this takes interval nature of hits into account</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="GapSize2.startup"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Cluster.GapSize2.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">startup</span><span class="p">()</span>
+        <span class="c"># Convert gap threshold to samples (is in time (ns) in config)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">large_gap_threshold</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;large_gap_threshold&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">small_gap_threshold</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;small_gap_threshold&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">transition_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;transition_point&#39;</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="GapSize2.cluster_hits"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Cluster.GapSize2.cluster_hits">[docs]</a>    <span class="k">def</span> <span class="nf">cluster_hits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hits</span><span class="p">):</span>
+        <span class="c"># If the next hit starts at a sample &gt; this, start a new cluster</span>
+        <span class="n">boundary</span> <span class="o">=</span> <span class="o">-</span><span class="mi">999999999</span>
+        <span class="n">clusters</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">hit</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">hits</span><span class="p">):</span>
+
+            <span class="k">if</span> <span class="n">hit</span><span class="o">.</span><span class="n">left</span> <span class="o">&gt;</span> <span class="n">boundary</span><span class="p">:</span>
+                <span class="c"># Hit starts after current boundary: new cluster</span>
+                <span class="n">clusters</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
+                <span class="c"># (Re)set area and thresholds</span>
+                <span class="n">area</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">gap_size_threshold</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">large_gap_threshold</span>
+                <span class="n">boundary</span> <span class="o">=</span> <span class="n">hit</span><span class="o">.</span><span class="n">right</span> <span class="o">+</span> <span class="n">gap_size_threshold</span>
+
+            <span class="c"># Add this hit to the cluster</span>
+            <span class="n">clusters</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+            <span class="n">area</span> <span class="o">+=</span> <span class="n">hit</span><span class="o">.</span><span class="n">area</span>
+
+            <span class="c"># Can we start applying the tighter threshold?</span>
+            <span class="k">if</span> <span class="n">area</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_point</span><span class="p">:</span>
+                <span class="c"># Yes, there&#39;s no chance this is a single electron: use a tighter clustering boundary</span>
+                <span class="n">gap_size_threshold</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">small_gap_threshold</span>
+
+            <span class="c"># Extend the boundary at which a new clusters starts, if needed</span>
+            <span class="n">boundary</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">boundary</span><span class="p">,</span> <span class="n">hit</span><span class="o">.</span><span class="n">right</span> <span class="o">+</span> <span class="n">gap_size_threshold</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">clusters</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li>
+          <li><a href="../../../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Christopher Tunnell.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

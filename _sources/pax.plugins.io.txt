@@ -12,6 +12,14 @@ pax.plugins.io.Avro module
     :undoc-members:
     :show-inheritance:
 
+pax.plugins.io.BulkOutput module
+--------------------------------
+
+.. automodule:: pax.plugins.io.BulkOutput
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pax.plugins.io.MongoDB module
 -----------------------------
 
@@ -32,14 +40,6 @@ pax.plugins.io.Pickle module
 ----------------------------
 
 .. automodule:: pax.plugins.io.Pickle
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pax.plugins.io.Plotting module
-------------------------------
-
-.. automodule:: pax.plugins.io.Plotting
     :members:
     :undoc-members:
     :show-inheritance:

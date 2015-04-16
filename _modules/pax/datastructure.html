@@ -64,14 +64,15 @@
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">units</span>
 
-<span class="c"># To turn off type-checking for all models, replace the line below with</span>
-<span class="c"># from pax.data_model import Model</span>
-<span class="c"># This will improve performance a bit (+ ~10% running time), but use at your own risk</span>
-<span class="kn">from</span> <span class="nn">pax.data_model</span> <span class="kn">import</span> <span class="n">StrictModel</span> <span class="k">as</span> <span class="n">Model</span>
+<span class="c"># To turn off type-checking, replace StrictModel with Model</span>
+<span class="c"># This will improve performance, but use at your own risk</span>
+<span class="kn">from</span> <span class="nn">pax.data_model</span> <span class="kn">import</span> <span class="n">StrictModel</span><span class="p">,</span> <span class="n">Model</span>
 
 
-<div class="viewcode-block" id="ReconstructedPosition"><a class="viewcode-back" href="../../pax.html#pax.datastructure.ReconstructedPosition">[docs]</a><span class="k">class</span> <span class="nc">ReconstructedPosition</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+<span class="n">INT_NAN</span> <span class="o">=</span> <span class="o">-</span><span class="mi">99999</span>  <span class="c"># Do not change without talking to me. -Tunnell 12/3/2015</span>
 
+
+<div class="viewcode-block" id="ReconstructedPosition"><a class="viewcode-back" href="../../pax.html#pax.datastructure.ReconstructedPosition">[docs]</a><span class="k">class</span> <span class="nc">ReconstructedPosition</span><span class="p">(</span><span class="n">StrictModel</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Reconstructed position</span>
 
 <span class="sd">    Each reconstruction algorithm creates one of these.</span>
@@ -79,8 +80,10 @@
     <span class="n">x</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c">#: x position (cm)</span>
     <span class="n">y</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c">#: y position (cm)</span>
 
-    <span class="n">goodness_of_fit</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c">#: goodness-of-fit parameter generated with PosRecChiSquareGamma</span>
-    <span class="n">ndf</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c"># : number of degrees of freedom calculated with PosRecChiSquareGamma</span>
+    <span class="c">#: goodness-of-fit parameter generated with PosRecChiSquareGamma</span>
+    <span class="n">goodness_of_fit</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="c"># : number of degrees of freedom calculated with PosRecChiSquareGamma</span>
+    <span class="n">ndf</span> <span class="o">=</span> <span class="mf">0.0</span>
 
     <span class="c">#: Name of algorithm used for computation</span>
     <span class="n">algorithm</span> <span class="o">=</span> <span class="s">&#39;none&#39;</span>
@@ -89,7 +92,8 @@
     <span class="c"># error_matrix = np.array([], dtype=np.float64)</span>
 
     <span class="c"># For convenience: cylindrical coordinates</span>
-    <span class="c"># Must be properties so InterpolatingDetectorMap can transparently use cylindrical coordinates</span>
+    <span class="c"># Must be properties so InterpolatingDetectorMap can transparently use</span>
+    <span class="c"># cylindrical coordinates</span>
     <span class="nd">@property</span>
 <div class="viewcode-block" id="ReconstructedPosition.r"><a class="viewcode-back" href="../../pax.html#pax.datastructure.ReconstructedPosition.r">[docs]</a>    <span class="k">def</span> <span class="nf">r</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
@@ -99,47 +103,68 @@
         <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">atan2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
 
 </div></div>
-<div class="viewcode-block" id="ChannelPeak"><a class="viewcode-back" href="../../pax.html#pax.datastructure.ChannelPeak">[docs]</a><span class="k">class</span> <span class="nc">ChannelPeak</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-
+<div class="viewcode-block" id="Hit"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Hit">[docs]</a><span class="k">class</span> <span class="nc">Hit</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Peaks found in individual channels</span>
-<span class="sd">    These are be clustered into ordinary peaks later</span>
+
+<span class="sd">    These are be clustered into ordinary peaks later. This is commonly</span>
+<span class="sd">    called a &#39;hit&#39; in particle physics detectors.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">channel</span> <span class="o">=</span> <span class="mi">0</span>              <span class="c">#: Channel in which this peak was found</span>
-    <span class="n">index_of_maximum</span> <span class="o">=</span> <span class="mi">0</span>     <span class="c">#: Index in the event at which this peak has its maximum.</span>
+    <span class="c">#: Index in the event at which this peak has its maximum.</span>
+    <span class="n">index_of_maximum</span> <span class="o">=</span> <span class="mi">0</span>
 
     <span class="n">left</span> <span class="o">=</span> <span class="mi">0</span>                 <span class="c">#: Index of left bound (inclusive) of peak.</span>
     <span class="n">right</span> <span class="o">=</span> <span class="mi">0</span>                <span class="c">#: Index of right bound (INCLUSIVE!!) of peak</span>
 
     <span class="nd">@property</span>
-<div class="viewcode-block" id="ChannelPeak.length"><a class="viewcode-back" href="../../pax.html#pax.datastructure.ChannelPeak.length">[docs]</a>    <span class="k">def</span> <span class="nf">length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Hit.length"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Hit.length">[docs]</a>    <span class="k">def</span> <span class="nf">length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">left</span> <span class="o">+</span> <span class="mi">1</span>
 </div>
-    <span class="n">area</span> <span class="o">=</span> <span class="mf">0.0</span>                   <span class="c">#: Area of the peak in photoelectrons</span>
-    <span class="n">height</span> <span class="o">=</span> <span class="mf">0.0</span>                 <span class="c">#: Height of highest point in peak (in pe/bin) in unfiltered waveform</span>
-    <span class="n">filtered_height</span> <span class="o">=</span> <span class="mf">0.0</span>        <span class="c">#: Height of highest point in peak (in pe/bin) in the filtered waveform</span>
-    <span class="n">noise_sigma</span> <span class="o">=</span> <span class="mf">0.0</span>            <span class="c">#: StDev of the noisin e (pe/bin) in the filtered waveform in this peak&#39;s occurrence</span>
+    <span class="n">area</span> <span class="o">=</span> <span class="mf">0.0</span>                  <span class="c">#: Area of the peak in photoelectrons</span>
+
+    <span class="c">#: Height of highest point in peak (in pe/bin)</span>
+    <span class="n">height</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="c">#: Noise sigma in pe/bin of pulse in which peak was found.</span>
+    <span class="c">#: Note: in Pulse the same number is stored in ADC-counts</span>
+    <span class="n">noise_sigma</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="c">#: Index of pulse (in event.pulses) in which peak was found</span>
+    <span class="n">found_in_pulse</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c">#: Set to True if rejected by suspicious channel algorithm</span>
+    <span class="n">is_rejected</span> <span class="o">=</span> <span class="bp">False</span>
 
 </div>
-<div class="viewcode-block" id="Peak"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak">[docs]</a><span class="k">class</span> <span class="nc">Peak</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+<div class="viewcode-block" id="Peak"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak">[docs]</a><span class="k">class</span> <span class="nc">Peak</span><span class="p">(</span><span class="n">StrictModel</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Peak</span>
 
-    <span class="sd">&quot;&quot;&quot;Peak object&quot;&quot;&quot;</span>
+<span class="sd">    A peak will be, e.g., S1 or S2.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c">##</span>
-    <span class="c">#   Fields present in all peaks</span>
+    <span class="c"># Basics</span>
     <span class="c">##</span>
-
-    <span class="n">left</span> <span class="o">=</span> <span class="mi">0</span>                 <span class="c">#: Index of left bound (inclusive) in event.</span>
-    <span class="n">right</span> <span class="o">=</span> <span class="mi">0</span>                <span class="c">#: Index of right bound (INCLUSIVE!!) in event.</span>
-    <span class="c"># For XDP matching rightmost sample is not in integral, so you could say it is exclusive then.</span>
-
-    <span class="c">#: Area of the pulse in photoelectrons.</span>
-    <span class="c">#:</span>
-    <span class="c">#: Includes only contributing pmts (see later) in the right detector</span>
-    <span class="n">area</span> <span class="o">=</span> <span class="mf">0.0</span>
 
     <span class="nb">type</span> <span class="o">=</span> <span class="s">&#39;unknown&#39;</span>        <span class="c">#: Type of peak (e.g., &#39;s1&#39;, &#39;s2&#39;, ...)</span>
-    <span class="n">subtype</span> <span class="o">=</span> <span class="s">&#39;unknown&#39;</span>     <span class="c">#: Subtype of peak</span>
-    <span class="n">detector</span> <span class="o">=</span> <span class="s">&#39;none&#39;</span>  <span class="c">#: e.g. tpc or veto</span>
+    <span class="n">detector</span> <span class="o">=</span> <span class="s">&#39;none&#39;</span>       <span class="c">#: e.g. tpc or veto</span>
+
+    <span class="c">#: Area of the pulse in photoelectrons. Includes only contributing pmts in the right detector.</span>
+    <span class="c">#: For XDP matching rightmost sample is not included in area integral.</span>
+    <span class="n">area</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="c">##</span>
+    <span class="c">#  Low-level data</span>
+    <span class="c">##</span>
+
+    <span class="c">#: Peaks in individual channels that make up this peak</span>
+    <span class="n">hits</span> <span class="o">=</span> <span class="p">(</span><span class="n">Hit</span><span class="p">,)</span>
+
+    <span class="c">#: Array of areas in each PMT.</span>
+    <span class="n">area_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="s">&#39;float64&#39;</span><span class="p">)</span>
+
+    <span class="c">#: Does a channel have no hits, but digitizer shows data?</span>
+    <span class="n">does_channel_have_noise</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
 
     <span class="c">#: Does a PMT see &#39;something significant&#39;? (thresholds configurable)</span>
     <span class="n">does_channel_contribute</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
@@ -149,74 +174,69 @@
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">does_channel_contribute</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 </div>
     <span class="nd">@property</span>
-<div class="viewcode-block" id="Peak.number_of_contributing_channels"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.number_of_contributing_channels">[docs]</a>    <span class="k">def</span> <span class="nf">number_of_contributing_channels</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; Number of PMTS which see something significant (depends on settings) &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">contributing_channels</span><span class="p">)</span>
+<div class="viewcode-block" id="Peak.noise_channels"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.noise_channels">[docs]</a>    <span class="k">def</span> <span class="nf">noise_channels</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">does_channel_have_noise</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
-    <span class="c">#: Array of areas in each PMT.</span></div>
-    <span class="n">area_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="s">&#39;float64&#39;</span><span class="p">)</span>
+    <span class="c">##</span>
+    <span class="c"># Time distribution information</span>
+    <span class="c">##</span>
+</div>
+    <span class="n">left</span> <span class="o">=</span> <span class="mi">0</span>                 <span class="c">#: Index of left bound (inclusive) in event.</span>
+    <span class="n">right</span> <span class="o">=</span> <span class="mi">0</span>                <span class="c">#: Index of right bound (INCLUSIVE) in event.</span>
 
-    <span class="c">#: Returns a list of reconstructed positions</span>
-    <span class="c">#:</span>
-    <span class="c">#: Returns an :class:`pax.datastructure.ReconstructedPosition` class.</span>
+    <span class="c">#: Weighted (by hit area) mean of hit times (since event start)</span>
+    <span class="n">hit_time_mean</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="c">#: Weighted (by hit area) std of hit times</span>
+    <span class="n">hit_time_std</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="c">#: Time range of centermost hits containing at least 50% / 90% of area (with center at hit_time_mean)</span>
+    <span class="c">#: (rightmostright - leftmostleft + 1) * sample_duration</span>
+    <span class="n">range_50p_area</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">range_90p_area</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="c">##</span>
+    <span class="c"># Spatial pattern information</span>
+    <span class="c">##</span>
+
+    <span class="c">#: List of reconstructed positions (instances of :class:`pax.datastructure.ReconstructedPosition`)</span>
     <span class="n">reconstructed_positions</span> <span class="o">=</span> <span class="p">(</span><span class="n">ReconstructedPosition</span><span class="p">,)</span>
 
     <span class="c">#: Weighted root mean square deviation of top hitpattern (cm)</span>
-    <span class="n">hitpattern_top_spread</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">top_hitpattern_spread</span> <span class="o">=</span> <span class="mf">0.0</span>
 
     <span class="c">#: Weighted root mean square deviation of bottom hitpattern (cm)</span>
-    <span class="n">hitpattern_bottom_spread</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">bottom_hitpattern_spread</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="c">#: Fraction of area in the top array</span>
+    <span class="n">area_fraction_top</span> <span class="o">=</span> <span class="mf">0.0</span>
 
     <span class="c">##</span>
-    <span class="c">#   Fields present in sum-waveform peaks</span>
+    <span class="c"># Signal / noise info</span>
     <span class="c">##</span>
 
-    <span class="n">index_of_maximum</span> <span class="o">=</span> <span class="mi">0</span>           <span class="c">#: Index in the event&#39;s sum waveform at which this peak has its maximum.</span>
-    <span class="n">index_of_filtered_maximum</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c">#: same, but maximum in filtered (for S2) sum waveform</span>
+    <span class="c">#: Number of PMTS which see something significant (depends on settings) ~~ &quot;coincidence level&quot;</span>
+    <span class="n">n_contributing_channels</span> <span class="o">=</span> <span class="mi">0</span>
 
-    <span class="n">height</span> <span class="o">=</span> <span class="mf">0.0</span>                 <span class="c">#: Height of highest point in peak (in pe/bin)</span>
-    <span class="n">height_filtered</span> <span class="o">=</span> <span class="mf">0.0</span>        <span class="c">#: Height of highest point in filtered waveform of peak (in pe/bin)</span>
+    <span class="c">#: Number of channels that show no hits, but digitizer shows data</span>
+    <span class="n">n_noise_channels</span> <span class="o">=</span> <span class="mi">0</span>
 
-    <span class="n">central_area</span> <span class="o">=</span> <span class="mf">0.0</span>           <span class="c">#: Area in the central part of the peak (used for classification)</span>
-
-    <span class="c"># Note these are floats -- the widths get interpolated</span>
-    <span class="n">full_width_half_max</span> <span class="o">=</span> <span class="mf">0.0</span>               <span class="c">#: Full width at half maximum in samples</span>
-    <span class="n">full_width_tenth_max</span> <span class="o">=</span> <span class="mf">0.0</span>              <span class="c">#: Full width at tenth of maximum in samples</span>
-    <span class="n">full_width_half_max_filtered</span> <span class="o">=</span> <span class="mf">0.0</span>      <span class="c">#: Full width at half of maximum in samples, in filtered waveform</span>
-    <span class="n">full_width_tenth_max_filtered</span> <span class="o">=</span> <span class="mf">0.0</span>     <span class="c">#: Full width at tenth of maximum in samples, in filtered waveform</span>
-
-    <span class="c">#: Array of squared signal entropies in each PMT.</span>
-    <span class="n">entropy_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="s">&#39;float64&#39;</span><span class="p">)</span>
+    <span class="c">#: Weighted (by area) mean hit amplitude / noise level in that hit&#39;s channel</span>
+    <span class="n">mean_amplitude_to_noise</span> <span class="o">=</span> <span class="mf">0.0</span>
 
     <span class="c">##</span>
-    <span class="c">#   Fields present in peaks from single-channel peakfinding</span>
+    <span class="c"># Deprecated sum-waveform stuff, needed for Xerawdp matching??</span>
     <span class="c">##</span>
 
-    <span class="c">#: Peaks in individual channels that make up this peak</span>
-    <span class="n">channel_peaks</span> <span class="o">=</span> <span class="p">(</span><span class="n">ChannelPeak</span><span class="p">,)</span>
+    <span class="c">#: Index in the event&#39;s sum waveform at which this peak has its maximum.</span>
+    <span class="n">index_of_maximum</span> <span class="o">=</span> <span class="mi">0</span>
 
-    <span class="n">does_channel_have_noise</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
-
-    <span class="nd">@property</span>
-<div class="viewcode-block" id="Peak.noise_channels"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.noise_channels">[docs]</a>    <span class="k">def</span> <span class="nf">noise_channels</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">does_channel_have_noise</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-</div>
-    <span class="nd">@property</span>
-<div class="viewcode-block" id="Peak.number_of_noise_channels"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.number_of_noise_channels">[docs]</a>    <span class="k">def</span> <span class="nf">number_of_noise_channels</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot; Number of channels which have noise during this peak &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">noise_channels</span><span class="p">)</span>
-
-    <span class="c">#: Variables indicating width of peak</span>
-
-    <span class="c">#: Median absolute deviation of photon arrival times (in ns)</span></div>
-    <span class="n">median_absolute_deviation</span> <span class="o">=</span> <span class="mf">0.0</span>
-    <span class="c"># standard_deviation = 0.0</span>
-    <span class="c"># half_area_range = 0.0</span>
-    <span class="c"># tenth_area_range = 0.0</span>
+    <span class="c">#: Height of highest point in peak (in pe/bin)</span>
+    <span class="c">#: In new pax, is height of highest hit</span>
+    <span class="n">height</span> <span class="o">=</span> <span class="mf">0.0</span>
 
 </div>
-<div class="viewcode-block" id="SumWaveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.SumWaveform">[docs]</a><span class="k">class</span> <span class="nc">SumWaveform</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-
+<div class="viewcode-block" id="SumWaveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.SumWaveform">[docs]</a><span class="k">class</span> <span class="nc">SumWaveform</span><span class="p">(</span><span class="n">StrictModel</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Class used to store sum (filtered or not) waveform information.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -224,7 +244,8 @@
     <span class="n">name_of_filter</span> <span class="o">=</span> <span class="s">&#39;none&#39;</span>
     <span class="c">#: Name of this sum waveform</span>
     <span class="n">name</span> <span class="o">=</span> <span class="s">&#39;none&#39;</span>
-    <span class="n">detector</span> <span class="o">=</span> <span class="s">&#39;none&#39;</span>  <span class="c">#: Name of the detector this waveform belongs to (e.g. tpc or veto)</span>
+    <span class="c">#: Name of the detector this waveform belongs to (e.g. tpc or veto)</span>
+    <span class="n">detector</span> <span class="o">=</span> <span class="s">&#39;none&#39;</span>
 
     <span class="c">#: Array of PMT numbers included in this waveform</span>
     <span class="n">channel_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span>
@@ -239,48 +260,49 @@
             <span class="k">return</span> <span class="bp">False</span>
 
 </div></div>
-<div class="viewcode-block" id="Occurrence"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Occurrence">[docs]</a><span class="k">class</span> <span class="nc">Occurrence</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+<div class="viewcode-block" id="Pulse"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Pulse">[docs]</a><span class="k">class</span> <span class="nc">Pulse</span><span class="p">(</span><span class="n">StrictModel</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A DAQ pulse</span>
 
-    <span class="sd">&quot;&quot;&quot;A DAQ occurrence</span>
+<span class="sd">    A DAQ pulse can also be thought of as a pulse in a PMT.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="c">#: First index (inclusive; integer)</span>
-    <span class="n">left</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c">#: Starttime of this occurence within event</span>
+    <span class="c">#:</span>
+    <span class="c">#: Units are samples.  This nonnegative number starts at zero and is an integere because</span>
+    <span class="c">#: it&#39;s an index.</span>
+    <span class="n">left</span> <span class="o">=</span> <span class="n">INT_NAN</span>
 
-    <span class="c">#: Last index (inclusive; integer)</span>
-    <span class="n">right</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c">#: Stoptime of this occurence within event</span>
+    <span class="c">#:</span>
+    <span class="c">#: Units are samples and this time is inclusive of last sample.  This nonnegative number</span>
+    <span class="c">#: starts at zero and is an integere because it&#39;s an index.</span>
+    <span class="n">right</span> <span class="o">=</span> <span class="n">INT_NAN</span>
 
-    <span class="c">#: Channel the occurrence belongs to (integer)</span>
-    <span class="n">channel</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c">#: Channel the pulse belongs to (integer)</span>
+    <span class="n">channel</span> <span class="o">=</span> <span class="n">INT_NAN</span>
 
-    <span class="c">#: Maximum amplitude (in pe/bin; float) in unfiltered waveform</span>
+    <span class="c">#: Maximum amplitude (in ADC counts; float)</span>
     <span class="c">#: Will remain nan if channel&#39;s gain is 0</span>
     <span class="c">#: baseline_correction, if any, has been substracted</span>
-    <span class="c"># TODO: may not be equal to actual occurrence height, baseline correction is computed on filtered wv. :-(</span>
     <span class="n">height</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
 
-    <span class="c">#: Noise sigma for this occurrence (in pe/bin)</span>
-    <span class="c">#: Computed in the filtered channel waveform</span>
-    <span class="c">#: Will remain nan unless occurrence is processed by smallpeakfinder</span>
+    <span class="c">#: Noise sigma for this pulse (in ADC counts)</span>
+    <span class="c">#: Will remain nan unless pulse is processed by hitfinder</span>
     <span class="n">noise_sigma</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
 
-    <span class="c">#: Baseline (in ADC counts, but float!)</span>
-    <span class="c">#: Will remain nan if channel&#39;s gain is 0</span>
-    <span class="n">digitizer_baseline_used</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
-
-    <span class="c">#: Baseline correction computed by FindSmallpeaks (in pe/bin)</span>
-    <span class="c">#: Will remain nan if channel is not processed by FindSmallPeaks</span>
-    <span class="n">baseline_correction</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
+    <span class="c">#: Baseline (in ADC counts, but float!) relative to configured reference baseline</span>
+    <span class="c">#: Will remain nan if pulse is not processed by hitfinder</span>
+    <span class="n">baseline</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
 
     <span class="c">#: Raw wave data (in ADC counts, NOT pe/bin!; numpy array of int16)</span>
     <span class="n">raw_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
 
     <span class="nd">@property</span>
-<div class="viewcode-block" id="Occurrence.length"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Occurrence.length">[docs]</a>    <span class="k">def</span> <span class="nf">length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Pulse.length"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Pulse.length">[docs]</a>    <span class="k">def</span> <span class="nf">length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">left</span> <span class="o">+</span> <span class="mi">1</span>
 </div>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Initialize an occurrence</span>
+        <span class="sd">&quot;&quot;&quot;Initialize an pulse</span>
 <span class="sd">        You must specify at least:</span>
 <span class="sd">         - left (first index)</span>
 <span class="sd">        And one of</span>
@@ -289,38 +311,46 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">channel</span> <span class="o">==</span> <span class="n">INT_NAN</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Must specify channel to init Pulse&quot;</span><span class="p">)</span>
+
         <span class="c"># Determine right from raw_data if needed</span>
         <span class="c"># Don&#39;t want right as a property, we want it to be saved...</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span> <span class="o">==</span> <span class="n">INT_NAN</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_data</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Must have right or raw_data to init Occurrence&#39;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Must have right or raw_data to init Pulse&#39;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">left</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_data</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
 
 </div>
-<div class="viewcode-block" id="Event"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event">[docs]</a><span class="k">class</span> <span class="nc">Event</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
-
+<div class="viewcode-block" id="Event"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event">[docs]</a><span class="k">class</span> <span class="nc">Event</span><span class="p">(</span><span class="n">StrictModel</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Event class</span>
+
+<span class="sd">    Stores high level information about the triggered event.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">dataset_name</span> <span class="o">=</span> <span class="s">&#39;Unknown&#39;</span>  <span class="c"># The name of the dataset this event belongs to</span>
-    <span class="n">event_number</span> <span class="o">=</span> <span class="mi">0</span>    <span class="c"># A nonnegative integer that uniquely identifies the event within the dataset.</span>
+    <span class="c"># A nonnegative integer that uniquely identifies the event within the</span>
+    <span class="c"># dataset.</span>
+    <span class="n">event_number</span> <span class="o">=</span> <span class="mi">0</span>
 
-    <span class="c">#: Start time of the event (time at which the first sample STARTS)</span>
+    <span class="c">#: Integer start time of the event in nanoseconds</span>
     <span class="c">#:</span>
-    <span class="c">#: This is a 64-bit number in units of ns that follows the UNIX clock.</span>
-    <span class="c">#: Or rather, it starts from January 1, 1970.</span>
-    <span class="c">#: Must be an int!! large floats don&#39;t support precision arithmetic</span>
+    <span class="c">#: Time that the first sample starts. This is a 64-bit number that follows the</span>
+    <span class="c">#: UNIX clock. Or rather, it starts from January 1, 1970.  This must be an integer</span>
+    <span class="c">#: because floats have rounding that result in imprecise times.</span>
     <span class="n">start_time</span> <span class="o">=</span> <span class="mi">0</span>
 
-    <span class="c">#: Stop time of the event (time at which the last sample ENDS).</span>
-    <span class="c">#:</span>
-    <span class="c">#: This is a 64-bit number in units of ns that follows the UNIX clock.</span>
-    <span class="c">#: Or rather, it starts from January 1, 1970.</span>
+    <span class="c">#: Integer stop time of the event in nanoseconds</span>
+    <span class="c">#</span>
+    <span class="c">#: This stop time includes the last recorded sample.  Therefore, it&#39;s the right</span>
+    <span class="c">#: edge of the last sample.  This is a 64-bit integer for the reasons explained</span>
+    <span class="c">#: in &#39;start_time&#39;.</span>
     <span class="n">stop_time</span> <span class="o">=</span> <span class="mi">0</span>
 
     <span class="c">#: Time duration of a sample (in pax units, i.e. ns)</span>
     <span class="c">#: This is also in config, but we need it here too, to convert between event duration and length in samples</span>
     <span class="c">#: Must be an int for same reason as start_time and stop_time</span>
-    <span class="n">sample_duration</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="mi">10</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">ns</span><span class="p">)</span>
+    <span class="c">#: DO NOT set to 10 ns as default, otherwise no way to check if it was given to constructor!</span>
+    <span class="n">sample_duration</span> <span class="o">=</span> <span class="mi">0</span>
 
     <span class="n">user_float_0</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c"># : Unused float (useful for developing)</span>
     <span class="n">user_float_1</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c"># : Unused float (useful for developing)</span>
@@ -333,35 +363,26 @@
     <span class="c">#: Returns a list of :class:`pax.datastructure.Peak` classes.</span>
     <span class="n">peaks</span> <span class="o">=</span> <span class="p">(</span><span class="n">Peak</span><span class="p">,)</span>
 
-    <span class="c">#: Temporary list of channel peaks -- will be shipped off to peaks later</span>
-    <span class="n">all_channel_peaks</span> <span class="o">=</span> <span class="p">(</span><span class="n">ChannelPeak</span><span class="p">,)</span>
+    <span class="c">#: Temporary list of hits -- will be shipped off to peaks later</span>
+    <span class="n">all_hits</span> <span class="o">=</span> <span class="p">(</span><span class="n">Hit</span><span class="p">,)</span>
 
     <span class="c">#: Returns a list of sum waveforms</span>
     <span class="c">#:</span>
     <span class="c">#: Returns an :class:`pax.datastructure.SumWaveform` class.</span>
     <span class="n">sum_waveforms</span> <span class="o">=</span> <span class="p">(</span><span class="n">SumWaveform</span><span class="p">,)</span>
 
-    <span class="c">#: A 2D array of all the PMT waveforms, units of pe/bin.</span>
-    <span class="c">#:</span>
-    <span class="c">#: The first index is the PMT number (starting from zero), and the second</span>
-    <span class="c">#: index is the sample number.  This must be a numpy array.  To access the</span>
-    <span class="c">#: waveform for a specific PMT such as PMT 10, you can do::</span>
-    <span class="c">#:</span>
-    <span class="c">#:     event.channel_waveforms[10]</span>
-    <span class="c">#:</span>
-    <span class="c">#: which returns a 1D array of samples.</span>
-    <span class="c">#:</span>
-    <span class="c">#: The data type is a float32 since these numbers are already baseline</span>
-    <span class="c">#: and gain corrected.</span>
-    <span class="n">channel_waveforms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>  <span class="c"># : Array of samples.</span>
+    <span class="c">#: A python list of all pulses in the event (containing instances of the Pulse class)</span>
+    <span class="c">#: An pulse holds a stream of samples in one channel, as provided by the digitizer.</span>
+    <span class="n">pulses</span> <span class="o">=</span> <span class="p">(</span><span class="n">Pulse</span><span class="p">,)</span>
 
-    <span class="c">#: A python list of all occurrences in the event (containing instances of the Occurrence class)</span>
-    <span class="c">#: An occurrence holds a stream of samples in one channel, as provided by the digitizer.</span>
-    <span class="n">occurrences</span> <span class="o">=</span> <span class="p">(</span><span class="n">Occurrence</span><span class="p">,)</span>
+    <span class="c">#: Number of noise pulses (pulses without any hits found) per channel</span>
+    <span class="n">noise_pulses_in</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
 
-    <span class="c">#: List of channels which showed an increased dark rate</span>
-    <span class="c">#: Declared as basefield as we want to store a list (it will get appended to constantly)</span>
-    <span class="n">is_channel_bad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+    <span class="c">#: Was channel flagged as suspicious?</span>
+    <span class="n">is_channel_suspicious</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+
+    <span class="c">#: Number of hits rejected in the suspicious channel algorithm</span>
+    <span class="n">n_hits_rejected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_channels</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 
@@ -375,17 +396,26 @@
 
         <span class="c"># Cheat to init stop_time from length and duration</span>
         <span class="k">if</span> <span class="s">&#39;length&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_duration</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop_time</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">stop_time</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">+</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;length&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_duration</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stop_time</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">+</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;length&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_duration</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop_time</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_duration</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Cannot initialize an event with an unknown length: &quot;</span> <span class="o">+</span>
-                             <span class="s">&quot;pass either stop_time or length and sample_duration&quot;</span><span class="p">)</span>
+                             <span class="s">&quot;pass sample_duration and either stop_time or length&quot;</span><span class="p">)</span>
 
         <span class="c"># Initialize numpy arrays -- need to have n_channels and self.length</span>
-        <span class="c"># This is the main reason for having Event.__init__</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">channel_waveforms</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_channels</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">()))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">is_channel_bad</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_channels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+        <span class="c"># TODO: don&#39;t initialize these if is already in kwargs</span>
+        <span class="c"># TODO: better yet, make an alternate init or something?</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">noise_pulses_in</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_channels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_hits_rejected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_channels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_channel_suspicious</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_channels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
 
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="Event.empty_event"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.empty_event">[docs]</a>    <span class="k">def</span> <span class="nf">empty_event</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Returns an empty example event: for testing purposes only!!</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">Event</span><span class="p">(</span><span class="n">n_channels</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">start_time</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">length</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">sample_duration</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="mi">10</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">ns</span><span class="p">))</span>
+</div>
 <div class="viewcode-block" id="Event.duration"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.duration">[docs]</a>    <span class="k">def</span> <span class="nf">duration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Duration of event window in units of ns</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -446,16 +476,7 @@
 
         <span class="k">return</span> <span class="n">peaks</span>
 
-<div class="viewcode-block" id="Event.get_occurrences_between"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.get_occurrences_between">[docs]</a>    <span class="k">def</span> <span class="nf">get_occurrences_between</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns all occurrences that overlap with [left, right]</span>
-<span class="sd">        If strict=True, only returns occurrences that are not outside [left, right]</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">strict</span><span class="p">:</span>
-            <span class="k">return</span> <span class="p">[</span><span class="n">oc</span> <span class="k">for</span> <span class="n">oc</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">occurrences</span> <span class="k">if</span> <span class="n">oc</span><span class="o">.</span><span class="n">left</span> <span class="o">&gt;=</span> <span class="n">left</span> <span class="ow">and</span> <span class="n">oc</span><span class="o">.</span><span class="n">right</span> <span class="o">&lt;=</span> <span class="n">right</span><span class="p">]</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="p">[</span><span class="n">oc</span> <span class="k">for</span> <span class="n">oc</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">occurrences</span> <span class="k">if</span> <span class="n">oc</span><span class="o">.</span><span class="n">left</span> <span class="o">&lt;=</span> <span class="n">right</span> <span class="ow">and</span> <span class="n">oc</span><span class="o">.</span><span class="n">right</span> <span class="o">&gt;=</span> <span class="n">left</span><span class="p">]</span>
-
-</div></div>
+</div>
 <span class="k">def</span> <span class="nf">_explain</span><span class="p">(</span><span class="n">class_name</span><span class="p">):</span>
     <span class="n">x</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getmembers</span><span class="p">(</span><span class="n">class_name</span><span class="p">,</span>
                            <span class="n">predicate</span><span class="o">=</span><span class="n">inspect</span><span class="o">.</span><span class="n">isdatadescriptor</span><span class="p">)</span>

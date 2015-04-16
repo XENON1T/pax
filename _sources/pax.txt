@@ -43,6 +43,14 @@ pax.exceptions module
     :undoc-members:
     :show-inheritance:
 
+pax.formats module
+------------------
+
+.. automodule:: pax.formats
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pax.plugin module
 -----------------
 

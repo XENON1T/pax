@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Processor for Analyzing XENON &mdash; Processor for Analyzing XENON1T 2.1.0 documentation</title>
+    <title>Installation &mdash; Processor for Analyzing XENON1T 2.1.0 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -52,8 +52,7 @@
         <div class="bodywrapper">
           <div class="body">
             
-  <div class="section" id="processor-for-analyzing-xenon">
-<h1>Processor for Analyzing XENON<a class="headerlink" href="#processor-for-analyzing-xenon" title="Permalink to this headline">¶</a></h1>
+  <img alt="docs/pax_logo_bw_cropped.png" src="docs/pax_logo_bw_cropped.png" />
 <p>The Processor for Analyzing XENON (PAX) is used for doing digital signal
 processing and other data processing on the XENON100/XENON1T raw data.</p>
 <ul class="simple">
@@ -63,29 +62,46 @@ processing and other data processing on the XENON100/XENON1T raw data.</p>
 <a class="reference external image-reference" href="https://magnum.travis-ci.com/XENON1T/pax"><img alt="https://magnum.travis-ci.com/XENON1T/pax.svg?token=8i3psWNJAskpVjC6qe3w&amp;branch=master" src="https://magnum.travis-ci.com/XENON1T/pax.svg?token=8i3psWNJAskpVjC6qe3w&amp;branch=master" /></a>
 <a class="reference external image-reference" href="https://coveralls.io/r/XENON1T/pax?branch=master"><img alt="https://coveralls.io/repos/XENON1T/pax/badge.svg?branch=master" src="https://coveralls.io/repos/XENON1T/pax/badge.svg?branch=master" /></a>
 <div class="section" id="installation">
-<h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
+<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="installing-requirements">
-<h3>Installing requirements<a class="headerlink" href="#installing-requirements" title="Permalink to this headline">¶</a></h3>
-<p>We require Python 3.4 and several python modules. The easiest way to install these
-is to get a scientific python distribution such as <a class="reference external" href="https://store.continuum.io/cshop/anaconda/">Anaconda</a>.
-Use your package manager, or run:</p>
+<h2>Installing requirements<a class="headerlink" href="#installing-requirements" title="Permalink to this headline">¶</a></h2>
+<p>We use Python 3.4 and several python modules. To allow people to run <cite>pax</cite> from
+their home directory and to ease people using pax, we recommend they setup the
+scientific python distribution <a class="reference external" href="https://store.continuum.io/cshop/anaconda/">Anaconda</a>.
+This should make it easier to install our code than typical experiments, and if this
+isn&#8217;t true, please let us know (See <a class="reference external" href="CONTRIBUTING.rst">relevant documentation section</a>).  To set this
+up, run:</p>
 <div class="highlight-python"><div class="highlight"><pre>$ wget http://repo.continuum.io/anaconda3/Anaconda3-2.1.0-Linux-x86_64.sh
 $ bash Anaconda3-2.1.0-Linux-x86_64.sh
 $ export PATH=~/anaconda3/bin:$PATH  # If installed in default location
 </pre></div>
 </div>
 <p>Alternatively, you can install Python 3.4 from the <a class="reference external" href="https://www.python.org/">python webpage</a>
-or your OS&#8217;s package management system. You may have to install some additional modules manually.</p>
-<p>You must separately install the <a class="reference external" href="https://code.google.com/p/snappy/">snappy compression library</a>
-and its python bindings. For Ubuntu you can do:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ sudo apt-get install python-snappy
-$ sudo apt-get install libsnappy-dev
+or your OS&#8217;s package management system. See the FAQ for more information.</p>
+<p>Though most of our dependencies are solved by using Anaconda, there is one
+dependency that often cannot be installed on olders machiens. You must separately
+install the <a class="reference external" href="https://code.google.com/p/snappy/">snappy compression library</a>,
+which is C++ code that must be compiled and is used for raw data access. If
+you&#8217;re using Ubuntu and have super user permissions, you could just install the libsnappy-dev package.
+However, we recommend you do the following:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ wget https://snappy.googlecode.com/files/snappy-1.1.1.tar.gz
+$ tar xvfz snappy-1.1.1.tar.gz
+$ cd snappy-1.1.1
+$ ./configure --prefix=`conda info --root`
+$ make install
+$ cd ~
+$ CFLAGS=-I`conda info --root`/include LDFLAGS=-L`conda info --root`/lib pip install python-snappy
 </pre></div>
 </div>
-<p>For installation on windows, see <a class="reference external" href="http://xenon1t.github.io/pax/faq.html#can-i-set-up-pax-on-my-windows-machine">the FAQ</a>.</p>
+<p>You should now be able to run the following command:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ python -m snappy
+</pre></div>
+</div>
+<p>For installation on Windows, see <a class="reference external" href="http://xenon1t.github.io/pax/faq.html#can-i-set-up-pax-on-my-windows-machine">the FAQ</a>.
+Also within the FAQs, you can find other useful hints.</p>
 </div>
 <div class="section" id="installing-pax">
-<h3>Installing pax<a class="headerlink" href="#installing-pax" title="Permalink to this headline">¶</a></h3>
+<h2>Installing pax<a class="headerlink" href="#installing-pax" title="Permalink to this headline">¶</a></h2>
 <p>The code of pax is in a private github repository. You must first have <cite>git</cite>
 installed, which you can test by running at the command line:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">git</span>
@@ -102,7 +118,7 @@ installed, which you can test by running at the command line:</p>
 </div>
 </div>
 <div class="section" id="first-steps">
-<h2>First steps<a class="headerlink" href="#first-steps" title="Permalink to this headline">¶</a></h2>
+<h1>First steps<a class="headerlink" href="#first-steps" title="Permalink to this headline">¶</a></h1>
 <p>This section assumes that pax is installed, either from the instructions above
 or via <a class="reference external" href="http://xenon1t.github.io/pax/faq.html#how-do-i-run-pax-at-lngs-on-xecluster">the FAQ on running the code at LNGS</a>.</p>
 <p>You can run the program by, for example, running:</p>
@@ -138,7 +154,7 @@ the <cite>PlotEventSummary</cite> that was produced in the first command from ab
 plugins are in <cite>pax</cite> for doing more sophisticated things.</p>
 </div>
 <div class="section" id="features">
-<h2>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h2>
+<h1>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h1>
 <p>Here is a list of some of the nice features you can play with:</p>
 <ul class="simple">
 <li>Digital signal processing</li>
@@ -183,7 +199,6 @@ within browser</li>
 </ul>
 </div></blockquote>
 </div>
-</div>
 
 
           </div>
@@ -193,16 +208,13 @@ within browser</li>
         <div class="sphinxsidebarwrapper">
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Processor for Analyzing XENON</a><ul>
-<li><a class="reference internal" href="#installation">Installation</a><ul>
+<li><a class="reference internal" href="#">Installation</a><ul>
 <li><a class="reference internal" href="#installing-requirements">Installing requirements</a></li>
 <li><a class="reference internal" href="#installing-pax">Installing pax</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#first-steps">First steps</a></li>
 <li><a class="reference internal" href="#features">Features</a></li>
-</ul>
-</li>
 </ul>
 
   <h4>Previous topic</h4>

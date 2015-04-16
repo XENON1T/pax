@@ -91,6 +91,21 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;s1_ER_recombination_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mf">3.5</span> <span class="o">/</span> <span class="mf">0.18</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">20</span> <span class="o">+</span> <span class="mf">0.41</span><span class="p">)</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="mf">0.009</span> <span class="o">*</span> <span class="n">efield</span><span class="p">)</span>
         <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Inferred s1_ER_recombination_time </span><span class="si">%s</span><span class="s"> ns&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;s1_ER_recombination_time&#39;</span><span class="p">])</span>
 
+        <span class="c"># Calculate particle number density in the gas (ideal gas law)</span>
+        <span class="n">number_density_gas</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pressure&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span><span class="n">units</span><span class="o">.</span><span class="n">boltzmannConstant</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;temperature&#39;</span><span class="p">])</span>
+
+        <span class="c"># electric field in the gas</span>
+        <span class="c"># Formula from xenon:xenon100:analysis:jacob:s2gain_v2</span>
+        <span class="n">e_in_gas</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;lxe_dielectric_constant&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;anode_voltage&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;lxe_dielectric_constant&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;elr_gas_gap_length&#39;</span><span class="p">]</span> <span class="o">+</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gate_to_anode_distance&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;elr_gas_gap_length&#39;</span><span class="p">])</span>
+        <span class="p">)</span>
+
+        <span class="c"># Reduced electric field in the gas</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;reduced_e_in_gas&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">e_in_gas</span> <span class="o">/</span> <span class="n">number_density_gas</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Inferred a reduced electric field of </span><span class="si">%s</span><span class="s"> Td in the gas&quot;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;reduced_e_in_gas&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">units</span><span class="o">.</span><span class="n">Td</span><span class="p">))</span>
+
         <span class="c"># Which channels stand to receive any photons?</span>
         <span class="c"># TODO: In XENON100, channel 0 will receive photons unless magically_avoid_dead_pmts=True</span>
         <span class="c"># To prevent this, subtract 0 from channel_for_photons. But don&#39;t do that for XENON1T!!</span>
@@ -111,7 +126,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;samples_after_pulse_center&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pulse_width_cutoff&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pmt_fall_time&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">dt</span>
         <span class="p">)</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Simulating </span><span class="si">%s</span><span class="s"> samples before and </span><span class="si">%s</span><span class="s"> samples after PMT pulse centers.&#39;</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Simulating </span><span class="si">%s</span><span class="s"> samples before and </span><span class="si">%s</span><span class="s"> samples after PMT pulse centers.&#39;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;samples_before_pulse_center&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;samples_after_pulse_center&#39;</span><span class="p">]))</span>
 
 <div class="viewcode-block" id="Simulator.s2_electrons"><a class="viewcode-back" href="../../pax.html#pax.simulation.Simulator.s2_electrons">[docs]</a>    <span class="k">def</span> <span class="nf">s2_electrons</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">electrons_generated</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return a list of electron arrival times in the ELR region caused by an S2 process.</span>
@@ -137,11 +153,13 @@
         <span class="n">drift_time_stdev</span> <span class="o">/=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;drift_velocity_liquid&#39;</span><span class="p">]</span>
 
         <span class="c"># Absorb electrons during the drift</span>
-        <span class="n">electrons_seen</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span>
-            <span class="n">n</span><span class="o">=</span><span class="n">electrons_generated</span><span class="p">,</span>
-            <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;electron_extraction_yield&#39;</span><span class="p">]</span>
-            <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span> <span class="n">drift_time_mean</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;electron_lifetime_liquid&#39;</span><span class="p">])</span>
-        <span class="p">)</span>
+        <span class="n">electron_lifetime_correction</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">drift_time_mean</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;electron_lifetime_liquid&#39;</span><span class="p">]</span>
+        <span class="n">electron_lifetime_correction</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">electron_lifetime_correction</span><span class="p">)</span>
+        <span class="n">prob</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;electron_extraction_yield&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">electron_lifetime_correction</span>
+
+        <span class="n">electrons_seen</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="n">electrons_generated</span><span class="p">,</span>
+                                            <span class="n">p</span><span class="o">=</span><span class="n">prob</span><span class="p">)</span>
+
         <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;    </span><span class="si">%s</span><span class="s"> electrons survive the drift.&quot;</span> <span class="o">%</span> <span class="n">electrons_generated</span><span class="p">)</span>
 
         <span class="c"># Calculate electron arrival times in the ELR region</span>
@@ -225,7 +243,7 @@
         <span class="c"># Find the photon production times</span>
         <span class="c"># Assume luminescence probability ~ electric field</span>
         <span class="n">s2_pe_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span>
-            <span class="n">t0</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_luminescence_positions</span><span class="p">(</span><span class="n">photons_produced</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;drift_velocity_gas&#39;</span><span class="p">]</span>
+            <span class="n">t0</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_luminescence_times</span><span class="p">(</span><span class="n">photons_produced</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">t0</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">electron_arrival_times</span><span class="p">)</span>
         <span class="p">])</span>
 
@@ -251,29 +269,37 @@
             <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="n">t3</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">)</span> <span class="o">-</span> <span class="n">n_singlets</span><span class="p">)</span>
         <span class="p">])</span>
 </div>
-<div class="viewcode-block" id="Simulator.get_luminescence_positions"><a class="viewcode-back" href="../../pax.html#pax.simulation.Simulator.get_luminescence_positions">[docs]</a>    <span class="k">def</span> <span class="nf">get_luminescence_positions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Sample luminescence positions in the ELR, using a mixed wire-dominated / uniform field&quot;&quot;&quot;</span>
-        <span class="c"># TODO: could gain performance here I think</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
-        <span class="n">l</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;elr_gas_gap_length&#39;</span><span class="p">]</span>
-        <span class="n">wire_par</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;wire_field_parameter&#39;</span><span class="p">]</span>
-        <span class="n">rm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;anode_mesh_pitch&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">wire_par</span>
-        <span class="n">rw</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;anode_wire_radius&#39;</span><span class="p">]</span>
-        <span class="k">if</span> <span class="n">wire_par</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">l</span>
-        <span class="n">total_area</span> <span class="o">=</span> <span class="n">l</span> <span class="o">+</span> <span class="n">rm</span> <span class="o">*</span> <span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">rm</span> <span class="o">/</span> <span class="n">rw</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="n">rel_a_wd_region</span> <span class="o">=</span> <span class="n">rm</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">rm</span> <span class="o">/</span> <span class="n">rw</span><span class="p">)</span> <span class="o">/</span> <span class="n">total_area</span>
-        <span class="c"># This is a bit slower, not much though:</span>
-        <span class="c"># return np.array([</span>
-        <span class="c">#     (l - np.exp(xi * total_area / rm) * rw)</span>
-        <span class="c">#     if xi &lt; rel_a_wd_region</span>
-        <span class="c">#     else l - (xi * total_area + rm * (1 - math.log(rm / rw)))</span>
-        <span class="c">#     for xi in x</span>
-        <span class="c"># ])</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
-        <span class="n">x_in_rel_a_wd_region</span> <span class="o">=</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">rel_a_wd_region</span>
-        <span class="n">result</span><span class="p">[</span><span class="n">x_in_rel_a_wd_region</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">l</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">x</span> <span class="o">&lt;</span> <span class="n">rel_a_wd_region</span><span class="p">]</span> <span class="o">*</span> <span class="n">total_area</span> <span class="o">/</span> <span class="n">rm</span><span class="p">)</span> <span class="o">*</span> <span class="n">rw</span><span class="p">)</span>
-        <span class="n">result</span><span class="p">[</span><span class="o">-</span><span class="n">x_in_rel_a_wd_region</span><span class="p">]</span> <span class="o">=</span> <span class="n">l</span> <span class="o">-</span> <span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="n">x_in_rel_a_wd_region</span><span class="p">]</span> <span class="o">*</span> <span class="n">total_area</span> <span class="o">+</span> <span class="n">rm</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">rm</span> <span class="o">/</span> <span class="n">rw</span><span class="p">)))</span>
+<div class="viewcode-block" id="Simulator.get_luminescence_times"><a class="viewcode-back" href="../../pax.html#pax.simulation.Simulator.get_luminescence_times">[docs]</a>    <span class="k">def</span> <span class="nf">get_luminescence_times</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
+
+        <span class="n">dg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;elr_gas_gap_length&#39;</span><span class="p">]</span>
+
+        <span class="c"># Distance between liquid level and uniform -&gt; line field crossover point</span>
+        <span class="n">du</span> <span class="o">=</span> <span class="n">dg</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;anode_field_domination_distance&#39;</span><span class="p">]</span>
+
+        <span class="c"># Distance between liquid level and anode wire</span>
+        <span class="n">dw</span> <span class="o">=</span> <span class="n">dg</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;anode_wire_radius&#39;</span><span class="p">]</span>
+
+        <span class="c"># How many photons are produced in the uniform part?</span>
+        <span class="n">n_uniform</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="n">dg</span> <span class="o">-</span> <span class="n">du</span><span class="p">)</span> <span class="o">/</span> <span class="n">du</span> <span class="o">*</span>
+                                               <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">((</span><span class="n">dg</span> <span class="o">-</span> <span class="n">du</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">dg</span> <span class="o">-</span> <span class="n">dw</span><span class="p">))))</span>
+
+        <span class="c"># Sample the luminescence times in the uniform part</span>
+        <span class="n">pos_uniform</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">du</span><span class="p">,</span> <span class="n">n_uniform</span><span class="p">)</span>
+
+        <span class="c"># Sample the luminescence positions in the non-uniform part</span>
+        <span class="n">FTilde</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n</span> <span class="o">-</span> <span class="n">n_uniform</span><span class="p">)</span>
+        <span class="n">pos_non_uniform</span> <span class="o">=</span> <span class="n">dg</span> <span class="o">-</span> <span class="p">(</span><span class="n">dg</span> <span class="o">-</span> <span class="n">du</span><span class="p">)</span> <span class="o">**</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">FTilde</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">dg</span> <span class="o">-</span> <span class="n">dw</span><span class="p">)</span> <span class="o">**</span> <span class="n">FTilde</span>
+
+        <span class="c"># Convert to luminescence times</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span>
+            <span class="n">pos_uniform</span><span class="p">,</span>
+            <span class="n">pos_non_uniform</span>
+            <span class="c"># To take electron speedup near anode into account, replace line above with:</span>
+            <span class="c"># (- du ** 2 + 2 * dg * pos_non_uniform - pos_non_uniform**2) / (2 * (dg - du))</span>
+            <span class="c"># NB: does not take electron bending towards anode into account, so probably worse!</span>
+        <span class="p">))</span>
+        <span class="n">result</span> <span class="o">*=</span> <span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gas_drift_velocity_slope&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;reduced_e_in_gas&#39;</span><span class="p">])</span>
+
         <span class="k">return</span> <span class="n">result</span>
 </div>
 <div class="viewcode-block" id="Simulator.pmt_pulse_current"><a class="viewcode-back" href="../../pax.html#pax.simulation.Simulator.pmt_pulse_current">[docs]</a>    <span class="k">def</span> <span class="nf">pmt_pulse_current</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">gain</span><span class="p">,</span> <span class="n">offset</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
@@ -304,6 +330,7 @@
             <span class="n">n_channels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;n_channels&#39;</span><span class="p">],</span>
             <span class="n">start_time</span><span class="o">=</span><span class="n">start_time</span><span class="p">,</span>
             <span class="n">stop_time</span><span class="o">=</span><span class="n">start_time</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="n">hitpattern</span><span class="o">.</span><span class="n">max</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;event_padding&#39;</span><span class="p">]),</span>
+            <span class="n">sample_duration</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;sample_duration&#39;</span><span class="p">],</span>
         <span class="p">)</span>
 
         <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Now performing hitpattern to waveform conversion for </span><span class="si">%s</span><span class="s"> photons&quot;</span> <span class="o">%</span> <span class="n">hitpattern</span><span class="o">.</span><span class="n">n_photons</span><span class="p">)</span>
@@ -337,9 +364,9 @@
 
                 <span class="n">start_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">center_index</span><span class="p">)</span> <span class="o">-</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;zle_padding&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">dt</span><span class="p">)</span>
                 <span class="n">end_index</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">center_index</span><span class="p">)</span> <span class="o">+</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;zle_padding&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">dt</span><span class="p">)</span>
-                <span class="n">occurrence_length</span> <span class="o">=</span> <span class="n">end_index</span> <span class="o">-</span> <span class="n">start_index</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="n">pulse_length</span> <span class="o">=</span> <span class="n">end_index</span> <span class="o">-</span> <span class="n">start_index</span> <span class="o">+</span> <span class="mi">1</span>
 
-                <span class="n">current_wave</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">occurrence_length</span><span class="p">)</span>
+                <span class="n">current_wave</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">pulse_length</span><span class="p">)</span>
 
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">center_index</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;use_simplified_simulator_from&#39;</span><span class="p">]:</span>
 
@@ -400,8 +427,10 @@
                             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Invalid left index </span><span class="si">%s</span><span class="s">: can&#39;t be negative!&quot;</span> <span class="o">%</span> <span class="n">left_index</span><span class="p">)</span>
 
                         <span class="k">if</span> <span class="n">righter_index</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">current_wave</span><span class="p">):</span>
-                            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Invalid right index </span><span class="si">%s</span><span class="s">: can&#39;t be longer than length of wave (</span><span class="si">%s</span><span class="s">)!&quot;</span> <span class="o">%</span> <span class="p">(</span>
-                                <span class="n">righter_index</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">current_wave</span><span class="p">)))</span>
+                            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Invalid right index </span><span class="si">%s</span><span class="s">: can&#39;t &quot;</span>
+                                               <span class="s">&quot;be longer than length of wave &quot;</span>
+                                               <span class="s">&quot;(</span><span class="si">%s</span><span class="s">)!&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">righter_index</span><span class="p">,</span>
+                                                          <span class="nb">len</span><span class="p">(</span><span class="n">current_wave</span><span class="p">)))</span>
 
                         <span class="n">current_wave</span><span class="p">[</span><span class="n">left_index</span><span class="p">:</span> <span class="n">righter_index</span><span class="p">]</span> <span class="o">+=</span> <span class="n">generated_pulse</span>
 
@@ -409,27 +438,34 @@
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;white_noise_sigma&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
                     <span class="c"># / dt is for charge -&gt; current conversion, as in pmt_pulse_current</span>
                     <span class="n">noise_sigma_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;white_noise_sigma&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]</span> <span class="o">/</span> <span class="n">dt</span><span class="p">,</span>
-                    <span class="n">current_wave</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">noise_sigma_current</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">current_wave</span><span class="p">))</span>
+                    <span class="n">current_wave</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span>
+                                                     <span class="n">noise_sigma_current</span><span class="p">,</span>
+                                                     <span class="nb">len</span><span class="p">(</span><span class="n">current_wave</span><span class="p">))</span>
 
-                <span class="c"># Convert current to digitizer count (should I trunc, ceil or floor?) and store</span>
-                <span class="c"># Don&#39;t baseline correct, clip or flip down here, we do that at the</span>
-                <span class="c"># very end when all signals are combined</span>
-                <span class="n">temp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;digitizer_baseline&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">trunc</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pmt_circuit_load_resistor&#39;</span><span class="p">]</span>
-                    <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;external_amplification&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="n">dV</span>
-                    <span class="o">*</span> <span class="n">current_wave</span>
-                <span class="p">)</span>
+                <span class="c"># Convert current to digitizer count and store.</span>
+                <span class="c"># Don&#39;t baseline correct, clip or flip down here, we do that at</span>
+                <span class="c"># the very end when all signals are combined. Think Ohm&#39;s law.</span>
+                <span class="n">temp</span> <span class="o">=</span> <span class="n">current_wave</span>
+                <span class="n">temp</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pmt_circuit_load_resistor&#39;</span><span class="p">]</span>  <span class="c"># Resistance</span>
+                <span class="n">temp</span> <span class="o">*=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;external_amplification&#39;</span><span class="p">]</span>    <span class="c"># k (scale)</span>
+                <span class="n">temp</span> <span class="o">/=</span> <span class="n">dV</span>  <span class="c"># Voltage</span>
+
+                <span class="c"># PMT signals are &#39;up side down&#39; when viewed on scope.</span>
+                <span class="n">temp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;digitizer_reference_baseline&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">trunc</span><span class="p">(</span><span class="n">temp</span><span class="p">)</span>
+
+                <span class="c"># Digitizers have finite number of bits per channel</span>
                 <span class="n">temp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">temp</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;digitizer_bits&#39;</span><span class="p">]))</span>
-                <span class="n">event</span><span class="o">.</span><span class="n">occurrences</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">datastructure</span><span class="o">.</span><span class="n">Occurrence</span><span class="p">(</span>
+
+                <span class="n">event</span><span class="o">.</span><span class="n">pulses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">datastructure</span><span class="o">.</span><span class="n">Pulse</span><span class="p">(</span>
                     <span class="n">channel</span><span class="o">=</span><span class="n">channel</span><span class="p">,</span>
                     <span class="n">left</span><span class="o">=</span><span class="n">start_index</span><span class="p">,</span>
                     <span class="n">raw_data</span><span class="o">=</span><span class="n">temp</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)))</span>
 
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">occurrences</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">pulses</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">return</span> <span class="bp">None</span>
 
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Simulated pax event of </span><span class="si">%s</span><span class="s"> samples length and </span><span class="si">%s</span><span class="s"> occurrences created.&quot;</span> <span class="o">%</span> <span class="p">(</span>
-            <span class="n">event</span><span class="o">.</span><span class="n">length</span><span class="p">(),</span> <span class="nb">len</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">occurrences</span><span class="p">)))</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Simulated pax event of </span><span class="si">%s</span><span class="s"> samples length and </span><span class="si">%s</span><span class="s"> pulses &quot;</span>
+                  <span class="s">&quot;created.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">length</span><span class="p">(),</span> <span class="nb">len</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">pulses</span><span class="p">)))</span>
         <span class="k">return</span> <span class="n">event</span>
 
 </div></div>
@@ -440,7 +476,8 @@
         <span class="c"># TODO: specify x, y, z, let photon distribution depend on it</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">photon_timings</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Need at least 1 photon timing to produce a valid hitpattern&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Need at least 1 photon timing to &#39;</span>
+                             <span class="s">&#39;produce a valid hitpattern&#39;</span><span class="p">)</span>
 
         <span class="c"># Correct for PMT TTS</span>
         <span class="n">photon_timings</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span>
@@ -453,16 +490,22 @@
         <span class="n">ch_for_photons</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_for_photons&#39;</span><span class="p">]</span>
         <span class="n">n_channels</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ch_for_photons</span><span class="p">)</span>
 
-        <span class="c"># First shuffle all timings in the array, so channel 1 doesn&#39;t always get the first photon</span>
+        <span class="c"># First shuffle all timings in the array, so channel 1 doesn&#39;t always</span>
+        <span class="c"># get the first photon</span>
         <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">photon_timings</span><span class="p">)</span>
 
-        <span class="c"># Now generate n_channels integers &lt; n_channels to denote the splitting points</span>
-        <span class="c"># TODO: think carefully about these +1 and -1&#39;s Without the +1 S1sClose failed</span>
-        <span class="n">split_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">photon_timings</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">n_channels</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="c"># Now generate n_channels integers &lt; n_channels to denote the splitting</span>
+        <span class="c"># points</span>
+        <span class="c"># TODO: think carefully about these +1 and -1&#39;s Without the +1 S1sClose</span>
+        <span class="c"># failed</span>
+        <span class="n">split_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span>
+                                                 <span class="nb">len</span><span class="p">(</span><span class="n">photon_timings</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                                                 <span class="n">n_channels</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
 
         <span class="c"># Split the array according to the split points</span>
         <span class="c"># numpy correctly inserts empty arrays if a split point occurs twice if split_points is sorted</span>
-        <span class="n">photons_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">photon_timings</span><span class="p">,</span> <span class="n">split_points</span><span class="p">)</span>
+        <span class="n">photons_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">photon_timings</span><span class="p">,</span>
+                                       <span class="n">split_points</span><span class="p">)</span>
 
         <span class="c"># This distributes stuff in some pattern, favouring the center... odd</span>
         <span class="c"># So: shuffle to randomize the photon distribution</span>

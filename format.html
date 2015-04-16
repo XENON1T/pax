@@ -59,6 +59,7 @@
 <dt id="pax.datastructure.Event">
 <em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Event</tt><big>(</big><em>n_channels</em>, <em>start_time</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event" title="Permalink to this definition">¶</a></dt>
 <dd><p>Event class</p>
+<p>Stores high level information about the triggered event.</p>
 <dl class="method">
 <dt id="pax.datastructure.Event.S1s">
 <tt class="descname">S1s</tt><big>(</big><em>detector='tpc'</em>, <em>sort_key='area'</em>, <em>reverse=True</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.S1s"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.S1s" title="Permalink to this definition">¶</a></dt>
@@ -74,24 +75,9 @@
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pax.datastructure.Event.all_channel_peaks">
-<tt class="descname">all_channel_peaks</tt><em class="property"> = (&lt;class 'pax.datastructure.ChannelPeak'&gt;,)</em><a class="headerlink" href="#pax.datastructure.Event.all_channel_peaks" title="Permalink to this definition">¶</a></dt>
-<dd><p>Temporary list of channel peaks &#8211; will be shipped off to peaks later</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Event.channel_waveforms">
-<tt class="descname">channel_waveforms</tt><em class="property"> = array([], dtype=float64)</em><a class="headerlink" href="#pax.datastructure.Event.channel_waveforms" title="Permalink to this definition">¶</a></dt>
-<dd><p>A 2D array of all the PMT waveforms, units of pe/bin.</p>
-<p>The first index is the PMT number (starting from zero), and the second
-index is the sample number.  This must be a numpy array.  To access the
-waveform for a specific PMT such as PMT 10, you can do:</p>
-<div class="highlight-python"><div class="highlight"><pre><span class="n">event</span><span class="o">.</span><span class="n">channel_waveforms</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span>
-</pre></div>
-</div>
-<p>which returns a 1D array of samples.</p>
-<p>The data type is a float32 since these numbers are already baseline
-and gain corrected.</p>
+<dt id="pax.datastructure.Event.all_hits">
+<tt class="descname">all_hits</tt><em class="property"> = (&lt;class 'pax.datastructure.Hit'&gt;,)</em><a class="headerlink" href="#pax.datastructure.Event.all_hits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Temporary list of hits &#8211; will be shipped off to peaks later</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -105,17 +91,16 @@ and gain corrected.</p>
 <dd><p>Duration of event window in units of ns</p>
 </dd></dl>
 
+<dl class="classmethod">
+<dt id="pax.datastructure.Event.empty_event">
+<em class="property">classmethod </em><tt class="descname">empty_event</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.empty_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.empty_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns an empty example event: for testing purposes only!!</p>
+</dd></dl>
+
 <dl class="attribute">
 <dt id="pax.datastructure.Event.event_number">
 <tt class="descname">event_number</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Event.event_number" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.datastructure.Event.get_occurrences_between">
-<tt class="descname">get_occurrences_between</tt><big>(</big><em>left</em>, <em>right</em>, <em>strict=False</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.get_occurrences_between"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.get_occurrences_between" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns all occurrences that overlap with [left, right]
-If strict=True, only returns occurrences that are not outside [left, right]</p>
-</dd></dl>
 
 <dl class="method">
 <dt id="pax.datastructure.Event.get_sum_waveform">
@@ -130,10 +115,9 @@ If strict=True, only returns occurrences that are not outside [left, right]</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pax.datastructure.Event.is_channel_bad">
-<tt class="descname">is_channel_bad</tt><em class="property"> = array([], dtype=bool)</em><a class="headerlink" href="#pax.datastructure.Event.is_channel_bad" title="Permalink to this definition">¶</a></dt>
-<dd><p>List of channels which showed an increased dark rate
-Declared as basefield as we want to store a list (it will get appended to constantly)</p>
+<dt id="pax.datastructure.Event.is_channel_suspicious">
+<tt class="descname">is_channel_suspicious</tt><em class="property"> = array([], dtype=bool)</em><a class="headerlink" href="#pax.datastructure.Event.is_channel_suspicious" title="Permalink to this definition">¶</a></dt>
+<dd><p>Was channel flagged as suspicious?</p>
 </dd></dl>
 
 <dl class="method">
@@ -143,10 +127,15 @@ Declared as basefield as we want to store a list (it will get appended to consta
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pax.datastructure.Event.occurrences">
-<tt class="descname">occurrences</tt><em class="property"> = (&lt;class 'pax.datastructure.Occurrence'&gt;,)</em><a class="headerlink" href="#pax.datastructure.Event.occurrences" title="Permalink to this definition">¶</a></dt>
-<dd><p>A python list of all occurrences in the event (containing instances of the Occurrence class)
-An occurrence holds a stream of samples in one channel, as provided by the digitizer.</p>
+<dt id="pax.datastructure.Event.n_hits_rejected">
+<tt class="descname">n_hits_rejected</tt><em class="property"> = array([], dtype=int64)</em><a class="headerlink" href="#pax.datastructure.Event.n_hits_rejected" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of hits rejected in the suspicious channel algorithm</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Event.noise_pulses_in">
+<tt class="descname">noise_pulses_in</tt><em class="property"> = array([], dtype=int64)</em><a class="headerlink" href="#pax.datastructure.Event.noise_pulses_in" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of noise pulses (pulses without any hits found) per channel</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -157,28 +146,37 @@ An occurrence holds a stream of samples in one channel, as provided by the digit
 </dd></dl>
 
 <dl class="attribute">
+<dt id="pax.datastructure.Event.pulses">
+<tt class="descname">pulses</tt><em class="property"> = (&lt;class 'pax.datastructure.Pulse'&gt;,)</em><a class="headerlink" href="#pax.datastructure.Event.pulses" title="Permalink to this definition">¶</a></dt>
+<dd><p>A python list of all pulses in the event (containing instances of the Pulse class)
+An pulse holds a stream of samples in one channel, as provided by the digitizer.</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="pax.datastructure.Event.sample_duration">
-<tt class="descname">sample_duration</tt><em class="property"> = 10</em><a class="headerlink" href="#pax.datastructure.Event.sample_duration" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">sample_duration</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Event.sample_duration" title="Permalink to this definition">¶</a></dt>
 <dd><p>Time duration of a sample (in pax units, i.e. ns)
 This is also in config, but we need it here too, to convert between event duration and length in samples
-Must be an int for same reason as start_time and stop_time</p>
+Must be an int for same reason as start_time and stop_time
+DO NOT set to 10 ns as default, otherwise no way to check if it was given to constructor!</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.start_time">
 <tt class="descname">start_time</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Event.start_time" title="Permalink to this definition">¶</a></dt>
-<dd><p>Start time of the event (time at which the first sample STARTS)</p>
-<p>This is a 64-bit number in units of ns that follows the UNIX clock.
-Or rather, it starts from January 1, 1970.
-Must be an int!! large floats don&#8217;t support precision arithmetic</p>
+<dd><p>Integer start time of the event in nanoseconds</p>
+<p>Time that the first sample starts. This is a 64-bit number that follows the
+UNIX clock. Or rather, it starts from January 1, 1970.  This must be an integer
+because floats have rounding that result in imprecise times.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.stop_time">
 <tt class="descname">stop_time</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Event.stop_time" title="Permalink to this definition">¶</a></dt>
-<dd><p>Stop time of the event (time at which the last sample ENDS).</p>
-<p>This is a 64-bit number in units of ns that follows the UNIX clock.
-Or rather, it starts from January 1, 1970.</p>
+<dd><p>Integer stop time of the event in nanoseconds
+This stop time includes the last recorded sample.  Therefore, it&#8217;s the right
+edge of the last sample.  This is a 64-bit integer for the reasons explained
+in &#8216;start_time&#8217;.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -219,12 +217,19 @@ Or rather, it starts from January 1, 1970.</p>
 <dl class="class">
 <dt id="pax.datastructure.Peak">
 <em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Peak</tt><big>(</big><em>kwargs_dict=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak" title="Permalink to this definition">¶</a></dt>
-<dd><p>Peak object</p>
+<dd><p>Peak</p>
+<p>A peak will be, e.g., S1 or S2.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.area">
 <tt class="descname">area</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.area" title="Permalink to this definition">¶</a></dt>
-<dd><p>Area of the pulse in photoelectrons.</p>
-<p>Includes only contributing pmts (see later) in the right detector</p>
+<dd><p>Area of the pulse in photoelectrons. Includes only contributing pmts in the right detector.
+For XDP matching rightmost sample is not included in area integral.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.area_fraction_top">
+<tt class="descname">area_fraction_top</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.area_fraction_top" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fraction of area in the top array</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -234,15 +239,9 @@ Or rather, it starts from January 1, 1970.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pax.datastructure.Peak.central_area">
-<tt class="descname">central_area</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.central_area" title="Permalink to this definition">¶</a></dt>
-<dd><p>Area in the central part of the peak (used for classification)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Peak.channel_peaks">
-<tt class="descname">channel_peaks</tt><em class="property"> = (&lt;class 'pax.datastructure.ChannelPeak'&gt;,)</em><a class="headerlink" href="#pax.datastructure.Peak.channel_peaks" title="Permalink to this definition">¶</a></dt>
-<dd><p>Peaks in individual channels that make up this peak</p>
+<dt id="pax.datastructure.Peak.bottom_hitpattern_spread">
+<tt class="descname">bottom_hitpattern_spread</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.bottom_hitpattern_spread" title="Permalink to this definition">¶</a></dt>
+<dd><p>Weighted root mean square deviation of bottom hitpattern (cm)</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -265,66 +264,32 @@ Or rather, it starts from January 1, 1970.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.does_channel_have_noise">
 <tt class="descname">does_channel_have_noise</tt><em class="property"> = array([], dtype=bool)</em><a class="headerlink" href="#pax.datastructure.Peak.does_channel_have_noise" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Peak.entropy_per_channel">
-<tt class="descname">entropy_per_channel</tt><em class="property"> = array([], dtype=float64)</em><a class="headerlink" href="#pax.datastructure.Peak.entropy_per_channel" title="Permalink to this definition">¶</a></dt>
-<dd><p>Array of squared signal entropies in each PMT.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Peak.full_width_half_max">
-<tt class="descname">full_width_half_max</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.full_width_half_max" title="Permalink to this definition">¶</a></dt>
-<dd><p>Full width at half maximum in samples</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Peak.full_width_half_max_filtered">
-<tt class="descname">full_width_half_max_filtered</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.full_width_half_max_filtered" title="Permalink to this definition">¶</a></dt>
-<dd><p>Full width at half of maximum in samples, in filtered waveform</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Peak.full_width_tenth_max">
-<tt class="descname">full_width_tenth_max</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.full_width_tenth_max" title="Permalink to this definition">¶</a></dt>
-<dd><p>Full width at tenth of maximum in samples</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Peak.full_width_tenth_max_filtered">
-<tt class="descname">full_width_tenth_max_filtered</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.full_width_tenth_max_filtered" title="Permalink to this definition">¶</a></dt>
-<dd><p>Full width at tenth of maximum in samples, in filtered waveform</p>
+<dd><p>Does a channel have no hits, but digitizer shows data?</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.height">
 <tt class="descname">height</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.height" title="Permalink to this definition">¶</a></dt>
-<dd><p>Height of highest point in peak (in pe/bin)</p>
+<dd><p>Height of highest point in peak (in pe/bin)
+In new pax, is height of highest hit</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pax.datastructure.Peak.height_filtered">
-<tt class="descname">height_filtered</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.height_filtered" title="Permalink to this definition">¶</a></dt>
-<dd><p>Height of highest point in filtered waveform of peak (in pe/bin)</p>
+<dt id="pax.datastructure.Peak.hit_time_mean">
+<tt class="descname">hit_time_mean</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.hit_time_mean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Weighted (by hit area) mean of hit times (since event start)</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pax.datastructure.Peak.hitpattern_bottom_spread">
-<tt class="descname">hitpattern_bottom_spread</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.hitpattern_bottom_spread" title="Permalink to this definition">¶</a></dt>
-<dd><p>Weighted root mean square deviation of bottom hitpattern (cm)</p>
+<dt id="pax.datastructure.Peak.hit_time_std">
+<tt class="descname">hit_time_std</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.hit_time_std" title="Permalink to this definition">¶</a></dt>
+<dd><p>Weighted (by hit area) std of hit times</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pax.datastructure.Peak.hitpattern_top_spread">
-<tt class="descname">hitpattern_top_spread</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.hitpattern_top_spread" title="Permalink to this definition">¶</a></dt>
-<dd><p>Weighted root mean square deviation of top hitpattern (cm)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Peak.index_of_filtered_maximum">
-<tt class="descname">index_of_filtered_maximum</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Peak.index_of_filtered_maximum" title="Permalink to this definition">¶</a></dt>
-<dd><p>same, but maximum in filtered (for S2) sum waveform</p>
+<dt id="pax.datastructure.Peak.hits">
+<tt class="descname">hits</tt><em class="property"> = (&lt;class 'pax.datastructure.Hit'&gt;,)</em><a class="headerlink" href="#pax.datastructure.Peak.hits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Peaks in individual channels that make up this peak</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -340,10 +305,21 @@ Or rather, it starts from January 1, 1970.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pax.datastructure.Peak.median_absolute_deviation">
-<tt class="descname">median_absolute_deviation</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.median_absolute_deviation" title="Permalink to this definition">¶</a></dt>
-<dd><p>Variables indicating width of peak
-Median absolute deviation of photon arrival times (in ns)</p>
+<dt id="pax.datastructure.Peak.mean_amplitude_to_noise">
+<tt class="descname">mean_amplitude_to_noise</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.mean_amplitude_to_noise" title="Permalink to this definition">¶</a></dt>
+<dd><p>Weighted (by area) mean hit amplitude / noise level in that hit&#8217;s channel</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.n_contributing_channels">
+<tt class="descname">n_contributing_channels</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Peak.n_contributing_channels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of PMTS which see something significant (depends on settings) ~~ &#8220;coincidence level&#8221;</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.n_noise_channels">
+<tt class="descname">n_noise_channels</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Peak.n_noise_channels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of channels that show no hits, but digitizer shows data</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -352,34 +328,33 @@ Median absolute deviation of photon arrival times (in ns)</p>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="pax.datastructure.Peak.number_of_contributing_channels">
-<tt class="descname">number_of_contributing_channels</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.number_of_contributing_channels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.number_of_contributing_channels" title="Permalink to this definition">¶</a></dt>
-<dd><p>Number of PMTS which see something significant (depends on settings)</p>
+<dt id="pax.datastructure.Peak.range_50p_area">
+<tt class="descname">range_50p_area</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.range_50p_area" title="Permalink to this definition">¶</a></dt>
+<dd><p>Time range of centermost hits containing at least 50% / 90% of area (with center at hit_time_mean)
+(rightmostright - leftmostleft + 1) * sample_duration</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pax.datastructure.Peak.number_of_noise_channels">
-<tt class="descname">number_of_noise_channels</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.number_of_noise_channels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.number_of_noise_channels" title="Permalink to this definition">¶</a></dt>
-<dd><p>Number of channels which have noise during this peak</p>
-</dd></dl>
+<dt id="pax.datastructure.Peak.range_90p_area">
+<tt class="descname">range_90p_area</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.range_90p_area" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.reconstructed_positions">
 <tt class="descname">reconstructed_positions</tt><em class="property"> = (&lt;class 'pax.datastructure.ReconstructedPosition'&gt;,)</em><a class="headerlink" href="#pax.datastructure.Peak.reconstructed_positions" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a list of reconstructed positions</p>
-<p>Returns an <a class="reference internal" href="pax.html#pax.datastructure.ReconstructedPosition" title="pax.datastructure.ReconstructedPosition"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.ReconstructedPosition</span></tt></a> class.</p>
+<dd><p>List of reconstructed positions (instances of <a class="reference internal" href="pax.html#pax.datastructure.ReconstructedPosition" title="pax.datastructure.ReconstructedPosition"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.ReconstructedPosition</span></tt></a>)</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.right">
 <tt class="descname">right</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Peak.right" title="Permalink to this definition">¶</a></dt>
-<dd><p>Index of right bound (INCLUSIVE!!) in event.</p>
+<dd><p>Index of right bound (INCLUSIVE) in event.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pax.datastructure.Peak.subtype">
-<tt class="descname">subtype</tt><em class="property"> = 'unknown'</em><a class="headerlink" href="#pax.datastructure.Peak.subtype" title="Permalink to this definition">¶</a></dt>
-<dd><p>Subtype of peak</p>
+<dt id="pax.datastructure.Peak.top_hitpattern_spread">
+<tt class="descname">top_hitpattern_spread</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.top_hitpattern_spread" title="Permalink to this definition">¶</a></dt>
+<dd><p>Weighted root mean square deviation of top hitpattern (cm)</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -479,60 +454,68 @@ Median absolute deviation of photon arrival times (in ns)</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="pax.datastructure.ChannelPeak">
-<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">ChannelPeak</tt><big>(</big><em>kwargs_dict=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#ChannelPeak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.ChannelPeak" title="Permalink to this definition">¶</a></dt>
-<dd><p>Peaks found in individual channels
-These are be clustered into ordinary peaks later</p>
+<dt id="pax.datastructure.Hit">
+<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Hit</tt><big>(</big><em>kwargs_dict=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Hit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Hit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Peaks found in individual channels</p>
+<p>These are be clustered into ordinary peaks later. This is commonly
+called a &#8216;hit&#8217; in particle physics detectors.</p>
 <dl class="attribute">
-<dt id="pax.datastructure.ChannelPeak.area">
-<tt class="descname">area</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.ChannelPeak.area" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.datastructure.Hit.area">
+<tt class="descname">area</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Hit.area" title="Permalink to this definition">¶</a></dt>
 <dd><p>Area of the peak in photoelectrons</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pax.datastructure.ChannelPeak.channel">
-<tt class="descname">channel</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.ChannelPeak.channel" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.datastructure.Hit.channel">
+<tt class="descname">channel</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Hit.channel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Channel in which this peak was found</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pax.datastructure.ChannelPeak.filtered_height">
-<tt class="descname">filtered_height</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.ChannelPeak.filtered_height" title="Permalink to this definition">¶</a></dt>
-<dd><p>Height of highest point in peak (in pe/bin) in the filtered waveform</p>
+<dt id="pax.datastructure.Hit.found_in_pulse">
+<tt class="descname">found_in_pulse</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Hit.found_in_pulse" title="Permalink to this definition">¶</a></dt>
+<dd><p>Index of pulse (in event.pulses) in which peak was found</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pax.datastructure.ChannelPeak.height">
-<tt class="descname">height</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.ChannelPeak.height" title="Permalink to this definition">¶</a></dt>
-<dd><p>Height of highest point in peak (in pe/bin) in unfiltered waveform</p>
+<dt id="pax.datastructure.Hit.height">
+<tt class="descname">height</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Hit.height" title="Permalink to this definition">¶</a></dt>
+<dd><p>Height of highest point in peak (in pe/bin)</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pax.datastructure.ChannelPeak.index_of_maximum">
-<tt class="descname">index_of_maximum</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.ChannelPeak.index_of_maximum" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.datastructure.Hit.index_of_maximum">
+<tt class="descname">index_of_maximum</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Hit.index_of_maximum" title="Permalink to this definition">¶</a></dt>
 <dd><p>Index in the event at which this peak has its maximum.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pax.datastructure.ChannelPeak.left">
-<tt class="descname">left</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.ChannelPeak.left" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.datastructure.Hit.is_rejected">
+<tt class="descname">is_rejected</tt><em class="property"> = False</em><a class="headerlink" href="#pax.datastructure.Hit.is_rejected" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set to True if rejected by suspicious channel algorithm</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Hit.left">
+<tt class="descname">left</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Hit.left" title="Permalink to this definition">¶</a></dt>
 <dd><p>Index of left bound (inclusive) of peak.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pax.datastructure.ChannelPeak.length">
-<tt class="descname">length</tt><a class="reference internal" href="_modules/pax/datastructure.html#ChannelPeak.length"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.ChannelPeak.length" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.datastructure.Hit.length">
+<tt class="descname">length</tt><a class="reference internal" href="_modules/pax/datastructure.html#Hit.length"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Hit.length" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="pax.datastructure.ChannelPeak.noise_sigma">
-<tt class="descname">noise_sigma</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.ChannelPeak.noise_sigma" title="Permalink to this definition">¶</a></dt>
-<dd><p>StDev of the noisin e (pe/bin) in the filtered waveform in this peak&#8217;s occurrence</p>
+<dt id="pax.datastructure.Hit.noise_sigma">
+<tt class="descname">noise_sigma</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Hit.noise_sigma" title="Permalink to this definition">¶</a></dt>
+<dd><p>Noise sigma in pe/bin of pulse in which peak was found.
+Note: in Pulse the same number is stored in ADC-counts</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pax.datastructure.ChannelPeak.right">
-<tt class="descname">right</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.ChannelPeak.right" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.datastructure.Hit.right">
+<tt class="descname">right</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Hit.right" title="Permalink to this definition">¶</a></dt>
 <dd><p>Index of right bound (INCLUSIVE!!) of peak</p>
 </dd></dl>
 

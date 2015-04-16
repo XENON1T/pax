@@ -65,10 +65,10 @@
 <li class="toctree-l1"><a class="reference internal" href="pax.plugins.io.html">pax.plugins.io package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="pax.plugins.io.html#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.Avro">pax.plugins.io.Avro module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pax.plugins.io.html#pax-plugins-io-mongodb-module">pax.plugins.io.MongoDB module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.BulkOutput">pax.plugins.io.BulkOutput module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.MongoDB">pax.plugins.io.MongoDB module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.Pandas">pax.plugins.io.Pandas module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.Pickle">pax.plugins.io.Pickle module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.Plotting">pax.plugins.io.Plotting module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.RawWaveformDump">pax.plugins.io.RawWaveformDump module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.WaveformSimulator">pax.plugins.io.WaveformSimulator module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.XED">pax.plugins.io.XED module</a></li>
@@ -77,7 +77,6 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="pax.plugins.posrec.html">pax.plugins.posrec package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="pax.plugins.posrec.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pax.plugins.posrec.html#module-pax.plugins.posrec.ComputeHitpatternSpread">pax.plugins.posrec.ComputeHitpatternSpread module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pax.plugins.posrec.html#module-pax.plugins.posrec.NeuralNet">pax.plugins.posrec.NeuralNet module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pax.plugins.posrec.html#module-pax.plugins.posrec.PosRecChiSquareGamma">pax.plugins.posrec.PosRecChiSquareGamma module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pax.plugins.posrec.html#module-pax.plugins.posrec.PosSimple">pax.plugins.posrec.PosSimple module</a></li>
@@ -86,18 +85,175 @@
 </li>
 <li class="toctree-l1"><a class="reference internal" href="pax.plugins.signal_processing.html">pax.plugins.signal_processing package</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="pax.plugins.signal_processing.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pax.plugins.signal_processing.html#module-pax.plugins.signal_processing.BigPeakProcessing">pax.plugins.signal_processing.BigPeakProcessing module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pax.plugins.signal_processing.html#module-pax.plugins.signal_processing.BigPeakfinder">pax.plugins.signal_processing.BigPeakfinder module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pax.plugins.signal_processing.html#module-pax.plugins.signal_processing.BuildWaveforms">pax.plugins.signal_processing.BuildWaveforms module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pax.plugins.signal_processing.html#module-pax.plugins.signal_processing.Filtering">pax.plugins.signal_processing.Filtering module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pax.plugins.signal_processing.html#module-pax.plugins.signal_processing.OldPeakFinder">pax.plugins.signal_processing.OldPeakFinder module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pax.plugins.signal_processing.html#module-pax.plugins.signal_processing.SmallPeakProcessing">pax.plugins.signal_processing.SmallPeakProcessing module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pax.plugins.signal_processing.html#module-pax.plugins.signal_processing.SmallPeakfinder">pax.plugins.signal_processing.SmallPeakfinder module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pax.plugins.signal_processing.html#module-pax.plugins.signal_processing.CheckPulses">pax.plugins.signal_processing.CheckPulses module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pax.plugins.signal_processing.html#module-pax.plugins.signal_processing.Cluster">pax.plugins.signal_processing.Cluster module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pax.plugins.signal_processing.html#module-pax.plugins.signal_processing.HitFinder">pax.plugins.signal_processing.HitFinder module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pax.plugins.signal_processing.html#module-pax.plugins.signal_processing">Module contents</a></li>
 </ul>
 </li>
 </ul>
 </div>
+</div>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-pax.plugins.XerawdpImitation">
+<span id="pax-plugins-xerawdpimitation-module"></span><h2>pax.plugins.XerawdpImitation module<a class="headerlink" href="#module-pax.plugins.XerawdpImitation" title="Permalink to this headline">¶</a></h2>
+<p>XerawdpImitation - XerawdpImitation Is Not Xerawdp
+This code imitates the peakfinding of Xerawdp (the Xenon100 processor)
+Its only purpose is to show we understand Xerawdp enough to be able to reproduce it,
+it is not meant to replace Xerawdp, nor to be used unmodified by Xenon1T or any experiment.
+(for example, some Xerawdp bugs are included here on purpose, to better match the Xerawdp output)</p>
+<dl class="class">
+<dt id="pax.plugins.XerawdpImitation.BuildWaveforms">
+<em class="property">class </em><tt class="descclassname">pax.plugins.XerawdpImitation.</tt><tt class="descname">BuildWaveforms</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/XerawdpImitation.html#BuildWaveforms"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.XerawdpImitation.BuildWaveforms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></tt></a></p>
+<p>Construct waveforms from PMT channel pulses
+This code has been used for other stuff in pax for a while, that&#8217;s why there&#8217;s some stuff not related to Xerawdp</p>
+<dl class="docutils">
+<dt>Waveforms that will be built:</dt>
+<dd>tpc
+top
+bottom
+NAME for each external detector named NAME (usually only the veto)</dd>
+<dt>for Xerawdp matching also:</dt>
+<dd>uS1
+uS2</dd>
+</dl>
+<dl class="method">
+<dt id="pax.plugins.XerawdpImitation.BuildWaveforms.startup">
+<tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/XerawdpImitation.html#BuildWaveforms.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.XerawdpImitation.BuildWaveforms.startup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.XerawdpImitation.BuildWaveforms.transform_event">
+<tt class="descname">transform_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/XerawdpImitation.html#BuildWaveforms.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.XerawdpImitation.BuildWaveforms.transform_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.plugins.XerawdpImitation.ComputePeakProperties">
+<em class="property">class </em><tt class="descclassname">pax.plugins.XerawdpImitation.</tt><tt class="descname">ComputePeakProperties</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/XerawdpImitation.html#ComputePeakProperties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.XerawdpImitation.ComputePeakProperties" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></tt></a></p>
+<p>Compute various derived quantities of each peak (full width half maximum, etc.)</p>
+<dl class="method">
+<dt id="pax.plugins.XerawdpImitation.ComputePeakProperties.transform_event">
+<tt class="descname">transform_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/XerawdpImitation.html#ComputePeakProperties.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.XerawdpImitation.ComputePeakProperties.transform_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Only computes area for Xerawdp matching at the moment</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.plugins.XerawdpImitation.Filtering">
+<em class="property">class </em><tt class="descclassname">pax.plugins.XerawdpImitation.</tt><tt class="descname">Filtering</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/XerawdpImitation.html#Filtering"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.XerawdpImitation.Filtering" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></tt></a></p>
+<dl class="staticmethod">
+<dt id="pax.plugins.XerawdpImitation.Filtering.butter_bandpass">
+<em class="property">static </em><tt class="descname">butter_bandpass</tt><big>(</big><em>lowcut</em>, <em>highcut</em>, <em>fs</em>, <em>order=5</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/XerawdpImitation.html#Filtering.butter_bandpass"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.XerawdpImitation.Filtering.butter_bandpass" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.XerawdpImitation.Filtering.startup">
+<tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/XerawdpImitation.html#Filtering.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.XerawdpImitation.Filtering.startup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.XerawdpImitation.Filtering.transform_event">
+<tt class="descname">transform_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/XerawdpImitation.html#Filtering.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.XerawdpImitation.Filtering.transform_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.plugins.XerawdpImitation.FindPeaks">
+<em class="property">class </em><tt class="descclassname">pax.plugins.XerawdpImitation.</tt><tt class="descname">FindPeaks</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/XerawdpImitation.html#FindPeaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.XerawdpImitation.FindPeaks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></tt></a></p>
+<p>NB: Does NOT do veto peakfinding!!!</p>
+<dl class="method">
+<dt id="pax.plugins.XerawdpImitation.FindPeaks.find_peaks_in">
+<tt class="descname">find_peaks_in</tt><big>(</big><em>event</em>, <em>peak_type</em>, <em>signal</em>, <em>settings</em>, <em>left_boundary</em>, <em>right_boundary</em>, <em>toplevel=False</em>, <em>max_idx=None</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/XerawdpImitation.html#FindPeaks.find_peaks_in"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.XerawdpImitation.FindPeaks.find_peaks_in" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.XerawdpImitation.FindPeaks.isolation_test">
+<tt class="descname">isolation_test</tt><big>(</big><em>signal</em>, <em>max_idx</em>, <em>right_edge_of_left_test_region</em>, <em>test_length_left</em>, <em>left_edge_of_right_test_region</em>, <em>test_length_right</em>, <em>before_avg_max_ratio</em>, <em>after_avg_max_ratio</em>, <em>can_fail_one=False</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/XerawdpImitation.html#FindPeaks.isolation_test"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.XerawdpImitation.FindPeaks.isolation_test" title="Permalink to this definition">¶</a></dt>
+<dd><p>Does XerawDP&#8217;s arcane isolation test. Returns if test is passed or not.
+NB: edge = first index IN region to test!
+TODO: Regions seem to come out empty sometimes, which triggers a numpy runtiome warning (only once though..)</p>
+<p>If you compare the isolation test intervals with xerawdp, it looks like ours are too large.
+In reality, Xerawdp&#8217;s math is off, and we are testing the same intervals.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.XerawdpImitation.FindPeaks.nearest_s2_boundary">
+<tt class="descname">nearest_s2_boundary</tt><big>(</big><em>event</em>, <em>peak_position</em>, <em>edge_position</em>, <em>direction</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/XerawdpImitation.html#FindPeaks.nearest_s2_boundary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.XerawdpImitation.FindPeaks.nearest_s2_boundary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds the nearest s2 boundary according to arcane Xerawdp rules</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.XerawdpImitation.FindPeaks.transform_event">
+<tt class="descname">transform_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/XerawdpImitation.html#FindPeaks.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.XerawdpImitation.FindPeaks.transform_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.plugins.XerawdpImitation.extent_until_threshold">
+<tt class="descclassname">pax.plugins.XerawdpImitation.</tt><tt class="descname">extent_until_threshold</tt><big>(</big><em>signal</em>, <em>start</em>, <em>threshold</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/XerawdpImitation.html#extent_until_threshold"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.XerawdpImitation.extent_until_threshold" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pax.plugins.XerawdpImitation.find_next_crossing">
+<tt class="descclassname">pax.plugins.XerawdpImitation.</tt><tt class="descname">find_next_crossing</tt><big>(</big><em>signal</em>, <em>threshold</em>, <em>start=0</em>, <em>direction='right'</em>, <em>min_length=1</em>, <em>stop=None</em>, <em>stop_if_start_exceeded=False</em>, <em>activate_xerawdp_hacks_for=None</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/XerawdpImitation.html#find_next_crossing"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.XerawdpImitation.find_next_crossing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns first index in signal crossing threshold, searching from start in direction
+A &#8216;crossing&#8217; is defined as a point where:</p>
+<blockquote>
+<div>start_sample &lt; threshold &lt; this_sample OR start_sample &gt; threshold &gt; this_sample</div></blockquote>
+<p>Arguments:
+signal            &#8211;  List of signal samples to search in
+threshold         &#8211;  Threshold defining crossings
+start             &#8211;  Index to start search from: defaults to 0
+direction         &#8211;  Direction to search in: &#8216;right&#8217; (default) or &#8216;left&#8217;
+min_length        &#8211;  Crossing only counts if stays above/below threshold for min_length</p>
+<blockquote>
+<div>Default: 1, i.e, a single sample on other side of threshold counts as a crossing
+The first index where a crossing happens is still returned.</div></blockquote>
+<p>stop_at           &#8211;  Stops search when this index is reached, THEN RETURNS THIS INDEX!!!
+#Hack for Xerawdp matching:
+stop_if_start_exceeded      &#8211; If true and a value HIGHER than start is encountered, stop immediately
+activate_xerawdp_hacks_for  &#8211; Activates several hacks, for instance, slope checking for large s2</p>
+<p>This is a pretty crucial function for several DSP routines; as such, it does extensive checking for
+pathological cases. Please be very careful in making changes to this function, their effects could
+be felt in unexpected ways in many places.</p>
+<p>TODO: add lots of tests!!!
+TODO: Allow specification of where start_sample should be (below or above treshold),</p>
+<blockquote>
+<div><dl class="docutils">
+<dt>only use to throw error if it is not true? Or see start as starting crossing?</dt>
+<dd><dl class="first last docutils">
+<dt>-&gt; If latter, can outsource to new function: find_next_crossing_above &amp; below</dt>
+<dd>(can be two lines or so, just check start)</dd>
+</dl>
+</dd>
+</dl>
+</div></blockquote>
+<p>TODO: Allow user to specify that finding a crossing is mandatory / return None when none found?</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.plugins.XerawdpImitation.interval_until_threshold">
+<tt class="descclassname">pax.plugins.XerawdpImitation.</tt><tt class="descname">interval_until_threshold</tt><big>(</big><em>signal</em>, <em>start</em>, <em>left_threshold</em>, <em>right_threshold=None</em>, <em>left_limit=0</em>, <em>right_limit=None</em>, <em>min_crossing_length=1</em>, <em>stop_if_start_exceeded=False</em>, <em>activate_xerawdp_hacks_for=None</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/XerawdpImitation.html#interval_until_threshold"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.XerawdpImitation.interval_until_threshold" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns (l,r) indices of largest interval including start on same side of threshold
+... .bla... bla</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.plugins.XerawdpImitation.sort_and_prune_by">
+<tt class="descclassname">pax.plugins.XerawdpImitation.</tt><tt class="descname">sort_and_prune_by</tt><big>(</big><em>peak_list</em>, <em>key=&lt;function &lt;lambda&gt; at 0x10d18b950&gt;</em>, <em>keep_number=inf</em>, <em>reverse=False</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/XerawdpImitation.html#sort_and_prune_by"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.XerawdpImitation.sort_and_prune_by" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </div>
 <div class="section" id="module-pax.plugins">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pax.plugins" title="Permalink to this headline">¶</a></h2>
@@ -114,6 +270,8 @@
   <ul>
 <li><a class="reference internal" href="#">pax.plugins package</a><ul>
 <li><a class="reference internal" href="#subpackages">Subpackages</a></li>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-pax.plugins.XerawdpImitation">pax.plugins.XerawdpImitation module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins">Module contents</a></li>
 </ul>
 </li>

@@ -1,0 +1,350 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pax.formats &mdash; Processor for Analyzing XENON1T 2.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '2.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Processor for Analyzing XENON1T 2.1.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for pax.formats</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Formats that pax can read and write</span>
+
+<span class="sd">Here are the definitions of how to serialize our data structure to various formats.  Both</span>
+<span class="sd">read and write routines are required.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">logging</span>
+
+<span class="n">base_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;BulkOutput&#39;</span><span class="p">)</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">ROOT</span>  <span class="c"># noqa</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">base_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;ROOT module not imported - if you use the ROOT output, pax will crash!&quot;</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">SyntaxError</span><span class="p">:</span>
+    <span class="n">base_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;ROOT module not made for Python3? - if you use the ROOT output, pax will crash!&quot;</span><span class="p">)</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">pandas</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">base_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;You don&#39;t have pandas -- if you use the pandas output, pax will crash!&quot;</span><span class="p">)</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">h5py</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">base_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;You don&#39;t have the HDF5 output -- if you use the hdf5 output, pax will crash!&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="BulkOutputFormat"><a class="viewcode-back" href="../../pax.html#pax.formats.BulkOutputFormat">[docs]</a><span class="k">class</span> <span class="nc">BulkOutputFormat</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base class for bulk output formats</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">supports_append</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">supports_write_in_chunks</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">supports_array_fields</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">supports_read_back</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">file_extension</span> <span class="o">=</span> <span class="s">&#39;DIRECTORY&#39;</span>   <span class="c"># Leave to None for database insertion or something</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="n">base_logger</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Initialize the output format</span>
+<span class="sd">        log is optional, so you can load these in- and outside of the of pax</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">log</span>
+
+<div class="viewcode-block" id="BulkOutputFormat.open"><a class="viewcode-back" href="../../pax.html#pax.formats.BulkOutputFormat.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">mode</span><span class="p">):</span>
+        <span class="c"># Dir formats don&#39;t need to do anything here</span>
+        <span class="k">pass</span>
+</div>
+<div class="viewcode-block" id="BulkOutputFormat.close"><a class="viewcode-back" href="../../pax.html#pax.formats.BulkOutputFormat.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c"># Dir formats don&#39;t need to do anything here</span>
+        <span class="k">pass</span>
+</div>
+<div class="viewcode-block" id="BulkOutputFormat.read_data"><a class="viewcode-back" href="../../pax.html#pax.formats.BulkOutputFormat.read_data">[docs]</a>    <span class="k">def</span> <span class="nf">read_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df_name</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</div>
+<div class="viewcode-block" id="BulkOutputFormat.write_data"><a class="viewcode-back" href="../../pax.html#pax.formats.BulkOutputFormat.write_data">[docs]</a>    <span class="k">def</span> <span class="nf">write_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="c"># Should be overridden by child class</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</div>
+<div class="viewcode-block" id="BulkOutputFormat.get_number_of_events"><a class="viewcode-back" href="../../pax.html#pax.formats.BulkOutputFormat.get_number_of_events">[docs]</a>    <span class="k">def</span> <span class="nf">get_number_of_events</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+</div></div>
+<div class="viewcode-block" id="NumpyDump"><a class="viewcode-back" href="../../pax.html#pax.formats.NumpyDump">[docs]</a><span class="k">class</span> <span class="nc">NumpyDump</span><span class="p">(</span><span class="n">BulkOutputFormat</span><span class="p">):</span>
+    <span class="n">file_extension</span> <span class="o">=</span> <span class="s">&#39;npz&#39;</span>
+    <span class="n">supports_array_fields</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="n">supports_read_back</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="bp">None</span>
+
+<div class="viewcode-block" id="NumpyDump.open"><a class="viewcode-back" href="../../pax.html#pax.formats.NumpyDump.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">mode</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">name</span>
+        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s">&#39;r&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="NumpyDump.close"><a class="viewcode-back" href="../../pax.html#pax.formats.NumpyDump.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="NumpyDump.write_data"><a class="viewcode-back" href="../../pax.html#pax.formats.NumpyDump.write_data">[docs]</a>    <span class="k">def</span> <span class="nf">write_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">savez_compressed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">data</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="NumpyDump.read_data"><a class="viewcode-back" href="../../pax.html#pax.formats.NumpyDump.read_data">[docs]</a>    <span class="k">def</span> <span class="nf">read_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df_name</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">end</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_in_data</span><span class="p">(</span><span class="n">df_name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="p">[</span><span class="n">df_name</span><span class="p">][</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="NumpyDump.n_in_data"><a class="viewcode-back" href="../../pax.html#pax.formats.NumpyDump.n_in_data">[docs]</a>    <span class="k">def</span> <span class="nf">n_in_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df_name</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="p">[</span><span class="n">df_name</span><span class="p">])</span>
+
+</div></div>
+<div class="viewcode-block" id="HDF5Dump"><a class="viewcode-back" href="../../pax.html#pax.formats.HDF5Dump">[docs]</a><span class="k">class</span> <span class="nc">HDF5Dump</span><span class="p">(</span><span class="n">BulkOutputFormat</span><span class="p">):</span>
+    <span class="n">file_extension</span> <span class="o">=</span> <span class="s">&#39;hdf5&#39;</span>
+    <span class="n">supports_array_fields</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="n">supports_write_in_chunks</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="n">supports_read_back</span> <span class="o">=</span> <span class="bp">True</span>
+
+<div class="viewcode-block" id="HDF5Dump.open"><a class="viewcode-back" href="../../pax.html#pax.formats.HDF5Dump.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">mode</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="HDF5Dump.close"><a class="viewcode-back" href="../../pax.html#pax.formats.HDF5Dump.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="HDF5Dump.write_data"><a class="viewcode-back" href="../../pax.html#pax.formats.HDF5Dump.write_data">[docs]</a>    <span class="k">def</span> <span class="nf">write_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">records</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">dataset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">dataset</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">records</span><span class="p">,</span> <span class="n">maxshape</span><span class="o">=</span><span class="p">(</span><span class="bp">None</span><span class="p">,),</span>
+                                      <span class="n">compression</span><span class="o">=</span><span class="s">&quot;gzip&quot;</span><span class="p">,</span>   <span class="c"># hdfview doesn&#39;t like lzf?</span>
+                                      <span class="n">shuffle</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                                      <span class="n">fletcher32</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">oldlen</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">len</span><span class="p">()</span>
+                <span class="n">dataset</span><span class="o">.</span><span class="n">resize</span><span class="p">((</span><span class="n">oldlen</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">records</span><span class="p">),))</span>
+                <span class="n">dataset</span><span class="p">[</span><span class="n">oldlen</span><span class="p">:]</span> <span class="o">=</span> <span class="n">records</span>
+</div>
+<div class="viewcode-block" id="HDF5Dump.read_data"><a class="viewcode-back" href="../../pax.html#pax.formats.HDF5Dump.read_data">[docs]</a>    <span class="k">def</span> <span class="nf">read_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df_name</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">end</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_in_data</span><span class="p">(</span><span class="n">df_name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">df_name</span><span class="p">)[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="HDF5Dump.n_in_data"><a class="viewcode-back" href="../../pax.html#pax.formats.HDF5Dump.n_in_data">[docs]</a>    <span class="k">def</span> <span class="nf">n_in_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df_name</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="p">[</span><span class="n">df_name</span><span class="p">]</span><span class="o">.</span><span class="n">len</span><span class="p">()</span>
+
+</div></div>
+<div class="viewcode-block" id="ROOTDump"><a class="viewcode-back" href="../../pax.html#pax.formats.ROOTDump">[docs]</a><span class="k">class</span> <span class="nc">ROOTDump</span><span class="p">(</span><span class="n">BulkOutputFormat</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Write data to ROOT file</span>
+
+<span class="sd">    Convert numpy structered array, every array becomes a TTree.</span>
+<span class="sd">    Every record becomes a TBranch.</span>
+<span class="sd">    For the first event the structure of the tree and branches is</span>
+<span class="sd">    determined, for each branch the proper datatype is determined</span>
+<span class="sd">    by converting the numpy types to their respective ROOT types.</span>
+<span class="sd">    This is &quot;&quot;&quot;</span>
+    <span class="n">file_extension</span> <span class="o">=</span> <span class="s">&#39;root&#39;</span>
+    <span class="n">supports_array_fields</span> <span class="o">=</span> <span class="bp">True</span>
+    <span class="n">supports_write_in_chunks</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">supports_read_back</span> <span class="o">=</span> <span class="bp">False</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c"># This line makes sure all TTree objects are NOT owned</span>
+        <span class="c"># by python, avoiding segfaults when garbage collecting</span>
+        <span class="n">ROOT</span><span class="o">.</span><span class="n">TTree</span><span class="o">.</span><span class="n">__init__</span><span class="o">.</span><span class="n">_creates</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+<div class="viewcode-block" id="ROOTDump.open"><a class="viewcode-back" href="../../pax.html#pax.formats.ROOTDump.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">mode</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">=</span> <span class="n">ROOT</span><span class="o">.</span><span class="n">TFile</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s">&quot;RECREATE&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trees</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">branch_buffers</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c"># Lookup dictionary for converting python numpy types to</span>
+        <span class="c"># ROOT types, strings are handled seperately!</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">root_type</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;float64&#39;</span><span class="p">:</span> <span class="s">&#39;/D&#39;</span><span class="p">,</span>
+                          <span class="s">&#39;int64&#39;</span><span class="p">:</span> <span class="s">&#39;/I&#39;</span><span class="p">,</span>
+                          <span class="s">&#39;bool&#39;</span><span class="p">:</span> <span class="s">&#39;/O&#39;</span><span class="p">,</span>
+                          <span class="s">&#39;float&#39;</span><span class="p">:</span> <span class="s">&#39;/D&#39;</span><span class="p">,</span>
+                          <span class="s">&#39;float32&#39;</span><span class="p">:</span> <span class="s">&#39;/D&#39;</span><span class="p">,</span>
+                          <span class="s">&#39;int&#39;</span><span class="p">:</span> <span class="s">&#39;/I&#39;</span><span class="p">,</span>
+                          <span class="s">&#39;S&#39;</span><span class="p">:</span> <span class="s">&#39;/C&#39;</span><span class="p">,</span>
+                          <span class="p">}</span>
+</div>
+<div class="viewcode-block" id="ROOTDump.close"><a class="viewcode-back" href="../../pax.html#pax.formats.ROOTDump.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">Close</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="ROOTDump.write_data"><a class="viewcode-back" href="../../pax.html#pax.formats.ROOTDump.write_data">[docs]</a>    <span class="k">def</span> <span class="nf">write_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">treename</span><span class="p">,</span> <span class="n">records</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+
+            <span class="c"># Create tree first time write data is called</span>
+            <span class="k">if</span> <span class="n">treename</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">trees</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Creating tree: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">treename</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">trees</span><span class="p">[</span><span class="n">treename</span><span class="p">]</span> <span class="o">=</span> <span class="n">ROOT</span><span class="o">.</span><span class="n">TTree</span><span class="p">(</span><span class="n">treename</span><span class="p">,</span> <span class="n">treename</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">branch_buffers</span><span class="p">[</span><span class="n">treename</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">for</span> <span class="n">fieldname</span> <span class="ow">in</span> <span class="n">records</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+                    <span class="n">field_data</span> <span class="o">=</span> <span class="n">records</span><span class="p">[</span><span class="n">fieldname</span><span class="p">]</span>
+                    <span class="n">dtype</span> <span class="o">=</span> <span class="n">field_data</span><span class="o">.</span><span class="n">dtype</span>
+                    <span class="c"># Handle array types</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">field_data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                        <span class="n">array_len</span> <span class="o">=</span> <span class="n">field_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="c"># Create buffer structure for arrays</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">branch_buffers</span><span class="p">[</span><span class="n">treename</span><span class="p">][</span><span class="n">fieldname</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span>
+                                                                            <span class="n">dtype</span><span class="o">=</span><span class="p">[(</span><span class="s">&#39;temp_name&#39;</span><span class="p">,</span> <span class="n">dtype</span><span class="p">,</span> <span class="p">(</span><span class="n">array_len</span><span class="p">,),)])</span>
+                        <span class="c"># Set buffer to use this structure</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">trees</span><span class="p">[</span><span class="n">treename</span><span class="p">]</span><span class="o">.</span><span class="n">Branch</span><span class="p">(</span><span class="n">fieldname</span><span class="p">,</span>
+                                                    <span class="bp">self</span><span class="o">.</span><span class="n">branch_buffers</span><span class="p">[</span><span class="n">treename</span><span class="p">][</span><span class="n">fieldname</span><span class="p">],</span>
+                                                    <span class="s">&#39;</span><span class="si">%s</span><span class="s">[</span><span class="si">%d</span><span class="s">]</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">fieldname</span><span class="p">,</span> <span class="n">array_len</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_type</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">dtype</span><span class="p">)]))</span>
+
+                    <span class="c"># Handle all other types (int, float, string, bool)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">sdtype</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
+                        <span class="k">if</span> <span class="n">sdtype</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;|S&#39;</span><span class="p">):</span>
+                            <span class="n">sdtype</span> <span class="o">=</span> <span class="s">&#39;S&#39;</span>
+                        <span class="c"># Store a single element in a buffer of the correct type</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">branch_buffers</span><span class="p">[</span><span class="n">treename</span><span class="p">][</span><span class="n">fieldname</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">records</span><span class="p">[</span><span class="n">fieldname</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+                        <span class="c"># Set the branch to use this buffer</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">trees</span><span class="p">[</span><span class="n">treename</span><span class="p">]</span><span class="o">.</span><span class="n">Branch</span><span class="p">(</span><span class="n">fieldname</span><span class="p">,</span>
+                                                    <span class="bp">self</span><span class="o">.</span><span class="n">branch_buffers</span><span class="p">[</span><span class="n">treename</span><span class="p">][</span><span class="n">fieldname</span><span class="p">],</span>
+                                                    <span class="n">fieldname</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_type</span><span class="p">[</span><span class="n">sdtype</span><span class="p">])</span>
+
+            <span class="c"># Fill branches</span>
+            <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">records</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">fieldname</span> <span class="ow">in</span> <span class="n">record</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
+                    <span class="c"># Store one record in branch buffer</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">branch_buffers</span><span class="p">[</span><span class="n">treename</span><span class="p">][</span><span class="n">fieldname</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">record</span><span class="p">[</span><span class="n">fieldname</span><span class="p">]</span>
+                <span class="c"># Fill appends the actual data to the branches</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">trees</span><span class="p">[</span><span class="n">treename</span><span class="p">]</span><span class="o">.</span><span class="n">Fill</span><span class="p">()</span>
+
+        <span class="c"># Write to file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Writing out to TFile&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">Write</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Done writing&quot;</span><span class="p">)</span>
+
+<span class="c">##</span>
+<span class="c"># Pandas output formats</span>
+<span class="c">##</span>
+
+</div></div>
+<div class="viewcode-block" id="PandasFormat"><a class="viewcode-back" href="../../pax.html#pax.formats.PandasFormat">[docs]</a><span class="k">class</span> <span class="nc">PandasFormat</span><span class="p">(</span><span class="n">BulkOutputFormat</span><span class="p">):</span>
+
+    <span class="n">pandas_format_key</span> <span class="o">=</span> <span class="bp">None</span>
+
+<div class="viewcode-block" id="PandasFormat.open"><a class="viewcode-back" href="../../pax.html#pax.formats.PandasFormat.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">mode</span><span class="p">):</span>
+        <span class="c"># Don&#39;t do anything here: just store filename</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">name</span>
+</div>
+<div class="viewcode-block" id="PandasFormat.write_data"><a class="viewcode-back" href="../../pax.html#pax.formats.PandasFormat.write_data">[docs]</a>    <span class="k">def</span> <span class="nf">write_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">records</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c"># Write pandas dataframe to container</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">write_pandas_dataframe</span><span class="p">(</span><span class="n">name</span><span class="p">,</span>
+                                        <span class="n">pandas</span><span class="o">.</span><span class="n">DataFrame</span><span class="o">.</span><span class="n">from_records</span><span class="p">(</span><span class="n">records</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="PandasFormat.write_pandas_dataframe"><a class="viewcode-back" href="../../pax.html#pax.formats.PandasFormat.write_pandas_dataframe">[docs]</a>    <span class="k">def</span> <span class="nf">write_pandas_dataframe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df_name</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
+        <span class="c"># Write each DataFrame to file</span>
+        <span class="nb">getattr</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="s">&#39;to_&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">pandas_format_key</span><span class="p">)(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span> <span class="n">df_name</span> <span class="o">+</span> <span class="s">&#39;.&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">pandas_format_key</span><span class="p">))</span>
+
+</div></div>
+<div class="viewcode-block" id="PandasCSV"><a class="viewcode-back" href="../../pax.html#pax.formats.PandasCSV">[docs]</a><span class="k">class</span> <span class="nc">PandasCSV</span><span class="p">(</span><span class="n">PandasFormat</span><span class="p">):</span>
+    <span class="n">pandas_format_key</span> <span class="o">=</span> <span class="s">&#39;csv&#39;</span>
+
+</div>
+<div class="viewcode-block" id="PandasHTML"><a class="viewcode-back" href="../../pax.html#pax.formats.PandasHTML">[docs]</a><span class="k">class</span> <span class="nc">PandasHTML</span><span class="p">(</span><span class="n">PandasFormat</span><span class="p">):</span>
+    <span class="n">pandas_format_key</span> <span class="o">=</span> <span class="s">&#39;html&#39;</span>
+
+</div>
+<div class="viewcode-block" id="PandasJSON"><a class="viewcode-back" href="../../pax.html#pax.formats.PandasJSON">[docs]</a><span class="k">class</span> <span class="nc">PandasJSON</span><span class="p">(</span><span class="n">PandasFormat</span><span class="p">):</span>
+    <span class="n">pandas_format_key</span> <span class="o">=</span> <span class="s">&#39;json&#39;</span>
+
+
+<span class="c"># List of data formats, pax / analysis code can import this</span></div>
+<span class="n">flat_data_formats</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s">&#39;hdf5&#39;</span><span class="p">:</span>         <span class="n">HDF5Dump</span><span class="p">,</span>
+    <span class="s">&#39;numpy&#39;</span><span class="p">:</span>        <span class="n">NumpyDump</span><span class="p">,</span>
+    <span class="s">&#39;csv&#39;</span><span class="p">:</span>          <span class="n">PandasCSV</span><span class="p">,</span>
+    <span class="s">&#39;html&#39;</span><span class="p">:</span>         <span class="n">PandasHTML</span><span class="p">,</span>
+    <span class="s">&#39;json&#39;</span><span class="p">:</span>         <span class="n">PandasJSON</span><span class="p">,</span>
+    <span class="s">&#39;root&#39;</span><span class="p">:</span>         <span class="n">ROOTDump</span>
+<span class="p">}</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Christopher Tunnell.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>
