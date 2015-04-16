@@ -27,6 +27,7 @@ up, run::
   $ wget http://repo.continuum.io/anaconda3/Anaconda3-2.1.0-Linux-x86_64.sh
   $ bash Anaconda3-2.1.0-Linux-x86_64.sh
   $ export PATH=~/anaconda3/bin:$PATH  # If installed in default location
+  $ conda update conda
 
 Alternatively, you can install Python 3.4 from the `python webpage <https://www.python.org/>`_ 
 or your OS's package management system. See the FAQ for more information.
