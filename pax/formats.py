@@ -15,6 +15,8 @@ try:
     import ROOT  # noqa
 except ImportError:
     base_logger.warning("ROOT module not imported - if you use the ROOT output, pax will crash!")
+except SyntaxError:
+    base_logger.warning("ROOT module not made for Python3? - if you use the ROOT output, pax will crash!")
 
 try:
     import pandas
