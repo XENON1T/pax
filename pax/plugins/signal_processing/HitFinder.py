@@ -54,7 +54,7 @@ class FindHits(plugin.TransformPlugin):
         argmaxes = -1 * np.zeros(self.max_hits_per_pulse, dtype=np.int64)
         areas = -1 * np.ones(self.max_hits_per_pulse)
 
-        for pulse_i, pulse in enumerate(event.occurrences):
+        for pulse_i, pulse in enumerate(event.pulses):
             start = pulse.left
             stop = pulse.right
             channel = pulse.channel
@@ -110,7 +110,7 @@ class FindHits(plugin.TransformPlugin):
             # Update pulse data
             pulse.noise_sigma = noise_sigma
             pulse.baseline = baseline
-            # TODO: compute and store pulse height
+            pulse.height = np.max(w)    # Remember w was modified in-place by the numba hitfinder to do baselining
 
             # Compute area and max of each hit
             # Results stored in argmaxes, areas; declared outside loop, see above
@@ -118,8 +118,8 @@ class FindHits(plugin.TransformPlugin):
 
             # Store the found peaks in the datastructure
             # Convert area, noise_sigma and height from adc counts -> pe
-            peaks = []
             adc_to_pe = self.adc_to_e / self.config['gains'][channel]
+            noise_sigma_pe = noise_sigma * adc_to_pe
             for i, hit in enumerate(hits_found):
 
                 # Do sanity checks
@@ -128,7 +128,6 @@ class FindHits(plugin.TransformPlugin):
                 left = start + hit[0]
                 right = start + hit[1]
                 max_idx = start + hit[0] + argmaxes[i]
-                noise_sigma_pe = noise_sigma * adc_to_pe
                 if not (0 <= left <= max_idx <= right) or not (0 <= self.min_sigma * noise_sigma_pe <= height <= area):
                     raise RuntimeError("You found a hitfinder bug!\n"
                                        "Current hit %d-%d-%d, in event %s, channel %s, pulse %s.\n"
@@ -139,7 +138,7 @@ class FindHits(plugin.TransformPlugin):
                                            hit[0], hit[0] + argmaxes[i], hit[1], start, stop,
                                            height, noise_sigma_pe, self.min_sigma * noise_sigma_pe, area))
 
-                event.all_channel_peaks.append(datastructure.ChannelPeak({
+                event.all_hits.append(datastructure.Hit({
                     'channel':             channel,
                     'left':                left,
                     'index_of_maximum':    max_idx,
@@ -151,27 +150,55 @@ class FindHits(plugin.TransformPlugin):
                 }))
 
             # Diagnostic plotting
-            # Can't more to plotting plugin: occurrence grouping of hits lost after clustering
-            if self.make_diagnostic_plots == 'always' or \
-               self.make_diagnostic_plots == 'no peaks' and not len(peaks):
-                plt.figure()
-                plt.plot(w, drawstyle='steps', label='data')
-                for hit in hits_found:
-                    plt.axvspan(hit[0] - 1, hit[1], color='red', alpha=0.5)
-                plt.plot(noise_sigma * np.ones(len(w)), '--', label='1 sigma')
-                plt.plot(self.min_sigma * noise_sigma * np.ones(len(w)),
-                         '--', label='%s sigma' % self.min_sigma)
-                # TODO: don't draw another line, draw another y-axis!
-                plt.plot(np.ones(len(w)) * self.config['gains'][channel] / self.adc_to_e,
-                         '--', label='1 pe/sample')
-                plt.legend()
-                bla = (event.event_number, start, stop, channel)
-                plt.title('Event %s, occurrence %d-%d, Channel %d' % bla)
-                plt.xlabel("Sample number (%s ns)" % event.sample_duration)
-                plt.ylabel("Amplitude (ADC counts above baseline)")
-                plt.savefig(os.path.join(self.make_diagnostic_plots_in,
-                                         'event%04d_occ%05d-%05d_ch%03d.png' % bla))
-                plt.close()
+            # Bit difficult to move to separate plugin: would have to re-group hits by pulse
+
+            # Do we need to show this pulse? If not: continue
+            if self.make_diagnostic_plots == 'never':
+                continue
+            elif self.make_diagnostic_plots == 'tricky cases':
+                # Always show pulse if noise level is very high
+                if noise_sigma_pe < 0.5:
+                    if len(hits_found) == 0:
+                        # Show pulse if it nearly went over threshold
+                        if not pulse.height / noise_sigma > 0.8 * self.min_sigma:
+                            continue
+                    else:
+                        # Show pulse if any of its hit nearly didn't go over threshold
+                        if not any([event.all_hits[-(i+1)].height < 1.2 * self.min_sigma * noise_sigma_pe
+                                   for i in range(len(hits_found))]):
+                            continue
+            elif self.make_diagnostic_plots == 'no peaks':
+                if len(hits_found) != 0:
+                    continue
+            else:
+                if self.make_diagnostic_plots != 'always':
+                    raise ValueError("Invalid make_diagnostic_plots option: %s!" % self.make_diagnostic_plots)
+
+            # Setup the twin-y-axis plot
+            fig, ax1 = plt.subplots(figsize=(10, 7))
+            ax2 = ax1.twinx()
+            ax1.set_xlabel("Sample number (%s ns)" % event.sample_duration)
+            ax1.set_ylabel("ADC counts above baseline")
+            ax2.set_ylabel("pe / sample")
+
+            # Plot the signal and noise levels
+            ax1.plot(w, drawstyle='steps', label='Data')
+            ax1.plot(np.ones_like(w) * self.min_sigma * noise_sigma, '--', label='Threshold', color='red')
+            for hit in hits_found:
+                ax1.axvspan(hit[0] - 1, hit[1], color='red', alpha=0.2)
+            ax1.plot(np.ones_like(w) * noise_sigma, '--', label='Noise level', color='gray')
+
+            # Make sure the y-scales match
+            ax2.set_ylim(ax1.get_ylim()[0] * adc_to_pe, ax1.get_ylim()[1] * adc_to_pe)
+
+            # Finish the plot, save, close
+            leg = ax1.legend()
+            leg.get_frame().set_alpha(0.5)
+            bla = (event.event_number, start, stop, channel)
+            plt.title('Event %s, pulse %d-%d, Channel %d' % bla)
+            plt.savefig(os.path.join(self.make_diagnostic_plots_in,
+                                     'event%04d_pulse%05d-%05d_ch%03d.png' % bla))
+            plt.close()
 
         return event
 

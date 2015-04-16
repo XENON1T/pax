@@ -2,7 +2,7 @@ import unittest
 
 import numpy as np
 
-from pax.datastructure import Event, Occurrence
+from pax.datastructure import Event, Pulse
 from pax import core
 from shutil import rmtree
 
@@ -27,10 +27,9 @@ class TestAvro(unittest.TestCase):
 
         event = Event.empty_event()
 
-        event.occurrences = [Occurrence(left=i,
-                                        raw_data=np.array(
-                                            [0, 1, 2, 3], dtype=np.int16),
-                                        channel=i) for i in range(10)]
+        event.pulses = [Pulse(left=i,
+                              raw_data=np.array([0, 1, 2, 3], dtype=np.int16),
+                              channel=i) for i in range(10)]
 
         write_plugin.write_event(event)
         write_plugin.shutdown()         # Needed to close the file in time for cleanup to remove it
@@ -71,13 +70,13 @@ class TestAvro(unittest.TestCase):
         self.assertEqual(len(events), 1)
 
         event = events[0]
-        self.assertEqual(len(event.occurrences), 1942)
+        self.assertEqual(len(event.pulses), 1942)
 
-        occurrence = event.occurrences[0]
+        pulse = event.pulses[0]
 
-        self.assertEqual(occurrence.channel,
+        self.assertEqual(pulse.channel,
                          1)
-        self.assertListEqual(occurrence.raw_data[0:10].tolist(),
+        self.assertListEqual(pulse.raw_data[0:10].tolist(),
                              [16006, 16000, 15991, 16004, 16004, 16006, 16000, 16000,
                               15995, 16010])
         self.read_plugin.shutdown()    # Needed to close avro file in time before dir gets removed

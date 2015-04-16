@@ -1,3 +1,9 @@
+"""Formats that pax can read and write
+
+Here are the definitions of how to serialize our data structure to various formats.  Both
+read and write routines are required.
+"""
+
 import numpy as np
 import os
 
@@ -9,6 +15,8 @@ try:
     import ROOT  # noqa
 except ImportError:
     base_logger.warning("ROOT module not imported - if you use the ROOT output, pax will crash!")
+except SyntaxError:
+    base_logger.warning("ROOT module not made for Python3? - if you use the ROOT output, pax will crash!")
 
 try:
     import pandas
@@ -210,6 +218,10 @@ class ROOTDump(BulkOutputFormat):
 class PandasFormat(BulkOutputFormat):
 
     pandas_format_key = None
+
+    def open(self, name, mode):
+        # Don't do anything here: just store filename
+        self.filename = name
 
     def write_data(self, data):
         for name, records in data.items():

@@ -24,7 +24,7 @@ import numpy as np
 
 import math
 from pax import units
-from pax.datastructure import Event, Occurrence
+from pax.datastructure import Event, Pulse
 
 from pax.plugins.io.FolderIO import InputFromFolder
 
@@ -159,7 +159,7 @@ class XedInput(InputFromFolder):
         event.dataset_name = self.file_metadata['dataset_name'].decode("utf-8")
         event.event_number = int(event_layer_metadata['event_number'])
 
-        # Loop over all channels in the event to get the occurrences
+        # Loop over all channels in the event to get the pulses
         for channel_id in channels_included:
 
             # Read channel size (in 4bit words), subtract header size, convert
@@ -173,7 +173,7 @@ class XedInput(InputFromFolder):
 
             # Read the channel data control word by control word.
             # sample_position keeps track of where in the waveform a new
-            # occurrence should be placed.
+            # pulse should be placed.
             sample_position = 0
             while 1:
 
@@ -195,15 +195,15 @@ class XedInput(InputFromFolder):
                     data_samples = 2 * (control_word - (2 ** 31))
 
                     # Note endianness
-                    samples_occurrence = np.fromstring(channel_fake_file.read(2 * data_samples),
-                                                       dtype="<i2")
+                    samples_pulse = np.fromstring(channel_fake_file.read(2 * data_samples),
+                                                  dtype="<i2")
 
-                    event.occurrences.append(Occurrence(
+                    event.pulses.append(Pulse(
                         channel=channel_id,
                         left=sample_position,
-                        raw_data=samples_occurrence
+                        raw_data=samples_pulse
                     ))
-                    sample_position += len(samples_occurrence)
+                    sample_position += len(samples_pulse)
 
         return event
 

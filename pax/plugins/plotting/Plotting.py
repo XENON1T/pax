@@ -61,7 +61,10 @@ class PlotBase(plugin.OutputPlugin):
         """Finalize plotting, send to screen/file, then closes plot properly (avoids runtimewarning / memory leak).
         """
         if self.output_dir:
-            plt.savefig(self.output_dir + '/%06d.png' % event_number)
+            if self.config['plot_format'] == 'pdf':
+                plt.savefig(self.output_dir + '/%06d.pdf' % event_number, format='pdf')
+            else:
+                plt.savefig(self.output_dir + '/%06d.png' % event_number)
         else:
             plt.show(block=False)
             self.log.info("Hit enter to continue...")
@@ -282,9 +285,9 @@ class PlotChannelWaveforms3D(PlotBase):  # user sets variables xlim, ylim for 3D
         fig = plt.figure(figsize=(self.size_multiplier * 4, self.size_multiplier * 2))
         ax = fig.gca(projection='3d')
 
-        # Plot each individual occurrence
+        # Plot each individual pulse
         global_max_amplitude = 0
-        for oc in event.occurrences:
+        for oc in event.pulses:
             start_index = oc.left
             channel = oc.channel
             end_index = oc.right
@@ -293,8 +296,8 @@ class PlotChannelWaveforms3D(PlotBase):  # user sets variables xlim, ylim for 3D
             if not ylim_channel_start <= channel <= ylim_channel_end:
                 continue
 
-            # Take only occurrences that start in the time window
-            # -- But don't you also want occurrences which start outside, but end inside the window?
+            # Take only pulses that start in the time window
+            # -- But don't you also want pulses which start outside, but end inside the window?
             if not xlim_time_start * 100 <= start_index <= xlim_time_end * 100:
                 continue
 
@@ -345,27 +348,23 @@ class PlotChannelWaveforms3D(PlotBase):  # user sets variables xlim, ylim for 3D
 
 class PlotChannelWaveforms2D(PlotBase):
 
-    """ Plots the occurrences in each channel, like like PlotChannelWaveforms3D, but seen from above
+    """ Plots the pulses in each channel, like like PlotChannelWaveforms3D, but seen from above
 
     Circles in the bottom subplot show when individual photo-electrons arrived in each channel .
     Circle color indicates log(peak amplitude / noise amplitude), size indicates peak integral.
-    For large peaks you see no dots; single-channel peakfinding is skipped for performance reasons.
-
-    Some channels are grayed out: these are excluded from low-energy peakfinding because they show an
-    unusual rate of lone pulses or pure-noise occurrences in this event.
     """
 
     def plot_event(self, event):
         time_scale = self.config['sample_duration'] / units.us
 
         # TODO: change from lines to squares
-        for oc in event.occurrences:
+        for oc in event.pulses:
             if oc.height is None:
                 # Maybe gain was 0 or something
                 # TODO: plot these too, in a different color
                 continue
 
-            # Choose a color for this occurrence based on amplitude
+            # Choose a color for this pulse based on amplitude
             # color_factor = np.clip(np.log10(oc.height) / 2, 0, 1)
             color_factor = 0
 
@@ -378,7 +377,7 @@ class PlotChannelWaveforms2D(PlotBase):
         self.log.debug('Plotting channel peaks...')
 
         result = []
-        for hit in event.all_channel_peaks:
+        for hit in event.all_hits:
             color_factor = min(hit.height / hit.noise_sigma, 15)/15
             result.append([
                 (0.5 + hit.index_of_maximum) * time_scale,             # X
@@ -441,6 +440,7 @@ class PlotChannelWaveforms2D(PlotBase):
 
         plt.xlabel('Time (us)')
         plt.ylabel('PMT channel')
+        plt.gca().invert_yaxis()    # To ensure top channels (low numbers) appear above bottom channels (high numbers)
 
 
 class PlotEventSummary(PlotBase):

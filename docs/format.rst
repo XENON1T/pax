@@ -24,6 +24,6 @@ Waveforms, which are not typically saved, follow the following format.
     :members:
     :undoc-members:
     
-.. autoclass:: pax.datastructure.ChannelPeak
+.. autoclass:: pax.datastructure.Hit
     :members:
     :undoc-members:    

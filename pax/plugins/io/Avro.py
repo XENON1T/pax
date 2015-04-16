@@ -56,14 +56,14 @@ class ReadAvro(InputFromFolder):
                                             stop_time=avro_event['stop_time'],
                                             event_number=avro_event['number'])
 
-            # For all pulses/occurrences, add to pax event
+            # For all pulses/pulses, add to pax event
             for pulse in avro_event['pulses']:
 
-                pulse = datastructure.Occurrence(channel=pulse['channel'],
-                                                 left=pulse['left'],
-                                                 raw_data=np.fromstring(pulse['payload'],
-                                                                        dtype=np.int16))
-                pax_event.occurrences.append(pulse)
+                pulse = datastructure.Pulse(channel=pulse['channel'],
+                                            left=pulse['left'],
+                                            raw_data=np.fromstring(pulse['payload'],
+                                                                   dtype=np.int16))
+                pax_event.pulses.append(pulse)
 
             yield pax_event
 
@@ -106,7 +106,7 @@ class WriteAvro(WriteToFolder):
                                 pulses=[dict(payload=pulse.raw_data.tobytes(),
                                              left=pulse.left,
                                              channel=pulse.channel)
-                                        for pulse in event.occurrences]))
+                                        for pulse in event.pulses]))
 
     def close(self):
         self.log.info("Closing current avro file, you'll get a silly 'info' from avro now...")
