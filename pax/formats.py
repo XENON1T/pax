@@ -107,10 +107,16 @@ class HDF5Dump(BulkOutputFormat):
         for name, records in data.items():
             dataset = self.f.get(name)
             if dataset is None:
-                self.f.create_dataset(name, data=records, maxshape=(None,),
-                                      compression="gzip",   # hdfview doesn't like lzf?
-                                      shuffle=True,
-                                      fletcher32=True)
+                try:
+                    self.f.create_dataset(name, data=records, maxshape=(None,),
+                                          compression="gzip",   # hdfview doesn't like lzf?
+                                          shuffle=True,
+                                          fletcher32=True)
+                except ValueError:
+                    self.log.fatal("Fatal error in creating HDF5 table %s!" % name)
+                    self.log.fatal("First record to write was was:")
+                    self.log.fatal(records[0])
+                    raise
             else:
                 oldlen = dataset.len()
                 dataset.resize((oldlen + len(records),))
