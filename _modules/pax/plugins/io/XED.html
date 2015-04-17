@@ -66,155 +66,89 @@
 <span class="sd">code for details.</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
-<span class="kn">import</span> <span class="nn">glob</span>
 <span class="kn">import</span> <span class="nn">bz2</span>
 <span class="kn">import</span> <span class="nn">io</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 
 <span class="kn">import</span> <span class="nn">math</span>
-<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">core</span><span class="p">,</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">units</span>
+<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">units</span>
 <span class="kn">from</span> <span class="nn">pax.datastructure</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">Pulse</span>
 
+<span class="kn">from</span> <span class="nn">pax.plugins.io.FolderIO</span> <span class="kn">import</span> <span class="n">InputFromFolder</span>
 
-<div class="viewcode-block" id="XedInput"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.XedInput">[docs]</a><span class="k">class</span> <span class="nc">XedInput</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">InputPlugin</span><span class="p">):</span>
-    <span class="n">file_header</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">([</span>
-        <span class="p">(</span><span class="s">&quot;dataset_name&quot;</span><span class="p">,</span> <span class="s">&quot;S64&quot;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s">&quot;creation_time&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s">&quot;first_event_number&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s">&quot;events_in_file&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s">&quot;event_index_size&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u4&quot;</span><span class="p">)</span>
-    <span class="p">])</span>
 
-    <span class="n">event_header</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">([</span>
-        <span class="p">(</span><span class="s">&quot;dataset_name&quot;</span><span class="p">,</span> <span class="s">&quot;S64&quot;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s">&quot;utc_time&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s">&quot;utc_time_usec&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s">&quot;event_number&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s">&quot;chunks&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
-        <span class="c"># This is where the &#39;chunk layer&#39; starts... but there always seems to be one chunk per event</span>
-        <span class="c"># I&#39;ll always assume this is true and raise an exception otherwise</span>
-        <span class="p">(</span><span class="s">&quot;type&quot;</span><span class="p">,</span> <span class="s">&quot;S4&quot;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s">&quot;size&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s">&quot;sample_precision&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;i2&quot;</span><span class="p">),</span>
-        <span class="c"># indicating compression type.. I&#39;ll assume bzip2 always</span>
-        <span class="p">(</span><span class="s">&quot;flags&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u2&quot;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s">&quot;samples_in_event&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s">&quot;voltage_range&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;f4&quot;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s">&quot;sampling_frequency&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;f4&quot;</span><span class="p">),</span>
-        <span class="p">(</span><span class="s">&quot;channels&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
-    <span class="p">])</span>
+<span class="n">xed_file_header</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">([</span>
+    <span class="p">(</span><span class="s">&quot;dataset_name&quot;</span><span class="p">,</span> <span class="s">&quot;S64&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">&quot;creation_time&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">&quot;first_event_number&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">&quot;events_in_file&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">&quot;event_index_size&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u4&quot;</span><span class="p">)</span>
+<span class="p">])</span>
 
-<div class="viewcode-block" id="XedInput.startup"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.XedInput.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">xedfiles</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">input</span> <span class="o">=</span> <span class="bp">None</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">number_of_events</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c"># Updated by init_xedfile</span>
-        <span class="n">filename</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">data_file_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;input_name&#39;</span><span class="p">])</span>
+<span class="n">xed_event_header</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">([</span>
+    <span class="p">(</span><span class="s">&quot;dataset_name&quot;</span><span class="p">,</span> <span class="s">&quot;S64&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">&quot;utc_time&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">&quot;utc_time_usec&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">&quot;event_number&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">&quot;chunks&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
+    <span class="c"># This is where the &#39;chunk layer&#39; starts... but there always seems to be one chunk per event</span>
+    <span class="c"># I&#39;ll always assume this is true and raise an exception otherwise</span>
+    <span class="p">(</span><span class="s">&quot;type&quot;</span><span class="p">,</span> <span class="s">&quot;S4&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">&quot;size&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">&quot;sample_precision&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;i2&quot;</span><span class="p">),</span>
+    <span class="c"># indicating compression type.. I&#39;ll assume bzip2 always</span>
+    <span class="p">(</span><span class="s">&quot;flags&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u2&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">&quot;samples_in_event&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">&quot;voltage_range&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;f4&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">&quot;sampling_frequency&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;f4&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="s">&quot;channels&quot;</span><span class="p">,</span> <span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
+<span class="p">])</span>
 
-        <span class="k">if</span> <span class="n">filename</span><span class="p">[</span><span class="o">-</span><span class="mi">4</span><span class="p">:]</span> <span class="o">==</span> <span class="s">&#39;.xed&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Single file mode&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">init_xedfile</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Directory mode&quot;</span><span class="p">)</span>
 
-            <span class="n">xed_file_names</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">filename</span> <span class="o">+</span> <span class="s">&quot;/*.xed&quot;</span><span class="p">)</span>
-            <span class="n">xed_file_names</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
+<div class="viewcode-block" id="XedInput"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.XedInput">[docs]</a><span class="k">class</span> <span class="nc">XedInput</span><span class="p">(</span><span class="n">InputFromFolder</span><span class="p">):</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Found these files: </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">xed_file_names</span><span class="p">))</span>
+    <span class="n">file_extension</span> <span class="o">=</span> <span class="s">&#39;xed&#39;</span>
 
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">xed_file_names</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;No XED files found in input directory </span><span class="si">%s</span><span class="s">!&quot;</span> <span class="o">%</span> <span class="n">filename</span><span class="p">)</span>
-
-            <span class="k">for</span> <span class="n">xf</span> <span class="ow">in</span> <span class="n">xed_file_names</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Initiailizing </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">xf</span><span class="p">)</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">init_xedfile</span><span class="p">(</span><span class="n">xf</span><span class="p">)</span>
-
-        <span class="c"># Select the first XED file</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">select_xedfile</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<div class="viewcode-block" id="XedInput.get_first_and_last_event_number"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.XedInput.get_first_and_last_event_number">[docs]</a>    <span class="k">def</span> <span class="nf">get_first_and_last_event_number</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the first and last event number in file specified by filename&quot;&quot;&quot;</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">xedfile</span><span class="p">:</span>
+            <span class="n">fmd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="n">xedfile</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">xed_file_header</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">return</span> <span class="n">fmd</span><span class="p">[</span><span class="s">&#39;first_event_number&#39;</span><span class="p">],</span> <span class="n">fmd</span><span class="p">[</span><span class="s">&#39;first_event_number&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">fmd</span><span class="p">[</span><span class="s">&#39;events_in_file&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>
 </div>
-<div class="viewcode-block" id="XedInput.init_xedfile"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.XedInput.init_xedfile">[docs]</a>    <span class="k">def</span> <span class="nf">init_xedfile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Loads in an XED file header, so we can look up which events are in it&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Opening </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
-        <span class="nb">input</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&#39;rb&#39;</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">xedfiles</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s">&#39;filename&#39;</span><span class="p">:</span> <span class="n">filename</span><span class="p">})</span>
-
-        <span class="c"># File meta data</span>
-        <span class="n">fmd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">XedInput</span><span class="o">.</span><span class="n">file_header</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">xedfiles</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s">&#39;first_event&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fmd</span><span class="p">[</span><span class="s">&#39;first_event_number&#39;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">xedfiles</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s">&#39;last_event&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fmd</span><span class="p">[</span><span class="s">&#39;first_event_number&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">fmd</span><span class="p">[</span><span class="s">&#39;events_in_file&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span>
-
-        <span class="c"># Read metadata and event positions from the XED file</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">event_positions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="nb">input</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
-                                           <span class="n">count</span><span class="o">=</span><span class="n">fmd</span><span class="p">[</span><span class="s">&#39;event_index_size&#39;</span><span class="p">])</span>
-        <span class="k">if</span> <span class="n">fmd</span><span class="p">[</span><span class="s">&#39;events_in_file&#39;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">fmd</span><span class="p">[</span><span class="s">&#39;event_index_size&#39;</span><span class="p">]:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;The XED file claims there are </span><span class="si">%s</span><span class="s"> events in the file, &quot;</span>
-                               <span class="s">&quot;but the event position index has only </span><span class="si">%s</span><span class="s"> entries!&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">fmd</span><span class="p">[</span><span class="s">&#39;events_in_file&#39;</span><span class="p">],</span>
-                                                                                      <span class="n">fmd</span><span class="p">[</span><span class="s">&#39;event_index_size&#39;</span><span class="p">]))</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Found XED file </span><span class="si">%s</span><span class="s"> containing events </span><span class="si">%s</span><span class="s">-</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span>
-            <span class="n">filename</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">xedfiles</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s">&#39;first_event&#39;</span><span class="p">],</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">xedfiles</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s">&#39;last_event&#39;</span><span class="p">]</span>
-        <span class="p">))</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">number_of_events</span> <span class="o">+=</span> <span class="nb">int</span><span class="p">(</span><span class="n">fmd</span><span class="p">[</span><span class="s">&#39;events_in_file&#39;</span><span class="p">])</span>
-
-        <span class="nb">input</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<div class="viewcode-block" id="XedInput.close"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.XedInput.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Close the currently open file&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_xedfile</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 </div>
-<div class="viewcode-block" id="XedInput.select_xedfile"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.XedInput.select_xedfile">[docs]</a>    <span class="k">def</span> <span class="nf">select_xedfile</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">i</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Selects an XED file previously loaded by init_xedfile, so we can start reading events&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">input</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">xedfile</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">xedfiles</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-        <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Invalid XED file index </span><span class="si">%s</span><span class="s">: </span><span class="si">%s</span><span class="s"> XED files loaded&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xedfiles</span><span class="p">)))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">input</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">xedfile</span><span class="p">[</span><span class="s">&#39;filename&#39;</span><span class="p">],</span> <span class="s">&#39;rb&#39;</span><span class="p">)</span>
-        <span class="c"># We already read in file metadata in init_xedfile, but didn&#39;t store it</span>
-        <span class="c"># We have to read it in here again anyway to get input in the right position...</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">file_metadata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">XedInput</span><span class="o">.</span><span class="n">file_header</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">event_positions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
+<div class="viewcode-block" id="XedInput.open"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.XedInput.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Opens an XED file so we can start reading events&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_xedfile</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="s">&#39;rb&#39;</span><span class="p">)</span>
+
+        <span class="c"># Read in the file metadata</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">file_metadata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_xedfile</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">xed_file_header</span><span class="p">,</span> <span class="n">count</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">event_positions</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_xedfile</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s">&quot;&lt;u4&quot;</span><span class="p">),</span>
                                            <span class="n">count</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">file_metadata</span><span class="p">[</span><span class="s">&#39;event_index_size&#39;</span><span class="p">])</span>
+
+        <span class="c"># Handle for special case of last XED file</span>
+        <span class="c"># Index size is larger than the actual number of events written:</span>
+        <span class="c"># The writer didn&#39;t know how many events there were left at s</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_metadata</span><span class="p">[</span><span class="s">&#39;events_in_file&#39;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_metadata</span><span class="p">[</span><span class="s">&#39;event_index_size&#39;</span><span class="p">]:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span>
-                <span class="p">(</span><span class="s">&quot;The XED file claims there are </span><span class="si">%s</span><span class="s"> events in the file, &quot;</span>
-                 <span class="s">&quot;while the event position index has </span><span class="si">%s</span><span class="s"> entries. </span><span class="se">\n</span><span class="s">&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
+                <span class="p">(</span><span class="s">&quot;The XED file claims there are </span><span class="si">%d</span><span class="s"> events in the file, &quot;</span>
+                 <span class="s">&quot;while the event position index has </span><span class="si">%d</span><span class="s"> entries. </span><span class="se">\n</span><span class="s">&quot;</span>
                  <span class="s">&quot;Is this the last XED file of a dataset?&quot;</span><span class="p">)</span> <span class="o">%</span>
                 <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_metadata</span><span class="p">[</span><span class="s">&#39;events_in_file&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_metadata</span><span class="p">[</span><span class="s">&#39;event_index_size&#39;</span><span class="p">])</span>
             <span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">event_positions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_positions</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">file_metadata</span><span class="p">[</span><span class="s">&#39;events_in_file&#39;</span><span class="p">]]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">first_event</span> <span class="o">=</span> <span class="n">xedfile</span><span class="p">[</span><span class="s">&#39;first_event&#39;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">last_event</span> <span class="o">=</span> <span class="n">xedfile</span><span class="p">[</span><span class="s">&#39;last_event&#39;</span><span class="p">]</span>
 </div>
-<div class="viewcode-block" id="XedInput.shutdown"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.XedInput.shutdown">[docs]</a>    <span class="k">def</span> <span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-
-    <span class="c"># Temp for old API compatibility</span></div>
-<div class="viewcode-block" id="XedInput.get_events"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.XedInput.get_events">[docs]</a>    <span class="k">def</span> <span class="nf">get_events</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">xed_i</span><span class="p">,</span> <span class="n">xed_dict</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xedfiles</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">select_xedfile</span><span class="p">(</span><span class="n">xed_i</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">event_position_i</span><span class="p">,</span> <span class="n">event_position</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">event_positions</span><span class="p">):</span>
-                <span class="k">yield</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_single_event</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_metadata</span><span class="p">[</span><span class="s">&#39;first_event_number&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">event_position_i</span><span class="p">)</span>
-</div>
-    <span class="nd">@plugin.BasePlugin._timeit</span>
-<div class="viewcode-block" id="XedInput.get_single_event"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.XedInput.get_single_event">[docs]</a>    <span class="k">def</span> <span class="nf">get_single_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_number</span><span class="p">):</span>
-
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">first_event</span> <span class="o">&lt;=</span> <span class="n">event_number</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">last_event</span><span class="p">:</span>
-            <span class="c"># Time to open a new XED file!</span>
-            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">xedfile</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">xedfiles</span><span class="p">):</span>
-                <span class="k">if</span> <span class="n">xedfile</span><span class="p">[</span><span class="s">&#39;first_event&#39;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">event_number</span> <span class="o">&lt;=</span> <span class="n">xedfile</span><span class="p">[</span><span class="s">&#39;last_event&#39;</span><span class="p">]:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">select_xedfile</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
-                    <span class="k">break</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;None of the loaded XED-files contains event </span><span class="si">%s</span><span class="s">!&quot;</span> <span class="o">%</span> <span class="n">event_number</span><span class="p">)</span>
+<div class="viewcode-block" id="XedInput.get_single_event_in_current_file"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.XED.XedInput.get_single_event_in_current_file">[docs]</a>    <span class="k">def</span> <span class="nf">get_single_event_in_current_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_position</span><span class="p">):</span>
 
         <span class="c"># Seek to the requested event</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">event_positions</span><span class="p">[</span><span class="n">event_number</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">first_event</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_xedfile</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">event_positions</span><span class="p">[</span><span class="n">event_position</span><span class="p">])</span>
 
         <span class="c"># Read event metadata, check if we can read this event type.</span>
-        <span class="n">event_layer_metadata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input</span><span class="p">,</span>
-                                           <span class="n">dtype</span><span class="o">=</span><span class="n">XedInput</span><span class="o">.</span><span class="n">event_header</span><span class="p">,</span>
+        <span class="n">event_layer_metadata</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_xedfile</span><span class="p">,</span>
+                                           <span class="n">dtype</span><span class="o">=</span><span class="n">xed_event_header</span><span class="p">,</span>
                                            <span class="n">count</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">event_layer_metadata</span><span class="p">[</span><span class="s">&#39;chunks&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s">&quot;Can&#39;t read this XED file: event with </span><span class="si">%s</span><span class="s"> chunks found!&quot;</span>
@@ -243,7 +177,7 @@
         <span class="c"># Checked (for 14 events); agrees with channels from</span>
         <span class="c"># LibXDIO-&gt;Moxie-&gt;MongoDB-&gt;MongoDBInput plugin</span>
         <span class="n">mask_bytes</span> <span class="o">=</span> <span class="mi">4</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">event_layer_metadata</span><span class="p">[</span><span class="s">&#39;channels&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="mi">32</span><span class="p">)</span>
-        <span class="n">mask_bits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unpackbits</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input</span><span class="p">,</span>
+        <span class="n">mask_bits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unpackbits</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">fromfile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">current_xedfile</span><span class="p">,</span>
                                               <span class="n">dtype</span><span class="o">=</span><span class="s">&#39;uint8&#39;</span><span class="p">,</span>
                                               <span class="n">count</span><span class="o">=</span><span class="n">mask_bytes</span><span class="p">))</span>
         <span class="c"># +1 as first pmt is 1 in Xenon100</span>
@@ -253,7 +187,7 @@
         <span class="c"># Decompress the event data (actually, the data from a single &#39;chunk&#39;)</span>
         <span class="c"># into fake binary file</span>
         <span class="c"># 28 is the chunk header size.</span>
-        <span class="n">data_to_decompress</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">event_layer_metadata</span><span class="p">[</span><span class="s">&#39;size&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">28</span> <span class="o">-</span> <span class="n">mask_bytes</span><span class="p">)</span>
+        <span class="n">data_to_decompress</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_xedfile</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">event_layer_metadata</span><span class="p">[</span><span class="s">&#39;size&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">28</span> <span class="o">-</span> <span class="n">mask_bytes</span><span class="p">)</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">chunk_fake_file</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">bz2</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">data_to_decompress</span><span class="p">))</span>
         <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
@@ -320,7 +254,73 @@
                     <span class="p">))</span>
                     <span class="n">sample_position</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">samples_pulse</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">event</span></div></div>
+        <span class="k">return</span> <span class="n">event</span>
+
+
+<span class="c"># import time</span>
+<span class="c"># from pax.plugins.io.FolderIO import WriteToFolder</span>
+<span class="c">#</span>
+<span class="c"># class WriteXED(WriteToFolder):</span>
+<span class="c">#</span>
+<span class="c">#       UNFINISHED UNTESTED DRAFT</span>
+<span class="c">#</span>
+<span class="c">#     file_extension = &#39;xed&#39;</span>
+<span class="c">#</span>
+<span class="c">#     def start_writing_file(self, filename):</span>
+<span class="c">#</span>
+<span class="c">#         self.current_xed = open(filename, &#39;wb&#39;)</span>
+<span class="c">#</span>
+<span class="c">#         # Write file header</span>
+<span class="c">#         np.array(dict(dataset_name=&#39;bla&#39;,</span>
+<span class="c">#                       creation_time=time.now(),</span>
+<span class="c">#                       first_event_number=0,                             # Should be updated on first write / at end</span>
+<span class="c">#                       events_in_file=self.config[&#39;events_per_file&#39;],    # Should be updated at end</span>
+<span class="c">#                       event_index_size=self.config[&#39;events_per_file&#39;]).items(),</span>
+<span class="c">#                  dtype=xed_event_header).tofile(self.current_xed)</span>
+<span class="c">#</span>
+<span class="c">#         # Reserve space for event index</span>
+<span class="c">#         self.event_index = []</span>
+<span class="c">#         np.zeros(self.config[&#39;events_per_file&#39;], dtype=np.dtype(&quot;&lt;u4&quot;)).tofile(self.current_xed)</span>
+<span class="c">#</span>
+<span class="c">#     def write_event_to_current_file(self, event):</span>
+<span class="c">#</span>
+<span class="c">#         # Store current position in event index</span>
+<span class="c">#         self.event_index.append(self.current_xed.tell())</span>
+<span class="c">#</span>
+<span class="c">#         # Write event header</span>
+<span class="c">#         np.array(dict(dataset_name=&#39;bla&#39;,</span>
+<span class="c">#                       creation_time=time.now(),   # Is this right??</span>
+<span class="c">#                       utc_time=0,            # TODO: fix</span>
+<span class="c">#                       utc_time_usec=0,       # TODO: fix</span>
+<span class="c">#                       event_number=event.event_number,</span>
+<span class="c">#                       chunks=1,</span>
+<span class="c">#                       type=&#39;&#39;,  #??</span>
+<span class="c">#                       size=0,   #Should be updated at end</span>
+<span class="c">#                       sample_precision=0,    # TODO: fix</span>
+<span class="c">#                       flags=0,               # fix??</span>
+<span class="c">#                       samples_in_event=event.length(),</span>
+<span class="c">#                       voltage_range=self.config[&#39;digitizer_voltage_range&#39;],</span>
+<span class="c">#                       sampling_frequency=0,  # TODO: fix</span>
+<span class="c">#                       channels=self.config[&#39;n_channels&#39;]).items(),</span>
+<span class="c">#                  dtype=xed_event_header).tofile(self.current_xed)</span>
+<span class="c">#</span>
+<span class="c">#         # Write channel mask field</span>
+<span class="c">#         # +1 as first pmt is 1 in Xenon100</span>
+<span class="c">#         # TODO: reverse this code</span>
+<span class="c">#         # channels_included = [i + 1 for i, bit in enumerate(reversed(mask_bits))</span>
+<span class="c">#         #                      if bit == 1]</span>
+<span class="c">#         # mask_bytes = 4 * math.ceil(event_layer_metadata[&#39;channels&#39;] / 32)</span>
+<span class="c">#         # mask_bits = np.unpackbits(np.fromfile(self.current_xedfile,</span>
+<span class="c">#         #                                       dtype=&#39;uint8&#39;,</span>
+<span class="c">#         #                                       count=mask_bytes))</span>
+<span class="c">#</span>
+<span class="c">#         # TODO: Go back to event header to update size etc</span>
+<span class="c">#</span>
+<span class="c">#     def stop_writing_current_file(self):</span>
+<span class="c">#</span>
+<span class="c">#         # TODO: Go back to start, write event index, i.e. event position lookup table</span>
+<span class="c">#</span>
+<span class="c">#         self.current_xed.close()</span></div></div>
 </pre></div>
 
           </div>

@@ -59,53 +59,51 @@
 
 <span class="sd">This replaced &#39;xdio&#39; from XENON100.</span>
 <span class="sd">&quot;&quot;&quot;</span>
-<span class="kn">import</span> <span class="nn">time</span>
-
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">gzip</span>
+<span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">BytesIO</span>
 
 <span class="kn">import</span> <span class="nn">avro.schema</span>
 <span class="kn">from</span> <span class="nn">avro.datafile</span> <span class="kn">import</span> <span class="n">DataFileReader</span><span class="p">,</span> <span class="n">DataFileWriter</span>
 <span class="kn">from</span> <span class="nn">avro.io</span> <span class="kn">import</span> <span class="n">DatumReader</span><span class="p">,</span> <span class="n">DatumWriter</span>
-<span class="kn">import</span> <span class="nn">pax</span>      <span class="c"># For version</span>
-<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">datastructure</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">pax</span>      <span class="c"># For version number</span>
+<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">datastructure</span>
+<span class="kn">from</span> <span class="nn">pax.plugins.io.FolderIO</span> <span class="kn">import</span> <span class="n">InputFromFolder</span><span class="p">,</span> <span class="n">WriteToFolder</span>
 
 
-<div class="viewcode-block" id="ReadAvro"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.Avro.ReadAvro">[docs]</a><span class="k">class</span> <span class="nc">ReadAvro</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">InputPlugin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Read raw Avro data to get PMT pulses</span>
-
-<span class="sd">    This is the lowest level data stored.</span>
+<div class="viewcode-block" id="ReadAvro"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.Avro.ReadAvro">[docs]</a><span class="k">class</span> <span class="nc">ReadAvro</span><span class="p">(</span><span class="n">InputFromFolder</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Read raw Avro data from an Avro file or folder of Avro files</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">file_extension</span> <span class="o">=</span> <span class="s">&#39;avro&#39;</span>
 
-<div class="viewcode-block" id="ReadAvro.startup"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.Avro.ReadAvro.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">reader</span> <span class="o">=</span> <span class="n">DataFileReader</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;input_name&#39;</span><span class="p">],</span>
-                                          <span class="s">&#39;rb&#39;</span><span class="p">),</span>
-                                     <span class="n">DatumReader</span><span class="p">())</span>
+<div class="viewcode-block" id="ReadAvro.open"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.Avro.ReadAvro.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
 
-        <span class="c"># n_channels is needed to initialize pax events.</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">n_channels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;n_channels&#39;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Assuming </span><span class="si">%d</span><span class="s"> channels&quot;</span><span class="p">,</span>
-                       <span class="bp">self</span><span class="o">.</span><span class="n">n_channels</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reader</span><span class="p">))</span>
+        <span class="c"># Gzip is a stream compression algorithm, while Avro requires seeking</span>
+        <span class="c"># (which makes its lack of random access support ever weirder...)</span>
+        <span class="c"># so we need to uncompress the entire file into memory</span>
+        <span class="c"># (BytesIO is a &#39;fake in-memory binary file&#39;)</span>
+        <span class="k">with</span> <span class="n">gzip</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">infile</span><span class="p">:</span>
+            <span class="n">f</span> <span class="o">=</span> <span class="n">BytesIO</span><span class="p">(</span><span class="n">infile</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">reader</span> <span class="o">=</span> <span class="n">DataFileReader</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">DatumReader</span><span class="p">())</span>
+        <span class="nb">next</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">reader</span><span class="p">)</span>   <span class="c"># The first datum is a fake &quot;event&quot; containing metadata</span>
 </div>
-<div class="viewcode-block" id="ReadAvro.get_events"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.Avro.ReadAvro.get_events">[docs]</a>    <span class="k">def</span> <span class="nf">get_events</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Fetch events from Avro file</span>
-
-<span class="sd">        This produces a generator for all the events within the file.  These</span>
-<span class="sd">        Events contain pulses, and the appropriate pax objects will be</span>
-<span class="sd">        built.</span>
+<div class="viewcode-block" id="ReadAvro.close"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.Avro.ReadAvro.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Close the currently open file&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="ReadAvro.get_all_events_in_current_file"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.Avro.ReadAvro.get_all_events_in_current_file">[docs]</a>    <span class="k">def</span> <span class="nf">get_all_events_in_current_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Yield events from Avro file iteratively</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="k">for</span> <span class="n">avro_event</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">reader</span><span class="p">:</span>  <span class="c"># For every event in file</span>
-            <span class="c"># Start the clock</span>
-            <span class="n">ts</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
             <span class="c"># Make pax object</span>
-            <span class="n">pax_event</span> <span class="o">=</span> <span class="n">datastructure</span><span class="o">.</span><span class="n">Event</span><span class="p">(</span><span class="n">n_channels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_channels</span><span class="p">,</span>
+            <span class="n">pax_event</span> <span class="o">=</span> <span class="n">datastructure</span><span class="o">.</span><span class="n">Event</span><span class="p">(</span><span class="n">n_channels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;n_channels&#39;</span><span class="p">],</span>
+                                            <span class="n">sample_duration</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;sample_duration&#39;</span><span class="p">],</span>
                                             <span class="n">start_time</span><span class="o">=</span><span class="n">avro_event</span><span class="p">[</span><span class="s">&#39;start_time&#39;</span><span class="p">],</span>
                                             <span class="n">stop_time</span><span class="o">=</span><span class="n">avro_event</span><span class="p">[</span><span class="s">&#39;stop_time&#39;</span><span class="p">],</span>
-                                            <span class="n">event_number</span><span class="o">=</span><span class="n">avro_event</span><span class="p">[</span><span class="s">&#39;number&#39;</span><span class="p">],</span>
-                                            <span class="c"># TODO: This belongs in Avro file!</span>
-                                            <span class="n">sample_duration</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;sample_duration&#39;</span><span class="p">])</span>
+                                            <span class="n">event_number</span><span class="o">=</span><span class="n">avro_event</span><span class="p">[</span><span class="s">&#39;number&#39;</span><span class="p">])</span>
 
             <span class="c"># For all pulses/pulses, add to pax event</span>
             <span class="k">for</span> <span class="n">pulse</span> <span class="ow">in</span> <span class="n">avro_event</span><span class="p">[</span><span class="s">&#39;pulses&#39;</span><span class="p">]:</span>
@@ -116,62 +114,51 @@
                                                                    <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">))</span>
                 <span class="n">pax_event</span><span class="o">.</span><span class="n">pulses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pulse</span><span class="p">)</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">total_time_taken</span> <span class="o">+=</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">ts</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1000</span>
-
             <span class="k">yield</span> <span class="n">pax_event</span>
-</div>
-<div class="viewcode-block" id="ReadAvro.shutdown"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.Avro.ReadAvro.shutdown">[docs]</a>    <span class="k">def</span> <span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">reader</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 
 </div></div>
-<div class="viewcode-block" id="WriteAvro"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.Avro.WriteAvro">[docs]</a><span class="k">class</span> <span class="nc">WriteAvro</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">OutputPlugin</span><span class="p">):</span>
+<div class="viewcode-block" id="WriteAvro"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.Avro.WriteAvro">[docs]</a><span class="k">class</span> <span class="nc">WriteAvro</span><span class="p">(</span><span class="n">WriteToFolder</span><span class="p">):</span>
 
-    <span class="sd">&quot;&quot;&quot;Write raw Avro data of PMT pulses</span>
-
-<span class="sd">    This is the lowest level data stored.</span>
+    <span class="sd">&quot;&quot;&quot;Write raw Avro data of PMT pulses to a folder of small Avro files</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">file_extension</span> <span class="o">=</span> <span class="s">&#39;avro&#39;</span>
 
 <div class="viewcode-block" id="WriteAvro.startup"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.Avro.WriteAvro.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c"># The &#39;schema&#39; stores how the data will be recorded to disk.  This is</span>
         <span class="c"># also saved along with the output.  The schema can be found in</span>
         <span class="c"># _base.ini and outlines what is stored.</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">schema</span> <span class="o">=</span> <span class="n">avro</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">Parse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;raw_pulse_schema&#39;</span><span class="p">])</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">writer</span> <span class="o">=</span> <span class="n">DataFileWriter</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;output_name&#39;</span><span class="p">],</span>
-                                          <span class="s">&#39;wb&#39;</span><span class="p">),</span>
-                                     <span class="n">DatumWriter</span><span class="p">(),</span>
-                                     <span class="bp">self</span><span class="o">.</span><span class="n">schema</span><span class="p">,</span>
-                                     <span class="n">codec</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;codec&#39;</span><span class="p">])</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s">&#39;number&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
-                            <span class="s">&#39;start_time&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
-                            <span class="s">&#39;stop_time&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span>
-                            <span class="s">&#39;pulses&#39;</span><span class="p">:</span> <span class="bp">None</span><span class="p">,</span>
-                            <span class="s">&#39;meta&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;run_number&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;run_number&#39;</span><span class="p">],</span>
-                                     <span class="s">&#39;tpc&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;tpc_name&#39;</span><span class="p">],</span>
-                                     <span class="s">&#39;file_builder_version&#39;</span><span class="p">:</span> <span class="n">pax</span><span class="o">.</span><span class="n">__version__</span>
-                                     <span class="p">}})</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">schema</span> <span class="o">=</span> <span class="n">avro</span><span class="o">.</span><span class="n">schema</span><span class="o">.</span><span class="n">Parse</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;event_schema&#39;</span><span class="p">])</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">startup</span><span class="p">()</span>
 </div>
-<div class="viewcode-block" id="WriteAvro.write_event"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.Avro.WriteAvro.write_event">[docs]</a>    <span class="k">def</span> <span class="nf">write_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pax_event</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Writing event&#39;</span><span class="p">)</span>
-        <span class="n">avro_event</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="n">avro_event</span><span class="p">[</span><span class="s">&#39;number&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pax_event</span><span class="o">.</span><span class="n">event_number</span>
-        <span class="n">avro_event</span><span class="p">[</span><span class="s">&#39;start_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pax_event</span><span class="o">.</span><span class="n">start_time</span>
-        <span class="n">avro_event</span><span class="p">[</span><span class="s">&#39;stop_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pax_event</span><span class="o">.</span><span class="n">stop_time</span>
-        <span class="n">avro_event</span><span class="p">[</span><span class="s">&#39;pulses&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+<div class="viewcode-block" id="WriteAvro.open"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.Avro.WriteAvro.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
 
-        <span class="k">for</span> <span class="n">pax_pulse</span> <span class="ow">in</span> <span class="n">pax_event</span><span class="o">.</span><span class="n">pulses</span><span class="p">:</span>
-            <span class="n">avro_pulse</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c"># Open file and set codec</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">gzip</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;wb&#39;</span><span class="p">,</span> <span class="n">compresslevel</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;compresslevel&#39;</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
 
-            <span class="n">avro_pulse</span><span class="p">[</span><span class="s">&#39;payload&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pax_pulse</span><span class="o">.</span><span class="n">raw_data</span><span class="o">.</span><span class="n">tobytes</span><span class="p">()</span>
-            <span class="n">avro_pulse</span><span class="p">[</span><span class="s">&#39;left&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pax_pulse</span><span class="o">.</span><span class="n">left</span>
-            <span class="n">avro_pulse</span><span class="p">[</span><span class="s">&#39;channel&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pax_pulse</span><span class="o">.</span><span class="n">channel</span>
+        <span class="c"># Start avro writer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">writer</span> <span class="o">=</span> <span class="n">DataFileWriter</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">DatumWriter</span><span class="p">(),</span> <span class="bp">self</span><span class="o">.</span><span class="n">schema</span><span class="p">,</span> <span class="n">codec</span><span class="o">=</span><span class="s">&#39;null&#39;</span><span class="p">)</span>
 
-            <span class="n">avro_event</span><span class="p">[</span><span class="s">&#39;pulses&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">avro_pulse</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">avro_event</span><span class="p">)</span>
+        <span class="c"># Store the metadata as a &quot;first event&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">number</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+                                <span class="n">start_time</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+                                <span class="n">stop_time</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span>
+                                <span class="n">pulses</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                                <span class="n">meta</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">run_number</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;run_number&#39;</span><span class="p">],</span>
+                                          <span class="n">tpc</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;tpc_name&#39;</span><span class="p">],</span>
+                                          <span class="n">file_builder_name</span><span class="o">=</span><span class="s">&#39;pax&#39;</span><span class="p">,</span>
+                                          <span class="n">file_builder_version</span><span class="o">=</span><span class="n">pax</span><span class="o">.</span><span class="n">__version__</span><span class="p">)))</span>
 </div>
-<div class="viewcode-block" id="WriteAvro.shutdown"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.Avro.WriteAvro.shutdown">[docs]</a>    <span class="k">def</span> <span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="WriteAvro.write_event_to_current_file"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.Avro.WriteAvro.write_event_to_current_file">[docs]</a>    <span class="k">def</span> <span class="nf">write_event_to_current_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">number</span><span class="o">=</span><span class="n">event</span><span class="o">.</span><span class="n">event_number</span><span class="p">,</span>
+                                <span class="n">start_time</span><span class="o">=</span><span class="n">event</span><span class="o">.</span><span class="n">start_time</span><span class="p">,</span>
+                                <span class="n">stop_time</span><span class="o">=</span><span class="n">event</span><span class="o">.</span><span class="n">stop_time</span><span class="p">,</span>
+                                <span class="n">pulses</span><span class="o">=</span><span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="n">payload</span><span class="o">=</span><span class="n">pulse</span><span class="o">.</span><span class="n">raw_data</span><span class="o">.</span><span class="n">tobytes</span><span class="p">(),</span>
+                                             <span class="n">left</span><span class="o">=</span><span class="n">pulse</span><span class="o">.</span><span class="n">left</span><span class="p">,</span>
+                                             <span class="n">channel</span><span class="o">=</span><span class="n">pulse</span><span class="o">.</span><span class="n">channel</span><span class="p">)</span>
+                                        <span class="k">for</span> <span class="n">pulse</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">pulses</span><span class="p">]))</span>
+</div>
+<div class="viewcode-block" id="WriteAvro.close"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.Avro.WriteAvro.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Closing current avro file, you&#39;ll get a silly &#39;info&#39; from avro now...&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">writer</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div></div>
 </pre></div>
 
