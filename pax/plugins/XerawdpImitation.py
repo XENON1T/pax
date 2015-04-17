@@ -895,6 +895,7 @@ class ComputePeakProperties(plugin.TransformPlugin):
                 peak.does_channel_contribute = np.ones(self.config['n_channels'], dtype=np.bool)
 
             peak.n_contributing_channels = len(peak.contributing_channels)
+            peak.does_channel_have_noise = np.zeros(self.config['n_channels'], dtype=np.bool)
 
         # Prune excess S1s
         event.peaks = sort_and_prune_by(

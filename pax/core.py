@@ -15,6 +15,9 @@ try:
     import ROOT     # noqa
 except ImportError:
     pass
+except SyntaxError:
+    pass
+
 import numpy as np
 
 from prettytable import PrettyTable     # Timing report
@@ -199,7 +202,7 @@ class Processor:
         else:
             self.action_plugins = []
             if not just_testing:
-                self.log.warning("No action plugins specified: this will be a"
+                self.log.warning("No action plugins specified: this will be a "
                                  "pretty boring processing run...")
 
     def load_configuration(self, config_names, config_paths, config_string, config_dict):

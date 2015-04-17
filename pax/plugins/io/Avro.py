@@ -10,53 +10,51 @@ information about Avro can be found at::
 
 This replaced 'xdio' from XENON100.
 """
-import time
-
-import numpy as np
+import gzip
+from io import BytesIO
 
 import avro.schema
 from avro.datafile import DataFileReader, DataFileWriter
 from avro.io import DatumReader, DatumWriter
-import pax      # For version
-from pax import plugin, datastructure
+import numpy as np
+
+import pax      # For version number
+from pax import datastructure
+from pax.plugins.io.FolderIO import InputFromFolder, WriteToFolder
 
 
-class ReadAvro(plugin.InputPlugin):
-    """Read raw Avro data to get PMT pulses
-
-    This is the lowest level data stored.
+class ReadAvro(InputFromFolder):
+    """Read raw Avro data from an Avro file or folder of Avro files
     """
+    file_extension = 'avro'
 
-    def startup(self):
-        self.reader = DataFileReader(open(self.config['input_name'],
-                                          'rb'),
-                                     DatumReader())
+    def open(self, filename):
 
-        # n_channels is needed to initialize pax events.
-        self.n_channels = self.config['n_channels']
-        self.log.debug("Assuming %d channels",
-                       self.n_channels)
-        self.log.info(next(self.reader))
+        # Gzip is a stream compression algorithm, while Avro requires seeking
+        # (which makes its lack of random access support ever weirder...)
+        # so we need to uncompress the entire file into memory
+        # (BytesIO is a 'fake in-memory binary file')
+        with gzip.open(filename, mode='rb') as infile:
+            f = BytesIO(infile.read())
 
-    def get_events(self):
-        """Fetch events from Avro file
+        self.reader = DataFileReader(f, DatumReader())
+        next(self.reader)   # The first datum is a fake "event" containing metadata
 
-        This produces a generator for all the events within the file.  These
-        Events contain pulses, and the appropriate pax objects will be
-        built.
+    def close(self):
+        """Close the currently open file"""
+        self.reader.close()
+
+    def get_all_events_in_current_file(self):
+        """Yield events from Avro file iteratively
         """
-
         for avro_event in self.reader:  # For every event in file
-            # Start the clock
-            ts = time.time()
 
             # Make pax object
-            pax_event = datastructure.Event(n_channels=self.n_channels,
+            pax_event = datastructure.Event(n_channels=self.config['n_channels'],
+                                            sample_duration=self.config['sample_duration'],
                                             start_time=avro_event['start_time'],
                                             stop_time=avro_event['stop_time'],
-                                            event_number=avro_event['number'],
-                                            # TODO: This belongs in Avro file!
-                                            sample_duration=self.config['sample_duration'])
+                                            event_number=avro_event['number'])
 
             # For all pulses/pulses, add to pax event
             for pulse in avro_event['pulses']:
@@ -67,60 +65,49 @@ class ReadAvro(plugin.InputPlugin):
                                                                    dtype=np.int16))
                 pax_event.pulses.append(pulse)
 
-            self.total_time_taken += (time.time() - ts) * 1000
-
             yield pax_event
 
-    def shutdown(self):
-        self.reader.close()
 
+class WriteAvro(WriteToFolder):
 
-class WriteAvro(plugin.OutputPlugin):
-
-    """Write raw Avro data of PMT pulses
-
-    This is the lowest level data stored.
+    """Write raw Avro data of PMT pulses to a folder of small Avro files
     """
+    file_extension = 'avro'
 
     def startup(self):
         # The 'schema' stores how the data will be recorded to disk.  This is
         # also saved along with the output.  The schema can be found in
         # _base.ini and outlines what is stored.
-        self.schema = avro.schema.Parse(self.config['raw_pulse_schema'])
+        self.schema = avro.schema.Parse(self.config['event_schema'])
+        super().startup()
 
-        self.writer = DataFileWriter(open(self.config['output_name'],
-                                          'wb'),
-                                     DatumWriter(),
-                                     self.schema,
-                                     codec=self.config['codec'])
+    def open(self, filename):
 
-        self.writer.append({'number': -1,
-                            'start_time': -1,
-                            'stop_time': -1,
-                            'pulses': None,
-                            'meta': {'run_number': self.config['run_number'],
-                                     'tpc': self.config['tpc_name'],
-                                     'file_builder_version': pax.__version__
-                                     }})
+        # Open file and set codec
+        f = gzip.open(filename, mode='wb', compresslevel=self.config.get('compresslevel', 4))
 
-    def write_event(self, pax_event):
-        self.log.debug('Writing event')
-        avro_event = {}
-        avro_event['number'] = pax_event.event_number
-        avro_event['start_time'] = pax_event.start_time
-        avro_event['stop_time'] = pax_event.stop_time
-        avro_event['pulses'] = []
+        # Start avro writer
+        self.writer = DataFileWriter(f, DatumWriter(), self.schema, codec='null')
 
-        for pax_pulse in pax_event.pulses:
-            avro_pulse = {}
+        # Store the metadata as a "first event"
+        self.writer.append(dict(number=-1,
+                                start_time=-1,
+                                stop_time=-1,
+                                pulses=None,
+                                meta=dict(run_number=self.config['run_number'],
+                                          tpc=self.config['tpc_name'],
+                                          file_builder_name='pax',
+                                          file_builder_version=pax.__version__)))
 
-            avro_pulse['payload'] = pax_pulse.raw_data.tobytes()
-            avro_pulse['left'] = pax_pulse.left
-            avro_pulse['channel'] = pax_pulse.channel
+    def write_event_to_current_file(self, event):
+        self.writer.append(dict(number=event.event_number,
+                                start_time=event.start_time,
+                                stop_time=event.stop_time,
+                                pulses=[dict(payload=pulse.raw_data.tobytes(),
+                                             left=pulse.left,
+                                             channel=pulse.channel)
+                                        for pulse in event.pulses]))
 
-            avro_event['pulses'].append(avro_pulse)
-
-        self.writer.append(avro_event)
-
-    def shutdown(self):
+    def close(self):
+        self.log.info("Closing current avro file, you'll get a silly 'info' from avro now...")
         self.writer.close()

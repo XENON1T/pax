@@ -265,7 +265,10 @@ class BulkOutput(plugin.OutputPlugin):
         if isinstance(x, float):
             return name, 'f'
         if isinstance(x, str):
-            return name, 'S' + str(self.config['string_data_length'])
+            if self.output_format.prefers_python_strings:
+                return name, 'O'
+            else:
+                return name, 'S' + str(self.config['string_data_length'])
         if isinstance(x, np.ndarray):
             return name, x.dtype, x.shape
         else:

@@ -14,18 +14,20 @@ base_logger = logging.getLogger('BulkOutput')
 try:
     import ROOT  # noqa
 except ImportError:
-    base_logger.warning("ROOT module not imported - if you use the ROOT output, pax will crash!")
+    base_logger.warning("ROOT module not imported - if you use the ROOT format, pax will crash!")
+except SyntaxError:
+    base_logger.warning("ROOT module not made for Python3? - if you use the ROOT format, pax will crash!")
 
 try:
     import pandas
 except ImportError:
-    base_logger.warning("You don't have pandas -- if you use the pandas output, pax will crash!")
+    base_logger.warning("You don't have pandas -- if you use any of the pandas formats, pax will crash!")
 
 
 try:
     import h5py
 except ImportError:
-    base_logger.warning("You don't have the HDF5 output -- if you use the hdf5 output, pax will crash!")
+    base_logger.warning("You don't have the HDF5 output -- if you use the hdf5 format, pax will crash!")
 
 
 class BulkOutputFormat(object):
@@ -35,6 +37,7 @@ class BulkOutputFormat(object):
     supports_write_in_chunks = False
     supports_array_fields = False
     supports_read_back = False
+    prefers_python_strings = False
     file_extension = 'DIRECTORY'   # Leave to None for database insertion or something
 
     def __init__(self, log=base_logger):
@@ -105,10 +108,16 @@ class HDF5Dump(BulkOutputFormat):
         for name, records in data.items():
             dataset = self.f.get(name)
             if dataset is None:
-                self.f.create_dataset(name, data=records, maxshape=(None,),
-                                      compression="gzip",   # hdfview doesn't like lzf?
-                                      shuffle=True,
-                                      fletcher32=True)
+                try:
+                    self.f.create_dataset(name, data=records, maxshape=(None,),
+                                          compression="gzip",   # hdfview doesn't like lzf?
+                                          shuffle=True,
+                                          fletcher32=True)
+                except ValueError:
+                    self.log.fatal("Fatal error in creating HDF5 table %s!" % name)
+                    self.log.fatal("First record to write was was:")
+                    self.log.fatal(records[0])
+                    raise
             else:
                 oldlen = dataset.len()
                 dataset.resize((oldlen + len(records),))
@@ -208,24 +217,20 @@ class ROOTDump(BulkOutputFormat):
         self.f.Write()
         self.log.debug("Done writing")
 
-##
-# Pandas output formats
-##
 
+##
+# Pandas data formats
+##
 
 class PandasFormat(BulkOutputFormat):
-
     pandas_format_key = None
-
-    def open(self, name, mode):
-        # Don't do anything here: just store filename
-        self.filename = name
+    prefers_python_strings = True
 
     def write_data(self, data):
         for name, records in data.items():
             # Write pandas dataframe to container
-            self.write_pandas_dataframe(name,
-                                        pandas.DataFrame.from_records(records))
+            df = pandas.DataFrame.from_records(records)
+            self.write_pandas_dataframe(name, df)
 
     def write_pandas_dataframe(self, df_name, df):
         # Write each DataFrame to file
@@ -245,10 +250,54 @@ class PandasJSON(PandasFormat):
     pandas_format_key = 'json'
 
 
+class PandasHDF5(PandasFormat):
+    supports_append = True
+    supports_write_in_chunks = True
+    supports_read_back = True
+    string_data_length = 32     # HACK, should come from config...
+    file_extension = 'hdf5'
+
+    def open(self, name, mode):
+        self.store = pandas.HDFStore(name, complevel=9, complib='blosc')
+
+    def close(self):
+        self.store.close()
+
+    def write_pandas_dataframe(self, df_name, df):
+        if df_name == 'pax_info':
+            self.log.error("HACK: didn't write metadata. Some JSON->string->pandas hdf5 issue. Sorry...")
+            return
+            # Don't worry about pre-setting string field lengths
+            # self.store.append(df_name, df, format='table')
+
+        else:
+            # Look for string fields (dtype=object), we should pre-set a length for them
+            string_fields = df.select_dtypes(include=['object']).columns.values
+
+            self.store.append(df_name, df, format='table',
+                              min_itemsize={field_name: self.string_data_length
+                                            for field_name in string_fields})
+
+    def read_data(self, df_name, start=0, end=None):
+        if end is None:
+            end = self.n_in_data(df_name)
+            if end == 0:
+                return []
+        return self.store[df_name][start:end+1].to_records(index=False)
+
+    def n_in_data(self, df_name):
+        if df_name not in self.store:
+            print(self.store)
+            self.log.warning("No %s present in HDF5 file... you sure this is good data?" % df_name)
+            return 0
+        return len(self.store[df_name])
+
+
 # List of data formats, pax / analysis code can import this
 flat_data_formats = {
     'hdf5':         HDF5Dump,
     'numpy':        NumpyDump,
+    'hdf5_pandas':  PandasHDF5,
     'csv':          PandasCSV,
     'html':         PandasHTML,
     'json':         PandasJSON,
