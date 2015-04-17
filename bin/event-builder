@@ -5,8 +5,40 @@ import argparse
 import logging
 import pymongo
 import sys
+import multiprocessing
 import time
 from pax import core
+
+class Consumer(multiprocessing.Process):
+
+    def __init__(self, task_queue, result_queue,
+                 config_names, config_dict):
+        multiprocessing.Process.__init__(self)
+        self.task_queue = task_queue
+        self.result_queue = result_queue
+
+        self.config_names = config_names
+        self.config_dict = config_dict
+
+    def run(self):
+        proc_name = self.name
+
+        p = core.Processor(config_names=self.config_names,
+                           config_dict=self.config_dict)
+
+        while True:
+            next_event = self.task_queue.get()
+            if next_event is None:
+                # Poison pill means shutdown
+                print(('%s: Exiting' % proc_name))
+                self.task_queue.task_done()
+                break
+
+            answer = p.process_event(next_event)
+
+            self.task_queue.task_done()
+            self.result_queue.put(answer)
+        return
 
 ##
 # Parse command line arguments
@@ -135,15 +167,51 @@ def main():
                          run_doc['name'])
 
             filename = 'raw_%s.avro' % run_doc['name']
-            try:
-                p = core.Processor(config_names='eventbuilder_standalone',
-                           config_dict={'DEFAULT' : {'run_doc' : run_doc['_id']},
+
+            config_names = 'eventbuilder_standalone'
+            config_dict = {'DEFAULT' : {'run_doc' : run_doc['_id']},
                                         'output_name' : filename,
                                         'MongoDB' : {'runs_database_location' : {'address' : args.address,
                                                                                  'database' : args.database,
-                                                                                 'collection' : args.collection}}})
+                                                                                 'collection' : args.collection}}}
+            try:
+                p = core.Processor(config_names=config_names,
+                                   config_dict=config_dict)
 
-                p.run()
+                #p.run()
+
+                # Establish communication queues
+                tasks = multiprocessing.JoinableQueue()
+                results = multiprocessing.Queue()
+
+                # Start consumers                                                                                              
+                num_consumers = multiprocessing.cpu_count()
+                print('Creating %d consumers' % num_consumers)
+                consumers = [ Consumer(tasks, results,
+                                       config_names, config_dict)
+                              for i in range(num_consumers) ]
+                for w in consumers:
+                    w.start()
+
+                # Enqueue jobs
+                num_jobs = 0
+                for event in p.get_events():
+                    tasks.put(event)
+                    num_jobs += 1
+
+                # Add a poison pill for each consumer
+                for i in range(num_consumers):
+                    tasks.put(None)
+
+                # Wait for all of the tasks to finish
+                tasks.join()
+
+                # Start printing results
+                while num_jobs:
+                    result = results.get()
+                    print('Result:', result)
+                    num_jobs -= 1
+
             except pymongo.errors.ServerSelectionTimeoutError as e:
                 log.exception(e)
                 collection.update(query,

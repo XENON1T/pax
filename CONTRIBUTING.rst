@@ -100,11 +100,6 @@ Before you submit a pull request, check that it meets these guidelines:
 2. If the pull request adds functionality, the docs should be updated. Put
    your new functionality into a function with a docstring, and add the
    feature to the list in README.rst.
-
-
-Tips
-----
-
-To run a subset of tests::
-
-	$ python -m unittest tests.test_pax
+3. You should follow the PEP8 style guide.  We resolve style arguments using
+   the Google Python style guide.  Whatever you do, don't repeat this
+   http://imgs.xkcd.com/comics/code_quality.png

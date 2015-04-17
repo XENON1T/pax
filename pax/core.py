@@ -443,6 +443,8 @@ class Processor:
         if self.input_plugin.has_shut_down:
             raise RuntimeError("Attempt to run a Processor twice.")
 
+        
+
         # This is the actual event loop.  'tqdm' is a progress bar.
         i = 0 # Defined outside loop since referenced later in this scope
         for i, event in enumerate(tqdm(self.get_events(),
