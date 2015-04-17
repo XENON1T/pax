@@ -3,9 +3,43 @@
 
 import argparse
 import os
+import multiprocessing
 
 from pax import core
 
+
+class Consumer(multiprocessing.Process):
+
+    def __init__(self, task_queue, result_queue,
+                 config_names, config_path, config_dict):
+        multiprocessing.Process.__init__(self)
+        self.task_queue = task_queue
+        self.result_queue = result_queue
+
+        self.config_names = config_names
+        self.config_path = config_path
+        self.config_dict = config_dict
+
+    def run(self):
+        proc_name = self.name
+
+        p = core.Processor(config_names=self.config_names,
+                           config_paths=self.config_path,
+                           config_dict=self.config_dict)
+
+        while True:
+            next_event = self.task_queue.get()
+            if next_event is None:
+                # Poison pill means shutdown
+                print(('%s: Exiting' % proc_name))
+                self.task_queue.task_done()
+                break
+
+            answer = p.process_event(next_event)
+
+            self.task_queue.task_done()
+            self.result_queue.put(answer)
+        return
 
 ##
 # Parse command line arguments
@@ -105,8 +139,51 @@ if args.plot_to_dir or args.plot :
 ##
 # Load configuration and run the processor
 ##
-core.Processor(
-    config_names=args.config,
-    config_paths=args.config_path,
-    config_dict=override_dict
-).run()
+override_dict['pax']['plugin_group_names'] = ['input']
+p = core.Processor(config_names=args.config,
+               config_paths=args.config_path,
+               config_dict=override_dict)
+
+override_dict['pax']['plugin_group_names'] = ['dsp', 'transform']
+
+# Establish communication queues
+tasks = multiprocessing.JoinableQueue()
+results = multiprocessing.Queue()
+
+# Start consumers
+num_consumers = multiprocessing.cpu_count()
+print('Creating %d consumers' % num_consumers)
+consumers = [ Consumer(tasks, results,
+                       args.config,
+                       args.config_path,
+                       override_dict)
+              for i in range(num_consumers) ]
+for w in consumers:
+    w.start()
+
+# Enqueue jobs
+num_jobs = 0
+for event in p.get_events():
+    tasks.put(event)
+    num_jobs += 1
+
+p.shutdown()
+
+# Add a poison pill for each consumer
+for i in range(num_consumers):
+    tasks.put(None)
+
+# Wait for all of the tasks to finish
+tasks.join()
+
+override_dict['pax']['plugin_group_names'] = ['output']
+p = core.Processor(config_names=args.config,
+                   config_paths=args.config_path,
+                   config_dict=override_dict)
+
+# Start printing results
+while num_jobs:
+    p.process_event(results.get())
+    num_jobs -= 1
+
+p.shutdown()

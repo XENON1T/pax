@@ -180,37 +180,7 @@ def main():
 
                 #p.run()
 
-                # Establish communication queues
-                tasks = multiprocessing.JoinableQueue()
-                results = multiprocessing.Queue()
 
-                # Start consumers                                                                                              
-                num_consumers = multiprocessing.cpu_count()
-                print('Creating %d consumers' % num_consumers)
-                consumers = [ Consumer(tasks, results,
-                                       config_names, config_dict)
-                              for i in range(num_consumers) ]
-                for w in consumers:
-                    w.start()
-
-                # Enqueue jobs
-                num_jobs = 0
-                for event in p.get_events():
-                    tasks.put(event)
-                    num_jobs += 1
-
-                # Add a poison pill for each consumer
-                for i in range(num_consumers):
-                    tasks.put(None)
-
-                # Wait for all of the tasks to finish
-                tasks.join()
-
-                # Start printing results
-                while num_jobs:
-                    result = results.get()
-                    print('Result:', result)
-                    num_jobs -= 1
 
             except pymongo.errors.ServerSelectionTimeoutError as e:
                 log.exception(e)

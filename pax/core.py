@@ -423,6 +423,16 @@ class Processor:
 
         return event
 
+    def shutdown(self):
+        self.log.debug("Shutting down all plugins...")
+        self.log.debug("Shutting down %s..." % self.input_plugin.name)
+        self.input_plugin.shutdown()
+        self.input_plugin.has_shut_down = True
+        for ap in self.action_plugins:
+            self.log.debug("Shutting down %s..." % ap.name)
+            ap.shutdown()
+            ap.has_shut_down = True
+
     def run(self, clean_shutdown=True):
         """Run the processor over all events, then shuts down the plugins (unless clean_shutdown=False)
 
@@ -443,7 +453,7 @@ class Processor:
         if self.input_plugin.has_shut_down:
             raise RuntimeError("Attempt to run a Processor twice.")
 
-        
+
 
         # This is the actual event loop.  'tqdm' is a progress bar.
         i = 0 # Defined outside loop since referenced later in this scope
@@ -506,11 +516,4 @@ class Processor:
 
         # Shutdown all plugins now -- don't wait until this Processor instance gets deleted
         if clean_shutdown:
-            self.log.debug("Shutting down all plugins...")
-            self.log.debug("Shutting down %s..." % self.input_plugin.name)
-            self.input_plugin.shutdown()
-            self.input_plugin.has_shut_down = True
-            for ap in self.action_plugins:
-                self.log.debug("Shutting down %s..." % ap.name)
-                ap.shutdown()
-                ap.has_shut_down = True
+            self.shutdown()
