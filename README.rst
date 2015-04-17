@@ -64,7 +64,7 @@ installed, which you can test by running at the command line::
 
   git
 
-Once you have access to the GitHub repository and `git` installed, run::
+You must have access to the private XENON1T github repository.  You can get this by emailing the `pax` developers.  Once you have access to the GitHub repository and `git` installed, run::
 
     pip install git+https://github.com/XENON1T/pax.git
 
