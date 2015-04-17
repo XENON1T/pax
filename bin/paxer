@@ -4,9 +4,14 @@
 import argparse
 import os
 import multiprocessing
-
+from itertools import zip_longest
 from pax import core
 
+def grouper(iterable, n, fillvalue=None):
+    "Collect data into fixed-length chunks or blocks"
+    # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
+    args = [iter(iterable)] * n
+    return zip_longest(*args, fillvalue=fillvalue)
 
 class Consumer(multiprocessing.Process):
 
@@ -28,14 +33,16 @@ class Consumer(multiprocessing.Process):
                            config_dict=self.config_dict)
 
         while True:
-            next_event = self.task_queue.get()
-            if next_event is None:
+            next_events = self.task_queue.get()
+            answer = []
+            if next_events is None:
                 # Poison pill means shutdown
                 print(('%s: Exiting' % proc_name))
                 self.task_queue.task_done()
                 break
-
-            answer = p.process_event(next_event)
+            for event in next_events:
+                if event is not None:
+                    answer.append(p.process_event(event))
 
             self.task_queue.task_done()
             self.result_queue.put(answer)
@@ -161,10 +168,12 @@ consumers = [ Consumer(tasks, results,
 for w in consumers:
     w.start()
 
+
 # Enqueue jobs
 num_jobs = 0
-for event in p.get_events():
-    tasks.put(event)
+
+for events in grouper(p.get_events(), 10):
+    tasks.put(events)
     num_jobs += 1
 
 p.shutdown()
@@ -183,7 +192,9 @@ p = core.Processor(config_names=args.config,
 
 # Start printing results
 while num_jobs:
-    p.process_event(results.get())
+
+    for event in results.get():
+        p.process_event(event)
     num_jobs -= 1
 
 p.shutdown()
