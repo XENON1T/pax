@@ -65,9 +65,9 @@ install:
 # command to run tests, e.g. python setup.py test
 script:
   - make test
-  #- make coverage
+  - make coverage
   - make lint
 
 after_success:
-  #- coveralls
+  - coveralls
 
