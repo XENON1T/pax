@@ -1,30 +1,32 @@
 """The backbone of pax
 
 """
-try:
-    import ROOT     # noqa
-except ImportError:
-    print("ROOT module not imported.")
 import glob
 import logging
 import importlib
 import inspect
 from io import StringIO
+import itertools
 import os
 import re
 from configparser import ConfigParser, ExtendedInterpolation
 
+try:
+    import ROOT     # noqa
+except ImportError:
+    pass
+except SyntaxError:
+    pass
+
 import numpy as np
 
-import itertools
 from prettytable import PrettyTable     # Timing report
 from tqdm import tqdm                   # Progress bar
 import pax
 from pax import units, simulation
 
-
-# Uncomment for diagnosing memory leaks
-# Also uncomment code in process_event
+# For diagnosing suspected memory leaks, uncomment this code
+# and similar code in process_event
 # import gc
 # import objgraph
 
@@ -200,7 +202,7 @@ class Processor:
         else:
             self.action_plugins = []
             if not just_testing:
-                self.log.warning("No action plugins specified: this will be a"
+                self.log.warning("No action plugins specified: this will be a "
                                  "pretty boring processing run...")
 
     def load_configuration(self, config_names, config_paths, config_string, config_dict):

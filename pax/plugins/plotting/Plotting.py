@@ -35,7 +35,7 @@ class PlotBase(plugin.OutputPlugin):
         self.peak_colors = {
             's1':   'blue',
             's2':   'green',
-            'lone_pulse': '0.75'
+            'lone_hit': '0.75'
         }
 
         self.substartup()
@@ -61,7 +61,10 @@ class PlotBase(plugin.OutputPlugin):
         """Finalize plotting, send to screen/file, then closes plot properly (avoids runtimewarning / memory leak).
         """
         if self.output_dir:
-            plt.savefig(self.output_dir + '/%06d.png' % event_number)
+            if self.config['plot_format'] == 'pdf':
+                plt.savefig(self.output_dir + '/%06d.pdf' % event_number, format='pdf')
+            else:
+                plt.savefig(self.output_dir + '/%06d.png' % event_number)
         else:
             plt.show(block=False)
             self.log.info("Hit enter to continue...")
@@ -103,7 +106,9 @@ class PlotBase(plugin.OutputPlugin):
             plt.plot(xvalues,
                      (waveform.samples[lefti:righti + 1] + y_offset) * scale,
                      label=w['plot_label'],
-                     drawstyle=w.get('drawstyle'))
+                     color=w.get('color', 'gray'),
+                     drawstyle=w.get('drawstyle'),
+                     alpha=w.get('alpha', 1))
         if log_y_axis:
             plt.ylim((0.9, plt.ylim()[1]))
 
@@ -116,7 +121,7 @@ class PlotBase(plugin.OutputPlugin):
             max_y = max([p.height for p in event.peaks])
 
             for peak in event.peaks:
-                if peak.type == 'lone_pulse':
+                if peak.type == 'lone_hit':
                     continue
                 textcolor = 'black' if peak.detector == 'tpc' else 'red'
 
@@ -154,11 +159,11 @@ class PlotBase(plugin.OutputPlugin):
     def color_peak_ranges(self, event):
         # Separated so PlotChannelWaveforms2D can also call it
         for peak in event.peaks:
-            shade_color = self.peak_colors.get(peak.type, 'gray') if peak.detector == 'tpc' else 'red'
+            shade_color = self.peak_colors.get(peak.type, 'black') if peak.detector == 'tpc' else 'red'
             plt.axvspan((peak.left - 1) * self.samples_to_us,
                         peak.right * self.samples_to_us,
                         color=shade_color,
-                        alpha=0.2)
+                        alpha=0.1)
 
     def draw_trigger_mark(self, y=0):
         # Draw a marker (orange star) indicating the event's trigger time
@@ -280,9 +285,9 @@ class PlotChannelWaveforms3D(PlotBase):  # user sets variables xlim, ylim for 3D
         fig = plt.figure(figsize=(self.size_multiplier * 4, self.size_multiplier * 2))
         ax = fig.gca(projection='3d')
 
-        # Plot each individual occurrence
+        # Plot each individual pulse
         global_max_amplitude = 0
-        for oc in event.occurrences:
+        for oc in event.pulses:
             start_index = oc.left
             channel = oc.channel
             end_index = oc.right
@@ -291,8 +296,8 @@ class PlotChannelWaveforms3D(PlotBase):  # user sets variables xlim, ylim for 3D
             if not ylim_channel_start <= channel <= ylim_channel_end:
                 continue
 
-            # Take only occurrences that start in the time window
-            # -- But don't you also want occurrences which start outside, but end inside the window?
+            # Take only pulses that start in the time window
+            # -- But don't you also want pulses which start outside, but end inside the window?
             if not xlim_time_start * 100 <= start_index <= xlim_time_end * 100:
                 continue
 
@@ -343,58 +348,52 @@ class PlotChannelWaveforms3D(PlotBase):  # user sets variables xlim, ylim for 3D
 
 class PlotChannelWaveforms2D(PlotBase):
 
-    """ Plots the occurrences in each channel, like like PlotChannelWaveforms3D, but seen from above
+    """ Plots the pulses in each channel, like like PlotChannelWaveforms3D, but seen from above
 
     Circles in the bottom subplot show when individual photo-electrons arrived in each channel .
     Circle color indicates log(peak amplitude / noise amplitude), size indicates peak integral.
-    For large peaks you see no dots; single-channel peakfinding is skipped for performance reasons.
-
-    Some channels are grayed out: these are excluded from low-energy peakfinding because they show an
-    unusual rate of lone pulses or pure-noise occurrences in this event.
     """
 
     def plot_event(self, event):
         time_scale = self.config['sample_duration'] / units.us
 
         # TODO: change from lines to squares
-        for oc in event.occurrences:
+        for oc in event.pulses:
             if oc.height is None:
                 # Maybe gain was 0 or something
                 # TODO: plot these too, in a different color
                 continue
 
-            # Choose a color for this occurrence based on amplitude
-            color_factor = np.clip(np.log10(oc.height) / 2, 0, 1)
+            # Choose a color for this pulse based on amplitude
+            # color_factor = np.clip(np.log10(oc.height) / 2, 0, 1)
+            color_factor = 0
 
             plt.gca().add_patch(Rectangle((oc.left * time_scale, oc.channel), oc.length * time_scale, 1,
                                           facecolor=plt.cm.gnuplot2(color_factor),
                                           edgecolor='none',
-                                          alpha=(0.1 if event.is_channel_bad[oc.channel] else 0.7)))
+                                          alpha=0.5))
 
         # Plot the channel peaks as dots
-        # All these for loops are slow -- hope we get by-column access some time
         self.log.debug('Plotting channel peaks...')
 
         result = []
-        for p in event.all_channel_peaks:
-            if p.noise_sigma == 0:
-                # What perfect world are you living in? WaveformSimulator!
-                color_factor = 1
-            else:
-                color_factor = min(max(p.height / (20 * p.noise_sigma), 0), 1)
+        for hit in event.all_hits:
+            color_factor = min(hit.height / hit.noise_sigma, 15)/15
             result.append([
-                (0.5 + p.index_of_maximum) * time_scale,             # X
-                0.5 + p.channel,                                     # Y
-                color_factor,                                        # Color (in [0,1])
-                10 * min(10, p.area),                                # Size
-                (0.1 if event.is_channel_bad[p.channel] else 1.0),   # Alpha
+                (0.5 + hit.index_of_maximum) * time_scale,             # X
+                0.5 + hit.channel,                                     # Y
+                color_factor,                                          # Color (in [0,1] -> [Blue, Red])
+                10 * min(10, hit.area),                                # Size
+                (1 if hit.is_rejected else 0),                         # Is rejected? If not, will make green
             ])
-        rgba_colors = np.zeros((len(result), 4))
-        result = np.array(result).T
-        rgba_colors[:, 0] = result[2]
-        rgba_colors[:, 2] = 1 - result[2]
-        rgba_colors[:, 3] = result[4]
-        plt.scatter(result[0], result[1], c=rgba_colors, s=result[3], edgecolor=None)
+        if len(result) != 0:
+            rgba_colors = np.zeros((len(result), 4))
+            result = np.array(result).T
+            rgba_colors[:, 0] = (1 - result[4]) * result[2]                     # R
+            rgba_colors[:, 1] = result[4]                 # G
+            rgba_colors[:, 2] = (1 - result[4]) * (1 - result[2])                 # B
+            rgba_colors[:, 3] = 1                             # A
+            plt.scatter(result[0], result[1], c=rgba_colors, s=result[3], edgecolor=None, lw=0)
 
         # Plot the bottom/top/veto boundaries
         # Assumes the detector names' lexical order is the same as the channel order!
@@ -420,21 +419,28 @@ class PlotChannelWaveforms2D(PlotBase):
                  ) / 2,
                 channel_ranges[i][0])
 
-        # Tell about the bad channels
-        bad_channels = np.where(event.is_channel_bad)[0]
-        if len(bad_channels):
-            plt.text(0, 0, 'Bad channels: ' + ', '.join(map(str, sorted(bad_channels))), {'size': 8})
+        # Information about suspicious channels
+        suspicious_channels = np.where(event.is_channel_suspicious)[0]
+        if len(suspicious_channels):
+            plt.text(
+                0,
+                0,
+                'Suspicious channels (# of hits rejected): ' + ', '.join([
+                    '%s (%s)' % (ch, event.n_hits_rejected[ch]) for ch in suspicious_channels
+                ]),
+                {'size': 8})
 
         # Color the peak ranges, place the trigger mark
         self.color_peak_ranges(event)
         self.draw_trigger_mark(0)
 
-        # Make sure we always see all channels , even if there are few occurrences
+        # Make sure we always see all channels
         plt.xlim((0, event.length() * time_scale))
-        plt.ylim((0, len(event.channel_waveforms)))
+        plt.ylim((0, self.config['n_channels']))
 
         plt.xlabel('Time (us)')
         plt.ylabel('PMT channel')
+        plt.gca().invert_yaxis()    # To ensure top channels (low numbers) appear above bottom channels (high numbers)
 
 
 class PlotEventSummary(PlotBase):

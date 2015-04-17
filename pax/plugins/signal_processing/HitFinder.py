@@ -1,163 +1,204 @@
+"""Hit finding plugin
+
+If you get an error from either of the numba methods in this plugin (exception from native function blahblah)
+Try commenting the @jit decorators, which will run a slow, pure-python version of the methods, allowing you to debug.
+Don't forget to re-enable the @jit -- otherwise it will run quite slow!
+"""
+
+
 import numpy as np
 import numba
+
+# For diagnostic plotting:
+import matplotlib.pyplot as plt
+import os
 
 from pax import plugin, datastructure, units
 
 
-# Used for diagnostic plotting only
-# TODO: factor out to separate plugin?
-import matplotlib.pyplot as plt
-import os
-
-
-class BaselineExcursionMethod(plugin.TransformPlugin):
+class FindHits(plugin.TransformPlugin):
 
     def startup(self):
+        c = self.config
 
-        # Get settings from configuration
-        self.min_sigma = self.config['peak_minimum_sigma']
-        self.initial_noise_sigma = self.config['noise_sigma_guess']
-        self.max_hits_per_occurrence = self.config['max_hits_per_occurrence']
+        self.min_sigma = c['peak_minimum_sigma']
+        self.noise_sigma_guess = c['noise_sigma_guess']
+        self.reference_baseline = c.get('digitizer_reference_baseline', 16000)
+        self.initial_baseline_samples = c.get('initial_baseline_samples', 50)
+        self.max_hits_per_pulse = c['max_hits_per_pulse']
+        self.max_passes = c.get('max_passes', float('inf'))
 
-        # Optional settings
-        self.filter_to_use = self.config.get('filter_to_use', None)
-        self.max_noise_detection_passes = self.config.get('max_noise_detection_passes', float('inf'))
-        self.make_diagnostic_plots = self.config.get('make_diagnostic_plots', 'never')
-        self.make_diagnostic_plots_in = self.config.get('make_diagnostic_plots_in', 'small_pf_diagnostic_plots')
+        self.build_sum_waveforms = c.get('build_sum_waveforms', False)
+
+        self.make_diagnostic_plots = c.get('make_diagnostic_plots', 'never')
+        self.make_diagnostic_plots_in = c.get('make_diagnostic_plots_in', 'small_pf_diagnostic_plots')
         if self.make_diagnostic_plots != 'never':
             if not os.path.exists(self.make_diagnostic_plots_in):
                 os.makedirs(self.make_diagnostic_plots_in)
 
-    def transform_event(self, event):
-        # ocs is shorthand for occurrences, as usual
-        noise_count = {}
+        # Conversion factor: multiply by this to convert from ADC counts above baseline -> electrons
+        # Still has to be divided by PMT gain to go to photo-electrons (done below)
+        self.adc_to_e = c['sample_duration'] * c['digitizer_voltage_range'] / (
+            2 ** (c['digitizer_bits']) *
+            c['pmt_circuit_load_resistor'] *
+            c['external_amplification'] *
+            units.electron_charge)
 
-        for oc in event.occurrences:
-            start = oc.left
-            stop = oc.right
-            channel = oc.channel
+        # Keep track of how many times the "too many hits" warning has been shown
+        self.too_many_hits_warnings_shown = 0
+
+    def transform_event(self, event):
+        # Allocate numpy arrays to hold numba peakfinder results
+        # -1 is a placeholder for values that should never be used
+        hits_buffer = -1 * np.ones((self.max_hits_per_pulse, 2), dtype=np.int64)
+        argmaxes = -1 * np.zeros(self.max_hits_per_pulse, dtype=np.int64)
+        areas = -1 * np.ones(self.max_hits_per_pulse)
+
+        for pulse_i, pulse in enumerate(event.pulses):
+            start = pulse.left
+            stop = pulse.right
+            channel = pulse.channel
 
             # Don't consider dead channels
             if self.config['gains'][channel] == 0:
                 continue
 
-            # Retrieve the waveform from channel_waveforms
-            w = event.channel_waveforms[channel, start: stop + 1]
+            # Retrieve the waveform, subtract ref baseline, invert
+            w = self.reference_baseline - pulse.raw_data.astype(np.float64)
 
-            noise_sigma = self.initial_noise_sigma
-            old_raw_peaks = []
-            pass_number = 0
-            baseline_correction = 0
+            # Call the numba hit finder -- see its documentation below
+            # Results stored in hits_buffer and extra_results; declared outside loop, see above
+            n_hits_found, baseline, noise_sigma, passes_used = self._find_peaks(
+                w, self.min_sigma, self.noise_sigma_guess, self.max_passes, self.initial_baseline_samples,
+                hits_buffer)
 
-            # Use several passes to separate noise / peaks
-            for pass_number in range(self.max_noise_detection_passes):
+            # Check for error return codes from the numba hitfinding
+            if n_hits_found < 0:
+                raise RuntimeError("You found a hitfinder bug!\n"
+                                   "Event %d, channel %d, pulse %d.\n"
+                                   "Guru meditation: %d\n"
+                                   "Please file a bug report!" % (
+                                       event.event_number, channel, pulse_i, n_hits_found))
 
-                # Determine the peaks based on the noise level
-                # Can't just use w > self.min_sigma * noise_sigma here,
-                # want to extend peak bounds to noise_sigma
-                raw_peaks = np.zeros((self.max_hits_per_occurrence, 2), dtype=np.int64)
-                n_raw_peaks_found = self._find_peaks(w,
-                                                     self.min_sigma * noise_sigma,
-                                                     noise_sigma,
-                                                     raw_peaks)
-                if n_raw_peaks_found == -1:
-                    # We found > self.max_hits_per_occurrence: write this in the debug log
-                    self.log.debug("Occurrence %s-%s in channel %s has more than %s hits on peakfinding "
-                                   "pass %s! Probably the noise level is unusually high. Further hits "
-                                   "will be ignored." % (start, stop, channel,
-                                                         self.max_hits_per_occurrence,
-                                                         pass_number))
-                    n_raw_peaks_found = len(raw_peaks)
-                raw_peaks = raw_peaks[:n_raw_peaks_found]
+            # Show too-many hits message
+            if n_hits_found >= self.max_hits_per_pulse:
+                if self.too_many_hits_warnings_shown > 3:
+                    show_to = self.log.debug
+                else:
+                    show_to = self.log.info
+                show_to("Pulse %s-%s in channel %s has more than %s hits. "
+                        "This usually indicates a zero-length encoding breakdown after a very large S2. "
+                        "Further hits in this pulse have been ignored." % (start, stop, channel,
+                                                                           self.max_hits_per_pulse))
+                self.too_many_hits_warnings_shown += 1
+                if self.too_many_hits_warnings_shown == 3:
+                    self.log.info('Further too-many hit messages will be suppressed!')
 
-                if pass_number != 0 and \
-                        len(raw_peaks) == len(old_raw_peaks) and \
-                        np.all(raw_peaks == old_raw_peaks):
-                    # No change in peakfinding, previous noise level is still valid
-                    # That means there's no point in repeating peak finding either, and we can just:
-                    break
-                    # You can't break if you find no peaks on the first pass:
-                    # maybe the estimated noise level was too high
+            if passes_used >= self.max_passes:
+                self.log.debug("Hit finding in pulse %d-%d in channel %d did not converge after %d passes." % (
+                    start, stop, channel, passes_used))
 
-                # Compute the baseline correction and the new noise_sigma
-                # -- BuildWaveforms can get baseline wrong if there is a pe in the starting samples
-                result = np.zeros(2)
-                self._mean_std_outside_peaks(w, raw_peaks, result)
-                baseline_correction_delta = result[0]
-                noise_sigma = result[1]
+            # If no hits were found, this is a noise pulse: update the noise pulse count
+            if n_hits_found == 0:
+                event.noise_pulses_in[channel] += 1
+                # Don't 'continue' to the next pulse! There's stuff left to do!
 
-                # Perform the baseline correction
-                w -= baseline_correction_delta
-                baseline_correction += baseline_correction_delta
+            # Only view the part of hits_buffer that contains peaks found in this event
+            # The rest of hits_buffer contains zeros or random junk from previous pulses
+            hits_found = hits_buffer[:n_hits_found]
 
-                old_raw_peaks = raw_peaks
+            # Update pulse data
+            pulse.noise_sigma = noise_sigma
+            pulse.baseline = baseline
+            pulse.height = np.max(w)    # Remember w was modified in-place by the numba hitfinder to do baselining
 
-            else:
-                self.log.warning((
-                    "In occurrence %s-%s in channel %s, findSmallPeaks did not converge on peaks after %s" +
-                    " iterations. This could indicate a baseline problem in this occurrence. " +
-                    "Channel-based peakfinding in this occurrence may be less accurate.") % (
-                        start, stop, channel, pass_number))
-
-            # Update occurrence data
-            oc.noise_sigma = noise_sigma
-            oc.baseline_correction = baseline_correction
-            oc.height = oc.height - baseline_correction
-
-            # Update the noise occurrence count
-            if len(raw_peaks) == 0:
-                noise_count[channel] = noise_count.get(channel, 0) + 1
-
-            # Compute peak area and max
-            argmaxes = np.zeros(len(raw_peaks), dtype=np.int64)
-            areas = np.zeros(len(raw_peaks))
-            self._peak_argmax_and_area(w, raw_peaks, argmaxes, areas)
+            # Compute area and max of each hit
+            # Results stored in argmaxes, areas; declared outside loop, see above
+            self._peak_argmax_and_area(w, hits_found, argmaxes, areas)
 
             # Store the found peaks in the datastructure
-            peaks = []
-            for i, p in enumerate(raw_peaks):
-                # TODO: Hmzz.. height is computed in unfiltered waveform, noise_level in filtered!
-                # TODO: height is wrong if baseline is corrected...
-                # TODO: are you sure it is ok to compute area in filtered waveform?
-                max_idx = p[0] + argmaxes[i]
-                peaks.append(datastructure.ChannelPeak({
-                    # TODO: store occurrence index
+            # Convert area, noise_sigma and height from adc counts -> pe
+            adc_to_pe = self.adc_to_e / self.config['gains'][channel]
+            noise_sigma_pe = noise_sigma * adc_to_pe
+            for i, hit in enumerate(hits_found):
+
+                # Do sanity checks
+                area = areas[i] * adc_to_pe
+                height = w[hit[0] + argmaxes[i]] * adc_to_pe
+                left = start + hit[0]
+                right = start + hit[1]
+                max_idx = start + hit[0] + argmaxes[i]
+                if not (0 <= left <= max_idx <= right) or not (0 <= self.min_sigma * noise_sigma_pe <= height <= area):
+                    raise RuntimeError("You found a hitfinder bug!\n"
+                                       "Current hit %d-%d-%d, in event %s, channel %s, pulse %s.\n"
+                                       "Indices in pulse: %s-%s-%s. Pulse bounds: %d-%d.\n"
+                                       "Height is %s, noise sigma is %s, dynamic threshold at %s; Area is %d.\n"
+                                       "Please file a bug report!" % (
+                                           left, max_idx, right, event.event_number, channel, pulse_i,
+                                           hit[0], hit[0] + argmaxes[i], hit[1], start, stop,
+                                           height, noise_sigma_pe, self.min_sigma * noise_sigma_pe, area))
+
+                event.all_hits.append(datastructure.Hit({
                     'channel':             channel,
-                    'left':                start + p[0],
-                    'index_of_maximum':    start + max_idx,
-                    'right':               start + p[1],
-                    'area':                areas[i],
-                    'height':              w[max_idx],
-                    'noise_sigma':         noise_sigma,
+                    'left':                left,
+                    'index_of_maximum':    max_idx,
+                    'right':               right,
+                    'area':                area,
+                    'height':              height,
+                    'noise_sigma':         noise_sigma_pe,
+                    'found_in_pulse':      pulse_i,
                 }))
-            event.all_channel_peaks.extend(peaks)
 
-            # TODO: move to separate plugin?
-            if self.make_diagnostic_plots == 'always' or \
-               self.make_diagnostic_plots == 'no peaks' and not len(peaks):
-                plt.figure()
-                plt.plot(w, drawstyle='steps', label='data')
-                for p in raw_peaks:
-                    plt.axvspan(p[0] - 1, p[1], color='red', alpha=0.5)
-                plt.plot(noise_sigma * np.ones(len(w)), '--', label='1 sigma')
-                plt.plot(self.min_sigma * noise_sigma * np.ones(len(w)),
-                         '--', label='%s sigma' % self.min_sigma)
-                plt.legend()
-                bla = (event.event_number, start, stop, channel)
-                plt.title('Event %s, occurrence %d-%d, Channel %d' % bla)
-                plt.xlabel("Sample [%s ns]" % (event.sample_duration / units.ns))
-                plt.ylabel("Amplitude [pe]")
-                plt.savefig(os.path.join(self.make_diagnostic_plots_in,
-                                         'event%04d_occ%05d-%05d_ch%03d.png' % bla))
-                plt.close()
+            # Diagnostic plotting
+            # Bit difficult to move to separate plugin: would have to re-group hits by pulse
 
-        # Mark channels with an abnormally high noise rate as bad
-        for ch, dc in noise_count.items():
-            if dc > self.config['maximum_noise_occurrences_per_channel']:
-                self.log.debug(
-                    "Channel %s shows an abnormally high rate of noise pulses (%s): its spe pulses will be excluded" % (
-                        ch, dc))
-                event.is_channel_bad[ch] = True
+            # Do we need to show this pulse? If not: continue
+            if self.make_diagnostic_plots == 'never':
+                continue
+            elif self.make_diagnostic_plots == 'tricky cases':
+                # Always show pulse if noise level is very high
+                if noise_sigma_pe < 0.5:
+                    if len(hits_found) == 0:
+                        # Show pulse if it nearly went over threshold
+                        if not pulse.height / noise_sigma > 0.8 * self.min_sigma:
+                            continue
+                    else:
+                        # Show pulse if any of its hit nearly didn't go over threshold
+                        if not any([event.all_hits[-(i+1)].height < 1.2 * self.min_sigma * noise_sigma_pe
+                                   for i in range(len(hits_found))]):
+                            continue
+            elif self.make_diagnostic_plots == 'no peaks':
+                if len(hits_found) != 0:
+                    continue
+            else:
+                if self.make_diagnostic_plots != 'always':
+                    raise ValueError("Invalid make_diagnostic_plots option: %s!" % self.make_diagnostic_plots)
+
+            # Setup the twin-y-axis plot
+            fig, ax1 = plt.subplots(figsize=(10, 7))
+            ax2 = ax1.twinx()
+            ax1.set_xlabel("Sample number (%s ns)" % event.sample_duration)
+            ax1.set_ylabel("ADC counts above baseline")
+            ax2.set_ylabel("pe / sample")
+
+            # Plot the signal and noise levels
+            ax1.plot(w, drawstyle='steps', label='Data')
+            ax1.plot(np.ones_like(w) * self.min_sigma * noise_sigma, '--', label='Threshold', color='red')
+            for hit in hits_found:
+                ax1.axvspan(hit[0] - 1, hit[1], color='red', alpha=0.2)
+            ax1.plot(np.ones_like(w) * noise_sigma, '--', label='Noise level', color='gray')
+
+            # Make sure the y-scales match
+            ax2.set_ylim(ax1.get_ylim()[0] * adc_to_pe, ax1.get_ylim()[1] * adc_to_pe)
+
+            # Finish the plot, save, close
+            leg = ax1.legend()
+            leg.get_frame().set_alpha(0.5)
+            bla = (event.event_number, start, stop, channel)
+            plt.title('Event %s, pulse %d-%d, Channel %d' % bla)
+            plt.savefig(os.path.join(self.make_diagnostic_plots_in,
+                                     'event%04d_pulse%05d-%05d_ch%03d.png' % bla))
+            plt.close()
 
         return event
 
@@ -165,6 +206,11 @@ class BaselineExcursionMethod(plugin.TransformPlugin):
     @staticmethod
     @numba.jit(numba.void(numba.float64[:], numba.int64[:, :], numba.int64[:], numba.float64[:]), nopython=True)
     def _peak_argmax_and_area(w, raw_peaks, argmaxes, areas):
+        """Finds the maximum index and area of peaks in w indicated by (left, right) bounds in raw_peaks.
+        Will fill up argmaxes and areas with result.
+            raw_peaks should be a numpy array of (left, right) bounds (inclusive)
+        Returns nothing
+        """
         for peak_i in range(len(raw_peaks)):
             current_max = -999.9
             current_argmax = -1
@@ -178,99 +224,157 @@ class BaselineExcursionMethod(plugin.TransformPlugin):
             areas[peak_i] = current_area
 
     @staticmethod
-    @numba.jit(numba.void(numba.float64[:], numba.int64[:, :], numba.float64[:]), nopython=True)
-    def _mean_std_outside_peaks(w, raw_peaks, result):
-        """Compute mean and std (rms) of samples w not in raw_peaks
-
-        Both mean and std are computed in a single pass using a clever algorithm from:
-        see http://en.wikipedia.org/wiki/Algorithms_for_calculating_variance#Online_algorithm
-
-        :param w: waveform
-        :param raw_peaks: np.int64[n,2]: raw peak boundaries
-        :param result: np.array([0,0]) will contain result (mean, std) after evaluation
-        :return: nothing
+    @numba.jit(numba.typeof((1.0, 2.0, 3.0, 4.0))(
+               numba.float64[:], numba.float64, numba.float64, numba.int64, numba.int64,
+               numba.int64[:, :]), nopython=True)
+    def _find_peaks(w, threshold_sigmas, noise_sigma, max_passes, initial_baseline_samples, hits_buffer):
+        """Fills raw_peaks with left, right indices of raw_peaks > bound_threshold which exceed threshold somewhere
+         raw_peaks: numpy () of [-1,-1] lists, will be filled by function.
+        BE CAREFUL -- Will modify w IN PLACE to do baseline correction
+        Returns: number of raw_peaks found, baseline, noise_sigma
+        Will stop search after raw_peaks found reached length of raw_peaks argument passed in
         """
+        has_changed = True      # First pass is never final
 
-        n = 0           # Samples outside peak included so far
-        mean = 0        # Mean so far
-        m2 = 0          # Sm of squares of differences from the (current) mean
-        delta = 0       # Temp storage for x - mean
-        n_peaks = len(raw_peaks)
-        current_peak = 0
-        currently_in_peak = False
+        # Determine an initial baseline from the first samples
+        # We have to do this BEFORE the first hit finding pass:
+        # the entire pulse could be above reference baseline, and we don't want to report it all as one hit...
+        # TODO: Also determine a noise_sigma here? Factor out code from below to separate function?
+        baseline = 0.0
+        initial_baseline_samples = min(initial_baseline_samples, len(w))
+        for x in w[:initial_baseline_samples + 1]:     # AARGH stupid python indexing!!!
+            baseline += x
+        baseline = baseline/initial_baseline_samples
 
-        for i, x in enumerate(w):
+        # Correct for the initial baseline
+        for i in range(len(w)):
+            w[i] -= baseline
 
-            if currently_in_peak:
-                if i > raw_peaks[current_peak, 1]:
-                    current_peak += 1
-                    currently_in_peak = False
+        # Determine the peaks based on the noise level
+        # Can't just use w > self.min_sigma * noise_sigma here,
+        # want to extend peak bounds to noise_sigma
+        pass_number = 0
+        while True:
 
-            # NOT else, currently_in_peak may have changed!
-            if not currently_in_peak:
-                if current_peak < n_peaks and i == raw_peaks[current_peak, 0]:
-                    currently_in_peak = True
-                else:
-                    delta = x - mean
-                    # Update n, mean and m2
-                    n += 1
-                    mean += delta/n
-                    m2 += delta*(x-mean)
+            in_candidate_interval = False
+            current_interval_passed_test = False
+            current_peak = 0
+            max_n_peaks = len(hits_buffer)      # First index which is outside hits buffer = max # of peaks to find
+            max_idx = len(w) - 1
+            current_candidate_interval_start = -1
+            threshold = noise_sigma * threshold_sigmas
+            bound_threshold = noise_sigma
 
-        # Put results in result
-        result[0] = mean
-        if n < 2:
-            result[1] = 0
-        else:
-            result[1] = (m2/n)**0.5
+            ##
+            #   Hit finding
+            ##
 
-    @staticmethod
-    @numba.jit(numba.int64(numba.float64[:], numba.float64, numba.float64, numba.int64[:, :]), nopython=True)
-    def _find_peaks(w, threshold, bound_threshold, intervals):
-        """Fills intervals with left, right indices of intervals > bound_threshold which exceed threshold somewhere
-         intervals: numpy () of [-1,-1] lists, will be filled by function.
-        Returns: number of intervals found
-        Will stop search after intervals found reached length of intervals argument passed in
-        """
+            for i, x in enumerate(w):
 
-        in_candidate_interval = False
-        current_interval_passed_test = False
-        current_interval = 0
-        max_intervals = len(intervals) - 1
+                if not in_candidate_interval and x > bound_threshold:
+                    # Start of candidate interval
+                    in_candidate_interval = True
+                    current_candidate_interval_start = i
 
-        for i, x in enumerate(w):
+                # This must be if, not else: an interval can cross threshold in start sample
+                if in_candidate_interval:
 
-            if not in_candidate_interval and x > bound_threshold:
-                # Start of candidate interval
-                in_candidate_interval = True
-                intervals[current_interval, 0] = i
+                    if x > threshold:
+                        current_interval_passed_test = True
 
-            # This must be if, not else: an interval can cross threshold in start sample
-            if in_candidate_interval:
+                    if x < bound_threshold or i == max_idx:
 
-                if x > threshold:
-                    current_interval_passed_test = True
+                        # End of candidate interval
+                        in_candidate_interval = False
 
-                if x < bound_threshold:
-                    # End of candidate interval
-                    if current_interval_passed_test:
-                        # We've found a new peak!
-                        intervals[current_interval, 1] = i - 1
-                        current_interval += 1
-                        if current_interval > max_intervals:
-                            # We found more peaks than we have room in our result array!
-                            # Would love to raise an exception, but can't...
-                            # Instead just return -1, caller will have to check this
-                            return -1
-                    in_candidate_interval = False
-                    current_interval_passed_test = False
+                        if current_interval_passed_test:
+                            # We've found a new peak!
 
-        # Add last interval, if it didn't end
-        # TODO: Hmm, should this raise a warning?
-        if in_candidate_interval and current_interval_passed_test:
-            intervals[current_interval, 1] = len(w) - 1
-            current_interval += 1
-        else:
-            intervals[current_interval, 0] = 0
+                            # The interval ended just before this index
+                            # unless, of course, we ended ONLY BECAUSE this is the last index
+                            itv_end = i-1 if x < bound_threshold else i
 
-        return current_interval
+                            # Add to raw_peaks, check if something has changed
+                            if itv_end != hits_buffer[current_peak, 1] \
+                                    or current_candidate_interval_start != hits_buffer[current_peak, 0]:
+                                hits_buffer[current_peak, 0] = current_candidate_interval_start
+                                hits_buffer[current_peak, 1] = itv_end
+                                has_changed = True
+
+                            # Prepare for the next peak
+                            current_peak += 1
+                            current_interval_passed_test = False
+
+                            # Check if we've reached the maximum # of peaks
+                            # If we found more peaks than we have room in our result array,
+                            # stop peakfinding immediately
+                            if current_peak == max_n_peaks:
+                                break
+
+            n_peaks_found = current_peak
+
+            # If we have reached the max pass_number, we should stop BEFORE recalculate noise sigma again
+            # (otherwise reported peaks will be inconsistent with reported baseline and noise)
+            # We can also stop if nothing has changed: baseline and noise will be the same as before
+            if pass_number > max_passes or not has_changed:
+                break
+
+            ##
+            #   Baseline computation
+            ##
+
+            # Compute the baseline correction
+            n = 0           # Samples outside peak included so far
+            mean = 0        # Mean so far
+
+            current_peak = 0
+            currently_in_peak = False
+
+            for i, x in enumerate(w):
+
+                if currently_in_peak:
+                    if i > hits_buffer[current_peak, 1]:
+                        current_peak += 1
+                        currently_in_peak = False
+
+                # NOT else, currently_in_peak may have changed!
+                if not currently_in_peak:
+                    if current_peak < n_peaks_found and i == hits_buffer[current_peak, 0]:
+                        currently_in_peak = True
+                    else:
+                        # Update n, mean
+                        n += 1
+                        mean += (x - mean)/n
+
+            # Perform the baseline correction
+            baseline += mean
+            for i in range(len(w)):
+                w[i] -= mean
+
+            ##
+            #   Noise sigma computation
+            ##
+
+            # Must be in a second pass, since we want to include only samples BELOW baseline (which we just determined)
+            # Don't need to keep track of being in a peak or not: peaks are never below baseline :-)
+            m2 = 0             # Sum of squares of differences from the (current) mean
+            n_nonpositive = 0  # Number of samples <= baseline. <=, not < to avoid div0 error if no noise (if only..)
+
+            for x in w:
+                if x <= 0:
+                    n_nonpositive += 1
+                    m2 += x*x
+
+            if n_nonpositive == 0:
+                # A pathological case when the entire pulse is indicated as a peak (for this pass)...
+                # I believe this can only happen if the baseline correction is bugged, so I'll raise an exception
+                # ... Wait,Numba doesn't allow this though, so...
+                return float(-41), 0.0, 0.0, 0.0
+
+            noise_sigma = (m2/n_nonpositive)**0.5
+            has_changed = False
+            pass_number += 1
+
+        # Return number of peaks found, baseline, noise sigma, and number of passes used
+        # Convert ints to float, if you keep it int, it will sometimes be int32, sometimes int64 => numba crashes
+        return float(n_peaks_found), baseline, noise_sigma, float(pass_number + 1)

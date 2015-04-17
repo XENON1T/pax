@@ -42,6 +42,21 @@ class Simulator(object):
         self.config['s1_ER_recombination_time'] = 3.5 / 0.18 * (1 / 20 + 0.41) * math.exp(-0.009 * efield)
         log.debug('Inferred s1_ER_recombination_time %s ns' % self.config['s1_ER_recombination_time'])
 
+        # Calculate particle number density in the gas (ideal gas law)
+        number_density_gas = self.config['pressure'] / (units.boltzmannConstant * self.config['temperature'])
+
+        # electric field in the gas
+        # Formula from xenon:xenon100:analysis:jacob:s2gain_v2
+        e_in_gas = self.config['lxe_dielectric_constant'] * self.config['anode_voltage'] / (
+            self.config['lxe_dielectric_constant'] * self.config['elr_gas_gap_length'] +
+            (self.config['gate_to_anode_distance'] - self.config['elr_gas_gap_length'])
+        )
+
+        # Reduced electric field in the gas
+        self.config['reduced_e_in_gas'] = e_in_gas / number_density_gas
+        log.debug("Inferred a reduced electric field of %s Td in the gas" % (
+            self.config['reduced_e_in_gas'] / units.Td))
+
         # Which channels stand to receive any photons?
         # TODO: In XENON100, channel 0 will receive photons unless magically_avoid_dead_pmts=True
         # To prevent this, subtract 0 from channel_for_photons. But don't do that for XENON1T!!
@@ -62,7 +77,8 @@ class Simulator(object):
         self.config['samples_after_pulse_center'] = math.ceil(
             self.config['pulse_width_cutoff'] * self.config['pmt_fall_time'] / dt
         )
-        log.debug('Simulating %s samples before and %s samples after PMT pulse centers.')
+        log.debug('Simulating %s samples before and %s samples after PMT pulse centers.' % (
+            self.config['samples_before_pulse_center'], self.config['samples_after_pulse_center']))
 
     def s2_electrons(self, electrons_generated=None, z=0., t=0.):
         """Return a list of electron arrival times in the ELR region caused by an S2 process.
@@ -178,7 +194,7 @@ class Simulator(object):
         # Find the photon production times
         # Assume luminescence probability ~ electric field
         s2_pe_times = np.concatenate([
-            t0 + self.get_luminescence_positions(photons_produced[i]) / self.config['drift_velocity_gas']
+            t0 + self.get_luminescence_times(photons_produced[i])
             for i, t0 in enumerate(electron_arrival_times)
         ])
 
@@ -204,29 +220,37 @@ class Simulator(object):
             np.random.exponential(t3, len(times) - n_singlets)
         ])
 
-    def get_luminescence_positions(self, n):
-        """Sample luminescence positions in the ELR, using a mixed wire-dominated / uniform field"""
-        # TODO: could gain performance here I think
-        x = np.random.uniform(0, 1, n)
-        l = self.config['elr_gas_gap_length']
-        wire_par = self.config['wire_field_parameter']
-        rm = self.config['anode_mesh_pitch'] * wire_par
-        rw = self.config['anode_wire_radius']
-        if wire_par == 0:
-            return x * l
-        total_area = l + rm * (math.log(rm / rw) - 1)
-        rel_a_wd_region = rm * math.log(rm / rw) / total_area
-        # This is a bit slower, not much though:
-        # return np.array([
-        #     (l - np.exp(xi * total_area / rm) * rw)
-        #     if xi < rel_a_wd_region
-        #     else l - (xi * total_area + rm * (1 - math.log(rm / rw)))
-        #     for xi in x
-        # ])
-        result = np.zeros(n)
-        x_in_rel_a_wd_region = x < rel_a_wd_region
-        result[x_in_rel_a_wd_region] = (l - np.exp(x[x < rel_a_wd_region] * total_area / rm) * rw)
-        result[-x_in_rel_a_wd_region] = l - (x[-x_in_rel_a_wd_region] * total_area + rm * (1 - math.log(rm / rw)))
+    def get_luminescence_times(self, n):
+
+        dg = self.config['elr_gas_gap_length']
+
+        # Distance between liquid level and uniform -> line field crossover point
+        du = dg - self.config['anode_field_domination_distance']
+
+        # Distance between liquid level and anode wire
+        dw = dg - self.config['anode_wire_radius']
+
+        # How many photons are produced in the uniform part?
+        n_uniform = np.random.binomial(n, 1 / (1 + (dg - du) / du *
+                                               math.log((dg - du) / (dg - dw))))
+
+        # Sample the luminescence times in the uniform part
+        pos_uniform = np.random.uniform(0, du, n_uniform)
+
+        # Sample the luminescence positions in the non-uniform part
+        FTilde = np.random.uniform(0, 1, n - n_uniform)
+        pos_non_uniform = dg - (dg - du) ** (1 - FTilde) * (dg - dw) ** FTilde
+
+        # Convert to luminescence times
+        result = np.concatenate((
+            pos_uniform,
+            pos_non_uniform
+            # To take electron speedup near anode into account, replace line above with:
+            # (- du ** 2 + 2 * dg * pos_non_uniform - pos_non_uniform**2) / (2 * (dg - du))
+            # NB: does not take electron bending towards anode into account, so probably worse!
+        ))
+        result *= 1/(self.config['gas_drift_velocity_slope'] * self.config['reduced_e_in_gas'])
+
         return result
 
     def pmt_pulse_current(self, gain, offset=0):
@@ -257,6 +281,7 @@ class Simulator(object):
             n_channels=self.config['n_channels'],
             start_time=start_time,
             stop_time=start_time + int(hitpattern.max + 2 * self.config['event_padding']),
+            sample_duration=self.config['sample_duration'],
         )
 
         log.debug("Now performing hitpattern to waveform conversion for %s photons" % hitpattern.n_photons)
@@ -290,9 +315,9 @@ class Simulator(object):
 
                 start_index = np.min(center_index) - int(self.config['zle_padding'] / dt)
                 end_index = max(center_index) + int(self.config['zle_padding'] / dt)
-                occurrence_length = end_index - start_index + 1
+                pulse_length = end_index - start_index + 1
 
-                current_wave = np.zeros(occurrence_length)
+                current_wave = np.zeros(pulse_length)
 
                 if len(center_index) > self.config['use_simplified_simulator_from']:
 
@@ -377,21 +402,21 @@ class Simulator(object):
                 temp /= dV  # Voltage
 
                 # PMT signals are 'up side down' when viewed on scope.
-                temp = self.config['digitizer_baseline'] - np.trunc(temp)
+                temp = self.config['digitizer_reference_baseline'] - np.trunc(temp)
 
                 # Digitizers have finite number of bits per channel
                 temp = np.clip(temp, 0, 2 ** (self.config['digitizer_bits']))
 
-                event.occurrences.append(datastructure.Occurrence(
+                event.pulses.append(datastructure.Pulse(
                     channel=channel,
                     left=start_index,
                     raw_data=temp.astype(np.int16)))
 
-        if len(event.occurrences) == 0:
+        if len(event.pulses) == 0:
             return None
 
-        log.debug("Simulated pax event of %s samples length and %s occurrences "
-                  "created." % (event.length(), len(event.occurrences)))
+        log.debug("Simulated pax event of %s samples length and %s pulses "
+                  "created." % (event.length(), len(event.pulses)))
         return event
 
 

@@ -10,7 +10,7 @@ from pax import core
 ##
 # Parse command line arguments
 ##
-parser = argparse.ArgumentParser(description="Process XENON1 data")
+parser = argparse.ArgumentParser(description="Process XENON1T data")
 
 # Input and output overrides
 parser.add_argument('--input',  default=None, help="File, database or directory to read events from", nargs='?')

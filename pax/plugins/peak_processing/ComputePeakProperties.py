@@ -2,7 +2,7 @@ import numpy as np
 from pax import plugin, utils
 
 
-class Basics(plugin.TransformPlugin):
+class BasicProperties(plugin.TransformPlugin):
 
     """Computes basic peak properies such as area and hit time spread ("width")
     """
@@ -15,30 +15,49 @@ class Basics(plugin.TransformPlugin):
 
         for peak in event.peaks:
 
-            peak.left = min([s.left for s in peak.channel_peaks])
-            peak.right = max([s.right for s in peak.channel_peaks])
-
             # For backwards compatibility with plotting code
-            highest_peak_index = np.argmax([s.height for s in peak.channel_peaks])
-            peak.index_of_maximum = peak.channel_peaks[highest_peak_index].index_of_maximum
-            peak.height = peak.channel_peaks[highest_peak_index].height
+            highest_peak_index = np.argmax([s.height for s in peak.hits])
+            peak.index_of_maximum = peak.hits[highest_peak_index].index_of_maximum
+            peak.height = peak.hits[highest_peak_index].height
 
-            # Compute the area per pmt. Store maxidx as well
-            for s in peak.channel_peaks:
+            # Compute the area per pmt.
+            for s in peak.hits:
                 peak.area_per_channel[s.channel] += s.area
 
             # Compute the total area
             peak.area = np.sum(peak.area_per_channel)
 
             # Compute top fraction
-            peak.area_fraction_top = np.sum(peak.area_per_channel[:self.last_top_ch + 1])
+            peak.area_fraction_top = np.sum(peak.area_per_channel[:self.last_top_ch + 1])/peak.area
 
             # Compute timing quantities
-            times = [s.index_of_maximum * self.dt for s in peak.channel_peaks]
-            peak.median_absolute_deviation = utils.mad(times)
+            times = [s.index_of_maximum * self.dt for s in peak.hits]
             peak.hit_time_mean, peak.hit_time_std = utils.weighted_mean_variance(times,
-                                                                                 [s.area for s in peak.channel_peaks])
-            peak.hit_time_std **= 0.5   # We stored variance in the line above
+                                                                                 [s.area for s in peak.hits])
+            peak.hit_time_std **= 0.5   # Convert variance to std
+
+            # Compute mean amplitude / noise
+            hit_areas = [hit.area for hit in peak.hits]
+            peak.mean_amplitude_to_noise = np.average([hit.height / hit.noise_sigma for hit in peak.hits],
+                                                      weights=hit_areas)
+
+            # Compute central ranges
+            dt = event.sample_duration
+            leftmost = float('inf')
+            rightmost = float('-inf')
+            area_so_far = 0
+            for hit in sorted(peak.hits, key=lambda hit: abs(hit.index_of_maximum * dt - peak.hit_time_mean)):
+                if hit.left < leftmost:
+                    leftmost = hit.left
+                if hit.right > rightmost:
+                    rightmost = hit.right
+                area_so_far += hit.area
+                if peak.range_50p_area == 0:
+                    if area_so_far >= 0.5 * peak.area:
+                        peak.range_50p_area = (rightmost - leftmost + 1) * dt
+                if area_so_far >= 0.9 * peak.area:
+                    peak.range_90p_area = (rightmost - leftmost + 1) * dt
+                    break
 
         return event
 
@@ -82,6 +101,6 @@ class HitpatternSpread(plugin.TransformPlugin):
                                                          weights=hitpattern)
                     weighted_var += wv
 
-                setattr(peak, '%s_hitpattern_spread' % array, np.sqrt(weighted_var/2))
+                setattr(peak, '%s_hitpattern_spread' % array, np.sqrt(weighted_var))
 
         return event
