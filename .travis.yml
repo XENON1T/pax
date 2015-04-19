@@ -63,12 +63,12 @@ install:
 
   # ROOT 
   # - unset ROOT # uncomment to not install ROOT
-  - if test -n "$ROOT"; then source travis/travis-install-ROOT.sh; fi
-  #- if test -n "$ROOT"; then source travis/travis-install-ROOT-binary.sh; fi
-  - source travis/travis-save-ROOT.sh
+  #- if test -n "$ROOT"; then source travis/travis-install-ROOT.sh; fi
+  - if test -n "$ROOT"; then source travis/travis-install-ROOT-binary.sh; fi
+  #- source travis/travis-save-ROOT.sh
 
   # Copy modified ROOT.py to proper directory
-  - cp /home/travis/build/XENON1T/pax/travis/travis_modified_ROOT.py /home/travis/build/XENON1T/pax/root/lib/ROOT.py
+  - cp /home/travis/build/XENON1T/pax/travis/travis_modified_ROOT.py /home/travis/build/XENON1T/pax/root-6.02.05/lib/ROOT.py
 
   # Does pyROOT still work?
   - root -l -q
