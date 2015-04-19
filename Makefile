@@ -35,7 +35,8 @@ test-all:
 	tox
 
 coverage:
-	nosetests --with-coverage --cover-package=pax tests
+	pip install -U nose
+	nosetests --with-coverage --cover-package=pax tests -e test_root
 
 docs:
 
