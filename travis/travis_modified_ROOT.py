@@ -527,7 +527,7 @@ class ModuleFacade( types.ModuleType ):
       appc = _root.MakeRootClass( 'PyROOT::TPyROOTApplication' )
       if appc.CreatePyROOTApplication():
          appc.InitROOTGlobals()
-         appc.InitCINTMessageCallback();
+         # appc.InitCINTMessageCallback();
          appc.InitROOTMessageCallback();
 
       if hasargv and PyConfig.IgnoreCommandLineOptions:
