@@ -68,6 +68,7 @@
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#submodules">Submodules</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.Avro">pax.plugins.io.Avro module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.BulkOutput">pax.plugins.io.BulkOutput module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.FolderIO">pax.plugins.io.FolderIO module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.MongoDB">pax.plugins.io.MongoDB module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.Pandas">pax.plugins.io.Pandas module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.Pickle">pax.plugins.io.Pickle module</a></li>
@@ -98,13 +99,6 @@
 <li class="toctree-l2"><a class="reference internal" href="pax.plugins.html#submodules">Submodules</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pax.plugins.html#module-pax.plugins.XerawdpImitation">pax.plugins.XerawdpImitation module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pax.plugins.html#module-pax.plugins">Module contents</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="pax.trigger.html">pax.trigger package</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="pax.trigger.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pax.trigger.html#module-pax.trigger.celery">pax.trigger.celery module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pax.trigger.html#module-pax.trigger.tasks">pax.trigger.tasks module</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pax.trigger.html#module-pax.trigger">Module contents</a></li>
 </ul>
 </li>
 </ul>
@@ -176,11 +170,6 @@ If you do, you get in trouble if you start a new Processor instance that tries t
 <tt class="descname">setup_logging</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/core.html#Processor.setup_logging"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor.setup_logging" title="Permalink to this definition">¶</a></dt>
 <dd><p>Sets up logging. Must have loaded config first.</p>
 </dd></dl>
-
-<dl class="method">
-<dt id="pax.core.Processor.shutdown">
-<tt class="descname">shutdown</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/core.html#Processor.shutdown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor.shutdown" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 </dd></dl>
 
@@ -270,7 +259,7 @@ names of functionality between major releases.  You may add variables in minor
 releases.  Patch releases cannot modify this.</p>
 <dl class="class">
 <dt id="pax.datastructure.Event">
-<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Event</tt><big>(</big><em>n_channels</em>, <em>start_time</em>, <em>partial=False</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Event</tt><big>(</big><em>n_channels</em>, <em>start_time</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.data_model.StrictModel" title="pax.data_model.StrictModel"><tt class="xref py py-class docutils literal"><span class="pre">pax.data_model.StrictModel</span></tt></a></p>
 <p>Event class</p>
 <p>Stores high level information about the triggered event.</p>
@@ -823,7 +812,7 @@ starts at zero and is an integere because it&#8217;s an index.</p>
 read and write routines are required.</p>
 <dl class="class">
 <dt id="pax.formats.BulkOutputFormat">
-<em class="property">class </em><tt class="descclassname">pax.formats.</tt><tt class="descname">BulkOutputFormat</tt><big>(</big><em>log=&lt;logging.Logger object at 0x10a358588&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#BulkOutputFormat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.BulkOutputFormat" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.formats.</tt><tt class="descname">BulkOutputFormat</tt><big>(</big><em>log=&lt;logging.Logger object at 0x10b027f98&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#BulkOutputFormat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.BulkOutputFormat" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
 <p>Base class for bulk output formats</p>
 <dl class="method">
@@ -885,7 +874,7 @@ read and write routines are required.</p>
 
 <dl class="class">
 <dt id="pax.formats.HDF5Dump">
-<em class="property">class </em><tt class="descclassname">pax.formats.</tt><tt class="descname">HDF5Dump</tt><big>(</big><em>log=&lt;logging.Logger object at 0x10a358588&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#HDF5Dump"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.HDF5Dump" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.formats.</tt><tt class="descname">HDF5Dump</tt><big>(</big><em>log=&lt;logging.Logger object at 0x10b027f98&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#HDF5Dump"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.HDF5Dump" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.formats.BulkOutputFormat" title="pax.formats.BulkOutputFormat"><tt class="xref py py-class docutils literal"><span class="pre">pax.formats.BulkOutputFormat</span></tt></a></p>
 <dl class="method">
 <dt id="pax.formats.HDF5Dump.close">
@@ -936,7 +925,7 @@ read and write routines are required.</p>
 
 <dl class="class">
 <dt id="pax.formats.NumpyDump">
-<em class="property">class </em><tt class="descclassname">pax.formats.</tt><tt class="descname">NumpyDump</tt><big>(</big><em>log=&lt;logging.Logger object at 0x10a358588&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#NumpyDump"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.NumpyDump" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.formats.</tt><tt class="descname">NumpyDump</tt><big>(</big><em>log=&lt;logging.Logger object at 0x10b027f98&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#NumpyDump"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.NumpyDump" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.formats.BulkOutputFormat" title="pax.formats.BulkOutputFormat"><tt class="xref py py-class docutils literal"><span class="pre">pax.formats.BulkOutputFormat</span></tt></a></p>
 <dl class="method">
 <dt id="pax.formats.NumpyDump.close">
@@ -987,7 +976,7 @@ read and write routines are required.</p>
 
 <dl class="class">
 <dt id="pax.formats.PandasCSV">
-<em class="property">class </em><tt class="descclassname">pax.formats.</tt><tt class="descname">PandasCSV</tt><big>(</big><em>log=&lt;logging.Logger object at 0x10a358588&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#PandasCSV"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.PandasCSV" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.formats.</tt><tt class="descname">PandasCSV</tt><big>(</big><em>log=&lt;logging.Logger object at 0x10b027f98&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#PandasCSV"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.PandasCSV" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.formats.PandasFormat" title="pax.formats.PandasFormat"><tt class="xref py py-class docutils literal"><span class="pre">pax.formats.PandasFormat</span></tt></a></p>
 <dl class="attribute">
 <dt id="pax.formats.PandasCSV.pandas_format_key">
@@ -998,7 +987,7 @@ read and write routines are required.</p>
 
 <dl class="class">
 <dt id="pax.formats.PandasFormat">
-<em class="property">class </em><tt class="descclassname">pax.formats.</tt><tt class="descname">PandasFormat</tt><big>(</big><em>log=&lt;logging.Logger object at 0x10a358588&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#PandasFormat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.PandasFormat" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.formats.</tt><tt class="descname">PandasFormat</tt><big>(</big><em>log=&lt;logging.Logger object at 0x10b027f98&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#PandasFormat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.PandasFormat" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.formats.BulkOutputFormat" title="pax.formats.BulkOutputFormat"><tt class="xref py py-class docutils literal"><span class="pre">pax.formats.BulkOutputFormat</span></tt></a></p>
 <dl class="attribute">
 <dt id="pax.formats.PandasFormat.pandas_format_key">
@@ -1024,7 +1013,7 @@ read and write routines are required.</p>
 
 <dl class="class">
 <dt id="pax.formats.PandasHDF5">
-<em class="property">class </em><tt class="descclassname">pax.formats.</tt><tt class="descname">PandasHDF5</tt><big>(</big><em>log=&lt;logging.Logger object at 0x10a358588&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#PandasHDF5"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.PandasHDF5" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.formats.</tt><tt class="descname">PandasHDF5</tt><big>(</big><em>log=&lt;logging.Logger object at 0x10b027f98&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#PandasHDF5"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.PandasHDF5" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.formats.PandasFormat" title="pax.formats.PandasFormat"><tt class="xref py py-class docutils literal"><span class="pre">pax.formats.PandasFormat</span></tt></a></p>
 <dl class="method">
 <dt id="pax.formats.PandasHDF5.close">
@@ -1080,7 +1069,7 @@ read and write routines are required.</p>
 
 <dl class="class">
 <dt id="pax.formats.PandasHTML">
-<em class="property">class </em><tt class="descclassname">pax.formats.</tt><tt class="descname">PandasHTML</tt><big>(</big><em>log=&lt;logging.Logger object at 0x10a358588&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#PandasHTML"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.PandasHTML" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.formats.</tt><tt class="descname">PandasHTML</tt><big>(</big><em>log=&lt;logging.Logger object at 0x10b027f98&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#PandasHTML"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.PandasHTML" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.formats.PandasFormat" title="pax.formats.PandasFormat"><tt class="xref py py-class docutils literal"><span class="pre">pax.formats.PandasFormat</span></tt></a></p>
 <dl class="attribute">
 <dt id="pax.formats.PandasHTML.pandas_format_key">
@@ -1091,7 +1080,7 @@ read and write routines are required.</p>
 
 <dl class="class">
 <dt id="pax.formats.PandasJSON">
-<em class="property">class </em><tt class="descclassname">pax.formats.</tt><tt class="descname">PandasJSON</tt><big>(</big><em>log=&lt;logging.Logger object at 0x10a358588&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#PandasJSON"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.PandasJSON" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.formats.</tt><tt class="descname">PandasJSON</tt><big>(</big><em>log=&lt;logging.Logger object at 0x10b027f98&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#PandasJSON"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.PandasJSON" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.formats.PandasFormat" title="pax.formats.PandasFormat"><tt class="xref py py-class docutils literal"><span class="pre">pax.formats.PandasFormat</span></tt></a></p>
 <dl class="attribute">
 <dt id="pax.formats.PandasJSON.pandas_format_key">

@@ -7,7 +7,6 @@ Subpackages
 .. toctree::
 
     pax.plugins
-    pax.trigger
 
 Submodules
 ----------

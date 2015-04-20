@@ -64,7 +64,7 @@ information about Avro can be found at:</p>
 <dl class="class">
 <dt id="pax.plugins.io.Avro.ReadAvro">
 <em class="property">class </em><tt class="descclassname">pax.plugins.io.Avro.</tt><tt class="descname">ReadAvro</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Avro.html#ReadAvro"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Avro.ReadAvro" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.FolderIO.InputFromFolder</span></tt></p>
+<dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.FolderIO.InputFromFolder" title="pax.plugins.io.FolderIO.InputFromFolder"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.FolderIO.InputFromFolder</span></tt></a></p>
 <p>Read raw Avro data from an Avro file or folder of Avro files</p>
 <dl class="method">
 <dt id="pax.plugins.io.Avro.ReadAvro.close">
@@ -93,7 +93,7 @@ information about Avro can be found at:</p>
 <dl class="class">
 <dt id="pax.plugins.io.Avro.WriteAvro">
 <em class="property">class </em><tt class="descclassname">pax.plugins.io.Avro.</tt><tt class="descname">WriteAvro</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Avro.html#WriteAvro"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Avro.WriteAvro" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.FolderIO.WriteToFolder</span></tt></p>
+<dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.FolderIO.WriteToFolder" title="pax.plugins.io.FolderIO.WriteToFolder"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.FolderIO.WriteToFolder</span></tt></a></p>
 <p>Write raw Avro data of PMT pulses to a folder of small Avro files</p>
 <dl class="method">
 <dt id="pax.plugins.io.Avro.WriteAvro.close">
@@ -226,114 +226,238 @@ Follows plugin API.</p>
 </dd></dl>
 
 </div>
+<div class="section" id="module-pax.plugins.io.FolderIO">
+<span id="pax-plugins-io-folderio-module"></span><h2>pax.plugins.io.FolderIO module<a class="headerlink" href="#module-pax.plugins.io.FolderIO" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pax.plugins.io.FolderIO.InputFromFolder">
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.FolderIO.</tt><tt class="descname">InputFromFolder</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/FolderIO.html#InputFromFolder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.FolderIO.InputFromFolder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.InputPlugin" title="pax.plugin.InputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.InputPlugin</span></tt></a></p>
+<p>Read from a folder containing several small files, each containing with events</p>
+<dl class="method">
+<dt id="pax.plugins.io.FolderIO.InputFromFolder.close">
+<tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/FolderIO.html#InputFromFolder.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.FolderIO.InputFromFolder.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Close the currently open file</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.plugins.io.FolderIO.InputFromFolder.file_extension">
+<tt class="descname">file_extension</tt><em class="property"> = None</em><a class="headerlink" href="#pax.plugins.io.FolderIO.InputFromFolder.file_extension" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.FolderIO.InputFromFolder.get_all_events_in_current_file">
+<tt class="descname">get_all_events_in_current_file</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/FolderIO.html#InputFromFolder.get_all_events_in_current_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.FolderIO.InputFromFolder.get_all_events_in_current_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uses random access to iterate over all events</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.FolderIO.InputFromFolder.get_events">
+<tt class="descname">get_events</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/FolderIO.html#InputFromFolder.get_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.FolderIO.InputFromFolder.get_events" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterate through all events in the file / folder</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.FolderIO.InputFromFolder.get_first_and_last_event_number">
+<tt class="descname">get_first_and_last_event_number</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/FolderIO.html#InputFromFolder.get_first_and_last_event_number"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.FolderIO.InputFromFolder.get_first_and_last_event_number" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the first and last event number in file specified by filename</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.FolderIO.InputFromFolder.get_single_event">
+<tt class="descname">get_single_event</tt><big>(</big><em>*args</em>, <em>**kw</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/FolderIO.html#InputFromFolder.get_single_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.FolderIO.InputFromFolder.get_single_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.FolderIO.InputFromFolder.get_single_event_in_current_file">
+<tt class="descname">get_single_event_in_current_file</tt><big>(</big><em>event_position</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/FolderIO.html#InputFromFolder.get_single_event_in_current_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.FolderIO.InputFromFolder.get_single_event_in_current_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uses iteration to emulate random access to events
+Note &#8211; this takes the event POSITION in the file, not the absolute event number!</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.FolderIO.InputFromFolder.init_file">
+<tt class="descname">init_file</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/FolderIO.html#InputFromFolder.init_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.FolderIO.InputFromFolder.init_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find out the first and last event contained in filename
+Appends {&#8216;filename&#8217;: ..., &#8216;first_event&#8217;: ..., &#8216;last_event&#8217;:...} to self.raw_data_files</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.FolderIO.InputFromFolder.open">
+<tt class="descname">open</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/FolderIO.html#InputFromFolder.open"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.FolderIO.InputFromFolder.open" title="Permalink to this definition">¶</a></dt>
+<dd><p>Opens the file specified by filename for reading</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.FolderIO.InputFromFolder.select_file">
+<tt class="descname">select_file</tt><big>(</big><em>i</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/FolderIO.html#InputFromFolder.select_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.FolderIO.InputFromFolder.select_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Selects the ith file from self.raw_data_files for reading
+Will be called by get_single_event (and once by startup)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.FolderIO.InputFromFolder.shutdown">
+<tt class="descname">shutdown</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/FolderIO.html#InputFromFolder.shutdown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.FolderIO.InputFromFolder.shutdown" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.FolderIO.InputFromFolder.startup">
+<tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/FolderIO.html#InputFromFolder.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.FolderIO.InputFromFolder.startup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.plugins.io.FolderIO.WriteToFolder">
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.FolderIO.</tt><tt class="descname">WriteToFolder</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/FolderIO.html#WriteToFolder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.FolderIO.WriteToFolder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.OutputPlugin" title="pax.plugin.OutputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.OutputPlugin</span></tt></a></p>
+<p>Write to a folder containing several small files, each containing a &lt;= a fixed number of events</p>
+<dl class="method">
+<dt id="pax.plugins.io.FolderIO.WriteToFolder.close">
+<tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/FolderIO.html#WriteToFolder.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.FolderIO.WriteToFolder.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.FolderIO.WriteToFolder.close_current_file">
+<tt class="descname">close_current_file</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/FolderIO.html#WriteToFolder.close_current_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.FolderIO.WriteToFolder.close_current_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Closes the currently open file, if there is one. Also handles temporary file renaming.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.plugins.io.FolderIO.WriteToFolder.file_extension">
+<tt class="descname">file_extension</tt><em class="property"> = None</em><a class="headerlink" href="#pax.plugins.io.FolderIO.WriteToFolder.file_extension" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.FolderIO.WriteToFolder.open">
+<tt class="descname">open</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/FolderIO.html#WriteToFolder.open"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.FolderIO.WriteToFolder.open" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.FolderIO.WriteToFolder.open_new_file">
+<tt class="descname">open_new_file</tt><big>(</big><em>first_event_number</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/FolderIO.html#WriteToFolder.open_new_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.FolderIO.WriteToFolder.open_new_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Opens a new file, closing any old open ones</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.FolderIO.WriteToFolder.shutdown">
+<tt class="descname">shutdown</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/FolderIO.html#WriteToFolder.shutdown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.FolderIO.WriteToFolder.shutdown" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.FolderIO.WriteToFolder.startup">
+<tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/FolderIO.html#WriteToFolder.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.FolderIO.WriteToFolder.startup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.FolderIO.WriteToFolder.write_event">
+<tt class="descname">write_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/FolderIO.html#WriteToFolder.write_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.FolderIO.WriteToFolder.write_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write one more event to the folder, opening/closing files as needed</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.FolderIO.WriteToFolder.write_event_to_current_file">
+<tt class="descname">write_event_to_current_file</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/FolderIO.html#WriteToFolder.write_event_to_current_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.FolderIO.WriteToFolder.write_event_to_current_file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
 <div class="section" id="module-pax.plugins.io.MongoDB">
 <span id="pax-plugins-io-mongodb-module"></span><h2>pax.plugins.io.MongoDB module<a class="headerlink" href="#module-pax.plugins.io.MongoDB" title="Permalink to this headline">¶</a></h2>
-<p>Interfacing to MongoDB</p>
-<p>MongoDB is used as a data backend within the DAQ.  For example, &#8216;kodiaq&#8217;, which
-reads out the digitizers, will write data to MongoDB.  This data from kodiaq can
-either be triggered or untriggered. In the case of untriggered, an event builder
-must be run on the data and will result in triggered data.  Input and output
-classes are provided for MongoDB access.  More information is in the docstrings.</p>
+<p>Interfacing to DAQ via MongoDB</p>
+<p>The DAQ uses MongoDB for input and output.  The classes defined hear allow the
+user to read data from the DAQ and also inject raw occurences into the DAQ.</p>
 <dl class="class">
-<dt id="pax.plugins.io.MongoDB.IOMongoDB">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.MongoDB.</tt><tt class="descname">IOMongoDB</tt><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#IOMongoDB"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.IOMongoDB" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
+<dt id="pax.plugins.io.MongoDB.MongoDBFakeDAQOutput">
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.MongoDB.</tt><tt class="descname">MongoDBFakeDAQOutput</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBFakeDAQOutput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBFakeDAQOutput" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.OutputPlugin" title="pax.plugin.OutputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.OutputPlugin</span></tt></a></p>
+<p>Inject PMT pulses into DAQ to test trigger.</p>
+<p>This plugin aims to emulate the DAQReader by creating run control documents
+and feeding raw data into the DAQ&#8217;s MongoDB format.  Consult here for more
+on formats:</p>
+<p><a class="reference external" href="https://docs.google.com/drawings/d/1dytKBmMARsZtuyUmLbzm9IbXM1hre">https://docs.google.com/drawings/d/1dytKBmMARsZtuyUmLbzm9IbXM1hre</a>
+-knkEIU4X3Ot8U/edit</p>
+<p>Note: write run document after output collection created.</p>
 <dl class="staticmethod">
-<dt id="pax.plugins.io.MongoDB.IOMongoDB.chunks">
-<em class="property">static </em><tt class="descname">chunks</tt><big>(</big><em>l</em>, <em>n</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#IOMongoDB.chunks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.IOMongoDB.chunks" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.chunks">
+<em class="property">static </em><tt class="descname">chunks</tt><big>(</big><em>l</em>, <em>n</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBFakeDAQOutput.chunks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.chunks" title="Permalink to this definition">¶</a></dt>
 <dd><p>Yield successive n-sized chunks from l.</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pax.plugins.io.MongoDB.IOMongoDB.number_events">
-<tt class="descname">number_events</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#IOMongoDB.number_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.IOMongoDB.number_events" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.get_connection">
+<tt class="descname">get_connection</tt><big>(</big><em>hostname</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBFakeDAQOutput.get_connection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.get_connection" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="pax.plugins.io.MongoDB.IOMongoDB.setup_access">
-<tt class="descname">setup_access</tt><big>(</big><em>name</em>, <em>address</em>, <em>database</em>, <em>collection</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#IOMongoDB.setup_access"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.IOMongoDB.setup_access" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.handle_occurences">
+<tt class="descname">handle_occurences</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBFakeDAQOutput.handle_occurences"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.handle_occurences" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="pax.plugins.io.MongoDB.IOMongoDB.setup_input">
-<tt class="descname">setup_input</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#IOMongoDB.setup_input"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.IOMongoDB.setup_input" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dt id="pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.shutdown">
+<tt class="descname">shutdown</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBFakeDAQOutput.shutdown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.shutdown" title="Permalink to this definition">¶</a></dt>
+<dd><p>Notify run database that datataking stopped</p>
+</dd></dl>
 
 <dl class="method">
-<dt id="pax.plugins.io.MongoDB.IOMongoDB.startup">
-<tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#IOMongoDB.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.IOMongoDB.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dt id="pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.startup">
+<tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBFakeDAQOutput.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.startup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setup</p>
+</dd></dl>
 
 <dl class="method">
-<dt id="pax.plugins.io.MongoDB.IOMongoDB.update_run_doc">
-<tt class="descname">update_run_doc</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#IOMongoDB.update_run_doc"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.IOMongoDB.update_run_doc" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.write_event">
+<tt class="descname">write_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBFakeDAQOutput.write_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.write_event" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="class">
-<dt id="pax.plugins.io.MongoDB.MongoDBReadUntriggered">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.MongoDB.</tt><tt class="descname">MongoDBReadUntriggered</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBReadUntriggered"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBReadUntriggered" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.InputPlugin" title="pax.plugin.InputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.InputPlugin</span></tt></a>, <a class="reference internal" href="#pax.plugins.io.MongoDB.IOMongoDB" title="pax.plugins.io.MongoDB.IOMongoDB"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.MongoDB.IOMongoDB</span></tt></a></p>
+<dt id="pax.plugins.io.MongoDB.MongoDBInput">
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.MongoDB.</tt><tt class="descname">MongoDBInput</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInput" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.InputPlugin" title="pax.plugin.InputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.InputPlugin</span></tt></a></p>
+<p>Read data from DAQ database</p>
+<p>This assumes that an event builder has run.</p>
 <dl class="method">
-<dt id="pax.plugins.io.MongoDB.MongoDBReadUntriggered.get_events">
-<tt class="descname">get_events</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBReadUntriggered.get_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBReadUntriggered.get_events" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="staticmethod">
-<dt id="pax.plugins.io.MongoDB.MongoDBReadUntriggered.sliding_window">
-<em class="property">static </em><tt class="descname">sliding_window</tt><big>(</big><em>x</em>, <em>window=1000</em>, <em>multiplicity=3</em>, <em>left=-10</em>, <em>right=7</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBReadUntriggered.sliding_window"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBReadUntriggered.sliding_window" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sliding window cluster finder (with range extension)</p>
-<p>x is a list of times.  A window will slide over the values in x and
-this function will return all event ranges with more than &#8216;multiplicity&#8217;
-of pulses.  We assume that any pulses will have ~1 pe area.
-Also, left and right will be added to ranges, where left can be the
-drift length.</p>
+<dt id="pax.plugins.io.MongoDB.MongoDBInput.get_events">
+<tt class="descname">get_events</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInput.get_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInput.get_events" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generator of events from Mongo</p>
 </dd></dl>
 
 <dl class="method">
-<dt id="pax.plugins.io.MongoDB.MongoDBReadUntriggered.startup">
-<tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBReadUntriggered.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBReadUntriggered.startup" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.plugins.io.MongoDB.MongoDBInput.number_events">
+<tt class="descname">number_events</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInput.number_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInput.number_events" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.MongoDB.MongoDBInput.startup">
+<tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInput.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInput.startup" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="class">
-<dt id="pax.plugins.io.MongoDB.MongoDBReadUntriggeredFiller">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.MongoDB.</tt><tt class="descname">MongoDBReadUntriggeredFiller</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBReadUntriggeredFiller"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBReadUntriggeredFiller" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></tt></a>, <a class="reference internal" href="#pax.plugins.io.MongoDB.IOMongoDB" title="pax.plugins.io.MongoDB.IOMongoDB"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.MongoDB.IOMongoDB</span></tt></a></p>
+<dt id="pax.plugins.io.MongoDB.MongoDBInputTriggered">
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.MongoDB.</tt><tt class="descname">MongoDBInputTriggered</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInputTriggered"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInputTriggered" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.InputPlugin" title="pax.plugin.InputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.InputPlugin</span></tt></a></p>
+<p>Read triggered data produced by kodiaq with MongoDB output</p>
+<p>This must be run after the data aquisition is finished.</p>
 <dl class="method">
-<dt id="pax.plugins.io.MongoDB.MongoDBReadUntriggeredFiller.process_event">
-<tt class="descname">process_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBReadUntriggeredFiller.process_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBReadUntriggeredFiller.process_event" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.plugins.io.MongoDB.MongoDBInputTriggered.get_events">
+<tt class="descname">get_events</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInputTriggered.get_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInputTriggered.get_events" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="pax.plugins.io.MongoDB.MongoDBReadUntriggeredFiller.startup">
-<tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBReadUntriggeredFiller.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBReadUntriggeredFiller.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.io.MongoDB.MongoDBWriteTriggered">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.MongoDB.</tt><tt class="descname">MongoDBWriteTriggered</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBWriteTriggered"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBWriteTriggered" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.OutputPlugin" title="pax.plugin.OutputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.OutputPlugin</span></tt></a>, <a class="reference internal" href="#pax.plugins.io.MongoDB.IOMongoDB" title="pax.plugins.io.MongoDB.IOMongoDB"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.MongoDB.IOMongoDB</span></tt></a></p>
-<dl class="method">
-<dt id="pax.plugins.io.MongoDB.MongoDBWriteTriggered.startup">
-<tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBWriteTriggered.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBWriteTriggered.startup" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.plugins.io.MongoDB.MongoDBInputTriggered.startup">
+<tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInputTriggered.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInputTriggered.startup" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="pax.plugins.io.MongoDB.MongoDBWriteTriggered.write_event">
-<tt class="descname">write_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBWriteTriggered.write_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBWriteTriggered.write_event" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.plugins.io.MongoDB.MongoDBInputTriggered.total_number_events">
+<tt class="descname">total_number_events</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInputTriggered.total_number_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInputTriggered.total_number_events" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-</dd></dl>
-
-<dl class="function">
-<dt id="pax.plugins.io.MongoDB.sampletime_fmt">
-<tt class="descclassname">pax.plugins.io.MongoDB.</tt><tt class="descname">sampletime_fmt</tt><big>(</big><em>num</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#sampletime_fmt"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.sampletime_fmt" title="Permalink to this definition">¶</a></dt>
-<dd><p>num is in 1s of ns</p>
 </dd></dl>
 
 </div>
@@ -467,7 +591,7 @@ handling its subcollections recursively.</p>
 <dl class="class">
 <dt id="pax.plugins.io.Pickle.ReadFromStackedPickleFolder">
 <em class="property">class </em><tt class="descclassname">pax.plugins.io.Pickle.</tt><tt class="descname">ReadFromStackedPickleFolder</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Pickle.html#ReadFromStackedPickleFolder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Pickle.ReadFromStackedPickleFolder" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.FolderIO.InputFromFolder</span></tt></p>
+<dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.FolderIO.InputFromFolder" title="pax.plugins.io.FolderIO.InputFromFolder"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.FolderIO.InputFromFolder</span></tt></a></p>
 <dl class="method">
 <dt id="pax.plugins.io.Pickle.ReadFromStackedPickleFolder.close">
 <tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Pickle.html#ReadFromStackedPickleFolder.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Pickle.ReadFromStackedPickleFolder.close" title="Permalink to this definition">¶</a></dt>
@@ -504,7 +628,7 @@ handling its subcollections recursively.</p>
 <dl class="class">
 <dt id="pax.plugins.io.Pickle.WriteToStackedPickleFolder">
 <em class="property">class </em><tt class="descclassname">pax.plugins.io.Pickle.</tt><tt class="descname">WriteToStackedPickleFolder</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Pickle.html#WriteToStackedPickleFolder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Pickle.WriteToStackedPickleFolder" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.FolderIO.WriteToFolder</span></tt></p>
+<dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.FolderIO.WriteToFolder" title="pax.plugins.io.FolderIO.WriteToFolder"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.FolderIO.WriteToFolder</span></tt></a></p>
 <dl class="method">
 <dt id="pax.plugins.io.Pickle.WriteToStackedPickleFolder.close">
 <tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Pickle.html#WriteToStackedPickleFolder.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Pickle.WriteToStackedPickleFolder.close" title="Permalink to this definition">¶</a></dt>
@@ -712,7 +836,7 @@ code for details.</p>
 <dl class="class">
 <dt id="pax.plugins.io.XED.XedInput">
 <em class="property">class </em><tt class="descclassname">pax.plugins.io.XED.</tt><tt class="descname">XedInput</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/XED.html#XedInput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.XED.XedInput" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.FolderIO.InputFromFolder</span></tt></p>
+<dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.FolderIO.InputFromFolder" title="pax.plugins.io.FolderIO.InputFromFolder"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.FolderIO.InputFromFolder</span></tt></a></p>
 <dl class="method">
 <dt id="pax.plugins.io.XED.XedInput.close">
 <tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/XED.html#XedInput.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.XED.XedInput.close" title="Permalink to this definition">¶</a></dt>
@@ -761,6 +885,7 @@ code for details.</p>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.Avro">pax.plugins.io.Avro module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.BulkOutput">pax.plugins.io.BulkOutput module</a></li>
+<li><a class="reference internal" href="#module-pax.plugins.io.FolderIO">pax.plugins.io.FolderIO module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.MongoDB">pax.plugins.io.MongoDB module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.Pandas">pax.plugins.io.Pandas module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.Pickle">pax.plugins.io.Pickle module</a></li>
