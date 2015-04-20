@@ -1,0 +1,30 @@
+pax.trigger package
+===================
+
+Submodules
+----------
+
+pax.trigger.celery module
+-------------------------
+
+.. automodule:: pax.trigger.celery
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.trigger.tasks module
+------------------------
+
+.. automodule:: pax.trigger.tasks
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: pax.trigger
+    :members:
+    :undoc-members:
+    :show-inheritance:

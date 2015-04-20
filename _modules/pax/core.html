@@ -472,6 +472,16 @@
 
         <span class="k">return</span> <span class="n">event</span>
 </div>
+<div class="viewcode-block" id="Processor.shutdown"><a class="viewcode-back" href="../../pax.html#pax.core.Processor.shutdown">[docs]</a>    <span class="k">def</span> <span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Shutting down all plugins...&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Shutting down </span><span class="si">%s</span><span class="s">...&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_plugin</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_plugin</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">input_plugin</span><span class="o">.</span><span class="n">has_shut_down</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="k">for</span> <span class="n">ap</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_plugins</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Shutting down </span><span class="si">%s</span><span class="s">...&quot;</span> <span class="o">%</span> <span class="n">ap</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">ap</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
+            <span class="n">ap</span><span class="o">.</span><span class="n">has_shut_down</span> <span class="o">=</span> <span class="bp">True</span>
+</div>
 <div class="viewcode-block" id="Processor.run"><a class="viewcode-back" href="../../pax.html#pax.core.Processor.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">clean_shutdown</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Run the processor over all events, then shuts down the plugins (unless clean_shutdown=False)</span>
 
@@ -492,7 +502,10 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_plugin</span><span class="o">.</span><span class="n">has_shut_down</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Attempt to run a Processor twice.&quot;</span><span class="p">)</span>
 
+
+
         <span class="c"># This is the actual event loop.  &#39;tqdm&#39; is a progress bar.</span>
+        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span> <span class="c"># Defined outside loop since referenced later in this scope</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">event</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tqdm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_events</span><span class="p">(),</span>
                                        <span class="n">desc</span><span class="o">=</span><span class="s">&#39;Event&#39;</span><span class="p">,</span>
                                        <span class="n">total</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">total_number_events</span><span class="p">)):</span>
@@ -507,11 +520,9 @@
         <span class="k">else</span><span class="p">:</span>   <span class="c"># If no break occurred:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;All events from input source have been processed.&quot;</span><span class="p">)</span>
 
-        <span class="c"># TODO: not nice, accessing the loop var outside the loop.. What if loop was never run?</span>
         <span class="n">events_actually_processed</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pax&#39;</span><span class="p">][</span><span class="s">&#39;print_timing_report&#39;</span><span class="p">]:</span>
-
             <span class="n">all_plugins</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">input_plugin</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_plugins</span>
             <span class="n">timing_report</span> <span class="o">=</span> <span class="n">PrettyTable</span><span class="p">([</span><span class="s">&#39;Plugin&#39;</span><span class="p">,</span>
                                          <span class="s">&#39;%&#39;</span><span class="p">,</span>
@@ -521,6 +532,10 @@
             <span class="n">timing_report</span><span class="o">.</span><span class="n">align</span> <span class="o">=</span> <span class="s">&quot;r&quot;</span>
             <span class="n">timing_report</span><span class="o">.</span><span class="n">align</span><span class="p">[</span><span class="s">&quot;Plugin&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;l&quot;</span>
             <span class="n">total_time</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">plugin</span><span class="o">.</span><span class="n">total_time_taken</span> <span class="k">for</span> <span class="n">plugin</span> <span class="ow">in</span> <span class="n">all_plugins</span><span class="p">])</span>
+
+            <span class="c"># If nothing run, speed metrics meaningless.</span>
+            <span class="k">if</span> <span class="n">total_time</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">total_time</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
 
             <span class="k">for</span> <span class="n">plugin</span> <span class="ow">in</span> <span class="n">all_plugins</span><span class="p">:</span>
 
@@ -550,14 +565,7 @@
 
         <span class="c"># Shutdown all plugins now -- don&#39;t wait until this Processor instance gets deleted</span>
         <span class="k">if</span> <span class="n">clean_shutdown</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Shutting down all plugins...&quot;</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Shutting down </span><span class="si">%s</span><span class="s">...&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_plugin</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">input_plugin</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">input_plugin</span><span class="o">.</span><span class="n">has_shut_down</span> <span class="o">=</span> <span class="bp">True</span>
-            <span class="k">for</span> <span class="n">ap</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_plugins</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Shutting down </span><span class="si">%s</span><span class="s">...&quot;</span> <span class="o">%</span> <span class="n">ap</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-                <span class="n">ap</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
-                <span class="n">ap</span><span class="o">.</span><span class="n">has_shut_down</span> <span class="o">=</span> <span class="bp">True</span></div></div>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span></div></div>
 </pre></div>
 
           </div>
