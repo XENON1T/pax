@@ -320,7 +320,6 @@ class ReadFromBulkOutput(plugin.InputPlugin):
 
     def get_events(self):
         """Get events from processed data source
-        Follows plugin API.
         """
         of = self.output_format
 

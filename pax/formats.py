@@ -2,7 +2,7 @@
 
 Here are the definitions of how to serialize our data structure to and from various formats.
 Please be careful when editing this file:
- - Do not add any dependencies (e.g. imports at head of file without try-except), this file has to stay importable
+ - Do not add any dependencies (e.g. imports at head of file without try-except), this file has to stay import-able
    even if not all the python modules for all the formats are installed.
  - Do not use python3-specific syntax, this file should be importable by python2 applications.
 """
@@ -99,58 +99,6 @@ class NumpyDump(BulkOutputFormat):
 
     def n_in_data(self, df_name):
         return len(self.f[df_name])
-
-
-class ROOTViaPy2(NumpyDump):
-    file_extension = 'root'
-    supports_array_fields = True
-    supports_read_back = False
-    f = None
-
-    def __init__(self, py2path=None, converter_script_path=None, **kwargs):
-        NumpyDump.__init__(self, **kwargs)
-        if py2path is None:
-            self.log.warning("Python2 executable path not specified: trying a few likely options")
-            for attempt in ('/usr/bin/python',
-                            'C:/Python27/python.exe', 'C:/Python26/python.exe',  'C:/Python28/python.exe'):
-                if os.path.exists(attempt):
-                    py2path = attempt
-                    break
-            else:
-                raise ValueError('Need to pass path to python2 on initialization of RootViaPy2 format!')
-        if converter_script_path is None:
-            self.log.warning("convert_pax_formats path not passed: trying a few likely options")
-            for attempt in (os.path.dirname(sys.executable), '.', '..'):
-                attempt = os.path.join(attempt, 'convert_pax_formats')
-                if os.path.exists(attempt):
-                    converter_script_path = attempt
-                    break
-            else:
-                raise ValueError('Need to pass path to convert_pax_formats on initialization of RootViaPy2 format!')
-        self.py2path = py2path
-        self.converter_script_path = converter_script_path
-
-    def open(self, name, mode):
-        # name is the file with '.root' added
-        # We must also construct the temporary numpy filename
-        self.root_filename = name
-        self.numpy_filename = os.path.splitext(name)[0] + '_temp.npz'
-        NumpyDump.open(self, self.numpy_filename, mode)
-
-    def close(self):
-        # Stop numpy writing
-        NumpyDump.close(self)
-
-        # Convert numpy dump to ROOT
-        self.log.info("Converting temporary file to ROOT...")
-        subprocess.call([self.py2path, self.converter_script_path,
-                         self.numpy_filename, self.root_filename,
-                         '--source_format', 'numpy',
-                         '--destination_format', 'root',
-                         '--pax_path', os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir)])
-
-        # Delete temporary numpy file
-        os.remove(self.filename)
 
 
 class HDF5Dump(BulkOutputFormat):
@@ -295,6 +243,7 @@ class ROOTDump(BulkOutputFormat):
         self.log.debug("Done writing")
 
     def read_data(self, df_name):
+        self.log.warning("ROOT read support is experimental!")
         tree = self.f.Get(df_name)
 
         # Read the branch names and types
@@ -434,8 +383,58 @@ class PandasHDF5(PandasFormat):
             return 0
         return len(self.store[df_name])
 
-    def has_data(self, df_name):
-        return df_name in self.store
+
+class ROOTViaPy2(NumpyDump):
+    file_extension = 'root'
+    supports_array_fields = True
+    supports_read_back = False
+    f = None
+
+    def __init__(self, py2path=None, converter_script_path=None, **kwargs):
+        self.log.warning("ROOT via py2 is experimental -- don't rely on it to discover dark matter yet")
+        NumpyDump.__init__(self, **kwargs)
+        if py2path is None:
+            self.log.warning("Python2 executable path not specified: trying a few likely options")
+            for attempt in ('/usr/bin/python',
+                            'C:/Python27/python.exe', 'C:/Python26/python.exe',  'C:/Python28/python.exe'):
+                if os.path.exists(attempt):
+                    py2path = attempt
+                    break
+            else:
+                raise ValueError('Need to pass path to python2 on initialization of RootViaPy2 format!')
+        if converter_script_path is None:
+            self.log.warning("convert_pax_formats path not passed: trying a few likely options")
+            for attempt in (os.path.dirname(sys.executable), '.', '..'):
+                attempt = os.path.join(attempt, 'convert_pax_formats')
+                if os.path.exists(attempt):
+                    converter_script_path = attempt
+                    break
+            else:
+                raise ValueError('Need to pass path to convert_pax_formats on initialization of RootViaPy2 format!')
+        self.py2path = py2path
+        self.converter_script_path = converter_script_path
+
+    def open(self, name, mode):
+        # name is the file with '.root' added
+        # We must also construct the temporary numpy filename
+        self.root_filename = name
+        self.numpy_filename = os.path.splitext(name)[0] + '_temp.npz'
+        NumpyDump.open(self, self.numpy_filename, mode)
+
+    def close(self):
+        # Stop numpy writing
+        NumpyDump.close(self)
+
+        # Convert numpy dump to ROOT
+        self.log.info("Converting temporary file to ROOT...")
+        subprocess.call([self.py2path, self.converter_script_path,
+                         self.numpy_filename, self.root_filename,
+                         '--source_format', 'numpy',
+                         '--destination_format', 'root',
+                         '--pax_path', os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir)])
+
+        # Delete temporary numpy file
+        os.remove(self.filename)
 
 
 # List of data formats, pax / analysis code can import this
