@@ -374,12 +374,14 @@ class Event(StrictModel):
         return self.stop_time - self.start_time
 
     def get_sum_waveform_names(self):
-        """Get list of the names of waveforms
+        """Get list of the names of sum waveform objects
+        Deprecated -- for Xerawdp matching only
         """
         return [sw.name for sw in self.sum_waveforms]
 
     def get_sum_waveform(self, name):
-        """Get waveform for name
+        """Get sum waveform object by name
+        Deprecated -- for Xerawdp matching only
         """
         for sw in self.sum_waveforms:
             if sw.name == name:
@@ -388,28 +390,39 @@ class Event(StrictModel):
         raise RuntimeError("SumWaveform %s not found" % name)
 
     def length(self):
-        """Number of samples for the sum waveform
+        """Number of samples in the event
         """
         return int(self.duration() / self.sample_duration)
 
     def S1s(self, detector='tpc', sort_key='area', reverse=True):  # noqa
-        """List of S1 (scintillation) signals
+        """List of S1 (scintillation) signals in this event
 
-        Returns an :class:`pax.datastructure.Peak` class.
+        Returns a list of :class:`pax.datastructure.Peak` objects
+          whose type is 's1', and
+          who are in the detector specified by the 'detector' argument (unless detector='all')
+        The returned list is sorted DESCENDING (i.e. reversed!) by the key sort_key (default area)
+        unless you pass reverse=False, then it is ascending.
         """
         return self._get_peaks_by_type('s1', sort_key, reverse, detector)
 
     def S2s(self, detector='tpc', sort_key='area', reverse=True):  # noqa
-        """List of S2 (ionization) signals
+        """List of S2 (ionization) signals in this event
 
-        Returns an :class:`pax.datastructure.Peak` class.
+        Returns a list of :class:`pax.datastructure.Peak` objects
+          whose type is 's2', and
+          who are in the detector specified by the 'detector' argument (unless detector='all')
+        The returned list is sorted DESCENDING (i.e. reversed!) by the key sort_key (default area)
+        unless you pass reverse=False, then it is ascending.
         """
         return self._get_peaks_by_type('s2', sort_key, reverse, detector)
 
-    def _get_peaks_by_type(self, desired_type, sort_key, reverse, detector='tpc'):
+    def _get_peaks_by_type(self, desired_type, sort_key, reverse=True, detector='tpc'):
         """Helper function for retrieving only certain types of peaks
-
-        You shouldn't be using this directly.
+        Returns a list of :class:`pax.datastructure.Peak` objects
+          whose type is desired_type, and
+          who are in the detector specified by the 'detector' argument (unless detector='all')
+        The returned list is sorted DESCENDING (i.e. reversed!) by the key sort_key (default area)
+        unless you pass reverse=False, then it is ascending (normal sort order).
         """
         # Extract only peaks of a certain type
         peaks = []
