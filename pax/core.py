@@ -339,7 +339,7 @@ class Processor:
             raise ValueError('Invalid log level: %s' % log_spec)
 
         logging.basicConfig(level=numeric_level,
-                            format='%(name)s L%(lineno)s %(levelname)s %(message)s')
+                            format='%(name)s %(processName)-10s L%(lineno)s %(levelname)s %(message)s')
 
         logger = logging.getLogger('processor')
         logger.debug('Logging initialized with level %s' % log_spec)

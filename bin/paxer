@@ -37,7 +37,8 @@ class Consumer(multiprocessing.Process):
             answer = []
             if next_events is None:
                 # Poison pill means shutdown
-                print(('%s: Exiting' % proc_name))
+                p.log.info('Exiting')
+
                 self.task_queue.task_done()
                 break
             for event in next_events:
@@ -48,64 +49,65 @@ class Consumer(multiprocessing.Process):
             self.result_queue.put(answer)
         return
 
-##
-# Parse command line arguments
-##
-parser = argparse.ArgumentParser(description="Process XENON1T data")
 
-# Input and output overrides
-parser.add_argument('--input',  default=None, help="File, database or directory to read events from", nargs='?')
-parser.add_argument('--output', default=None, help="File, database or directory to write events to",  nargs='?')
+def get_args():
+    global parser, plotting_control_group
+    # #
+    # Parse command line arguments
+    ##
+    parser = argparse.ArgumentParser(description="Process XENON1T data")
+    # Input and output overrides
+    parser.add_argument('--input', default=None,
+                        help="File, database or directory to read events from",
+                        nargs='?')
+    parser.add_argument('--output', default=None,
+                        help="File, database or directory to write events to",
+                        nargs='?')
+    # Log level control
+    parser.add_argument('--log', default=None,
+                        help="Set log level, e.g. 'debug'")
+    # Configuration control
+    # Pass in a name to use a pre-cooked config from config:
+    parser.add_argument('--config',
+                        default='XENON100',
+                        choices=core.get_named_configuration_options(),
+                        nargs='+',
+                        help="Name(s) of the pax configuration(s) to use.")
+    # ... or pass in a path to your own config file:
+    parser.add_argument('--config_path',
+                        default=[],
+                        nargs='+',
+                        help="Path(s) of the configuration file(s) to use."
+    )
+    # ... or load the configuration from a previous processed data file
+    parser.add_argument('--redo',
+                        default='',
+                        help="Path of the HDF5 data file to redo.")
+    # Plotting override
+    plotting_control_group = parser.add_mutually_exclusive_group()
+    plotting_control_group.add_argument(
+        '--plot',
+        action='store_const',
+        const=True,
+        help='Plot summed waveforms on screen',
+    )
+    plotting_control_group.add_argument(
+        '--plot_to_dir',
+        help='Save summed waveform plots in directory',
+    )
+    # Control events to process
+    parser.add_argument('--event',
+                        type=int,
+                        nargs='+',
+                        help="Process particular event(s).")
+    parser.add_argument('--stop_after',
+                        type=int,
+                        help="Stop after STOP_AFTER events have been processed.")
 
-# Log level control
-parser.add_argument('--log', default=None, help="Set log level, e.g. 'debug'")
+    args = parser.parse_args()
+    return args
 
-# Configuration control
-# Pass in a name to use a pre-cooked config from config:
-parser.add_argument(
-    '--config',
-    default='XENON100',
-    choices=core.get_named_configuration_options(),
-    nargs='+',
-    help="Name(s) of the pax configuration(s) to use."
-)
-# ... or pass in a path to your own config file:
-parser.add_argument(
-    '--config_path',
-    default=[],
-    nargs='+',
-    help="Path(s) of the configuration file(s) to use."
-)
-# ... or load the configuration from a previous processed data file
-parser.add_argument(
-    '--redo',
-    default='',
-    help="Path of the HDF5 data file to redo."
-)
-
-# Plotting override
-plotting_control_group = parser.add_mutually_exclusive_group()
-plotting_control_group.add_argument(
-    '--plot',
-    action='store_const',
-    const=True,
-    help='Plot summed waveforms on screen',
-)
-plotting_control_group.add_argument(
-    '--plot_to_dir',
-    help='Save summed waveform plots in directory',
-)
-
-# Control events to process
-parser.add_argument('--event',
-                    type=int,
-                    nargs='+',
-                    help="Process particular event(s).")
-parser.add_argument('--stop_after',
-                    type=int,
-                    help="Stop after STOP_AFTER events have been processed.")
-
-args = parser.parse_args()
+args = get_args()
 
 # Take config from previous file
 if args.redo:
@@ -148,8 +150,8 @@ if args.plot_to_dir or args.plot :
 ##
 override_dict['pax']['plugin_group_names'] = ['input']
 p = core.Processor(config_names=args.config,
-               config_paths=args.config_path,
-               config_dict=override_dict)
+                   config_paths=args.config_path,
+                   config_dict=override_dict)
 
 override_dict['pax']['plugin_group_names'] = ['dsp', 'transform']
 
@@ -159,15 +161,14 @@ results = multiprocessing.Queue()
 
 # Start consumers
 num_consumers = multiprocessing.cpu_count()
-print('Creating %d consumers' % num_consumers)
+p.log.info('Creating %d consumers',
+           num_consumers)
 consumers = [ Consumer(tasks, results,
                        args.config,
                        args.config_path,
-                       override_dict)
-              for i in range(num_consumers) ]
+                       override_dict) for i in range(num_consumers) ]
 for w in consumers:
     w.start()
-
 
 # Enqueue jobs
 num_jobs = 0
