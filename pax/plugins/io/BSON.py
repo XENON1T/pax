@@ -26,21 +26,23 @@ class ReadBSON(InputFromFolder):
 
     def get_all_events_in_current_file(self):
         """Yield events from BSON file iteratively
+        HACK: we have to cast some stuff to int manually, it appears a newer version of pymongo (3.0?)
+        introduces a custom bson int64 class... Why not use numpy int64? How many ints are there??
         """
         for doc in self.reader:  # For every event in file
 
             # Make pax object
             pax_event = datastructure.Event(n_channels=self.config['n_channels'],
                                             sample_duration=self.config['sample_duration'],
-                                            start_time=doc['start_time'],
-                                            stop_time=doc['stop_time'],
-                                            event_number=doc['event_number'])
+                                            start_time=int(doc['start_time']),
+                                            stop_time=int(doc['stop_time']),
+                                            event_number=int(doc['event_number']))
 
             # For all pulses/pulses, add to pax event
             for pulse in doc['pulses']:
 
-                pulse = datastructure.Pulse(channel=pulse['channel'],
-                                            left=pulse['left'],
+                pulse = datastructure.Pulse(channel=int(pulse['channel']),
+                                            left=int(pulse['left']),
                                             raw_data=np.fromstring(pulse['payload'],
                                                                    dtype=np.int16))
                 pax_event.pulses.append(pulse)
