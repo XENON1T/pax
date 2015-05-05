@@ -178,8 +178,11 @@ class FindHits(plugin.TransformPlugin):
                         if not any([event.all_hits[-(i+1)].height < 1.2 * self.min_sigma * noise_sigma_pe
                                    for i in range(len(hits_found))]):
                             continue
-            elif self.make_diagnostic_plots == 'no peaks':
+            elif self.make_diagnostic_plots == 'no hits':
                 if len(hits_found) != 0:
+                    continue
+            elif self.make_diagnostic_plots == 'hits only':
+                if len(hits_found) == 0:
                     continue
             else:
                 if self.make_diagnostic_plots != 'always':
