@@ -52,7 +52,10 @@ class FindHits(plugin.TransformPlugin):
         # -1 is a placeholder for values that should never be used
         hits_buffer = -1 * np.ones((self.max_hits_per_pulse, 2), dtype=np.int64)
         argmaxes = -1 * np.zeros(self.max_hits_per_pulse, dtype=np.int64)
-        areas = -1 * np.ones(self.max_hits_per_pulse)
+        areas = -1 * np.ones(self.max_hits_per_pulse, dtype=np.float64)
+        centers = -1 * np.ones(self.max_hits_per_pulse, dtype=np.float64)
+
+        dt = self.config['sample_duration']
 
         for pulse_i, pulse in enumerate(event.pulses):
             start = pulse.left
@@ -112,9 +115,9 @@ class FindHits(plugin.TransformPlugin):
             pulse.baseline = baseline
             pulse.height = np.max(w)    # Remember w was modified in-place by the numba hitfinder to do baselining
 
-            # Compute area and max of each hit
-            # Results stored in argmaxes, areas; declared outside loop, see above
-            self._peak_argmax_and_area(w, hits_found, argmaxes, areas)
+            # Compute area, max, and center of each hit in numba
+            # Results stored in argmaxes, areas, centers; declared outside loop, see above
+            self._compute_hit_properties(w, hits_found, argmaxes, areas, centers)
 
             # Store the found peaks in the datastructure
             # Convert area, noise_sigma and height from adc counts -> pe
@@ -124,24 +127,32 @@ class FindHits(plugin.TransformPlugin):
 
                 # Do sanity checks
                 area = areas[i] * adc_to_pe
+                center = (centers[i] + start + hit[0]) * dt
                 height = w[hit[0] + argmaxes[i]] * adc_to_pe
                 left = start + hit[0]
                 right = start + hit[1]
                 max_idx = start + hit[0] + argmaxes[i]
-                if not (0 <= left <= max_idx <= right) or not (0 <= self.min_sigma * noise_sigma_pe <= height <= area):
+                if not (0 <= left <= max_idx <= right) \
+                   or not (left <= center / dt <= right) \
+                   or not (0 <= self.min_sigma * noise_sigma_pe <= height <= area):
                     raise RuntimeError("You found a hitfinder bug!\n"
                                        "Current hit %d-%d-%d, in event %s, channel %s, pulse %s.\n"
                                        "Indices in pulse: %s-%s-%s. Pulse bounds: %d-%d.\n"
-                                       "Height is %s, noise sigma is %s, dynamic threshold at %s; Area is %d.\n"
+                                       "Center of gravity at %s.\n"
+                                       "Height is %s, noise sigma is %s, threshold at %s.\n"
+                                       "Area is %d.\n"
                                        "Please file a bug report!" % (
                                            left, max_idx, right, event.event_number, channel, pulse_i,
                                            hit[0], hit[0] + argmaxes[i], hit[1], start, stop,
-                                           height, noise_sigma_pe, self.min_sigma * noise_sigma_pe, area))
+                                           center,
+                                           height, noise_sigma_pe, self.min_sigma * noise_sigma_pe,
+                                           area))
 
                 event.all_hits.append(datastructure.Hit({
                     'channel':             channel,
                     'left':                left,
                     'index_of_maximum':    max_idx,
+                    'center':              center,
                     'right':               right,
                     'area':                area,
                     'height':              height,
@@ -182,11 +193,15 @@ class FindHits(plugin.TransformPlugin):
             ax2.set_ylabel("pe / sample")
 
             # Plot the signal and noise levels
-            ax1.plot(w, drawstyle='steps', label='Data')
+            ax1.plot(w, drawstyle='steps-mid', label='Data')
             ax1.plot(np.ones_like(w) * self.min_sigma * noise_sigma, '--', label='Threshold', color='red')
-            for hit in hits_found:
-                ax1.axvspan(hit[0] - 1, hit[1], color='red', alpha=0.2)
             ax1.plot(np.ones_like(w) * noise_sigma, '--', label='Noise level', color='gray')
+            ax1.plot(np.ones_like(w) * 2 * noise_sigma, '--', label='Boundary threshold', color='green')
+
+            # Mark the hit ranges & center of gravity point
+            for hit_i, hit in enumerate(hits_found):
+                ax1.axvspan(hit[0] - 0.5, hit[1] + 0.5, color='red', alpha=0.2)
+                ax1.axvline([centers[i] + hit[0]], linestyle=':', color='gray')
 
             # Make sure the y-scales match
             ax2.set_ylim(ax1.get_ylim()[0] * adc_to_pe, ax1.get_ylim()[1] * adc_to_pe)
@@ -204,31 +219,36 @@ class FindHits(plugin.TransformPlugin):
 
     # TODO: Needs a test!
     @staticmethod
-    @numba.jit(numba.void(numba.float64[:], numba.int64[:, :], numba.int64[:], numba.float64[:]), nopython=True)
-    def _peak_argmax_and_area(w, raw_peaks, argmaxes, areas):
-        """Finds the maximum index and area of peaks in w indicated by (left, right) bounds in raw_peaks.
+    @numba.jit(numba.void(numba.float64[:], numba.int64[:, :], numba.int64[:], numba.float64[:], numba.float64[:]),
+               nopython=True)
+    def _compute_hit_properties(w, raw_peaks, argmaxes, areas, centers):
+        """Finds the maximum index, area, and center of gravity of hits in w indicated by (l, r) bounds in raw_peaks.
         Will fill up argmaxes and areas with result.
-            raw_peaks should be a numpy array of (left, right) bounds (inclusive)
+        raw_peaks should be a numpy array of (left, right) bounds (inclusive)
+        centers, argmaxes are returned in samples right of hit start -- you probably want to convert this
         Returns nothing
         """
         for peak_i in range(len(raw_peaks)):
             current_max = -999.9
             current_argmax = -1
             current_area = 0
+            current_center = 0
             for i, x in enumerate(w[raw_peaks[peak_i, 0]:raw_peaks[peak_i, 1]+1]):
                 if x > current_max:
                     current_max = x
                     current_argmax = i
                 current_area += x
+                current_center += i * x
             argmaxes[peak_i] = current_argmax
             areas[peak_i] = current_area
+            centers[peak_i] = current_center / current_area
 
     @staticmethod
     @numba.jit(numba.typeof((1.0, 2.0, 3.0, 4.0))(
                numba.float64[:], numba.float64, numba.float64, numba.int64, numba.int64,
                numba.int64[:, :]), nopython=True)
     def _find_peaks(w, threshold_sigmas, noise_sigma, max_passes, initial_baseline_samples, hits_buffer):
-        """Fills raw_peaks with left, right indices of raw_peaks > bound_threshold which exceed threshold somewhere
+        """Fills raw_peaks with left, right indices of raw_peaks > 2 * noise which exceed threshold somewhere
          raw_peaks: numpy () of [-1,-1] lists, will be filled by function.
         BE CAREFUL -- Will modify w IN PLACE to do baseline correction
         Returns: number of raw_peaks found, baseline, noise_sigma
@@ -263,7 +283,7 @@ class FindHits(plugin.TransformPlugin):
             max_idx = len(w) - 1
             current_candidate_interval_start = -1
             threshold = noise_sigma * threshold_sigmas
-            bound_threshold = noise_sigma
+            bound_threshold = 2 * noise_sigma
 
             ##
             #   Hit finding

@@ -31,7 +31,7 @@ class BasicProperties(plugin.TransformPlugin):
             peak.area_fraction_top = np.sum(peak.area_per_channel[:self.last_top_ch + 1])/peak.area
 
             # Compute timing quantities
-            times = [s.index_of_maximum * self.dt for s in peak.hits]
+            times = [s.center for s in peak.hits]
             peak.hit_time_mean, peak.hit_time_std = utils.weighted_mean_variance(times,
                                                                                  [s.area for s in peak.hits])
             peak.hit_time_std **= 0.5   # Convert variance to std
@@ -46,7 +46,7 @@ class BasicProperties(plugin.TransformPlugin):
             leftmost = float('inf')
             rightmost = float('-inf')
             area_so_far = 0
-            for hit in sorted(peak.hits, key=lambda hit: abs(hit.index_of_maximum * dt - peak.hit_time_mean)):
+            for hit in sorted(peak.hits, key=lambda hit: abs(hit.center - peak.hit_time_mean)):
                 if hit.left < leftmost:
                     leftmost = hit.left
                 if hit.right > rightmost:

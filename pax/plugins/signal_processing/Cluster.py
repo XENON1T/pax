@@ -194,7 +194,7 @@ class MeanShift(ClusterPlugin):
 
     def cluster_hits(self, spes):
         # Cluster the single-pes in groups separated by >= self.s2_width
-        cluster_indices = utils.cluster_by_diff([s.index_of_maximum * self.dt for s in spes],
+        cluster_indices = utils.cluster_by_diff([s.center for s in spes],
                                                 self.s2_width,
                                                 return_indices=True)
         self.log.debug("Pre-clustering made %s clusters" % len(cluster_indices))
@@ -277,7 +277,7 @@ class HitDifference(ClusterPlugin):
     """
 
     def cluster_hits(self, hits):
-        return utils.cluster_by_diff([s.index_of_maximum * self.dt for s in hits],
+        return utils.cluster_by_diff([s.center for s in hits],
                                      self.config['max_difference'],
                                      return_indices=True)
 
