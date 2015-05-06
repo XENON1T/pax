@@ -4,7 +4,7 @@
 import argparse
 import os
 
-from pax import core
+from pax import core, utils
 
 
 ##
@@ -24,7 +24,7 @@ parser.add_argument('--log', default=None, help="Set log level, e.g. 'debug'")
 parser.add_argument(
     '--config',
     default='XENON100',
-    choices=core.get_named_configuration_options(),
+    choices=utils.get_named_configuration_options(),
     nargs='+',
     help="Name(s) of the pax configuration(s) to use."
 )
@@ -70,7 +70,7 @@ args = parser.parse_args()
 if args.redo:
     from pandas import HDFStore
     import json
-    file_to_redo = core.data_file_name(args.redo)
+    file_to_redo = utils.data_file_name(args.redo)
     store = HDFStore(file_to_redo)
     if len(store['pax_info']) > 1:
         print("Warning: This file contains data from several processings. Will use config from last!\n")

@@ -1,14 +1,11 @@
-"""The backbone of pax
-
+"""The backbone of pax - the Processor class
 """
 import glob
 import logging
 import importlib
-import inspect
 from io import StringIO
 import itertools
 import os
-import re
 from configparser import ConfigParser, ExtendedInterpolation
 
 try:
@@ -22,49 +19,14 @@ import numpy as np
 
 from prettytable import PrettyTable     # Timing report
 from tqdm import tqdm                   # Progress bar
-import pax
-from pax import units, simulation
+import pax      # Needed for pax.__version__
+from pax import units, simulation, utils
 
 # For diagnosing suspected memory leaks, uncomment this code
 # and similar code in process_event
 # import gc
 # import objgraph
 
-# Store the directory of pax (i.e. this file's directory) as PAX_DIR
-PAX_DIR = os.path.join(os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe()))))
-
-
-def data_file_name(filename):
-    """Returns filename if a file exists there, else returns PAX_DIR/data/filename"""
-    if os.path.exists(filename):
-        return filename
-    new_filename = os.path.join(PAX_DIR, 'data', filename)
-    if os.path.exists(new_filename):
-        return new_filename
-    else:
-        raise ValueError('File name or path %s not found!' % filename)
-
-
-def get_named_configuration_options():
-    """ Return the names of all working named configurations
-    """
-    config_files = []
-    for filename in glob.glob(os.path.join(PAX_DIR, 'config', '*.ini')):
-        filename = os.path.basename(filename)
-        m = re.match(r'(\w+)\.ini', filename)
-        if m is None:
-            print("Weird file in config dir: %s" % filename)
-        filename = m.group(1)
-        # Config files starting with '_' won't appear in the usage list (they won't work by themselves)
-        if filename[0] == '_':
-            continue
-        config_files.append(filename)
-    return config_files
-
-
-##
-# Processor class
-##
 class Processor:
     fallback_configuration = 'XENON100'    # Configuration to use when none is specified
 
@@ -234,7 +196,7 @@ class Processor:
         # Make a list of all config paths / file objects to load
         config_files = []
         for config_name in config_names:
-            config_files.append(os.path.join(PAX_DIR, 'config', config_name + '.ini'))
+            config_files.append(os.path.join(utils.PAX_DIR, 'config', config_name + '.ini'))
         for config_path in config_paths:
             config_files.append(config_path)
         if config_string is not None:
@@ -243,7 +205,7 @@ class Processor:
             # Load the fallback configuration
             # Have to use print, logging is not yet setup...
             print("WARNING: no configuration specified: loading %s config!" % self.fallback_configuration)
-            config_files.append(os.path.join(PAX_DIR, 'config', self.fallback_configuration + '.ini'))
+            config_files.append(os.path.join(utils.PAX_DIR, 'config', self.fallback_configuration + '.ini'))
 
         # Loads the files into configparser, also takes care of inheritance.
         for config_file_thing in config_files:
@@ -303,7 +265,7 @@ class Processor:
             if not isinstance(parent_files, list):
                 parent_files = [parent_files]
             parent_file_paths.extend([
-                os.path.join(PAX_DIR, 'config', pf + '.ini')
+                os.path.join(utils.PAX_DIR, 'config', pf + '.ini')
                 for pf in parent_files])
 
         if 'parent_configuration_file' in self.configp['pax']:
@@ -349,10 +311,10 @@ class Processor:
     @staticmethod
     def get_plugin_search_paths(extra_paths=None):
         """Returns paths where we should search for plugins
-        Search for plugins in  ./plugins, PAX_DIR/plugins, any directories in config['plugin_paths']
+        Search for plugins in  ./plugins, utils.PAX_DIR/plugins, any directories in config['plugin_paths']
         Search in all subdirs of the above, except for __pycache__ dirs
         """
-        plugin_search_paths = ['./plugins', os.path.join(PAX_DIR, 'plugins')]
+        plugin_search_paths = ['.', './plugins', os.path.join(utils.PAX_DIR, 'plugins')]
         if extra_paths is not None:
             plugin_search_paths += extra_paths
 

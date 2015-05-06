@@ -2,7 +2,7 @@ import glob
 import os
 import time
 
-from pax import core, plugin
+from pax import utils, plugin
 
 
 class InputFromFolder(plugin.InputPlugin):
@@ -18,7 +18,7 @@ class InputFromFolder(plugin.InputPlugin):
         self.current_first_event = None
         self.current_last_event = None
 
-        input_name = core.data_file_name(self.config['input_name'])
+        input_name = utils.data_file_name(self.config['input_name'])
         if not os.path.exists(input_name):
             raise ValueError("Can't read from %s: it does not exist!" % input_name)
 

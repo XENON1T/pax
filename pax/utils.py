@@ -1,203 +1,63 @@
-"""
-Utilities for peakfinders etc.
+"""Helper routines needed in pax
 
+Please only put stuff here that you *really* can't find any other place for!
+e.g. a list clustering routine that isn't in some standard, library but several plugins depend on it
 """
 
 import re
+import inspect
 import json
 import gzip
 import logging
+import os
+import glob
 from itertools import zip_longest
 
 import numpy as np
 from scipy import interpolate
 import matplotlib.pyplot as plt
-import numba
 
-log = logging.getLogger('dsputils')
-
-
-def chunk_in_ntuples(iterable, n, fillvalue=None):
-    """ Chunks an iterable into a list of tuples
-    :param iterable: input iterable
-    :param n: length of n tuple
-    :param fillvalue: if iterable is not divisible by chunk_size, pad last tuple with this value
-    :return: list of n-tuples
-    Stolen from http://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks-in-python
-    Modified for python3, and made it return lists
-    """
-    if not n > 0 and int(n) == n:
-        raise ValueError("Chunk size should be a positive integer, not %s" % n)
-    return list(zip_longest(*[iter(iterable)] * n, fillvalue=fillvalue))
-    # Numpy solution -- without filling though
-    # return np.reshape(iterable, (-1,n))
+log = logging.getLogger('pax_utils')
 
 
 ##
-# Peak processing helper routines
+# Utilities for finding files inside pax.
 ##
 
+# Store the directory of pax (i.e. this file's directory) as PAX_DIR
+PAX_DIR = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 
-def cluster_by_diff(x, diff_threshold, return_indices=False):
-    """Returns list of lists of indices of clusters in x,
-    making cluster boundaries whenever values are >= threshold apart.
-    """
-    x = sorted(x)
-    if len(x) == 0:
-        return []
-    clusters = []
-    current_cluster = []
-    previous_t = x[0]
-    for i, t in enumerate(x):
-        if t - previous_t > diff_threshold:
-            clusters.append(current_cluster)
-            current_cluster = []
-        current_cluster.append(i if return_indices else t)
-        previous_t = t
-    clusters.append(current_cluster)
-    return clusters
-    # Numpy solution below appears to make processor run slower!
-    # x.sort()
-    # if not isinstance(x, np.ndarray):
-    #     x = np.array(x)
-    # split_indices = np.where(np.diff(x) >= diff_threshold)[0] + 1
-    # if return_indices:
-    #     return np.split(np.arange(len(x)), split_indices)
-    # else:
-    #     return np.split(x, split_indices)
-
-
-def mad(data, axis=None):
-    """ Return median absolute deviation of numpy array"""
-    return np.mean(np.absolute(data - np.median(data, axis)), axis)
-
-
-def weighted_mean_variance(values, weights):
-    """
-    Return the weighted mean, and the weighted sum square deviation from the weighted mean.
-    values, weights -- Numpy ndarrays with the same shape.
-    Stolen from http://stackoverflow.com/questions/2413522/weighted-standard-deviation-in-numpy
-    """
-    weighted_mean = np.average(values, weights=weights)
-    weighted_variance = np.average((values-weighted_mean)**2, weights=weights)  # Fast and numerically precise
-    return weighted_mean, weighted_variance
-
-
-def peak_bounds(signal, fraction_of_max=None, max_idx=None, zero_level=0, inclusive=True):
-    """
-    Return (left, right) indices closest to max_idx where signal drops below signal[max_idx]*fraction_of_max.
-
-    :param signal: waveform to look in (numpy array)
-    :param fraction_of_max: Width at this fraction of maximum. If None, peaks will extend until zero_level.
-    :param max_idx: Index in signal of the maximum of the peak. Default None, will be determined by np.argmax(signal)
-    :param zero_level: Always end a peak when it drops below this level. Default: 0
-    :param inclusive: Include endpoints (first points where signal drops below), default True.
-    TODO: proper support for inclusive (don't just subtract 1)
-    """
-    if max_idx is None:
-        max_idx = np.argmax(signal)
-    if len(signal) == 0:
-        raise RuntimeError("Empty signal, can't find peak bounds!")
-    if max_idx > len(signal) - 1:
-        raise RuntimeError("Can't compute bounds: max at %s, peak wave is %s long" % (max_idx, len(signal)))
-    if max_idx < 0:
-        raise RuntimeError("Peak maximum index is negative (%s)... what are you smoking?" % max_idx)
-
-    height = signal[max_idx]
-
-    if fraction_of_max is None:
-        threshold = zero_level
+# TODO: Why isn't this in utils??
+def data_file_name(filename):
+    """Returns filename if a file exists there, else returns PAX_DIR/data/filename"""
+    if os.path.exists(filename):
+        return filename
+    new_filename = os.path.join(PAX_DIR, 'data', filename)
+    if os.path.exists(new_filename):
+        return new_filename
     else:
-        threshold = max(zero_level, height * fraction_of_max)
+        raise ValueError('File name or path %s not found!' % filename)
 
-    if height < threshold:
-        # Peak is always below threshold -> return smallest legal peak.
-        return (max_idx, max_idx)
-
-    # Note reversion acts before indexing in numpy!
-    left = first_below_threshold(signal[max_idx::-1], threshold)
-    if left is None:
-        left = 0
-    else:
-        left = max_idx - left
-    right = first_below_threshold(signal[max_idx:], threshold)
-    if right is None:
-        right = len(signal) - 1
-    else:
-        right += max_idx
-
-    if not inclusive:
-        if signal[left] < threshold and left != len(signal) - 1:
-            left += 1
-        if signal[right] < threshold and right != 0:
-            right -= 1
-    return (left, right)
+def get_named_configuration_options():
+    """ Return the names of all working named configurations
+    """
+    config_files = []
+    for filename in glob.glob(os.path.join(PAX_DIR, 'config', '*.ini')):
+        filename = os.path.basename(filename)
+        m = re.match(r'(\w+)\.ini', filename)
+        if m is None:
+            print("Weird file in config dir: %s" % filename)
+        filename = m.group(1)
+        # Config files starting with '_' won't appear in the usage list (they won't work by themselves)
+        if filename[0] == '_':
+            continue
+        config_files.append(filename)
+    return config_files
 
 
-# TODO: interpolate argument shadows interpolate imported from scipy
-def width_at_fraction(peak_wave, fraction_of_max, max_idx, interpolate=False):
-    """Returns width of a peak IN SAMPLES at fraction of maximum"""
-    left, right = peak_bounds(peak_wave, max_idx=max_idx, fraction_of_max=fraction_of_max)
-    # Try to do sub-sample width determination
-
-    threshold = peak_wave[max_idx] * fraction_of_max
-
-    if interpolate:     # Need at least 3 points to interpolate
-        if left + 1 in peak_wave and peak_wave[left] < threshold < peak_wave[left + 1]:
-            correction = (peak_wave[left] - threshold) / (peak_wave[left] - peak_wave[left + 1])
-            assert 0 <= correction <= 1
-            left += correction
-        else:
-            # Weird peak, can't interpolate
-            # Should not happen once peakfinder works well
-            pass
-
-        if right - 1 in peak_wave and peak_wave[right] < threshold < peak_wave[right - 1]:
-            correction = (threshold - peak_wave[right]) / (peak_wave[right - 1] - peak_wave[right])
-            assert 0 <= correction <= 1
-            right -= correction
-        else:
-            # Weird peak, can't interpolate
-            # Should not happen once peakfinder works well
-            pass
-
-    # If you want to test this code, uncomment this:
-    # plt.plot(peak_wave, 'bo-')
-    # plt.plot([threshold for i in range(len(peak_wave))], '--', label='Threshold')
-    # plt.plot([left, left], [0, threshold], '--', label='Left width bound')
-    # plt.plot([right, right], [0, threshold], '--', label='Right width bound')
-    # plt.scatter([max_idx], [peak_wave[max_idx]], marker='*', s=100, label='Maximum', color='purple')
-    # plt.title('Peak bounds at %s of max' % fraction_of_max)
-    # plt.legend()
-    # plt.show()
-
-    return right - left + 1
-
-
-@numba.autojit
-def first_below_threshold(w, threshold):
-    """Returns first index in w below threshold, or None if w never below threshold"""
-    for i, x in enumerate(w):
-        if x < threshold:
-            return i
-    return None
-
-
-# Caching decorator
-class Memoize:
-    # from http://avinashv.net/2008/04/python-decorators-syntactic-sugar/
-
-    def __init__(self, function):
-        self.function = function
-        self.memoized = {}
-
-    def __call__(self, *args):
-        try:
-            return self.memoized[args]
-        except KeyError:
-            self.memoized[args] = self.function(*args)
-            return self.memoized[args]
-
+##
+# Interpolating map class
+##
 
 class InterpolatingMap(object):
 
@@ -306,3 +166,84 @@ class InterpolatingMap(object):
         else:
             plt.show()
         plt.close()
+
+
+##
+# General helper functions
+##
+
+def chunk_in_ntuples(iterable, n, fillvalue=None):
+    """ Chunks an iterable into a list of tuples
+    :param iterable: input iterable
+    :param n: length of n tuple
+    :param fillvalue: if iterable is not divisible by chunk_size, pad last tuple with this value
+    :return: list of n-tuples
+    Stolen from http://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks-in-python
+    Modified for python3, and made it return lists
+    """
+    if not n > 0 and int(n) == n:
+        raise ValueError("Chunk size should be a positive integer, not %s" % n)
+    return list(zip_longest(*[iter(iterable)] * n, fillvalue=fillvalue))
+    # Numpy solution -- without filling though
+    # return np.reshape(iterable, (-1,n))
+
+
+def cluster_by_diff(x, diff_threshold, return_indices=False):
+    """Returns list of lists of indices of clusters in x,
+    making cluster boundaries whenever values are >= threshold apart.
+    """
+    x = sorted(x)
+    if len(x) == 0:
+        return []
+    clusters = []
+    current_cluster = []
+    previous_t = x[0]
+    for i, t in enumerate(x):
+        if t - previous_t > diff_threshold:
+            clusters.append(current_cluster)
+            current_cluster = []
+        current_cluster.append(i if return_indices else t)
+        previous_t = t
+    clusters.append(current_cluster)
+    return clusters
+    # Numpy solution below appears to make processor run slower!
+    # x.sort()
+    # if not isinstance(x, np.ndarray):
+    #     x = np.array(x)
+    # split_indices = np.where(np.diff(x) >= diff_threshold)[0] + 1
+    # if return_indices:
+    #     return np.split(np.arange(len(x)), split_indices)
+    # else:
+    #     return np.split(x, split_indices)
+
+
+def mad(data, axis=None):
+    """ Return median absolute deviation of numpy array"""
+    return np.mean(np.absolute(data - np.median(data, axis)), axis)
+
+
+def weighted_mean_variance(values, weights):
+    """
+    Return the weighted mean, and the weighted sum square deviation from the weighted mean.
+    values, weights -- Numpy ndarrays with the same shape.
+    Stolen from http://stackoverflow.com/questions/2413522/weighted-standard-deviation-in-numpy
+    """
+    weighted_mean = np.average(values, weights=weights)
+    weighted_variance = np.average((values-weighted_mean)**2, weights=weights)  # Fast and numerically precise
+    return weighted_mean, weighted_variance
+
+
+# Caching decorator
+# Stolen from http://avinashv.net/2008/04/python-decorators-syntactic-sugar/
+class Memoize:
+
+    def __init__(self, function):
+        self.function = function
+        self.memoized = {}
+
+    def __call__(self, *args):
+        try:
+            return self.memoized[args]
+        except KeyError:
+            self.memoized[args] = self.function(*args)
+            return self.memoized[args]

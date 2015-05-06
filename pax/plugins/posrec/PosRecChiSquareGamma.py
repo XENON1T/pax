@@ -5,8 +5,7 @@ from scipy.optimize import fmin_powell
 
 from pax import plugin
 from pax.datastructure import ReconstructedPosition
-from pax.utils import InterpolatingMap
-from pax.core import data_file_name
+from pax.utils import InterpolatingMap, data_file_name
 
 
 class PosRecChiSquareGamma(plugin.TransformPlugin):

@@ -1,11 +1,11 @@
-from pax import core, plugin, utils
+from pax import plugin, utils
 
 
 class ExampleCorrection(plugin.TransformPlugin):
 
     def startup(self):
         self.correction_map = utils.InterpolatingMap(
-            core.data_file_name('s2_xy_lce_map_XENON100_Xerawdp0.4.5.json.gz'))
+            utils.data_file_name('s2_xy_lce_map_XENON100_Xerawdp0.4.5.json.gz'))
         # self.correction_map.plot(map_name='60')
 
     def transform_event(self, event):
