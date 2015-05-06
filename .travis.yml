@@ -15,7 +15,7 @@ services:
   - mongodb
 
 env:
-  #- ROOT=5.34.25
+  - ROOT=5.34.25
   - ROOT=6.02.05
 
 install:
@@ -27,7 +27,7 @@ install:
   #- yes | sudo apt-get upgrade
 
   # needed for save-ROOT
-  - sudo apt-get install -y putty-tools
+  #- sudo apt-get install -y putty-tools
 
   # update gcc to 4.8 via toolchain
   - sudo apt-get install -y python-software-properties
@@ -68,7 +68,8 @@ install:
   #- source travis/travis-save-ROOT.sh
 
   # Copy modified ROOT.py to proper directory
-  - cp /home/travis/build/XENON1T/pax/travis/travis_modified_ROOT.py /home/travis/build/XENON1T/pax/root-6.02.05/lib/ROOT.py
+  - if [ "${ROOT}" == "6.02.05" ]; then cp /home/travis/build/XENON1T/pax/travis/travis_modified_ROOT_v${ROOT}.py /home/travis/build/XENON1T/pax/root-6.02.05/lib/ROOT.py; fi
+  - if [ "${ROOT}" == "5.34.25" ]; then cp /home/travis/build/XENON1T/pax/travis/travis_modified_ROOT_v${ROOT}.py /home/travis/build/XENON1T/pax/root/lib/ROOT.py; fi
 
   # Does pyROOT still work?
   - root -l -q
