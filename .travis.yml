@@ -2,6 +2,10 @@
 
 language: python
 
+os:
+  - linux
+  - osx
+
 python:
   - "3.4"
 
@@ -21,23 +25,9 @@ env:
 install:
   # General update
   - deactivate
-  - sudo apt-get update -qq
-  - sudo apt-get install -y build-essential
-  - sudo apt-get install -y git dpkg-dev make binutils libx11-dev libxpm-dev libxft-dev libxext-dev gcc-multilib g++ gcc libsnappy1 libsnappy-dev
-  #- yes | sudo apt-get upgrade
 
-  # needed for save-ROOT
-  #- sudo apt-get install -y putty-tools
+  - source travis/${TRAVIS_OS_NAME}_setup.sh; fi
 
-  # update gcc to 4.8 via toolchain
-  - sudo apt-get install -y python-software-properties
-  - yes "" | sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-  - sudo apt-get update
-  - sudo apt-get install -y gcc-4.8 g++-4.8
-  - sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-4.8 20
-  - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.8 20
-  - sudo update-alternatives --config gcc
-  - sudo update-alternatives --config g++
   # check
   - gcc --version
 
@@ -50,12 +40,7 @@ install:
   - conda update -q conda
   - conda info -a # Useful for debugging any issues with conda
 
-  # Install snappy and python bindings
-  - sudo apt-get install libsnappy-dev
-  - sudo apt-get build-dep python-snappy
-
   # Create environment
-  # Replace dep1 dep2 ... with your dependencies
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib pandas pytables cython h5py numba pip scikit-learn
 
   - source activate test-environment
