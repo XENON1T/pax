@@ -26,7 +26,7 @@ install:
   # General update
   - deactivate
 
-  - source travis/${TRAVIS_OS_NAME}_setup.sh; fi
+  - source travis/${TRAVIS_OS_NAME}_setup.sh
 
   # check
   - gcc --version
