@@ -513,4 +513,3 @@ class Processor:
             self.log.debug("Shutting down %s..." % ap.name)
             ap.shutdown()
             ap.has_shut_down = True
-        
