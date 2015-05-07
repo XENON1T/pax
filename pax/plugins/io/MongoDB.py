@@ -36,6 +36,8 @@ class IOMongoDB():
         self.connections = {}  # MongoClient objects
         self.mongo = {}        #
 
+        self.pmt_mappings = self.config['pmt_mappings']
+
         # Each MongoDB class must acquire the run database document that
         # describes this acquisition.  This is partly because the state can
         # change midrun.  For example, the run can end.
@@ -66,7 +68,8 @@ class IOMongoDB():
     def setup_access(self, name,
                      address,
                      database,
-                     collection):
+                     collection,
+                     port=27017):
         wc = pymongo.write_concern.WriteConcern(w=0)
 
         m = {}  # Holds connection, database info, and collection info
@@ -74,8 +77,18 @@ class IOMongoDB():
         # Used for coordinating which runs to analyze
         self.log.debug("Connecting to: %s" % address)
         if address not in self.connections:
-            self.connections[address] = pymongo.MongoClient(address,
-                                                            serverSelectionTimeoutMS=500)
+            if '/' in address: # HACK, fix kodiaq
+                replica_set, address = address.split('/')
+
+                c = pymongo.MongoClient(address,
+                                        replicaSet = replica_set,
+                                        serverSelectionTimeoutMS=500)
+            else:
+
+                c = pymongo.MongoClient(address,
+                                        port,
+                                        serverSelectionTimeoutMS=500)
+            self.connections[address] = c
 
             try:
                 self.connections[address].admin.command('ping')
@@ -204,7 +217,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
             search_after = self.last_time - delay # ns
             self.log.info("Searching for pulses after %s",
                           sampletime_fmt(search_after))
-            times = list(c.find({'time' : {'$gt' : search_after * (self.mongo_time_unit / units.ns)}},
+            times = list(c.find({'time' : {'$gt' : search_after * self.mongo_time_unit}},
                                 projection=[START_KEY, STOP_KEY],
                                 **self.mongo_find_options))
 
@@ -215,7 +228,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
                 continue
 
             x = [[doc[START_KEY], doc[STOP_KEY]] for doc in times]  # in digitizer units
-            x = np.array(x) * (units.ns / self.mongo_time_unit)
+            x = np.array(x) * self.mongo_time_unit
             x = x.mean(axis=1)  # in ns
 
             self.log.info("Processing range [%s, %s]",
@@ -275,28 +288,34 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, IOMongoDB):
                           sampletime_fmt(t0),
                           sampletime_fmt(t1))
 
-        query = {START_KEY : {"$gte" : t0 * (self.mongo_time_unit/units.ns)},
-                 STOP_KEY : {"$lte" : t1 * (self.mongo_time_unit/units.ns)}}
+        query = {START_KEY : {"$gte" : t0 // self.mongo_time_unit},
+                 STOP_KEY : {"$lte" : t1 // self.mongo_time_unit}}
 
         self.mongo_iterator = self.mongo['input']['collection'].find(query,
                                                                      **self.mongo_find_options)
         pulse_objects = []
 
+        t0_samples = t0 * self.mongo_time_unit  # from ns -> samples
         for i, pulse_doc in enumerate(self.mongo_iterator):
             # Fetch raw data from document
             data = pulse_doc['data']
 
-            time_within_event = pulse_doc[START_KEY] - (t0 * (self.mongo_time_unit // units.ns))
+            time_within_event = pulse_doc[START_KEY] - t0_samples # samples
 
+            self.log.info("Sample %s",
+                          sampletime_fmt(time_within_event * self.mongo_time_unit))
 
             if self.compressed:
                 data = snappy.decompress(data)
 
-            pulse_objects.append(Pulse(left=int(time_within_event),
-                                                 raw_data=np.fromstring(data,
-                                                                        dtype="<i2"),
-                                                 channel=int(pulse_doc['channel'])))
+            channel = self.pmt_mappings[(pulse_doc['module'],
+                                         pulse_doc['channel'])]
 
+            pulse_objects.append(Pulse(left=int(time_within_event),
+                                       raw_data=np.fromstring(data,
+                                                              dtype="<i2"),
+                                       channel=channel))
+        self.log.debug("%d pulses added", len(pulse_objects))
         event.pulses = pulse_objects
         return event
 

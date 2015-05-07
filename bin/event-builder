@@ -168,7 +168,7 @@ def main():
 
             filename = 'raw_%s.avro' % run_doc['name']
 
-            config_names = 'eventbuilder_standalone'
+            config_names = 'eventbuilder'
             config_dict = {'DEFAULT' : {'run_doc' : run_doc['_id']},
                                         'output_name' : filename,
                                         'MongoDB' : {'runs_database_location' : {'address' : args.address,

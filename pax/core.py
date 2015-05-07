@@ -443,6 +443,7 @@ class Processor:
         if self.input_plugin.has_shut_down:
             raise RuntimeError("Attempt to run a Processor twice.")
 
+        i = 0  # in case loop does not run
         # This is the actual event loop.  'tqdm' is a progress bar.
         for i, event in enumerate(tqdm(self.get_events(),
                                        desc='Event',
@@ -458,10 +459,9 @@ class Processor:
         else:   # If no break occurred:
             self.log.info("All events from input source have been processed.")
 
-        # TODO: not nice, accessing the loop var outside the loop.. What if loop was never run?
         events_actually_processed = i + 1
 
-        if self.config['pax']['print_timing_report']:
+        if self.config['pax']['print_timing_report'] and t > 0:
 
             all_plugins = [self.input_plugin] + self.action_plugins
             timing_report = PrettyTable(['Plugin',
@@ -474,15 +474,12 @@ class Processor:
             total_time = sum([plugin.total_time_taken for plugin in all_plugins])
 
             for plugin in all_plugins:
-
                 t = plugin.total_time_taken
                 time_per_event_ms = round(t / events_actually_processed, 1)
-                if t == 0:
+
+                event_rate_hz = round(1000 * events_actually_processed / t, 1)
+                if event_rate_hz > 100:
                     event_rate_hz = ''
-                else:
-                    event_rate_hz = round(1000 * events_actually_processed / t, 1)
-                    if event_rate_hz > 100:
-                        event_rate_hz = ''
 
                 timing_report.add_row([plugin.__class__.__name__,
                                        round(100 * t / total_time, 1),
