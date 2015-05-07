@@ -3,6 +3,7 @@
 
 import argparse
 import os
+import sys
 
 from pax import core
 
@@ -105,8 +106,17 @@ if args.plot_to_dir or args.plot :
 ##
 # Load configuration and run the processor
 ##
-core.Processor(
-    config_names=args.config,
-    config_paths=args.config_path,
-    config_dict=override_dict
-).run()
+pax_instance = core.Processor(
+                   config_names=args.config,
+                   config_paths=args.config_path,
+                   config_dict=override_dict
+               )
+
+try:
+    pax_instance.run()
+except (KeyboardInterrupt, SystemExit):
+    print("\nShutting down all plugins...")
+    pax_instance.stop()
+    print("Exiting")
+    sys.exit()
+
