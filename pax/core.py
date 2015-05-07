@@ -506,9 +506,10 @@ class Processor:
     # Call shutdown on all plugins
     def stop(self):
         self.log.debug("Shutting down all plugins...")
-        self.log.debug("Shutting down %s..." % self.input_plugin.name)
-        self.input_plugin.shutdown()
-        self.input_plugin.has_shut_down = True
+        if self.input_plugin is not None:
+            self.log.debug("Shutting down %s..." % self.input_plugin.name)
+            self.input_plugin.shutdown()
+            self.input_plugin.has_shut_down = True
         for ap in self.action_plugins:
             self.log.debug("Shutting down %s..." % ap.name)
             ap.shutdown()
