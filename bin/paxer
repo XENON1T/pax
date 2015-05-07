@@ -115,7 +115,7 @@ pax_instance = core.Processor(
 try:
     pax_instance.run()
 except (KeyboardInterrupt, SystemExit):
-    print("Shutting down all plugins...")
+    print("\nShutting down all plugins...")
     pax_instance.stop()
     print("Exiting")
     sys.exit()
