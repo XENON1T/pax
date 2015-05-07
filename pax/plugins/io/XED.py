@@ -48,8 +48,7 @@ xed_event_header = np.dtype([
     ("type", "S4"),
     ("size", "<u4"),
     ("sample_precision", "<i2"),
-    # indicating compression type.. I'll assume bzip2 always
-    ("flags", "<u2"),
+    ("flags", "<u2"),               # indicating compression type.. I'll assume bzip2 always
     ("samples_in_event", "<u4"),
     ("voltage_range", "<f4"),
     ("sampling_frequency", "<f4"),
@@ -101,12 +100,10 @@ class XedInput(InputFromFolder):
         event_layer_metadata = np.fromfile(self.current_xedfile,
                                            dtype=xed_event_header,
                                            count=1)[0]
+
         if event_layer_metadata['chunks'] != 1:
             raise NotImplementedError("Can't read this XED file: event with %s chunks found!"
                                       % event_layer_metadata['chunks'])
-        if event_layer_metadata['type'] != b'zle0':
-            raise NotImplementedError("Still have to code grokking for sample type %s..."
-                                      % event_layer_metadata['type'])
 
         # Check if voltage range and digitizer dt are the same as in the settings
         # If not, raise error. Would be simple matter to change settings dynamically, but that's weird.
@@ -123,29 +120,6 @@ class XedInput(InputFromFolder):
                     % (name, xed_value, ini_value)
                 )
 
-        # Read the channel bitmask to find out which channels are included in this event.
-        # Lots of possibilities for errors here: 4-byte groupings, 1-byte groupings, little-endian...
-        # Checked (for 14 events); agrees with channels from
-        # LibXDIO->Moxie->MongoDB->MongoDBInput plugin
-        mask_bytes = 4 * math.ceil(event_layer_metadata['channels'] / 32)
-        mask_bits = np.unpackbits(np.fromfile(self.current_xedfile,
-                                              dtype='uint8',
-                                              count=mask_bytes))
-        # +1 as first pmt is 1 in Xenon100
-        channels_included = [i + 1 for i, bit in enumerate(reversed(mask_bits))
-                             if bit == 1]
-
-        # Decompress the event data (actually, the data from a single 'chunk')
-        # into fake binary file
-        # 28 is the chunk header size.
-        data_to_decompress = self.current_xedfile.read(event_layer_metadata['size'] - 28 - mask_bytes)
-        try:
-            chunk_fake_file = io.BytesIO(bz2.decompress(data_to_decompress))
-        except OSError:
-            # Maybe it wasn't compressed after all? We can at least try
-            # TODO: figure this out from flags
-            chunk_fake_file = io.BytesIO(data_to_decompress)
-
         # Start building the event
         event = Event(
             n_channels=self.config['n_channels'],
@@ -159,51 +133,109 @@ class XedInput(InputFromFolder):
         event.dataset_name = self.file_metadata['dataset_name'].decode("utf-8")
         event.event_number = int(event_layer_metadata['event_number'])
 
-        # Loop over all channels in the event to get the pulses
-        for channel_id in channels_included:
+        if event_layer_metadata['type'] == b'raw0':
+            # Grok 'raw' XEDs - these probably come from the LED calibration
 
-            # Read channel size (in 4bit words), subtract header size, convert
-            # from 4-byte words to bytes
-            channel_data_size = int(4 * (np.fromstring(chunk_fake_file.read(4),
-                                                       dtype='<u4')[0] - 1))
+            # 4 unused bytes at start (part of 'chunk header')
+            self.current_xedfile.read(4)
 
-            # Read the channel data into another fake binary file
-            channel_fake_file = io.BytesIO(
-                chunk_fake_file.read(channel_data_size))
+            # Data is just a big bunch of samples from one channel, then next channel, etc
+            # Each channel has an equal number of samples.
+            data = np.fromfile(self.current_xedfile,
+                               dtype='<i2',
+                               count=event_layer_metadata['channels'] *
+                                     event_layer_metadata['samples_in_event'])
+            data = np.reshape(data, (event_layer_metadata['channels'],
+                                     event_layer_metadata['samples_in_event']))
+            for ch_i, chdata in enumerate(data):
+                event.pulses.append(Pulse(
+                    channel=ch_i + 1,       # +1 as first channel is 1 in Xenon100
+                    left=0,
+                    raw_data=chdata
+                ))
 
-            # Read the channel data control word by control word.
-            # sample_position keeps track of where in the waveform a new
-            # pulse should be placed.
-            sample_position = 0
-            while 1:
+        elif event_layer_metadata['type'] == b'zle0':
+            # Read the channel bitmask to find out which channels are included in this event.
+            # Lots of possibilities for errors here: 4-byte groupings, 1-byte groupings, little-endian...
+            # Checked (for 14 events); agrees with channels from
+            # LibXDIO->Moxie->MongoDB->MongoDBInput plugin
+            mask_bytes = 4 * math.ceil(event_layer_metadata['channels'] / 32)
+            mask_bits = np.unpackbits(np.fromfile(self.current_xedfile,
+                                                  dtype='uint8',
+                                                  count=mask_bytes))
+            # +1 as first pmt is 1 in Xenon100
+            channels_included = [i + 1 for i, bit in enumerate(reversed(mask_bits))
+                                 if bit == 1]
 
-                # Is there a new control word?
-                control_word_string = channel_fake_file.read(4)
-                if not control_word_string:
-                    break
+            # Decompress the event data (actually, the data from a single 'chunk')
+            # into fake binary file (io.BytesIO)
+            # 28 is the chunk header size.
+            data_to_decompress = self.current_xedfile.read(event_layer_metadata['size'] - 28 - mask_bytes)
+            try:
+                chunk_fake_file = io.BytesIO(bz2.decompress(data_to_decompress))
+            except OSError:
+                # Maybe it wasn't compressed after all? We can at least try
+                # TODO: figure this out from flags
+                chunk_fake_file = io.BytesIO(data_to_decompress)
 
-                # Control words starting with zero indicate a number of sample PAIRS to skip
-                control_word = int(
-                    np.fromstring(control_word_string, dtype='<u4')[0])
-                if control_word < 2 ** 31:
-                    sample_position += 2 * control_word
-                    continue
+            # Loop over all channels in the event to get the pulses
+            for channel_id in channels_included:
 
-                # Control words starting with one indicate a number of sample PAIRS follow
-                else:
-                    # Subtract the control word flag
-                    data_samples = 2 * (control_word - (2 ** 31))
+                # Read channel size (in 4bit words), subtract header size, convert
+                # from 4-byte words to bytes
+                channel_data_size = int(4 * (np.fromstring(chunk_fake_file.read(4),
+                                                           dtype='<u4')[0] - 1))
 
-                    # Note endianness
-                    samples_pulse = np.fromstring(channel_fake_file.read(2 * data_samples),
-                                                  dtype="<i2")
+                # Read the channel data into another fake binary file
+                channel_fake_file = io.BytesIO(
+                    chunk_fake_file.read(channel_data_size))
 
-                    event.pulses.append(Pulse(
-                        channel=channel_id,
-                        left=sample_position,
-                        raw_data=samples_pulse
-                    ))
-                    sample_position += len(samples_pulse)
+                # Read the channel data control word by control word.
+                # sample_position keeps track of where in the waveform a new
+                # pulse should be placed.
+                sample_position = 0
+                while 1:
+
+                    # Is there a new control word?
+                    control_word_string = channel_fake_file.read(4)
+                    if not control_word_string:
+                        break
+
+                    # Control words starting with zero indicate a number of sample PAIRS to skip
+                    control_word = int(
+                        np.fromstring(control_word_string, dtype='<u4')[0])
+                    if control_word < 2 ** 31:
+                        sample_position += 2 * control_word
+                        continue
+
+                    # Control words starting with one indicate a number of sample PAIRS follow
+                    else:
+                        # Subtract the control word flag
+                        data_samples = 2 * (control_word - (2 ** 31))
+
+                        # Note endianness
+                        samples_pulse = np.fromstring(channel_fake_file.read(2 * data_samples),
+                                                      dtype="<i2")
+
+                        event.pulses.append(Pulse(
+                            channel=channel_id,
+                            left=sample_position,
+                            raw_data=samples_pulse
+                        ))
+                        sample_position += len(samples_pulse)
+
+        else:
+            raise NotImplementedError("XED type %s not supported" % event_layer_metadata['type'])
+
+        # Check we have read all data for this event
+
+        if event_position != len(self.event_positions) - 1:
+            current_pos = self.current_xedfile.tell()
+            should_be_at_pos = self.event_positions[event_position + 1]
+            if current_pos != should_be_at_pos:
+                raise RuntimeError("Error during XED reading: after reading event %d from file "
+                                   "(event number %d) we should be at position %d, but we are at position %d!" % (
+                                       event_position, event.event_number, should_be_at_pos, current_pos))
 
         return event
 

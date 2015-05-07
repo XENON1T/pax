@@ -11,7 +11,7 @@ cat config.log
 
 echo making ROOT...
 
-make
+make -j2
 
 echo source ROOT environment...
 

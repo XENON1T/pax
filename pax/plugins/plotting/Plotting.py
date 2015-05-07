@@ -355,7 +355,8 @@ class PlotChannelWaveforms2D(PlotBase):
     """
 
     def plot_event(self, event):
-        time_scale = self.config['sample_duration'] / units.us
+        dt = self.config['sample_duration']
+        time_scale = dt / units.us
 
         # TODO: change from lines to squares
         for oc in event.pulses:
@@ -380,7 +381,7 @@ class PlotChannelWaveforms2D(PlotBase):
         for hit in event.all_hits:
             color_factor = min(hit.height / hit.noise_sigma, 15)/15
             result.append([
-                (0.5 + hit.index_of_maximum) * time_scale,             # X
+                (0.5 + hit.center / dt) * time_scale,                  # X
                 0.5 + hit.channel,                                     # Y
                 color_factor,                                          # Color (in [0,1] -> [Blue, Red])
                 10 * min(10, hit.area),                                # Size
@@ -390,9 +391,9 @@ class PlotChannelWaveforms2D(PlotBase):
             rgba_colors = np.zeros((len(result), 4))
             result = np.array(result).T
             rgba_colors[:, 0] = (1 - result[4]) * result[2]                     # R
-            rgba_colors[:, 1] = result[4]                 # G
-            rgba_colors[:, 2] = (1 - result[4]) * (1 - result[2])                 # B
-            rgba_colors[:, 3] = 1                             # A
+            rgba_colors[:, 1] = result[4]                                       # G
+            rgba_colors[:, 2] = (1 - result[4]) * (1 - result[2])               # B
+            rgba_colors[:, 3] = 1                                               # A
             plt.scatter(result[0], result[1], c=rgba_colors, s=result[3], edgecolor=None, lw=0)
 
         # Plot the bottom/top/veto boundaries
