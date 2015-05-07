@@ -226,6 +226,9 @@ class PandasFormat(BulkOutputFormat):
     pandas_format_key = None
     prefers_python_strings = True
 
+    def open(self, name, mode):
+        self.filename = name
+
     def write_data(self, data):
         for name, records in data.items():
             # Write pandas dataframe to container

@@ -16,16 +16,18 @@ services:
 
 env:
   - ROOT=5.34.25
+  - ROOT=6.02.05
+
+os:
+  - linux
+#  - osx
 
 install:
-  # General update
   - deactivate
-  - sudo apt-get update -qq
-  - sudo apt-get install -y build-essential
-  - sudo apt-get install -y git dpkg-dev make binutils libx11-dev libxpm-dev libxft-dev libxext-dev gcc-multilib g++ gcc libsnappy1 libsnappy-dev
-  #- yes | sudo apt-get upgrade
+  - source travis/${TRAVIS_OS_NAME}_setup.sh
+  - gcc --version
 
-  # MiniConda
+  # Conda
   - wget -nv http://repo.continuum.io/miniconda/Miniconda3-3.8.3-Linux-x86_64.sh -O miniconda.sh
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
@@ -33,25 +35,19 @@ install:
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
   - conda info -a # Useful for debugging any issues with conda
-
-  # Install snappy and python bindings
-  - sudo apt-get install libsnappy-dev
-  - sudo apt-get build-dep python-snappy
-
-  # Create environment
-  # Replace dep1 dep2 ... with your dependencies
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib pandas pytables cython h5py numba pip scikit-learn
-
   - source activate test-environment
   - pip install coveralls nose coverage
 
   # ROOT 
   # - unset ROOT # uncomment to not install ROOT
-  # - if test -n "$ROOT"; then source travis/travis-install-ROOT; fi
-  - if test -n "$ROOT"; then source travis/travis-install-ROOT-binary.sh; fi
+  #- if test -n "$ROOT"; then source travis/install-ROOT.sh; fi
+  - if test -n "$ROOT"; then source travis/install-ROOT-binary.sh; fi
+  #- source travis/save-ROOT.sh
 
   # Copy modified ROOT.py to proper directory
-  - cp /home/travis/build/XENON1T/pax/travis/travis_modified_ROOT.py /home/travis/build/XENON1T/pax/root/lib/ROOT.py
+  - if [ "${ROOT}" == "6.02.05" ]; then cp /home/travis/build/XENON1T/pax/travis/modified_ROOT_v${ROOT}.py /home/travis/build/XENON1T/pax/root-6.02.05/lib/ROOT.py; fi
+  - if [ "${ROOT}" == "5.34.25" ]; then cp /home/travis/build/XENON1T/pax/travis/modified_ROOT_v${ROOT}.py /home/travis/build/XENON1T/pax/root/lib/ROOT.py; fi
 
   # Does pyROOT still work?
   - root -l -q

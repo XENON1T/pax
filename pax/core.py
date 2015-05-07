@@ -423,18 +423,6 @@ class Processor:
 
         return event
 
-    def shutdown(self):
-        self.log.debug("Shutting down all plugins...")
-        if self.input_plugin:
-            self.log.debug("Shutting down %s..." % self.input_plugin.name)
-            self.input_plugin.shutdown()
-            self.input_plugin.has_shut_down = True
-
-        for ap in self.action_plugins:
-            self.log.debug("Shutting down %s..." % ap.name)
-            ap.shutdown()
-            ap.has_shut_down = True
-
     def run(self, clean_shutdown=True):
         """Run the processor over all events, then shuts down the plugins (unless clean_shutdown=False)
 
@@ -455,10 +443,7 @@ class Processor:
         if self.input_plugin.has_shut_down:
             raise RuntimeError("Attempt to run a Processor twice.")
 
-
-
         # This is the actual event loop.  'tqdm' is a progress bar.
-        i = 0 # Defined outside loop since referenced later in this scope
         for i, event in enumerate(tqdm(self.get_events(),
                                        desc='Event',
                                        total=self.total_number_events)):
@@ -473,9 +458,11 @@ class Processor:
         else:   # If no break occurred:
             self.log.info("All events from input source have been processed.")
 
+        # TODO: not nice, accessing the loop var outside the loop.. What if loop was never run?
         events_actually_processed = i + 1
 
         if self.config['pax']['print_timing_report']:
+
             all_plugins = [self.input_plugin] + self.action_plugins
             timing_report = PrettyTable(['Plugin',
                                          '%',
@@ -485,10 +472,6 @@ class Processor:
             timing_report.align = "r"
             timing_report.align["Plugin"] = "l"
             total_time = sum([plugin.total_time_taken for plugin in all_plugins])
-
-            # If nothing run, speed metrics meaningless.
-            if total_time == 0:
-                total_time = float('nan')
 
             for plugin in all_plugins:
 

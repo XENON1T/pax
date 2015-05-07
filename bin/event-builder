@@ -173,12 +173,13 @@ def main():
                                         'output_name' : filename,
                                         'MongoDB' : {'runs_database_location' : {'address' : args.address,
                                                                                  'database' : args.database,
+                                                                                 'port' : args.port,
                                                                                  'collection' : args.collection}}}
             try:
                 p = core.Processor(config_names=config_names,
                                    config_dict=config_dict)
 
-                #p.run()
+                p.run()
 
 
 

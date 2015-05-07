@@ -60,9 +60,14 @@ class Hit(Model):
     These are be clustered into ordinary peaks later. This is commonly
     called a 'hit' in particle physics detectors.
     """
-    channel = 0              #: Channel in which this peak was found
+    #: Channel in which this peak was found
+    channel = 0
+
     #: Index in the event at which this peak has its maximum.
     index_of_maximum = 0
+
+    #: Time (since start of event in ns) of hit's center of gravity
+    center = 0.0
 
     left = 0                 #: Index of left bound (inclusive) of peak.
     right = 0                #: Index of right bound (INCLUSIVE!!) of peak

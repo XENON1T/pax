@@ -5,6 +5,7 @@ import argparse
 import os
 import multiprocessing
 from itertools import zip_longest
+
 from pax import core
 
 def grouper(iterable, n, fillvalue=None):
@@ -21,93 +22,55 @@ class Consumer(multiprocessing.Process):
         self.task_queue = task_queue
         self.result_queue = result_queue
 
-        self.config_names = config_names
-        self.config_path = config_path
-        self.config_dict = config_dict
+# Log level control
+parser.add_argument('--log', default=None, help="Set log level, e.g. 'debug'")
 
-    def run(self):
-        proc_name = self.name
+# Configuration control
+# Pass in a name to use a pre-cooked config from config:
+parser.add_argument(
+    '--config',
+    default='XENON100',
+    choices=core.get_named_configuration_options(),
+    nargs='+',
+    help="Name(s) of the pax configuration(s) to use."
+)
+# ... or pass in a path to your own config file:
+parser.add_argument(
+    '--config_path',
+    default=[],
+    nargs='+',
+    help="Path(s) of the configuration file(s) to use."
+)
+# ... or load the configuration from a previous processed data file
+parser.add_argument(
+    '--redo',
+    default='',
+    help="Path of the HDF5 data file to redo."
+)
 
-        p = core.Processor(config_names=self.config_names,
-                           config_paths=self.config_path,
-                           config_dict=self.config_dict)
+# Plotting override
+plotting_control_group = parser.add_mutually_exclusive_group()
+plotting_control_group.add_argument(
+    '--plot',
+    action='store_const',
+    const=True,
+    help='Plot summed waveforms on screen',
+)
+plotting_control_group.add_argument(
+    '--plot_to_dir',
+    help='Save summed waveform plots in directory',
+)
 
-        while True:
-            next_events = self.task_queue.get()
-            answer = []
-            if next_events is None:
-                # Poison pill means shutdown
-                p.log.info('Exiting')
+# Control events to process
+parser.add_argument('--event',
+                    type=int,
+                    nargs='+',
+                    help="Process particular event(s).")
+parser.add_argument('--stop_after',
+                    type=int,
+                    help="Stop after STOP_AFTER events have been processed.")
 
-                self.task_queue.task_done()
-                break
-            for event in next_events:
-                if event is not None:
-                    answer.append(p.process_event(event))
-
-            self.task_queue.task_done()
-            self.result_queue.put(answer)
-        return
-
-
-def get_args():
-    global parser, plotting_control_group
-    # #
-    # Parse command line arguments
-    ##
-    parser = argparse.ArgumentParser(description="Process XENON1T data")
-    # Input and output overrides
-    parser.add_argument('--input', default=None,
-                        help="File, database or directory to read events from",
-                        nargs='?')
-    parser.add_argument('--output', default=None,
-                        help="File, database or directory to write events to",
-                        nargs='?')
-    # Log level control
-    parser.add_argument('--log', default=None,
-                        help="Set log level, e.g. 'debug'")
-    # Configuration control
-    # Pass in a name to use a pre-cooked config from config:
-    parser.add_argument('--config',
-                        default='XENON100',
-                        choices=core.get_named_configuration_options(),
-                        nargs='+',
-                        help="Name(s) of the pax configuration(s) to use.")
-    # ... or pass in a path to your own config file:
-    parser.add_argument('--config_path',
-                        default=[],
-                        nargs='+',
-                        help="Path(s) of the configuration file(s) to use."
-    )
-    # ... or load the configuration from a previous processed data file
-    parser.add_argument('--redo',
-                        default='',
-                        help="Path of the HDF5 data file to redo.")
-    # Plotting override
-    plotting_control_group = parser.add_mutually_exclusive_group()
-    plotting_control_group.add_argument(
-        '--plot',
-        action='store_const',
-        const=True,
-        help='Plot summed waveforms on screen',
-    )
-    plotting_control_group.add_argument(
-        '--plot_to_dir',
-        help='Save summed waveform plots in directory',
-    )
-    # Control events to process
-    parser.add_argument('--event',
-                        type=int,
-                        nargs='+',
-                        help="Process particular event(s).")
-    parser.add_argument('--stop_after',
-                        type=int,
-                        help="Stop after STOP_AFTER events have been processed.")
-
-    args = parser.parse_args()
-    return args
-
-args = get_args()
+args = parser.parse_args()
 
 # Take config from previous file
 if args.redo:
