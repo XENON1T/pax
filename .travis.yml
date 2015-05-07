@@ -2,10 +2,6 @@
 
 language: python
 
-os:
-  - linux
-  - osx
-
 python:
   - "3.4"
 
@@ -22,16 +18,16 @@ env:
   - ROOT=5.34.25
   - ROOT=6.02.05
 
+os:
+  - linux
+#  - osx
+
 install:
-  # General update
   - deactivate
-
   - source travis/${TRAVIS_OS_NAME}_setup.sh
-
-  # check
   - gcc --version
 
-  # MiniConda
+  # Conda
   - wget -nv http://repo.continuum.io/miniconda/Miniconda3-3.8.3-Linux-x86_64.sh -O miniconda.sh
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
@@ -39,10 +35,7 @@ install:
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
   - conda info -a # Useful for debugging any issues with conda
-
-  # Create environment
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib pandas pytables cython h5py numba pip scikit-learn
-
   - source activate test-environment
   - pip install coveralls nose coverage
 
