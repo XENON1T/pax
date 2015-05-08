@@ -295,7 +295,7 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, IOMongoDB):
                                                                      **self.mongo_find_options)
         pulse_objects = []
 
-        t0_samples = t0 * self.mongo_time_unit  # from ns -> samples
+        t0_samples = t0 // self.mongo_time_unit  # from ns -> samples
         for i, pulse_doc in enumerate(self.mongo_iterator):
             # Fetch raw data from document
             data = pulse_doc['data']
