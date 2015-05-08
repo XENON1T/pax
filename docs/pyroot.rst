@@ -79,10 +79,10 @@ To use the provided ROOT.py from PAX.
 * Copy the file to the proper directory::
 
    #Using ROOT v5
-   cp pax/travis/modified_ROOT_v5.34.25.py /env/py34/src/root/lib/ROOT.py
+   cp pax/travis/modified_ROOT_v5.34.25.py ~/env/py34/src/root/lib/ROOT.py
    
    #Using ROOT v6
-   cp pax/travis/modified_ROOT_v6.02.05.py /env/py34/src/root/lib/ROOT.py
+   cp pax/travis/modified_ROOT_v6.02.05.py ~/env/py34/src/root/lib/ROOT.py
 
 To manually convert ROOT.py.
 
