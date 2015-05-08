@@ -255,6 +255,10 @@ class Processor:
             self.config_files_read.append(config_file)
         else:
             self.configp.read_file(config_file)
+            # Apparently ConfigParser.read_file doesn't reset the read position?
+            # Or maybe it has to do with using StringIO instead of real files?
+            # Anyway, we want to read in the file again (for overriding parent instructions), so:
+            config_file.seek(0)
 
         # Determine the path(s) of the parent config file(s)
         parent_file_paths = []
@@ -311,7 +315,7 @@ class Processor:
     @staticmethod
     def get_plugin_search_paths(extra_paths=None):
         """Returns paths where we should search for plugins
-        Search for plugins in  ./plugins, utils.PAX_DIR/plugins, any directories in config['plugin_paths']
+        Search for plugins in  ., ./plugins, utils.PAX_DIR/plugins, any directories in config['plugin_paths']
         Search in all subdirs of the above, except for __pycache__ dirs
         """
         plugin_search_paths = ['.', './plugins', os.path.join(utils.PAX_DIR, 'plugins')]
