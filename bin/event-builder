@@ -102,7 +102,7 @@ def main():
 
     # set up logging to file - see previous section for more details
     logging.basicConfig(level=logging.DEBUG,
-                        format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
+                        format='%(asctime)s %(name)s %(levelname)-8s %(message)s',
                         datefmt='%m-%d %H:%M',
                         filename='myapp.log',
                         filemode='w')
@@ -180,8 +180,6 @@ def main():
                                    config_dict=config_dict)
 
                 p.run()
-
-
 
             except pymongo.errors.ServerSelectionTimeoutError as e:
                 log.exception(e)
