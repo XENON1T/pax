@@ -409,7 +409,7 @@ class FindHits(plugin.TransformPlugin):
 @numba.jit((numba.int64)(numba.int16[:], numba.float64, numba.float64, numba.int64[:, :]), nopython=True)
 def find_intervals_above_threshold(w, high_threshold, low_threshold, result_buffer):
     """Fills result_buffer with l, r bounds of intervals in w > low_threshold which exceed high_threshold somewhere
-        result_buffer: numpy N*2 array of ints, will be filled by function. 
+        result_buffer: numpy N*2 array of ints, will be filled by function.
     Returns: number of intervals found
     Will stop search after raw_peaks found reached N (length of raw_peaks argument passed in).
     Boundary indices are inclusive, i.e. the right index is the last index which was still above low_threshold

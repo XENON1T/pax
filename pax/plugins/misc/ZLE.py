@@ -5,6 +5,7 @@ from pax.plugins.signal_processing.HitFinder import find_intervals_above_thresho
 
 import matplotlib.pyplot as plt
 
+
 class SoftwareZLE(plugin.TransformPlugin):
     """Emulate the Zero-length encoding of the CAEN 1724 digitizer
     Makes no attempt to emulate the 2-sample word logic, so some rare edge cases will be different

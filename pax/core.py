@@ -27,6 +27,7 @@ from pax import units, simulation, utils
 # import gc
 # import objgraph
 
+
 class Processor:
     fallback_configuration = 'XENON100'    # Configuration to use when none is specified
 

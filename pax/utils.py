@@ -27,7 +27,7 @@ log = logging.getLogger('pax_utils')
 # Store the directory of pax (i.e. this file's directory) as PAX_DIR
 PAX_DIR = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 
-# TODO: Why isn't this in utils??
+
 def data_file_name(filename):
     """Returns filename if a file exists there, else returns PAX_DIR/data/filename"""
     if os.path.exists(filename):
@@ -37,6 +37,7 @@ def data_file_name(filename):
         return new_filename
     else:
         raise ValueError('File name or path %s not found!' % filename)
+
 
 def get_named_configuration_options():
     """ Return the names of all working named configurations

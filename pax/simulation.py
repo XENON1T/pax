@@ -5,7 +5,6 @@ The only I/O stuff here is pax event creation, everything else is in the Wavefor
 
 import logging
 import math
-import os
 import time
 
 import numpy as np
@@ -422,7 +421,7 @@ class Simulator(object):
                 adc_wave *= self.config['external_amplification']       # Now in voltage after amplifier
                 adc_wave /= dV                                          # Now in float ADC counts above baseline
                 adc_wave = np.trunc(adc_wave)                           # Now in integer ADC counts "" ""
-                                                                        # Could round instead of trunk... who cares?
+                # Could round instead of trunk... who cares?
 
                 # PMT signals are negative excursions, so flip them.
                 adc_wave = - adc_wave
