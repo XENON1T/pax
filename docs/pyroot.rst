@@ -72,9 +72,36 @@ The ROOT build should be successful
 
    echo source bin/thisroot.sh >> ~/env/py34/bin/activate
 
+The last part of the pyROOT install deals with the ROOT.py file. You can either convert it yourself or copy the file provided in pax/travis.
+
+To use the provided ROOT.py from PAX.
+
+* Copy the file to the proper directory::
+
+   #Using ROOT v5
+   cp pax/travis/modified_ROOT_v5.34.25.py /env/py34/src/root/lib/ROOT.py
+   
+   #Using ROOT v6
+   cp pax/travis/modified_ROOT_v6.02.05.py /env/py34/src/root/lib/ROOT.py
+
+To manually convert ROOT.py.
+
 * Convert the code in ROOT.py from python 2 to python 3 with 2to3::
 
-   2to3 -w ~/env/py34/src/root/lib/ROOT.py 
+   2to3 -w ~/env/py34/src/root/lib/ROOT.py
+
+* Some tweaking of ROOT.py is required, comment out the following lines in ROOT.py (on lines 355, 542-544), (this rather ad hoc modification disables the backwards compatibility, but since we are using python 3 this is not needed)::
+
+    builtins.__import__ = _importhook
+    
+    # special case for cout (backwards compatibility)
+    if hasattr( std, '__1' ):
+      self.__dict__[ 'cout' ] = getattr( std, '__1' ).cout
+
+* ROOT.py also has a cleanup() function that is called when PAX shuts down, since we have changed the behaviour of ROOT.py this function causes errors. Bypass it by putting a return statement after its definition (yes, this is not good practise and we are looking for a better solution)::
+
+   def cleanup():
+       return
 
 Start python and check that "import ROOT" works. If so happy programming.
 
