@@ -94,7 +94,7 @@ def main():
 
 
     parser.add_argument('--wait',
-                        default=1,
+                        default=10,
                         type=int,
                         help="Wait time between searching if no data")
     # Log level control
