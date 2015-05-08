@@ -401,3 +401,62 @@ class FindHits(plugin.TransformPlugin):
         # Return number of peaks found, baseline, noise sigma, and number of passes used
         # Convert ints to float, if you keep it int, it will sometimes be int32, sometimes int64 => numba crashes
         return float(n_peaks_found), baseline, noise_sigma, float(pass_number + 1)
+
+
+# TODO: replace monstrous code above by nice code below
+# TODO: And add back tests...
+# TODO: Wait, int16 vs float64 waveforms.... aargh...
+@numba.jit((numba.int64)(numba.int16[:], numba.float64, numba.float64, numba.int64[:, :]), nopython=True)
+def find_intervals_above_threshold(w, high_threshold, low_threshold, result_buffer):
+    """Fills result_buffer with l, r bounds of intervals in w > low_threshold which exceed high_threshold somewhere
+        result_buffer: numpy N*2 array of ints, will be filled by function. 
+    Returns: number of intervals found
+    Will stop search after raw_peaks found reached N (length of raw_peaks argument passed in).
+    Boundary indices are inclusive, i.e. the right index is the last index which was still above low_threshold
+    """
+    in_candidate_interval = False
+    current_interval_passed_test = False
+    current_interval = 0
+    result_buffer_size = len(result_buffer)
+    last_index_in_w = len(w) - 1
+    current_candidate_interval_start = -1
+
+    for i, x in enumerate(w):
+
+        if not in_candidate_interval and x > low_threshold:
+            # Start of candidate interval
+            in_candidate_interval = True
+            current_candidate_interval_start = i
+
+        # This must be if, not else: an interval can cross high_threshold in start sample
+        if in_candidate_interval:
+
+            if x > high_threshold:
+                current_interval_passed_test = True
+
+            if x < low_threshold or i == last_index_in_w:
+
+                # End of candidate interval
+                in_candidate_interval = False
+
+                if current_interval_passed_test:
+                    # We've found a new interval!
+
+                    # The interval ended just before this index
+                    # unless, of course, we ended ONLY BECAUSE this is the last index
+                    itv_end = i-1 if x < low_threshold else i
+
+                    # Add to result buffer
+                    result_buffer[current_interval, 0] = current_candidate_interval_start
+                    result_buffer[current_interval, 1] = itv_end
+
+                    # Prepare for the next interval
+                    current_interval += 1
+                    current_interval_passed_test = False
+
+                    if current_interval == result_buffer_size:
+                        break
+
+    # Return number of peaks found
+    # May crash numba here: not sure if it is int32 or int64...
+    return current_interval
