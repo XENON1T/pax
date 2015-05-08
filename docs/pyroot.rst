@@ -2,10 +2,10 @@
 PyROOT installation
 ===============================
 
-The Processor for Analysing XENON (PAX) uses ROOT (http://root.cern.ch/drupal/) for the output of files. 
-PyROOT is a Python extension module that allows the user to interact with any ROOT class from the Python interpreter.
-For this purpose it is necessary to have the latest Python (3.4) version working with ROOT. This installation document 
-shows the steps needed to do this correctly in an virtual environment on Ubuntu 14.
+The Processor for Analysing XENON (PAX) can use ROOT (http://root.cern.ch/drupal/) as a processed data output format.
+If you want to use this output format, you'll first have to install pyROOT 
+(a Python module to interact with ROOT classes) in the latest version of Python (3.4).
+This installation document shows the steps needed to do this correctly in an virtual environment on Ubuntu 14.
 
 Installation
 =============
