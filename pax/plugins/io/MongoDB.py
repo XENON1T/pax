@@ -8,6 +8,7 @@ classes are provided for MongoDB access.  More information is in the docstrings.
 """
 from datetime import datetime
 import numpy as np
+import numba
 
 import time
 import pymongo
@@ -19,7 +20,39 @@ from pax import plugin, units
 
 
 START_KEY = 'time'
-STOP_KEY = 'time' # 'endtime'
+STOP_KEY = 'endtime'
+
+@numba.jit((numba.int64)(numba.int64[:],
+                             numba.int64, numba.int64, numba.int64, numba.int64,
+                             numba.int64[:, :], numba.int64), nopython=True)
+def _sliding_window_numba(x,
+                          window, multiplicity, left, right,
+                          ranges_buffer, ranges_buffer_size):
+    current_range = -1
+    i = 0  # Start of range to test
+    j = 0  # End of range to test
+
+    while j < x.size:  # For every pulse... extend end
+        if x[j] - x[i] > window:  # If time diff greater than window, form new cluster
+            if j - i > multiplicity:  # If more than 100 pulses, trigger
+                if current_range != -1 and ranges_buffer[current_range, 1] + window > x[i]:
+                    ranges_buffer[current_range, 1] = x[j-1] + right
+                else:
+                    current_range += 1
+                    if current_range > ranges_buffer_size - 1:
+                        break
+                    ranges_buffer[current_range, 0] = x[i] + left
+                    ranges_buffer[current_range, 1] = x[j-1] + right
+            i+= 1
+        else:
+            j += 1
+
+    if j - i > multiplicity and current_range < ranges_buffer_size - 1:
+        current_range += 1
+        ranges_buffer[current_range, 0] = x[i] + left
+        ranges_buffer[current_range, 1] = x[j-1] + right
+
+    return current_range + 1
 
 def sampletime_fmt(num):
     """num is in 1s of ns"""
@@ -31,6 +64,10 @@ def sampletime_fmt(num):
 
 class IOMongoDB():
     def startup(self):
+        if START_KEY == STOP_KEY:
+            raise ValueError("START_KEY and STOP_KEY must be different."
+                             "Otherwise, must modify query logic.")
+
         self.number_of_events = 0
 
         self.connections = {}  # MongoClient objects
@@ -59,11 +96,21 @@ class IOMongoDB():
                                    'cursor_type' : pymongo.cursor.CursorType.EXHAUST}
 
         # Digitizer bins
-        self.mongo_time_unit = self.config.get('sample_duration')
+        self.sample_duration = self.config.get('sample_duration')
+        self.log.debug("Time unit: %f", self.sample_duration)
 
         # Retrieved from runs database
         self.data_taking_ended = False
 
+    def _to_mt(self, x):
+        # Takes time in ns and converts to samples
+        # makes number small by 10
+        return int(x * units.ns // self.sample_duration)
+
+    def _from_mt(self, x):
+        # Takes time in samples and converts to ns
+        # Makes number bigger by 10
+        return int(x * self.sample_duration // units.ns)
 
     def setup_access(self, name,
                      address,
@@ -154,15 +201,14 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
         self.right = self.config['right_extension']
 
         self.log.info("Building events with:")
-        self.log.info("\tSliding window: %0.2f us", self.window / units.us)
+        self.log.info("\tSliding window: %0.2f us", self.window / units.us * units.ns)
         self.log.info("\tMultiplicity: %d hits", self.multiplicity)
-        self.log.info("\tLeft extension: %0.2f us", self.left / units.us)
-        self.log.info("\tRight extension: %0.2f us", self.right / units.us)
+        self.log.info("\tLeft extension: %0.2f us", self.left / units.us * units.ns)
+        self.log.info("\tRight extension: %0.2f us", self.right / units.us * units.ns)
 
         self.setup_input()
 
-    @staticmethod
-    def sliding_window(x, window=1000, multiplicity=3, left=-10, right=7):
+    def sliding_window(self, x, n, window=1000, multiplicity=3, left=-10, right=7):
         """Sliding window cluster finder (with range extension)
 
         x is a list of times.  A window will slide over the values in x and
@@ -194,8 +240,36 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
 
         return ranges
 
+    def sliding_window2(self, x, ranges_buffer_size,
+                             window=1000, multiplicity=3,
+                             left=-10, right=7):
+        """Sliding window cluster finder (with range extension)
+
+        x is a list of times.  A window will slide over the values in x and
+        this function will return all event ranges with more than 'multiplicity'
+        of pulses.  We assume that any pulses will have ~1 pe area.
+        Also, left and right will be added to ranges, where left can be the
+        drift length.  n is the number of possible ranges.
+        """
+        if left > 0:
+            raise ValueError("Left offset must be negative")
+
+        ranges_buffer = -1 * np.ones((ranges_buffer_size,
+                                      2),
+                                     dtype=np.int64)
+
+
+
+        n_ranges_found = _sliding_window_numba(x, window, multiplicity,
+                                               left, right, ranges_buffer,
+                                               ranges_buffer_size)
+        if n_ranges_found >= ranges_buffer_size:
+            print("Too many ranges to fit in buffer... :-(?")
+        return ranges_buffer[:n_ranges_found]
+
+
     def get_events(self):
-        self.last_time = 0 * units.ns# ns
+        self.last_time = 0 # ns
 
         while not self.data_taking_ended:
             # Grab new run document in case run ended.  This much happen before
@@ -208,16 +282,14 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
 
             c = self.mongo['input']['collection']
 
-            delay = 0 * units.ns # ns
+            delay = 0 # ns
 
-            # Consider faster implementation here since requires much
-            # type conversion.  e.g. monary.
 
-            # times is in digitizer samples
             search_after = self.last_time - delay # ns
             self.log.info("Searching for pulses after %s",
                           sampletime_fmt(search_after))
-            times = list(c.find({'time' : {'$gt' : search_after * self.mongo_time_unit}},
+            # times is in digitizer samples
+            times = list(c.find({'time' : {'$gt' : self._to_mt(search_after)}},
                                 projection=[START_KEY, STOP_KEY],
                                 **self.mongo_find_options))
 
@@ -227,17 +299,22 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
                 time.sleep(1)  # todo: configure
                 continue
 
-            x = [[doc[START_KEY], doc[STOP_KEY]] for doc in times]  # in digitizer units
-            x = np.array(x) * self.mongo_time_unit
-            x = x.mean(axis=1)  # in ns
+            x = [[self._from_mt(doc[START_KEY]),
+                  self._from_mt(doc[STOP_KEY])] for doc in times]  # in digitizer units
+            x = np.array(x, dtype=np.int64)
+            x = x.mean(axis=1, dtype=np.int64)  # in ns
 
             self.log.info("Processing range [%s, %s]",
                           sampletime_fmt(x[0]),
                           sampletime_fmt(x[-1]))
 
             self.last_time = x[-1]   # TODO race condition? subtract second?
+            self.first_time = x[0]
+            rate = 2000
+            n = int(((x[-1] - x[0]) // units.s) * rate)
 
             self.ranges = self.sliding_window(x,
+                                              n,
                                               window=self.window,
                                               multiplicity=self.multiplicity,
                                               left=self.left,
@@ -255,7 +332,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
 
                 yield Event(n_channels=self.config['n_channels'],
                             start_time=t0,
-                            sample_duration=self.mongo_time_unit,
+                            sample_duration=self.sample_duration,
                             stop_time=t1,
                             partial=True)
 
@@ -277,44 +354,51 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, IOMongoDB):
         self.setup_input()
 
     def process_event(self, event):
-        t0, t1 = event.start_time, event.stop_time  # ns
+        t0, t1 = int(event.start_time), int(event.stop_time)  # ns
 
         event = Event(start_time = event.start_time,
                       stop_time = event.stop_time,
                       n_channels=self.config['n_channels'],
-                      sample_duration=self.mongo_time_unit)
+                      sample_duration=self.sample_duration)
 
         self.log.info("Building event in range [%s, %s]",
                           sampletime_fmt(t0),
                           sampletime_fmt(t1))
 
-        query = {START_KEY : {"$gte" : t0 // self.mongo_time_unit},
-                 STOP_KEY : {"$lte" : t1 // self.mongo_time_unit}}
+        query = {START_KEY : {"$gte" : self._to_mt(t0)},
+                 STOP_KEY : {"$lte" : self._to_mt(t1)}}
 
         self.mongo_iterator = self.mongo['input']['collection'].find(query,
                                                                      **self.mongo_find_options)
         pulse_objects = []
 
-        t0_samples = t0 // self.mongo_time_unit  # from ns -> samples
         for i, pulse_doc in enumerate(self.mongo_iterator):
             # Fetch raw data from document
             data = pulse_doc['data']
 
-            time_within_event = pulse_doc[START_KEY] - t0_samples # samples
+            time_within_event = self._from_mt(pulse_doc[START_KEY]) - t0 # ns
 
             self.log.info("Sample %s",
-                          sampletime_fmt(time_within_event * self.mongo_time_unit))
+                          sampletime_fmt(time_within_event))
 
             if self.compressed:
                 data = snappy.decompress(data)
 
-            channel = self.pmt_mappings[(pulse_doc['module'],
-                                         pulse_doc['channel'])]
 
-            pulse_objects.append(Pulse(left=int(time_within_event),
-                                       raw_data=np.fromstring(data,
-                                                              dtype="<i2"),
-                                       channel=channel))
+            id = (pulse_doc['module'],
+                  pulse_doc['channel'])
+            if id in self.pmt_mappings:
+                channel = self.pmt_mappings[id]
+
+                pulse_objects.append(Pulse(left=self._to_mt(time_within_event),
+                                           raw_data=np.fromstring(data,
+                                                                  dtype="<i2"),
+                                           channel=channel))
+            else:
+                self.log.warning("Found data from module %d digitizer channel "
+                                 "%d, but not in PMT mapping.  Ignoring.",
+                                 pulse_doc['module'],
+                                 pulse_doc['channel'])
         self.log.debug("%d pulses added", len(pulse_objects))
         event.pulses = pulse_objects
         return event
