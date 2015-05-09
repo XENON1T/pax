@@ -5,40 +5,8 @@ import argparse
 import logging
 import pymongo
 import sys
-import multiprocessing
 import time
-from pax import core
-
-class Consumer(multiprocessing.Process):
-
-    def __init__(self, task_queue, result_queue,
-                 config_names, config_dict):
-        multiprocessing.Process.__init__(self)
-        self.task_queue = task_queue
-        self.result_queue = result_queue
-
-        self.config_names = config_names
-        self.config_dict = config_dict
-
-    def run(self):
-        proc_name = self.name
-
-        p = core.Processor(config_names=self.config_names,
-                           config_dict=self.config_dict)
-
-        while True:
-            next_event = self.task_queue.get()
-            if next_event is None:
-                # Poison pill means shutdown
-                print(('%s: Exiting' % proc_name))
-                self.task_queue.task_done()
-                break
-
-            answer = p.process_event(next_event)
-
-            self.task_queue.task_done()
-            self.result_queue.put(answer)
-        return
+from pax import core, units
 
 ##
 # Parse command line arguments
@@ -51,24 +19,24 @@ def main():
 
 
 
-    mode_group = parser.add_argument_group(title='Event builder modes',
-                                           description='The event builder can '
-                                                        'be started in various '
-                                                        'different '
-                                                        'configurations.')
-    group = mode_group.add_mutually_exclusive_group(required=True)
-    group.add_argument('--master',
-                       action='store_true',
-                       help='Start master that feeds the workers.')
-    group.add_argument('--worker',
-                       action='store_true',
-                       help='Information on starting worker nodes')
+    trigger_group = parser.add_argument_group(title='Event builder settings',
+                                           description='Configure trigger')
 
-    group.add_argument('--standalone',
-                       action='store_true',
-                       help='Run event builder in single threaded mode '
-                            '(for testing)')
 
+    trigger_group.add_argument('--multiplicity',
+                               type=int,
+                               help='Number pulses required for coincidence trigger',
+                               default=10)
+    trigger_group.add_argument('--window',
+                               type=int,
+                               help='Size of sliding window (us)',
+                               default=1)
+    trigger_group.add_argument('--left',
+                               type=int, default=200,
+                               help='Left extension to save (us)')
+    trigger_group.add_argument('--right',
+                               type=int, default=200,
+                               help='Right extension to save (us)')
 
 
     run_db_str = 'The runs database stores all metadata about runs, including'\
@@ -79,7 +47,7 @@ def main():
     run_db_group = parser.add_argument_group(title='Runs database settings',
                                              description=run_db_str)
     run_db_group.add_argument('--address',
-                              default='127.0.0.1',
+                              default='daqeb0',
                               help='Address or hostname of MongoDB instance.')
     run_db_group.add_argument('--database',
                               default='online',
@@ -88,7 +56,7 @@ def main():
                               default='runs',
                               help='')
     run_db_group.add_argument('--port',
-                              default=27017,
+                              default=27000,
                               type=int,
                               help='Listening port of MongoDB.')
 
@@ -118,17 +86,6 @@ def main():
     log = logging.getLogger('eb')
 
     args = parser.parse_args()
-
-    if args.worker:
-        log.info("To start a worker, you have to initialize pax via celery.")
-        log.info("This can be done with the following command:")
-        log.info("\tcelery -A pax.event_builder worker")
-        return
-
-    print(args)
-
-
-
 
     query = {"trigger.status" : "waiting_to_be_processed"}
 
@@ -170,11 +127,18 @@ def main():
 
             config_names = 'eventbuilder'
             config_dict = {'DEFAULT' : {'run_doc' : run_doc['_id']},
-                                        'output_name' : filename,
-                                        'MongoDB' : {'runs_database_location' : {'address' : args.address,
-                                                                                 'database' : args.database,
-                                                                                 'port' : args.port,
-                                                                                 'collection' : args.collection}}}
+                            'output_name' : filename,
+                           'MongoDB' : {'runs_database_location' : {'address' : args.address,
+                                                                    'database' : args.database,
+                                                                    'port' : args.port,
+                                                                    'collection' : args.collection
+                                                                },
+                                        'window' : args.window * units.us,
+                                        'left' : args.left * units.us,
+                                        'right' : args.right * units.us,
+                                        'multiplicity' : args.multiplicity
+                                       }
+                           }
             try:
                 p = core.Processor(config_names=config_names,
                                    config_dict=config_dict)
