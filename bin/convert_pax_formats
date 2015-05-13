@@ -1,0 +1,98 @@
+#!/usr/bin/env python
+import argparse
+import logging
+import os
+import sys
+
+##
+# Parse command line arguments
+##
+parser = argparse.ArgumentParser(description='Convert between pax formats outside pax itself; '
+                                             'using python2 or python3. WARNING: Slurps entire input file into RAM!')
+parser.add_argument('input_path', help='Input file to convert, including file extension.')
+parser.add_argument('output_path', default='.',
+                    help='Path to desired output file/directory, including file extension.')
+
+parser.add_argument('--pax_path', default=os.path.join(os.path.dirname(os.path.realpath(__file__)), os.pardir),
+                    help='Path to pax dir (containing bin, pax, etc folders). '
+                         "Pax doesn't actually have to be installed or working, "
+                         "we just need to import some of its code (formats.py).")
+parser.add_argument('--source_format', default='hdf5', help='Format of input file to read')
+parser.add_argument('--destination_format', default='root', help='Format of output file to make')
+args = parser.parse_args()
+
+if not os.path.exists(args.input_path):
+    raise ValueError('Nothing found at input path %s...' % args.input_path)
+
+
+##
+# Import pax.formats
+##
+
+# Add the pax dir to the search path'
+# If pax is actually installed, this is completely unnecessary from pax.formats import ... just works.
+sys.path.append(args.pax_path)
+
+# Setup logging at info level
+# If we don't setup logging, we can't import from pax.formats
+# get a 'no handlers found for logger' error
+logging.basicConfig(level=logging.INFO,
+                    format='%(name)s L%(lineno)s %(levelname)s %(message)s')
+
+try:
+    from pax.formats import flat_data_formats
+except ImportError:
+    raise ValueError("Couldn't import formats.py. Pax path passed: %s" % args.pax_path)
+
+
+##
+# Initialize the source & destination formats
+##
+
+# Are the format codes valid?
+try:
+    source = flat_data_formats[args.source_format]()
+except KeyError:
+    raise ValueError('Invalid source format %s!' % args.source_format)
+try:
+    destination = flat_data_formats[args.destination_format]()
+except KeyError:
+    raise ValueError('Invalid destination format %s!' % args.destination_format)
+
+# Does the source format support reading? (all formats should support writing)
+if not source.supports_read_back:
+    raise ValueError("Source format %s doesn't support reading (yet... want a nice project?)" % args.source_format)
+
+# Are the source and destination format features compatible?
+# If not, we'd have to do a more clever conversion.
+if source.supports_array_fields:
+    if not destination.supports_array_fields:
+        raise ValueError("Source format supports array fields, destination format does not. "
+                         "Conversion outisde pax is not (yet...) possible.")
+if source.prefers_python_strings != destination.prefers_python_strings:
+    raise ValueError("Source format and destination format have different tastes for strings in numpy arrays. "
+                     "Conversion outisde pax is not (yet...) possible.")
+
+# Check if the destination file/directory exists
+if destination.file_extension == 'DIRECTORY':
+    if os.path.isdir(args.output_path):
+        raise ValueError("Output directory %s already exists!" % args.output_path)
+    os.mkdir(args.output_path)   # Dir formats expect directory to already exist...
+else:
+    if os.path.exists(args.output_path):
+        raise ValueError("Output file %s already exists" % args.output_path)
+
+##
+# Do the actual conversion
+##
+source.open(args.input_path, mode='r')
+destination.open(args.output_path, mode='w')
+
+data = {}
+for dt in source.data_types_present:
+    data[dt] = source.read_data(dt)
+
+destination.write_data(data)
+
+source.close()
+destination.close()

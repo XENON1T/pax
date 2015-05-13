@@ -39,7 +39,7 @@ setup(
     ],
     package_dir={'pax': 'pax'},
     package_data={'pax': ['config/*.ini', 'data/*.*']},
-    scripts=['bin/paxer'],
+    scripts=['bin/paxer', 'bin/convert_pax_formats'],
     install_requires=requirements,
     license="BSD",
     zip_safe=False,
