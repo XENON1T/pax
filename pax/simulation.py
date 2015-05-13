@@ -84,7 +84,7 @@ class Simulator(object):
         if self.config['real_noise_file']:
             self.noise_data = np.load(utils.data_file_name(self.config['real_noise_file']))['arr_0']
             # The silly XENON100 PMT offset again: it's relevant for indexing the array of noise data
-            # (which is one column per channel)
+            # (which is one row per channel)
             self.channel_offset = 1 if self.config['pmt_0_is_fake'] else 0
 
     def s2_electrons(self, electrons_generated=None, z=0., t=0.):

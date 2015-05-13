@@ -11,11 +11,13 @@ class SoftwareZLE(plugin.TransformPlugin):
     Makes no attempt to emulate the 2-sample word logic, so some rare edge cases will be different
     """
     debug = False
+    zle_intervals_buffer = -1 * np.ones((5000, 2), dtype=np.int64)
 
     def transform_event(self, event):
 
         new_pulses = []
-        zle_intervals_buffer = -1 * np.ones((1000, 2), dtype=np.int64)
+
+        zle_intervals_buffer = self.zle_intervals_buffer
 
         for pulse in event.pulses:
 
@@ -33,7 +35,8 @@ class SoftwareZLE(plugin.TransformPlugin):
             if n_itvs_found == 0:
                 continue
             elif n_itvs_found == self.config['max_intervals']:
-                # more than 1000 intervals - insane!!!
+                # more than 5000 intervals - insane!!!
+                # Ignore intervals beyond this -- probably will go beyond 32 intervals to encode anyway
                 zle_intervals_buffer[-1, 1] = pulse.length - 1
             itvs_to_encode = zle_intervals_buffer[:n_itvs_found]
 
@@ -41,16 +44,19 @@ class SoftwareZLE(plugin.TransformPlugin):
                 for l, r in itvs_to_encode:
                     plt.axvspan(l, r, alpha=0.5, color='red')
 
-            # Find boundaries of regions to encode
-            # This will introduce overlaps
+            # Find boundaries of regions to encode by subtracting before and after window
+            # This will introduce overlaps and out-of-pulse indices
             itvs_to_encode[:, 0] -= self.config['samples_to_store_before']
             itvs_to_encode[:, 1] += self.config['samples_to_store_after']
 
-            # Decide which intervals to encode: have to deal with overlaps here
+            # Clip out-of-pulse indices
+            itvs_to_encode = np.clip(itvs_to_encode, 0, pulse.length - 1)
+
+            # Decide which intervals to encode: deal with overlaps here
             itvs_encoded = 0
             itv_i = 0
             while itv_i <= len(itvs_to_encode) - 1:
-                start = max(itvs_to_encode[itv_i, 0], 0)
+                start = itvs_to_encode[itv_i, 0]
 
                 if itvs_encoded >= self.config['max_intervals']:
                     self.log.debug("ZLE breakdown in channel %d: all samples from %d onwards are stored" % (
@@ -58,12 +64,12 @@ class SoftwareZLE(plugin.TransformPlugin):
                     stop = pulse.length - 1
                     itv_i = len(itvs_to_encode) - 1     # Loop will end after this last pulse is appended
                 else:
-                    stop = min(itvs_to_encode[itv_i, 1], pulse.length - 1)
+                    stop = itvs_to_encode[itv_i, 1]
                     # If next interval starts before this one ends, update stop and keep searching
                     # If last interval reached, there is no itv_i + 1, thats why the condition has <, not <=
                     while itv_i < len(itvs_to_encode) - 1:
                         if itvs_to_encode[itv_i + 1, 0] <= stop:
-                            stop = min(itvs_to_encode[itv_i + 1, 1], pulse.length - 1)
+                            stop = itvs_to_encode[itv_i + 1, 1]
                             itv_i += 1
                         else:
                             break
