@@ -319,7 +319,7 @@ class Processor:
         Search for plugins in  ., ./plugins, utils.PAX_DIR/plugins, any directories in config['plugin_paths']
         Search in all subdirs of the above, except for __pycache__ dirs
         """
-        plugin_search_paths = ['.', './plugins', os.path.join(utils.PAX_DIR, 'plugins')]
+        plugin_search_paths = ['./plugins', os.path.join(utils.PAX_DIR, 'plugins')]
         if extra_paths is not None:
             plugin_search_paths += extra_paths
 
