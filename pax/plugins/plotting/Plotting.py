@@ -359,8 +359,8 @@ class PlotChannelWaveforms2D(PlotBase):
         time_scale = dt / units.us
 
         # TODO: change from lines to squares
-        for oc in event.pulses:
-            if oc.height is None:
+        for pulse in event.pulses:
+            if pulse.maximum is None:
                 # Maybe gain was 0 or something
                 # TODO: plot these too, in a different color
                 continue
@@ -369,7 +369,7 @@ class PlotChannelWaveforms2D(PlotBase):
             # color_factor = np.clip(np.log10(oc.height) / 2, 0, 1)
             color_factor = 0
 
-            plt.gca().add_patch(Rectangle((oc.left * time_scale, oc.channel), oc.length * time_scale, 1,
+            plt.gca().add_patch(Rectangle((pulse.left * time_scale, pulse.channel), pulse.length * time_scale, 1,
                                           facecolor=plt.cm.gnuplot2(color_factor),
                                           edgecolor='none',
                                           alpha=0.5))

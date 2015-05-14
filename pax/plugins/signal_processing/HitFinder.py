@@ -21,14 +21,8 @@ class FindHits(plugin.TransformPlugin):
     def startup(self):
         c = self.config
 
-        self.min_sigma = c['peak_minimum_sigma']
-        self.noise_sigma_guess = c['noise_sigma_guess']
-        self.reference_baseline = c.get('digitizer_reference_baseline', 16000)
         self.initial_baseline_samples = c.get('initial_baseline_samples', 50)
         self.max_hits_per_pulse = c['max_hits_per_pulse']
-        self.max_passes = c.get('max_passes', float('inf'))
-
-        self.build_sum_waveforms = c.get('build_sum_waveforms', False)
 
         self.make_diagnostic_plots = c.get('make_diagnostic_plots', 'never')
         self.make_diagnostic_plots_in = c.get('make_diagnostic_plots_in', 'small_pf_diagnostic_plots')
@@ -48,11 +42,11 @@ class FindHits(plugin.TransformPlugin):
         self.too_many_hits_warnings_shown = 0
 
     def transform_event(self, event):
-        # Allocate numpy arrays to hold numba peakfinder results
-        # -1 is a placeholder for values that should never be used
+        # Allocate numpy arrays to hold numba hitfinder results
+        # -1 is a placeholder for values that should never appear (0 would be bad as it often IS a possible value)
         hits_buffer = -1 * np.ones((self.max_hits_per_pulse, 2), dtype=np.int64)
         argmaxes = -1 * np.zeros(self.max_hits_per_pulse, dtype=np.int64)
-        areas = -1 * np.ones(self.max_hits_per_pulse, dtype=np.float64)
+        areas = -1 * np.ones(self.max_hits_per_pulse, dtype=np.int64)
         centers = -1 * np.ones(self.max_hits_per_pulse, dtype=np.float64)
 
         dt = self.config['sample_duration']
@@ -61,30 +55,52 @@ class FindHits(plugin.TransformPlugin):
             start = pulse.left
             stop = pulse.right
             channel = pulse.channel
+            pmt_gain = self.config['gains'][channel]
 
             # Don't consider dead channels
-            if self.config['gains'][channel] == 0:
+            if pmt_gain == 0:
                 continue
 
-            # Retrieve the waveform, subtract ref baseline, invert
-            w = self.reference_baseline - pulse.raw_data.astype(np.float64)
+            # Retrieve the waveform. For safety, retrieve a copy.
+            # Yeah, it slows down the hitfinder... but you'll thank me when this doesn't cause a bug.
+            # Wait, that's not how it works, is it?
+            w = pulse.raw_data.copy()
 
-            # Call the numba hit finder -- see its documentation below
-            # Results stored in hits_buffer and extra_results; declared outside loop, see above
-            n_hits_found, baseline, noise_sigma, passes_used = self._find_peaks(
-                w, self.min_sigma, self.noise_sigma_guess, self.max_passes, self.initial_baseline_samples,
-                hits_buffer)
+            # Compute baseline and noise_sigma on the first samples
+            # Median is more robust than mean for baselining
+            # -- it can't resolve the baseline finer than 1 ADC count though
+            baseline_sample = w[:min(len(w), self.initial_baseline_samples)]
+            pulse.baseline = int(np.median(baseline_sample))
+            pulse.noise_sigma = np.std(baseline_sample)
 
-            # Check for error return codes from the numba hitfinding
-            if n_hits_found < 0:
-                raise RuntimeError("You found a hitfinder bug!\n"
-                                   "Event %d, channel %d, pulse %d.\n"
-                                   "Guru meditation: %d\n"
-                                   "Please file a bug report!" % (
-                                       event.event_number, channel, pulse_i, n_hits_found))
+            # Substract baseline, invert (so hits point up from baseline)
+            w = pulse.baseline - w
 
-            # Show too-many hits message
-            if n_hits_found >= self.max_hits_per_pulse:
+            # Compute extra data about this pulse
+            # May disable this for performance later?
+            pulse.maximum = np.max(w)
+            pulse.minimum = np.min(w)
+
+            # Compute thresholds based on noise level
+            high_threshold = max(round(self.config['high_threshold_sigmas'] * pulse.noise_sigma),
+                                 self.config['min_high_threshold'])
+            low_threshold = max(round(self.config['low_threshold_sigmas'] * pulse.noise_sigma),
+                                self.config['min_low_threshold'])
+
+            # Call the numba hit finder -- see its docstring for description
+            n_hits_found = find_intervals_above_threshold(w, high_threshold, low_threshold, hits_buffer)
+
+            # Only view the part of hits_buffer that contains hits found in this event
+            # The rest of hits_buffer contains -1's or stuff from previous pulses
+            hits_found = hits_buffer[:n_hits_found]
+
+            # If no hits were found, this is a noise pulse: update the noise pulse count
+            if n_hits_found == 0:
+                event.noise_pulses_in[channel] += 1
+                # Don't 'continue' to the next pulse! There's stuff left to do!
+            # Show too-many-hits message if needed
+            # This message really should be shown the first few times, as you should be aware how often this occurs
+            elif n_hits_found >= self.max_hits_per_pulse:
                 if self.too_many_hits_warnings_shown > 3:
                     show_to = self.log.debug
                 else:
@@ -97,32 +113,14 @@ class FindHits(plugin.TransformPlugin):
                 if self.too_many_hits_warnings_shown == 3:
                     self.log.info('Further too-many hit messages will be suppressed!')
 
-            if passes_used >= self.max_passes:
-                self.log.debug("Hit finding in pulse %d-%d in channel %d did not converge after %d passes." % (
-                    start, stop, channel, passes_used))
-
-            # If no hits were found, this is a noise pulse: update the noise pulse count
-            if n_hits_found == 0:
-                event.noise_pulses_in[channel] += 1
-                # Don't 'continue' to the next pulse! There's stuff left to do!
-
-            # Only view the part of hits_buffer that contains peaks found in this event
-            # The rest of hits_buffer contains zeros or random junk from previous pulses
-            hits_found = hits_buffer[:n_hits_found]
-
-            # Update pulse data
-            pulse.noise_sigma = noise_sigma
-            pulse.baseline = baseline
-            pulse.height = np.max(w)    # Remember w was modified in-place by the numba hitfinder to do baselining
-
             # Compute area, max, and center of each hit in numba
             # Results stored in argmaxes, areas, centers; declared outside loop, see above
-            self._compute_hit_properties(w, hits_found, argmaxes, areas, centers)
+            _compute_hit_properties(w, hits_found, argmaxes, areas, centers)
 
-            # Store the found peaks in the datastructure
+            # Store the found hits in the datastructure
             # Convert area, noise_sigma and height from adc counts -> pe
-            adc_to_pe = self.adc_to_e / self.config['gains'][channel]
-            noise_sigma_pe = noise_sigma * adc_to_pe
+            adc_to_pe = self.adc_to_e / pmt_gain
+            noise_sigma_pe = pulse.noise_sigma * adc_to_pe
             for i, hit in enumerate(hits_found):
 
                 # Do sanity checks
@@ -134,7 +132,7 @@ class FindHits(plugin.TransformPlugin):
                 max_idx = start + hit[0] + argmaxes[i]
                 if not (0 <= left <= max_idx <= right) \
                    or not (left <= center / dt <= right) \
-                   or not (0 <= self.min_sigma * noise_sigma_pe <= height <= area):
+                   or not (0 <= high_threshold * adc_to_pe <= height <= area):
                     raise RuntimeError("You found a hitfinder bug!\n"
                                        "Current hit %d-%d-%d, in event %s, channel %s, pulse %s.\n"
                                        "Indices in pulse: %s-%s-%s. Pulse bounds: %d-%d.\n"
@@ -145,7 +143,7 @@ class FindHits(plugin.TransformPlugin):
                                            left, max_idx, right, event.event_number, channel, pulse_i,
                                            hit[0], hit[0] + argmaxes[i], hit[1], start, stop,
                                            center,
-                                           height, noise_sigma_pe, self.min_sigma * noise_sigma_pe,
+                                           height, noise_sigma_pe, high_threshold * adc_to_pe,
                                            area))
 
                 event.all_hits.append(datastructure.Hit({
@@ -161,7 +159,8 @@ class FindHits(plugin.TransformPlugin):
                 }))
 
             # Diagnostic plotting
-            # Bit difficult to move to separate plugin: would have to re-group hits by pulse
+            # Difficult to move to separate plugin:
+            # would have to re-group hits by pulse, move settings like threshold to DEFAULT or use hack...
 
             # Do we need to show this pulse? If not: continue
             if self.make_diagnostic_plots == 'never':
@@ -171,11 +170,11 @@ class FindHits(plugin.TransformPlugin):
                 if noise_sigma_pe < 0.5:
                     if len(hits_found) == 0:
                         # Show pulse if it nearly went over threshold
-                        if not pulse.height / noise_sigma > 0.8 * self.min_sigma:
+                        if not pulse.maximum > 0.8 * high_threshold:
                             continue
                     else:
                         # Show pulse if any of its hit nearly didn't go over threshold
-                        if not any([event.all_hits[-(i+1)].height < 1.2 * self.min_sigma * noise_sigma_pe
+                        if not any([event.all_hits[-(i+1)].height < 1.2 * high_threshold * adc_to_pe
                                    for i in range(len(hits_found))]):
                             continue
             elif self.make_diagnostic_plots == 'no hits':
@@ -197,14 +196,16 @@ class FindHits(plugin.TransformPlugin):
 
             # Plot the signal and noise levels
             ax1.plot(w, drawstyle='steps-mid', label='Data')
-            ax1.plot(np.ones_like(w) * self.min_sigma * noise_sigma, '--', label='Threshold', color='red')
-            ax1.plot(np.ones_like(w) * noise_sigma, '--', label='Noise level', color='gray')
-            ax1.plot(np.ones_like(w) * 2 * noise_sigma, '--', label='Boundary threshold', color='green')
+            ax1.plot(np.ones_like(w) * high_threshold, '--', label='Threshold', color='red')
+            ax1.plot(np.ones_like(w) * pulse.noise_sigma, '--', label='Noise level', color='gray')
+            ax1.plot(np.ones_like(w) * low_threshold, '--', label='Boundary threshold', color='green')
 
             # Mark the hit ranges & center of gravity point
+
             for hit_i, hit in enumerate(hits_found):
                 ax1.axvspan(hit[0] - 0.5, hit[1] + 0.5, color='red', alpha=0.2)
-                ax1.axvline([centers[i] + hit[0]], linestyle=':', color='gray')
+                # Remember: array 'centers' is still in samples since start of hit...
+                ax1.axvline([centers[hit_i] + hit[0]], linestyle=':', color='gray')
 
             # Make sure the y-scales match
             ax2.set_ylim(ax1.get_ylim()[0] * adc_to_pe, ax1.get_ylim()[1] * adc_to_pe)
@@ -220,200 +221,63 @@ class FindHits(plugin.TransformPlugin):
 
         return event
 
-    # TODO: Needs a test!
-    @staticmethod
-    @numba.jit(numba.void(numba.float64[:], numba.int64[:, :], numba.int64[:], numba.float64[:], numba.float64[:]),
-               nopython=True)
-    def _compute_hit_properties(w, raw_peaks, argmaxes, areas, centers):
-        """Finds the maximum index, area, and center of gravity of hits in w indicated by (l, r) bounds in raw_peaks.
-        Will fill up argmaxes and areas with result.
-        raw_peaks should be a numpy array of (left, right) bounds (inclusive)
-        centers, argmaxes are returned in samples right of hit start -- you probably want to convert this
-        Returns nothing
-        """
-        for peak_i in range(len(raw_peaks)):
-            current_max = -999.9
-            current_argmax = -1
-            current_area = 0
-            current_center = 0
-            for i, x in enumerate(w[raw_peaks[peak_i, 0]:raw_peaks[peak_i, 1]+1]):
-                if x > current_max:
-                    current_max = x
-                    current_argmax = i
-                current_area += x
-                current_center += i * x
-            argmaxes[peak_i] = current_argmax
-            areas[peak_i] = current_area
-            centers[peak_i] = current_center / current_area
 
-    @staticmethod
-    @numba.jit(numba.typeof((1.0, 2.0, 3.0, 4.0))(
-               numba.float64[:], numba.float64, numba.float64, numba.int64, numba.int64,
-               numba.int64[:, :]), nopython=True)
-    def _find_peaks(w, threshold_sigmas, noise_sigma, max_passes, initial_baseline_samples, hits_buffer):
-        """Fills raw_peaks with left, right indices of raw_peaks > 2 * noise which exceed threshold somewhere
-         raw_peaks: numpy () of [-1,-1] lists, will be filled by function.
-        BE CAREFUL -- Will modify w IN PLACE to do baseline correction
-        Returns: number of raw_peaks found, baseline, noise_sigma
-        Will stop search after raw_peaks found reached length of raw_peaks argument passed in
-        """
-        has_changed = True      # First pass is never final
+##
+# Python wrappers around numba
+# Convenient because numba doesn't support keyword arguments
+##
 
-        # Determine an initial baseline from the first samples
-        # We have to do this BEFORE the first hit finding pass:
-        # the entire pulse could be above reference baseline, and we don't want to report it all as one hit...
-        # TODO: Also determine a noise_sigma here? Factor out code from below to separate function?
-        baseline = 0.0
-        initial_baseline_samples = min(initial_baseline_samples, len(w))
-        for x in w[:initial_baseline_samples + 1]:     # AARGH stupid python indexing!!!
-            baseline += x
-        baseline = baseline/initial_baseline_samples
-
-        # Correct for the initial baseline
-        for i in range(len(w)):
-            w[i] -= baseline
-
-        # Determine the peaks based on the noise level
-        # Can't just use w > self.min_sigma * noise_sigma here,
-        # want to extend peak bounds to noise_sigma
-        pass_number = 0
-        while True:
-
-            in_candidate_interval = False
-            current_interval_passed_test = False
-            current_peak = 0
-            max_n_peaks = len(hits_buffer)      # First index which is outside hits buffer = max # of peaks to find
-            max_idx = len(w) - 1
-            current_candidate_interval_start = -1
-            threshold = noise_sigma * threshold_sigmas
-            bound_threshold = 2 * noise_sigma
-
-            ##
-            #   Hit finding
-            ##
-
-            for i, x in enumerate(w):
-
-                if not in_candidate_interval and x > bound_threshold:
-                    # Start of candidate interval
-                    in_candidate_interval = True
-                    current_candidate_interval_start = i
-
-                # This must be if, not else: an interval can cross threshold in start sample
-                if in_candidate_interval:
-
-                    if x > threshold:
-                        current_interval_passed_test = True
-
-                    if x < bound_threshold or i == max_idx:
-
-                        # End of candidate interval
-                        in_candidate_interval = False
-
-                        if current_interval_passed_test:
-                            # We've found a new peak!
-
-                            # The interval ended just before this index
-                            # unless, of course, we ended ONLY BECAUSE this is the last index
-                            itv_end = i-1 if x < bound_threshold else i
-
-                            # Add to raw_peaks, check if something has changed
-                            if itv_end != hits_buffer[current_peak, 1] \
-                                    or current_candidate_interval_start != hits_buffer[current_peak, 0]:
-                                hits_buffer[current_peak, 0] = current_candidate_interval_start
-                                hits_buffer[current_peak, 1] = itv_end
-                                has_changed = True
-
-                            # Prepare for the next peak
-                            current_peak += 1
-                            current_interval_passed_test = False
-
-                            # Check if we've reached the maximum # of peaks
-                            # If we found more peaks than we have room in our result array,
-                            # stop peakfinding immediately
-                            if current_peak == max_n_peaks:
-                                break
-
-            n_peaks_found = current_peak
-
-            # If we have reached the max pass_number, we should stop BEFORE recalculate noise sigma again
-            # (otherwise reported peaks will be inconsistent with reported baseline and noise)
-            # We can also stop if nothing has changed: baseline and noise will be the same as before
-            if pass_number > max_passes or not has_changed:
-                break
-
-            ##
-            #   Baseline computation
-            ##
-
-            # Compute the baseline correction
-            n = 0           # Samples outside peak included so far
-            mean = 0        # Mean so far
-
-            current_peak = 0
-            currently_in_peak = False
-
-            for i, x in enumerate(w):
-
-                if currently_in_peak:
-                    if i > hits_buffer[current_peak, 1]:
-                        current_peak += 1
-                        currently_in_peak = False
-
-                # NOT else, currently_in_peak may have changed!
-                if not currently_in_peak:
-                    if current_peak < n_peaks_found and i == hits_buffer[current_peak, 0]:
-                        currently_in_peak = True
-                    else:
-                        # Update n, mean
-                        n += 1
-                        mean += (x - mean)/n
-
-            # Perform the baseline correction
-            baseline += mean
-            for i in range(len(w)):
-                w[i] -= mean
-
-            ##
-            #   Noise sigma computation
-            ##
-
-            # Must be in a second pass, since we want to include only samples BELOW baseline (which we just determined)
-            # Don't need to keep track of being in a peak or not: peaks are never below baseline :-)
-            m2 = 0             # Sum of squares of differences from the (current) mean
-            n_nonpositive = 0  # Number of samples <= baseline. <=, not < to avoid div0 error if no noise (if only..)
-
-            for x in w:
-                if x <= 0:
-                    n_nonpositive += 1
-                    m2 += x*x
-
-            if n_nonpositive == 0:
-                # A pathological case when the entire pulse is indicated as a peak (for this pass)...
-                # I believe this can only happen if the baseline correction is bugged, so I'll raise an exception
-                # ... Wait,Numba doesn't allow this though, so...
-                return float(-41), 0.0, 0.0, 0.0
-
-            noise_sigma = (m2/n_nonpositive)**0.5
-            has_changed = False
-            pass_number += 1
-
-        # Return number of peaks found, baseline, noise sigma, and number of passes used
-        # Convert ints to float, if you keep it int, it will sometimes be int32, sometimes int64 => numba crashes
-        return float(n_peaks_found), baseline, noise_sigma, float(pass_number + 1)
+def compute_hit_properties(w, raw_hits, argmaxes, areas, centers):
+    """Finds the maximum index, area, and center of gravity of hits in w indicated by (l, r) bounds in raw_hits.
+    Will fill up argmaxes and areas with result.
+    raw_hits should be a numpy array of (left, right) bounds (inclusive)
+    centers, argmaxes are returned in samples right of hit start -- you probably want to convert this
+    Returns nothing
+    """
+    _compute_hit_properties(w, raw_hits, argmaxes, areas, centers)
 
 
-# TODO: replace monstrous code above by nice code below
-# TODO: And add back tests...
-# TODO: Wait, int16 vs float64 waveforms.... aargh...
-@numba.jit((numba.int64)(numba.int16[:], numba.float64, numba.float64, numba.int64[:, :]), nopython=True)
+# TODO: add back tests... use tes cases from previous pax versions
 def find_intervals_above_threshold(w, high_threshold, low_threshold, result_buffer):
     """Fills result_buffer with l, r bounds of intervals in w > low_threshold which exceed high_threshold somewhere
         result_buffer: numpy N*2 array of ints, will be filled by function.
     Returns: number of intervals found
-    Will stop search after raw_peaks found reached N (length of raw_peaks argument passed in).
+    Will stop search after N intervals are found, with N the length of result_buffer.
     Boundary indices are inclusive, i.e. the right index is the last index which was still above low_threshold
     """
+    # This function just wraps the numba code below, so you can call it with keyword arguments
+    return _find_intervals_above_threshold(w, high_threshold, low_threshold, result_buffer)
+
+
+# TODO: Needs a test!
+@numba.jit(numba.void(numba.int16[:], numba.int64[:, :], numba.int64[:], numba.int64[:], numba.float64[:]),
+           nopython=True)
+def _compute_hit_properties(w, raw_hits, argmaxes, areas, centers):
+    """Finds the maximum index, area, and center of gravity of hits in w indicated by (l, r) bounds in raw_hits.
+    Will fill up argmaxes and areas with result.
+    raw_hits should be a numpy array of (left, right) bounds (inclusive)
+    centers, argmaxes are returned in samples right of hit start -- you probably want to convert this
+    Returns nothing
+    """
+    for hit_i in range(len(raw_hits)):
+        current_max = -999.9
+        current_argmax = -1
+        current_area = 0
+        current_center = 0
+        for i, x in enumerate(w[raw_hits[hit_i, 0]:raw_hits[hit_i, 1]+1]):
+            if x > current_max:
+                current_max = x
+                current_argmax = i
+            current_area += x
+            current_center += i * x
+        argmaxes[hit_i] = current_argmax
+        areas[hit_i] = current_area
+        centers[hit_i] = current_center / current_area
+
+
+@numba.jit(numba.int64(numba.int16[:], numba.float64, numba.float64, numba.int64[:, :]), nopython=True)
+def _find_intervals_above_threshold(w, high_threshold, low_threshold, result_buffer):
+    """Numba implementation of find_intervals_above_threshold"""
     in_candidate_interval = False
     current_interval_passed_test = False
     current_interval = 0
@@ -457,6 +321,6 @@ def find_intervals_above_threshold(w, high_threshold, low_threshold, result_buff
                     if current_interval == result_buffer_size:
                         break
 
-    # Return number of peaks found
+    # Return number of hits found
     # May crash numba here: not sure if it is int32 or int64...
     return current_interval
