@@ -1,4 +1,54 @@
+import numpy as np
+
 from pax import plugin,  datastructure, exceptions
+
+
+class SortPulses(plugin.TransformPlugin):
+    """
+    Sorts pulses by channel, then left
+    """
+
+    def transform_event(self, event):
+        event.pulses = sorted(event.pulses, key=lambda p: (p.channel, p.left))
+        return event
+
+
+class ConcatenateAdjacentPulses(plugin.TransformPlugin):
+    """Concatenates directly adjacent pulses in the same channel
+    This ensures baselines / noise levels won't get recalculated in the middle
+    of some data region (possibly containing hits).
+    Assumes pulses are already sorted by channel, then left. Use SortPulses if this is not automatic.
+    """
+
+    def transform_event(self, event):
+        good_pulses = []
+        last_pulse = 0  # Keep track of last pulse not yet merged into previous one
+
+        for pulse_i in range(1, len(event.pulses) - 1):
+            prev_pulse = event.pulses[last_pulse]
+            pulse = event.pulses[pulse_i]
+
+            if pulse.channel == prev_pulse.channel and pulse.left == prev_pulse.right + 1:
+                # Pulse is directly adjacent to previous one in same channel: merge it
+                self.log.debug("Concatenating adjacent DAQ pulses %d-%d and %d-%d in channel %s" % (
+                    prev_pulse.left, prev_pulse.right, pulse.left, pulse.right, pulse.channel))
+                prev_pulse.right = pulse.right
+                prev_pulse.raw_data = np.concatenate((prev_pulse.raw_data, pulse.raw_data))
+                # If there are no pulses after this, add the merged pulse to the good pulses list
+                if pulse_i == len(event.pulses) - 1:
+                    good_pulses.append(prev_pulse)
+                # Else we need to keep checking: maybe the next pulse is directly adjacent to the new merged pulse
+                # hence we don't advance the last_pulse counter
+
+            else:
+                # Don't concatenate this pulse to previous one
+                # We can add the previous pulse to the list of good pulses
+                good_pulses.append(prev_pulse)
+                # ... and advance the last_pulse counter
+                last_pulse = pulse_i
+
+        event.pulses = good_pulses
+        return event
 
 
 class CheckBounds(plugin.TransformPlugin):
