@@ -1,22 +1,25 @@
-"""Formats that pax can read and write
+"""Input/Output code1 for *processed* data
 
-Here are the definitions of how to serialize our data structure to various formats.  Both
-read and write routines are required.
+Here are the definitions of how to serialize our data structure to and from various formats.
+Please be careful when editing this file:
+ - Do not add any dependencies (e.g. imports at head of file without try-except), this file has to stay import-able
+   even if not all the python modules for all the formats are installed.
+ - Do not use python3-specific syntax, this file should be importable by python2 applications.
 """
+import logging
+import os
+import re
 
 import numpy as np
-import os
-
-import logging
 
 base_logger = logging.getLogger('BulkOutput')
 
 try:
-    import ROOT  # noqa
+    import ROOT   # noqa
 except ImportError:
-    base_logger.warning("ROOT module not imported - if you use the ROOT format, pax will crash!")
+    base_logger.warning("pyROOT didn't import - if you use the ROOT format, pax will crash!")
 except SyntaxError:
-    base_logger.warning("ROOT module not made for Python3? - if you use the ROOT format, pax will crash!")
+    base_logger.warning("pyROOT not made for Python3? - if you use the ROOT format, pax will crash!")
 
 try:
     import pandas
@@ -27,7 +30,7 @@ except ImportError:
 try:
     import h5py
 except ImportError:
-    base_logger.warning("You don't have the HDF5 output -- if you use the hdf5 format, pax will crash!")
+    base_logger.warning("You don't have h5py -- if you use the hdf5 format, pax will crash!")
 
 
 class BulkOutputFormat(object):
@@ -58,10 +61,10 @@ class BulkOutputFormat(object):
         raise NotImplementedError
 
     def write_data(self, data):
-        # Should be overridden by child class
         raise NotImplementedError
 
-    def get_number_of_events(self):
+    @property
+    def data_types_present(self):
         raise NotImplementedError
 
 
@@ -87,6 +90,10 @@ class NumpyDump(BulkOutputFormat):
         if end is None:
             end = self.n_in_data(df_name)
         return self.f[df_name][start:end]
+
+    @property
+    def data_types_present(self):
+        return list(self.f.keys())
 
     def n_in_data(self, df_name):
         return len(self.f[df_name])
@@ -128,6 +135,10 @@ class HDF5Dump(BulkOutputFormat):
             end = self.n_in_data(df_name)
         return self.f.get(df_name)[start:end]
 
+    @property
+    def data_types_present(self):
+        return list(self.f.keys())
+
     def n_in_data(self, df_name):
         return self.f[df_name].len()
 
@@ -144,28 +155,40 @@ class ROOTDump(BulkOutputFormat):
     file_extension = 'root'
     supports_array_fields = True
     supports_write_in_chunks = False
-    supports_read_back = False
+    supports_read_back = True
+
+    # Lookup dictionary for converting python numpy types to
+    # ROOT types, strings are handled seperately!
+    root_type = {'float32': '/F',
+                 'float64': '/D',
+                 'int32': '/I',
+                 'int64': '/L',
+                 'bool': '/O',
+                 'S': '/C'}
+
+    numpy_type = {'F': np.float32,
+                  'D': np.float64,
+                  'I': np.int32,
+                  'L': np.int64,
+                  'O': np.bool,
+                  'C': np.dtype('object')}
 
     def __init__(self, *args, **kwargs):
         # This line makes sure all TTree objects are NOT owned
         # by python, avoiding segfaults when garbage collecting
         ROOT.TTree.__init__._creates = False
-        super().init(*args, **kwargs)
+        # DON'T use the Python3 super trick here, we want this code to run in python2 as well!
+        BulkOutputFormat.__init__(self, *args, **kwargs)
 
     def open(self, name, mode):
-        self.f = ROOT.TFile(name, "RECREATE")
-        self.trees = {}
-        self.branch_buffers = {}
-        # Lookup dictionary for converting python numpy types to
-        # ROOT types, strings are handled seperately!
-        self.root_type = {'float64': '/D',
-                          'int64': '/I',
-                          'bool': '/O',
-                          'float': '/D',
-                          'float32': '/D',
-                          'int': '/I',
-                          'S': '/C',
-                          }
+        if mode == 'w':
+            self.f = ROOT.TFile(name, "RECREATE")
+            self.trees = {}
+            self.branch_buffers = {}
+        elif mode == 'r':
+            self.f = ROOT.TFile(name)
+        else:
+            raise ValueError("Invalid mode")
 
     def close(self):
         self.f.Close()
@@ -217,6 +240,54 @@ class ROOTDump(BulkOutputFormat):
         self.f.Write()
         self.log.debug("Done writing")
 
+    def read_data(self, df_name):
+        self.log.warning("ROOT read support is experimental!")
+        tree = self.f.Get(df_name)
+
+        # Read the branch names and types
+        dt = []
+        for b in tree.GetListOfBranches():
+            bdata = re.split(r'[\/\[\]]+', b.GetTitle())
+            if len(bdata) == 2:
+                # Normal field
+                bname, btype = bdata
+                # TODO HACK ignore string fields for now...
+                if btype == 'S':
+                    continue
+                dt.append((bname, self.numpy_type[btype]))
+            elif len(bdata) == 3:
+                # Array field
+                bname, blen, btype = bdata
+                dt.append((bname, self.numpy_type[btype], (int(blen),)))
+            else:
+                raise ValueError("Strange branch %s in tree %s?" % (b.GetTitle(), df_name))
+            if btype == 'S':
+                continue
+
+        # Read the data into a numpy record array
+        n = self.n_in_data(df_name)
+        data = np.zeros(n, dtype=dt)
+        for i in range(self.n_in_data(df_name)):
+            tree.GetEntry(i)
+            for bdata in dt:
+                value = getattr(tree, bdata[0])
+                if len(bdata) == 3:
+                    # Array field: must force this into numpy array to read it
+                    # Try list(value) or value[:] if you want to have fun...
+                    data[i][bdata[0]][:bdata[2][0]] = value
+                else:
+                    data[i][bdata[0]] = value
+
+        return data
+
+    @property
+    def data_types_present(self):
+        # After some trial and error...
+        return [x.GetTitle() for x in self.f.GetListOfKeys()]
+
+    def n_in_data(self, df_name):
+        return self.f.Get(df_name).GetEntries()
+
 
 ##
 # Pandas data formats
@@ -224,7 +295,7 @@ class ROOTDump(BulkOutputFormat):
 
 class PandasFormat(BulkOutputFormat):
     pandas_format_key = None
-    prefers_python_strings = True
+    supports_array_fields = True
 
     def open(self, name, mode):
         self.filename = name
@@ -232,7 +303,17 @@ class PandasFormat(BulkOutputFormat):
     def write_data(self, data):
         for name, records in data.items():
             # Write pandas dataframe to container
-            df = pandas.DataFrame.from_records(records)
+            df_series_dict = {}
+            for column_name in records.dtype.names:
+                if len(records[column_name].shape) != 1:
+                    # This is an array field. Pandas doesn't like this: we should convert it to a list of lists,
+                    # then store it as an object-dtype Series
+                    df_series_dict[column_name] = pandas.Series(records[column_name].tolist(),
+                                                                dtype=np.dtype("object"))
+                else:
+                    df_series_dict[column_name] = pandas.Series(records[column_name],
+                                                                dtype=records[column_name].dtype)
+            df = pandas.DataFrame(df_series_dict)
             self.write_pandas_dataframe(name, df)
 
     def write_pandas_dataframe(self, df_name, df):
@@ -257,6 +338,7 @@ class PandasHDF5(PandasFormat):
     supports_append = True
     supports_write_in_chunks = True
     supports_read_back = True
+    prefers_python_strings = True
     string_data_length = 32     # HACK, should come from config...
     file_extension = 'hdf5'
 
@@ -288,6 +370,10 @@ class PandasHDF5(PandasFormat):
                 return []
         return self.store[df_name][start:end+1].to_records(index=False)
 
+    @property
+    def data_types_present(self):
+        return list(self.store.keys())
+
     def n_in_data(self, df_name):
         if df_name not in self.store:
             print(self.store)
@@ -304,5 +390,5 @@ flat_data_formats = {
     'csv':          PandasCSV,
     'html':         PandasHTML,
     'json':         PandasJSON,
-    'root':         ROOTDump
+    'root':         ROOTDump,
 }
