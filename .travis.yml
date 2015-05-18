@@ -8,8 +8,8 @@ python:
 notifications:
   email:
     - ctunnell@nikhef.nl
-    - jaalbers@nikhef.nl
-    - bartp@nikhef.nl
+    #- jaalbers@nikhef.nl
+    #- bartp@nikhef.nl
 
 services:
   - mongodb
@@ -20,7 +20,7 @@ env:
 
 os:
   - linux
-#  - osx
+    - osx
 
 install:
   - deactivate
