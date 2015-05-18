@@ -19,8 +19,8 @@ env:
   - ROOT=6.02.05
 
 os:
-  - linux
-    - osx
+  - osx
+  #- linux
 
 install:
   - deactivate
