@@ -441,26 +441,31 @@ class SimulatedHitpattern(object):
         ch_for_photons = self.config['channels_for_photons']
         n_channels = len(ch_for_photons)
 
-        # First shuffle all timings in the array, so channel 1 doesn't always
-        # get the first photon
-        np.random.shuffle(photon_timings)
+        if n_channels == 1:
+            photons_per_channel = [photon_timings]
 
-        # Now generate n_channels integers < n_channels to denote the splitting
-        # points
-        # TODO: think carefully about these +1 and -1's Without the +1 S1sClose
-        # failed
-        split_points = np.sort(np.random.randint(0,
-                                                 len(photon_timings) + 1,
-                                                 n_channels - 1))
+        else:
 
-        # Split the array according to the split points
-        # numpy correctly inserts empty arrays if a split point occurs twice if split_points is sorted
-        photons_per_channel = np.split(photon_timings,
-                                       split_points)
+            # First shuffle all timings in the array, so channel 1 doesn't always
+            # get the first photon
+            np.random.shuffle(photon_timings)
 
-        # This distributes stuff in some pattern, favouring the center... odd
-        # So: shuffle to randomize the photon distribution
-        np.random.shuffle(photons_per_channel)
+            # Now generate n_channels integers < n_channels to denote the splitting
+            # points
+            # TODO: think carefully about these +1 and -1's Without the +1 S1sClose
+            # failed
+            split_points = np.sort(np.random.randint(0,
+                                                     len(photon_timings) + 1,
+                                                     n_channels - 1))
+
+            # Split the array according to the split points
+            # numpy correctly inserts empty arrays if a split point occurs twice if split_points is sorted
+            photons_per_channel = np.split(photon_timings,
+                                           split_points)
+
+            # This distributes stuff in some pattern, favouring the center... odd
+            # So: shuffle to randomize the photon distribution
+            np.random.shuffle(photons_per_channel)
 
         # Check we have not generated any photons or lost any
         # assert sum(list(map(len, photons_per_channel))) == len(photon_timings)
