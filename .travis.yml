@@ -39,7 +39,8 @@ install:
   - conda info -a # Useful for debugging any issues with conda
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib pandas pytables cython h5py numba pip scikit-learn
   - source activate test-environment
-  - conda remove libpng libtiff sqlite
+  - if [ "${TRAVIS_OS_NAME}" == "osx" ]; then conda remove libpng; fi
+  - conda remove libtiff sqlite
   - pip install coveralls nose coverage
 
   # ROOT 
