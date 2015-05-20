@@ -40,6 +40,10 @@ echo source ROOT environment...
 
 source `python3.4-config --exec-prefix`/bin/thisroot.sh
 
+export LD_LIBRARY_PATH=`python3.4-config --exec-prefix`/lib:`python3.4-config --exec-prefix`/lib/root
+export DYLD_LIBRARY_PATH=$LD_LIBRARY_PATH
+export PYTHONPATH=$LD_LIBRARY_PATH
+
 cd ..
 
 if [ "${TRAVIS_OS_NAME}" == "linux" ]
