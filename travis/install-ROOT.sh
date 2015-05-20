@@ -6,7 +6,11 @@ if [ -z "$ROOT" ]; then
     export ROOT=6.03.04
 fi  
 
-#conda remove system
+if [ "${TRAVIS_OS_NAME}" == "linux" ]
+then
+  conda remove system 
+fi
+ 
 time wget -nv --no-check-certificate http://root.cern.ch/download/root_v${ROOT}.source.tar.gz
 tar xfz root_v${ROOT}.source.tar.gz
 cd root*
@@ -37,3 +41,8 @@ echo source ROOT environment...
 source `python3.4-config --exec-prefix`/bin/thisroot.sh
 
 cd ..
+
+if [ "${TRAVIS_OS_NAME}" == "linux" ]
+then
+  conda install system
+fi
