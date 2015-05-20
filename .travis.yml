@@ -15,7 +15,7 @@ services:
   - mongodb
 
 env:
-  - ROOT=6.03.04
+  - ROOT=6.02.08
 
 os:
   #- osx
