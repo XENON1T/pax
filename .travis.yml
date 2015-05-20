@@ -15,12 +15,11 @@ services:
   - mongodb
 
 env:
-  - ROOT=5.34.25
-  - ROOT=6.02.05
+  - ROOT=6.03.04
 
 os:
-  - osx
-  #- linux
+  #- osx
+  - linux
 
 install:
   - deactivate
@@ -40,12 +39,13 @@ install:
   - conda info -a # Useful for debugging any issues with conda
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib pandas pytables cython h5py numba pip scikit-learn
   - source activate test-environment
+  - conda remove libpng libtiff sqlite
   - pip install coveralls nose coverage
 
   # ROOT 
   # - unset ROOT # uncomment to not install ROOT
-  #- if test -n "$ROOT"; then source travis/install-ROOT.sh; fi
-  - if test -n "$ROOT"; then source travis/install-ROOT-binary.sh; fi
+  - if test -n "$ROOT"; then source travis/install-ROOT.sh; fi
+  #- if test -n "$ROOT"; then source travis/install-ROOT-binary.sh; fi
   #- source travis/save-ROOT.sh
 
   # Copy modified ROOT.py to proper directory
@@ -55,8 +55,6 @@ install:
   # Does pyROOT still work?
   - root -l -q
   - python -c "import ROOT; ROOT.TBrowser()"
-
-  - conda install system
 
   # Install pax
   - python setup.py install
