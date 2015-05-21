@@ -34,7 +34,7 @@ cat config.log
 
 echo making ROOT...
 
-make install
+make -j2 install
 
 echo source ROOT environment...
 
