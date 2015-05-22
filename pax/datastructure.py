@@ -308,12 +308,6 @@ class Event(StrictModel):
     #: DO NOT set to 10 ns as default, otherwise no way to check if it was given to constructor!
     sample_duration = 0
 
-    user_float_0 = 0.0  # : Unused float (useful for developing)
-    user_float_1 = 0.0  # : Unused float (useful for developing)
-    user_float_2 = 0.0  # : Unused float (useful for developing)
-    user_float_3 = 0.0  # : Unused float (useful for developing)
-    user_float_4 = 0.0  # : Unused float (useful for developing)
-
     #: List of peaks
     #:
     #: Returns a list of :class:`pax.datastructure.Peak` classes.
