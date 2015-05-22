@@ -18,6 +18,6 @@ def process(primers):
     mypax = core.Processor(config_names='eventbuilder_worker')
 
     for primer in primers:
-        event =  Event(**primer)
+        event = Event(**primer)
 
         mypax.process_event(event)
