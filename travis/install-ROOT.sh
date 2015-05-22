@@ -28,19 +28,19 @@ then
  ln -s `python3.4-config --exec-prefix`/lib/libpython3.4m.dylib `python3.4-config --exec-prefix`/lib/libpython3.4.dylib
 fi
 
-./configure --minimal --enable-python --with-python-incdir=`python3.4-config --exec-prefix`/include/python3.4m --with-python-libdir=`python3.4-config --exec-prefix`/lib --prefix=`python3.4-config --exec-prefix` #--enable-builtin-zlib --enable-builtin-lzma --enable-builtin-pcre --disable-shared
+./configure --minimal --enable-python --with-python-incdir=`python3.4-config --exec-prefix`/include/python3.4m --with-python-libdir=`python3.4-config --exec-prefix`/lib
 
 cat config.log
 
 echo making ROOT...
 
-make -j2 install
+make -j2
 
 echo source ROOT environment...
 
-source `python3.4-config --exec-prefix`/bin/thisroot.sh
+source bin/thisroot.sh
 
-export LD_LIBRARY_PATH=`python3.4-config --exec-prefix`/lib:`python3.4-config --exec-prefix`/lib/root
+export LD_LIBRARY_PATH=`python3.4-config --exec-prefix`/lib:$LD_LIBRARY_PATH
 export DYLD_LIBRARY_PATH=$LD_LIBRARY_PATH
 export PYTHONPATH=$LD_LIBRARY_PATH
 
