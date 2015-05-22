@@ -28,7 +28,7 @@ then
  ln -s `python3.4-config --exec-prefix`/lib/libpython3.4m.dylib `python3.4-config --exec-prefix`/lib/libpython3.4.dylib
 fi
 
-./configure --minimal --enable-python --with-python-incdir=`python3.4-config --exec-prefix`/include/python3.4m --with-python-libdir=`python3.4-config --exec-prefix`/lib
+./configure --enable-python --with-python-incdir=`python3.4-config --exec-prefix`/include/python3.4m --with-python-libdir=`python3.4-config --exec-prefix`/lib
 
 cat config.log
 
