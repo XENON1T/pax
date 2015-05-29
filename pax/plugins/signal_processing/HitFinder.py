@@ -235,16 +235,22 @@ class FindHits(plugin.TransformPlugin):
             current_max = -999.9
             current_argmax = -1
             current_area = 0
+            current_positive_area = 0
             current_center = 0
             for i, x in enumerate(w[raw_peaks[peak_i, 0]:raw_peaks[peak_i, 1]+1]):
                 if x > current_max:
                     current_max = x
                     current_argmax = i
                 current_area += x
-                current_center += i * x
+                # Only samples > 0 contribute to weighing the center of mass
+                # Of course, you won't see any samples <= 0 if we set low_threshold_sigmas > 0...
+                # but quite probably we won't always do this
+                if x > 0:
+                    current_positive_area += x
+                    current_center += i * x
             argmaxes[peak_i] = current_argmax
             areas[peak_i] = current_area
-            centers[peak_i] = current_center / current_area
+            centers[peak_i] = current_center / current_positive_area
 
     @staticmethod
     @numba.jit(numba.typeof((1.0, 2.0, 3.0, 4.0))(
