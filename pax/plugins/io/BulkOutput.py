@@ -195,7 +195,7 @@ class BulkOutput(plugin.OutputPlugin):
                 # then the model has a classattribute 'cf' = (ChildClassName, ): see data_model.py
                 'subcollection_fields': {
                     fieldn: getattr(m.__class__, fieldn)[0].__name__
-                    for fieldn in m.get_list_field_names()},
+                    for fieldn in m.get_list_field_info().keys()},
                 'first_index':      0
             }
             first_time_seen = True

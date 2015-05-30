@@ -3,6 +3,7 @@ Python skeleton for data structure
 Extends python object to do a few tricks
 """
 import json
+import bson
 
 import numpy as np
 
@@ -16,34 +17,72 @@ class Model(object):
       - get_data_fields(): iterates over the user-specified attributes
                           (that are not methods, properties, _internals)
       - safely declare attributes defaulting to empty lists ([])
-        in the class declaration. some_field = (SomeClass,) in class declaration
-        means you promise to fill the list  with SomeClass instances.
-        TODO: this isn't actually checked, even in StrictModel
+        in the class declaration. some_field = ListField(SomeType,) in class declaration
+        means you promise to fill the list with SomeType instances.
+        NB: This is checked on initialization (even for Model) not for appending (even for StrictModel)!
+            (we'd have to mess with / override list for that)
+      - recursive initializiation of subclasses
       - dump as dictionary and JSON
     """
 
     def __init__(self, kwargs_dict=None, **kwargs):
 
-        # Initialize the list fields
+        # Initialize the collection fields to empty lists
         # super() is needed to bypass type checking in StrictModel
-        for field_name in self.get_list_field_names():
+        list_field_info = self.get_list_field_info()
+        for field_name in list_field_info:
             super().__setattr__(field_name, [])
 
         # Initialize all attributes from kwargs and kwargs_dict
         kwargs.update(kwargs_dict or {})
         for k, v in kwargs.items():
-            setattr(self, k, v)
+            if k in list_field_info:
+                # User gave a value to initialize a list field. Hopefully an iterable!
+                # Let's check if the types are correct
+                desired_type = list_field_info[k]
+                temp_list = []
+                for el in v:
+                    if isinstance(el, desired_type):
+                        # Good, pass through unmolested
+                        temp_list.append(el)
+                    elif isinstance(el, dict):
+                        # Dicts are fine too, we can use them to init the desired type
+                        temp_list.append(desired_type(**el))
+                    else:
+                        raise ValueError("Attempt to initialize list field %s with type %s, "
+                                         "but you promised type %s in class declaration." % (k,
+                                                                                             type(el),
+                                                                                             desired_type))
+                # This has to be a list of dictionaries
+                # suitable to be passed to __init__ of the list field's element type
+                setattr(self, k, temp_list)
+            else:
+                default_value = getattr(self, k)
+                if type(default_value) == np.ndarray:
+                    if isinstance(v, np.ndarray):
+                        setattr(self, k, v)
+                    elif isinstance(v, bytes):
+                        # Numpy arrays can be also initialized from a 'string' of bytes...
+                        setattr(self, k, np.fromstring(v, dtype=default_value.dtype))
+                    elif hasattr(v, '__iter__'):
+                        # ... or an iterable
+                        setattr(self, k, np.array(v, dtype=default_value.dtype))
+                    else:
+                        raise ValueError("Can't initialize field %s: "
+                                         "don't know how to make a numpy array from a %s" % (k, type(v)))
+                else:
+                    setattr(self, k, v)
 
     @classmethod        # Use only in initialization (or if attributes are fixed, as for StrictModel)
     @Memoize            # Caching decorator, improves performance if a model is initialized often
-    def get_list_field_names(cls):
-        """Get the field names of all list / collection fields in this class
+    def get_list_field_info(cls):
+        """Return dict with fielname => type of elements in collection fields in this class
         """
-        list_field_names = []
+        list_field_info = {}
         for k, v in cls.__dict__.items():
-            if isinstance(v, tuple) and len(v) == 1 and type(v[0]) == type:
-                list_field_names.append(k)
-        return list_field_names
+            if isinstance(v, ListField):
+                list_field_info[k] = v.element_type
+        return list_field_info
 
     def __str__(self):
         return str(self.__dict__)
@@ -73,26 +112,48 @@ class Model(object):
                 # Yes, yield the class-level value
                 yield (field_name, value_in_class)
 
-    def to_dict(self, json_compatible=False):
+    def to_dict(self, convert_numpy_arrays_to=None):
         result = {}
         for k, v in self.get_fields_data():
             if isinstance(v, list):
-                result[k] = [el.to_dict(json_compatible) for el in v]
-            elif isinstance(v, np.ndarray) and json_compatible:
-                # For JSON compatibility, numpy arrays must be converted to lists
-                result[k] = v.tolist()
+                result[k] = [el.to_dict(convert_numpy_arrays_to) for el in v]
+            elif isinstance(v, np.ndarray) and convert_numpy_arrays_to is not None:
+                if convert_numpy_arrays_to == 'list':
+                    result[k] = v.tolist()
+                elif convert_numpy_arrays_to == 'bytes':
+                    result[k] = v.tostring()
+                else:
+                    raise ValueError('convert_numpy_arrays_to must be "list" or "bytes"')
             else:
                 result[k] = v
         return result
 
     def to_json(self):
-        return json.dumps(self.to_dict(json_compatible=True))
+        return json.dumps(self.to_dict(convert_numpy_arrays_to='list'))
+
+    def to_bson(self):
+        return bson.BSON.encode(self.to_dict(convert_numpy_arrays_to='bytes'))
+
+    @classmethod
+    def from_json(cls, x):
+        return cls(**json.loads(x))
+
+    @classmethod
+    def from_bson(cls, x):
+        return cls(**bson.BSON.decode(x))
 
 
 casting_allowed_for = {
     int:    ['int16', 'int32', 'int64'],
     float:  ['int', 'float32', 'float64', 'int16', 'int32', 'int64'],
 }
+
+
+class ListField(object):
+    def __init__(self, element_type):
+        if not type(element_type) == type:
+            raise ValueError("Model collections must specify a type")
+        self.element_type = element_type
 
 
 class StrictModel(Model):
