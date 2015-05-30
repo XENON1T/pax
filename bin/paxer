@@ -22,6 +22,10 @@ class Consumer(multiprocessing.Process):
         self.task_queue = task_queue
         self.result_queue = result_queue
 
+parser = argparse.ArgumentParser(description="Process XENON data")
+parser.add_argument('--input',  default=None, help="File, database or directory to read events from", nargs='?')
+parser.add_argument('--output', default=None, help="File, database or directory to write events to",  nargs='?')
+
 # Log level control
 parser.add_argument('--log', default=None, help="Set log level, e.g. 'debug'")
 
