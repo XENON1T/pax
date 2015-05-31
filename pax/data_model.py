@@ -144,8 +144,8 @@ class Model(object):
 
 
 casting_allowed_for = {
-    int:    ['int16', 'int32', 'int64'],
-    float:  ['int', 'float32', 'float64', 'int16', 'int32', 'int64'],
+    int:    ['int16', 'int32', 'int64', 'Int64', 'Int32'],
+    float:  ['int', 'float32', 'float64', 'int16', 'int32', 'int64', 'Int64', 'Int32'],
 }
 
 
@@ -180,7 +180,10 @@ class StrictModel(Model):
 
             else:
                 raise TypeError('Attribute %s of class %s should be a %s, not a %s. '
-                                % (key, self.__class__.__name__, old_type, new_type))
+                                % (key,
+                                   self.__class__.__name__,
+                                   old_val.__class__.__name__,
+                                   value.__class__.__name__))
 
         # Check for attempted dtype change
         if isinstance(old_val, np.ndarray):
