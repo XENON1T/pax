@@ -34,8 +34,7 @@ class TestBSON(unittest.TestCase):
             # This print statement is necessary to help user figure out which plugin failed, if any does fail.
             print("\n\nNow testing %s\n" % plugin_info['name'])
 
-            config = {'pax': {'events_to_process': [0],
-                              'plugin_group_names': ['input', 'output'],
+            config = {'pax': {'events_to_process': [0, 1],
                               'input': 'XED.XedInput',
                               'output': plugin_info['write_plugin']},
                       plugin_info['write_plugin']: {'output_name': tempdir.name,
@@ -51,8 +50,7 @@ class TestBSON(unittest.TestCase):
                 pax_xed_to_bson.stop()
                 raise e
 
-            config = {'pax': {'events_to_process': [0],
-                              'plugin_group_names': ['input'],
+            config = {'pax': {'events_to_process': [0, 1],
                               'input': plugin_info['read_plugin']},
                       plugin_info['read_plugin']: {'input_name': tempdir.name}}
 
@@ -66,7 +64,7 @@ class TestBSON(unittest.TestCase):
                 pax_bson.stop()
                 raise e
 
-            self.assertEqual(len(events), 1)
+            self.assertEqual(len(events), 2)
 
             event = events[0]
             self.assertEqual(len(event.pulses), 1942)

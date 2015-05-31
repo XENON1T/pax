@@ -1,6 +1,5 @@
 """
-BSON-based raw data output
-
+JSON and BSON-based data output
 """
 import json
 import bson
