@@ -9,6 +9,7 @@ from io import StringIO
 import itertools
 import os
 import re
+import time
 from configparser import ConfigParser, ExtendedInterpolation
 
 try:
@@ -414,6 +415,7 @@ class Processor:
                     tpc=self.config['DEFAULT']['tpc_name'],
                     file_builder_name='pax',
                     file_builder_version=pax.__version__,
+                    timestamp=time.time(),
                     configuration=self.config)
 
     def process_event(self, event):
