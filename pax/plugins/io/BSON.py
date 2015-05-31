@@ -41,7 +41,7 @@ class WriteJSON(WriteToFolder):
         self.current_file = open(filename, mode='w')
 
     def write_event_to_current_file(self, event):
-        self.current_file.write(event.to_json())
+        self.current_file.write(event.to_json(fields_to_ignore=self.config['fields_to_ignore']))
         self.current_file.write("\n")
 
     def close(self):
@@ -79,7 +79,7 @@ class WriteBSON(WriteToFolder):
         self.current_file = open(filename, mode='wb')
 
     def write_event_to_current_file(self, event):
-        self.current_file.write(event.to_bson())
+        self.current_file.write(event.to_bson(fields_to_ignore=self.config['fields_to_ignore']))
 
     def close(self):
         self.current_file.close()
@@ -121,7 +121,7 @@ class WriteZippedBSON(WriteToFolder):
 
     def write_event_to_current_file(self, event):
         self.current_file.writestr(str(event.event_number),
-                                   gzip.compress(event.to_bson(),
+                                   gzip.compress(event.to_bson(fields_to_ignore=self.config['fields_to_ignore']),
                                                  self.config['compresslevel']))
 
     def close(self):

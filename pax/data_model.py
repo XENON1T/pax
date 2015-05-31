@@ -112,11 +112,16 @@ class Model(object):
                 # Yes, yield the class-level value
                 yield (field_name, value_in_class)
 
-    def to_dict(self, convert_numpy_arrays_to=None):
+    def to_dict(self, convert_numpy_arrays_to=None, fields_to_ignore=None):
         result = {}
+        if fields_to_ignore is None:
+            fields_to_ignore = tuple()
         for k, v in self.get_fields_data():
+            if k in fields_to_ignore:
+                continue
             if isinstance(v, list):
-                result[k] = [el.to_dict(convert_numpy_arrays_to) for el in v]
+                result[k] = [el.to_dict(convert_numpy_arrays_to=convert_numpy_arrays_to,
+                                        fields_to_ignore=fields_to_ignore) for el in v]
             elif isinstance(v, np.ndarray) and convert_numpy_arrays_to is not None:
                 if convert_numpy_arrays_to == 'list':
                     result[k] = v.tolist()
@@ -128,11 +133,13 @@ class Model(object):
                 result[k] = v
         return result
 
-    def to_json(self):
-        return json.dumps(self.to_dict(convert_numpy_arrays_to='list'))
+    def to_json(self, fields_to_ignore=None):
+        return json.dumps(self.to_dict(convert_numpy_arrays_to='list',
+                                       fields_to_ignore=fields_to_ignore))
 
-    def to_bson(self):
-        return bson.BSON.encode(self.to_dict(convert_numpy_arrays_to='bytes'))
+    def to_bson(self, fields_to_ignore=None):
+        return bson.BSON.encode(self.to_dict(convert_numpy_arrays_to='bytes',
+                                             fields_to_ignore=fields_to_ignore))
 
     @classmethod
     def from_json(cls, x):
