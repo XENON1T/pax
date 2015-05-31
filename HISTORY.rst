@@ -7,7 +7,14 @@ History
 3.0.0 (2015-04-20)
 ------------------
 
- * Many things (update)
+ * Reprocessing capability, switch HDF5 backend (#116)
+ * Better clustering algorithms: MeanShift, GapSize (#124)
+ * Hitfinder: faster, new noise definition, work on raw ADC data (#126)
+ * Bad channel rejection -> suspicious channel rejection (#126)
+ * ROOT output, including tests for Travis (#127)
+ * Speed and feature improvements to folder-based IO (XED, Avro, ...) (#131)
+ * Datastructure update (#139)
+ * Bugfixes, plotting and comment improvements
 
 ------------------
 2.1.0 (2015-02-15)
