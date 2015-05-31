@@ -185,18 +185,14 @@ class BulkOutput(plugin.OutputPlugin):
         first_time_seen = False
         if m_name not in self.data:
             self.data[m_name] = {
-                'tuples':         [],
-                'records':        None,
+                'tuples':               [],
+                'records':              None,
                 # Initialize dtype with the index fields
-                'dtype':          [(x[0], np.int) for x in index_fields],
-                'index_depth':    len(m_indices),
-                # Dictionary of collection field's field_names: collection class name
-                # Remember if cf is a collection field,
-                # then the model has a classattribute 'cf' = (ChildClassName, ): see data_model.py
-                'subcollection_fields': {
-                    fieldn: getattr(m.__class__, fieldn)[0].__name__
-                    for fieldn in m.get_list_field_info().keys()},
-                'first_index':      0
+                'dtype':                [(x[0], np.int) for x in index_fields],
+                'index_depth':          len(m_indices),
+                # Dictionary of collection field's {field_names: collection class name}
+                'subcollection_fields': m.get_list_field_info(),
+                'first_index':          0
             }
             first_time_seen = True
 

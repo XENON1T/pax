@@ -9,6 +9,7 @@ import gzip
 from pax import datastructure
 from pax.plugins.io.FolderIO import InputFromFolder, WriteToFolder
 
+
 class ReadBSON(InputFromFolder):
     """Read raw BSON data from a concatenated-BSON file or a folder of such files
     """
@@ -41,7 +42,7 @@ class ReadZippedBSON(InputFromFolder):
         with self.current_file.open(event_name_in_zip) as event_file_in_zip:
             doc = event_file_in_zip.read()
             doc = gzip.decompress(doc)
-            return datastructure.Event.from_bson(**doc)
+            return datastructure.Event.from_bson(doc)
 
     def close(self):
         """Close the currently open file"""
@@ -89,7 +90,7 @@ class WriteZippedBSON(WriteToFolder):
         self.current_file = zipfile.ZipFile(filename, mode='w')
 
     def write_event_to_current_file(self, event):
-        self.current_file.writestr(event.event_number,
+        self.current_file.writestr(str(event.event_number),
                                    gzip.compress(event.to_bson(),
                                                  self.config['compresslevel']))
 
