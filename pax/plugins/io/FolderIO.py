@@ -35,6 +35,8 @@ class InputFromFolder(plugin.InputPlugin):
         else:
             self.log.debug("InputFromFolder: Directory mode")
             file_names = glob.glob(os.path.join(input_name, "*." + self.file_extension))
+            # Remove the pax_info.json file from the file list-- the JSON I/O will thank us
+            file_names = [fn for fn in file_names if not fn.endswith('pax_info.json')]
             file_names.sort()
             self.log.debug("InputFromFolder: Found these files: %s", str(file_names))
             if len(file_names) == 0:
@@ -92,7 +94,8 @@ class InputFromFolder(plugin.InputPlugin):
         # so it won't work well with generators like get_events for an input plugin
         self.ts = time.time()
         for file_i, file_info in enumerate(self.raw_data_files):
-            self.select_file(file_i)
+            if self.current_file_number != file_i:
+                self.select_file(file_i)
             for event in self.get_all_events_in_current_file():
                 self.total_time_taken += (time.time() - self.ts) * 1000
                 yield event

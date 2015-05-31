@@ -26,7 +26,7 @@ class ReadJSON(InputFromFolder):
 
     def get_all_events_in_current_file(self):
         for line in self.current_file:
-            yield datastructure.Event.from_json(json.load(line))
+            yield datastructure.Event(**json.loads(line))
 
     def close(self):
         self.current_file.close()
