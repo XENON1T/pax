@@ -2,6 +2,7 @@
 BSON-based raw data output
 
 """
+import json
 import bson
 import zipfile
 import gzip
@@ -9,6 +10,48 @@ import gzip
 from pax import datastructure
 from pax.plugins.io.FolderIO import InputFromFolder, WriteToFolder
 
+
+##
+# JSON
+##
+
+class ReadJSON(InputFromFolder):
+
+    """Read raw data from a folder of newline-separated-JSON files
+    """
+    file_extension = 'json'
+
+    def open(self, filename):
+        self.current_file = open(filename, mode='r')
+
+    def get_all_events_in_current_file(self):
+        for line in self.current_file:
+            yield datastructure.Event.from_json(json.load(line))
+
+    def close(self):
+        self.current_file.close()
+
+
+class WriteJSON(WriteToFolder):
+
+    """Write raw data to a folder of newline-separated-JSON files
+    """
+    file_extension = 'json'
+
+    def open(self, filename):
+        self.current_file = open(filename, mode='w')
+
+    def write_event_to_current_file(self, event):
+        self.current_file.write(event.to_json())
+        self.current_file.write("\n")
+
+    def close(self):
+        self.current_file.close()
+
+
+##
+# BSON
+##
 
 class ReadBSON(InputFromFolder):
     """Read raw BSON data from a concatenated-BSON file or a folder of such files
@@ -26,6 +69,26 @@ class ReadBSON(InputFromFolder):
         for doc in self.reader:
             yield datastructure.Event(**doc)
 
+
+class WriteBSON(WriteToFolder):
+
+    """Write raw data to a folder of concatenated-BSON files
+    """
+    file_extension = 'bson'
+
+    def open(self, filename):
+        self.current_file = open(filename, mode='wb')
+
+    def write_event_to_current_file(self, event):
+        self.current_file.write(event.to_bson())
+
+    def close(self):
+        self.current_file.close()
+
+
+##
+# Zipped BSON
+##
 
 class ReadZippedBSON(InputFromFolder):
     """Read a folder of zipfiles containing gzipped BSON files
@@ -46,38 +109,6 @@ class ReadZippedBSON(InputFromFolder):
 
     def close(self):
         """Close the currently open file"""
-        self.current_file.close()
-
-
-class WriteBSON(WriteToFolder):
-
-    """Write raw data to a folder of concatenated-BSON files
-    """
-    file_extension = 'bson'
-
-    def open(self, filename):
-        self.current_file = open(filename, mode='wb')
-
-    def write_event_to_current_file(self, event):
-        self.current_file.write(event.to_bson())
-
-    def close(self):
-        self.current_file.close()
-
-
-class WriteJSON(WriteToFolder):
-
-    """Write raw data to a folder of concatenated-JSON files
-    """
-    file_extension = 'json'
-
-    def open(self, filename):
-        self.current_file = open(filename, mode='w')
-
-    def write_event_to_current_file(self, event):
-        self.current_file.write(event.to_json())
-
-    def close(self):
         self.current_file.close()
 
 

@@ -409,6 +409,13 @@ class Processor:
         else:
             raise ValueError("No plugin named %s has been initialized." % name)
 
+    def get_metadata(self):
+        return dict(run_number=self.config['DEFAULT']['run_number'],
+                    tpc=self.config['DEFAULT']['tpc_name'],
+                    file_builder_name='pax',
+                    file_builder_version=pax.__version__,
+                    configuration=self.config)
+
     def process_event(self, event):
         """Process one event with all action plugins. Returns processed event."""
         total_plugins = len(self.action_plugins)
