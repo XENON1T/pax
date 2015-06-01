@@ -384,8 +384,8 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, IOMongoDB):
             if self.compressed:
                 data = snappy.decompress(data)
 
-            id = (pulse_doc['module'],
-                  pulse_doc['channel'])
+            id = str((pulse_doc['module'],
+                      pulse_doc['channel']))
             if id in self.pmt_mappings:
                 channel = self.pmt_mappings[id]
 
