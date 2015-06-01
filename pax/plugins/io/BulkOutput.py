@@ -5,7 +5,6 @@ import time
 
 import numpy as np
 
-import pax
 from pax import plugin, exceptions, datastructure
 from pax.formats import flat_data_formats
 
@@ -46,7 +45,7 @@ class BulkOutput(plugin.OutputPlugin):
         #   dtype   :       dtype of numpy record (includes field names),
         # }
 
-        configdump = json.dumps(self.processor.config)
+        metadata_dump = json.dumps(self.processor.get_metadata())
 
         self.data = {
             # Write pax configuration and version to pax_info dataframe
@@ -54,11 +53,9 @@ class BulkOutput(plugin.OutputPlugin):
             # If you append to an existing HDF5 file, it will make a second row
             # TODO: However, it will probably crash if the configuration is a longer string...
             'pax_info': {
-                'tuples':       [(time.time(), str(pax.__version__), configdump)],
+                'tuples':       [(metadata_dump,)],
                 'records':      None,
-                'dtype':        [('timestamp', np.int),
-                                 ('pax_version', 'S32'),
-                                 ('configuration_json', 'S%d' % len(configdump))]}
+                'dtype':        [('metadata_json', 'S%d' % len(metadata_dump))]}
         }
 
         self.events_ready_for_conversion = 0
@@ -185,18 +182,14 @@ class BulkOutput(plugin.OutputPlugin):
         first_time_seen = False
         if m_name not in self.data:
             self.data[m_name] = {
-                'tuples':         [],
-                'records':        None,
+                'tuples':               [],
+                'records':              None,
                 # Initialize dtype with the index fields
-                'dtype':          [(x[0], np.int) for x in index_fields],
-                'index_depth':    len(m_indices),
-                # Dictionary of collection field's field_names: collection class name
-                # Remember if cf is a collection field,
-                # then the model has a classattribute 'cf' = (ChildClassName, ): see data_model.py
-                'subcollection_fields': {
-                    fieldn: getattr(m.__class__, fieldn)[0].__name__
-                    for fieldn in m.get_list_field_names()},
-                'first_index':      0
+                'dtype':                [(x[0], np.int) for x in index_fields],
+                'index_depth':          len(m_indices),
+                # Dictionary of collection field's {field_names: collection class name}
+                'subcollection_fields': m.get_list_field_info(),
+                'first_index':          0
             }
             first_time_seen = True
 
@@ -258,7 +251,7 @@ class BulkOutput(plugin.OutputPlugin):
     def _numpy_field_dtype(self, name, x):
         """Return field dtype of numpy record with field name name and value (of type of) x
         """
-        if name == 'configuration_json':
+        if name == 'metadata_dump':
             return name, 'O'
         if isinstance(x, int):
             return name, np.int64
