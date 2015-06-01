@@ -47,8 +47,8 @@ install:
 
   # ROOT 
   # - unset ROOT # uncomment to not install ROOT
-  - if test -n "$ROOT"; then source travis/install-ROOT.sh; fi
-  #- if test -n "$ROOT"; then source travis/install-ROOT-binary.sh; fi
+  # - if test -n "$ROOT"; then source travis/install-ROOT.sh; fi
+  - if test -n "$ROOT"; then source travis/install-ROOT-binary.sh; fi
   #- source travis/save-ROOT.sh
 
   # Copy modified ROOT.py to proper directory
