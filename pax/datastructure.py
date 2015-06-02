@@ -15,9 +15,11 @@ import numpy as np
 import math
 from pax import units
 
-# To turn off type-checking, replace StrictModel with Model
-# This will improve performance, but use at your own risk
-from pax.data_model import StrictModel, Model
+# DO NOT use Model instead of StrictModel:
+# It improves performance, but kills serialization (numpy int types will apear in class etc)
+# TODO: For Hit class, we may want Model for performance?
+#       Look where the numpy int types get in, force them to python ints.
+from pax.data_model import StrictModel, ListField
 
 
 INT_NAN = -99999  # Do not change without talking to me. -Tunnell 12/3/2015
@@ -54,7 +56,7 @@ class ReconstructedPosition(StrictModel):
         return math.atan2(self.y, self.x)
 
 
-class Hit(Model):
+class Hit(StrictModel):
     """Peaks found in individual channels
 
     These are be clustered into ordinary peaks later. This is commonly
@@ -114,7 +116,7 @@ class Peak(StrictModel):
     ##
 
     #: Peaks in individual channels that make up this peak
-    hits = (Hit,)
+    hits = ListField(Hit)
 
     #: Array of areas in each PMT.
     area_per_channel = np.array([], dtype='float64')
@@ -156,7 +158,7 @@ class Peak(StrictModel):
     ##
 
     #: List of reconstructed positions (instances of :class:`pax.datastructure.ReconstructedPosition`)
-    reconstructed_positions = (ReconstructedPosition,)
+    reconstructed_positions = ListField(ReconstructedPosition)
 
     #: Weighted root mean square deviation of top hitpattern (cm)
     top_hitpattern_spread = 0.0
@@ -287,9 +289,14 @@ class Event(StrictModel):
     Stores high level information about the triggered event.
     """
     dataset_name = 'Unknown'  # The name of the dataset this event belongs to
+
     # A nonnegative integer that uniquely identifies the event within the
     # dataset.
     event_number = 0
+
+    #: Number of channels in the event
+    #: Has to be the same as n_channels in config, provided here for deserialization ease
+    n_channels = INT_NAN
 
     #: Integer start time of the event in nanoseconds
     #:
@@ -314,19 +321,19 @@ class Event(StrictModel):
     #: List of peaks
     #:
     #: Returns a list of :class:`pax.datastructure.Peak` classes.
-    peaks = (Peak,)
+    peaks = ListField(Peak)
 
     #: Temporary list of hits -- will be shipped off to peaks later
-    all_hits = (Hit,)
+    all_hits = ListField(Hit)
 
     #: Returns a list of sum waveforms
     #:
     #: Returns an :class:`pax.datastructure.SumWaveform` class.
-    sum_waveforms = (SumWaveform,)
+    sum_waveforms = ListField(SumWaveform)
 
     #: A python list of all pulses in the event (containing instances of the Pulse class)
     #: An pulse holds a stream of samples in one channel, as provided by the digitizer.
-    pulses = (Pulse,)
+    pulses = ListField(Pulse)
 
     #: Number of noise pulses (pulses without any hits found) per channel
     noise_pulses_in = np.array([], dtype=np.int)
@@ -338,9 +345,12 @@ class Event(StrictModel):
     n_hits_rejected = np.array([], dtype=np.int)
 
     def __init__(self, n_channels, start_time, **kwargs):
+        # TODO: refactor code so n_channels and start_time are no longer positional arguments
+        # Just check if they are in kwargs, otherwise throw error
 
         # Start time is mandatory, so it is not in kwargs
         kwargs['start_time'] = start_time
+        kwargs['n_channels'] = n_channels
 
         # Model's init must be called first, else we can't store attributes
         # This will store all of the kwargs as attrs

@@ -43,9 +43,3 @@ class DumpSumWaveformToBinary(WaveformDumperBase):
 
     def get_waveform_to_dump(self, event):
         return event.get_sum_waveform(self.config['waveform_to_dump']).samples
-
-
-class DumpPMTWaveformsToBinary(WaveformDumperBase):
-
-    def get_waveform_to_dump(self, event):
-        return event.channel_waveforms

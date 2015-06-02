@@ -212,7 +212,7 @@ class FindHits(plugin.TransformPlugin):
 
         return event
 
-# TODO: add back tests... use tes cases from previous pax versions
+# TODO: add back tests... use test cases from previous pax versions
 @numba.jit(nopython=True)
 def find_intervals_above_threshold(w, high_threshold, low_threshold, result_buffer):
     """Fills result_buffer with l, r bounds of intervals in w > low_threshold which exceed high_threshold somewhere
