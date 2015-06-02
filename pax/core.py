@@ -9,6 +9,7 @@ from io import StringIO
 import itertools
 import os
 import re
+import time
 from configparser import ConfigParser, ExtendedInterpolation
 
 try:
@@ -408,6 +409,14 @@ class Processor:
             return plugins_by_name[name]
         else:
             raise ValueError("No plugin named %s has been initialized." % name)
+
+    def get_metadata(self):
+        return dict(run_number=self.config['DEFAULT']['run_number'],
+                    tpc=self.config['DEFAULT']['tpc_name'],
+                    file_builder_name='pax',
+                    file_builder_version=pax.__version__,
+                    timestamp=time.time(),
+                    configuration=self.config)
 
     def process_event(self, event):
         """Process one event with all action plugins. Returns processed event."""

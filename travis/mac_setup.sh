@@ -1,1 +1,1 @@
-port install snappy
+brew install wget
