@@ -19,14 +19,13 @@ code for details.
 
 import bz2
 import io
+import math
 
 import numpy as np
 
-import math
 from pax import units
 from pax.datastructure import Event, Pulse
-
-from pax.plugins.io.FolderIO import InputFromFolder
+from pax.FolderIO import InputFromFolder
 
 
 xed_file_header = np.dtype([

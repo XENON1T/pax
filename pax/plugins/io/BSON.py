@@ -2,12 +2,14 @@
 JSON and BSON-based data output
 """
 import json
-import bson
 import zipfile
 import gzip
 
+import bson
+
 from pax import datastructure
-from pax.plugins.io.FolderIO import InputFromFolder, WriteToFolder
+from pax.FolderIO import InputFromFolder, WriteToFolder
+
 
 
 ##

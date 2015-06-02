@@ -411,6 +411,28 @@ class MongoDBWriteTriggered(plugin.OutputPlugin,
         self.setup_access('output')
         self.c = self.mongo['output']['collection']
 
-    def write_event(self, event):
+    def write_event(self, event_class):
         # Write the data to database
-        self.c.write(event.to_dict(json_compatible=True))
+
+        # Convert event class to pymongo-able dictionary
+        event_dict = event_class.to_dict(convert_numpy_arrays_to='bytes')
+
+        # Insert dictionary into database
+        self.c.write(event_dict)
+
+class MongoDBWriteTriggered(plugin.OutputPlugin,
+                            IOMongoDB):
+
+    def startup(self):
+        IOMongoDB.startup(self)  # Setup with baseclass
+        self.setup_access('output')
+        self.c = self.mongo['output']['collection']
+
+    def write_event(self, event_class):
+        # Write the data to database
+
+        # Convert event class to pymongo-able dictionary
+        event_dict = event_class.to_dict(convert_numpy_arrays_to='bytes')
+
+        # Insert dictionary into database
+        self.c.write(event_dict)
