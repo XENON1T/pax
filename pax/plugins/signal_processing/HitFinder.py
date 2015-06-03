@@ -45,7 +45,7 @@ class FindHits(plugin.TransformPlugin):
         # Allocate numpy arrays to hold numba hitfinder results
         # -1 is a placeholder for values that should never appear (0 would be bad as it often IS a possible value)
         hits_buffer = -1 * np.ones((self.max_hits_per_pulse, 2), dtype=np.int64)
-        argmaxes = -1 * np.zeros(self.max_hits_per_pulse, dtype=np.int64)
+        argmaxes = -1 * np.ones(self.max_hits_per_pulse, dtype=np.int64)
         areas = -1 * np.ones(self.max_hits_per_pulse, dtype=np.float64)
         centers = -1 * np.ones(self.max_hits_per_pulse, dtype=np.float64)
 
@@ -57,26 +57,31 @@ class FindHits(plugin.TransformPlugin):
             channel = pulse.channel
             pmt_gain = self.config['gains'][channel]
 
-            # Don't consider dead channels
+            # Retrieve waveform as floats: needed to subtract baseline (which can be in between ADC counts)
+            w = pulse.raw_data.astype(np.float64)
+
+            # Subtract reference baseline, invert (so hits point up from baseline)
+            # This is convenient so we don't have to reinterpret min, max, etc
+            w = self.config['digitizer_reference_baseline'] - w
+
+            pulse.baseline, pulse.noise_sigma, pulse.minimum, pulse.maximum = \
+                compute_pulse_properties(w, self.initial_baseline_samples)
+
+            w -= pulse.baseline
+
+            # Don't do hitfinding in dead channels, pulse property computation was enough
+            # Could refactor pulse property computation to separate plugin,
+            # but that would mean waveform has to be converted to floats twice
             if pmt_gain == 0:
                 continue
 
-            # Retrieve the waveform & convert to floats
-            w = pulse.raw_data.astype(np.float64)
-
-            # Compute baseline, noise_sigma, min, max of pulse in numba
-            pulse.baseline, pulse.noise_sigma, mi, ma = compute_pulse_properties(w, self.initial_baseline_samples)
-            pulse.minimum = pulse.baseline - ma
-            pulse.maximum = pulse.baseline - mi
-
-            # Substract baseline, invert (so hits point up from baseline)
-            w = pulse.baseline - w
-
             # Compute thresholds based on noise level
-            high_threshold = max(self.config['high_threshold_sigmas'] * pulse.noise_sigma,
-                                 self.config['min_high_threshold'])
-            low_threshold = max(self.config['low_threshold_sigmas'] * pulse.noise_sigma,
-                                self.config['min_low_threshold'])
+            high_threshold = max(self.config['height_over_noise_high_threshold'] * pulse.noise_sigma,
+                                 self.config['absolute_adc_counts_high_threshold'],
+                                 - self.config['height_over_min_high_threshold'] * pulse.minimum)
+            low_threshold = max(self.config['height_over_noise_low_threshold'] * pulse.noise_sigma,
+                                self.config['absolute_adc_counts_low_threshold'],
+                                - self.config['height_over_min_low_threshold'] * pulse.minimum)
 
             # Call the numba hit finder -- see its docstring for description
             n_hits_found = find_intervals_above_threshold(w, high_threshold, low_threshold, hits_buffer)
@@ -192,7 +197,6 @@ class FindHits(plugin.TransformPlugin):
             ax1.plot(np.ones_like(w) * low_threshold, '--', label='Boundary threshold', color='green')
 
             # Mark the hit ranges & center of gravity point
-
             for hit_i, hit in enumerate(hits_found):
                 ax1.axvspan(hit[0] - 0.5, hit[1] + 0.5, color='red', alpha=0.2)
                 # Remember: array 'centers' is still in samples since start of hit...
@@ -212,7 +216,7 @@ class FindHits(plugin.TransformPlugin):
 
         return event
 
-# TODO: add back tests... use test cases from previous pax versions
+
 @numba.jit(nopython=True)
 def find_intervals_above_threshold(w, high_threshold, low_threshold, result_buffer):
     """Fills result_buffer with l, r bounds of intervals in w > low_threshold which exceed high_threshold somewhere
@@ -242,7 +246,7 @@ def find_intervals_above_threshold(w, high_threshold, low_threshold, result_buff
             if x > high_threshold:
                 current_interval_passed_test = True
 
-            if x < low_threshold or i == last_index_in_w:
+            if x <= low_threshold or i == last_index_in_w:
 
                 # End of candidate interval
                 in_candidate_interval = False
@@ -252,7 +256,7 @@ def find_intervals_above_threshold(w, high_threshold, low_threshold, result_buff
 
                     # The interval ended just before this index
                     # unless, of course, we ended ONLY BECAUSE this is the last index
-                    itv_end = i-1 if x < low_threshold else i
+                    itv_end = i-1 if x <= low_threshold else i
 
                     # Add to result buffer
                     result_buffer[current_interval, 0] = current_candidate_interval_start
@@ -266,11 +270,10 @@ def find_intervals_above_threshold(w, high_threshold, low_threshold, result_buff
                         break
 
     # Return number of hits found
-    # May crash numba here: not sure if it is int32 or int64...
+    # One day numba may have crashed here: not sure if it is int32 or int64...
     return current_interval
 
 
-# TODO: Needs a test!
 @numba.jit(nopython=True)
 def compute_hit_properties(w, raw_hits, argmaxes, areas, centers):
     """Finds the maximum index, area, and center of gravity of hits in w indicated by (l, r) bounds in raw_hits.
@@ -282,8 +285,8 @@ def compute_hit_properties(w, raw_hits, argmaxes, areas, centers):
     for hit_i in range(len(raw_hits)):
         current_max = -999.9
         current_argmax = -1
-        current_area = 0
-        current_center = 0
+        current_area = 0.0
+        current_center = 0.0
         for i, x in enumerate(w[raw_hits[hit_i, 0]:raw_hits[hit_i, 1]+1]):
             if x > current_max:
                 current_max = x
@@ -294,44 +297,45 @@ def compute_hit_properties(w, raw_hits, argmaxes, areas, centers):
         areas[hit_i] = current_area
         centers[hit_i] = current_center / current_area
 
+
 @numba.jit(nopython=True)
 def compute_pulse_properties(w, initial_baseline_samples):
     """Compute basic pulse properties quickly
     :param w: Raw pulse waveform in ADC counts
-    :param initial_baseline_samples: number of samples at start of pulse to use for baseline & noise computation
-    :return: (baseline, noise_sigma, min, max); min and max are already corrected for baseline
-    Does not modify w. Does not assume anything about inversion of w.
+    :param initial_baseline_samples: number of samples at start of pulse to use for baseline computation
+    :return: (baseline, noise_sigma, min, max);
+      min and max are relative to baseline
+      noise_sigma is the std of samples below baseline
+    Does not modify w. Does not assume anything about inversion of w!!
     """
 
-    n = 0           # Running count of samples included in baseline&noise sample
-    baseline = 0    # Running mean = baseline
-    m2 = 0          # Running sum of squares of differences from the mean
-    max_a = -999.9  # Running max amplitude
-    min_a = 1e9     # Running min amplitude
+    # First compute baseline
+    baseline = 0.0
+    initial_baseline_samples = min(initial_baseline_samples, len(w))
+    for x in w[:initial_baseline_samples]:
+        baseline += x
+    baseline /= initial_baseline_samples
 
-    for i, x in enumerate(w):
+    # Now compute mean, noise, and min
+    n = 0           # Running count of samples included in noise sample
+    m2 = 0          # Running sum of squares of differences from the baseline
+    max_a = -1.0e6  # Running max amplitude
+    min_a = 1.0e6   # Running min amplitude
+
+    for x in w:
         if x > max_a:
             max_a = x
         if x < min_a:
             min_a = x
-        if i < initial_baseline_samples:
+        if x < baseline:
             delta = x - baseline
             n += 1
-            baseline += delta/n
             m2 += delta*(x-baseline)
 
-    return baseline, (m2/n)**0.5, min_a , max_a
+    if n == 0:
+        # Should only happen if w = baseline everywhere
+        noise = 0
+    else:
+        noise = (m2/n)**0.5
 
-    # TODO: test against python code like:
-    # # Compute baseline and noise_sigma on the first samples
-    # baseline_sample = w[:min(len(w), self.initial_baseline_samples)]
-    # pulse.baseline = np.mean(baseline_sample)
-    # pulse.noise_sigma = np.std(baseline_sample)
-    #
-    # # Substract baseline, invert (so hits point up from baseline)
-    # w = pulse.baseline - w
-    #
-    # # Compute extra data about this pulse
-    # # May disable this for performance later?
-    # pulse.maximum = np.max(w)
-    # pulse.minimum = np.min(w)
+    return baseline, noise, min_a - baseline, max_a - baseline

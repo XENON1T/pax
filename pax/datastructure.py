@@ -242,20 +242,16 @@ class Pulse(StrictModel):
     #: Raw wave data (numpy array of int16, ADC counts)
     raw_data = np.array([], np.int16)
 
-    #: Baseline in ADC counts -- but float!
-    #: Will remain nan if pulse is not processed by hitfinder
+    #: Baseline in ADC counts relative to reference baseline -- but float!
     baseline = float('nan')
 
     #: Maximum amplitude reached in the pulse (in ADC counts above baseline)
-    #: Will remain nan if channel's gain is 0
     maximum = float('nan')
 
     #: Minimum amplitude (in ADC counts above baseline, so should be negative)
-    #: Will remain nan if channel's gain is 0
     minimum = float('nan')
 
     #: Noise sigma for this pulse (in ADC counts - but float!)
-    #: Will remain nan unless pulse is processed by hitfinder
     noise_sigma = float('nan')
 
     @property
