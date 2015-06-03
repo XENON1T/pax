@@ -10,7 +10,7 @@ import csv
 import numpy as np
 
 import pandas
-from pax import core, plugin, units
+from pax import plugin, units, utils
 
 
 class WaveformSimulator(plugin.InputPlugin):
@@ -151,7 +151,7 @@ class WaveformSimulatorFromCSV(WaveformSimulator):
         # Open the instructions file
         filename = self.config['input_name']
         self.dataset_name = os.path.basename(filename)
-        self.instructions_file = open(core.data_file_name(filename), 'r')
+        self.instructions_file = open(utils.data_file_name(filename), 'r')
         #
         # Slurp the entire instructions file, so we know the number of events
         self.instruction_reader = csv.DictReader(self.instructions_file)
@@ -202,7 +202,7 @@ class WaveformSimulatorFromNEST(WaveformSimulator):
         self.log.warning('This plugin is completely untested and will probably crash!')
         filename = self.config['input_name']
         import ROOT
-        f = ROOT.TFile(core.data_file_name(filename))
+        f = ROOT.TFile(utils.data_file_name(filename))
         self.t = f.Get("t1")  # For Xerawdp use T1, for MC t1
         WaveformSimulator.startup(self)
         self.number_of_events = self.t.GetEntries() * self.config['event_repetitions']
