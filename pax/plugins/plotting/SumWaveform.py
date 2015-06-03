@@ -47,7 +47,7 @@ class SumWaveform(plugin.TransformPlugin):
             if self.config['subtract_reference_baseline_only_for_raw_waveform']:
                 baseline_to_subtract = self.config['digitizer_reference_baseline']
             else:
-                baseline_to_subtract = pulse.baseline
+                baseline_to_subtract = self.config['digitizer_reference_baseline'] + pulse.baseline
 
             w = baseline_to_subtract - pulse.raw_data.astype(np.float64)
 
@@ -70,7 +70,8 @@ class SumWaveform(plugin.TransformPlugin):
             # Retrieve the waveform, subtract baseline, invert
             left_in_pulse = hit.left - pulse.left
             right_in_pulse = hit.right - pulse.left
-            w = pulse.baseline - pulse.raw_data[left_in_pulse:right_in_pulse+1].astype(np.float64)
+            w = (self.config['digitizer_reference_baseline'] + pulse.baseline) - \
+                pulse.raw_data[left_in_pulse:right_in_pulse+1].astype(np.float64)
 
             adc_to_pe = self.adc_to_e / self.config['gains'][channel]
 
