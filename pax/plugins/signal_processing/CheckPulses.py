@@ -21,10 +21,13 @@ class ConcatenateAdjacentPulses(plugin.TransformPlugin):
     """
 
     def transform_event(self, event):
+        if len(event.pulses) < 2:
+            return event
+
         good_pulses = []
         last_pulse = 0  # Keep track of last pulse not yet merged into previous one
 
-        for pulse_i in range(1, len(event.pulses) - 1):
+        for pulse_i in range(1, len(event.pulses)):
             prev_pulse = event.pulses[last_pulse]
             pulse = event.pulses[pulse_i]
 
@@ -46,6 +49,9 @@ class ConcatenateAdjacentPulses(plugin.TransformPlugin):
                 good_pulses.append(prev_pulse)
                 # ... and advance the last_pulse counter
                 last_pulse = pulse_i
+                # If there are no pulses after this, add the current pulse to the good pulses list
+                if pulse_i == len(event.pulses) - 1:
+                    good_pulses.append(pulse)
 
         event.pulses = good_pulses
         return event
