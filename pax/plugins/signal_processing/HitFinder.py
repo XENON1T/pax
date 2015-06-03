@@ -193,7 +193,8 @@ class FindHits(plugin.TransformPlugin):
             # Plot the signal and noise levels
             ax1.plot(w, drawstyle='steps-mid', label='Data')
             ax1.plot(np.ones_like(w) * high_threshold, '--', label='Threshold', color='red')
-            ax1.plot(np.ones_like(w) * pulse.noise_sigma, '--', label='Noise level', color='gray')
+            ax1.plot(np.ones_like(w) * pulse.noise_sigma, ':', label='Noise level', color='gray')
+            ax1.plot(np.ones_like(w) * pulse.minimum, '--', label='Minimum', color='orange')
             ax1.plot(np.ones_like(w) * low_threshold, '--', label='Boundary threshold', color='green')
 
             # Mark the hit ranges & center of gravity point
