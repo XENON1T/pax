@@ -17,18 +17,23 @@ services:
 env:
   - ROOT=5.34.25
   - ROOT=6.02.05
+  - ROOT=6.03.04
+  
 
 os:
+  - osx
   - linux
-#  - osx
 
 install:
   - deactivate
+  - echo ${TRAVIS_OS_NAME}
   - source travis/${TRAVIS_OS_NAME}_setup.sh
   - gcc --version
 
   # Conda
-  - wget -nv http://repo.continuum.io/miniconda/Miniconda3-3.8.3-Linux-x86_64.sh -O miniconda.sh
+  - if [ "${TRAVIS_OS_NAME}" == "linux" ]; then wget -nv http://repo.continuum.io/miniconda/Miniconda3-3.9.1-Linux-x86_64.sh -O miniconda.sh; fi
+  - if [ "${TRAVIS_OS_NAME}" == "osx" ]; then wget -nv http://repo.continuum.io/miniconda/Miniconda3-3.9.1-MacOSX-x86_64.sh -O miniconda.sh; fi
+  
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
   - hash -r
@@ -37,11 +42,12 @@ install:
   - conda info -a # Useful for debugging any issues with conda
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib pandas pytables cython h5py numba pip scikit-learn
   - source activate test-environment
+  - if [ "${TRAVIS_OS_NAME}" == "osx" ]; then conda remove libpng libtiff sqlite; fi
   - pip install coveralls nose coverage
 
   # ROOT 
   # - unset ROOT # uncomment to not install ROOT
-  #- if test -n "$ROOT"; then source travis/install-ROOT.sh; fi
+  # - if test -n "$ROOT"; then source travis/install-ROOT.sh; fi
   - if test -n "$ROOT"; then source travis/install-ROOT-binary.sh; fi
   #- source travis/save-ROOT.sh
 
@@ -52,8 +58,6 @@ install:
   # Does pyROOT still work?
   - root -l -q
   - python -c "import ROOT; ROOT.TBrowser()"
-
-  - conda install system
 
   # Install pax
   - python setup.py install

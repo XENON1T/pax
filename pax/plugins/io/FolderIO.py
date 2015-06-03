@@ -1,12 +1,14 @@
+import json
 import glob
 import os
 import time
+import shutil
 
 from pax import utils, plugin
 
 
 class InputFromFolder(plugin.InputPlugin):
-    """Read from a folder containing several small files, each containing with events"""
+    """Read from a folder containing several small files, each containing events"""
 
     ##
     # Base class methods you don't need to override
@@ -22,21 +24,24 @@ class InputFromFolder(plugin.InputPlugin):
         if not os.path.exists(input_name):
             raise ValueError("Can't read from %s: it does not exist!" % input_name)
 
-        if input_name.endswith('.' + self.file_extension):
+        if not os.path.isdir(input_name):
+            if not input_name.endswith('.' + self.file_extension):
+                self.log.warning("input_name %s does not end "
+                                 "with the expected file extension %s" % (input_name,
+                                                                          self.file_extension))
             self.log.debug("InputFromFolder: Single file mode")
             self.init_file(input_name)
+
         else:
             self.log.debug("InputFromFolder: Directory mode")
-
             file_names = glob.glob(os.path.join(input_name, "*." + self.file_extension))
+            # Remove the pax_info.json file from the file list-- the JSON I/O will thank us
+            file_names = [fn for fn in file_names if not fn.endswith('pax_info.json')]
             file_names.sort()
-
             self.log.debug("InputFromFolder: Found these files: %s", str(file_names))
-
             if len(file_names) == 0:
                 raise ValueError("InputFromFolder: No %s files found in input directory %s!" % (self.file_extension,
                                                                                                 input_name))
-
             for fn in file_names:
                 self.init_file(fn)
 
@@ -85,9 +90,12 @@ class InputFromFolder(plugin.InputPlugin):
 
     def get_events(self):
         """Iterate through all events in the file / folder"""
-        self.ts = time.time()   # We must keep track of time ourselves, BasePlugin.timeit is a function decorator
+        # We must keep track of time ourselves, BasePlugin.timeit is a function decorator,
+        # so it won't work well with generators like get_events for an input plugin
+        self.ts = time.time()
         for file_i, file_info in enumerate(self.raw_data_files):
-            self.select_file(file_i)
+            if self.current_file_number != file_i:
+                self.select_file(file_i)
             for event in self.get_all_events_in_current_file():
                 self.total_time_taken += (time.time() - self.ts) * 1000
                 yield event
@@ -111,7 +119,7 @@ class InputFromFolder(plugin.InputPlugin):
 
         return self.get_single_event_in_current_file(event_number - self.current_first_event)
 
-    # If reaading in from a folder-of-files format not written by FolderIO,
+    # If reading in from a folder-of-files format not written by FolderIO,
     # you'll probably have to overwrite this. (e.g. XED does)
     def get_first_and_last_event_number(self, filename):
         """Return the first and last event number in file specified by filename"""
@@ -122,7 +130,7 @@ class InputFromFolder(plugin.InputPlugin):
     # Child class should override these
     ##
 
-    file_extension = None
+    file_extension = ''
 
     def open(self, filename):
         """Opens the file specified by filename for reading"""
@@ -155,7 +163,7 @@ class InputFromFolder(plugin.InputPlugin):
 
 
 class WriteToFolder(plugin.OutputPlugin):
-    """Write to a folder containing several small files, each containing a <= a fixed number of events"""
+    """Write to a folder containing several small files, each containing <= a fixed number of events"""
 
     def startup(self):
         self.events_per_file = self.config['events_per_file']
@@ -164,11 +172,25 @@ class WriteToFolder(plugin.OutputPlugin):
 
         self.output_dir = self.config['output_name']
         if os.path.exists(self.output_dir):
-            raise ValueError("Output directory %s already exists, can't write your %ss there!" % (
-                self.output_dir, self.file_extension))
+            if self.config.get('overwrite_output', False):
+                if self.config['overwrite_output'] == 'confirm':
+                    print("\n\nOutput dir %s already exists. Overwrite? [y/n]:" % self.output_dir)
+                    if input().lower() not in ('y', 'yes'):
+                        print("\nFine, Exiting pax...\n")
+                        exit()
+                shutil.rmtree(self.output_dir)
+                os.mkdir(self.output_dir)
+            else:
+                raise ValueError("Output directory %s already exists, can't write your %ss there!" % (
+                    self.output_dir, self.file_extension))
         else:
             os.mkdir(self.output_dir)
 
+        # Write the metadata to JSON
+        with open(os.path.join(self.output_dir, 'pax_info.json'), 'w') as outfile:
+            json.dump(self.processor.get_metadata(), outfile, sort_keys=True)
+
+        # Start the temporary file. Events will first be written here, until events_per_file is reached
         self.tempfile = os.path.join(self.output_dir, 'temp.' + self.file_extension)
 
     def open_new_file(self, first_event_number):

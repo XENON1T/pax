@@ -36,12 +36,6 @@ parser.add_argument(
     nargs='+',
     help="Path(s) of the configuration file(s) to use."
 )
-# ... or load the configuration from a previous processed data file
-parser.add_argument(
-    '--redo',
-    default='',
-    help="Path of the HDF5 data file to redo."
-)
 
 # Plotting override
 plotting_control_group = parser.add_mutually_exclusive_group()
@@ -67,24 +61,7 @@ parser.add_argument('--stop_after',
 
 args = parser.parse_args()
 
-# Take config from previous file
-if args.redo:
-    from pandas import HDFStore
-    import json
-    file_to_redo = utils.data_file_name(args.redo)
-    store = HDFStore(file_to_redo)
-    if len(store['pax_info']) > 1:
-        print("Warning: This file contains data from several processings. Will use config from last!\n")
-    override_dict = json.loads(store['pax_info'].iloc[-1]['configuration_json'])
-    # Add _redone to output name, unless user has specified an output name
-    if not args.output:
-        redo_path, ext = os.path.splitext(args.redo)    # Remove .hdf from path
-        redo_path += '_redone'
-        print("Output path of redone processing not specified: will write to %s\n" % redo_path)
-        args.output = redo_path
-    store.close()
-else:
-    override_dict = {'pax': {}}
+override_dict = {'pax': {}}
 
 for argname, configname in (
         ('input',      'input_name'),
@@ -119,4 +96,3 @@ except (KeyboardInterrupt, SystemExit):
     pax_instance.stop()
     print("Exiting")
     sys.exit()
-
