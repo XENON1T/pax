@@ -153,6 +153,7 @@ class Model(object):
 casting_allowed_for = {
     int:    ['int16', 'int32', 'int64', 'Int64', 'Int32'],
     float:  ['int', 'float32', 'float64', 'int16', 'int32', 'int64', 'Int64', 'Int32'],
+    bool:   ['int16', 'int32', 'int64', 'Int64', 'Int32'],
 }
 
 
