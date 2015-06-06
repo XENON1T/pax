@@ -148,12 +148,17 @@ class FindHits(plugin.TransformPlugin):
                                            height, noise_sigma_pe, self.min_sigma * noise_sigma_pe,
                                            area))
 
+                # Store the hit
+                # int's need to be cast to avoid weird numpy types in our datastructure
+                # Type checking in data_model takes care of this, but if someone ever turns off type checking
+                # (e.g. because they want a x2 speed boost in loading data) I don't want them to get
+                # strange BSON encoding errors (bson.errors.InvalidDocument: Cannot encode object: 4332)
                 event.all_hits.append(datastructure.Hit({
                     'channel':             channel,
-                    'left':                left,
-                    'index_of_maximum':    max_idx,
+                    'left':                int(left),
+                    'index_of_maximum':    int(max_idx),
                     'center':              center,
-                    'right':               right,
+                    'right':               int(right),
                     'area':                area,
                     'height':              height,
                     'noise_sigma':         noise_sigma_pe,
