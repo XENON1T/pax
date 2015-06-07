@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.utils &mdash; Processor for Analyzing XENON1T 2.1.0 documentation</title>
+    <title>pax.utils &mdash; Processor for Analyzing XENON1T 3.0.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.1.0',
+        VERSION:     '3.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 2.1.0 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 3.0.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body>
@@ -36,7 +36,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Processor for Analyzing XENON1T 3.0.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -47,206 +47,67 @@
           <div class="body">
             
   <h1>Source code for pax.utils</h1><div class="highlight"><pre>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">Utilities for peakfinders etc.</span>
+<span class="sd">&quot;&quot;&quot;Helper routines needed in pax</span>
 
+<span class="sd">Please only put stuff here that you *really* can&#39;t find any other place for!</span>
+<span class="sd">e.g. a list clustering routine that isn&#39;t in some standard, library but several plugins depend on it</span>
 <span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">inspect</span>
 <span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">import</span> <span class="nn">gzip</span>
 <span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">glob</span>
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">zip_longest</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">interpolate</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
-<span class="kn">import</span> <span class="nn">numba</span>
 
-<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;dsputils&#39;</span><span class="p">)</span>
-
-
-<div class="viewcode-block" id="chunk_in_ntuples"><a class="viewcode-back" href="../../pax.html#pax.utils.chunk_in_ntuples">[docs]</a><span class="k">def</span> <span class="nf">chunk_in_ntuples</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">fillvalue</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; Chunks an iterable into a list of tuples</span>
-<span class="sd">    :param iterable: input iterable</span>
-<span class="sd">    :param n: length of n tuple</span>
-<span class="sd">    :param fillvalue: if iterable is not divisible by chunk_size, pad last tuple with this value</span>
-<span class="sd">    :return: list of n-tuples</span>
-<span class="sd">    Stolen from http://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks-in-python</span>
-<span class="sd">    Modified for python3, and made it return lists</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">int</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">==</span> <span class="n">n</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Chunk size should be a positive integer, not </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">n</span><span class="p">)</span>
-    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">zip_longest</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="nb">iter</span><span class="p">(</span><span class="n">iterable</span><span class="p">)]</span> <span class="o">*</span> <span class="n">n</span><span class="p">,</span> <span class="n">fillvalue</span><span class="o">=</span><span class="n">fillvalue</span><span class="p">))</span>
-    <span class="c"># Numpy solution -- without filling though</span>
-    <span class="c"># return np.reshape(iterable, (-1,n))</span>
+<span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;pax_utils&#39;</span><span class="p">)</span>
 
 
 <span class="c">##</span>
-<span class="c"># Peak processing helper routines</span>
+<span class="c"># Utilities for finding files inside pax.</span>
 <span class="c">##</span>
 
-</div>
-<div class="viewcode-block" id="cluster_by_diff"><a class="viewcode-back" href="../../pax.html#pax.utils.cluster_by_diff">[docs]</a><span class="k">def</span> <span class="nf">cluster_by_diff</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">diff_threshold</span><span class="p">,</span> <span class="n">return_indices</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Returns list of lists of indices of clusters in x,</span>
-<span class="sd">    making cluster boundaries whenever values are &gt;= threshold apart.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">x</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">[]</span>
-    <span class="n">clusters</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">current_cluster</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">previous_t</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">t</span> <span class="o">-</span> <span class="n">previous_t</span> <span class="o">&gt;</span> <span class="n">diff_threshold</span><span class="p">:</span>
-            <span class="n">clusters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_cluster</span><span class="p">)</span>
-            <span class="n">current_cluster</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">current_cluster</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span> <span class="k">if</span> <span class="n">return_indices</span> <span class="k">else</span> <span class="n">t</span><span class="p">)</span>
-        <span class="n">previous_t</span> <span class="o">=</span> <span class="n">t</span>
-    <span class="n">clusters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_cluster</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">clusters</span>
-    <span class="c"># Numpy solution below appears to make processor run slower!</span>
-    <span class="c"># x.sort()</span>
-    <span class="c"># if not isinstance(x, np.ndarray):</span>
-    <span class="c">#     x = np.array(x)</span>
-    <span class="c"># split_indices = np.where(np.diff(x) &gt;= diff_threshold)[0] + 1</span>
-    <span class="c"># if return_indices:</span>
-    <span class="c">#     return np.split(np.arange(len(x)), split_indices)</span>
-    <span class="c"># else:</span>
-    <span class="c">#     return np.split(x, split_indices)</span>
+<span class="c"># Store the directory of pax (i.e. this file&#39;s directory) as PAX_DIR</span>
+<span class="n">PAX_DIR</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">currentframe</span><span class="p">())))</span>
 
-</div>
-<div class="viewcode-block" id="mad"><a class="viewcode-back" href="../../pax.html#pax.utils.mad">[docs]</a><span class="k">def</span> <span class="nf">mad</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; Return median absolute deviation of numpy array&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">absolute</span><span class="p">(</span><span class="n">data</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">axis</span><span class="p">)),</span> <span class="n">axis</span><span class="p">)</span>
 
-</div>
-<div class="viewcode-block" id="weighted_mean_variance"><a class="viewcode-back" href="../../pax.html#pax.utils.weighted_mean_variance">[docs]</a><span class="k">def</span> <span class="nf">weighted_mean_variance</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">weights</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Return the weighted mean, and the weighted sum square deviation from the weighted mean.</span>
-<span class="sd">    values, weights -- Numpy ndarrays with the same shape.</span>
-<span class="sd">    Stolen from http://stackoverflow.com/questions/2413522/weighted-standard-deviation-in-numpy</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">weighted_mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
-    <span class="n">weighted_variance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">((</span><span class="n">values</span><span class="o">-</span><span class="n">weighted_mean</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>  <span class="c"># Fast and numerically precise</span>
-    <span class="k">return</span> <span class="n">weighted_mean</span><span class="p">,</span> <span class="n">weighted_variance</span>
-
-</div>
-<div class="viewcode-block" id="peak_bounds"><a class="viewcode-back" href="../../pax.html#pax.utils.peak_bounds">[docs]</a><span class="k">def</span> <span class="nf">peak_bounds</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">fraction_of_max</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">max_idx</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">zero_level</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">inclusive</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Return (left, right) indices closest to max_idx where signal drops below signal[max_idx]*fraction_of_max.</span>
-
-<span class="sd">    :param signal: waveform to look in (numpy array)</span>
-<span class="sd">    :param fraction_of_max: Width at this fraction of maximum. If None, peaks will extend until zero_level.</span>
-<span class="sd">    :param max_idx: Index in signal of the maximum of the peak. Default None, will be determined by np.argmax(signal)</span>
-<span class="sd">    :param zero_level: Always end a peak when it drops below this level. Default: 0</span>
-<span class="sd">    :param inclusive: Include endpoints (first points where signal drops below), default True.</span>
-<span class="sd">    TODO: proper support for inclusive (don&#39;t just subtract 1)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">max_idx</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-        <span class="n">max_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Empty signal, can&#39;t find peak bounds!&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">max_idx</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Can&#39;t compute bounds: max at </span><span class="si">%s</span><span class="s">, peak wave is </span><span class="si">%s</span><span class="s"> long&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">max_idx</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">signal</span><span class="p">)))</span>
-    <span class="k">if</span> <span class="n">max_idx</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Peak maximum index is negative (</span><span class="si">%s</span><span class="s">)... what are you smoking?&quot;</span> <span class="o">%</span> <span class="n">max_idx</span><span class="p">)</span>
-
-    <span class="n">height</span> <span class="o">=</span> <span class="n">signal</span><span class="p">[</span><span class="n">max_idx</span><span class="p">]</span>
-
-    <span class="k">if</span> <span class="n">fraction_of_max</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-        <span class="n">threshold</span> <span class="o">=</span> <span class="n">zero_level</span>
+<div class="viewcode-block" id="data_file_name"><a class="viewcode-back" href="../../pax.html#pax.utils.data_file_name">[docs]</a><span class="k">def</span> <span class="nf">data_file_name</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns filename if a file exists there, else returns PAX_DIR/data/filename&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">filename</span>
+    <span class="n">new_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">PAX_DIR</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">new_filename</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">new_filename</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">threshold</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">zero_level</span><span class="p">,</span> <span class="n">height</span> <span class="o">*</span> <span class="n">fraction_of_max</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">height</span> <span class="o">&lt;</span> <span class="n">threshold</span><span class="p">:</span>
-        <span class="c"># Peak is always below threshold -&gt; return smallest legal peak.</span>
-        <span class="k">return</span> <span class="p">(</span><span class="n">max_idx</span><span class="p">,</span> <span class="n">max_idx</span><span class="p">)</span>
-
-    <span class="c"># Note reversion acts before indexing in numpy!</span>
-    <span class="n">left</span> <span class="o">=</span> <span class="n">first_below_threshold</span><span class="p">(</span><span class="n">signal</span><span class="p">[</span><span class="n">max_idx</span><span class="p">::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">threshold</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">left</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-        <span class="n">left</span> <span class="o">=</span> <span class="mi">0</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">left</span> <span class="o">=</span> <span class="n">max_idx</span> <span class="o">-</span> <span class="n">left</span>
-    <span class="n">right</span> <span class="o">=</span> <span class="n">first_below_threshold</span><span class="p">(</span><span class="n">signal</span><span class="p">[</span><span class="n">max_idx</span><span class="p">:],</span> <span class="n">threshold</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">right</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-        <span class="n">right</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">right</span> <span class="o">+=</span> <span class="n">max_idx</span>
-
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">inclusive</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">signal</span><span class="p">[</span><span class="n">left</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">threshold</span> <span class="ow">and</span> <span class="n">left</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">left</span> <span class="o">+=</span> <span class="mi">1</span>
-        <span class="k">if</span> <span class="n">signal</span><span class="p">[</span><span class="n">right</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">threshold</span> <span class="ow">and</span> <span class="n">right</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">right</span> <span class="o">-=</span> <span class="mi">1</span>
-    <span class="k">return</span> <span class="p">(</span><span class="n">left</span><span class="p">,</span> <span class="n">right</span><span class="p">)</span>
-
-
-<span class="c"># TODO: interpolate argument shadows interpolate imported from scipy</span></div>
-<div class="viewcode-block" id="width_at_fraction"><a class="viewcode-back" href="../../pax.html#pax.utils.width_at_fraction">[docs]</a><span class="k">def</span> <span class="nf">width_at_fraction</span><span class="p">(</span><span class="n">peak_wave</span><span class="p">,</span> <span class="n">fraction_of_max</span><span class="p">,</span> <span class="n">max_idx</span><span class="p">,</span> <span class="n">interpolate</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Returns width of a peak IN SAMPLES at fraction of maximum&quot;&quot;&quot;</span>
-    <span class="n">left</span><span class="p">,</span> <span class="n">right</span> <span class="o">=</span> <span class="n">peak_bounds</span><span class="p">(</span><span class="n">peak_wave</span><span class="p">,</span> <span class="n">max_idx</span><span class="o">=</span><span class="n">max_idx</span><span class="p">,</span> <span class="n">fraction_of_max</span><span class="o">=</span><span class="n">fraction_of_max</span><span class="p">)</span>
-    <span class="c"># Try to do sub-sample width determination</span>
-
-    <span class="n">threshold</span> <span class="o">=</span> <span class="n">peak_wave</span><span class="p">[</span><span class="n">max_idx</span><span class="p">]</span> <span class="o">*</span> <span class="n">fraction_of_max</span>
-
-    <span class="k">if</span> <span class="n">interpolate</span><span class="p">:</span>     <span class="c"># Need at least 3 points to interpolate</span>
-        <span class="k">if</span> <span class="n">left</span> <span class="o">+</span> <span class="mi">1</span> <span class="ow">in</span> <span class="n">peak_wave</span> <span class="ow">and</span> <span class="n">peak_wave</span><span class="p">[</span><span class="n">left</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">threshold</span> <span class="o">&lt;</span> <span class="n">peak_wave</span><span class="p">[</span><span class="n">left</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]:</span>
-            <span class="n">correction</span> <span class="o">=</span> <span class="p">(</span><span class="n">peak_wave</span><span class="p">[</span><span class="n">left</span><span class="p">]</span> <span class="o">-</span> <span class="n">threshold</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">peak_wave</span><span class="p">[</span><span class="n">left</span><span class="p">]</span> <span class="o">-</span> <span class="n">peak_wave</span><span class="p">[</span><span class="n">left</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
-            <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">correction</span> <span class="o">&lt;=</span> <span class="mi">1</span>
-            <span class="n">left</span> <span class="o">+=</span> <span class="n">correction</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c"># Weird peak, can&#39;t interpolate</span>
-            <span class="c"># Should not happen once peakfinder works well</span>
-            <span class="k">pass</span>
-
-        <span class="k">if</span> <span class="n">right</span> <span class="o">-</span> <span class="mi">1</span> <span class="ow">in</span> <span class="n">peak_wave</span> <span class="ow">and</span> <span class="n">peak_wave</span><span class="p">[</span><span class="n">right</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">threshold</span> <span class="o">&lt;</span> <span class="n">peak_wave</span><span class="p">[</span><span class="n">right</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]:</span>
-            <span class="n">correction</span> <span class="o">=</span> <span class="p">(</span><span class="n">threshold</span> <span class="o">-</span> <span class="n">peak_wave</span><span class="p">[</span><span class="n">right</span><span class="p">])</span> <span class="o">/</span> <span class="p">(</span><span class="n">peak_wave</span><span class="p">[</span><span class="n">right</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">peak_wave</span><span class="p">[</span><span class="n">right</span><span class="p">])</span>
-            <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">correction</span> <span class="o">&lt;=</span> <span class="mi">1</span>
-            <span class="n">right</span> <span class="o">-=</span> <span class="n">correction</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="c"># Weird peak, can&#39;t interpolate</span>
-            <span class="c"># Should not happen once peakfinder works well</span>
-            <span class="k">pass</span>
-
-    <span class="c"># If you want to test this code, uncomment this:</span>
-    <span class="c"># plt.plot(peak_wave, &#39;bo-&#39;)</span>
-    <span class="c"># plt.plot([threshold for i in range(len(peak_wave))], &#39;--&#39;, label=&#39;Threshold&#39;)</span>
-    <span class="c"># plt.plot([left, left], [0, threshold], &#39;--&#39;, label=&#39;Left width bound&#39;)</span>
-    <span class="c"># plt.plot([right, right], [0, threshold], &#39;--&#39;, label=&#39;Right width bound&#39;)</span>
-    <span class="c"># plt.scatter([max_idx], [peak_wave[max_idx]], marker=&#39;*&#39;, s=100, label=&#39;Maximum&#39;, color=&#39;purple&#39;)</span>
-    <span class="c"># plt.title(&#39;Peak bounds at %s of max&#39; % fraction_of_max)</span>
-    <span class="c"># plt.legend()</span>
-    <span class="c"># plt.show()</span>
-
-    <span class="k">return</span> <span class="n">right</span> <span class="o">-</span> <span class="n">left</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;File name or path </span><span class="si">%s</span><span class="s"> not found!&#39;</span> <span class="o">%</span> <span class="n">filename</span><span class="p">)</span>
 
 </div>
-<span class="nd">@numba.autojit</span>
-<span class="k">def</span> <span class="nf">first_below_threshold</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">threshold</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Returns first index in w below threshold, or None if w never below threshold&quot;&quot;&quot;</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">w</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">threshold</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">i</span>
-    <span class="k">return</span> <span class="bp">None</span>
+<div class="viewcode-block" id="get_named_configuration_options"><a class="viewcode-back" href="../../pax.html#pax.utils.get_named_configuration_options">[docs]</a><span class="k">def</span> <span class="nf">get_named_configuration_options</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot; Return the names of all working named configurations</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">config_files</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">PAX_DIR</span><span class="p">,</span> <span class="s">&#39;config&#39;</span><span class="p">,</span> <span class="s">&#39;*.ini&#39;</span><span class="p">)):</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">r&#39;(\w+)\.ini&#39;</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Weird file in config dir: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+        <span class="c"># Config files starting with &#39;_&#39; won&#39;t appear in the usage list (they won&#39;t work by themselves)</span>
+        <span class="k">if</span> <span class="n">filename</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;_&#39;</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="n">config_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">config_files</span>
 
 
-<span class="c"># Caching decorator</span>
-<div class="viewcode-block" id="Memoize"><a class="viewcode-back" href="../../pax.html#pax.utils.Memoize">[docs]</a><span class="k">class</span> <span class="nc">Memoize</span><span class="p">:</span>
-    <span class="c"># from http://avinashv.net/2008/04/python-decorators-syntactic-sugar/</span>
-
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">function</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">function</span> <span class="o">=</span> <span class="n">function</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">memoized</span> <span class="o">=</span> <span class="p">{}</span>
-
-    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">memoized</span><span class="p">[</span><span class="n">args</span><span class="p">]</span>
-        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">memoized</span><span class="p">[</span><span class="n">args</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">function</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">memoized</span><span class="p">[</span><span class="n">args</span><span class="p">]</span>
-
+<span class="c">##</span>
+<span class="c"># Interpolating map class</span>
+<span class="c">##</span>
 </div>
 <div class="viewcode-block" id="InterpolatingMap"><a class="viewcode-back" href="../../pax.html#pax.utils.InterpolatingMap">[docs]</a><span class="k">class</span> <span class="nc">InterpolatingMap</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
@@ -354,7 +215,88 @@
             <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">to_file</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div></div>
+        <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+
+<span class="c">##</span>
+<span class="c"># General helper functions</span>
+<span class="c">##</span>
+</div></div>
+<div class="viewcode-block" id="chunk_in_ntuples"><a class="viewcode-back" href="../../pax.html#pax.utils.chunk_in_ntuples">[docs]</a><span class="k">def</span> <span class="nf">chunk_in_ntuples</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">fillvalue</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Chunks an iterable into a list of tuples</span>
+<span class="sd">    :param iterable: input iterable</span>
+<span class="sd">    :param n: length of n tuple</span>
+<span class="sd">    :param fillvalue: if iterable is not divisible by chunk_size, pad last tuple with this value</span>
+<span class="sd">    :return: list of n-tuples</span>
+<span class="sd">    Stolen from http://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks-in-python</span>
+<span class="sd">    Modified for python3, and made it return lists</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">int</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">==</span> <span class="n">n</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Chunk size should be a positive integer, not </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">n</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">zip_longest</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="nb">iter</span><span class="p">(</span><span class="n">iterable</span><span class="p">)]</span> <span class="o">*</span> <span class="n">n</span><span class="p">,</span> <span class="n">fillvalue</span><span class="o">=</span><span class="n">fillvalue</span><span class="p">))</span>
+    <span class="c"># Numpy solution -- without filling though</span>
+    <span class="c"># return np.reshape(iterable, (-1,n))</span>
+
+</div>
+<div class="viewcode-block" id="cluster_by_diff"><a class="viewcode-back" href="../../pax.html#pax.utils.cluster_by_diff">[docs]</a><span class="k">def</span> <span class="nf">cluster_by_diff</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">diff_threshold</span><span class="p">,</span> <span class="n">return_indices</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns list of lists of indices of clusters in x,</span>
+<span class="sd">    making cluster boundaries whenever values are &gt;= threshold apart.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span>
+    <span class="n">clusters</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">current_cluster</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">previous_t</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">t</span> <span class="o">-</span> <span class="n">previous_t</span> <span class="o">&gt;</span> <span class="n">diff_threshold</span><span class="p">:</span>
+            <span class="n">clusters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_cluster</span><span class="p">)</span>
+            <span class="n">current_cluster</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">current_cluster</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span> <span class="k">if</span> <span class="n">return_indices</span> <span class="k">else</span> <span class="n">t</span><span class="p">)</span>
+        <span class="n">previous_t</span> <span class="o">=</span> <span class="n">t</span>
+    <span class="n">clusters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_cluster</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">clusters</span>
+    <span class="c"># Numpy solution below appears to make processor run slower!</span>
+    <span class="c"># x.sort()</span>
+    <span class="c"># if not isinstance(x, np.ndarray):</span>
+    <span class="c">#     x = np.array(x)</span>
+    <span class="c"># split_indices = np.where(np.diff(x) &gt;= diff_threshold)[0] + 1</span>
+    <span class="c"># if return_indices:</span>
+    <span class="c">#     return np.split(np.arange(len(x)), split_indices)</span>
+    <span class="c"># else:</span>
+    <span class="c">#     return np.split(x, split_indices)</span>
+
+</div>
+<div class="viewcode-block" id="mad"><a class="viewcode-back" href="../../pax.html#pax.utils.mad">[docs]</a><span class="k">def</span> <span class="nf">mad</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot; Return median absolute deviation of numpy array&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">absolute</span><span class="p">(</span><span class="n">data</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">axis</span><span class="p">)),</span> <span class="n">axis</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="weighted_mean_variance"><a class="viewcode-back" href="../../pax.html#pax.utils.weighted_mean_variance">[docs]</a><span class="k">def</span> <span class="nf">weighted_mean_variance</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">weights</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return the weighted mean, and the weighted sum square deviation from the weighted mean.</span>
+<span class="sd">    values, weights -- Numpy ndarrays with the same shape.</span>
+<span class="sd">    Stolen from http://stackoverflow.com/questions/2413522/weighted-standard-deviation-in-numpy</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">weighted_mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
+    <span class="n">weighted_variance</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">((</span><span class="n">values</span><span class="o">-</span><span class="n">weighted_mean</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>  <span class="c"># Fast and numerically precise</span>
+    <span class="k">return</span> <span class="n">weighted_mean</span><span class="p">,</span> <span class="n">weighted_variance</span>
+
+
+<span class="c"># Caching decorator</span>
+<span class="c"># Stolen from http://avinashv.net/2008/04/python-decorators-syntactic-sugar/</span></div>
+<div class="viewcode-block" id="Memoize"><a class="viewcode-back" href="../../pax.html#pax.utils.Memoize">[docs]</a><span class="k">class</span> <span class="nc">Memoize</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">function</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">function</span> <span class="o">=</span> <span class="n">function</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">memoized</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">memoized</span><span class="p">[</span><span class="n">args</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">memoized</span><span class="p">[</span><span class="n">args</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">function</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">memoized</span><span class="p">[</span><span class="n">args</span><span class="p">]</span></div>
 </pre></div>
 
           </div>
@@ -388,7 +330,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Processor for Analyzing XENON1T 3.0.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>

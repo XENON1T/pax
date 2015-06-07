@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>PyROOT installation &mdash; Processor for Analyzing XENON1T 2.1.0 documentation</title>
+    <title>PyROOT installation &mdash; Processor for Analyzing XENON1T 3.0.0 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.0',
+        VERSION:     '3.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 2.1.0 documentation" href="index.html" /> 
+    <link rel="top" title="Processor for Analyzing XENON1T 3.0.0 documentation" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -35,7 +35,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 3.0.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -46,10 +46,10 @@
             
   <div class="section" id="pyroot-installation">
 <h1>PyROOT installation<a class="headerlink" href="#pyroot-installation" title="Permalink to this headline">¶</a></h1>
-<p>The Processor for Analysing XENON (PAX) uses ROOT (<a class="reference external" href="http://root.cern.ch/drupal/">http://root.cern.ch/drupal/</a>) for the output of files.
-PyROOT is a Python extension module that allows the user to interact with any ROOT class from the Python interpreter.
-For this purpose it is necessary to have the latest Python (3.4) version working with ROOT. This installation document
-shows the steps needed to do this correctly in an virtual environment on Ubuntu 14.</p>
+<p>The Processor for Analysing XENON (PAX) can use ROOT (<a class="reference external" href="http://root.cern.ch/drupal/">http://root.cern.ch/drupal/</a>) as a processed data output format.
+If you want to use this output format, you&#8217;ll first have to install pyROOT
+(a Python module to interact with ROOT classes) in the latest version of Python (3.4).
+This installation document shows the steps needed to do this correctly in an virtual environment on Ubuntu 14.</p>
 <div class="section" id="installation">
 <h2>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h2>
 <p>We assume installation on Ubuntu 14 desktop with python3.4 pre-installed.</p>
@@ -126,8 +126,39 @@ locate libPyROOT.so
 </pre></div>
 </div>
 </li>
+</ul>
+<p>The last part of the pyROOT install deals with the ROOT.py file. You can either convert it yourself or copy the file provided in pax/travis.</p>
+<p>To use the provided ROOT.py from PAX.</p>
+<ul>
+<li><p class="first">Copy the file to the proper directory:</p>
+<div class="highlight-python"><div class="highlight"><pre>#Using ROOT v5
+cp pax/travis/modified_ROOT_v5.34.25.py ~/env/py34/src/root/lib/ROOT.py
+
+#Using ROOT v6
+cp pax/travis/modified_ROOT_v6.02.05.py ~/env/py34/src/root/lib/ROOT.py
+</pre></div>
+</div>
+</li>
+</ul>
+<p>To manually convert ROOT.py.</p>
+<ul>
 <li><p class="first">Convert the code in ROOT.py from python 2 to python 3 with 2to3:</p>
 <div class="highlight-python"><div class="highlight"><pre>2to3 -w ~/env/py34/src/root/lib/ROOT.py
+</pre></div>
+</div>
+</li>
+<li><p class="first">Some tweaking of ROOT.py is required, comment out the following lines in ROOT.py (on lines 355, 542-544), (this rather ad hoc modification disables the backwards compatibility, but since we are using python 3 this is not needed):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">builtins</span><span class="o">.</span><span class="n">__import__</span> <span class="o">=</span> <span class="n">_importhook</span>
+
+<span class="c"># special case for cout (backwards compatibility)</span>
+<span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span> <span class="n">std</span><span class="p">,</span> <span class="s">&#39;__1&#39;</span> <span class="p">):</span>
+  <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">[</span> <span class="s">&#39;cout&#39;</span> <span class="p">]</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span> <span class="n">std</span><span class="p">,</span> <span class="s">&#39;__1&#39;</span> <span class="p">)</span><span class="o">.</span><span class="n">cout</span>
+</pre></div>
+</div>
+</li>
+<li><p class="first">ROOT.py also has a cleanup() function that is called when PAX shuts down, since we have changed the behaviour of ROOT.py this function causes errors. Bypass it by putting a return statement after its definition (yes, this is not good practise and we are looking for a better solution):</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="k">def</span> <span class="nf">cleanup</span><span class="p">():</span>
+    <span class="k">return</span>
 </pre></div>
 </div>
 </li>
@@ -185,7 +216,7 @@ locate libPyROOT.so
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 3.0.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

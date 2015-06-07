@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.io.WaveformSimulator &mdash; Processor for Analyzing XENON1T 2.1.0 documentation</title>
+    <title>pax.plugins.io.WaveformSimulator &mdash; Processor for Analyzing XENON1T 3.0.0 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '2.1.0',
+        VERSION:     '3.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 2.1.0 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 3.0.0 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" /> 
   </head>
   <body>
@@ -36,7 +36,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 3.0.0 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -59,7 +59,7 @@
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 
 <span class="kn">import</span> <span class="nn">pandas</span>
-<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">core</span><span class="p">,</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">units</span>
+<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">units</span><span class="p">,</span> <span class="n">utils</span>
 
 
 <div class="viewcode-block" id="WaveformSimulator"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulator">[docs]</a><span class="k">class</span> <span class="nc">WaveformSimulator</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">InputPlugin</span><span class="p">):</span>
@@ -200,7 +200,7 @@
         <span class="c"># Open the instructions file</span>
         <span class="n">filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;input_name&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dataset_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">instructions_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">data_file_name</span><span class="p">(</span><span class="n">filename</span><span class="p">),</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">instructions_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">data_file_name</span><span class="p">(</span><span class="n">filename</span><span class="p">),</span> <span class="s">&#39;r&#39;</span><span class="p">)</span>
         <span class="c">#</span>
         <span class="c"># Slurp the entire instructions file, so we know the number of events</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">instruction_reader</span> <span class="o">=</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictReader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">instructions_file</span><span class="p">)</span>
@@ -251,7 +251,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&#39;This plugin is completely untested and will probably crash!&#39;</span><span class="p">)</span>
         <span class="n">filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;input_name&#39;</span><span class="p">]</span>
         <span class="kn">import</span> <span class="nn">ROOT</span>
-        <span class="n">f</span> <span class="o">=</span> <span class="n">ROOT</span><span class="o">.</span><span class="n">TFile</span><span class="p">(</span><span class="n">core</span><span class="o">.</span><span class="n">data_file_name</span><span class="p">(</span><span class="n">filename</span><span class="p">))</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">ROOT</span><span class="o">.</span><span class="n">TFile</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">data_file_name</span><span class="p">(</span><span class="n">filename</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">t</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">Get</span><span class="p">(</span><span class="s">&quot;t1&quot;</span><span class="p">)</span>  <span class="c"># For Xerawdp use T1, for MC t1</span>
         <span class="n">WaveformSimulator</span><span class="o">.</span><span class="n">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">number_of_events</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">t</span><span class="o">.</span><span class="n">GetEntries</span><span class="p">()</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;event_repetitions&#39;</span><span class="p">]</span>
@@ -318,7 +318,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 3.0.0 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>

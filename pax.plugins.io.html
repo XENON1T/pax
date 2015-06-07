@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.io package &mdash; Processor for Analyzing XENON1T 2.1.0 documentation</title>
+    <title>pax.plugins.io package &mdash; Processor for Analyzing XENON1T 3.0.0 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.0',
+        VERSION:     '3.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 2.1.0 documentation" href="index.html" /> 
+    <link rel="top" title="Processor for Analyzing XENON1T 3.0.0 documentation" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -35,7 +35,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 3.0.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -118,6 +118,173 @@ information about Avro can be found at:</p>
 <dl class="method">
 <dt id="pax.plugins.io.Avro.WriteAvro.write_event_to_current_file">
 <tt class="descname">write_event_to_current_file</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Avro.html#WriteAvro.write_event_to_current_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Avro.WriteAvro.write_event_to_current_file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="module-pax.plugins.io.BSON">
+<span id="pax-plugins-io-bson-module"></span><h2>pax.plugins.io.BSON module<a class="headerlink" href="#module-pax.plugins.io.BSON" title="Permalink to this headline">¶</a></h2>
+<p>JSON and BSON-based data output</p>
+<dl class="class">
+<dt id="pax.plugins.io.BSON.ReadBSON">
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.BSON.</tt><tt class="descname">ReadBSON</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BSON.html#ReadBSON"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BSON.ReadBSON" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.FolderIO.InputFromFolder" title="pax.plugins.io.FolderIO.InputFromFolder"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.FolderIO.InputFromFolder</span></tt></a></p>
+<p>Read raw BSON data from a concatenated-BSON file or a folder of such files</p>
+<dl class="method">
+<dt id="pax.plugins.io.BSON.ReadBSON.close">
+<tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BSON.html#ReadBSON.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BSON.ReadBSON.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pax.plugins.io.BSON.ReadBSON.file_extension">
+<tt class="descname">file_extension</tt><em class="property"> = 'bson'</em><a class="headerlink" href="#pax.plugins.io.BSON.ReadBSON.file_extension" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.BSON.ReadBSON.get_all_events_in_current_file">
+<tt class="descname">get_all_events_in_current_file</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BSON.html#ReadBSON.get_all_events_in_current_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BSON.ReadBSON.get_all_events_in_current_file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.BSON.ReadBSON.open">
+<tt class="descname">open</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BSON.html#ReadBSON.open"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BSON.ReadBSON.open" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.plugins.io.BSON.ReadJSON">
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.BSON.</tt><tt class="descname">ReadJSON</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BSON.html#ReadJSON"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BSON.ReadJSON" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.FolderIO.InputFromFolder" title="pax.plugins.io.FolderIO.InputFromFolder"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.FolderIO.InputFromFolder</span></tt></a></p>
+<p>Read raw data from a folder of newline-separated-JSON files</p>
+<dl class="method">
+<dt id="pax.plugins.io.BSON.ReadJSON.close">
+<tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BSON.html#ReadJSON.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BSON.ReadJSON.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pax.plugins.io.BSON.ReadJSON.file_extension">
+<tt class="descname">file_extension</tt><em class="property"> = 'json'</em><a class="headerlink" href="#pax.plugins.io.BSON.ReadJSON.file_extension" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.BSON.ReadJSON.get_all_events_in_current_file">
+<tt class="descname">get_all_events_in_current_file</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BSON.html#ReadJSON.get_all_events_in_current_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BSON.ReadJSON.get_all_events_in_current_file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.BSON.ReadJSON.open">
+<tt class="descname">open</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BSON.html#ReadJSON.open"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BSON.ReadJSON.open" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.plugins.io.BSON.ReadZippedBSON">
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.BSON.</tt><tt class="descname">ReadZippedBSON</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BSON.html#ReadZippedBSON"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BSON.ReadZippedBSON" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.FolderIO.InputFromFolder" title="pax.plugins.io.FolderIO.InputFromFolder"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.FolderIO.InputFromFolder</span></tt></a></p>
+<p>Read a folder of zipfiles containing gzipped BSON files</p>
+<dl class="method">
+<dt id="pax.plugins.io.BSON.ReadZippedBSON.close">
+<tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BSON.html#ReadZippedBSON.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BSON.ReadZippedBSON.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Close the currently open file</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.plugins.io.BSON.ReadZippedBSON.file_extension">
+<tt class="descname">file_extension</tt><em class="property"> = 'zip'</em><a class="headerlink" href="#pax.plugins.io.BSON.ReadZippedBSON.file_extension" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.BSON.ReadZippedBSON.get_single_event_in_current_file">
+<tt class="descname">get_single_event_in_current_file</tt><big>(</big><em>event_position</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BSON.html#ReadZippedBSON.get_single_event_in_current_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BSON.ReadZippedBSON.get_single_event_in_current_file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.BSON.ReadZippedBSON.open">
+<tt class="descname">open</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BSON.html#ReadZippedBSON.open"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BSON.ReadZippedBSON.open" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.plugins.io.BSON.WriteBSON">
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.BSON.</tt><tt class="descname">WriteBSON</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BSON.html#WriteBSON"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BSON.WriteBSON" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.FolderIO.WriteToFolder" title="pax.plugins.io.FolderIO.WriteToFolder"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.FolderIO.WriteToFolder</span></tt></a></p>
+<p>Write raw data to a folder of concatenated-BSON files</p>
+<dl class="method">
+<dt id="pax.plugins.io.BSON.WriteBSON.close">
+<tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BSON.html#WriteBSON.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BSON.WriteBSON.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pax.plugins.io.BSON.WriteBSON.file_extension">
+<tt class="descname">file_extension</tt><em class="property"> = 'bson'</em><a class="headerlink" href="#pax.plugins.io.BSON.WriteBSON.file_extension" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.BSON.WriteBSON.open">
+<tt class="descname">open</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BSON.html#WriteBSON.open"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BSON.WriteBSON.open" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.BSON.WriteBSON.write_event_to_current_file">
+<tt class="descname">write_event_to_current_file</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BSON.html#WriteBSON.write_event_to_current_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BSON.WriteBSON.write_event_to_current_file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.plugins.io.BSON.WriteJSON">
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.BSON.</tt><tt class="descname">WriteJSON</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BSON.html#WriteJSON"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BSON.WriteJSON" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.FolderIO.WriteToFolder" title="pax.plugins.io.FolderIO.WriteToFolder"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.FolderIO.WriteToFolder</span></tt></a></p>
+<p>Write raw data to a folder of newline-separated-JSON files</p>
+<dl class="method">
+<dt id="pax.plugins.io.BSON.WriteJSON.close">
+<tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BSON.html#WriteJSON.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BSON.WriteJSON.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pax.plugins.io.BSON.WriteJSON.file_extension">
+<tt class="descname">file_extension</tt><em class="property"> = 'json'</em><a class="headerlink" href="#pax.plugins.io.BSON.WriteJSON.file_extension" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.BSON.WriteJSON.open">
+<tt class="descname">open</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BSON.html#WriteJSON.open"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BSON.WriteJSON.open" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.BSON.WriteJSON.write_event_to_current_file">
+<tt class="descname">write_event_to_current_file</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BSON.html#WriteJSON.write_event_to_current_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BSON.WriteJSON.write_event_to_current_file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.plugins.io.BSON.WriteZippedBSON">
+<em class="property">class </em><tt class="descclassname">pax.plugins.io.BSON.</tt><tt class="descname">WriteZippedBSON</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BSON.html#WriteZippedBSON"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BSON.WriteZippedBSON" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.FolderIO.WriteToFolder" title="pax.plugins.io.FolderIO.WriteToFolder"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.FolderIO.WriteToFolder</span></tt></a></p>
+<p>Write raw data to a folder of zipfiles containing gzipped BSONs</p>
+<dl class="method">
+<dt id="pax.plugins.io.BSON.WriteZippedBSON.close">
+<tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BSON.html#WriteZippedBSON.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BSON.WriteZippedBSON.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pax.plugins.io.BSON.WriteZippedBSON.file_extension">
+<tt class="descname">file_extension</tt><em class="property"> = 'zip'</em><a class="headerlink" href="#pax.plugins.io.BSON.WriteZippedBSON.file_extension" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.BSON.WriteZippedBSON.open">
+<tt class="descname">open</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BSON.html#WriteZippedBSON.open"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BSON.WriteZippedBSON.open" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.BSON.WriteZippedBSON.write_event_to_current_file">
+<tt class="descname">write_event_to_current_file</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BSON.html#WriteZippedBSON.write_event_to_current_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BSON.WriteZippedBSON.write_event_to_current_file" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -214,8 +381,7 @@ as well, which takes time too.</p>
 <dl class="method">
 <dt id="pax.plugins.io.BulkOutput.ReadFromBulkOutput.get_events">
 <tt class="descname">get_events</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/BulkOutput.html#ReadFromBulkOutput.get_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BulkOutput.ReadFromBulkOutput.get_events" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get events from processed data source
-Follows plugin API.</p>
+<dd><p>Get events from processed data source</p>
 </dd></dl>
 
 <dl class="method">
@@ -232,7 +398,7 @@ Follows plugin API.</p>
 <dt id="pax.plugins.io.FolderIO.InputFromFolder">
 <em class="property">class </em><tt class="descclassname">pax.plugins.io.FolderIO.</tt><tt class="descname">InputFromFolder</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/FolderIO.html#InputFromFolder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.FolderIO.InputFromFolder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.InputPlugin" title="pax.plugin.InputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.InputPlugin</span></tt></a></p>
-<p>Read from a folder containing several small files, each containing with events</p>
+<p>Read from a folder containing several small files, each containing events</p>
 <dl class="method">
 <dt id="pax.plugins.io.FolderIO.InputFromFolder.close">
 <tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/FolderIO.html#InputFromFolder.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.FolderIO.InputFromFolder.close" title="Permalink to this definition">¶</a></dt>
@@ -241,7 +407,7 @@ Follows plugin API.</p>
 
 <dl class="attribute">
 <dt id="pax.plugins.io.FolderIO.InputFromFolder.file_extension">
-<tt class="descname">file_extension</tt><em class="property"> = None</em><a class="headerlink" href="#pax.plugins.io.FolderIO.InputFromFolder.file_extension" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">file_extension</tt><em class="property"> = ''</em><a class="headerlink" href="#pax.plugins.io.FolderIO.InputFromFolder.file_extension" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -310,7 +476,7 @@ Will be called by get_single_event (and once by startup)</p>
 <dt id="pax.plugins.io.FolderIO.WriteToFolder">
 <em class="property">class </em><tt class="descclassname">pax.plugins.io.FolderIO.</tt><tt class="descname">WriteToFolder</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/FolderIO.html#WriteToFolder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.FolderIO.WriteToFolder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.OutputPlugin" title="pax.plugin.OutputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.OutputPlugin</span></tt></a></p>
-<p>Write to a folder containing several small files, each containing a &lt;= a fixed number of events</p>
+<p>Write to a folder containing several small files, each containing &lt;= a fixed number of events</p>
 <dl class="method">
 <dt id="pax.plugins.io.FolderIO.WriteToFolder.close">
 <tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/FolderIO.html#WriteToFolder.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.FolderIO.WriteToFolder.close" title="Permalink to this definition">¶</a></dt>
@@ -461,109 +627,6 @@ on formats:</p>
 </dd></dl>
 
 </div>
-<div class="section" id="module-pax.plugins.io.Pandas">
-<span id="pax-plugins-io-pandas-module"></span><h2>pax.plugins.io.Pandas module<a class="headerlink" href="#module-pax.plugins.io.Pandas" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="pax.plugins.io.Pandas.WritePandas">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.Pandas.</tt><tt class="descname">WritePandas</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Pandas.html#WritePandas"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Pandas.WritePandas" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.OutputPlugin" title="pax.plugin.OutputPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.OutputPlugin</span></tt></a></p>
-<p>Convert our event to pandas DataFrames, then write to containers supported by pandas: HDF5, CSV, JSON, HTML, ...</p>
-<p>We make a separate DataFrame for each model type in our data structure
-(Event, Peak, reconstructed position, ...) and every NumpyArrayField as well.</p>
-<dl class="docutils">
-<dt>The data frames have a hierarchical multi-index, e.g. for the ReconstrucedPosition DataFrame</dt>
-<dd>the first  index is the event number
-the second index is the Peak&#8217;s index in event.peaks
-the third  index is the ReconstructedPosition&#8217;s index in peak.reconstructed_positions</dd>
-</dl>
-<p>Each index is also named (in this example, &#8216;Event&#8217;, &#8216;Peak&#8217;, &#8216;ReconstructedPosition&#8217;) for clarity.</p>
-<p>Because pandas is optimised for working with large data structures, converting/appending each model instance
-to a DataFrame separately would take an unacceptable amount of CPU time. Hence, we store data in lists of
-dictionaries first (&#8220;pre-dataframes&#8221;), then convert those to DataFrames once we are ready to write to disk.</p>
-<p>Available options:</p>
-<blockquote>
-<div><ul>
-<li><dl class="first docutils">
-<dt>output_format:      If hdf, will produce an HDF5 file with tables for each dataframe.</dt>
-<dd><p class="first last">If csv, json, html, pickle, ... will produce a folder with files for each dataframe.
-See <a class="reference external" href="http://pandas.pydata.org/pandas-docs/dev/io.html">http://pandas.pydata.org/pandas-docs/dev/io.html</a> for all possible options;
-I really just call pandas.to_FORMAT for each DataFrame.</p>
-</dd>
-</dl>
-</li>
-<li><p class="first">output_name:        The name of the output file or folder, WITHOUT file extension.</p>
-</li>
-<li><p class="first">fields_to_ignore:   Fields which will not be stored.</p>
-</li>
-</ul>
-</div></blockquote>
-<p>Further options specific to output_format=&#8217;hdf&#8217;:</p>
-<blockquote>
-<div><ul>
-<li><p class="first">append_data:        Append data to an existing HDF5 file.</p>
-</li>
-<li><dl class="first docutils">
-<dt>write_every:        Write data to disk after every nth event.</dt>
-<dd><p class="first last">(For the other output_formats, all data is kept in memory, then written to disk on shutdown.)</p>
-</dd>
-</dl>
-</li>
-<li><dl class="first docutils">
-<dt>string_data_length: Maximum length of strings in string data fields.  If you try to store a longer string</dt>
-<dd><p class="first last">in any but the first write pass, it will crash!</p>
-</dd>
-</dl>
-</li>
-</ul>
-</div></blockquote>
-<dl class="method">
-<dt id="pax.plugins.io.Pandas.WritePandas.append_to_df">
-<tt class="descname">append_to_df</tt><big>(</big><em>dfname</em>, <em>index_and_data_tuple</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Pandas.html#WritePandas.append_to_df"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Pandas.WritePandas.append_to_df" title="Permalink to this definition">¶</a></dt>
-<dd><p>Appends an (index, data_dict) tuple to self.dataframes[dfname]</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.Pandas.WritePandas.model_to_dataframe">
-<tt class="descname">model_to_dataframe</tt><big>(</big><em>m</em>, <em>index_trail</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Pandas.html#WritePandas.model_to_dataframe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Pandas.WritePandas.model_to_dataframe" title="Permalink to this definition">¶</a></dt>
-<dd><p>Convert a MicroModels class instance to a pre-dataframe (data_dict with index_trail),
-handling its subcollections recursively.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>m</strong> &#8211; instance to convert</li>
-<li><strong>index_trail</strong> &#8211; list of (index_name, index) tuples denoting multi-index trail</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.Pandas.WritePandas.shutdown">
-<tt class="descname">shutdown</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Pandas.html#WritePandas.shutdown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Pandas.WritePandas.shutdown" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.Pandas.WritePandas.startup">
-<tt class="descname">startup</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Pandas.html#WritePandas.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Pandas.WritePandas.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.Pandas.WritePandas.write_dataframes">
-<tt class="descname">write_dataframes</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Pandas.html#WritePandas.write_dataframes"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Pandas.WritePandas.write_dataframes" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.Pandas.WritePandas.write_event">
-<tt class="descname">write_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/Pandas.html#WritePandas.write_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Pandas.WritePandas.write_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-</div>
 <div class="section" id="module-pax.plugins.io.Pickle">
 <span id="pax-plugins-io-pickle-module"></span><h2>pax.plugins.io.Pickle module<a class="headerlink" href="#module-pax.plugins.io.Pickle" title="Permalink to this headline">¶</a></h2>
 <p>Read/write event class from/to gzip-compressed pickle files.</p>
@@ -655,17 +718,6 @@ handling its subcollections recursively.</p>
 <div class="section" id="module-pax.plugins.io.RawWaveformDump">
 <span id="pax-plugins-io-rawwaveformdump-module"></span><h2>pax.plugins.io.RawWaveformDump module<a class="headerlink" href="#module-pax.plugins.io.RawWaveformDump" title="Permalink to this headline">¶</a></h2>
 <p>Dumps event waveforms to file using numpy.tofile</p>
-<dl class="class">
-<dt id="pax.plugins.io.RawWaveformDump.DumpPMTWaveformsToBinary">
-<em class="property">class </em><tt class="descclassname">pax.plugins.io.RawWaveformDump.</tt><tt class="descname">DumpPMTWaveformsToBinary</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/RawWaveformDump.html#DumpPMTWaveformsToBinary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.RawWaveformDump.DumpPMTWaveformsToBinary" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.RawWaveformDump.WaveformDumperBase" title="pax.plugins.io.RawWaveformDump.WaveformDumperBase"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.RawWaveformDump.WaveformDumperBase</span></tt></a></p>
-<dl class="method">
-<dt id="pax.plugins.io.RawWaveformDump.DumpPMTWaveformsToBinary.get_waveform_to_dump">
-<tt class="descname">get_waveform_to_dump</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/RawWaveformDump.html#DumpPMTWaveformsToBinary.get_waveform_to_dump"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.RawWaveformDump.DumpPMTWaveformsToBinary.get_waveform_to_dump" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
 <dl class="class">
 <dt id="pax.plugins.io.RawWaveformDump.DumpSumWaveformToBinary">
 <em class="property">class </em><tt class="descclassname">pax.plugins.io.RawWaveformDump.</tt><tt class="descname">DumpSumWaveformToBinary</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/io/RawWaveformDump.html#DumpSumWaveformToBinary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.RawWaveformDump.DumpSumWaveformToBinary" title="Permalink to this definition">¶</a></dt>
@@ -884,10 +936,10 @@ code for details.</p>
 <li><a class="reference internal" href="#">pax.plugins.io package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.Avro">pax.plugins.io.Avro module</a></li>
+<li><a class="reference internal" href="#module-pax.plugins.io.BSON">pax.plugins.io.BSON module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.BulkOutput">pax.plugins.io.BulkOutput module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.FolderIO">pax.plugins.io.FolderIO module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.MongoDB">pax.plugins.io.MongoDB module</a></li>
-<li><a class="reference internal" href="#module-pax.plugins.io.Pandas">pax.plugins.io.Pandas module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.Pickle">pax.plugins.io.Pickle module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.RawWaveformDump">pax.plugins.io.RawWaveformDump module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.WaveformSimulator">pax.plugins.io.WaveformSimulator module</a></li>
@@ -928,7 +980,7 @@ code for details.</p>
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 3.0.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

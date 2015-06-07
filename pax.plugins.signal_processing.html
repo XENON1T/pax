@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.signal_processing package &mdash; Processor for Analyzing XENON1T 2.1.0 documentation</title>
+    <title>pax.plugins.signal_processing package &mdash; Processor for Analyzing XENON1T 3.0.0 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.0',
+        VERSION:     '3.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 2.1.0 documentation" href="index.html" /> 
+    <link rel="top" title="Processor for Analyzing XENON1T 3.0.0 documentation" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -35,7 +35,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 3.0.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -199,6 +199,18 @@ Don&#8217;t forget to re-enable the &#64;jit &#8211; otherwise it will run quite
 
 </dd></dl>
 
+<dl class="attribute">
+<dt id="pax.plugins.signal_processing.HitFinder.find_intervals_above_threshold">
+<tt class="descclassname">pax.plugins.signal_processing.HitFinder.</tt><tt class="descname">find_intervals_above_threshold</tt><a class="reference internal" href="_modules/pax/plugins/signal_processing/HitFinder.html#find_intervals_above_threshold"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.HitFinder.find_intervals_above_threshold" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Fills result_buffer with l, r bounds of intervals in w &gt; low_threshold which exceed high_threshold somewhere</dt>
+<dd>result_buffer: numpy N*2 array of ints, will be filled by function.</dd>
+</dl>
+<p>Returns: number of intervals found
+Will stop search after raw_peaks found reached N (length of raw_peaks argument passed in).
+Boundary indices are inclusive, i.e. the right index is the last index which was still above low_threshold</p>
+</dd></dl>
+
 </div>
 <div class="section" id="module-pax.plugins.signal_processing">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pax.plugins.signal_processing" title="Permalink to this headline">¶</a></h2>
@@ -254,7 +266,7 @@ Don&#8217;t forget to re-enable the &#64;jit &#8211; otherwise it will run quite
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 3.0.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.signal_processing.HitFinder &mdash; Processor for Analyzing XENON1T 2.1.0 documentation</title>
+    <title>pax.plugins.signal_processing.HitFinder &mdash; Processor for Analyzing XENON1T 3.0.0 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '2.1.0',
+        VERSION:     '3.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 2.1.0 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 3.0.0 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" /> 
   </head>
   <body>
@@ -36,7 +36,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 3.0.0 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -101,7 +101,10 @@
         <span class="c"># -1 is a placeholder for values that should never be used</span>
         <span class="n">hits_buffer</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">max_hits_per_pulse</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
         <span class="n">argmaxes</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_hits_per_pulse</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
-        <span class="n">areas</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_hits_per_pulse</span><span class="p">)</span>
+        <span class="n">areas</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_hits_per_pulse</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+        <span class="n">centers</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_hits_per_pulse</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+
+        <span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;sample_duration&#39;</span><span class="p">]</span>
 
         <span class="k">for</span> <span class="n">pulse_i</span><span class="p">,</span> <span class="n">pulse</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">pulses</span><span class="p">):</span>
             <span class="n">start</span> <span class="o">=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">left</span>
@@ -161,9 +164,9 @@
             <span class="n">pulse</span><span class="o">.</span><span class="n">baseline</span> <span class="o">=</span> <span class="n">baseline</span>
             <span class="n">pulse</span><span class="o">.</span><span class="n">height</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">w</span><span class="p">)</span>    <span class="c"># Remember w was modified in-place by the numba hitfinder to do baselining</span>
 
-            <span class="c"># Compute area and max of each hit</span>
-            <span class="c"># Results stored in argmaxes, areas; declared outside loop, see above</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_peak_argmax_and_area</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">hits_found</span><span class="p">,</span> <span class="n">argmaxes</span><span class="p">,</span> <span class="n">areas</span><span class="p">)</span>
+            <span class="c"># Compute area, max, and center of each hit in numba</span>
+            <span class="c"># Results stored in argmaxes, areas, centers; declared outside loop, see above</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_compute_hit_properties</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">hits_found</span><span class="p">,</span> <span class="n">argmaxes</span><span class="p">,</span> <span class="n">areas</span><span class="p">,</span> <span class="n">centers</span><span class="p">)</span>
 
             <span class="c"># Store the found peaks in the datastructure</span>
             <span class="c"># Convert area, noise_sigma and height from adc counts -&gt; pe</span>
@@ -173,25 +176,38 @@
 
                 <span class="c"># Do sanity checks</span>
                 <span class="n">area</span> <span class="o">=</span> <span class="n">areas</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">adc_to_pe</span>
+                <span class="n">center</span> <span class="o">=</span> <span class="p">(</span><span class="n">centers</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">start</span> <span class="o">+</span> <span class="n">hit</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">*</span> <span class="n">dt</span>
                 <span class="n">height</span> <span class="o">=</span> <span class="n">w</span><span class="p">[</span><span class="n">hit</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">argmaxes</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span> <span class="o">*</span> <span class="n">adc_to_pe</span>
                 <span class="n">left</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">hit</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
                 <span class="n">right</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">hit</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
                 <span class="n">max_idx</span> <span class="o">=</span> <span class="n">start</span> <span class="o">+</span> <span class="n">hit</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">argmaxes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">left</span> <span class="o">&lt;=</span> <span class="n">max_idx</span> <span class="o">&lt;=</span> <span class="n">right</span><span class="p">)</span> <span class="ow">or</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_sigma</span> <span class="o">*</span> <span class="n">noise_sigma_pe</span> <span class="o">&lt;=</span> <span class="n">height</span> <span class="o">&lt;=</span> <span class="n">area</span><span class="p">):</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">left</span> <span class="o">&lt;=</span> <span class="n">max_idx</span> <span class="o">&lt;=</span> <span class="n">right</span><span class="p">)</span> \
+                   <span class="ow">or</span> <span class="ow">not</span> <span class="p">(</span><span class="n">left</span> <span class="o">&lt;=</span> <span class="n">center</span> <span class="o">/</span> <span class="n">dt</span> <span class="o">&lt;=</span> <span class="n">right</span><span class="p">)</span> \
+                   <span class="ow">or</span> <span class="ow">not</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_sigma</span> <span class="o">*</span> <span class="n">noise_sigma_pe</span> <span class="o">&lt;=</span> <span class="n">height</span> <span class="o">&lt;=</span> <span class="n">area</span><span class="p">):</span>
                     <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;You found a hitfinder bug!</span><span class="se">\n</span><span class="s">&quot;</span>
                                        <span class="s">&quot;Current hit </span><span class="si">%d</span><span class="s">-</span><span class="si">%d</span><span class="s">-</span><span class="si">%d</span><span class="s">, in event </span><span class="si">%s</span><span class="s">, channel </span><span class="si">%s</span><span class="s">, pulse </span><span class="si">%s</span><span class="s">.</span><span class="se">\n</span><span class="s">&quot;</span>
                                        <span class="s">&quot;Indices in pulse: </span><span class="si">%s</span><span class="s">-</span><span class="si">%s</span><span class="s">-</span><span class="si">%s</span><span class="s">. Pulse bounds: </span><span class="si">%d</span><span class="s">-</span><span class="si">%d</span><span class="s">.</span><span class="se">\n</span><span class="s">&quot;</span>
-                                       <span class="s">&quot;Height is </span><span class="si">%s</span><span class="s">, noise sigma is </span><span class="si">%s</span><span class="s">, dynamic threshold at </span><span class="si">%s</span><span class="s">; Area is </span><span class="si">%d</span><span class="s">.</span><span class="se">\n</span><span class="s">&quot;</span>
+                                       <span class="s">&quot;Center of gravity at </span><span class="si">%s</span><span class="s">.</span><span class="se">\n</span><span class="s">&quot;</span>
+                                       <span class="s">&quot;Height is </span><span class="si">%s</span><span class="s">, noise sigma is </span><span class="si">%s</span><span class="s">, threshold at </span><span class="si">%s</span><span class="s">.</span><span class="se">\n</span><span class="s">&quot;</span>
+                                       <span class="s">&quot;Area is </span><span class="si">%d</span><span class="s">.</span><span class="se">\n</span><span class="s">&quot;</span>
                                        <span class="s">&quot;Please file a bug report!&quot;</span> <span class="o">%</span> <span class="p">(</span>
                                            <span class="n">left</span><span class="p">,</span> <span class="n">max_idx</span><span class="p">,</span> <span class="n">right</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">event_number</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">pulse_i</span><span class="p">,</span>
                                            <span class="n">hit</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">hit</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">argmaxes</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">hit</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span>
-                                           <span class="n">height</span><span class="p">,</span> <span class="n">noise_sigma_pe</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_sigma</span> <span class="o">*</span> <span class="n">noise_sigma_pe</span><span class="p">,</span> <span class="n">area</span><span class="p">))</span>
+                                           <span class="n">center</span><span class="p">,</span>
+                                           <span class="n">height</span><span class="p">,</span> <span class="n">noise_sigma_pe</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_sigma</span> <span class="o">*</span> <span class="n">noise_sigma_pe</span><span class="p">,</span>
+                                           <span class="n">area</span><span class="p">))</span>
 
+                <span class="c"># Store the hit</span>
+                <span class="c"># int&#39;s need to be cast to avoid weird numpy types in our datastructure</span>
+                <span class="c"># Type checking in data_model takes care of this, but if someone ever turns off type checking</span>
+                <span class="c"># (e.g. because they want a x2 speed boost in loading data) I don&#39;t want them to get</span>
+                <span class="c"># strange BSON encoding errors (bson.errors.InvalidDocument: Cannot encode object: 4332)</span>
                 <span class="n">event</span><span class="o">.</span><span class="n">all_hits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">datastructure</span><span class="o">.</span><span class="n">Hit</span><span class="p">({</span>
                     <span class="s">&#39;channel&#39;</span><span class="p">:</span>             <span class="n">channel</span><span class="p">,</span>
-                    <span class="s">&#39;left&#39;</span><span class="p">:</span>                <span class="n">left</span><span class="p">,</span>
-                    <span class="s">&#39;index_of_maximum&#39;</span><span class="p">:</span>    <span class="n">max_idx</span><span class="p">,</span>
-                    <span class="s">&#39;right&#39;</span><span class="p">:</span>               <span class="n">right</span><span class="p">,</span>
+                    <span class="s">&#39;left&#39;</span><span class="p">:</span>                <span class="nb">int</span><span class="p">(</span><span class="n">left</span><span class="p">),</span>
+                    <span class="s">&#39;index_of_maximum&#39;</span><span class="p">:</span>    <span class="nb">int</span><span class="p">(</span><span class="n">max_idx</span><span class="p">),</span>
+                    <span class="s">&#39;center&#39;</span><span class="p">:</span>              <span class="n">center</span><span class="p">,</span>
+                    <span class="s">&#39;right&#39;</span><span class="p">:</span>               <span class="nb">int</span><span class="p">(</span><span class="n">right</span><span class="p">),</span>
                     <span class="s">&#39;area&#39;</span><span class="p">:</span>                <span class="n">area</span><span class="p">,</span>
                     <span class="s">&#39;height&#39;</span><span class="p">:</span>              <span class="n">height</span><span class="p">,</span>
                     <span class="s">&#39;noise_sigma&#39;</span><span class="p">:</span>         <span class="n">noise_sigma_pe</span><span class="p">,</span>
@@ -216,8 +232,11 @@
                         <span class="k">if</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">([</span><span class="n">event</span><span class="o">.</span><span class="n">all_hits</span><span class="p">[</span><span class="o">-</span><span class="p">(</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">)]</span><span class="o">.</span><span class="n">height</span> <span class="o">&lt;</span> <span class="mf">1.2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_sigma</span> <span class="o">*</span> <span class="n">noise_sigma_pe</span>
                                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hits_found</span><span class="p">))]):</span>
                             <span class="k">continue</span>
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">==</span> <span class="s">&#39;no peaks&#39;</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">==</span> <span class="s">&#39;no hits&#39;</span><span class="p">:</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">hits_found</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">continue</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">==</span> <span class="s">&#39;hits only&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">hits_found</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="k">continue</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">!=</span> <span class="s">&#39;always&#39;</span><span class="p">:</span>
@@ -231,11 +250,15 @@
             <span class="n">ax2</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s">&quot;pe / sample&quot;</span><span class="p">)</span>
 
             <span class="c"># Plot the signal and noise levels</span>
-            <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">drawstyle</span><span class="o">=</span><span class="s">&#39;steps&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">&#39;Data&#39;</span><span class="p">)</span>
+            <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">drawstyle</span><span class="o">=</span><span class="s">&#39;steps-mid&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">&#39;Data&#39;</span><span class="p">)</span>
             <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_sigma</span> <span class="o">*</span> <span class="n">noise_sigma</span><span class="p">,</span> <span class="s">&#39;--&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">&#39;Threshold&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">&#39;red&#39;</span><span class="p">)</span>
-            <span class="k">for</span> <span class="n">hit</span> <span class="ow">in</span> <span class="n">hits_found</span><span class="p">:</span>
-                <span class="n">ax1</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">hit</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">hit</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s">&#39;red&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
             <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">*</span> <span class="n">noise_sigma</span><span class="p">,</span> <span class="s">&#39;--&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">&#39;Noise level&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">&#39;gray&#39;</span><span class="p">)</span>
+            <span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">noise_sigma</span><span class="p">,</span> <span class="s">&#39;--&#39;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s">&#39;Boundary threshold&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">&#39;green&#39;</span><span class="p">)</span>
+
+            <span class="c"># Mark the hit ranges &amp; center of gravity point</span>
+            <span class="k">for</span> <span class="n">hit_i</span><span class="p">,</span> <span class="n">hit</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">hits_found</span><span class="p">):</span>
+                <span class="n">ax1</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">hit</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">hit</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">&#39;red&#39;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+                <span class="n">ax1</span><span class="o">.</span><span class="n">axvline</span><span class="p">([</span><span class="n">centers</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">hit</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">linestyle</span><span class="o">=</span><span class="s">&#39;:&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">&#39;gray&#39;</span><span class="p">)</span>
 
             <span class="c"># Make sure the y-scales match</span>
             <span class="n">ax2</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">ax1</span><span class="o">.</span><span class="n">get_ylim</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">adc_to_pe</span><span class="p">,</span> <span class="n">ax1</span><span class="o">.</span><span class="n">get_ylim</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">adc_to_pe</span><span class="p">)</span>
@@ -253,31 +276,42 @@
 
     <span class="c"># TODO: Needs a test!</span></div>
     <span class="nd">@staticmethod</span>
-    <span class="nd">@numba.jit</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">void</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:]),</span> <span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">_peak_argmax_and_area</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">raw_peaks</span><span class="p">,</span> <span class="n">argmaxes</span><span class="p">,</span> <span class="n">areas</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Finds the maximum index and area of peaks in w indicated by (left, right) bounds in raw_peaks.</span>
+    <span class="nd">@numba.jit</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">void</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:]),</span>
+               <span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_compute_hit_properties</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">raw_peaks</span><span class="p">,</span> <span class="n">argmaxes</span><span class="p">,</span> <span class="n">areas</span><span class="p">,</span> <span class="n">centers</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Finds the maximum index, area, and center of gravity of hits in w indicated by (l, r) bounds in raw_peaks.</span>
 <span class="sd">        Will fill up argmaxes and areas with result.</span>
-<span class="sd">            raw_peaks should be a numpy array of (left, right) bounds (inclusive)</span>
+<span class="sd">        raw_peaks should be a numpy array of (left, right) bounds (inclusive)</span>
+<span class="sd">        centers, argmaxes are returned in samples right of hit start -- you probably want to convert this</span>
 <span class="sd">        Returns nothing</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">peak_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">raw_peaks</span><span class="p">)):</span>
             <span class="n">current_max</span> <span class="o">=</span> <span class="o">-</span><span class="mf">999.9</span>
             <span class="n">current_argmax</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
             <span class="n">current_area</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">current_positive_area</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">current_center</span> <span class="o">=</span> <span class="mi">0</span>
             <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="n">raw_peaks</span><span class="p">[</span><span class="n">peak_i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]:</span><span class="n">raw_peaks</span><span class="p">[</span><span class="n">peak_i</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="mi">1</span><span class="p">]):</span>
                 <span class="k">if</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="n">current_max</span><span class="p">:</span>
                     <span class="n">current_max</span> <span class="o">=</span> <span class="n">x</span>
                     <span class="n">current_argmax</span> <span class="o">=</span> <span class="n">i</span>
                 <span class="n">current_area</span> <span class="o">+=</span> <span class="n">x</span>
+                <span class="c"># Only samples &gt; 0 contribute to weighing the center of mass</span>
+                <span class="c"># Of course, you won&#39;t see any samples &lt;= 0 if we set low_threshold_sigmas &gt; 0...</span>
+                <span class="c"># but quite probably we won&#39;t always do this</span>
+                <span class="k">if</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">current_positive_area</span> <span class="o">+=</span> <span class="n">x</span>
+                    <span class="n">current_center</span> <span class="o">+=</span> <span class="n">i</span> <span class="o">*</span> <span class="n">x</span>
             <span class="n">argmaxes</span><span class="p">[</span><span class="n">peak_i</span><span class="p">]</span> <span class="o">=</span> <span class="n">current_argmax</span>
             <span class="n">areas</span><span class="p">[</span><span class="n">peak_i</span><span class="p">]</span> <span class="o">=</span> <span class="n">current_area</span>
+            <span class="n">centers</span><span class="p">[</span><span class="n">peak_i</span><span class="p">]</span> <span class="o">=</span> <span class="n">current_center</span> <span class="o">/</span> <span class="n">current_positive_area</span>
 
     <span class="nd">@staticmethod</span>
     <span class="nd">@numba.jit</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">typeof</span><span class="p">((</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">))(</span>
                <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span>
                <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">[:,</span> <span class="p">:]),</span> <span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">_find_peaks</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">threshold_sigmas</span><span class="p">,</span> <span class="n">noise_sigma</span><span class="p">,</span> <span class="n">max_passes</span><span class="p">,</span> <span class="n">initial_baseline_samples</span><span class="p">,</span> <span class="n">hits_buffer</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Fills raw_peaks with left, right indices of raw_peaks &gt; bound_threshold which exceed threshold somewhere</span>
+        <span class="sd">&quot;&quot;&quot;Fills raw_peaks with left, right indices of raw_peaks &gt; 2 * noise which exceed threshold somewhere</span>
 <span class="sd">         raw_peaks: numpy () of [-1,-1] lists, will be filled by function.</span>
 <span class="sd">        BE CAREFUL -- Will modify w IN PLACE to do baseline correction</span>
 <span class="sd">        Returns: number of raw_peaks found, baseline, noise_sigma</span>
@@ -312,7 +346,7 @@
             <span class="n">max_idx</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
             <span class="n">current_candidate_interval_start</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
             <span class="n">threshold</span> <span class="o">=</span> <span class="n">noise_sigma</span> <span class="o">*</span> <span class="n">threshold_sigmas</span>
-            <span class="n">bound_threshold</span> <span class="o">=</span> <span class="n">noise_sigma</span>
+            <span class="n">bound_threshold</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">noise_sigma</span>
 
             <span class="c">##</span>
             <span class="c">#   Hit finding</span>
@@ -426,7 +460,66 @@
 
         <span class="c"># Return number of peaks found, baseline, noise sigma, and number of passes used</span>
         <span class="c"># Convert ints to float, if you keep it int, it will sometimes be int32, sometimes int64 =&gt; numba crashes</span>
-        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">n_peaks_found</span><span class="p">),</span> <span class="n">baseline</span><span class="p">,</span> <span class="n">noise_sigma</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">pass_number</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">n_peaks_found</span><span class="p">),</span> <span class="n">baseline</span><span class="p">,</span> <span class="n">noise_sigma</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="n">pass_number</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+
+
+<span class="c"># TODO: replace monstrous code above by nice code below</span>
+<span class="c"># TODO: And add back tests...</span>
+<span class="c"># TODO: Wait, int16 vs float64 waveforms.... aargh...</span></div>
+<span class="nd">@numba.jit</span><span class="p">((</span><span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">)(</span><span class="n">numba</span><span class="o">.</span><span class="n">int16</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">[:,</span> <span class="p">:]),</span> <span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<div class="viewcode-block" id="find_intervals_above_threshold"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.HitFinder.find_intervals_above_threshold">[docs]</a><span class="k">def</span> <span class="nf">find_intervals_above_threshold</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">high_threshold</span><span class="p">,</span> <span class="n">low_threshold</span><span class="p">,</span> <span class="n">result_buffer</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Fills result_buffer with l, r bounds of intervals in w &gt; low_threshold which exceed high_threshold somewhere</span>
+<span class="sd">        result_buffer: numpy N*2 array of ints, will be filled by function.</span>
+<span class="sd">    Returns: number of intervals found</span>
+<span class="sd">    Will stop search after raw_peaks found reached N (length of raw_peaks argument passed in).</span>
+<span class="sd">    Boundary indices are inclusive, i.e. the right index is the last index which was still above low_threshold</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">in_candidate_interval</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">current_interval_passed_test</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">current_interval</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">result_buffer_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">result_buffer</span><span class="p">)</span>
+    <span class="n">last_index_in_w</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">w</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">current_candidate_interval_start</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">w</span><span class="p">):</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">in_candidate_interval</span> <span class="ow">and</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="n">low_threshold</span><span class="p">:</span>
+            <span class="c"># Start of candidate interval</span>
+            <span class="n">in_candidate_interval</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="n">current_candidate_interval_start</span> <span class="o">=</span> <span class="n">i</span>
+
+        <span class="c"># This must be if, not else: an interval can cross high_threshold in start sample</span>
+        <span class="k">if</span> <span class="n">in_candidate_interval</span><span class="p">:</span>
+
+            <span class="k">if</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="n">high_threshold</span><span class="p">:</span>
+                <span class="n">current_interval_passed_test</span> <span class="o">=</span> <span class="bp">True</span>
+
+            <span class="k">if</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">low_threshold</span> <span class="ow">or</span> <span class="n">i</span> <span class="o">==</span> <span class="n">last_index_in_w</span><span class="p">:</span>
+
+                <span class="c"># End of candidate interval</span>
+                <span class="n">in_candidate_interval</span> <span class="o">=</span> <span class="bp">False</span>
+
+                <span class="k">if</span> <span class="n">current_interval_passed_test</span><span class="p">:</span>
+                    <span class="c"># We&#39;ve found a new interval!</span>
+
+                    <span class="c"># The interval ended just before this index</span>
+                    <span class="c"># unless, of course, we ended ONLY BECAUSE this is the last index</span>
+                    <span class="n">itv_end</span> <span class="o">=</span> <span class="n">i</span><span class="o">-</span><span class="mi">1</span> <span class="k">if</span> <span class="n">x</span> <span class="o">&lt;</span> <span class="n">low_threshold</span> <span class="k">else</span> <span class="n">i</span>
+
+                    <span class="c"># Add to result buffer</span>
+                    <span class="n">result_buffer</span><span class="p">[</span><span class="n">current_interval</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">current_candidate_interval_start</span>
+                    <span class="n">result_buffer</span><span class="p">[</span><span class="n">current_interval</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">itv_end</span>
+
+                    <span class="c"># Prepare for the next interval</span>
+                    <span class="n">current_interval</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">current_interval_passed_test</span> <span class="o">=</span> <span class="bp">False</span>
+
+                    <span class="k">if</span> <span class="n">current_interval</span> <span class="o">==</span> <span class="n">result_buffer_size</span><span class="p">:</span>
+                        <span class="k">break</span>
+
+    <span class="c"># Return number of peaks found</span>
+    <span class="c"># May crash numba here: not sure if it is int32 or int64...</span>
+    <span class="k">return</span> <span class="n">current_interval</span></div>
 </pre></div>
 
           </div>
@@ -460,7 +553,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 3.0.0 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>

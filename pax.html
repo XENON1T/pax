@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax package &mdash; Processor for Analyzing XENON1T 2.1.0 documentation</title>
+    <title>pax package &mdash; Processor for Analyzing XENON1T 3.0.0 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '2.1.0',
+        VERSION:     '3.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 2.1.0 documentation" href="index.html" /> 
+    <link rel="top" title="Processor for Analyzing XENON1T 3.0.0 documentation" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -35,7 +35,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 3.0.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -67,10 +67,10 @@
 <li class="toctree-l3"><a class="reference internal" href="pax.plugins.io.html">pax.plugins.io package</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#submodules">Submodules</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.Avro">pax.plugins.io.Avro module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.BSON">pax.plugins.io.BSON module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.BulkOutput">pax.plugins.io.BulkOutput module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.FolderIO">pax.plugins.io.FolderIO module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.MongoDB">pax.plugins.io.MongoDB module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.Pandas">pax.plugins.io.Pandas module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.Pickle">pax.plugins.io.Pickle module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.RawWaveformDump">pax.plugins.io.RawWaveformDump module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.WaveformSimulator">pax.plugins.io.WaveformSimulator module</a></li>
@@ -96,8 +96,6 @@
 </li>
 </ul>
 </li>
-<li class="toctree-l2"><a class="reference internal" href="pax.plugins.html#submodules">Submodules</a></li>
-<li class="toctree-l2"><a class="reference internal" href="pax.plugins.html#module-pax.plugins.XerawdpImitation">pax.plugins.XerawdpImitation module</a></li>
 <li class="toctree-l2"><a class="reference internal" href="pax.plugins.html#module-pax.plugins">Module contents</a></li>
 </ul>
 </li>
@@ -109,7 +107,7 @@
 </div>
 <div class="section" id="module-pax.core">
 <span id="pax-core-module"></span><h2>pax.core module<a class="headerlink" href="#module-pax.core" title="Permalink to this headline">¶</a></h2>
-<p>The backbone of pax</p>
+<p>The backbone of pax - the Processor class</p>
 <dl class="class">
 <dt id="pax.core.Processor">
 <em class="property">class </em><tt class="descclassname">pax.core.</tt><tt class="descname">Processor</tt><big>(</big><em>config_names=()</em>, <em>config_paths=()</em>, <em>config_string=None</em>, <em>config_dict=None</em>, <em>just_testing=False</em><big>)</big><a class="reference internal" href="_modules/pax/core.html#Processor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor" title="Permalink to this definition">¶</a></dt>
@@ -117,6 +115,11 @@
 <dl class="attribute">
 <dt id="pax.core.Processor.fallback_configuration">
 <tt class="descname">fallback_configuration</tt><em class="property"> = 'XENON100'</em><a class="headerlink" href="#pax.core.Processor.fallback_configuration" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.core.Processor.get_metadata">
+<tt class="descname">get_metadata</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/core.html#Processor.get_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor.get_metadata" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -129,7 +132,7 @@
 <dt id="pax.core.Processor.get_plugin_search_paths">
 <em class="property">static </em><tt class="descname">get_plugin_search_paths</tt><big>(</big><em>extra_paths=None</em><big>)</big><a class="reference internal" href="_modules/pax/core.html#Processor.get_plugin_search_paths"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor.get_plugin_search_paths" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns paths where we should search for plugins
-Search for plugins in  ./plugins, PAX_DIR/plugins, any directories in config[&#8216;plugin_paths&#8217;]
+Search for plugins in  ., ./plugins, utils.PAX_DIR/plugins, any directories in config[&#8216;plugin_paths&#8217;]
 Search in all subdirs of the above, except for __pycache__ dirs</p>
 </dd></dl>
 
@@ -171,18 +174,11 @@ If you do, you get in trouble if you start a new Processor instance that tries t
 <dd><p>Sets up logging. Must have loaded config first.</p>
 </dd></dl>
 
-</dd></dl>
+<dl class="method">
+<dt id="pax.core.Processor.stop">
+<tt class="descname">stop</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/core.html#Processor.stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor.stop" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
-<dl class="function">
-<dt id="pax.core.data_file_name">
-<tt class="descclassname">pax.core.</tt><tt class="descname">data_file_name</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/pax/core.html#data_file_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.data_file_name" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns filename if a file exists there, else returns PAX_DIR/data/filename</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pax.core.get_named_configuration_options">
-<tt class="descclassname">pax.core.</tt><tt class="descname">get_named_configuration_options</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/core.html#get_named_configuration_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.get_named_configuration_options" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the names of all working named configurations</p>
 </dd></dl>
 
 </div>
@@ -190,6 +186,12 @@ If you do, you get in trouble if you start a new Processor instance that tries t
 <h2>pax.data_model module<a class="headerlink" href="#pax-data-model-module" title="Permalink to this headline">¶</a></h2>
 <span class="target" id="module-pax.data_model"></span><p>Python skeleton for data structure
 Extends python object to do a few tricks</p>
+<dl class="class">
+<dt id="pax.data_model.ListField">
+<em class="property">class </em><tt class="descclassname">pax.data_model.</tt><tt class="descname">ListField</tt><big>(</big><em>element_type</em><big>)</big><a class="reference internal" href="_modules/pax/data_model.html#ListField"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.data_model.ListField" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
+</dd></dl>
+
 <dl class="class">
 <dt id="pax.data_model.Model">
 <em class="property">class </em><tt class="descclassname">pax.data_model.</tt><tt class="descname">Model</tt><big>(</big><em>kwargs_dict=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/pax/data_model.html#Model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.data_model.Model" title="Permalink to this definition">¶</a></dt>
@@ -207,14 +209,29 @@ Features:</p>
 </dl>
 </li>
 <li><p class="first">safely declare attributes defaulting to empty lists ([])
-in the class declaration. some_field = (SomeClass,) in class declaration
-means you promise to fill the list  with SomeClass instances.
-TODO: this isn&#8217;t actually checked, even in StrictModel</p>
+in the class declaration. some_field = ListField(SomeType,) in class declaration
+means you promise to fill the list with SomeType instances.
+NB: This is checked on initialization (even for Model) not for appending (even for StrictModel)!</p>
+<blockquote>
+<div><p>(we&#8217;d have to mess with / override list for that)</p>
+</div></blockquote>
+</li>
+<li><p class="first">recursive initializiation of subclasses</p>
 </li>
 <li><p class="first">dump as dictionary and JSON</p>
 </li>
 </ul>
 </div></blockquote>
+<dl class="classmethod">
+<dt id="pax.data_model.Model.from_bson">
+<em class="property">classmethod </em><tt class="descname">from_bson</tt><big>(</big><em>x</em><big>)</big><a class="reference internal" href="_modules/pax/data_model.html#Model.from_bson"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.data_model.Model.from_bson" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="classmethod">
+<dt id="pax.data_model.Model.from_json">
+<em class="property">classmethod </em><tt class="descname">from_json</tt><big>(</big><em>x</em><big>)</big><a class="reference internal" href="_modules/pax/data_model.html#Model.from_json"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.data_model.Model.from_json" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="method">
 <dt id="pax.data_model.Model.get_fields_data">
 <tt class="descname">get_fields_data</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/data_model.html#Model.get_fields_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.data_model.Model.get_fields_data" title="Permalink to this definition">¶</a></dt>
@@ -223,18 +240,23 @@ Returns keys in lexical order</p>
 </dd></dl>
 
 <dl class="classmethod">
-<dt id="pax.data_model.Model.get_list_field_names">
-<em class="property">classmethod </em><tt class="descname">get_list_field_names</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/data_model.html#Model.get_list_field_names"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.data_model.Model.get_list_field_names" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.data_model.Model.get_list_field_info">
+<em class="property">classmethod </em><tt class="descname">get_list_field_info</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/data_model.html#Model.get_list_field_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.data_model.Model.get_list_field_info" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.data_model.Model.to_bson">
+<tt class="descname">to_bson</tt><big>(</big><em>fields_to_ignore=None</em><big>)</big><a class="reference internal" href="_modules/pax/data_model.html#Model.to_bson"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.data_model.Model.to_bson" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="pax.data_model.Model.to_dict">
-<tt class="descname">to_dict</tt><big>(</big><em>json_compatible=False</em><big>)</big><a class="reference internal" href="_modules/pax/data_model.html#Model.to_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.data_model.Model.to_dict" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">to_dict</tt><big>(</big><em>convert_numpy_arrays_to=None</em>, <em>fields_to_ignore=None</em><big>)</big><a class="reference internal" href="_modules/pax/data_model.html#Model.to_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.data_model.Model.to_dict" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="pax.data_model.Model.to_json">
-<tt class="descname">to_json</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/data_model.html#Model.to_json"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.data_model.Model.to_json" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">to_json</tt><big>(</big><em>fields_to_ignore=None</em><big>)</big><a class="reference internal" href="_modules/pax/data_model.html#Model.to_json"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.data_model.Model.to_json" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -266,20 +288,32 @@ releases.  Patch releases cannot modify this.</p>
 <dl class="method">
 <dt id="pax.datastructure.Event.S1s">
 <tt class="descname">S1s</tt><big>(</big><em>detector='tpc'</em>, <em>sort_key='area'</em>, <em>reverse=True</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.S1s"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.S1s" title="Permalink to this definition">¶</a></dt>
-<dd><p>List of S1 (scintillation) signals</p>
-<p>Returns an <a class="reference internal" href="#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a> class.</p>
+<dd><p>List of S1 (scintillation) signals in this event</p>
+<dl class="docutils">
+<dt>Returns a list of <a class="reference internal" href="#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a> objects</dt>
+<dd>whose type is &#8216;s1&#8217;, and
+who are in the detector specified by the &#8216;detector&#8217; argument (unless detector=&#8217;all&#8217;)</dd>
+</dl>
+<p>The returned list is sorted DESCENDING (i.e. reversed!) by the key sort_key (default area)
+unless you pass reverse=False, then it is ascending.</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="pax.datastructure.Event.S2s">
 <tt class="descname">S2s</tt><big>(</big><em>detector='tpc'</em>, <em>sort_key='area'</em>, <em>reverse=True</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.S2s"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.S2s" title="Permalink to this definition">¶</a></dt>
-<dd><p>List of S2 (ionization) signals</p>
-<p>Returns an <a class="reference internal" href="#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a> class.</p>
+<dd><p>List of S2 (ionization) signals in this event</p>
+<dl class="docutils">
+<dt>Returns a list of <a class="reference internal" href="#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a> objects</dt>
+<dd>whose type is &#8216;s2&#8217;, and
+who are in the detector specified by the &#8216;detector&#8217; argument (unless detector=&#8217;all&#8217;)</dd>
+</dl>
+<p>The returned list is sorted DESCENDING (i.e. reversed!) by the key sort_key (default area)
+unless you pass reverse=False, then it is ascending.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.all_hits">
-<tt class="descname">all_hits</tt><em class="property"> = (&lt;class 'pax.datastructure.Hit'&gt;,)</em><a class="headerlink" href="#pax.datastructure.Event.all_hits" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">all_hits</tt><em class="property"> = &lt;pax.data_model.ListField object at 0x104365518&gt;</em><a class="headerlink" href="#pax.datastructure.Event.all_hits" title="Permalink to this definition">¶</a></dt>
 <dd><p>Temporary list of hits &#8211; will be shipped off to peaks later</p>
 </dd></dl>
 
@@ -308,13 +342,15 @@ releases.  Patch releases cannot modify this.</p>
 <dl class="method">
 <dt id="pax.datastructure.Event.get_sum_waveform">
 <tt class="descname">get_sum_waveform</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.get_sum_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.get_sum_waveform" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get waveform for name</p>
+<dd><p>Get sum waveform object by name
+Deprecated &#8211; for Xerawdp matching only</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="pax.datastructure.Event.get_sum_waveform_names">
 <tt class="descname">get_sum_waveform_names</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.get_sum_waveform_names"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.get_sum_waveform_names" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get list of the names of waveforms</p>
+<dd><p>Get list of the names of sum waveform objects
+Deprecated &#8211; for Xerawdp matching only</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -326,7 +362,14 @@ releases.  Patch releases cannot modify this.</p>
 <dl class="method">
 <dt id="pax.datastructure.Event.length">
 <tt class="descname">length</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.length"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.length" title="Permalink to this definition">¶</a></dt>
-<dd><p>Number of samples for the sum waveform</p>
+<dd><p>Number of samples in the event</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Event.n_channels">
+<tt class="descname">n_channels</tt><em class="property"> = -99999</em><a class="headerlink" href="#pax.datastructure.Event.n_channels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of channels in the event
+Has to be the same as n_channels in config, provided here for deserialization ease</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -343,14 +386,14 @@ releases.  Patch releases cannot modify this.</p>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.peaks">
-<tt class="descname">peaks</tt><em class="property"> = (&lt;class 'pax.datastructure.Peak'&gt;,)</em><a class="headerlink" href="#pax.datastructure.Event.peaks" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">peaks</tt><em class="property"> = &lt;pax.data_model.ListField object at 0x1043654e0&gt;</em><a class="headerlink" href="#pax.datastructure.Event.peaks" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of peaks</p>
 <p>Returns a list of <a class="reference internal" href="#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a> classes.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.pulses">
-<tt class="descname">pulses</tt><em class="property"> = (&lt;class 'pax.datastructure.Pulse'&gt;,)</em><a class="headerlink" href="#pax.datastructure.Event.pulses" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">pulses</tt><em class="property"> = &lt;pax.data_model.ListField object at 0x104af03c8&gt;</em><a class="headerlink" href="#pax.datastructure.Event.pulses" title="Permalink to this definition">¶</a></dt>
 <dd><p>A python list of all pulses in the event (containing instances of the Pulse class)
 An pulse holds a stream of samples in one channel, as provided by the digitizer.</p>
 </dd></dl>
@@ -384,42 +427,17 @@ in &#8216;start_time&#8217;.</p>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.sum_waveforms">
-<tt class="descname">sum_waveforms</tt><em class="property"> = (&lt;class 'pax.datastructure.SumWaveform'&gt;,)</em><a class="headerlink" href="#pax.datastructure.Event.sum_waveforms" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">sum_waveforms</tt><em class="property"> = &lt;pax.data_model.ListField object at 0x104365048&gt;</em><a class="headerlink" href="#pax.datastructure.Event.sum_waveforms" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a list of sum waveforms</p>
 <p>Returns an <a class="reference internal" href="#pax.datastructure.SumWaveform" title="pax.datastructure.SumWaveform"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.SumWaveform</span></tt></a> class.</p>
 </dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Event.user_float_0">
-<tt class="descname">user_float_0</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Event.user_float_0" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Event.user_float_1">
-<tt class="descname">user_float_1</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Event.user_float_1" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Event.user_float_2">
-<tt class="descname">user_float_2</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Event.user_float_2" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Event.user_float_3">
-<tt class="descname">user_float_3</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Event.user_float_3" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Event.user_float_4">
-<tt class="descname">user_float_4</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Event.user_float_4" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
 
 </dd></dl>
 
 <dl class="class">
 <dt id="pax.datastructure.Hit">
 <em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Hit</tt><big>(</big><em>kwargs_dict=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Hit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Hit" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.data_model.Model" title="pax.data_model.Model"><tt class="xref py py-class docutils literal"><span class="pre">pax.data_model.Model</span></tt></a></p>
+<dd><p>Bases: <a class="reference internal" href="#pax.data_model.StrictModel" title="pax.data_model.StrictModel"><tt class="xref py py-class docutils literal"><span class="pre">pax.data_model.StrictModel</span></tt></a></p>
 <p>Peaks found in individual channels</p>
 <p>These are be clustered into ordinary peaks later. This is commonly
 called a &#8216;hit&#8217; in particle physics detectors.</p>
@@ -427,6 +445,12 @@ called a &#8216;hit&#8217; in particle physics detectors.</p>
 <dt id="pax.datastructure.Hit.area">
 <tt class="descname">area</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Hit.area" title="Permalink to this definition">¶</a></dt>
 <dd><p>Area of the peak in photoelectrons</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Hit.center">
+<tt class="descname">center</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Hit.center" title="Permalink to this definition">¶</a></dt>
+<dd><p>Time (since start of event in ns) of hit&#8217;s center of gravity</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -560,7 +584,7 @@ In new pax, is height of highest hit</p>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.hits">
-<tt class="descname">hits</tt><em class="property"> = (&lt;class 'pax.datastructure.Hit'&gt;,)</em><a class="headerlink" href="#pax.datastructure.Peak.hits" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">hits</tt><em class="property"> = &lt;pax.data_model.ListField object at 0x1049f9a90&gt;</em><a class="headerlink" href="#pax.datastructure.Peak.hits" title="Permalink to this definition">¶</a></dt>
 <dd><p>Peaks in individual channels that make up this peak</p>
 </dd></dl>
 
@@ -613,7 +637,7 @@ In new pax, is height of highest hit</p>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.reconstructed_positions">
-<tt class="descname">reconstructed_positions</tt><em class="property"> = (&lt;class 'pax.datastructure.ReconstructedPosition'&gt;,)</em><a class="headerlink" href="#pax.datastructure.Peak.reconstructed_positions" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">reconstructed_positions</tt><em class="property"> = &lt;pax.data_model.ListField object at 0x1043656a0&gt;</em><a class="headerlink" href="#pax.datastructure.Peak.reconstructed_positions" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of reconstructed positions (instances of <a class="reference internal" href="#pax.datastructure.ReconstructedPosition" title="pax.datastructure.ReconstructedPosition"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.ReconstructedPosition</span></tt></a>)</p>
 </dd></dl>
 
@@ -807,12 +831,19 @@ starts at zero and is an integere because it&#8217;s an index.</p>
 </div>
 <div class="section" id="module-pax.formats">
 <span id="pax-formats-module"></span><h2>pax.formats module<a class="headerlink" href="#module-pax.formats" title="Permalink to this headline">¶</a></h2>
-<p>Formats that pax can read and write</p>
-<p>Here are the definitions of how to serialize our data structure to various formats.  Both
-read and write routines are required.</p>
+<p>Input/Output code1 for <em>processed</em> data</p>
+<p>Here are the definitions of how to serialize our data structure to and from various formats.
+Please be careful when editing this file:</p>
+<blockquote>
+<div><ul class="simple">
+<li>Do not add any dependencies (e.g. imports at head of file without try-except), this file has to stay import-able
+even if not all the python modules for all the formats are installed.</li>
+<li>Do not use python3-specific syntax, this file should be importable by python2 applications.</li>
+</ul>
+</div></blockquote>
 <dl class="class">
 <dt id="pax.formats.BulkOutputFormat">
-<em class="property">class </em><tt class="descclassname">pax.formats.</tt><tt class="descname">BulkOutputFormat</tt><big>(</big><em>log=&lt;logging.Logger object at 0x10b027f98&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#BulkOutputFormat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.BulkOutputFormat" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.formats.</tt><tt class="descname">BulkOutputFormat</tt><big>(</big><em>log=&lt;logging.Logger object at 0x1072c59e8&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#BulkOutputFormat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.BulkOutputFormat" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <tt class="xref py py-class docutils literal"><span class="pre">builtins.object</span></tt></p>
 <p>Base class for bulk output formats</p>
 <dl class="method">
@@ -821,13 +852,13 @@ read and write routines are required.</p>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="pax.formats.BulkOutputFormat.file_extension">
-<tt class="descname">file_extension</tt><em class="property"> = 'DIRECTORY'</em><a class="headerlink" href="#pax.formats.BulkOutputFormat.file_extension" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.formats.BulkOutputFormat.data_types_present">
+<tt class="descname">data_types_present</tt><a class="reference internal" href="_modules/pax/formats.html#BulkOutputFormat.data_types_present"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.BulkOutputFormat.data_types_present" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="method">
-<dt id="pax.formats.BulkOutputFormat.get_number_of_events">
-<tt class="descname">get_number_of_events</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/formats.html#BulkOutputFormat.get_number_of_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.BulkOutputFormat.get_number_of_events" title="Permalink to this definition">¶</a></dt>
+<dl class="attribute">
+<dt id="pax.formats.BulkOutputFormat.file_extension">
+<tt class="descname">file_extension</tt><em class="property"> = 'DIRECTORY'</em><a class="headerlink" href="#pax.formats.BulkOutputFormat.file_extension" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -874,11 +905,16 @@ read and write routines are required.</p>
 
 <dl class="class">
 <dt id="pax.formats.HDF5Dump">
-<em class="property">class </em><tt class="descclassname">pax.formats.</tt><tt class="descname">HDF5Dump</tt><big>(</big><em>log=&lt;logging.Logger object at 0x10b027f98&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#HDF5Dump"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.HDF5Dump" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.formats.</tt><tt class="descname">HDF5Dump</tt><big>(</big><em>log=&lt;logging.Logger object at 0x1072c59e8&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#HDF5Dump"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.HDF5Dump" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.formats.BulkOutputFormat" title="pax.formats.BulkOutputFormat"><tt class="xref py py-class docutils literal"><span class="pre">pax.formats.BulkOutputFormat</span></tt></a></p>
 <dl class="method">
 <dt id="pax.formats.HDF5Dump.close">
 <tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/formats.html#HDF5Dump.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.HDF5Dump.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pax.formats.HDF5Dump.data_types_present">
+<tt class="descname">data_types_present</tt><a class="reference internal" href="_modules/pax/formats.html#HDF5Dump.data_types_present"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.HDF5Dump.data_types_present" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -925,11 +961,16 @@ read and write routines are required.</p>
 
 <dl class="class">
 <dt id="pax.formats.NumpyDump">
-<em class="property">class </em><tt class="descclassname">pax.formats.</tt><tt class="descname">NumpyDump</tt><big>(</big><em>log=&lt;logging.Logger object at 0x10b027f98&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#NumpyDump"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.NumpyDump" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.formats.</tt><tt class="descname">NumpyDump</tt><big>(</big><em>log=&lt;logging.Logger object at 0x1072c59e8&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#NumpyDump"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.NumpyDump" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.formats.BulkOutputFormat" title="pax.formats.BulkOutputFormat"><tt class="xref py py-class docutils literal"><span class="pre">pax.formats.BulkOutputFormat</span></tt></a></p>
 <dl class="method">
 <dt id="pax.formats.NumpyDump.close">
 <tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/formats.html#NumpyDump.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.NumpyDump.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pax.formats.NumpyDump.data_types_present">
+<tt class="descname">data_types_present</tt><a class="reference internal" href="_modules/pax/formats.html#NumpyDump.data_types_present"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.NumpyDump.data_types_present" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -976,7 +1017,7 @@ read and write routines are required.</p>
 
 <dl class="class">
 <dt id="pax.formats.PandasCSV">
-<em class="property">class </em><tt class="descclassname">pax.formats.</tt><tt class="descname">PandasCSV</tt><big>(</big><em>log=&lt;logging.Logger object at 0x10b027f98&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#PandasCSV"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.PandasCSV" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.formats.</tt><tt class="descname">PandasCSV</tt><big>(</big><em>log=&lt;logging.Logger object at 0x1072c59e8&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#PandasCSV"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.PandasCSV" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.formats.PandasFormat" title="pax.formats.PandasFormat"><tt class="xref py py-class docutils literal"><span class="pre">pax.formats.PandasFormat</span></tt></a></p>
 <dl class="attribute">
 <dt id="pax.formats.PandasCSV.pandas_format_key">
@@ -987,16 +1028,21 @@ read and write routines are required.</p>
 
 <dl class="class">
 <dt id="pax.formats.PandasFormat">
-<em class="property">class </em><tt class="descclassname">pax.formats.</tt><tt class="descname">PandasFormat</tt><big>(</big><em>log=&lt;logging.Logger object at 0x10b027f98&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#PandasFormat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.PandasFormat" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.formats.</tt><tt class="descname">PandasFormat</tt><big>(</big><em>log=&lt;logging.Logger object at 0x1072c59e8&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#PandasFormat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.PandasFormat" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.formats.BulkOutputFormat" title="pax.formats.BulkOutputFormat"><tt class="xref py py-class docutils literal"><span class="pre">pax.formats.BulkOutputFormat</span></tt></a></p>
+<dl class="method">
+<dt id="pax.formats.PandasFormat.open">
+<tt class="descname">open</tt><big>(</big><em>name</em>, <em>mode</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#PandasFormat.open"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.PandasFormat.open" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 <dl class="attribute">
 <dt id="pax.formats.PandasFormat.pandas_format_key">
 <tt class="descname">pandas_format_key</tt><em class="property"> = None</em><a class="headerlink" href="#pax.formats.PandasFormat.pandas_format_key" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
-<dt id="pax.formats.PandasFormat.prefers_python_strings">
-<tt class="descname">prefers_python_strings</tt><em class="property"> = True</em><a class="headerlink" href="#pax.formats.PandasFormat.prefers_python_strings" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.formats.PandasFormat.supports_array_fields">
+<tt class="descname">supports_array_fields</tt><em class="property"> = False</em><a class="headerlink" href="#pax.formats.PandasFormat.supports_array_fields" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -1013,11 +1059,16 @@ read and write routines are required.</p>
 
 <dl class="class">
 <dt id="pax.formats.PandasHDF5">
-<em class="property">class </em><tt class="descclassname">pax.formats.</tt><tt class="descname">PandasHDF5</tt><big>(</big><em>log=&lt;logging.Logger object at 0x10b027f98&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#PandasHDF5"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.PandasHDF5" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.formats.</tt><tt class="descname">PandasHDF5</tt><big>(</big><em>log=&lt;logging.Logger object at 0x1072c59e8&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#PandasHDF5"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.PandasHDF5" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.formats.PandasFormat" title="pax.formats.PandasFormat"><tt class="xref py py-class docutils literal"><span class="pre">pax.formats.PandasFormat</span></tt></a></p>
 <dl class="method">
 <dt id="pax.formats.PandasHDF5.close">
 <tt class="descname">close</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/formats.html#PandasHDF5.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.PandasHDF5.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pax.formats.PandasHDF5.data_types_present">
+<tt class="descname">data_types_present</tt><a class="reference internal" href="_modules/pax/formats.html#PandasHDF5.data_types_present"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.PandasHDF5.data_types_present" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -1033,6 +1084,11 @@ read and write routines are required.</p>
 <dl class="method">
 <dt id="pax.formats.PandasHDF5.open">
 <tt class="descname">open</tt><big>(</big><em>name</em>, <em>mode</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#PandasHDF5.open"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.PandasHDF5.open" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pax.formats.PandasHDF5.prefers_python_strings">
+<tt class="descname">prefers_python_strings</tt><em class="property"> = True</em><a class="headerlink" href="#pax.formats.PandasHDF5.prefers_python_strings" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -1069,7 +1125,7 @@ read and write routines are required.</p>
 
 <dl class="class">
 <dt id="pax.formats.PandasHTML">
-<em class="property">class </em><tt class="descclassname">pax.formats.</tt><tt class="descname">PandasHTML</tt><big>(</big><em>log=&lt;logging.Logger object at 0x10b027f98&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#PandasHTML"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.PandasHTML" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.formats.</tt><tt class="descname">PandasHTML</tt><big>(</big><em>log=&lt;logging.Logger object at 0x1072c59e8&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#PandasHTML"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.PandasHTML" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.formats.PandasFormat" title="pax.formats.PandasFormat"><tt class="xref py py-class docutils literal"><span class="pre">pax.formats.PandasFormat</span></tt></a></p>
 <dl class="attribute">
 <dt id="pax.formats.PandasHTML.pandas_format_key">
@@ -1080,7 +1136,7 @@ read and write routines are required.</p>
 
 <dl class="class">
 <dt id="pax.formats.PandasJSON">
-<em class="property">class </em><tt class="descclassname">pax.formats.</tt><tt class="descname">PandasJSON</tt><big>(</big><em>log=&lt;logging.Logger object at 0x10b027f98&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#PandasJSON"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.PandasJSON" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><tt class="descclassname">pax.formats.</tt><tt class="descname">PandasJSON</tt><big>(</big><em>log=&lt;logging.Logger object at 0x1072c59e8&gt;</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#PandasJSON"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.PandasJSON" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.formats.PandasFormat" title="pax.formats.PandasFormat"><tt class="xref py py-class docutils literal"><span class="pre">pax.formats.PandasFormat</span></tt></a></p>
 <dl class="attribute">
 <dt id="pax.formats.PandasJSON.pandas_format_key">
@@ -1106,13 +1162,38 @@ This is</p>
 <dd></dd></dl>
 
 <dl class="attribute">
+<dt id="pax.formats.ROOTDump.data_types_present">
+<tt class="descname">data_types_present</tt><a class="reference internal" href="_modules/pax/formats.html#ROOTDump.data_types_present"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.ROOTDump.data_types_present" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
 <dt id="pax.formats.ROOTDump.file_extension">
 <tt class="descname">file_extension</tt><em class="property"> = 'root'</em><a class="headerlink" href="#pax.formats.ROOTDump.file_extension" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
+<dt id="pax.formats.ROOTDump.n_in_data">
+<tt class="descname">n_in_data</tt><big>(</big><em>df_name</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#ROOTDump.n_in_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.ROOTDump.n_in_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pax.formats.ROOTDump.numpy_type">
+<tt class="descname">numpy_type</tt><em class="property"> = {'C': dtype('O'), 'D': &lt;class 'numpy.float64'&gt;, 'L': &lt;class 'numpy.int64'&gt;, 'I': &lt;class 'numpy.int32'&gt;, 'F': &lt;class 'numpy.float32'&gt;, 'O': &lt;class 'bool'&gt;}</em><a class="headerlink" href="#pax.formats.ROOTDump.numpy_type" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="pax.formats.ROOTDump.open">
 <tt class="descname">open</tt><big>(</big><em>name</em>, <em>mode</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#ROOTDump.open"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.ROOTDump.open" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.formats.ROOTDump.read_data">
+<tt class="descname">read_data</tt><big>(</big><em>df_name</em><big>)</big><a class="reference internal" href="_modules/pax/formats.html#ROOTDump.read_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.ROOTDump.read_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pax.formats.ROOTDump.root_type">
+<tt class="descname">root_type</tt><em class="property"> = {'float32': '/F', 'S': '/C', 'int64': '/L', 'bool': '/O', 'int32': '/I', 'float64': '/D'}</em><a class="headerlink" href="#pax.formats.ROOTDump.root_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -1122,7 +1203,7 @@ This is</p>
 
 <dl class="attribute">
 <dt id="pax.formats.ROOTDump.supports_read_back">
-<tt class="descname">supports_read_back</tt><em class="property"> = False</em><a class="headerlink" href="#pax.formats.ROOTDump.supports_read_back" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">supports_read_back</tt><em class="property"> = True</em><a class="headerlink" href="#pax.formats.ROOTDump.supports_read_back" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -1330,7 +1411,9 @@ unit_name(ns,&#8217;s&#8217;) will give &#8216;ns&#8217;</p>
 </div>
 <div class="section" id="module-pax.utils">
 <span id="pax-utils-module"></span><h2>pax.utils module<a class="headerlink" href="#module-pax.utils" title="Permalink to this headline">¶</a></h2>
-<p>Utilities for peakfinders etc.</p>
+<p>Helper routines needed in pax</p>
+<p>Please only put stuff here that you <em>really</em> can&#8217;t find any other place for!
+e.g. a list clustering routine that isn&#8217;t in some standard, library but several plugins depend on it</p>
 <dl class="class">
 <dt id="pax.utils.InterpolatingMap">
 <em class="property">class </em><tt class="descclassname">pax.utils.</tt><tt class="descname">InterpolatingMap</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/pax/utils.html#InterpolatingMap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.utils.InterpolatingMap" title="Permalink to this definition">¶</a></dt>
@@ -1401,31 +1484,21 @@ making cluster boundaries whenever values are &gt;= threshold apart.</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="pax.utils.mad">
-<tt class="descclassname">pax.utils.</tt><tt class="descname">mad</tt><big>(</big><em>data</em>, <em>axis=None</em><big>)</big><a class="reference internal" href="_modules/pax/utils.html#mad"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.utils.mad" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return median absolute deviation of numpy array</p>
+<dt id="pax.utils.data_file_name">
+<tt class="descclassname">pax.utils.</tt><tt class="descname">data_file_name</tt><big>(</big><em>filename</em><big>)</big><a class="reference internal" href="_modules/pax/utils.html#data_file_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.utils.data_file_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns filename if a file exists there, else returns PAX_DIR/data/filename</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="pax.utils.peak_bounds">
-<tt class="descclassname">pax.utils.</tt><tt class="descname">peak_bounds</tt><big>(</big><em>signal</em>, <em>fraction_of_max=None</em>, <em>max_idx=None</em>, <em>zero_level=0</em>, <em>inclusive=True</em><big>)</big><a class="reference internal" href="_modules/pax/utils.html#peak_bounds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.utils.peak_bounds" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return (left, right) indices closest to max_idx where signal drops below signal[max_idx]*fraction_of_max.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>signal</strong> &#8211; waveform to look in (numpy array)</li>
-<li><strong>fraction_of_max</strong> &#8211; Width at this fraction of maximum. If None, peaks will extend until zero_level.</li>
-<li><strong>max_idx</strong> &#8211; Index in signal of the maximum of the peak. Default None, will be determined by np.argmax(signal)</li>
-<li><strong>zero_level</strong> &#8211; Always end a peak when it drops below this level. Default: 0</li>
-<li><strong>inclusive</strong> &#8211; Include endpoints (first points where signal drops below), default True.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-<p>TODO: proper support for inclusive (don&#8217;t just subtract 1)</p>
+<dt id="pax.utils.get_named_configuration_options">
+<tt class="descclassname">pax.utils.</tt><tt class="descname">get_named_configuration_options</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/utils.html#get_named_configuration_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.utils.get_named_configuration_options" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the names of all working named configurations</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.utils.mad">
+<tt class="descclassname">pax.utils.</tt><tt class="descname">mad</tt><big>(</big><em>data</em>, <em>axis=None</em><big>)</big><a class="reference internal" href="_modules/pax/utils.html#mad"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.utils.mad" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return median absolute deviation of numpy array</p>
 </dd></dl>
 
 <dl class="function">
@@ -1434,12 +1507,6 @@ making cluster boundaries whenever values are &gt;= threshold apart.</p>
 <dd><p>Return the weighted mean, and the weighted sum square deviation from the weighted mean.
 values, weights &#8211; Numpy ndarrays with the same shape.
 Stolen from <a class="reference external" href="http://stackoverflow.com/questions/2413522/weighted-standard-deviation-in-numpy">http://stackoverflow.com/questions/2413522/weighted-standard-deviation-in-numpy</a></p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pax.utils.width_at_fraction">
-<tt class="descclassname">pax.utils.</tt><tt class="descname">width_at_fraction</tt><big>(</big><em>peak_wave</em>, <em>fraction_of_max</em>, <em>max_idx</em>, <em>interpolate=False</em><big>)</big><a class="reference internal" href="_modules/pax/utils.html#width_at_fraction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.utils.width_at_fraction" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns width of a peak IN SAMPLES at fraction of maximum</p>
 </dd></dl>
 
 </div>
@@ -1506,7 +1573,7 @@ Stolen from <a class="reference external" href="http://stackoverflow.com/questio
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 3.0.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

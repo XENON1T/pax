@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.data_model &mdash; Processor for Analyzing XENON1T 2.1.0 documentation</title>
+    <title>pax.data_model &mdash; Processor for Analyzing XENON1T 3.0.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.1.0',
+        VERSION:     '3.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 2.1.0 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 3.0.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body>
@@ -36,7 +36,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Processor for Analyzing XENON1T 3.0.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -52,6 +52,7 @@
 <span class="sd">Extends python object to do a few tricks</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">bson</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 
@@ -65,34 +66,72 @@
 <span class="sd">      - get_data_fields(): iterates over the user-specified attributes</span>
 <span class="sd">                          (that are not methods, properties, _internals)</span>
 <span class="sd">      - safely declare attributes defaulting to empty lists ([])</span>
-<span class="sd">        in the class declaration. some_field = (SomeClass,) in class declaration</span>
-<span class="sd">        means you promise to fill the list  with SomeClass instances.</span>
-<span class="sd">        TODO: this isn&#39;t actually checked, even in StrictModel</span>
+<span class="sd">        in the class declaration. some_field = ListField(SomeType,) in class declaration</span>
+<span class="sd">        means you promise to fill the list with SomeType instances.</span>
+<span class="sd">        NB: This is checked on initialization (even for Model) not for appending (even for StrictModel)!</span>
+<span class="sd">            (we&#39;d have to mess with / override list for that)</span>
+<span class="sd">      - recursive initializiation of subclasses</span>
 <span class="sd">      - dump as dictionary and JSON</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs_dict</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 
-        <span class="c"># Initialize the list fields</span>
+        <span class="c"># Initialize the collection fields to empty lists</span>
         <span class="c"># super() is needed to bypass type checking in StrictModel</span>
-        <span class="k">for</span> <span class="n">field_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_list_field_names</span><span class="p">():</span>
+        <span class="n">list_field_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_list_field_info</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">field_name</span> <span class="ow">in</span> <span class="n">list_field_info</span><span class="p">:</span>
             <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="n">field_name</span><span class="p">,</span> <span class="p">[])</span>
 
         <span class="c"># Initialize all attributes from kwargs and kwargs_dict</span>
         <span class="n">kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs_dict</span> <span class="ow">or</span> <span class="p">{})</span>
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">list_field_info</span><span class="p">:</span>
+                <span class="c"># User gave a value to initialize a list field. Hopefully an iterable!</span>
+                <span class="c"># Let&#39;s check if the types are correct</span>
+                <span class="n">desired_type</span> <span class="o">=</span> <span class="n">list_field_info</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+                <span class="n">temp_list</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">v</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">el</span><span class="p">,</span> <span class="n">desired_type</span><span class="p">):</span>
+                        <span class="c"># Good, pass through unmolested</span>
+                        <span class="n">temp_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">el</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">el</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                        <span class="c"># Dicts are fine too, we can use them to init the desired type</span>
+                        <span class="n">temp_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">desired_type</span><span class="p">(</span><span class="o">**</span><span class="n">el</span><span class="p">))</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Attempt to initialize list field </span><span class="si">%s</span><span class="s"> with type </span><span class="si">%s</span><span class="s">, &quot;</span>
+                                         <span class="s">&quot;but you promised type </span><span class="si">%s</span><span class="s"> in class declaration.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span>
+                                                                                             <span class="nb">type</span><span class="p">(</span><span class="n">el</span><span class="p">),</span>
+                                                                                             <span class="n">desired_type</span><span class="p">))</span>
+                <span class="c"># This has to be a list of dictionaries</span>
+                <span class="c"># suitable to be passed to __init__ of the list field&#39;s element type</span>
+                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">temp_list</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">default_value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+                <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">default_value</span><span class="p">)</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+                    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+                        <span class="c"># Numpy arrays can be also initialized from a &#39;string&#39; of bytes...</span>
+                        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">default_value</span><span class="o">.</span><span class="n">dtype</span><span class="p">))</span>
+                    <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="s">&#39;__iter__&#39;</span><span class="p">):</span>
+                        <span class="c"># ... or an iterable</span>
+                        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">default_value</span><span class="o">.</span><span class="n">dtype</span><span class="p">))</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Can&#39;t initialize field </span><span class="si">%s</span><span class="s">: &quot;</span>
+                                         <span class="s">&quot;don&#39;t know how to make a numpy array from a </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>        <span class="c"># Use only in initialization (or if attributes are fixed, as for StrictModel)</span>
     <span class="nd">@Memoize</span>            <span class="c"># Caching decorator, improves performance if a model is initialized often</span>
-<div class="viewcode-block" id="Model.get_list_field_names"><a class="viewcode-back" href="../../pax.html#pax.data_model.Model.get_list_field_names">[docs]</a>    <span class="k">def</span> <span class="nf">get_list_field_names</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Get the field names of all list / collection fields in this class</span>
+<div class="viewcode-block" id="Model.get_list_field_info"><a class="viewcode-back" href="../../pax.html#pax.data_model.Model.get_list_field_info">[docs]</a>    <span class="k">def</span> <span class="nf">get_list_field_info</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return dict with fielname =&gt; type of elements in collection fields in this class</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">list_field_names</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">list_field_info</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">cls</span><span class="o">.</span><span class="n">__dict__</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">==</span> <span class="nb">type</span><span class="p">:</span>
-                <span class="n">list_field_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">list_field_names</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">ListField</span><span class="p">):</span>
+                <span class="n">list_field_info</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">element_type</span>
+        <span class="k">return</span> <span class="n">list_field_info</span>
 </div>
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">)</span>
@@ -122,28 +161,58 @@
                 <span class="c"># Yes, yield the class-level value</span>
                 <span class="k">yield</span> <span class="p">(</span><span class="n">field_name</span><span class="p">,</span> <span class="n">value_in_class</span><span class="p">)</span>
 </div>
-<div class="viewcode-block" id="Model.to_dict"><a class="viewcode-back" href="../../pax.html#pax.data_model.Model.to_dict">[docs]</a>    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">json_compatible</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+<div class="viewcode-block" id="Model.to_dict"><a class="viewcode-back" href="../../pax.html#pax.data_model.Model.to_dict">[docs]</a>    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">convert_numpy_arrays_to</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">fields_to_ignore</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">if</span> <span class="n">fields_to_ignore</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">fields_to_ignore</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_fields_data</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">fields_to_ignore</span><span class="p">:</span>
+                <span class="k">continue</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-                <span class="n">result</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">el</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">json_compatible</span><span class="p">)</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">v</span><span class="p">]</span>
-            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="n">json_compatible</span><span class="p">:</span>
-                <span class="c"># For JSON compatibility, numpy arrays must be converted to lists</span>
-                <span class="n">result</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                <span class="n">result</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="n">el</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">convert_numpy_arrays_to</span><span class="o">=</span><span class="n">convert_numpy_arrays_to</span><span class="p">,</span>
+                                        <span class="n">fields_to_ignore</span><span class="o">=</span><span class="n">fields_to_ignore</span><span class="p">)</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">v</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="n">convert_numpy_arrays_to</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">convert_numpy_arrays_to</span> <span class="o">==</span> <span class="s">&#39;list&#39;</span><span class="p">:</span>
+                    <span class="n">result</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+                <span class="k">elif</span> <span class="n">convert_numpy_arrays_to</span> <span class="o">==</span> <span class="s">&#39;bytes&#39;</span><span class="p">:</span>
+                    <span class="n">result</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">tostring</span><span class="p">()</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;convert_numpy_arrays_to must be &quot;list&quot; or &quot;bytes&quot;&#39;</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">result</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
         <span class="k">return</span> <span class="n">result</span>
 </div>
-<div class="viewcode-block" id="Model.to_json"><a class="viewcode-back" href="../../pax.html#pax.data_model.Model.to_json">[docs]</a>    <span class="k">def</span> <span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">json_compatible</span><span class="o">=</span><span class="bp">True</span><span class="p">))</span>
+<div class="viewcode-block" id="Model.to_json"><a class="viewcode-back" href="../../pax.html#pax.data_model.Model.to_json">[docs]</a>    <span class="k">def</span> <span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields_to_ignore</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">convert_numpy_arrays_to</span><span class="o">=</span><span class="s">&#39;list&#39;</span><span class="p">,</span>
+                                       <span class="n">fields_to_ignore</span><span class="o">=</span><span class="n">fields_to_ignore</span><span class="p">))</span>
+</div>
+<div class="viewcode-block" id="Model.to_bson"><a class="viewcode-back" href="../../pax.html#pax.data_model.Model.to_bson">[docs]</a>    <span class="k">def</span> <span class="nf">to_bson</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields_to_ignore</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">bson</span><span class="o">.</span><span class="n">BSON</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">convert_numpy_arrays_to</span><span class="o">=</span><span class="s">&#39;bytes&#39;</span><span class="p">,</span>
+                                             <span class="n">fields_to_ignore</span><span class="o">=</span><span class="n">fields_to_ignore</span><span class="p">))</span>
+</div>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="Model.from_json"><a class="viewcode-back" href="../../pax.html#pax.data_model.Model.from_json">[docs]</a>    <span class="k">def</span> <span class="nf">from_json</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">cls</span><span class="p">(</span><span class="o">**</span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+</div>
+    <span class="nd">@classmethod</span>
+<div class="viewcode-block" id="Model.from_bson"><a class="viewcode-back" href="../../pax.html#pax.data_model.Model.from_bson">[docs]</a>    <span class="k">def</span> <span class="nf">from_bson</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">cls</span><span class="p">(</span><span class="o">**</span><span class="n">bson</span><span class="o">.</span><span class="n">BSON</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
 
 </div></div>
 <span class="n">casting_allowed_for</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="nb">int</span><span class="p">:</span>    <span class="p">[</span><span class="s">&#39;int16&#39;</span><span class="p">,</span> <span class="s">&#39;int32&#39;</span><span class="p">,</span> <span class="s">&#39;int64&#39;</span><span class="p">],</span>
-    <span class="nb">float</span><span class="p">:</span>  <span class="p">[</span><span class="s">&#39;int&#39;</span><span class="p">,</span> <span class="s">&#39;float32&#39;</span><span class="p">,</span> <span class="s">&#39;float64&#39;</span><span class="p">,</span> <span class="s">&#39;int16&#39;</span><span class="p">,</span> <span class="s">&#39;int32&#39;</span><span class="p">,</span> <span class="s">&#39;int64&#39;</span><span class="p">],</span>
+    <span class="nb">int</span><span class="p">:</span>    <span class="p">[</span><span class="s">&#39;int16&#39;</span><span class="p">,</span> <span class="s">&#39;int32&#39;</span><span class="p">,</span> <span class="s">&#39;int64&#39;</span><span class="p">,</span> <span class="s">&#39;Int64&#39;</span><span class="p">,</span> <span class="s">&#39;Int32&#39;</span><span class="p">],</span>
+    <span class="nb">float</span><span class="p">:</span>  <span class="p">[</span><span class="s">&#39;int&#39;</span><span class="p">,</span> <span class="s">&#39;float32&#39;</span><span class="p">,</span> <span class="s">&#39;float64&#39;</span><span class="p">,</span> <span class="s">&#39;int16&#39;</span><span class="p">,</span> <span class="s">&#39;int32&#39;</span><span class="p">,</span> <span class="s">&#39;int64&#39;</span><span class="p">,</span> <span class="s">&#39;Int64&#39;</span><span class="p">,</span> <span class="s">&#39;Int32&#39;</span><span class="p">],</span>
+    <span class="nb">bool</span><span class="p">:</span>   <span class="p">[</span><span class="s">&#39;int16&#39;</span><span class="p">,</span> <span class="s">&#39;int32&#39;</span><span class="p">,</span> <span class="s">&#39;int64&#39;</span><span class="p">,</span> <span class="s">&#39;Int64&#39;</span><span class="p">,</span> <span class="s">&#39;Int32&#39;</span><span class="p">],</span>
 <span class="p">}</span>
 
 
+<div class="viewcode-block" id="ListField"><a class="viewcode-back" href="../../pax.html#pax.data_model.ListField">[docs]</a><span class="k">class</span> <span class="nc">ListField</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element_type</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">type</span><span class="p">(</span><span class="n">element_type</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Model collections must specify a type&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">element_type</span> <span class="o">=</span> <span class="n">element_type</span>
+
+</div>
 <div class="viewcode-block" id="StrictModel"><a class="viewcode-back" href="../../pax.html#pax.data_model.StrictModel">[docs]</a><span class="k">class</span> <span class="nc">StrictModel</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Model which enforces additional restrictions:</span>
 <span class="sd">      - can&#39;t add new attributes: have to be fixed at class declaration</span>
@@ -168,7 +237,10 @@
 
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;Attribute </span><span class="si">%s</span><span class="s"> of class </span><span class="si">%s</span><span class="s"> should be a </span><span class="si">%s</span><span class="s">, not a </span><span class="si">%s</span><span class="s">. &#39;</span>
-                                <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">old_type</span><span class="p">,</span> <span class="n">new_type</span><span class="p">))</span>
+                                <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span>
+                                   <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                                   <span class="n">old_val</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                                   <span class="n">value</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">))</span>
 
         <span class="c"># Check for attempted dtype change</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">old_val</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
@@ -210,7 +282,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Processor for Analyzing XENON1T 3.0.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>

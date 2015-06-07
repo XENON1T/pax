@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.io.FolderIO &mdash; Processor for Analyzing XENON1T 2.1.0 documentation</title>
+    <title>pax.plugins.io.FolderIO &mdash; Processor for Analyzing XENON1T 3.0.0 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '2.1.0',
+        VERSION:     '3.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 2.1.0 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 3.0.0 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" /> 
   </head>
   <body>
@@ -36,7 +36,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 3.0.0 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -47,15 +47,17 @@
           <div class="body">
             
   <h1>Source code for pax.plugins.io.FolderIO</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">import</span> <span class="nn">glob</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">shutil</span>
 
-<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">core</span><span class="p">,</span> <span class="n">plugin</span>
+<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">utils</span><span class="p">,</span> <span class="n">plugin</span>
 
 
 <div class="viewcode-block" id="InputFromFolder"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.FolderIO.InputFromFolder">[docs]</a><span class="k">class</span> <span class="nc">InputFromFolder</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">InputPlugin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Read from a folder containing several small files, each containing with events&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Read from a folder containing several small files, each containing events&quot;&quot;&quot;</span>
 
     <span class="c">##</span>
     <span class="c"># Base class methods you don&#39;t need to override</span>
@@ -67,25 +69,28 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">current_first_event</span> <span class="o">=</span> <span class="bp">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">current_last_event</span> <span class="o">=</span> <span class="bp">None</span>
 
-        <span class="n">input_name</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">data_file_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;input_name&#39;</span><span class="p">])</span>
+        <span class="n">input_name</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">data_file_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;input_name&#39;</span><span class="p">])</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">input_name</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Can&#39;t read from </span><span class="si">%s</span><span class="s">: it does not exist!&quot;</span> <span class="o">%</span> <span class="n">input_name</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">input_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;.&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_extension</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">input_name</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">input_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;.&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_extension</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;input_name </span><span class="si">%s</span><span class="s"> does not end &quot;</span>
+                                 <span class="s">&quot;with the expected file extension </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">input_name</span><span class="p">,</span>
+                                                                          <span class="bp">self</span><span class="o">.</span><span class="n">file_extension</span><span class="p">))</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;InputFromFolder: Single file mode&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">init_file</span><span class="p">(</span><span class="n">input_name</span><span class="p">)</span>
+
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;InputFromFolder: Directory mode&quot;</span><span class="p">)</span>
-
             <span class="n">file_names</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">input_name</span><span class="p">,</span> <span class="s">&quot;*.&quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_extension</span><span class="p">))</span>
+            <span class="c"># Remove the pax_info.json file from the file list-- the JSON I/O will thank us</span>
+            <span class="n">file_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">fn</span> <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">file_names</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">fn</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;pax_info.json&#39;</span><span class="p">)]</span>
             <span class="n">file_names</span><span class="o">.</span><span class="n">sort</span><span class="p">()</span>
-
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;InputFromFolder: Found these files: </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">file_names</span><span class="p">))</span>
-
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">file_names</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;InputFromFolder: No </span><span class="si">%s</span><span class="s"> files found in input directory </span><span class="si">%s</span><span class="s">!&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">file_extension</span><span class="p">,</span>
                                                                                                 <span class="n">input_name</span><span class="p">))</span>
-
             <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">file_names</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">init_file</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span>
 
@@ -134,9 +139,12 @@
 </div>
 <div class="viewcode-block" id="InputFromFolder.get_events"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.FolderIO.InputFromFolder.get_events">[docs]</a>    <span class="k">def</span> <span class="nf">get_events</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Iterate through all events in the file / folder&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">ts</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>   <span class="c"># We must keep track of time ourselves, BasePlugin.timeit is a function decorator</span>
+        <span class="c"># We must keep track of time ourselves, BasePlugin.timeit is a function decorator,</span>
+        <span class="c"># so it won&#39;t work well with generators like get_events for an input plugin</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ts</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">file_i</span><span class="p">,</span> <span class="n">file_info</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_data_files</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">select_file</span><span class="p">(</span><span class="n">file_i</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_file_number</span> <span class="o">!=</span> <span class="n">file_i</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">select_file</span><span class="p">(</span><span class="n">file_i</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_all_events_in_current_file</span><span class="p">():</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">total_time_taken</span> <span class="o">+=</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">ts</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1000</span>
                 <span class="k">yield</span> <span class="n">event</span>
@@ -160,7 +168,7 @@
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_single_event_in_current_file</span><span class="p">(</span><span class="n">event_number</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_first_event</span><span class="p">)</span>
 
-    <span class="c"># If reaading in from a folder-of-files format not written by FolderIO,</span>
+    <span class="c"># If reading in from a folder-of-files format not written by FolderIO,</span>
     <span class="c"># you&#39;ll probably have to overwrite this. (e.g. XED does)</span></div>
 <div class="viewcode-block" id="InputFromFolder.get_first_and_last_event_number"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.FolderIO.InputFromFolder.get_first_and_last_event_number">[docs]</a>    <span class="k">def</span> <span class="nf">get_first_and_last_event_number</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return the first and last event number in file specified by filename&quot;&quot;&quot;</span>
@@ -171,7 +179,7 @@
     <span class="c"># Child class should override these</span>
     <span class="c">##</span>
 </div>
-    <span class="n">file_extension</span> <span class="o">=</span> <span class="bp">None</span>
+    <span class="n">file_extension</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
 
 <div class="viewcode-block" id="InputFromFolder.open"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.FolderIO.InputFromFolder.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Opens the file specified by filename for reading&quot;&quot;&quot;</span>
@@ -204,7 +212,7 @@
 
 </div></div>
 <div class="viewcode-block" id="WriteToFolder"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.FolderIO.WriteToFolder">[docs]</a><span class="k">class</span> <span class="nc">WriteToFolder</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">OutputPlugin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Write to a folder containing several small files, each containing a &lt;= a fixed number of events&quot;&quot;&quot;</span>
+    <span class="sd">&quot;&quot;&quot;Write to a folder containing several small files, each containing &lt;= a fixed number of events&quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="WriteToFolder.startup"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.FolderIO.WriteToFolder.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">events_per_file</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;events_per_file&#39;</span><span class="p">]</span>
@@ -213,11 +221,25 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;output_name&#39;</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Output directory </span><span class="si">%s</span><span class="s"> already exists, can&#39;t write your </span><span class="si">%s</span><span class="s">s there!&quot;</span> <span class="o">%</span> <span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_extension</span><span class="p">))</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;overwrite_output&#39;</span><span class="p">,</span> <span class="bp">False</span><span class="p">):</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;overwrite_output&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;confirm&#39;</span><span class="p">:</span>
+                    <span class="k">print</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n\n</span><span class="s">Output dir </span><span class="si">%s</span><span class="s"> already exists. Overwrite? [y/n]:&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="nb">input</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&#39;y&#39;</span><span class="p">,</span> <span class="s">&#39;yes&#39;</span><span class="p">):</span>
+                        <span class="k">print</span><span class="p">(</span><span class="s">&quot;</span><span class="se">\n</span><span class="s">Fine, Exiting pax...</span><span class="se">\n</span><span class="s">&quot;</span><span class="p">)</span>
+                        <span class="nb">exit</span><span class="p">()</span>
+                <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">)</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Output directory </span><span class="si">%s</span><span class="s"> already exists, can&#39;t write your </span><span class="si">%s</span><span class="s">s there!&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_extension</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">os</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">)</span>
 
+        <span class="c"># Write the metadata to JSON</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="s">&#39;pax_info.json&#39;</span><span class="p">),</span> <span class="s">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">outfile</span><span class="p">:</span>
+            <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">get_metadata</span><span class="p">(),</span> <span class="n">outfile</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+        <span class="c"># Start the temporary file. Events will first be written here, until events_per_file is reached</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">tempfile</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">output_dir</span><span class="p">,</span> <span class="s">&#39;temp.&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_extension</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="WriteToFolder.open_new_file"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.FolderIO.WriteToFolder.open_new_file">[docs]</a>    <span class="k">def</span> <span class="nf">open_new_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">first_event_number</span><span class="p">):</span>
@@ -306,7 +328,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 3.0.0 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>

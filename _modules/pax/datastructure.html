@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.datastructure &mdash; Processor for Analyzing XENON1T 2.1.0 documentation</title>
+    <title>pax.datastructure &mdash; Processor for Analyzing XENON1T 3.0.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.1.0',
+        VERSION:     '3.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 2.1.0 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 3.0.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body>
@@ -36,7 +36,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Processor for Analyzing XENON1T 3.0.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -64,9 +64,11 @@
 <span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">units</span>
 
-<span class="c"># To turn off type-checking, replace StrictModel with Model</span>
-<span class="c"># This will improve performance, but use at your own risk</span>
-<span class="kn">from</span> <span class="nn">pax.data_model</span> <span class="kn">import</span> <span class="n">StrictModel</span><span class="p">,</span> <span class="n">Model</span>
+<span class="c"># DO NOT use Model instead of StrictModel:</span>
+<span class="c"># It improves performance, but kills serialization (numpy int types will apear in class etc)</span>
+<span class="c"># TODO: For Hit class, we may want Model for performance?</span>
+<span class="c">#       Look where the numpy int types get in, force them to python ints.</span>
+<span class="kn">from</span> <span class="nn">pax.data_model</span> <span class="kn">import</span> <span class="n">StrictModel</span><span class="p">,</span> <span class="n">ListField</span>
 
 
 <span class="n">INT_NAN</span> <span class="o">=</span> <span class="o">-</span><span class="mi">99999</span>  <span class="c"># Do not change without talking to me. -Tunnell 12/3/2015</span>
@@ -103,15 +105,20 @@
         <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">atan2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
 
 </div></div>
-<div class="viewcode-block" id="Hit"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Hit">[docs]</a><span class="k">class</span> <span class="nc">Hit</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+<div class="viewcode-block" id="Hit"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Hit">[docs]</a><span class="k">class</span> <span class="nc">Hit</span><span class="p">(</span><span class="n">StrictModel</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Peaks found in individual channels</span>
 
 <span class="sd">    These are be clustered into ordinary peaks later. This is commonly</span>
 <span class="sd">    called a &#39;hit&#39; in particle physics detectors.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">channel</span> <span class="o">=</span> <span class="mi">0</span>              <span class="c">#: Channel in which this peak was found</span>
+    <span class="c">#: Channel in which this peak was found</span>
+    <span class="n">channel</span> <span class="o">=</span> <span class="mi">0</span>
+
     <span class="c">#: Index in the event at which this peak has its maximum.</span>
     <span class="n">index_of_maximum</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c">#: Time (since start of event in ns) of hit&#39;s center of gravity</span>
+    <span class="n">center</span> <span class="o">=</span> <span class="mf">0.0</span>
 
     <span class="n">left</span> <span class="o">=</span> <span class="mi">0</span>                 <span class="c">#: Index of left bound (inclusive) of peak.</span>
     <span class="n">right</span> <span class="o">=</span> <span class="mi">0</span>                <span class="c">#: Index of right bound (INCLUSIVE!!) of peak</span>
@@ -158,7 +165,7 @@
     <span class="c">##</span>
 
     <span class="c">#: Peaks in individual channels that make up this peak</span>
-    <span class="n">hits</span> <span class="o">=</span> <span class="p">(</span><span class="n">Hit</span><span class="p">,)</span>
+    <span class="n">hits</span> <span class="o">=</span> <span class="n">ListField</span><span class="p">(</span><span class="n">Hit</span><span class="p">)</span>
 
     <span class="c">#: Array of areas in each PMT.</span>
     <span class="n">area_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="s">&#39;float64&#39;</span><span class="p">)</span>
@@ -200,7 +207,7 @@
     <span class="c">##</span>
 
     <span class="c">#: List of reconstructed positions (instances of :class:`pax.datastructure.ReconstructedPosition`)</span>
-    <span class="n">reconstructed_positions</span> <span class="o">=</span> <span class="p">(</span><span class="n">ReconstructedPosition</span><span class="p">,)</span>
+    <span class="n">reconstructed_positions</span> <span class="o">=</span> <span class="n">ListField</span><span class="p">(</span><span class="n">ReconstructedPosition</span><span class="p">)</span>
 
     <span class="c">#: Weighted root mean square deviation of top hitpattern (cm)</span>
     <span class="n">top_hitpattern_spread</span> <span class="o">=</span> <span class="mf">0.0</span>
@@ -328,9 +335,14 @@
 <span class="sd">    Stores high level information about the triggered event.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">dataset_name</span> <span class="o">=</span> <span class="s">&#39;Unknown&#39;</span>  <span class="c"># The name of the dataset this event belongs to</span>
+
     <span class="c"># A nonnegative integer that uniquely identifies the event within the</span>
     <span class="c"># dataset.</span>
     <span class="n">event_number</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c">#: Number of channels in the event</span>
+    <span class="c">#: Has to be the same as n_channels in config, provided here for deserialization ease</span>
+    <span class="n">n_channels</span> <span class="o">=</span> <span class="n">INT_NAN</span>
 
     <span class="c">#: Integer start time of the event in nanoseconds</span>
     <span class="c">#:</span>
@@ -352,28 +364,22 @@
     <span class="c">#: DO NOT set to 10 ns as default, otherwise no way to check if it was given to constructor!</span>
     <span class="n">sample_duration</span> <span class="o">=</span> <span class="mi">0</span>
 
-    <span class="n">user_float_0</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c"># : Unused float (useful for developing)</span>
-    <span class="n">user_float_1</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c"># : Unused float (useful for developing)</span>
-    <span class="n">user_float_2</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c"># : Unused float (useful for developing)</span>
-    <span class="n">user_float_3</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c"># : Unused float (useful for developing)</span>
-    <span class="n">user_float_4</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c"># : Unused float (useful for developing)</span>
-
     <span class="c">#: List of peaks</span>
     <span class="c">#:</span>
     <span class="c">#: Returns a list of :class:`pax.datastructure.Peak` classes.</span>
-    <span class="n">peaks</span> <span class="o">=</span> <span class="p">(</span><span class="n">Peak</span><span class="p">,)</span>
+    <span class="n">peaks</span> <span class="o">=</span> <span class="n">ListField</span><span class="p">(</span><span class="n">Peak</span><span class="p">)</span>
 
     <span class="c">#: Temporary list of hits -- will be shipped off to peaks later</span>
-    <span class="n">all_hits</span> <span class="o">=</span> <span class="p">(</span><span class="n">Hit</span><span class="p">,)</span>
+    <span class="n">all_hits</span> <span class="o">=</span> <span class="n">ListField</span><span class="p">(</span><span class="n">Hit</span><span class="p">)</span>
 
     <span class="c">#: Returns a list of sum waveforms</span>
     <span class="c">#:</span>
     <span class="c">#: Returns an :class:`pax.datastructure.SumWaveform` class.</span>
-    <span class="n">sum_waveforms</span> <span class="o">=</span> <span class="p">(</span><span class="n">SumWaveform</span><span class="p">,)</span>
+    <span class="n">sum_waveforms</span> <span class="o">=</span> <span class="n">ListField</span><span class="p">(</span><span class="n">SumWaveform</span><span class="p">)</span>
 
     <span class="c">#: A python list of all pulses in the event (containing instances of the Pulse class)</span>
     <span class="c">#: An pulse holds a stream of samples in one channel, as provided by the digitizer.</span>
-    <span class="n">pulses</span> <span class="o">=</span> <span class="p">(</span><span class="n">Pulse</span><span class="p">,)</span>
+    <span class="n">pulses</span> <span class="o">=</span> <span class="n">ListField</span><span class="p">(</span><span class="n">Pulse</span><span class="p">)</span>
 
     <span class="c">#: Number of noise pulses (pulses without any hits found) per channel</span>
     <span class="n">noise_pulses_in</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
@@ -385,9 +391,12 @@
     <span class="n">n_hits_rejected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_channels</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c"># TODO: refactor code so n_channels and start_time are no longer positional arguments</span>
+        <span class="c"># Just check if they are in kwargs, otherwise throw error</span>
 
         <span class="c"># Start time is mandatory, so it is not in kwargs</span>
         <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;start_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">start_time</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;n_channels&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_channels</span>
 
         <span class="c"># Model&#39;s init must be called first, else we can&#39;t store attributes</span>
         <span class="c"># This will store all of the kwargs as attrs</span>
@@ -422,12 +431,14 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop_time</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span>
 </div>
 <div class="viewcode-block" id="Event.get_sum_waveform_names"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.get_sum_waveform_names">[docs]</a>    <span class="k">def</span> <span class="nf">get_sum_waveform_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Get list of the names of waveforms</span>
+        <span class="sd">&quot;&quot;&quot;Get list of the names of sum waveform objects</span>
+<span class="sd">        Deprecated -- for Xerawdp matching only</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">sw</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">sw</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sum_waveforms</span><span class="p">]</span>
 </div>
 <div class="viewcode-block" id="Event.get_sum_waveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.get_sum_waveform">[docs]</a>    <span class="k">def</span> <span class="nf">get_sum_waveform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Get waveform for name</span>
+        <span class="sd">&quot;&quot;&quot;Get sum waveform object by name</span>
+<span class="sd">        Deprecated -- for Xerawdp matching only</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">sw</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sum_waveforms</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">sw</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">name</span><span class="p">:</span>
@@ -436,28 +447,39 @@
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;SumWaveform </span><span class="si">%s</span><span class="s"> not found&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="Event.length"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.length">[docs]</a>    <span class="k">def</span> <span class="nf">length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Number of samples for the sum waveform</span>
+        <span class="sd">&quot;&quot;&quot;Number of samples in the event</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">()</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_duration</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="Event.S1s"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.S1s">[docs]</a>    <span class="k">def</span> <span class="nf">S1s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="s">&#39;tpc&#39;</span><span class="p">,</span> <span class="n">sort_key</span><span class="o">=</span><span class="s">&#39;area&#39;</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>  <span class="c"># noqa</span>
-        <span class="sd">&quot;&quot;&quot;List of S1 (scintillation) signals</span>
+        <span class="sd">&quot;&quot;&quot;List of S1 (scintillation) signals in this event</span>
 
-<span class="sd">        Returns an :class:`pax.datastructure.Peak` class.</span>
+<span class="sd">        Returns a list of :class:`pax.datastructure.Peak` objects</span>
+<span class="sd">          whose type is &#39;s1&#39;, and</span>
+<span class="sd">          who are in the detector specified by the &#39;detector&#39; argument (unless detector=&#39;all&#39;)</span>
+<span class="sd">        The returned list is sorted DESCENDING (i.e. reversed!) by the key sort_key (default area)</span>
+<span class="sd">        unless you pass reverse=False, then it is ascending.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_peaks_by_type</span><span class="p">(</span><span class="s">&#39;s1&#39;</span><span class="p">,</span> <span class="n">sort_key</span><span class="p">,</span> <span class="n">reverse</span><span class="p">,</span> <span class="n">detector</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="Event.S2s"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.S2s">[docs]</a>    <span class="k">def</span> <span class="nf">S2s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="s">&#39;tpc&#39;</span><span class="p">,</span> <span class="n">sort_key</span><span class="o">=</span><span class="s">&#39;area&#39;</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>  <span class="c"># noqa</span>
-        <span class="sd">&quot;&quot;&quot;List of S2 (ionization) signals</span>
+        <span class="sd">&quot;&quot;&quot;List of S2 (ionization) signals in this event</span>
 
-<span class="sd">        Returns an :class:`pax.datastructure.Peak` class.</span>
+<span class="sd">        Returns a list of :class:`pax.datastructure.Peak` objects</span>
+<span class="sd">          whose type is &#39;s2&#39;, and</span>
+<span class="sd">          who are in the detector specified by the &#39;detector&#39; argument (unless detector=&#39;all&#39;)</span>
+<span class="sd">        The returned list is sorted DESCENDING (i.e. reversed!) by the key sort_key (default area)</span>
+<span class="sd">        unless you pass reverse=False, then it is ascending.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_peaks_by_type</span><span class="p">(</span><span class="s">&#39;s2&#39;</span><span class="p">,</span> <span class="n">sort_key</span><span class="p">,</span> <span class="n">reverse</span><span class="p">,</span> <span class="n">detector</span><span class="p">)</span>
 </div>
-    <span class="k">def</span> <span class="nf">_get_peaks_by_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">desired_type</span><span class="p">,</span> <span class="n">sort_key</span><span class="p">,</span> <span class="n">reverse</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="s">&#39;tpc&#39;</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">_get_peaks_by_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">desired_type</span><span class="p">,</span> <span class="n">sort_key</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="s">&#39;tpc&#39;</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Helper function for retrieving only certain types of peaks</span>
-
-<span class="sd">        You shouldn&#39;t be using this directly.</span>
+<span class="sd">        Returns a list of :class:`pax.datastructure.Peak` objects</span>
+<span class="sd">          whose type is desired_type, and</span>
+<span class="sd">          who are in the detector specified by the &#39;detector&#39; argument (unless detector=&#39;all&#39;)</span>
+<span class="sd">        The returned list is sorted DESCENDING (i.e. reversed!) by the key sort_key (default area)</span>
+<span class="sd">        unless you pass reverse=False, then it is ascending (normal sort order).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c"># Extract only peaks of a certain type</span>
         <span class="n">peaks</span> <span class="o">=</span> <span class="p">[]</span>
@@ -523,7 +545,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Processor for Analyzing XENON1T 3.0.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.signal_processing.Cluster &mdash; Processor for Analyzing XENON1T 2.1.0 documentation</title>
+    <title>pax.plugins.signal_processing.Cluster &mdash; Processor for Analyzing XENON1T 3.0.0 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '2.1.0',
+        VERSION:     '3.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 2.1.0 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 3.0.0 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" /> 
   </head>
   <body>
@@ -36,7 +36,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 3.0.0 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -243,7 +243,7 @@
 </div>
 <div class="viewcode-block" id="MeanShift.cluster_hits"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Cluster.MeanShift.cluster_hits">[docs]</a>    <span class="k">def</span> <span class="nf">cluster_hits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">spes</span><span class="p">):</span>
         <span class="c"># Cluster the single-pes in groups separated by &gt;= self.s2_width</span>
-        <span class="n">cluster_indices</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">cluster_by_diff</span><span class="p">([</span><span class="n">s</span><span class="o">.</span><span class="n">index_of_maximum</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">spes</span><span class="p">],</span>
+        <span class="n">cluster_indices</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">cluster_by_diff</span><span class="p">([</span><span class="n">s</span><span class="o">.</span><span class="n">center</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">spes</span><span class="p">],</span>
                                                 <span class="bp">self</span><span class="o">.</span><span class="n">s2_width</span><span class="p">,</span>
                                                 <span class="n">return_indices</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Pre-clustering made </span><span class="si">%s</span><span class="s"> clusters&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">cluster_indices</span><span class="p">))</span>
@@ -326,7 +326,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="HitDifference.cluster_hits"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Cluster.HitDifference.cluster_hits">[docs]</a>    <span class="k">def</span> <span class="nf">cluster_hits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hits</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">cluster_by_diff</span><span class="p">([</span><span class="n">s</span><span class="o">.</span><span class="n">index_of_maximum</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">hits</span><span class="p">],</span>
+        <span class="k">return</span> <span class="n">utils</span><span class="o">.</span><span class="n">cluster_by_diff</span><span class="p">([</span><span class="n">s</span><span class="o">.</span><span class="n">center</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">hits</span><span class="p">],</span>
                                      <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;max_difference&#39;</span><span class="p">],</span>
                                      <span class="n">return_indices</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 
@@ -442,7 +442,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 3.0.0 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>

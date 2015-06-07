@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.core &mdash; Processor for Analyzing XENON1T 2.1.0 documentation</title>
+    <title>pax.core &mdash; Processor for Analyzing XENON1T 3.0.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '2.1.0',
+        VERSION:     '3.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 2.1.0 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 3.0.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body>
@@ -36,7 +36,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Processor for Analyzing XENON1T 3.0.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -47,17 +47,15 @@
           <div class="body">
             
   <h1>Source code for pax.core</h1><div class="highlight"><pre>
-<span class="sd">&quot;&quot;&quot;The backbone of pax</span>
-
+<span class="sd">&quot;&quot;&quot;The backbone of pax - the Processor class</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">glob</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">importlib</span>
-<span class="kn">import</span> <span class="nn">inspect</span>
 <span class="kn">from</span> <span class="nn">io</span> <span class="kn">import</span> <span class="n">StringIO</span>
 <span class="kn">import</span> <span class="nn">itertools</span>
 <span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">from</span> <span class="nn">configparser</span> <span class="kn">import</span> <span class="n">ConfigParser</span><span class="p">,</span> <span class="n">ExtendedInterpolation</span>
 
 <span class="k">try</span><span class="p">:</span>
@@ -71,49 +69,15 @@
 
 <span class="kn">from</span> <span class="nn">prettytable</span> <span class="kn">import</span> <span class="n">PrettyTable</span>     <span class="c"># Timing report</span>
 <span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>                   <span class="c"># Progress bar</span>
-<span class="kn">import</span> <span class="nn">pax</span>
-<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">units</span><span class="p">,</span> <span class="n">simulation</span>
+<span class="kn">import</span> <span class="nn">pax</span>      <span class="c"># Needed for pax.__version__</span>
+<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">units</span><span class="p">,</span> <span class="n">simulation</span><span class="p">,</span> <span class="n">utils</span>
 
 <span class="c"># For diagnosing suspected memory leaks, uncomment this code</span>
 <span class="c"># and similar code in process_event</span>
 <span class="c"># import gc</span>
 <span class="c"># import objgraph</span>
 
-<span class="c"># Store the directory of pax (i.e. this file&#39;s directory) as PAX_DIR</span>
-<span class="n">PAX_DIR</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">getfile</span><span class="p">(</span><span class="n">inspect</span><span class="o">.</span><span class="n">currentframe</span><span class="p">()))))</span>
 
-
-<div class="viewcode-block" id="data_file_name"><a class="viewcode-back" href="../../pax.html#pax.core.data_file_name">[docs]</a><span class="k">def</span> <span class="nf">data_file_name</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Returns filename if a file exists there, else returns PAX_DIR/data/filename&quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">filename</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">filename</span>
-    <span class="n">new_filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">PAX_DIR</span><span class="p">,</span> <span class="s">&#39;data&#39;</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">new_filename</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">new_filename</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;File name or path </span><span class="si">%s</span><span class="s"> not found!&#39;</span> <span class="o">%</span> <span class="n">filename</span><span class="p">)</span>
-
-</div>
-<div class="viewcode-block" id="get_named_configuration_options"><a class="viewcode-back" href="../../pax.html#pax.core.get_named_configuration_options">[docs]</a><span class="k">def</span> <span class="nf">get_named_configuration_options</span><span class="p">():</span>
-    <span class="sd">&quot;&quot;&quot; Return the names of all working named configurations</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">config_files</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">PAX_DIR</span><span class="p">,</span> <span class="s">&#39;config&#39;</span><span class="p">,</span> <span class="s">&#39;*.ini&#39;</span><span class="p">)):</span>
-        <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
-        <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s">r&#39;(\w+)\.ini&#39;</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="k">print</span><span class="p">(</span><span class="s">&quot;Weird file in config dir: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">filename</span><span class="p">)</span>
-        <span class="n">filename</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
-        <span class="c"># Config files starting with &#39;_&#39; won&#39;t appear in the usage list (they won&#39;t work by themselves)</span>
-        <span class="k">if</span> <span class="n">filename</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;_&#39;</span><span class="p">:</span>
-            <span class="k">continue</span>
-        <span class="n">config_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">config_files</span>
-
-
-<span class="c">##</span>
-<span class="c"># Processor class</span>
-<span class="c">##</span></div>
 <div class="viewcode-block" id="Processor"><a class="viewcode-back" href="../../pax.html#pax.core.Processor">[docs]</a><span class="k">class</span> <span class="nc">Processor</span><span class="p">:</span>
     <span class="n">fallback_configuration</span> <span class="o">=</span> <span class="s">&#39;XENON100&#39;</span>    <span class="c"># Configuration to use when none is specified</span>
 
@@ -283,7 +247,7 @@
         <span class="c"># Make a list of all config paths / file objects to load</span>
         <span class="n">config_files</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">config_name</span> <span class="ow">in</span> <span class="n">config_names</span><span class="p">:</span>
-            <span class="n">config_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">PAX_DIR</span><span class="p">,</span> <span class="s">&#39;config&#39;</span><span class="p">,</span> <span class="n">config_name</span> <span class="o">+</span> <span class="s">&#39;.ini&#39;</span><span class="p">))</span>
+            <span class="n">config_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">PAX_DIR</span><span class="p">,</span> <span class="s">&#39;config&#39;</span><span class="p">,</span> <span class="n">config_name</span> <span class="o">+</span> <span class="s">&#39;.ini&#39;</span><span class="p">))</span>
         <span class="k">for</span> <span class="n">config_path</span> <span class="ow">in</span> <span class="n">config_paths</span><span class="p">:</span>
             <span class="n">config_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">config_path</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">config_string</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
@@ -292,7 +256,7 @@
             <span class="c"># Load the fallback configuration</span>
             <span class="c"># Have to use print, logging is not yet setup...</span>
             <span class="k">print</span><span class="p">(</span><span class="s">&quot;WARNING: no configuration specified: loading </span><span class="si">%s</span><span class="s"> config!&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">fallback_configuration</span><span class="p">)</span>
-            <span class="n">config_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">PAX_DIR</span><span class="p">,</span> <span class="s">&#39;config&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fallback_configuration</span> <span class="o">+</span> <span class="s">&#39;.ini&#39;</span><span class="p">))</span>
+            <span class="n">config_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">PAX_DIR</span><span class="p">,</span> <span class="s">&#39;config&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fallback_configuration</span> <span class="o">+</span> <span class="s">&#39;.ini&#39;</span><span class="p">))</span>
 
         <span class="c"># Loads the files into configparser, also takes care of inheritance.</span>
         <span class="k">for</span> <span class="n">config_file_thing</span> <span class="ow">in</span> <span class="n">config_files</span><span class="p">:</span>
@@ -342,6 +306,10 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">config_files_read</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">config_file</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">configp</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">config_file</span><span class="p">)</span>
+            <span class="c"># Apparently ConfigParser.read_file doesn&#39;t reset the read position?</span>
+            <span class="c"># Or maybe it has to do with using StringIO instead of real files?</span>
+            <span class="c"># Anyway, we want to read in the file again (for overriding parent instructions), so:</span>
+            <span class="n">config_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
         <span class="c"># Determine the path(s) of the parent config file(s)</span>
         <span class="n">parent_file_paths</span> <span class="o">=</span> <span class="p">[]</span>
@@ -352,7 +320,7 @@
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parent_files</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
                 <span class="n">parent_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">parent_files</span><span class="p">]</span>
             <span class="n">parent_file_paths</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span>
-                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">PAX_DIR</span><span class="p">,</span> <span class="s">&#39;config&#39;</span><span class="p">,</span> <span class="n">pf</span> <span class="o">+</span> <span class="s">&#39;.ini&#39;</span><span class="p">)</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">PAX_DIR</span><span class="p">,</span> <span class="s">&#39;config&#39;</span><span class="p">,</span> <span class="n">pf</span> <span class="o">+</span> <span class="s">&#39;.ini&#39;</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">pf</span> <span class="ow">in</span> <span class="n">parent_files</span><span class="p">])</span>
 
         <span class="k">if</span> <span class="s">&#39;parent_configuration_file&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">configp</span><span class="p">[</span><span class="s">&#39;pax&#39;</span><span class="p">]:</span>
@@ -398,10 +366,10 @@
     <span class="nd">@staticmethod</span>
 <div class="viewcode-block" id="Processor.get_plugin_search_paths"><a class="viewcode-back" href="../../pax.html#pax.core.Processor.get_plugin_search_paths">[docs]</a>    <span class="k">def</span> <span class="nf">get_plugin_search_paths</span><span class="p">(</span><span class="n">extra_paths</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Returns paths where we should search for plugins</span>
-<span class="sd">        Search for plugins in  ./plugins, PAX_DIR/plugins, any directories in config[&#39;plugin_paths&#39;]</span>
+<span class="sd">        Search for plugins in  ., ./plugins, utils.PAX_DIR/plugins, any directories in config[&#39;plugin_paths&#39;]</span>
 <span class="sd">        Search in all subdirs of the above, except for __pycache__ dirs</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">plugin_search_paths</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;./plugins&#39;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">PAX_DIR</span><span class="p">,</span> <span class="s">&#39;plugins&#39;</span><span class="p">)]</span>
+        <span class="n">plugin_search_paths</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;./plugins&#39;</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">PAX_DIR</span><span class="p">,</span> <span class="s">&#39;plugins&#39;</span><span class="p">)]</span>
         <span class="k">if</span> <span class="n">extra_paths</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="n">plugin_search_paths</span> <span class="o">+=</span> <span class="n">extra_paths</span>
 
@@ -457,6 +425,14 @@
             <span class="k">return</span> <span class="n">plugins_by_name</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;No plugin named </span><span class="si">%s</span><span class="s"> has been initialized.&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Processor.get_metadata"><a class="viewcode-back" href="../../pax.html#pax.core.Processor.get_metadata">[docs]</a>    <span class="k">def</span> <span class="nf">get_metadata</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">run_number</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;DEFAULT&#39;</span><span class="p">][</span><span class="s">&#39;run_number&#39;</span><span class="p">],</span>
+                    <span class="n">tpc</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;DEFAULT&#39;</span><span class="p">][</span><span class="s">&#39;tpc_name&#39;</span><span class="p">],</span>
+                    <span class="n">file_builder_name</span><span class="o">=</span><span class="s">&#39;pax&#39;</span><span class="p">,</span>
+                    <span class="n">file_builder_version</span><span class="o">=</span><span class="n">pax</span><span class="o">.</span><span class="n">__version__</span><span class="p">,</span>
+                    <span class="n">timestamp</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span>
+                    <span class="n">configuration</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="Processor.process_event"><a class="viewcode-back" href="../../pax.html#pax.core.Processor.process_event">[docs]</a>    <span class="k">def</span> <span class="nf">process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Process one event with all action plugins. Returns processed event.&quot;&quot;&quot;</span>
@@ -551,13 +527,19 @@
         <span class="c"># Shutdown all plugins now -- don&#39;t wait until this Processor instance gets deleted</span>
         <span class="k">if</span> <span class="n">clean_shutdown</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Shutting down all plugins...&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+
+    <span class="c"># Call shutdown on all plugins</span></div>
+<div class="viewcode-block" id="Processor.stop"><a class="viewcode-back" href="../../pax.html#pax.core.Processor.stop">[docs]</a>    <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Shutting down all plugins...&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_plugin</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Shutting down </span><span class="si">%s</span><span class="s">...&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_plugin</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">input_plugin</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">input_plugin</span><span class="o">.</span><span class="n">has_shut_down</span> <span class="o">=</span> <span class="bp">True</span>
-            <span class="k">for</span> <span class="n">ap</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_plugins</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Shutting down </span><span class="si">%s</span><span class="s">...&quot;</span> <span class="o">%</span> <span class="n">ap</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-                <span class="n">ap</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
-                <span class="n">ap</span><span class="o">.</span><span class="n">has_shut_down</span> <span class="o">=</span> <span class="bp">True</span></div></div>
+        <span class="k">for</span> <span class="n">ap</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_plugins</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Shutting down </span><span class="si">%s</span><span class="s">...&quot;</span> <span class="o">%</span> <span class="n">ap</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">ap</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
+            <span class="n">ap</span><span class="o">.</span><span class="n">has_shut_down</span> <span class="o">=</span> <span class="bp">True</span></div></div>
 </pre></div>
 
           </div>
@@ -591,7 +573,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Processor for Analyzing XENON1T 3.0.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>

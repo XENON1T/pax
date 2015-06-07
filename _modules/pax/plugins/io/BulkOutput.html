@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.io.BulkOutput &mdash; Processor for Analyzing XENON1T 2.1.0 documentation</title>
+    <title>pax.plugins.io.BulkOutput &mdash; Processor for Analyzing XENON1T 3.0.0 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '2.1.0',
+        VERSION:     '3.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 2.1.0 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 3.0.0 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" /> 
   </head>
   <body>
@@ -36,7 +36,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 3.0.0 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -54,7 +54,6 @@
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 
-<span class="kn">import</span> <span class="nn">pax</span>
 <span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">exceptions</span><span class="p">,</span> <span class="n">datastructure</span>
 <span class="kn">from</span> <span class="nn">pax.formats</span> <span class="kn">import</span> <span class="n">flat_data_formats</span>
 
@@ -95,7 +94,7 @@
         <span class="c">#   dtype   :       dtype of numpy record (includes field names),</span>
         <span class="c"># }</span>
 
-        <span class="n">configdump</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+        <span class="n">metadata_dump</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">get_metadata</span><span class="p">())</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
             <span class="c"># Write pax configuration and version to pax_info dataframe</span>
@@ -103,11 +102,9 @@
             <span class="c"># If you append to an existing HDF5 file, it will make a second row</span>
             <span class="c"># TODO: However, it will probably crash if the configuration is a longer string...</span>
             <span class="s">&#39;pax_info&#39;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s">&#39;tuples&#39;</span><span class="p">:</span>       <span class="p">[(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span> <span class="nb">str</span><span class="p">(</span><span class="n">pax</span><span class="o">.</span><span class="n">__version__</span><span class="p">),</span> <span class="n">configdump</span><span class="p">)],</span>
+                <span class="s">&#39;tuples&#39;</span><span class="p">:</span>       <span class="p">[(</span><span class="n">metadata_dump</span><span class="p">,)],</span>
                 <span class="s">&#39;records&#39;</span><span class="p">:</span>      <span class="bp">None</span><span class="p">,</span>
-                <span class="s">&#39;dtype&#39;</span><span class="p">:</span>        <span class="p">[(</span><span class="s">&#39;timestamp&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">),</span>
-                                 <span class="p">(</span><span class="s">&#39;pax_version&#39;</span><span class="p">,</span> <span class="s">&#39;S32&#39;</span><span class="p">),</span>
-                                 <span class="p">(</span><span class="s">&#39;configuration_json&#39;</span><span class="p">,</span> <span class="s">&#39;S</span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">configdump</span><span class="p">))]}</span>
+                <span class="s">&#39;dtype&#39;</span><span class="p">:</span>        <span class="p">[(</span><span class="s">&#39;metadata_json&#39;</span><span class="p">,</span> <span class="s">&#39;S</span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">metadata_dump</span><span class="p">))]}</span>
         <span class="p">}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">events_ready_for_conversion</span> <span class="o">=</span> <span class="mi">0</span>
@@ -177,7 +174,8 @@
         <span class="k">for</span> <span class="n">dfname</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Converting </span><span class="si">%s</span><span class="s"> &quot;</span> <span class="o">%</span> <span class="n">dfname</span><span class="p">)</span>
             <span class="c"># Set index at which next set of tuples begins</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">dfname</span><span class="p">][</span><span class="s">&#39;first_index&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">dfname</span><span class="p">][</span><span class="s">&#39;tuples&#39;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">dfname</span><span class="p">][</span><span class="s">&#39;first_index&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">dfname</span><span class="p">][</span><span class="s">&#39;tuples&#39;</span><span class="p">])</span> <span class="o">+</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">dfname</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;first_index&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
             <span class="c"># Convert tuples to records</span>
             <span class="n">newrecords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">dfname</span><span class="p">][</span><span class="s">&#39;tuples&#39;</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">dfname</span><span class="p">][</span><span class="s">&#39;dtype&#39;</span><span class="p">])</span>
             <span class="c"># Clear tuples. Enjoy the freed memory.</span>
@@ -234,18 +232,14 @@
         <span class="n">first_time_seen</span> <span class="o">=</span> <span class="bp">False</span>
         <span class="k">if</span> <span class="n">m_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">m_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-                <span class="s">&#39;tuples&#39;</span><span class="p">:</span>         <span class="p">[],</span>
-                <span class="s">&#39;records&#39;</span><span class="p">:</span>        <span class="bp">None</span><span class="p">,</span>
+                <span class="s">&#39;tuples&#39;</span><span class="p">:</span>               <span class="p">[],</span>
+                <span class="s">&#39;records&#39;</span><span class="p">:</span>              <span class="bp">None</span><span class="p">,</span>
                 <span class="c"># Initialize dtype with the index fields</span>
-                <span class="s">&#39;dtype&#39;</span><span class="p">:</span>          <span class="p">[(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">index_fields</span><span class="p">],</span>
-                <span class="s">&#39;index_depth&#39;</span><span class="p">:</span>    <span class="nb">len</span><span class="p">(</span><span class="n">m_indices</span><span class="p">),</span>
-                <span class="c"># Dictionary of collection field&#39;s field_names: collection class name</span>
-                <span class="c"># Remember if cf is a collection field,</span>
-                <span class="c"># then the model has a classattribute &#39;cf&#39; = (ChildClassName, ): see data_model.py</span>
-                <span class="s">&#39;subcollection_fields&#39;</span><span class="p">:</span> <span class="p">{</span>
-                    <span class="n">fieldn</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">__class__</span><span class="p">,</span> <span class="n">fieldn</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">__name__</span>
-                    <span class="k">for</span> <span class="n">fieldn</span> <span class="ow">in</span> <span class="n">m</span><span class="o">.</span><span class="n">get_list_field_names</span><span class="p">()},</span>
-                <span class="s">&#39;first_index&#39;</span><span class="p">:</span>      <span class="mi">0</span>
+                <span class="s">&#39;dtype&#39;</span><span class="p">:</span>                <span class="p">[(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">index_fields</span><span class="p">],</span>
+                <span class="s">&#39;index_depth&#39;</span><span class="p">:</span>          <span class="nb">len</span><span class="p">(</span><span class="n">m_indices</span><span class="p">),</span>
+                <span class="c"># Dictionary of collection field&#39;s {field_names: collection class name}</span>
+                <span class="s">&#39;subcollection_fields&#39;</span><span class="p">:</span> <span class="n">m</span><span class="o">.</span><span class="n">get_list_field_info</span><span class="p">(),</span>
+                <span class="s">&#39;first_index&#39;</span><span class="p">:</span>          <span class="mi">0</span>
             <span class="p">}</span>
             <span class="n">first_time_seen</span> <span class="o">=</span> <span class="bp">True</span>
 
@@ -258,7 +252,7 @@
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">field_value</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
 
                 <span class="k">assert</span> <span class="n">field_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">m_name</span><span class="p">][</span><span class="s">&#39;subcollection_fields&#39;</span><span class="p">]</span>
-                <span class="n">child_class_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">m_name</span><span class="p">][</span><span class="s">&#39;subcollection_fields&#39;</span><span class="p">][</span><span class="n">field_name</span><span class="p">]</span>
+                <span class="n">child_class_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">m_name</span><span class="p">][</span><span class="s">&#39;subcollection_fields&#39;</span><span class="p">][</span><span class="n">field_name</span><span class="p">]</span><span class="o">.</span><span class="n">__name__</span>
 
                 <span class="c"># Store the absolute start index &amp; number of children</span>
                 <span class="n">child_start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_index_of</span><span class="p">(</span><span class="n">child_class_name</span><span class="p">)</span>
@@ -307,7 +301,7 @@
     <span class="k">def</span> <span class="nf">_numpy_field_dtype</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return field dtype of numpy record with field name name and value (of type of) x</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s">&#39;configuration_json&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s">&#39;metadata_dump&#39;</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">name</span><span class="p">,</span> <span class="s">&#39;O&#39;</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">name</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span>
@@ -369,7 +363,6 @@
 </div>
 <div class="viewcode-block" id="ReadFromBulkOutput.get_events"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BulkOutput.ReadFromBulkOutput.get_events">[docs]</a>    <span class="k">def</span> <span class="nf">get_events</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get events from processed data source</span>
-<span class="sd">        Follows plugin API.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">of</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_format</span>
 
@@ -422,23 +415,30 @@
 
             <span class="n">event</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convert_record</span><span class="p">(</span><span class="n">datastructure</span><span class="o">.</span><span class="n">Event</span><span class="p">,</span> <span class="n">e_record</span><span class="p">)</span>
 
-            <span class="k">for</span> <span class="n">peak_i</span><span class="p">,</span> <span class="n">p_record</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">peaks</span><span class="p">):</span>
-                <span class="n">peak</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convert_record</span><span class="p">(</span><span class="n">datastructure</span><span class="o">.</span><span class="n">Peak</span><span class="p">,</span> <span class="n">p_record</span><span class="p">)</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;read_hits_only&#39;</span><span class="p">,</span> <span class="bp">False</span><span class="p">):</span>
+                <span class="c"># Read in only hits for reclustering</span>
+                <span class="k">for</span> <span class="n">hit_record</span> <span class="ow">in</span> <span class="n">in_this_event</span><span class="p">[</span><span class="s">&#39;Hit&#39;</span><span class="p">]:</span>
+                    <span class="n">cp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convert_record</span><span class="p">(</span><span class="n">datastructure</span><span class="o">.</span><span class="n">Hit</span><span class="p">,</span> <span class="n">hit_record</span><span class="p">)</span>
+                    <span class="n">event</span><span class="o">.</span><span class="n">all_hits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cp</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
 
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_recposes</span><span class="p">:</span>
-                    <span class="k">for</span> <span class="n">rp_record</span> <span class="ow">in</span> <span class="n">in_this_event</span><span class="p">[</span><span class="s">&#39;ReconstructedPosition&#39;</span><span class="p">][</span>
-                            <span class="n">in_this_event</span><span class="p">[</span><span class="s">&#39;ReconstructedPosition&#39;</span><span class="p">][</span><span class="s">&#39;Peak&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">peak_i</span><span class="p">]:</span>
-                        <span class="n">peak</span><span class="o">.</span><span class="n">reconstructed_positions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                            <span class="bp">self</span><span class="o">.</span><span class="n">convert_record</span><span class="p">(</span><span class="n">datastructure</span><span class="o">.</span><span class="n">ReconstructedPosition</span><span class="p">,</span> <span class="n">rp_record</span><span class="p">)</span>
-                        <span class="p">)</span>
+                <span class="k">for</span> <span class="n">peak_i</span><span class="p">,</span> <span class="n">p_record</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">peaks</span><span class="p">):</span>
+                    <span class="n">peak</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convert_record</span><span class="p">(</span><span class="n">datastructure</span><span class="o">.</span><span class="n">Peak</span><span class="p">,</span> <span class="n">p_record</span><span class="p">)</span>
 
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_hits</span><span class="p">:</span>
-                    <span class="k">for</span> <span class="n">hit_record</span> <span class="ow">in</span> <span class="n">in_this_event</span><span class="p">[</span><span class="s">&#39;Hit&#39;</span><span class="p">][(</span><span class="n">in_this_event</span><span class="p">[</span><span class="s">&#39;Hit&#39;</span><span class="p">][</span><span class="s">&#39;Peak&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">peak_i</span><span class="p">)]:</span>
-                        <span class="n">cp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convert_record</span><span class="p">(</span><span class="n">datastructure</span><span class="o">.</span><span class="n">Hit</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_numpy_record_to_dict</span><span class="p">(</span><span class="n">hit_record</span><span class="p">))</span>
-                        <span class="n">peak</span><span class="o">.</span><span class="n">hits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cp</span><span class="p">)</span>
-                        <span class="n">event</span><span class="o">.</span><span class="n">all_hits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cp</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_recposes</span><span class="p">:</span>
+                        <span class="k">for</span> <span class="n">rp_record</span> <span class="ow">in</span> <span class="n">in_this_event</span><span class="p">[</span><span class="s">&#39;ReconstructedPosition&#39;</span><span class="p">][</span>
+                                <span class="n">in_this_event</span><span class="p">[</span><span class="s">&#39;ReconstructedPosition&#39;</span><span class="p">][</span><span class="s">&#39;Peak&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">peak_i</span><span class="p">]:</span>
+                            <span class="n">peak</span><span class="o">.</span><span class="n">reconstructed_positions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">convert_record</span><span class="p">(</span><span class="n">datastructure</span><span class="o">.</span><span class="n">ReconstructedPosition</span><span class="p">,</span> <span class="n">rp_record</span><span class="p">)</span>
+                            <span class="p">)</span>
 
-                <span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">peak</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">read_hits</span><span class="p">:</span>
+                        <span class="k">for</span> <span class="n">hit_record</span> <span class="ow">in</span> <span class="n">in_this_event</span><span class="p">[</span><span class="s">&#39;Hit&#39;</span><span class="p">][(</span><span class="n">in_this_event</span><span class="p">[</span><span class="s">&#39;Hit&#39;</span><span class="p">][</span><span class="s">&#39;Peak&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">peak_i</span><span class="p">)]:</span>
+                            <span class="n">cp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">convert_record</span><span class="p">(</span><span class="n">datastructure</span><span class="o">.</span><span class="n">Hit</span><span class="p">,</span> <span class="n">hit_record</span><span class="p">)</span>
+                            <span class="n">peak</span><span class="o">.</span><span class="n">hits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cp</span><span class="p">)</span>
+                            <span class="n">event</span><span class="o">.</span><span class="n">all_hits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cp</span><span class="p">)</span>
+
+                    <span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">peak</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">total_time_taken</span> <span class="o">+=</span> <span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">ts</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1000</span>
             <span class="k">yield</span> <span class="n">event</span>
@@ -505,7 +505,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 2.1.0 documentation</a> &raquo;</li>
+        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 3.0.0 documentation</a> &raquo;</li>
           <li><a href="../../../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>

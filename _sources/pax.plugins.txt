@@ -12,18 +12,6 @@ Subpackages
     pax.plugins.posrec
     pax.plugins.signal_processing
 
-Submodules
-----------
-
-pax.plugins.XerawdpImitation module
------------------------------------
-
-.. automodule:: pax.plugins.XerawdpImitation
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
 Module contents
 ---------------
 

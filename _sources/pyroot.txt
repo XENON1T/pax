@@ -2,10 +2,10 @@
 PyROOT installation
 ===============================
 
-The Processor for Analysing XENON (PAX) uses ROOT (http://root.cern.ch/drupal/) for the output of files. 
-PyROOT is a Python extension module that allows the user to interact with any ROOT class from the Python interpreter.
-For this purpose it is necessary to have the latest Python (3.4) version working with ROOT. This installation document 
-shows the steps needed to do this correctly in an virtual environment on Ubuntu 14.
+The Processor for Analysing XENON (PAX) can use ROOT (http://root.cern.ch/drupal/) as a processed data output format.
+If you want to use this output format, you'll first have to install pyROOT 
+(a Python module to interact with ROOT classes) in the latest version of Python (3.4).
+This installation document shows the steps needed to do this correctly in an virtual environment on Ubuntu 14.
 
 Installation
 =============
@@ -72,9 +72,36 @@ The ROOT build should be successful
 
    echo source bin/thisroot.sh >> ~/env/py34/bin/activate
 
+The last part of the pyROOT install deals with the ROOT.py file. You can either convert it yourself or copy the file provided in pax/travis.
+
+To use the provided ROOT.py from PAX.
+
+* Copy the file to the proper directory::
+
+   #Using ROOT v5
+   cp pax/travis/modified_ROOT_v5.34.25.py ~/env/py34/src/root/lib/ROOT.py
+   
+   #Using ROOT v6
+   cp pax/travis/modified_ROOT_v6.02.05.py ~/env/py34/src/root/lib/ROOT.py
+
+To manually convert ROOT.py.
+
 * Convert the code in ROOT.py from python 2 to python 3 with 2to3::
 
-   2to3 -w ~/env/py34/src/root/lib/ROOT.py 
+   2to3 -w ~/env/py34/src/root/lib/ROOT.py
+
+* Some tweaking of ROOT.py is required, comment out the following lines in ROOT.py (on lines 355, 542-544), (this rather ad hoc modification disables the backwards compatibility, but since we are using python 3 this is not needed)::
+
+    builtins.__import__ = _importhook
+    
+    # special case for cout (backwards compatibility)
+    if hasattr( std, '__1' ):
+      self.__dict__[ 'cout' ] = getattr( std, '__1' ).cout
+
+* ROOT.py also has a cleanup() function that is called when PAX shuts down, since we have changed the behaviour of ROOT.py this function causes errors. Bypass it by putting a return statement after its definition (yes, this is not good practise and we are looking for a better solution)::
+
+   def cleanup():
+       return
 
 Start python and check that "import ROOT" works. If so happy programming.
 

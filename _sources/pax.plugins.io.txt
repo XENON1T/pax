@@ -12,6 +12,14 @@ pax.plugins.io.Avro module
     :undoc-members:
     :show-inheritance:
 
+pax.plugins.io.BSON module
+--------------------------
+
+.. automodule:: pax.plugins.io.BSON
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pax.plugins.io.BulkOutput module
 --------------------------------
 
@@ -32,14 +40,6 @@ pax.plugins.io.MongoDB module
 -----------------------------
 
 .. automodule:: pax.plugins.io.MongoDB
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pax.plugins.io.Pandas module
-----------------------------
-
-.. automodule:: pax.plugins.io.Pandas
     :members:
     :undoc-members:
     :show-inheritance:
