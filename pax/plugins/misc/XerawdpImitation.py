@@ -223,7 +223,7 @@ class BuildWaveforms(plugin.TransformPlugin):
                     event.get_sum_waveform(group).samples[start_index:end_index + 1] += pulse_to_add
 
             # Store some metadata for this pulse
-            occ.height = np.max(corrected_pulse)
+            occ.maximum = np.max(corrected_pulse)
             occ.baseline = baseline
 
             last_pulse_in[channel] = occ

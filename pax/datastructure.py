@@ -224,36 +224,35 @@ class Pulse(StrictModel):
     A DAQ pulse can also be thought of as a pulse in a PMT.
     """
 
-    #: Starttime of this occurence within event
+    #: Start time of this pulse: samples
     #:
-    #: Units are samples.  This nonnegative number starts at zero and is an integere because
+    #: Units are samples. This nonnegative number starts at zero and is an integer because
     #: it's an index.
     left = INT_NAN
 
-    #: Stoptime of this occurence within event
+    #: Stoptime of this pulse within event
     #:
     #: Units are samples and this time is inclusive of last sample.  This nonnegative number
-    #: starts at zero and is an integere because it's an index.
+    #: starts at zero and is an integer because it's an index.
     right = INT_NAN
 
-    #: Channel the pulse belongs to (integer)
+    #: Channel number the pulse belongs to
     channel = INT_NAN
 
-    #: Maximum amplitude (in ADC counts; float)
-    #: Will remain nan if channel's gain is 0
-    #: baseline_correction, if any, has been substracted
-    height = float('nan')
+    #: Raw wave data (numpy array of int16, ADC counts)
+    raw_data = np.array([], np.int16)
 
-    #: Noise sigma for this pulse (in ADC counts)
-    #: Will remain nan unless pulse is processed by hitfinder
-    noise_sigma = float('nan')
-
-    #: Baseline (in ADC counts, but float!) relative to configured reference baseline
-    #: Will remain nan if pulse is not processed by hitfinder
+    #: Baseline in ADC counts relative to reference baseline -- but float!
     baseline = float('nan')
 
-    #: Raw wave data (in ADC counts, NOT pe/bin!; numpy array of int16)
-    raw_data = np.array([], np.int16)
+    #: Maximum amplitude reached in the pulse (in ADC counts above baseline)
+    maximum = float('nan')
+
+    #: Minimum amplitude (in ADC counts above baseline, so should be negative)
+    minimum = float('nan')
+
+    #: Noise sigma for this pulse (in ADC counts - but float!)
+    noise_sigma = float('nan')
 
     @property
     def length(self):
