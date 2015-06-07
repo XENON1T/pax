@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.signal_processing package &mdash; Processor for Analyzing XENON1T 3.0.0 documentation</title>
+    <title>pax.plugins.signal_processing package &mdash; Processor for Analyzing XENON1T 3.1.0 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '3.0.0',
+        VERSION:     '3.1.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 3.0.0 documentation" href="index.html" /> 
+    <link rel="top" title="Processor for Analyzing XENON1T 3.1.0 documentation" href="index.html" /> 
   </head>
   <body>
     <div class="related">
@@ -35,7 +35,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 3.0.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 3.1.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -65,6 +65,33 @@ If so, truncate them or raise exception, depending on config</p>
 <dl class="method">
 <dt id="pax.plugins.signal_processing.CheckPulses.CheckBounds.transform_event">
 <tt class="descname">transform_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/signal_processing/CheckPulses.html#CheckBounds.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.CheckPulses.CheckBounds.transform_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.plugins.signal_processing.CheckPulses.ConcatenateAdjacentPulses">
+<em class="property">class </em><tt class="descclassname">pax.plugins.signal_processing.CheckPulses.</tt><tt class="descname">ConcatenateAdjacentPulses</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/signal_processing/CheckPulses.html#ConcatenateAdjacentPulses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.CheckPulses.ConcatenateAdjacentPulses" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></tt></a></p>
+<p>Concatenates directly adjacent pulses in the same channel
+This ensures baselines / noise levels won&#8217;t get recalculated in the middle
+of some data region (possibly containing hits).
+Assumes pulses are already sorted by channel, then left. Use SortPulses if this is not automatic.</p>
+<dl class="method">
+<dt id="pax.plugins.signal_processing.CheckPulses.ConcatenateAdjacentPulses.transform_event">
+<tt class="descname">transform_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/signal_processing/CheckPulses.html#ConcatenateAdjacentPulses.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.CheckPulses.ConcatenateAdjacentPulses.transform_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.plugins.signal_processing.CheckPulses.SortPulses">
+<em class="property">class </em><tt class="descclassname">pax.plugins.signal_processing.CheckPulses.</tt><tt class="descname">SortPulses</tt><big>(</big><em>config_values</em>, <em>processor</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/signal_processing/CheckPulses.html#SortPulses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.CheckPulses.SortPulses" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><tt class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></tt></a></p>
+<p>Sorts pulses by channel, then left</p>
+<dl class="method">
+<dt id="pax.plugins.signal_processing.CheckPulses.SortPulses.transform_event">
+<tt class="descname">transform_event</tt><big>(</big><em>event</em><big>)</big><a class="reference internal" href="_modules/pax/plugins/signal_processing/CheckPulses.html#SortPulses.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.CheckPulses.SortPulses.transform_event" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -200,6 +227,29 @@ Don&#8217;t forget to re-enable the &#64;jit &#8211; otherwise it will run quite
 </dd></dl>
 
 <dl class="attribute">
+<dt id="pax.plugins.signal_processing.HitFinder.compute_hit_properties">
+<tt class="descclassname">pax.plugins.signal_processing.HitFinder.</tt><tt class="descname">compute_hit_properties</tt><a class="reference internal" href="_modules/pax/plugins/signal_processing/HitFinder.html#compute_hit_properties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.HitFinder.compute_hit_properties" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finds the maximum index, area, and center of gravity of hits in w indicated by (l, r) bounds in raw_hits.
+Will fill up argmaxes and areas with result.
+raw_hits should be a numpy array of (left, right) bounds (inclusive)
+centers, argmaxes are returned in samples right of hit start &#8211; you probably want to convert this
+Returns nothing</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.plugins.signal_processing.HitFinder.compute_pulse_properties">
+<tt class="descclassname">pax.plugins.signal_processing.HitFinder.</tt><tt class="descname">compute_pulse_properties</tt><a class="reference internal" href="_modules/pax/plugins/signal_processing/HitFinder.html#compute_pulse_properties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.HitFinder.compute_pulse_properties" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute basic pulse properties quickly
+:param w: Raw pulse waveform in ADC counts
+:param initial_baseline_samples: number of samples at start of pulse to use for baseline computation
+:return: (baseline, noise_sigma, min, max);</p>
+<blockquote>
+<div>min and max are relative to baseline
+noise_sigma is the std of samples below baseline</div></blockquote>
+<p>Does not modify w. Does not assume anything about inversion of w!!</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="pax.plugins.signal_processing.HitFinder.find_intervals_above_threshold">
 <tt class="descclassname">pax.plugins.signal_processing.HitFinder.</tt><tt class="descname">find_intervals_above_threshold</tt><a class="reference internal" href="_modules/pax/plugins/signal_processing/HitFinder.html#find_intervals_above_threshold"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.HitFinder.find_intervals_above_threshold" title="Permalink to this definition">¶</a></dt>
 <dd><dl class="docutils">
@@ -207,7 +257,7 @@ Don&#8217;t forget to re-enable the &#64;jit &#8211; otherwise it will run quite
 <dd>result_buffer: numpy N*2 array of ints, will be filled by function.</dd>
 </dl>
 <p>Returns: number of intervals found
-Will stop search after raw_peaks found reached N (length of raw_peaks argument passed in).
+Will stop search after N intervals are found, with N the length of result_buffer.
 Boundary indices are inclusive, i.e. the right index is the last index which was still above low_threshold</p>
 </dd></dl>
 
@@ -266,7 +316,7 @@ Boundary indices are inclusive, i.e. the right index is the last index which was
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 3.0.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 3.1.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

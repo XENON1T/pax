@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Event format &mdash; Processor for Analyzing XENON1T 3.0.0 documentation</title>
+    <title>Event format &mdash; Processor for Analyzing XENON1T 3.1.0 documentation</title>
     
     <link rel="stylesheet" href="_static/default.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '3.0.0',
+        VERSION:     '3.1.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 3.0.0 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 3.1.0 documentation" href="index.html" />
     <link rel="next" title="Plugins" href="plugin.html" />
     <link rel="prev" title="Usage" href="usage.html" /> 
   </head>
@@ -43,7 +43,7 @@
         <li class="right" >
           <a href="usage.html" title="Usage"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 3.0.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 3.1.0 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -88,7 +88,7 @@ unless you pass reverse=False, then it is ascending.</p>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.all_hits">
-<tt class="descname">all_hits</tt><em class="property"> = &lt;pax.data_model.ListField object at 0x104365518&gt;</em><a class="headerlink" href="#pax.datastructure.Event.all_hits" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">all_hits</tt><em class="property"> = &lt;pax.data_model.ListField object at 0x10436cd68&gt;</em><a class="headerlink" href="#pax.datastructure.Event.all_hits" title="Permalink to this definition">¶</a></dt>
 <dd><p>Temporary list of hits &#8211; will be shipped off to peaks later</p>
 </dd></dl>
 
@@ -161,14 +161,14 @@ Has to be the same as n_channels in config, provided here for deserialization ea
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.peaks">
-<tt class="descname">peaks</tt><em class="property"> = &lt;pax.data_model.ListField object at 0x1043654e0&gt;</em><a class="headerlink" href="#pax.datastructure.Event.peaks" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">peaks</tt><em class="property"> = &lt;pax.data_model.ListField object at 0x104343518&gt;</em><a class="headerlink" href="#pax.datastructure.Event.peaks" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of peaks</p>
 <p>Returns a list of <a class="reference internal" href="pax.html#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a> classes.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.pulses">
-<tt class="descname">pulses</tt><em class="property"> = &lt;pax.data_model.ListField object at 0x104af03c8&gt;</em><a class="headerlink" href="#pax.datastructure.Event.pulses" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">pulses</tt><em class="property"> = &lt;pax.data_model.ListField object at 0x1049e5320&gt;</em><a class="headerlink" href="#pax.datastructure.Event.pulses" title="Permalink to this definition">¶</a></dt>
 <dd><p>A python list of all pulses in the event (containing instances of the Pulse class)
 An pulse holds a stream of samples in one channel, as provided by the digitizer.</p>
 </dd></dl>
@@ -202,7 +202,7 @@ in &#8216;start_time&#8217;.</p>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.sum_waveforms">
-<tt class="descname">sum_waveforms</tt><em class="property"> = &lt;pax.data_model.ListField object at 0x104365048&gt;</em><a class="headerlink" href="#pax.datastructure.Event.sum_waveforms" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">sum_waveforms</tt><em class="property"> = &lt;pax.data_model.ListField object at 0x104374828&gt;</em><a class="headerlink" href="#pax.datastructure.Event.sum_waveforms" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a list of sum waveforms</p>
 <p>Returns an <a class="reference internal" href="pax.html#pax.datastructure.SumWaveform" title="pax.datastructure.SumWaveform"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.SumWaveform</span></tt></a> class.</p>
 </dd></dl>
@@ -284,7 +284,7 @@ In new pax, is height of highest hit</p>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.hits">
-<tt class="descname">hits</tt><em class="property"> = &lt;pax.data_model.ListField object at 0x1049f9a90&gt;</em><a class="headerlink" href="#pax.datastructure.Peak.hits" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">hits</tt><em class="property"> = &lt;pax.data_model.ListField object at 0x104343630&gt;</em><a class="headerlink" href="#pax.datastructure.Peak.hits" title="Permalink to this definition">¶</a></dt>
 <dd><p>Peaks in individual channels that make up this peak</p>
 </dd></dl>
 
@@ -337,7 +337,7 @@ In new pax, is height of highest hit</p>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.reconstructed_positions">
-<tt class="descname">reconstructed_positions</tt><em class="property"> = &lt;pax.data_model.ListField object at 0x1043656a0&gt;</em><a class="headerlink" href="#pax.datastructure.Peak.reconstructed_positions" title="Permalink to this definition">¶</a></dt>
+<tt class="descname">reconstructed_positions</tt><em class="property"> = &lt;pax.data_model.ListField object at 0x104343550&gt;</em><a class="headerlink" href="#pax.datastructure.Peak.reconstructed_positions" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of reconstructed positions (instances of <a class="reference internal" href="pax.html#pax.datastructure.ReconstructedPosition" title="pax.datastructure.ReconstructedPosition"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.ReconstructedPosition</span></tt></a>)</p>
 </dd></dl>
 
@@ -574,7 +574,7 @@ Note: in Pulse the same number is stored in ADC-counts</p>
         <li class="right" >
           <a href="usage.html" title="Usage"
              >previous</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 3.0.0 documentation</a> &raquo;</li> 
+        <li><a href="index.html">Processor for Analyzing XENON1T 3.1.0 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer">

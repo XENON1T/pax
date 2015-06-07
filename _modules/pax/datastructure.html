@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.datastructure &mdash; Processor for Analyzing XENON1T 3.0.0 documentation</title>
+    <title>pax.datastructure &mdash; Processor for Analyzing XENON1T 3.1.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '3.0.0',
+        VERSION:     '3.1.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 3.0.0 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 3.1.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body>
@@ -36,7 +36,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">Processor for Analyzing XENON1T 3.0.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Processor for Analyzing XENON1T 3.1.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -273,36 +273,35 @@
 <span class="sd">    A DAQ pulse can also be thought of as a pulse in a PMT.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="c">#: Starttime of this occurence within event</span>
+    <span class="c">#: Start time of this pulse: samples</span>
     <span class="c">#:</span>
-    <span class="c">#: Units are samples.  This nonnegative number starts at zero and is an integere because</span>
+    <span class="c">#: Units are samples. This nonnegative number starts at zero and is an integer because</span>
     <span class="c">#: it&#39;s an index.</span>
     <span class="n">left</span> <span class="o">=</span> <span class="n">INT_NAN</span>
 
-    <span class="c">#: Stoptime of this occurence within event</span>
+    <span class="c">#: Stoptime of this pulse within event</span>
     <span class="c">#:</span>
     <span class="c">#: Units are samples and this time is inclusive of last sample.  This nonnegative number</span>
-    <span class="c">#: starts at zero and is an integere because it&#39;s an index.</span>
+    <span class="c">#: starts at zero and is an integer because it&#39;s an index.</span>
     <span class="n">right</span> <span class="o">=</span> <span class="n">INT_NAN</span>
 
-    <span class="c">#: Channel the pulse belongs to (integer)</span>
+    <span class="c">#: Channel number the pulse belongs to</span>
     <span class="n">channel</span> <span class="o">=</span> <span class="n">INT_NAN</span>
 
-    <span class="c">#: Maximum amplitude (in ADC counts; float)</span>
-    <span class="c">#: Will remain nan if channel&#39;s gain is 0</span>
-    <span class="c">#: baseline_correction, if any, has been substracted</span>
-    <span class="n">height</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
+    <span class="c">#: Raw wave data (numpy array of int16, ADC counts)</span>
+    <span class="n">raw_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
 
-    <span class="c">#: Noise sigma for this pulse (in ADC counts)</span>
-    <span class="c">#: Will remain nan unless pulse is processed by hitfinder</span>
-    <span class="n">noise_sigma</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
-
-    <span class="c">#: Baseline (in ADC counts, but float!) relative to configured reference baseline</span>
-    <span class="c">#: Will remain nan if pulse is not processed by hitfinder</span>
+    <span class="c">#: Baseline in ADC counts relative to reference baseline -- but float!</span>
     <span class="n">baseline</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
 
-    <span class="c">#: Raw wave data (in ADC counts, NOT pe/bin!; numpy array of int16)</span>
-    <span class="n">raw_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+    <span class="c">#: Maximum amplitude reached in the pulse (in ADC counts above baseline)</span>
+    <span class="n">maximum</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
+
+    <span class="c">#: Minimum amplitude (in ADC counts above baseline, so should be negative)</span>
+    <span class="n">minimum</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
+
+    <span class="c">#: Noise sigma for this pulse (in ADC counts - but float!)</span>
+    <span class="n">noise_sigma</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
 
     <span class="nd">@property</span>
 <div class="viewcode-block" id="Pulse.length"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Pulse.length">[docs]</a>    <span class="k">def</span> <span class="nf">length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -545,7 +544,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">Processor for Analyzing XENON1T 3.0.0 documentation</a> &raquo;</li>
+        <li><a href="../../index.html">Processor for Analyzing XENON1T 3.1.0 documentation</a> &raquo;</li>
           <li><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>
