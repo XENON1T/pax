@@ -6,15 +6,15 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Event format &mdash; Processor for Analyzing XENON1T 3.1.0 documentation</title>
+    <title>Event format &mdash; Processor for Analyzing XENON1T 3.1.1 documentation</title>
     
-    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '3.1.0',
+        VERSION:     '3.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,12 +23,12 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 3.1.0 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 3.1.1 documentation" href="index.html" />
     <link rel="next" title="Plugins" href="plugin.html" />
     <link rel="prev" title="Usage" href="usage.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -43,29 +43,29 @@
         <li class="right" >
           <a href="usage.html" title="Usage"
              accesskey="P">previous</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 3.1.0 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Processor for Analyzing XENON1T 3.1.1 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <div class="section" id="event-format">
 <h1>Event format<a class="headerlink" href="#event-format" title="Permalink to this headline">¶</a></h1>
 <p>All data available for the current event is stored in the event data structure. Input plugins are required to fill the event with a bare amount of raw information. Transform plugins subsequently add their processed variables.</p>
 <dl class="class">
 <dt id="pax.datastructure.Event">
-<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Event</tt><big>(</big><em>n_channels</em>, <em>start_time</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">Event</code><span class="sig-paren">(</span><em>n_channels</em>, <em>start_time</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event" title="Permalink to this definition">¶</a></dt>
 <dd><p>Event class</p>
 <p>Stores high level information about the triggered event.</p>
 <dl class="method">
 <dt id="pax.datastructure.Event.S1s">
-<tt class="descname">S1s</tt><big>(</big><em>detector='tpc'</em>, <em>sort_key='area'</em>, <em>reverse=True</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.S1s"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.S1s" title="Permalink to this definition">¶</a></dt>
+<code class="descname">S1s</code><span class="sig-paren">(</span><em>detector='tpc'</em>, <em>sort_key='area'</em>, <em>reverse=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Event.S1s"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.S1s" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of S1 (scintillation) signals in this event</p>
 <dl class="docutils">
-<dt>Returns a list of <a class="reference internal" href="pax.html#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a> objects</dt>
+<dt>Returns a list of <a class="reference internal" href="pax.html#pax.datastructure.Peak" title="pax.datastructure.Peak"><code class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></code></a> objects</dt>
 <dd>whose type is &#8216;s1&#8217;, and
 who are in the detector specified by the &#8216;detector&#8217; argument (unless detector=&#8217;all&#8217;)</dd>
 </dl>
@@ -75,10 +75,10 @@ unless you pass reverse=False, then it is ascending.</p>
 
 <dl class="method">
 <dt id="pax.datastructure.Event.S2s">
-<tt class="descname">S2s</tt><big>(</big><em>detector='tpc'</em>, <em>sort_key='area'</em>, <em>reverse=True</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.S2s"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.S2s" title="Permalink to this definition">¶</a></dt>
+<code class="descname">S2s</code><span class="sig-paren">(</span><em>detector='tpc'</em>, <em>sort_key='area'</em>, <em>reverse=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Event.S2s"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.S2s" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of S2 (ionization) signals in this event</p>
 <dl class="docutils">
-<dt>Returns a list of <a class="reference internal" href="pax.html#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a> objects</dt>
+<dt>Returns a list of <a class="reference internal" href="pax.html#pax.datastructure.Peak" title="pax.datastructure.Peak"><code class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></code></a> objects</dt>
 <dd>whose type is &#8216;s2&#8217;, and
 who are in the detector specified by the &#8216;detector&#8217; argument (unless detector=&#8217;all&#8217;)</dd>
 </dl>
@@ -88,94 +88,94 @@ unless you pass reverse=False, then it is ascending.</p>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.all_hits">
-<tt class="descname">all_hits</tt><em class="property"> = &lt;pax.data_model.ListField object at 0x10436cd68&gt;</em><a class="headerlink" href="#pax.datastructure.Event.all_hits" title="Permalink to this definition">¶</a></dt>
+<code class="descname">all_hits</code><em class="property"> = &lt;pax.data_model.ListField object&gt;</em><a class="headerlink" href="#pax.datastructure.Event.all_hits" title="Permalink to this definition">¶</a></dt>
 <dd><p>Temporary list of hits &#8211; will be shipped off to peaks later</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.dataset_name">
-<tt class="descname">dataset_name</tt><em class="property"> = 'Unknown'</em><a class="headerlink" href="#pax.datastructure.Event.dataset_name" title="Permalink to this definition">¶</a></dt>
+<code class="descname">dataset_name</code><em class="property"> = 'Unknown'</em><a class="headerlink" href="#pax.datastructure.Event.dataset_name" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="pax.datastructure.Event.duration">
-<tt class="descname">duration</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.duration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.duration" title="Permalink to this definition">¶</a></dt>
+<code class="descname">duration</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Event.duration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.duration" title="Permalink to this definition">¶</a></dt>
 <dd><p>Duration of event window in units of ns</p>
 </dd></dl>
 
 <dl class="classmethod">
 <dt id="pax.datastructure.Event.empty_event">
-<em class="property">classmethod </em><tt class="descname">empty_event</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.empty_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.empty_event" title="Permalink to this definition">¶</a></dt>
+<em class="property">classmethod </em><code class="descname">empty_event</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Event.empty_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.empty_event" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns an empty example event: for testing purposes only!!</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.event_number">
-<tt class="descname">event_number</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Event.event_number" title="Permalink to this definition">¶</a></dt>
+<code class="descname">event_number</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Event.event_number" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="pax.datastructure.Event.get_sum_waveform">
-<tt class="descname">get_sum_waveform</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.get_sum_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.get_sum_waveform" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_sum_waveform</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Event.get_sum_waveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.get_sum_waveform" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get sum waveform object by name
 Deprecated &#8211; for Xerawdp matching only</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="pax.datastructure.Event.get_sum_waveform_names">
-<tt class="descname">get_sum_waveform_names</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.get_sum_waveform_names"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.get_sum_waveform_names" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_sum_waveform_names</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Event.get_sum_waveform_names"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.get_sum_waveform_names" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get list of the names of sum waveform objects
 Deprecated &#8211; for Xerawdp matching only</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.is_channel_suspicious">
-<tt class="descname">is_channel_suspicious</tt><em class="property"> = array([], dtype=bool)</em><a class="headerlink" href="#pax.datastructure.Event.is_channel_suspicious" title="Permalink to this definition">¶</a></dt>
+<code class="descname">is_channel_suspicious</code><em class="property"> = array([], dtype=bool)</em><a class="headerlink" href="#pax.datastructure.Event.is_channel_suspicious" title="Permalink to this definition">¶</a></dt>
 <dd><p>Was channel flagged as suspicious?</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="pax.datastructure.Event.length">
-<tt class="descname">length</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Event.length"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.length" title="Permalink to this definition">¶</a></dt>
+<code class="descname">length</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Event.length"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.length" title="Permalink to this definition">¶</a></dt>
 <dd><p>Number of samples in the event</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.n_channels">
-<tt class="descname">n_channels</tt><em class="property"> = -99999</em><a class="headerlink" href="#pax.datastructure.Event.n_channels" title="Permalink to this definition">¶</a></dt>
+<code class="descname">n_channels</code><em class="property"> = -99999</em><a class="headerlink" href="#pax.datastructure.Event.n_channels" title="Permalink to this definition">¶</a></dt>
 <dd><p>Number of channels in the event
 Has to be the same as n_channels in config, provided here for deserialization ease</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.n_hits_rejected">
-<tt class="descname">n_hits_rejected</tt><em class="property"> = array([], dtype=int64)</em><a class="headerlink" href="#pax.datastructure.Event.n_hits_rejected" title="Permalink to this definition">¶</a></dt>
+<code class="descname">n_hits_rejected</code><em class="property"> = array([], dtype=int64)</em><a class="headerlink" href="#pax.datastructure.Event.n_hits_rejected" title="Permalink to this definition">¶</a></dt>
 <dd><p>Number of hits rejected in the suspicious channel algorithm</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.noise_pulses_in">
-<tt class="descname">noise_pulses_in</tt><em class="property"> = array([], dtype=int64)</em><a class="headerlink" href="#pax.datastructure.Event.noise_pulses_in" title="Permalink to this definition">¶</a></dt>
+<code class="descname">noise_pulses_in</code><em class="property"> = array([], dtype=int64)</em><a class="headerlink" href="#pax.datastructure.Event.noise_pulses_in" title="Permalink to this definition">¶</a></dt>
 <dd><p>Number of noise pulses (pulses without any hits found) per channel</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.peaks">
-<tt class="descname">peaks</tt><em class="property"> = &lt;pax.data_model.ListField object at 0x104343518&gt;</em><a class="headerlink" href="#pax.datastructure.Event.peaks" title="Permalink to this definition">¶</a></dt>
+<code class="descname">peaks</code><em class="property"> = &lt;pax.data_model.ListField object&gt;</em><a class="headerlink" href="#pax.datastructure.Event.peaks" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of peaks</p>
-<p>Returns a list of <a class="reference internal" href="pax.html#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a> classes.</p>
+<p>Returns a list of <a class="reference internal" href="pax.html#pax.datastructure.Peak" title="pax.datastructure.Peak"><code class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></code></a> classes.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.pulses">
-<tt class="descname">pulses</tt><em class="property"> = &lt;pax.data_model.ListField object at 0x1049e5320&gt;</em><a class="headerlink" href="#pax.datastructure.Event.pulses" title="Permalink to this definition">¶</a></dt>
+<code class="descname">pulses</code><em class="property"> = &lt;pax.data_model.ListField object&gt;</em><a class="headerlink" href="#pax.datastructure.Event.pulses" title="Permalink to this definition">¶</a></dt>
 <dd><p>A python list of all pulses in the event (containing instances of the Pulse class)
 An pulse holds a stream of samples in one channel, as provided by the digitizer.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.sample_duration">
-<tt class="descname">sample_duration</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Event.sample_duration" title="Permalink to this definition">¶</a></dt>
+<code class="descname">sample_duration</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Event.sample_duration" title="Permalink to this definition">¶</a></dt>
 <dd><p>Time duration of a sample (in pax units, i.e. ns)
 This is also in config, but we need it here too, to convert between event duration and length in samples
 Must be an int for same reason as start_time and stop_time
@@ -184,7 +184,7 @@ DO NOT set to 10 ns as default, otherwise no way to check if it was given to con
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.start_time">
-<tt class="descname">start_time</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Event.start_time" title="Permalink to this definition">¶</a></dt>
+<code class="descname">start_time</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Event.start_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Integer start time of the event in nanoseconds</p>
 <p>Time that the first sample starts. This is a 64-bit number that follows the
 UNIX clock. Or rather, it starts from January 1, 1970.  This must be an integer
@@ -193,7 +193,7 @@ because floats have rounding that result in imprecise times.</p>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.stop_time">
-<tt class="descname">stop_time</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Event.stop_time" title="Permalink to this definition">¶</a></dt>
+<code class="descname">stop_time</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Event.stop_time" title="Permalink to this definition">¶</a></dt>
 <dd><p>Integer stop time of the event in nanoseconds
 This stop time includes the last recorded sample.  Therefore, it&#8217;s the right
 edge of the last sample.  This is a 64-bit integer for the reasons explained
@@ -202,160 +202,159 @@ in &#8216;start_time&#8217;.</p>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.sum_waveforms">
-<tt class="descname">sum_waveforms</tt><em class="property"> = &lt;pax.data_model.ListField object at 0x104374828&gt;</em><a class="headerlink" href="#pax.datastructure.Event.sum_waveforms" title="Permalink to this definition">¶</a></dt>
+<code class="descname">sum_waveforms</code><em class="property"> = &lt;pax.data_model.ListField object&gt;</em><a class="headerlink" href="#pax.datastructure.Event.sum_waveforms" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns a list of sum waveforms</p>
-<p>Returns an <a class="reference internal" href="pax.html#pax.datastructure.SumWaveform" title="pax.datastructure.SumWaveform"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.SumWaveform</span></tt></a> class.</p>
+<p>Returns an <a class="reference internal" href="pax.html#pax.datastructure.SumWaveform" title="pax.datastructure.SumWaveform"><code class="xref py py-class docutils literal"><span class="pre">pax.datastructure.SumWaveform</span></code></a> class.</p>
 </dd></dl>
 
 </dd></dl>
 
-<p>There are variables within the class that refer to <a class="reference internal" href="pax.html#pax.datastructure.Peak" title="pax.datastructure.Peak"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></tt></a> and <a class="reference internal" href="pax.html#pax.datastructure.SumWaveform" title="pax.datastructure.SumWaveform"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.SumWaveform</span></tt></a> objects.  These have their own class structure.  For example, both S1 and S2 peaks follow the following syntax.</p>
+<p>There are variables within the class that refer to <a class="reference internal" href="pax.html#pax.datastructure.Peak" title="pax.datastructure.Peak"><code class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></code></a> and <a class="reference internal" href="pax.html#pax.datastructure.SumWaveform" title="pax.datastructure.SumWaveform"><code class="xref py py-class docutils literal"><span class="pre">pax.datastructure.SumWaveform</span></code></a> objects.  These have their own class structure.  For example, both S1 and S2 peaks follow the following syntax.</p>
 <dl class="class">
 <dt id="pax.datastructure.Peak">
-<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Peak</tt><big>(</big><em>kwargs_dict=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak" title="Permalink to this definition">¶</a></dt>
-<dd><p>Peak</p>
-<p>A peak will be, e.g., S1 or S2.</p>
+<em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">Peak</code><span class="sig-paren">(</span><em>kwargs_dict=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak" title="Permalink to this definition">¶</a></dt>
+<dd><p>A peak will be, e.g., S1 or S2.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.area">
-<tt class="descname">area</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.area" title="Permalink to this definition">¶</a></dt>
+<code class="descname">area</code><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.area" title="Permalink to this definition">¶</a></dt>
 <dd><p>Area of the pulse in photoelectrons. Includes only contributing pmts in the right detector.
 For XDP matching rightmost sample is not included in area integral.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.area_fraction_top">
-<tt class="descname">area_fraction_top</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.area_fraction_top" title="Permalink to this definition">¶</a></dt>
+<code class="descname">area_fraction_top</code><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.area_fraction_top" title="Permalink to this definition">¶</a></dt>
 <dd><p>Fraction of area in the top array</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.area_per_channel">
-<tt class="descname">area_per_channel</tt><em class="property"> = array([], dtype=float64)</em><a class="headerlink" href="#pax.datastructure.Peak.area_per_channel" title="Permalink to this definition">¶</a></dt>
+<code class="descname">area_per_channel</code><em class="property"> = array([], dtype=float64)</em><a class="headerlink" href="#pax.datastructure.Peak.area_per_channel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Array of areas in each PMT.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.bottom_hitpattern_spread">
-<tt class="descname">bottom_hitpattern_spread</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.bottom_hitpattern_spread" title="Permalink to this definition">¶</a></dt>
+<code class="descname">bottom_hitpattern_spread</code><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.bottom_hitpattern_spread" title="Permalink to this definition">¶</a></dt>
 <dd><p>Weighted root mean square deviation of bottom hitpattern (cm)</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.contributing_channels">
-<tt class="descname">contributing_channels</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.contributing_channels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.contributing_channels" title="Permalink to this definition">¶</a></dt>
+<code class="descname">contributing_channels</code><a class="headerlink" href="#pax.datastructure.Peak.contributing_channels" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.detector">
-<tt class="descname">detector</tt><em class="property"> = 'none'</em><a class="headerlink" href="#pax.datastructure.Peak.detector" title="Permalink to this definition">¶</a></dt>
+<code class="descname">detector</code><em class="property"> = 'none'</em><a class="headerlink" href="#pax.datastructure.Peak.detector" title="Permalink to this definition">¶</a></dt>
 <dd><p>e.g. tpc or veto</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.does_channel_contribute">
-<tt class="descname">does_channel_contribute</tt><em class="property"> = array([], dtype=bool)</em><a class="headerlink" href="#pax.datastructure.Peak.does_channel_contribute" title="Permalink to this definition">¶</a></dt>
+<code class="descname">does_channel_contribute</code><em class="property"> = array([], dtype=bool)</em><a class="headerlink" href="#pax.datastructure.Peak.does_channel_contribute" title="Permalink to this definition">¶</a></dt>
 <dd><p>Does a PMT see &#8216;something significant&#8217;? (thresholds configurable)</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.does_channel_have_noise">
-<tt class="descname">does_channel_have_noise</tt><em class="property"> = array([], dtype=bool)</em><a class="headerlink" href="#pax.datastructure.Peak.does_channel_have_noise" title="Permalink to this definition">¶</a></dt>
+<code class="descname">does_channel_have_noise</code><em class="property"> = array([], dtype=bool)</em><a class="headerlink" href="#pax.datastructure.Peak.does_channel_have_noise" title="Permalink to this definition">¶</a></dt>
 <dd><p>Does a channel have no hits, but digitizer shows data?</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.height">
-<tt class="descname">height</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.height" title="Permalink to this definition">¶</a></dt>
+<code class="descname">height</code><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.height" title="Permalink to this definition">¶</a></dt>
 <dd><p>Height of highest point in peak (in pe/bin)
 In new pax, is height of highest hit</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.hit_time_mean">
-<tt class="descname">hit_time_mean</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.hit_time_mean" title="Permalink to this definition">¶</a></dt>
+<code class="descname">hit_time_mean</code><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.hit_time_mean" title="Permalink to this definition">¶</a></dt>
 <dd><p>Weighted (by hit area) mean of hit times (since event start)</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.hit_time_std">
-<tt class="descname">hit_time_std</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.hit_time_std" title="Permalink to this definition">¶</a></dt>
+<code class="descname">hit_time_std</code><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.hit_time_std" title="Permalink to this definition">¶</a></dt>
 <dd><p>Weighted (by hit area) std of hit times</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.hits">
-<tt class="descname">hits</tt><em class="property"> = &lt;pax.data_model.ListField object at 0x104343630&gt;</em><a class="headerlink" href="#pax.datastructure.Peak.hits" title="Permalink to this definition">¶</a></dt>
+<code class="descname">hits</code><em class="property"> = &lt;pax.data_model.ListField object&gt;</em><a class="headerlink" href="#pax.datastructure.Peak.hits" title="Permalink to this definition">¶</a></dt>
 <dd><p>Peaks in individual channels that make up this peak</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.index_of_maximum">
-<tt class="descname">index_of_maximum</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Peak.index_of_maximum" title="Permalink to this definition">¶</a></dt>
+<code class="descname">index_of_maximum</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Peak.index_of_maximum" title="Permalink to this definition">¶</a></dt>
 <dd><p>Index in the event&#8217;s sum waveform at which this peak has its maximum.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.left">
-<tt class="descname">left</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Peak.left" title="Permalink to this definition">¶</a></dt>
+<code class="descname">left</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Peak.left" title="Permalink to this definition">¶</a></dt>
 <dd><p>Index of left bound (inclusive) in event.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.mean_amplitude_to_noise">
-<tt class="descname">mean_amplitude_to_noise</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.mean_amplitude_to_noise" title="Permalink to this definition">¶</a></dt>
+<code class="descname">mean_amplitude_to_noise</code><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.mean_amplitude_to_noise" title="Permalink to this definition">¶</a></dt>
 <dd><p>Weighted (by area) mean hit amplitude / noise level in that hit&#8217;s channel</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.n_contributing_channels">
-<tt class="descname">n_contributing_channels</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Peak.n_contributing_channels" title="Permalink to this definition">¶</a></dt>
+<code class="descname">n_contributing_channels</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Peak.n_contributing_channels" title="Permalink to this definition">¶</a></dt>
 <dd><p>Number of PMTS which see something significant (depends on settings) ~~ &#8220;coincidence level&#8221;</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.n_noise_channels">
-<tt class="descname">n_noise_channels</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Peak.n_noise_channels" title="Permalink to this definition">¶</a></dt>
+<code class="descname">n_noise_channels</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Peak.n_noise_channels" title="Permalink to this definition">¶</a></dt>
 <dd><p>Number of channels that show no hits, but digitizer shows data</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.noise_channels">
-<tt class="descname">noise_channels</tt><a class="reference internal" href="_modules/pax/datastructure.html#Peak.noise_channels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.noise_channels" title="Permalink to this definition">¶</a></dt>
+<code class="descname">noise_channels</code><a class="headerlink" href="#pax.datastructure.Peak.noise_channels" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.range_50p_area">
-<tt class="descname">range_50p_area</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.range_50p_area" title="Permalink to this definition">¶</a></dt>
+<code class="descname">range_50p_area</code><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.range_50p_area" title="Permalink to this definition">¶</a></dt>
 <dd><p>Time range of centermost hits containing at least 50% / 90% of area (with center at hit_time_mean)
 (rightmostright - leftmostleft + 1) * sample_duration</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.range_90p_area">
-<tt class="descname">range_90p_area</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.range_90p_area" title="Permalink to this definition">¶</a></dt>
+<code class="descname">range_90p_area</code><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.range_90p_area" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.reconstructed_positions">
-<tt class="descname">reconstructed_positions</tt><em class="property"> = &lt;pax.data_model.ListField object at 0x104343550&gt;</em><a class="headerlink" href="#pax.datastructure.Peak.reconstructed_positions" title="Permalink to this definition">¶</a></dt>
-<dd><p>List of reconstructed positions (instances of <a class="reference internal" href="pax.html#pax.datastructure.ReconstructedPosition" title="pax.datastructure.ReconstructedPosition"><tt class="xref py py-class docutils literal"><span class="pre">pax.datastructure.ReconstructedPosition</span></tt></a>)</p>
+<code class="descname">reconstructed_positions</code><em class="property"> = &lt;pax.data_model.ListField object&gt;</em><a class="headerlink" href="#pax.datastructure.Peak.reconstructed_positions" title="Permalink to this definition">¶</a></dt>
+<dd><p>List of reconstructed positions (instances of <a class="reference internal" href="pax.html#pax.datastructure.ReconstructedPosition" title="pax.datastructure.ReconstructedPosition"><code class="xref py py-class docutils literal"><span class="pre">pax.datastructure.ReconstructedPosition</span></code></a>)</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.right">
-<tt class="descname">right</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Peak.right" title="Permalink to this definition">¶</a></dt>
+<code class="descname">right</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Peak.right" title="Permalink to this definition">¶</a></dt>
 <dd><p>Index of right bound (INCLUSIVE) in event.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.top_hitpattern_spread">
-<tt class="descname">top_hitpattern_spread</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.top_hitpattern_spread" title="Permalink to this definition">¶</a></dt>
+<code class="descname">top_hitpattern_spread</code><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Peak.top_hitpattern_spread" title="Permalink to this definition">¶</a></dt>
 <dd><p>Weighted root mean square deviation of top hitpattern (cm)</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.type">
-<tt class="descname">type</tt><em class="property"> = 'unknown'</em><a class="headerlink" href="#pax.datastructure.Peak.type" title="Permalink to this definition">¶</a></dt>
+<code class="descname">type</code><em class="property"> = 'unknown'</em><a class="headerlink" href="#pax.datastructure.Peak.type" title="Permalink to this definition">¶</a></dt>
 <dd><p>Type of peak (e.g., &#8216;s1&#8217;, &#8216;s2&#8217;, ...)</p>
 </dd></dl>
 
@@ -364,40 +363,40 @@ In new pax, is height of highest hit</p>
 <p>Waveforms, which are not typically saved, follow the following format.</p>
 <dl class="class">
 <dt id="pax.datastructure.SumWaveform">
-<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">SumWaveform</tt><big>(</big><em>kwargs_dict=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#SumWaveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.SumWaveform" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">SumWaveform</code><span class="sig-paren">(</span><em>kwargs_dict=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#SumWaveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.SumWaveform" title="Permalink to this definition">¶</a></dt>
 <dd><p>Class used to store sum (filtered or not) waveform information.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.SumWaveform.channel_list">
-<tt class="descname">channel_list</tt><em class="property"> = array([], dtype=uint16)</em><a class="headerlink" href="#pax.datastructure.SumWaveform.channel_list" title="Permalink to this definition">¶</a></dt>
+<code class="descname">channel_list</code><em class="property"> = array([], dtype=uint16)</em><a class="headerlink" href="#pax.datastructure.SumWaveform.channel_list" title="Permalink to this definition">¶</a></dt>
 <dd><p>Array of PMT numbers included in this waveform</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.SumWaveform.detector">
-<tt class="descname">detector</tt><em class="property"> = 'none'</em><a class="headerlink" href="#pax.datastructure.SumWaveform.detector" title="Permalink to this definition">¶</a></dt>
+<code class="descname">detector</code><em class="property"> = 'none'</em><a class="headerlink" href="#pax.datastructure.SumWaveform.detector" title="Permalink to this definition">¶</a></dt>
 <dd><p>Name of the detector this waveform belongs to (e.g. tpc or veto)</p>
 </dd></dl>
 
 <dl class="method">
 <dt id="pax.datastructure.SumWaveform.is_filtered">
-<tt class="descname">is_filtered</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#SumWaveform.is_filtered"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.SumWaveform.is_filtered" title="Permalink to this definition">¶</a></dt>
+<code class="descname">is_filtered</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#SumWaveform.is_filtered"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.SumWaveform.is_filtered" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.SumWaveform.name">
-<tt class="descname">name</tt><em class="property"> = 'none'</em><a class="headerlink" href="#pax.datastructure.SumWaveform.name" title="Permalink to this definition">¶</a></dt>
+<code class="descname">name</code><em class="property"> = 'none'</em><a class="headerlink" href="#pax.datastructure.SumWaveform.name" title="Permalink to this definition">¶</a></dt>
 <dd><p>Name of this sum waveform</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.SumWaveform.name_of_filter">
-<tt class="descname">name_of_filter</tt><em class="property"> = 'none'</em><a class="headerlink" href="#pax.datastructure.SumWaveform.name_of_filter" title="Permalink to this definition">¶</a></dt>
+<code class="descname">name_of_filter</code><em class="property"> = 'none'</em><a class="headerlink" href="#pax.datastructure.SumWaveform.name_of_filter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Name of the filter used (or &#8216;none&#8217;)</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.SumWaveform.samples">
-<tt class="descname">samples</tt><em class="property"> = array([], dtype=float64)</em><a class="headerlink" href="#pax.datastructure.SumWaveform.samples" title="Permalink to this definition">¶</a></dt>
+<code class="descname">samples</code><em class="property"> = array([], dtype=float64)</em><a class="headerlink" href="#pax.datastructure.SumWaveform.samples" title="Permalink to this definition">¶</a></dt>
 <dd><p>Array of samples, units of pe/bin.</p>
 </dd></dl>
 
@@ -405,45 +404,45 @@ In new pax, is height of highest hit</p>
 
 <dl class="class">
 <dt id="pax.datastructure.ReconstructedPosition">
-<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">ReconstructedPosition</tt><big>(</big><em>kwargs_dict=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#ReconstructedPosition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.ReconstructedPosition" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">ReconstructedPosition</code><span class="sig-paren">(</span><em>kwargs_dict=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#ReconstructedPosition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.ReconstructedPosition" title="Permalink to this definition">¶</a></dt>
 <dd><p>Reconstructed position</p>
 <p>Each reconstruction algorithm creates one of these.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.ReconstructedPosition.algorithm">
-<tt class="descname">algorithm</tt><em class="property"> = 'none'</em><a class="headerlink" href="#pax.datastructure.ReconstructedPosition.algorithm" title="Permalink to this definition">¶</a></dt>
+<code class="descname">algorithm</code><em class="property"> = 'none'</em><a class="headerlink" href="#pax.datastructure.ReconstructedPosition.algorithm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Name of algorithm used for computation</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.ReconstructedPosition.goodness_of_fit">
-<tt class="descname">goodness_of_fit</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.ReconstructedPosition.goodness_of_fit" title="Permalink to this definition">¶</a></dt>
+<code class="descname">goodness_of_fit</code><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.ReconstructedPosition.goodness_of_fit" title="Permalink to this definition">¶</a></dt>
 <dd><p>goodness-of-fit parameter generated with PosRecChiSquareGamma</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.ReconstructedPosition.ndf">
-<tt class="descname">ndf</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.ReconstructedPosition.ndf" title="Permalink to this definition">¶</a></dt>
+<code class="descname">ndf</code><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.ReconstructedPosition.ndf" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.ReconstructedPosition.phi">
-<tt class="descname">phi</tt><a class="reference internal" href="_modules/pax/datastructure.html#ReconstructedPosition.phi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.ReconstructedPosition.phi" title="Permalink to this definition">¶</a></dt>
+<code class="descname">phi</code><a class="headerlink" href="#pax.datastructure.ReconstructedPosition.phi" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.ReconstructedPosition.r">
-<tt class="descname">r</tt><a class="reference internal" href="_modules/pax/datastructure.html#ReconstructedPosition.r"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.ReconstructedPosition.r" title="Permalink to this definition">¶</a></dt>
+<code class="descname">r</code><a class="headerlink" href="#pax.datastructure.ReconstructedPosition.r" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.ReconstructedPosition.x">
-<tt class="descname">x</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.ReconstructedPosition.x" title="Permalink to this definition">¶</a></dt>
+<code class="descname">x</code><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.ReconstructedPosition.x" title="Permalink to this definition">¶</a></dt>
 <dd><p>x position (cm)</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.ReconstructedPosition.y">
-<tt class="descname">y</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.ReconstructedPosition.y" title="Permalink to this definition">¶</a></dt>
+<code class="descname">y</code><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.ReconstructedPosition.y" title="Permalink to this definition">¶</a></dt>
 <dd><p>y position (cm)</p>
 </dd></dl>
 
@@ -451,73 +450,73 @@ In new pax, is height of highest hit</p>
 
 <dl class="class">
 <dt id="pax.datastructure.Hit">
-<em class="property">class </em><tt class="descclassname">pax.datastructure.</tt><tt class="descname">Hit</tt><big>(</big><em>kwargs_dict=None</em>, <em>**kwargs</em><big>)</big><a class="reference internal" href="_modules/pax/datastructure.html#Hit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Hit" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">Hit</code><span class="sig-paren">(</span><em>kwargs_dict=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Hit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Hit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Peaks found in individual channels</p>
 <p>These are be clustered into ordinary peaks later. This is commonly
 called a &#8216;hit&#8217; in particle physics detectors.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Hit.area">
-<tt class="descname">area</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Hit.area" title="Permalink to this definition">¶</a></dt>
+<code class="descname">area</code><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Hit.area" title="Permalink to this definition">¶</a></dt>
 <dd><p>Area of the peak in photoelectrons</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Hit.center">
-<tt class="descname">center</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Hit.center" title="Permalink to this definition">¶</a></dt>
+<code class="descname">center</code><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Hit.center" title="Permalink to this definition">¶</a></dt>
 <dd><p>Time (since start of event in ns) of hit&#8217;s center of gravity</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Hit.channel">
-<tt class="descname">channel</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Hit.channel" title="Permalink to this definition">¶</a></dt>
+<code class="descname">channel</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Hit.channel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Channel in which this peak was found</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Hit.found_in_pulse">
-<tt class="descname">found_in_pulse</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Hit.found_in_pulse" title="Permalink to this definition">¶</a></dt>
+<code class="descname">found_in_pulse</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Hit.found_in_pulse" title="Permalink to this definition">¶</a></dt>
 <dd><p>Index of pulse (in event.pulses) in which peak was found</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Hit.height">
-<tt class="descname">height</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Hit.height" title="Permalink to this definition">¶</a></dt>
+<code class="descname">height</code><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Hit.height" title="Permalink to this definition">¶</a></dt>
 <dd><p>Height of highest point in peak (in pe/bin)</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Hit.index_of_maximum">
-<tt class="descname">index_of_maximum</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Hit.index_of_maximum" title="Permalink to this definition">¶</a></dt>
+<code class="descname">index_of_maximum</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Hit.index_of_maximum" title="Permalink to this definition">¶</a></dt>
 <dd><p>Index in the event at which this peak has its maximum.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Hit.is_rejected">
-<tt class="descname">is_rejected</tt><em class="property"> = False</em><a class="headerlink" href="#pax.datastructure.Hit.is_rejected" title="Permalink to this definition">¶</a></dt>
+<code class="descname">is_rejected</code><em class="property"> = False</em><a class="headerlink" href="#pax.datastructure.Hit.is_rejected" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set to True if rejected by suspicious channel algorithm</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Hit.left">
-<tt class="descname">left</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Hit.left" title="Permalink to this definition">¶</a></dt>
+<code class="descname">left</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Hit.left" title="Permalink to this definition">¶</a></dt>
 <dd><p>Index of left bound (inclusive) of peak.</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Hit.length">
-<tt class="descname">length</tt><a class="reference internal" href="_modules/pax/datastructure.html#Hit.length"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Hit.length" title="Permalink to this definition">¶</a></dt>
+<code class="descname">length</code><a class="headerlink" href="#pax.datastructure.Hit.length" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Hit.noise_sigma">
-<tt class="descname">noise_sigma</tt><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Hit.noise_sigma" title="Permalink to this definition">¶</a></dt>
+<code class="descname">noise_sigma</code><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Hit.noise_sigma" title="Permalink to this definition">¶</a></dt>
 <dd><p>Noise sigma in pe/bin of pulse in which peak was found.
 Note: in Pulse the same number is stored in ADC-counts</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Hit.right">
-<tt class="descname">right</tt><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Hit.right" title="Permalink to this definition">¶</a></dt>
+<code class="descname">right</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Hit.right" title="Permalink to this definition">¶</a></dt>
 <dd><p>Index of right bound (INCLUSIVE!!) of peak</p>
 </dd></dl>
 
@@ -529,7 +528,7 @@ Note: in Pulse the same number is stored in ADC-counts</p>
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
   <h4>Previous topic</h4>
   <p class="topless"><a href="usage.html"
@@ -537,12 +536,14 @@ Note: in Pulse the same number is stored in ADC-counts</p>
   <h4>Next topic</h4>
   <p class="topless"><a href="plugin.html"
                         title="next chapter">Plugins</a></p>
-  <h3>This Page</h3>
-  <ul class="this-page-menu">
-    <li><a href="_sources/format.txt"
-           rel="nofollow">Show Source</a></li>
-  </ul>
-<div id="searchbox" style="display: none">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/format.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="search.html" method="get">
       <input type="text" name="q" />
@@ -559,7 +560,7 @@ Note: in Pulse the same number is stored in ADC-counts</p>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -574,12 +575,12 @@ Note: in Pulse the same number is stored in ADC-counts</p>
         <li class="right" >
           <a href="usage.html" title="Usage"
              >previous</a> |</li>
-        <li><a href="index.html">Processor for Analyzing XENON1T 3.1.0 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Processor for Analyzing XENON1T 3.1.1 documentation</a> &raquo;</li> 
       </ul>
     </div>
-    <div class="footer">
+    <div class="footer" role="contentinfo">
         &copy; Copyright 2014, Christopher Tunnell.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
     </div>
   </body>
 </html>

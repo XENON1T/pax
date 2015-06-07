@@ -6,15 +6,15 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.io.FolderIO &mdash; Processor for Analyzing XENON1T 3.1.0 documentation</title>
+    <title>pax.plugins.io.FolderIO &mdash; Processor for Analyzing XENON1T 3.1.1 documentation</title>
     
-    <link rel="stylesheet" href="../../../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '3.1.0',
+        VERSION:     '3.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,11 +23,11 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 3.1.0 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 3.1.1 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -36,15 +36,15 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 3.1.0 documentation</a> &raquo;</li>
-          <li><a href="../../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">Processor for Analyzing XENON1T 3.1.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <h1>Source code for pax.plugins.io.FolderIO</h1><div class="highlight"><pre>
 <span class="kn">import</span> <span class="nn">json</span>
@@ -151,7 +151,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">ts</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>       <span class="c"># Restart clock</span>
 </div>
     <span class="nd">@plugin.BasePlugin._timeit</span>
-<div class="viewcode-block" id="InputFromFolder.get_single_event"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.FolderIO.InputFromFolder.get_single_event">[docs]</a>    <span class="k">def</span> <span class="nf">get_single_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_number</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_single_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_number</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get a single event, automatically selecting the right file&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_first_event</span> <span class="o">&lt;=</span> <span class="n">event_number</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_last_event</span><span class="p">:</span>
             <span class="c"># Time to open a new file!</span>
@@ -169,7 +169,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_single_event_in_current_file</span><span class="p">(</span><span class="n">event_number</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_first_event</span><span class="p">)</span>
 
     <span class="c"># If reading in from a folder-of-files format not written by FolderIO,</span>
-    <span class="c"># you&#39;ll probably have to overwrite this. (e.g. XED does)</span></div>
+    <span class="c"># you&#39;ll probably have to overwrite this. (e.g. XED does)</span>
 <div class="viewcode-block" id="InputFromFolder.get_first_and_last_event_number"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.FolderIO.InputFromFolder.get_first_and_last_event_number">[docs]</a>    <span class="k">def</span> <span class="nf">get_first_and_last_event_number</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return the first and last event number in file specified by filename&quot;&quot;&quot;</span>
         <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">first_event</span><span class="p">,</span> <span class="n">last_event</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">filename</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;-&#39;</span><span class="p">)</span>
@@ -300,9 +300,9 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-<div id="searchbox" style="display: none">
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../../search.html" method="get">
       <input type="text" name="q" />
@@ -319,7 +319,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -328,13 +328,13 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../../../index.html">Processor for Analyzing XENON1T 3.1.0 documentation</a> &raquo;</li>
-          <li><a href="../../../index.html" >Module code</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">Processor for Analyzing XENON1T 3.1.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>
-    <div class="footer">
+    <div class="footer" role="contentinfo">
         &copy; Copyright 2014, Christopher Tunnell.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
     </div>
   </body>
 </html>

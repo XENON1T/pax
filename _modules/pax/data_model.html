@@ -6,15 +6,15 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.data_model &mdash; Processor for Analyzing XENON1T 3.1.0 documentation</title>
+    <title>pax.data_model &mdash; Processor for Analyzing XENON1T 3.1.1 documentation</title>
     
-    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '3.1.0',
+        VERSION:     '3.1.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,11 +23,11 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 3.1.0 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 3.1.1 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
-  <body>
-    <div class="related">
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -36,15 +36,15 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">Processor for Analyzing XENON1T 3.1.0 documentation</a> &raquo;</li>
-          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="../../index.html">Processor for Analyzing XENON1T 3.1.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
 
     <div class="document">
       <div class="documentwrapper">
         <div class="bodywrapper">
-          <div class="body">
+          <div class="body" role="main">
             
   <h1>Source code for pax.data_model</h1><div class="highlight"><pre>
 <span class="sd">&quot;&quot;&quot;</span>
@@ -59,7 +59,7 @@
 <span class="kn">from</span> <span class="nn">pax.utils</span> <span class="kn">import</span> <span class="n">Memoize</span>
 
 
-<div class="viewcode-block" id="Model"><a class="viewcode-back" href="../../pax.html#pax.data_model.Model">[docs]</a><span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="Model"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Model">[docs]</a><span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Data modelling base class -- use for subclassing.</span>
 <span class="sd">    Features:</span>
 <span class="sd">      - set attribute values by passing dict or kwargs to init</span>
@@ -124,7 +124,7 @@
 
     <span class="nd">@classmethod</span>        <span class="c"># Use only in initialization (or if attributes are fixed, as for StrictModel)</span>
     <span class="nd">@Memoize</span>            <span class="c"># Caching decorator, improves performance if a model is initialized often</span>
-<div class="viewcode-block" id="Model.get_list_field_info"><a class="viewcode-back" href="../../pax.html#pax.data_model.Model.get_list_field_info">[docs]</a>    <span class="k">def</span> <span class="nf">get_list_field_info</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">get_list_field_info</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return dict with fielname =&gt; type of elements in collection fields in this class</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">list_field_info</span> <span class="o">=</span> <span class="p">{}</span>
@@ -132,11 +132,11 @@
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">ListField</span><span class="p">):</span>
                 <span class="n">list_field_info</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">element_type</span>
         <span class="k">return</span> <span class="n">list_field_info</span>
-</div>
+
     <span class="k">def</span> <span class="nf">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span><span class="p">)</span>
 
-<div class="viewcode-block" id="Model.get_fields_data"><a class="viewcode-back" href="../../pax.html#pax.data_model.Model.get_fields_data">[docs]</a>    <span class="k">def</span> <span class="nf">get_fields_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="Model.get_fields_data"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Model.get_fields_data">[docs]</a>    <span class="k">def</span> <span class="nf">get_fields_data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Iterator over (key, value) tuples of all user-specified fields</span>
 <span class="sd">        Returns keys in lexical order</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -161,7 +161,7 @@
                 <span class="c"># Yes, yield the class-level value</span>
                 <span class="k">yield</span> <span class="p">(</span><span class="n">field_name</span><span class="p">,</span> <span class="n">value_in_class</span><span class="p">)</span>
 </div>
-<div class="viewcode-block" id="Model.to_dict"><a class="viewcode-back" href="../../pax.html#pax.data_model.Model.to_dict">[docs]</a>    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">convert_numpy_arrays_to</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">fields_to_ignore</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Model.to_dict"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Model.to_dict">[docs]</a>    <span class="k">def</span> <span class="nf">to_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">convert_numpy_arrays_to</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">fields_to_ignore</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">if</span> <span class="n">fields_to_ignore</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="n">fields_to_ignore</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">()</span>
@@ -182,20 +182,20 @@
                 <span class="n">result</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
         <span class="k">return</span> <span class="n">result</span>
 </div>
-<div class="viewcode-block" id="Model.to_json"><a class="viewcode-back" href="../../pax.html#pax.data_model.Model.to_json">[docs]</a>    <span class="k">def</span> <span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields_to_ignore</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Model.to_json"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Model.to_json">[docs]</a>    <span class="k">def</span> <span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields_to_ignore</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">convert_numpy_arrays_to</span><span class="o">=</span><span class="s">&#39;list&#39;</span><span class="p">,</span>
                                        <span class="n">fields_to_ignore</span><span class="o">=</span><span class="n">fields_to_ignore</span><span class="p">))</span>
 </div>
-<div class="viewcode-block" id="Model.to_bson"><a class="viewcode-back" href="../../pax.html#pax.data_model.Model.to_bson">[docs]</a>    <span class="k">def</span> <span class="nf">to_bson</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields_to_ignore</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Model.to_bson"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Model.to_bson">[docs]</a>    <span class="k">def</span> <span class="nf">to_bson</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields_to_ignore</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">bson</span><span class="o">.</span><span class="n">BSON</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">convert_numpy_arrays_to</span><span class="o">=</span><span class="s">&#39;bytes&#39;</span><span class="p">,</span>
                                              <span class="n">fields_to_ignore</span><span class="o">=</span><span class="n">fields_to_ignore</span><span class="p">))</span>
 </div>
     <span class="nd">@classmethod</span>
-<div class="viewcode-block" id="Model.from_json"><a class="viewcode-back" href="../../pax.html#pax.data_model.Model.from_json">[docs]</a>    <span class="k">def</span> <span class="nf">from_json</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<div class="viewcode-block" id="Model.from_json"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Model.from_json">[docs]</a>    <span class="k">def</span> <span class="nf">from_json</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">cls</span><span class="p">(</span><span class="o">**</span><span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
 </div>
     <span class="nd">@classmethod</span>
-<div class="viewcode-block" id="Model.from_bson"><a class="viewcode-back" href="../../pax.html#pax.data_model.Model.from_bson">[docs]</a>    <span class="k">def</span> <span class="nf">from_bson</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<div class="viewcode-block" id="Model.from_bson"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Model.from_bson">[docs]</a>    <span class="k">def</span> <span class="nf">from_bson</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">cls</span><span class="p">(</span><span class="o">**</span><span class="n">bson</span><span class="o">.</span><span class="n">BSON</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
 
 </div></div>
@@ -206,14 +206,14 @@
 <span class="p">}</span>
 
 
-<div class="viewcode-block" id="ListField"><a class="viewcode-back" href="../../pax.html#pax.data_model.ListField">[docs]</a><span class="k">class</span> <span class="nc">ListField</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="ListField"><a class="viewcode-back" href="../../pax.html#pax.datastructure.ListField">[docs]</a><span class="k">class</span> <span class="nc">ListField</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element_type</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">type</span><span class="p">(</span><span class="n">element_type</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Model collections must specify a type&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">element_type</span> <span class="o">=</span> <span class="n">element_type</span>
 
 </div>
-<div class="viewcode-block" id="StrictModel"><a class="viewcode-back" href="../../pax.html#pax.data_model.StrictModel">[docs]</a><span class="k">class</span> <span class="nc">StrictModel</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+<div class="viewcode-block" id="StrictModel"><a class="viewcode-back" href="../../pax.html#pax.datastructure.StrictModel">[docs]</a><span class="k">class</span> <span class="nc">StrictModel</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Model which enforces additional restrictions:</span>
 <span class="sd">      - can&#39;t add new attributes: have to be fixed at class declaration</span>
 <span class="sd">      - attributes can&#39;t change type or numpy dtype once set.</span>
@@ -254,9 +254,9 @@
           </div>
         </div>
       </div>
-      <div class="sphinxsidebar">
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-<div id="searchbox" style="display: none">
+<div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
       <input type="text" name="q" />
@@ -273,7 +273,7 @@
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related">
+    <div class="related" role="navigation" aria-label="related navigation">
       <h3>Navigation</h3>
       <ul>
         <li class="right" style="margin-right: 10px">
@@ -282,13 +282,13 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li><a href="../../index.html">Processor for Analyzing XENON1T 3.1.0 documentation</a> &raquo;</li>
-          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="../../index.html">Processor for Analyzing XENON1T 3.1.1 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>
-    <div class="footer">
+    <div class="footer" role="contentinfo">
         &copy; Copyright 2014, Christopher Tunnell.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
     </div>
   </body>
 </html>
