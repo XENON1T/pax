@@ -7,7 +7,7 @@ History
 3.1.2 (2015-06-07)
 ------------------
 
-* Requirements.txt
+* Update requirements.txt
 
   * Require new numba version since use new features
   * Pymongo3 required for all our Mongo setups
