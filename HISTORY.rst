@@ -4,6 +4,15 @@ History
 -------
 
 ------------------
+3.1.2 (2015-06-07)
+------------------
+
+* Requirements.txt
+
+  * Require new numba version in requirements.txt since we use new features
+  * Pymongo3 required for all our Mongo setups
+
+------------------
 3.1.1 (2015-06-07)
 ------------------
 
