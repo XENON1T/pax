@@ -4,6 +4,16 @@ History
 -------
 
 ------------------
+3.1.0 (2015-06-07)
+------------------
+
+* Simplified hit finder (#167)
+* ZLE in waveform simulator
+* BSON output
+* Cleanup of Travis building
+* Various bug fixes
+
+------------------
 3.0.0 (2015-04-20)
 ------------------
 
