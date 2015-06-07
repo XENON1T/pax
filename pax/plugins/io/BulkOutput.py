@@ -125,7 +125,8 @@ class BulkOutput(plugin.OutputPlugin):
         for dfname in self.data.keys():
             self.log.debug("Converting %s " % dfname)
             # Set index at which next set of tuples begins
-            self.data[dfname]['first_index'] = len(self.data[dfname]['tuples'])
+            self.data[dfname]['first_index'] = len(self.data[dfname]['tuples']) + \
+                self.data[dfname].get('first_index', 0)
             # Convert tuples to records
             newrecords = np.array(self.data[dfname]['tuples'], self.data[dfname]['dtype'])
             # Clear tuples. Enjoy the freed memory.
@@ -202,7 +203,7 @@ class BulkOutput(plugin.OutputPlugin):
             if isinstance(field_value, list):
 
                 assert field_name in self.data[m_name]['subcollection_fields']
-                child_class_name = self.data[m_name]['subcollection_fields'][field_name]
+                child_class_name = self.data[m_name]['subcollection_fields'][field_name].__name__
 
                 # Store the absolute start index & number of children
                 child_start = self.get_index_of(child_class_name)
