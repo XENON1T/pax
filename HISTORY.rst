@@ -9,7 +9,7 @@ History
 
 * Requirements.txt
 
-  * Require new numba version in requirements.txt since we use new features
+  * Require new numba version since use new features
   * Pymongo3 required for all our Mongo setups
 
 ------------------
