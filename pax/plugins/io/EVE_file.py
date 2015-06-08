@@ -147,6 +147,7 @@ class EveInput(InputFromFolder):
 
         # Read in the file metadata
         self.file_metadata = np.fromfile(self.current_evefile, dtype=eve_file_header, count=1)[0]
+        fmd = np.fromfile(self.current_evefile, dtype=eve_event_header, count=1)[0]
         # self.file_metadata = header_unpacker(self.file_metadata)
         self.file_caen_pars = np.fromfile(self.current_evefile, dtype=eve_caen1724_par_t, count=1)[0]
         first, last = self.get_first_and_last_event_number(filename)
@@ -178,7 +179,7 @@ class EveInput(InputFromFolder):
             evefile.seek(0,0)
             positions = []
             fmd = np.fromfile(evefile, dtype=eve_file_header, count=1)[0]
-            print(fmd['byte_order'], fmd['version'], fmd['buffsize'], fmd["timestamp"], [hex(z) for z in fmd["not_used"]])
+            #print(fmd['byte_order'], fmd['version'], fmd['buffsize'], fmd["timestamp"], [hex(z) for z in fmd["not_used"]])
             j= 0
             while evefile.tell()< filesize: # maybe better with while(true) and try catch IndexOutofBounds for performance reasons
                 fmd = np.fromfile(evefile, dtype=eve_event_header, count=1)[0]
@@ -220,10 +221,11 @@ class EveInput(InputFromFolder):
                 event_event_header['event_timestamp'] * units.s  # +
                 # event_layer_metadata['utc_time_usec'] * units.us
             ),
-            sample_duration=int(self.file_caen_pars["nof_samples"] * 10 * units.ns),
+            sample_duration=int( 10 * units.ns),
             # 10 ns is the inverse of the sampling  frequency 10MHz
             length=self.file_caen_pars['nof_samples']  # nof samples per each channel and event
         )
+
         event.dataset_name = self.current_filename  # now metadata available
         # as eve files do not have event numbers just count them
         self.event_number += 1
@@ -252,7 +254,7 @@ class EveInput(InputFromFolder):
                     # chdata = np.array(chdata)
                     event.pulses.append(Pulse(
                         channel=ch_i + 8 * i,
-                        left=0,
+                        left=0,# int(event_signal_header["trigger_time_tag"]),
                         raw_data=chdata
                     ))
                 if i == 1:  # select trigger time tag from second board only
