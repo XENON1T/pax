@@ -298,7 +298,8 @@ class Event(StrictModel):
     #:
     #: Time that the first sample starts. This is a 64-bit number that follows the
     #: UNIX clock. Or rather, it starts from January 1, 1970.  This must be an integer
-    #: because floats have rounding that result in imprecise times.
+    #: because floats have rounding that result in imprecise times.  You could
+    #: think of this as the time of the earliest sample.
     start_time = 0
 
     #: Integer stop time of the event in nanoseconds
@@ -309,6 +310,7 @@ class Event(StrictModel):
     stop_time = 0
 
     #: Time duration of a sample (in pax units, i.e. ns)
+    #: For V1724 digitizers (e.g. XENON), this is 10 nanoseconds always.
     #: This is also in config, but we need it here too, to convert between event duration and length in samples
     #: Must be an int for same reason as start_time and stop_time
     #: DO NOT set to 10 ns as default, otherwise no way to check if it was given to constructor!
@@ -355,12 +357,14 @@ class Event(StrictModel):
 
         # Cheat to init stop_time from length and duration
         if 'length' in kwargs and self.sample_duration and not self.stop_time:
-            self.stop_time = int(
-                self.start_time + kwargs['length'] * self.sample_duration)
+            self.stop_time = int(self.start_time + kwargs['length'] * self.sample_duration)
 
         if not self.stop_time or not self.sample_duration:
             raise ValueError("Cannot initialize an event with an unknown length: " +
                              "pass sample_duration and either stop_time or length")
+
+        if self.duration() <= 0:
+            raise ValueError("Negative event duration")
 
         # Initialize numpy arrays -- need to have n_channels and self.length
         # TODO: don't initialize these if is already in kwargs
