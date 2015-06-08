@@ -298,7 +298,8 @@ class Event(StrictModel):
     #:
     #: Time that the first sample starts. This is a 64-bit number that follows the
     #: UNIX clock. Or rather, it starts from January 1, 1970.  This must be an integer
-    #: because floats have rounding that result in imprecise times.
+    #: because floats have rounding that result in imprecise times.  You could
+    #: think of this as the time of the earliest sample.
     start_time = 0
 
     #: Integer stop time of the event in nanoseconds
