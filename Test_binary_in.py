@@ -1,6 +1,6 @@
 __author__ = 'axel'
 import numpy as np
-#from pax.plugins.io import EVE_file
+from pax.plugins.io import EVE_file
 
 eve_file_header = np.dtype([
     ("byte_order", "<u4"),

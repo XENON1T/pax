@@ -215,7 +215,7 @@ class EveInput(InputFromFolder):
 
         # Start building the event
         event = Event(
-            n_channels=self.file_caen_pars["chan_active"].sum(),  # never trust the config file
+            n_channels=16,  # never trust the config file
             start_time=int(
                 event_event_header['event_timestamp'] * units.s  # +
                 # event_layer_metadata['utc_time_usec'] * units.us
@@ -246,18 +246,17 @@ class EveInput(InputFromFolder):
                     print(event_signal_header["page_size"])
                     for j in range(int(event_signal_header[
                                            "page_size"] / 2)):  # divide by 2 because there are two samples in each word
-                        data_word = np.fromfile(self.current_evefile, dtype=np.uint32, count=1)[0]
+                        data_word1 = np.fromfile(self.current_evefile, dtype=np.int16, count=1)[0]
+                        data_word2 = np.fromfile(self.current_evefile, dtype=np.int16, count=1)[0]
                         # print("entry:\t", i, "\t" ,a & 0x7fffffff, "\t", format(a,"#01b"),"\t",  a & 0x3fff, "\t", (a>> 16) &0x3fff)
-                        chdata.append(data_word & 0x3fff)  # first sample in 4byte word
-                        chdata.append((data_word >> 16) & 0x3fff)  # second sample in 4byte word
+                        chdata.append(data_word1)  # first sample in 4byte word
+                        chdata.append(data_word2)  # second sample in 4byte word
                     # chdata = np.array(chdata)
                     event.pulses.append(Pulse(
                         channel=ch_i + 8 * i,
                         left=0,# int(event_signal_header["trigger_time_tag"]),
-                        raw_data=chdata
+                        raw_data=np.array(chdata, dtype=np.int16)
                     ))
-                if i == 1:  # select trigger time tag from second board only
-                    event.start_time += event_signal_header["trigger_time_tag"]
             print(hex(np.fromfile(self.current_evefile, dtype=np.uint32, count=1)[0]))
 
         elif self.file_caen_pars['zle'] == 0:
@@ -295,8 +294,8 @@ class EveInput(InputFromFolder):
                         left=0,
                         raw_data=chdata
                     ))
-                if i == 1:  # select trigger time tag from second board only
-                    event.start_time += event_signal_header["trigger_time_tag"]
+                #if i == 1:  # select trigger time tag from second board only
+                #    event.start_time += event_signal_header["trigger_time_tag"]
             print(hex(np.fromfile(self.current_evefile, dtype=np.uint32, count=1)[0]))
 
         # TODO: Check we have read all data for this event
