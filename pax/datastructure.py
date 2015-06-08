@@ -310,6 +310,7 @@ class Event(StrictModel):
     stop_time = 0
 
     #: Time duration of a sample (in pax units, i.e. ns)
+    #: For V1724 digitizers (e.g. XENON), this is 10 nanoseconds always.
     #: This is also in config, but we need it here too, to convert between event duration and length in samples
     #: Must be an int for same reason as start_time and stop_time
     #: DO NOT set to 10 ns as default, otherwise no way to check if it was given to constructor!
