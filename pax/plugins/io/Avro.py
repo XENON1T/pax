@@ -82,8 +82,8 @@ class WriteAvro(WriteToFolder):
         super().startup()
 
     def open(self, filename):
-        raise DeprecationWarning("Avro is no longer supported and will "
-                                 "be removed soon. Use BSON.")
+        self.log.warning("Avro is no longer supported and will "
+                         "be removed soon. Use BSON.")
         # Open file and set codec
         f = gzip.open(filename, mode='wb', compresslevel=self.config.get('compresslevel', 4))
 
