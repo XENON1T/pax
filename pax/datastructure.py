@@ -355,12 +355,14 @@ class Event(StrictModel):
 
         # Cheat to init stop_time from length and duration
         if 'length' in kwargs and self.sample_duration and not self.stop_time:
-            self.stop_time = int(
-                self.start_time + kwargs['length'] * self.sample_duration)
+            self.stop_time = int(self.start_time + kwargs['length'] * self.sample_duration)
 
         if not self.stop_time or not self.sample_duration:
             raise ValueError("Cannot initialize an event with an unknown length: " +
                              "pass sample_duration and either stop_time or length")
+
+        if self.duration() <= 0:
+            raise ValueError("Negative event duration")
 
         # Initialize numpy arrays -- need to have n_channels and self.length
         # TODO: don't initialize these if is already in kwargs
