@@ -1,4 +1,3 @@
-__author__ = 'axel'
 """This plugin will read binary data from the Münster TPC. The data is stored in .eve files that are created
 with the daq software "FPPGUI" written by Volker Hannen.
 
