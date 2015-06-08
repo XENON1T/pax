@@ -90,7 +90,7 @@ eve_signal_header = np.dtype([
     ("trigger_time_tag", "<i4"),
 ])
 
-eve_signal_header_unpacked_noZLE = np.dtype = ([
+eve_signal_header_unpacked_noZLE = np.dtype([
     ("nsamp", "<u4"),
     ("page_size", "<u4"),
     ("event_size", "<u4"),

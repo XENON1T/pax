@@ -52,13 +52,3 @@ for (name, value) in list(base_units.items()):
 # Townsend (unit for reduced electric field)
 Td = 10**(-17) * V / cm ** 2    # noqa
 
-
-def unit_name(unit, base_unit):
-    """
-    Hack to get unit name back
-    unit_name(ns,'s') will give 'ns'
-    """
-    power = int(math.log10(unit / base_units[base_unit]))
-    for p_name, p_factor in list(prefixes.items()):
-        if p_factor == power:
-            return p_name + base_unit
