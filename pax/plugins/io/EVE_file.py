@@ -243,60 +243,55 @@ class EveInput(InputFromFolder):
                     if channel == 0:
                         continue  # skip unused channels
                     chdata = []
-                    print(event_signal_header["page_size"])
+
                     for j in range(int(event_signal_header[
                                            "page_size"] / 2)):  # divide by 2 because there are two samples in each word
                         data_word1 = np.fromfile(self.current_evefile, dtype=np.int16, count=1)[0]
                         data_word2 = np.fromfile(self.current_evefile, dtype=np.int16, count=1)[0]
-                        # print("entry:\t", i, "\t" ,a & 0x7fffffff, "\t", format(a,"#01b"),"\t",  a & 0x3fff, "\t", (a>> 16) &0x3fff)
                         chdata.append(data_word1)  # first sample in 4byte word
                         chdata.append(data_word2)  # second sample in 4byte word
                     # chdata = np.array(chdata)
                     event.pulses.append(Pulse(
                         channel=ch_i + 8 * i,
-                        left=0,# int(event_signal_header["trigger_time_tag"]),
+                        left= 0,
                         raw_data=np.array(chdata, dtype=np.int16)
                     ))
-            print(hex(np.fromfile(self.current_evefile, dtype=np.uint32, count=1)[0]))
+            self.current_evefile.seek(4, 1)     # skip the 0xaffe
 
-        elif self.file_caen_pars['zle'] == 0:
-            print("This should not be executed yet")
-            # ZLE has the advantage to push down the file sizes by a huge factor.
-            # The downside is an increased complexity for the stored data
-            # TODO: write a reading in routine
-            # TODO: Test that routine
+        elif self.file_caen_pars['zle'] == 1:
+            #print(len(self.file_caen_pars["chan_active"]))
             for i, board_i in enumerate(self.file_caen_pars["chan_active"]):
                 if board_i.sum() == 0:  # if no channel is active there should be no signal header of the current board TODO: Check if that is really the case!
                     continue  # skip the current board
                 event_signal_header = np.fromfile(self.current_evefile, dtype=eve_signal_header, count=1)[0]
                 event_signal_header = header_unpacker(event_signal_header)
+                channel_mask = event_signal_header["channel_mask"]
                 for ch_i, channel in enumerate(board_i):
                     if channel == 0:
                         continue  # skip unused channels
-                    # TODO: read Size and Cwords
-                    chdata = []
+                    position = self.current_evefile.tell()
+
+                    if not (2**ch_i & channel_mask):    # if channel has not triggered even once, there is neither a channel size nor a cword
+                            continue
                     channel_size = np.fromfile(self.current_evefile, dtype=np.uint32, count=1)[0]
-                    begin = self.current_evefile.tell()
-                    for j in range(channel_size/2):     # divide by 2 because there are two samples in each
+                    sample_position = 0
+                    #for j in range(channel_size):  # divide by 2 because there are two samples in each word
+                    while(self.current_evefile.tell() < position + channel_size*4):
                         cword = np.fromfile(self.current_evefile, dtype=np.uint32, count=1)[0]
-                        if cword > 2e9: # TODO: proper equivalent to reading first control bit which determines signal or zeros
-                            chdata.extend(np.zeros((cword - 0x80000000)*2))     # fill chdata with zeros
-                            j += (cword - 0x80000000)
+                        if cword < 0x80000000:      # if cword is less than 0x80000000 waveform is below zle threshold
+                            # skip word
+                            sample_position += 2*cword
+                            continue
                         else:
-                            for l in range(cword):
-                                data_word = np.fromfile(self.current_evefile, dtype=np.uint32, count=1)[0]
-                                # print("entry:\t", i, "\t" ,a & 0x7fffffff, "\t", format(a,"#01b"),"\t",  a & 0x3fff, "\t", (a>> 16) &0x3fff)
-                                chdata.append(data_word & 0x3fff)  # first sample in 4byte word
-                                chdata.append((data_word >> 16) & 0x3fff)  # second sample in 4byte word
-                    # chdata = np.array(chdata)
-                    event.pulses.append(Pulse(
-                        channel=ch_i + 8 * i,
-                        left=0,
-                        raw_data=chdata
-                    ))
-                #if i == 1:  # select trigger time tag from second board only
-                #    event.start_time += event_signal_header["trigger_time_tag"]
+                            chdata = np.fromfile(self.current_evefile, dtype=np.int16, count=2*(cword-0x80000000))
+                            event.pulses.append(Pulse(
+                                channel=ch_i + 8 * i,
+                                left=sample_position,
+                                raw_data=np.array(chdata, dtype=np.int16)
+                            ))
+                            sample_position += 2*(cword & (2**20-1))
             print(hex(np.fromfile(self.current_evefile, dtype=np.uint32, count=1)[0]))
+            #self.current_evefile.seek(4, 1)     #
 
         # TODO: Check we have read all data for this event
         if event_position != len(self.event_positions) - 1:
