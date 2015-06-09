@@ -209,7 +209,7 @@ class EveInput(InputFromFolder):
                                       % event_event_header['event_type'], self.current_evefile.tell())
         if event_event_header['event_type'] == 4:
             # it might be possible to get another event header along with caen1724.par stuff
-            print("Unexpected event header at this position, trying to go on")
+            self.log.error("Unexpected event header at this position, trying to go on")
             self.file_caen_pars = np.fromfile(self.current_evefile, dtype=eve_caen1724_par_t, count=1)[0]
             event_event_header = np.fromfile(self.current_evefile, dtype=eve_event_header, count=1)[0]
 
@@ -222,7 +222,7 @@ class EveInput(InputFromFolder):
             ),
             sample_duration=int( 10 * units.ns),
             # 10 ns is the inverse of the sampling  frequency 10MHz
-            length=self.file_caen_pars['nof_samples']  # nof samples per each channel and event
+            length=self.file_caen_pars['nof_samples']  # nof samples per event
         )
 
         event.dataset_name = self.current_filename  # now metadata available
@@ -234,13 +234,13 @@ class EveInput(InputFromFolder):
             # Data is just a big bunch of samples from one channel, then next channel, etc
             # unless board's last channel is read. Then signal header from next board and then again data
             # Each channel has an equal number of samples.
-            for i, board_i in enumerate(self.file_caen_pars["chan_active"]):
-                if board_i.sum() == 0:  # if no channel is active there should be no signal header of the current board TODO: Check if that is really the case!
+            for board_i, channels_active in enumerate(self.file_caen_pars["chan_active"]):
+                if channels_active.sum() == 0:  # if no channel is active there should be no signal header of the current board TODO: Check if that is really the case!
                     continue  # skip the current board
-                event_signal_header = np.fromfile(self.current_evefile, dtype=eve_signal_header, count=1)[0]
-                event_signal_header = header_unpacker(event_signal_header)
-                for ch_i, channel in enumerate(board_i):
-                    if channel == 0:
+                event_signal_header_raw = np.fromfile(self.current_evefile, dtype=eve_signal_header, count=1)[0]
+                event_signal_header = header_unpacker(event_signal_header_raw)
+                for ch_i, channel_is_active in enumerate(channels_active):
+                    if channel_is_active == 0:
                         continue  # skip unused channels
                     chdata = []
 
@@ -252,7 +252,7 @@ class EveInput(InputFromFolder):
                         chdata.append(data_word2)  # second sample in 4byte word
                     # chdata = np.array(chdata)
                     event.pulses.append(Pulse(
-                        channel=ch_i + 8 * i,
+                        channel=ch_i + 8 * board_i,
                         left= 0,
                         raw_data=np.array(chdata, dtype=np.int16)
                     ))
@@ -260,20 +260,33 @@ class EveInput(InputFromFolder):
 
         elif self.file_caen_pars['zle'] == 1:
             #print(len(self.file_caen_pars["chan_active"]))
-            for i, board_i in enumerate(self.file_caen_pars["chan_active"]):
-                if board_i.sum() == 0:  # if no channel is active there should be no signal header of the current board TODO: Check if that is really the case!
+            for board_i, channels_active in enumerate(self.file_caen_pars["chan_active"]):
+                # Skip nonexistent board
+                if channels_active.sum() == 0:  # if no channel is active there should be no signal header of the current board TODO: Check if that is really the case!
                     continue  # skip the current board
-                event_signal_header = np.fromfile(self.current_evefile, dtype=eve_signal_header, count=1)[0]
-                event_signal_header = header_unpacker(event_signal_header)
+
+                event_signal_header_raw = np.fromfile(self.current_evefile,
+                                                      dtype=eve_signal_header,
+                                                      count=1)[0]
+                event_signal_header = header_unpacker(event_signal_header_raw)
                 channel_mask = event_signal_header["channel_mask"]
-                for ch_i, channel in enumerate(board_i):
-                    if channel == 0:
-                        continue  # skip unused channels
+
+
+                # +1 as first pmt is 1 in Xenon100
+                channels_included = [i for i in range(8)
+                                     if (2**i & channel_mask) > 0]
+
+                for ch_i in channels_included: #enumerate(channels_active):
+                    #if channel_is_active == 0:
+                    #    continue  # skip unused channels
                     position = self.current_evefile.tell()
 
-                    if not (2**ch_i & channel_mask):    # if channel has not triggered even once, there is neither a channel size nor a cword
-                            continue
-                    channel_size = np.fromfile(self.current_evefile, dtype=np.uint32, count=1)[0]
+#                    if not (2**ch_i & channel_mask):    # if channel has not triggered even once, there is neither a channel size nor a cword
+ #                           continue
+
+
+                    temp = np.fromfile(self.current_evefile, dtype=np.uint32, count=1)
+                    channel_size = temp[0]
                     sample_position = 0
                     #for j in range(channel_size):  # divide by 2 because there are two samples in each word
                     while(self.current_evefile.tell() < position + channel_size*4):
@@ -285,15 +298,18 @@ class EveInput(InputFromFolder):
                         else:
                             chdata = np.fromfile(self.current_evefile, dtype=np.int16, count=2*(cword-0x80000000))
                             event.pulses.append(Pulse(
-                                channel=ch_i + 8 * i,
+                                channel=ch_i + 8 * board_i,
                                 left=sample_position,
                                 raw_data=np.array(chdata, dtype=np.int16)
                             ))
                             sample_position += 2*(cword & (2**20-1))
-            print(hex(np.fromfile(self.current_evefile, dtype=np.uint32, count=1)[0]))
+            #print(hex(np.fromfile(self.current_evefile, dtype=np.uint32, count=1)[0]))
             #self.current_evefile.seek(4, 1)     #
 
         # TODO: Check we have read all data for this event
+        affe = hex(np.fromfile(self.current_evefile, dtype=np.uint32, count=1)[0])
+        if (affe == 0xaffe):
+            print("WARNING : EVENT DID NOT END WITH 0XAFFE!! INSTEAD IT ENDED WITH ", affe)
         if event_position != len(self.event_positions) - 1:
             current_pos = self.current_evefile.tell()
             should_be_at_pos = self.event_positions[event_position + 1]
@@ -302,4 +318,12 @@ class EveInput(InputFromFolder):
                                    "(event number %d) we should be at position %d, but we are at position %d!" % (
                                        event_position, event.event_number, should_be_at_pos, current_pos))
 
+
         return event
+
+    def read_zle_channels(self):
+         #read signal header
+        raw_signal_header = np.fromfile(self.current_evefile, dtype=eve_signal_header, count=1)[0]
+        eve_signal_header = header_unpacker(raw_signal_header)
+
+

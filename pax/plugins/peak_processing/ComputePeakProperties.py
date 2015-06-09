@@ -37,9 +37,17 @@ class BasicProperties(plugin.TransformPlugin):
             peak.hit_time_std **= 0.5   # Convert variance to std
 
             # Compute mean amplitude / noise
+            if event.event_number== 198:
+                pass
             hit_areas = [hit.area for hit in peak.hits]
-            peak.mean_amplitude_to_noise = np.average([hit.height / hit.noise_sigma for hit in peak.hits],
+            for hit in peak.hits:
+                if hit.noise_sigma == 0:
+                    pass
+            try:
+                peak.mean_amplitude_to_noise = np.average([hit.height / hit.noise_sigma for hit in peak.hits],
                                                       weights=hit_areas)
+            except (ZeroDivisionError) as e:
+                pass
 
             # Compute central ranges
             dt = event.sample_duration
