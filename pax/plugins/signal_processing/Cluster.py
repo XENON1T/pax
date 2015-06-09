@@ -6,6 +6,7 @@ from pax import plugin, datastructure, utils
 
 
 class ClusterPlugin(plugin.TransformPlugin):
+
     """Base plugin for clustering
 
     Individual channel peaks into groups, and labels them as noise / lone_pulse / unknown
@@ -176,6 +177,7 @@ class ClusterPlugin(plugin.TransformPlugin):
 
 
 class MeanShift(ClusterPlugin):
+
     """Clusters hits using mean-shift algorithm
 
     http://en.wikipedia.org/wiki/Mean_shift
@@ -271,6 +273,7 @@ class MeanShift(ClusterPlugin):
 
 
 class HitDifference(ClusterPlugin):
+
     """Clusters hits based on times between their maxima
     If any hit maximum is separated by more than max_difference from the next,
     it starts a new cluster.
@@ -283,10 +286,12 @@ class HitDifference(ClusterPlugin):
 
 
 class GapSize(ClusterPlugin):
+
     """Clusters hits based on gaps = times not covered by any hits.
     Any gap longer than max_gap_size starts a new cluster.
     Difference with HitDifference: this takes interval nature of hits into account
     """
+
     def startup(self):
         super().startup()
         # Convert gap threshold to samples (is in time (ns) in config)
