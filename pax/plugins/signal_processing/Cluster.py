@@ -320,4 +320,3 @@ class GapSize(ClusterPlugin):
             # Extend the boundary at which a new clusters starts, if needed
             boundary = max(boundary, hit.right + gap_size_threshold)
         return clusters
-

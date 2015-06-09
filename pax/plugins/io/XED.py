@@ -157,7 +157,6 @@ class XedInput(InputFromFolder):
                     left=0,
                     raw_data=chdata
                 ))
-
         elif event_layer_metadata['type'] == b'zle0':
             # Read the channel bitmask to find out which channels are included in this event.
             # Lots of possibilities for errors here: 4-byte groupings, 1-byte groupings, little-endian...
@@ -184,7 +183,6 @@ class XedInput(InputFromFolder):
 
             # Loop over all channels in the event to get the pulses
             for channel_id in channels_included:
-
                 # Read channel size (in 4bit words), subtract header size, convert
                 # from 4-byte words to bytes
                 channel_data_size = int(4 * (np.fromstring(chunk_fake_file.read(4),
@@ -240,4 +238,3 @@ class XedInput(InputFromFolder):
                                        event_position, event.event_number, should_be_at_pos, current_pos))
 
         return event
-
