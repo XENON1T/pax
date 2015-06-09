@@ -64,7 +64,8 @@ class XedInput(InputFromFolder):
         """Return the first and last event number in file specified by filename"""
         with open(filename, 'rb') as xedfile:
             fmd = np.fromfile(xedfile, dtype=xed_file_header, count=1)[0]
-            return fmd['first_event_number'], fmd['first_event_number'] + fmd['events_in_file'] - 1
+            return (fmd['first_event_number'],
+                    fmd['first_event_number'] + fmd['events_in_file'] - 1)
 
     def close(self):
         """Close the currently open file"""
@@ -75,8 +76,11 @@ class XedInput(InputFromFolder):
         self.current_xedfile = open(filename, 'rb')
 
         # Read in the file metadata
-        self.file_metadata = np.fromfile(self.current_xedfile, dtype=xed_file_header, count=1)[0]
-        self.event_positions = np.fromfile(self.current_xedfile, dtype=np.dtype("<u4"),
+        self.file_metadata = np.fromfile(self.current_xedfile,
+                                         dtype=xed_file_header,
+                                         count=1)[0]
+        self.event_positions = np.fromfile(self.current_xedfile,
+                                           dtype=np.dtype("<u4"),
                                            count=self.file_metadata['event_index_size'])
 
         # Handle for special case of last XED file
@@ -187,23 +191,21 @@ class XedInput(InputFromFolder):
                                                            dtype='<u4')[0] - 1))
 
                 # Read the channel data into another fake binary file
-                channel_fake_file = io.BytesIO(
-                    chunk_fake_file.read(channel_data_size))
+                channel_fake_file = io.BytesIO(chunk_fake_file.read(channel_data_size))
 
                 # Read the channel data control word by control word.
                 # sample_position keeps track of where in the waveform a new
                 # pulse should be placed.
                 sample_position = 0
                 while 1:
-
                     # Is there a new control word?
                     control_word_string = channel_fake_file.read(4)
                     if not control_word_string:
                         break
 
                     # Control words starting with zero indicate a number of sample PAIRS to skip
-                    control_word = int(
-                        np.fromstring(control_word_string, dtype='<u4')[0])
+                    control_word = int(np.fromstring(control_word_string,
+                                                     dtype='<u4')[0])
                     if control_word < 2 ** 31:
                         sample_position += 2 * control_word
                         continue
@@ -239,68 +241,3 @@ class XedInput(InputFromFolder):
 
         return event
 
-
-# import time
-# from pax.plugins.io.FolderIO import WriteToFolder
-#
-# class WriteXED(WriteToFolder):
-#
-#       UNFINISHED UNTESTED DRAFT
-#
-#     file_extension = 'xed'
-#
-#     def start_writing_file(self, filename):
-#
-#         self.current_xed = open(filename, 'wb')
-#
-#         # Write file header
-#         np.array(dict(dataset_name='bla',
-#                       creation_time=time.now(),
-#                       first_event_number=0,                             # Should be updated on first write / at end
-#                       events_in_file=self.config['events_per_file'],    # Should be updated at end
-#                       event_index_size=self.config['events_per_file']).items(),
-#                  dtype=xed_event_header).tofile(self.current_xed)
-#
-#         # Reserve space for event index
-#         self.event_index = []
-#         np.zeros(self.config['events_per_file'], dtype=np.dtype("<u4")).tofile(self.current_xed)
-#
-#     def write_event_to_current_file(self, event):
-#
-#         # Store current position in event index
-#         self.event_index.append(self.current_xed.tell())
-#
-#         # Write event header
-#         np.array(dict(dataset_name='bla',
-#                       creation_time=time.now(),   # Is this right??
-#                       utc_time=0,            # TODO: fix
-#                       utc_time_usec=0,       # TODO: fix
-#                       event_number=event.event_number,
-#                       chunks=1,
-#                       type='',  #??
-#                       size=0,   #Should be updated at end
-#                       sample_precision=0,    # TODO: fix
-#                       flags=0,               # fix??
-#                       samples_in_event=event.length(),
-#                       voltage_range=self.config['digitizer_voltage_range'],
-#                       sampling_frequency=0,  # TODO: fix
-#                       channels=self.config['n_channels']).items(),
-#                  dtype=xed_event_header).tofile(self.current_xed)
-#
-#         # Write channel mask field
-#         # +1 as first pmt is 1 in Xenon100
-#         # TODO: reverse this code
-#         # channels_included = [i + 1 for i, bit in enumerate(reversed(mask_bits))
-#         #                      if bit == 1]
-#         # mask_bytes = 4 * math.ceil(event_layer_metadata['channels'] / 32)
-#         # mask_bits = np.unpackbits(np.fromfile(self.current_xedfile,
-#         #                                       dtype='uint8',
-#         #                                       count=mask_bytes))
-#
-#         # TODO: Go back to event header to update size etc
-#
-#     def stop_writing_current_file(self):
-#
-#         # TODO: Go back to start, write event index, i.e. event position lookup table
-#
-#         self.current_xed.close()
