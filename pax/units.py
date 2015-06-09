@@ -1,4 +1,5 @@
-"""
+"""Define unit system for pax (i.e., seconds, etc.)
+
 This sets up variables for the various unit abbreviations, ensuring we always
 have a 'consistent' unit system.
 You can change base_units without breaking the consistency of any physical
