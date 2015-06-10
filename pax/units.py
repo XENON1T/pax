@@ -44,7 +44,8 @@ boltzmannConstant = boltzmannConstant_SI * base_units['J'] / base_units['K']
 # Make variables for ns, uHz, kOhm, etc.
 # Unfortunately this won't be recognized as declared variables so that you will get warnings
 # that for example unit.ns is not defined. By the use of the command vars() all units come
-# into the current name space, including probably useless units aka GC, nHz, Gs etc.
+# into the current name space during runtime, including probably useless units aka GC, nHz, Gs etc.
+# We could think of making a hardcoded list with only the useful units as the math won't change.
 prefixes = {'': 0, 'n': -9, 'u': -6, 'm': -3, 'c': -2, 'k': 3, 'M': 6, 'G': 9}
 for (name, value) in list(base_units.items()):
     for (p_name, p_factor) in list(prefixes.items()):
