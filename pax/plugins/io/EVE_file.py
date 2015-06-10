@@ -155,19 +155,7 @@ class EveInput(InputFromFolder):
         self.sample_duration = 10 * units.ns
         self.stop_time = int(
             self.start_time + self.file_caen_pars["nof_samples"] * self.sample_duration)
-        """
-        # Handle for special case of last EVE file
-        # Index size is larger than the actual number of events written:
-        # The writer didn't know how many events there were left at s
-        if self.file_metadata['events_in_file'] < self.file_metadata['event_index_size']:
-            self.log.info(
-                ("The EVE file claims there are %d events in the file, "
-                 "while the event position index has %d entries. \n"
-                 "Is this the last EVE file of a dataset?") %
-                (self.file_metadata['events_in_file'], self.file_metadata['event_index_size'])
-            )
-            self.event_positions = self.event_positions[:self.file_metadata['events_in_file']]
-        """
+
 
     def get_first_and_last_event_number(self, filename):
         """Return the first and last event number in file specified by filename"""
