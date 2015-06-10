@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.datastructure &mdash; Processor for Analyzing XENON1T 3.1.1 documentation</title>
+    <title>pax.datastructure &mdash; Processor for Analyzing XENON1T 3.1.2 documentation</title>
     
     <link rel="stylesheet" href="../../_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '3.1.1',
+        VERSION:     '3.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 3.1.1 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 3.1.2 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" /> 
   </head>
   <body role="document">
@@ -36,7 +36,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">Processor for Analyzing XENON1T 3.1.1 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Processor for Analyzing XENON1T 3.1.2 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -347,7 +347,8 @@
     <span class="c">#:</span>
     <span class="c">#: Time that the first sample starts. This is a 64-bit number that follows the</span>
     <span class="c">#: UNIX clock. Or rather, it starts from January 1, 1970.  This must be an integer</span>
-    <span class="c">#: because floats have rounding that result in imprecise times.</span>
+    <span class="c">#: because floats have rounding that result in imprecise times.  You could</span>
+    <span class="c">#: think of this as the time of the earliest sample.</span>
     <span class="n">start_time</span> <span class="o">=</span> <span class="mi">0</span>
 
     <span class="c">#: Integer stop time of the event in nanoseconds</span>
@@ -358,6 +359,7 @@
     <span class="n">stop_time</span> <span class="o">=</span> <span class="mi">0</span>
 
     <span class="c">#: Time duration of a sample (in pax units, i.e. ns)</span>
+    <span class="c">#: For V1724 digitizers (e.g. XENON), this is 10 nanoseconds always.</span>
     <span class="c">#: This is also in config, but we need it here too, to convert between event duration and length in samples</span>
     <span class="c">#: Must be an int for same reason as start_time and stop_time</span>
     <span class="c">#: DO NOT set to 10 ns as default, otherwise no way to check if it was given to constructor!</span>
@@ -404,12 +406,14 @@
 
         <span class="c"># Cheat to init stop_time from length and duration</span>
         <span class="k">if</span> <span class="s">&#39;length&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_duration</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop_time</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">stop_time</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">+</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;length&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_duration</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stop_time</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">+</span> <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;length&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_duration</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop_time</span> <span class="ow">or</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_duration</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Cannot initialize an event with an unknown length: &quot;</span> <span class="o">+</span>
                              <span class="s">&quot;pass sample_duration and either stop_time or length&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">()</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Negative event duration&quot;</span><span class="p">)</span>
 
         <span class="c"># Initialize numpy arrays -- need to have n_channels and self.length</span>
         <span class="c"># TODO: don&#39;t initialize these if is already in kwargs</span>
@@ -544,7 +548,7 @@
         <li class="right" >
           <a href="../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">Processor for Analyzing XENON1T 3.1.1 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Processor for Analyzing XENON1T 3.1.2 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>

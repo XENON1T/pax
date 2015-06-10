@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax package &mdash; Processor for Analyzing XENON1T 3.1.1 documentation</title>
+    <title>pax package &mdash; Processor for Analyzing XENON1T 3.1.2 documentation</title>
     
     <link rel="stylesheet" href="_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '3.1.1',
+        VERSION:     '3.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 3.1.1 documentation" href="index.html" /> 
+    <link rel="top" title="Processor for Analyzing XENON1T 3.1.2 documentation" href="index.html" /> 
   </head>
   <body role="document">
     <div class="related" role="navigation" aria-label="related navigation">
@@ -35,7 +35,7 @@
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Processor for Analyzing XENON1T 3.1.1 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Processor for Analyzing XENON1T 3.1.2 documentation</a> &raquo;</li> 
       </ul>
     </div>  
 
@@ -72,6 +72,7 @@
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.FolderIO">pax.plugins.io.FolderIO module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.MongoDB">pax.plugins.io.MongoDB module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.Pickle">pax.plugins.io.Pickle module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.ROOT">pax.plugins.io.ROOT module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.RawWaveformDump">pax.plugins.io.RawWaveformDump module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.WaveformSimulator">pax.plugins.io.WaveformSimulator module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.XED">pax.plugins.io.XED module</a></li>
@@ -402,6 +403,7 @@ An pulse holds a stream of samples in one channel, as provided by the digitizer.
 <dt id="pax.datastructure.Event.sample_duration">
 <code class="descname">sample_duration</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Event.sample_duration" title="Permalink to this definition">¶</a></dt>
 <dd><p>Time duration of a sample (in pax units, i.e. ns)
+For V1724 digitizers (e.g. XENON), this is 10 nanoseconds always.
 This is also in config, but we need it here too, to convert between event duration and length in samples
 Must be an int for same reason as start_time and stop_time
 DO NOT set to 10 ns as default, otherwise no way to check if it was given to constructor!</p>
@@ -413,7 +415,8 @@ DO NOT set to 10 ns as default, otherwise no way to check if it was given to con
 <dd><p>Integer start time of the event in nanoseconds</p>
 <p>Time that the first sample starts. This is a 64-bit number that follows the
 UNIX clock. Or rather, it starts from January 1, 1970.  This must be an integer
-because floats have rounding that result in imprecise times.</p>
+because floats have rounding that result in imprecise times.  You could
+think of this as the time of the earliest sample.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -1179,7 +1182,7 @@ This is</p>
 
 <dl class="attribute">
 <dt id="pax.formats.ROOTDump.numpy_type">
-<code class="descname">numpy_type</code><em class="property"> = {'D': &lt;class 'numpy.float64'&gt;, 'C': dtype('O'), 'I': &lt;class 'numpy.int32'&gt;, 'L': &lt;class 'numpy.int64'&gt;, 'O': &lt;class 'bool'&gt;, 'F': &lt;class 'numpy.float32'&gt;}</em><a class="headerlink" href="#pax.formats.ROOTDump.numpy_type" title="Permalink to this definition">¶</a></dt>
+<code class="descname">numpy_type</code><em class="property"> = {'C': dtype('O'), 'D': &lt;class 'numpy.float64'&gt;, 'I': &lt;class 'numpy.int32'&gt;, 'O': &lt;class 'bool'&gt;, 'F': &lt;class 'numpy.float32'&gt;, 'L': &lt;class 'numpy.int64'&gt;}</em><a class="headerlink" href="#pax.formats.ROOTDump.numpy_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -1194,7 +1197,7 @@ This is</p>
 
 <dl class="attribute">
 <dt id="pax.formats.ROOTDump.root_type">
-<code class="descname">root_type</code><em class="property"> = {'float32': '/F', 'S': '/C', 'float64': '/D', 'int64': '/L', 'int32': '/I', 'bool': '/O'}</em><a class="headerlink" href="#pax.formats.ROOTDump.root_type" title="Permalink to this definition">¶</a></dt>
+<code class="descname">root_type</code><em class="property"> = {'bool': '/O', 'int64': '/L', 'int32': '/I', 'float32': '/F', 'S': '/C', 'float64': '/D'}</em><a class="headerlink" href="#pax.formats.ROOTDump.root_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -1576,7 +1579,7 @@ Stolen from <a class="reference external" href="http://stackoverflow.com/questio
         <li class="right" >
           <a href="py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Processor for Analyzing XENON1T 3.1.1 documentation</a> &raquo;</li> 
+        <li class="nav-item nav-item-0"><a href="index.html">Processor for Analyzing XENON1T 3.1.2 documentation</a> &raquo;</li> 
       </ul>
     </div>
     <div class="footer" role="contentinfo">

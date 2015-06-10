@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.signal_processing.Cluster &mdash; Processor for Analyzing XENON1T 3.1.1 documentation</title>
+    <title>pax.plugins.signal_processing.Cluster &mdash; Processor for Analyzing XENON1T 3.1.2 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/classic.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '3.1.1',
+        VERSION:     '3.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 3.1.1 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 3.1.2 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" /> 
   </head>
   <body role="document">
@@ -36,7 +36,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../../index.html">Processor for Analyzing XENON1T 3.1.1 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">Processor for Analyzing XENON1T 3.1.2 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &raquo;</li> 
       </ul>
     </div>  
@@ -55,6 +55,7 @@
 
 
 <div class="viewcode-block" id="ClusterPlugin"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Cluster.ClusterPlugin">[docs]</a><span class="k">class</span> <span class="nc">ClusterPlugin</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
+
     <span class="sd">&quot;&quot;&quot;Base plugin for clustering</span>
 
 <span class="sd">    Individual channel peaks into groups, and labels them as noise / lone_pulse / unknown</span>
@@ -225,6 +226,7 @@
 
 </div></div>
 <div class="viewcode-block" id="MeanShift"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Cluster.MeanShift">[docs]</a><span class="k">class</span> <span class="nc">MeanShift</span><span class="p">(</span><span class="n">ClusterPlugin</span><span class="p">):</span>
+
     <span class="sd">&quot;&quot;&quot;Clusters hits using mean-shift algorithm</span>
 
 <span class="sd">    http://en.wikipedia.org/wiki/Mean_shift</span>
@@ -320,6 +322,7 @@
 
 </div></div>
 <div class="viewcode-block" id="HitDifference"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Cluster.HitDifference">[docs]</a><span class="k">class</span> <span class="nc">HitDifference</span><span class="p">(</span><span class="n">ClusterPlugin</span><span class="p">):</span>
+
     <span class="sd">&quot;&quot;&quot;Clusters hits based on times between their maxima</span>
 <span class="sd">    If any hit maximum is separated by more than max_difference from the next,</span>
 <span class="sd">    it starts a new cluster.</span>
@@ -332,10 +335,12 @@
 
 </div></div>
 <div class="viewcode-block" id="GapSize"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Cluster.GapSize">[docs]</a><span class="k">class</span> <span class="nc">GapSize</span><span class="p">(</span><span class="n">ClusterPlugin</span><span class="p">):</span>
+
     <span class="sd">&quot;&quot;&quot;Clusters hits based on gaps = times not covered by any hits.</span>
 <span class="sd">    Any gap longer than max_gap_size starts a new cluster.</span>
 <span class="sd">    Difference with HitDifference: this takes interval nature of hits into account</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
 <div class="viewcode-block" id="GapSize.startup"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Cluster.GapSize.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">startup</span><span class="p">()</span>
         <span class="c"># Convert gap threshold to samples (is in time (ns) in config)</span>
@@ -345,46 +350,6 @@
 </div>
 <div class="viewcode-block" id="GapSize.cluster_hits"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Cluster.GapSize.cluster_hits">[docs]</a>    <span class="k">def</span> <span class="nf">cluster_hits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hits</span><span class="p">):</span>
         <span class="c"># If a hit has a left &gt; this, it will form a new cluster</span>
-        <span class="n">boundary</span> <span class="o">=</span> <span class="o">-</span><span class="mi">999999999</span>
-        <span class="n">clusters</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">hit</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">hits</span><span class="p">):</span>
-
-            <span class="k">if</span> <span class="n">hit</span><span class="o">.</span><span class="n">left</span> <span class="o">&gt;</span> <span class="n">boundary</span><span class="p">:</span>
-                <span class="c"># Hit starts after current boundary: new cluster</span>
-                <span class="n">clusters</span><span class="o">.</span><span class="n">append</span><span class="p">([])</span>
-                <span class="c"># (Re)set area and thresholds</span>
-                <span class="n">area</span> <span class="o">=</span> <span class="mi">0</span>
-                <span class="n">gap_size_threshold</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">large_gap_threshold</span>
-                <span class="n">boundary</span> <span class="o">=</span> <span class="n">hit</span><span class="o">.</span><span class="n">right</span> <span class="o">+</span> <span class="n">gap_size_threshold</span>
-
-            <span class="c"># Add this hit to the cluster</span>
-            <span class="n">clusters</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
-            <span class="n">area</span> <span class="o">+=</span> <span class="n">hit</span><span class="o">.</span><span class="n">area</span>
-
-            <span class="c"># Can we start applying the tighter threshold?</span>
-            <span class="k">if</span> <span class="n">area</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">transition_point</span><span class="p">:</span>
-                <span class="c"># Yes, there&#39;s no chance this is a single electron: use a tighter clustering boundary</span>
-                <span class="n">gap_size_threshold</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">small_gap_threshold</span>
-
-            <span class="c"># Extend the boundary at which a new clusters starts, if needed</span>
-            <span class="n">boundary</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">boundary</span><span class="p">,</span> <span class="n">hit</span><span class="o">.</span><span class="n">right</span> <span class="o">+</span> <span class="n">gap_size_threshold</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">clusters</span>
-
-</div></div>
-<div class="viewcode-block" id="GapSize2"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Cluster.GapSize2">[docs]</a><span class="k">class</span> <span class="nc">GapSize2</span><span class="p">(</span><span class="n">ClusterPlugin</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Clusters hits based on gaps = times not covered by any hits.</span>
-<span class="sd">    Any gap longer than max_gap_size starts a new cluster.</span>
-<span class="sd">    Difference with HitDifference: this takes interval nature of hits into account</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-<div class="viewcode-block" id="GapSize2.startup"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Cluster.GapSize2.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">startup</span><span class="p">()</span>
-        <span class="c"># Convert gap threshold to samples (is in time (ns) in config)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">large_gap_threshold</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;large_gap_threshold&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">small_gap_threshold</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;small_gap_threshold&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">transition_point</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;transition_point&#39;</span><span class="p">]</span>
-</div>
-<div class="viewcode-block" id="GapSize2.cluster_hits"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Cluster.GapSize2.cluster_hits">[docs]</a>    <span class="k">def</span> <span class="nf">cluster_hits</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hits</span><span class="p">):</span>
-        <span class="c"># If the next hit starts at a sample &gt; this, start a new cluster</span>
         <span class="n">boundary</span> <span class="o">=</span> <span class="o">-</span><span class="mi">999999999</span>
         <span class="n">clusters</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">hit</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">hits</span><span class="p">):</span>
@@ -442,7 +407,7 @@
         <li class="right" >
           <a href="../../../../py-modindex.html" title="Python Module Index"
              >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../../index.html">Processor for Analyzing XENON1T 3.1.1 documentation</a> &raquo;</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">Processor for Analyzing XENON1T 3.1.2 documentation</a> &raquo;</li>
           <li class="nav-item nav-item-1"><a href="../../../index.html" >Module code</a> &raquo;</li> 
       </ul>
     </div>

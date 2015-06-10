@@ -52,6 +52,14 @@ pax.plugins.io.Pickle module
     :undoc-members:
     :show-inheritance:
 
+pax.plugins.io.ROOT module
+--------------------------
+
+.. automodule:: pax.plugins.io.ROOT
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pax.plugins.io.RawWaveformDump module
 -------------------------------------
 

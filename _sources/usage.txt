@@ -17,8 +17,11 @@ To use processor for Analyzing XENON1T, see /bin/paxer --help for available opti
         optional arguments:
           -h, --help            show this help message and exit
           --input [INPUT]       File, database or directory to read events from
+          
           --output [OUTPUT]     File, database or directory to write events to
+          
           --log LOG             Set log level, e.g. 'debug'
+          
           --config {3d_plotter,bern,daq_injector,Mongo,newDSP,XAMS,XED,XENON100,XENON1T} [{3d_plotter,bern,daq_injector,Mongo,newDSP,XAMS,XED,XENON100,XENON1T} ...]
                                 Name(s) of the pax configuration(s) to use.
           --config_path CONFIG_PATH [CONFIG_PATH ...]
