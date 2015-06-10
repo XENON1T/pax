@@ -7,7 +7,6 @@ relations
 Please change comments in this code if you change any units. Better yet, don't
 change any units!
 """
-import math
 
 # From physics.nist.gov, January 2015
 electron_charge_SI = 1.602176565 * 10 ** (-19)
@@ -39,20 +38,12 @@ electron_charge = electron_charge_SI * base_units['C']
 boltzmannConstant = boltzmannConstant_SI * base_units['J'] / base_units['K']
 
 # Make variables for ns, uHz, kOhm, etc.
+# Unfortunately this won't be recognized as declared variables so that you will get warnings
+# that for example unit.ns is not defined. By the use of the command vars() all units come
+# into the current name space, including probably useless units aka GC, nHz, Gs etc.
 prefixes = {'': 0, 'n': -9, 'u': -6, 'm': -3, 'c': -2, 'k': 3, 'M': 6, 'G': 9}
 for (name, value) in list(base_units.items()):
     for (p_name, p_factor) in list(prefixes.items()):
         # Float makes sure units might work even for poor fellas who forget to
         # from __future__ import division -- not tested though
         vars()[p_name + name] = float(10 ** (p_factor) * value)
-
-
-def unit_name(unit, base_unit):
-    """
-    Hack to get unit name back
-    unit_name(ns,'s') will give 'ns'
-    """
-    power = int(math.log10(unit / base_units[base_unit]))
-    for p_name, p_factor in list(prefixes.items()):
-        if p_factor == power:
-            return p_name + base_unit
