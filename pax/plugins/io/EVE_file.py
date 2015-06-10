@@ -14,15 +14,10 @@ In short the file is built up like this:
 For a more detailed understanding of the file read the short manual.
 """
 
-import bz2
-import io
-
 import numpy as np
 
-import math
 from pax import units
 from pax.datastructure import Event, Pulse
-
 from pax.plugins.io.FolderIO import InputFromFolder
 
 """  File header provided by FPPGui. This has only to be read once. Byte order is a relict from times where "Big Endian"
@@ -150,40 +145,39 @@ class EveInput(InputFromFolder):
         # self.file_metadata = header_unpacker(self.file_metadata)
         self.file_caen_pars = np.fromfile(self.current_evefile, dtype=eve_caen1724_par_t, count=1)[0]
         first, last = self.get_first_and_last_event_number(filename)
-        #print(self.event_positions)
+        # print(self.event_positions)
         self.start_time = self.file_metadata["timestamp"]
         self.sample_duration = 10 * units.ns
         self.stop_time = int(
             self.start_time + self.file_caen_pars["nof_samples"] * self.sample_duration)
 
-
     def get_first_and_last_event_number(self, filename):
         """Return the first and last event number in file specified by filename"""
         print("getting first and last event number")
         with open(filename, 'rb') as evefile:
-            evefile.seek(0,2)
-            filesize=evefile.tell()
-            evefile.seek(0,0)
+            evefile.seek(0, 2)
+            filesize = evefile.tell()
+            evefile.seek(0, 0)
             positions = []
             fmd = np.fromfile(evefile, dtype=eve_file_header, count=1)[0]
-            #print(fmd['byte_order'], fmd['version'], fmd['buffsize'], fmd["timestamp"], [hex(z) for z in fmd["not_used"]])
-            j= 0
-            while evefile.tell()< filesize: # maybe better with while(true) and try catch IndexOutofBounds for performance reasons
+            # print(fmd['byte_order'], fmd['version'], fmd['buffsize'], fmd["timestamp"], [hex(z) for z in fmd["not_used"]])
+            j = 0
+            while evefile.tell() < filesize:  # maybe better with while(true) and try catch IndexOutofBounds for performance reasons
                 fmd = np.fromfile(evefile, dtype=eve_event_header, count=1)[0]
-                evefile.seek(fmd["event_size"]*4-12,1)
-                #print(evefile.tell())
-                #np.fromfile(evefile,dtype=np.uint32, count=1)[0]
+                evefile.seek(fmd["event_size"] * 4 - 12, 1)
+                # print(evefile.tell())
+                # np.fromfile(evefile,dtype=np.uint32, count=1)[0]
                 j += 1
                 positions.append(evefile.tell())
-            print("There are %d events in this file"%j)
-            #print(positions)
+            print("There are %d events in this file" % j)
+            # print(positions)
             self.event_positions = positions
             return 1, j
 
     def close(self):
         """Close the currently open file"""
         print("Closing .eve file")
-        #self.current_evefile.close()
+        # self.current_evefile.close()
 
     def get_single_event_in_current_file(self, event_position=1):
         # Seek to the requested event
@@ -208,7 +202,7 @@ class EveInput(InputFromFolder):
                 event_event_header['event_timestamp'] * units.s  # +
                 # event_layer_metadata['utc_time_usec'] * units.us
             ),
-            sample_duration=int( 10 * units.ns),
+            sample_duration=int(10 * units.ns),
             # 10 ns is the inverse of the sampling  frequency 10MHz
             length=self.file_caen_pars['nof_samples']  # nof samples per event
         )
@@ -241,13 +235,13 @@ class EveInput(InputFromFolder):
                     # chdata = np.array(chdata)
                     event.pulses.append(Pulse(
                         channel=ch_i + 8 * board_i,
-                        left= 0,
+                        left=0,
                         raw_data=np.array(chdata, dtype=np.int16)
                     ))
-            self.current_evefile.seek(4, 1)     # skip the 0xaffe
+            self.current_evefile.seek(4, 1)  # skip the 0xaffe
 
         elif self.file_caen_pars['zle'] == 1:
-            #print(len(self.file_caen_pars["chan_active"]))
+            # print(len(self.file_caen_pars["chan_active"]))
             for board_i, channels_active in enumerate(self.file_caen_pars["chan_active"]):
                 # Skip nonexistent board
                 if channels_active.sum() == 0:  # if no channel is active there should be no signal header of the current board TODO: Check if that is really the case!
@@ -259,40 +253,28 @@ class EveInput(InputFromFolder):
                 event_signal_header = header_unpacker(event_signal_header_raw)
                 channel_mask = event_signal_header["channel_mask"]
 
-
-                # +1 as first pmt is 1 in Xenon100
                 channels_included = [i for i in range(8)
-                                     if (2**i & channel_mask) > 0]
+                                     if (2 ** i & channel_mask) > 0]
 
-                for ch_i in channels_included: #enumerate(channels_active):
-                    #if channel_is_active == 0:
-                    #    continue  # skip unused channels
+                for ch_i in channels_included:  # enumerate(channels_active):
                     position = self.current_evefile.tell()
-
-#                    if not (2**ch_i & channel_mask):    # if channel has not triggered even once, there is neither a channel size nor a cword
- #                           continue
-
-
                     temp = np.fromfile(self.current_evefile, dtype=np.uint32, count=1)
                     channel_size = temp[0]
                     sample_position = 0
-                    #for j in range(channel_size):  # divide by 2 because there are two samples in each word
-                    while(self.current_evefile.tell() < position + channel_size*4):
+                    while (self.current_evefile.tell() < position + channel_size * 4):
                         cword = np.fromfile(self.current_evefile, dtype=np.uint32, count=1)[0]
-                        if cword < 0x80000000:      # if cword is less than 0x80000000 waveform is below zle threshold
+                        if cword < 0x80000000:  # if cword is less than 0x80000000 waveform is below zle threshold
                             # skip word
-                            sample_position += 2*cword
+                            sample_position += 2 * cword
                             continue
                         else:
-                            chdata = np.fromfile(self.current_evefile, dtype=np.int16, count=2*(cword-0x80000000))
+                            chdata = np.fromfile(self.current_evefile, dtype=np.int16, count=2 * (cword - 0x80000000))
                             event.pulses.append(Pulse(
                                 channel=ch_i + 8 * board_i,
                                 left=sample_position,
                                 raw_data=np.array(chdata, dtype=np.int16)
                             ))
-                            sample_position += 2*(cword & (2**20-1))
-            #print(hex(np.fromfile(self.current_evefile, dtype=np.uint32, count=1)[0]))
-            #self.current_evefile.seek(4, 1)     #
+                            sample_position += 2 * (cword & (2 ** 20 - 1))
 
         # TODO: Check we have read all data for this event
         affe = hex(np.fromfile(self.current_evefile, dtype=np.uint32, count=1)[0])
@@ -306,12 +288,9 @@ class EveInput(InputFromFolder):
                                    "(event number %d) we should be at position %d, but we are at position %d!" % (
                                        event_position, event.event_number, should_be_at_pos, current_pos))
 
-
         return event
 
     def read_zle_channels(self):
-         #read signal header
+        # read signal header
         raw_signal_header = np.fromfile(self.current_evefile, dtype=eve_signal_header, count=1)[0]
         eve_signal_header = header_unpacker(raw_signal_header)
-
-
