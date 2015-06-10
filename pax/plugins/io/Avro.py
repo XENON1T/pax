@@ -1,4 +1,4 @@
-"""Avro is responsible for the raw digitizer data storage
+"""(deprecated for BSON) Avro is responsible for the raw digitizer data storage
 
 Avro is a remote procedure call and data serialization framework developed
 within Apache's Hadoop project.  We use it within 'pax' to store the raw data
@@ -82,7 +82,8 @@ class WriteAvro(WriteToFolder):
         super().startup()
 
     def open(self, filename):
-
+        self.log.warning("Avro is no longer supported and will "
+                         "be removed soon. Use BSON.")
         # Open file and set codec
         f = gzip.open(filename, mode='wb', compresslevel=self.config.get('compresslevel', 4))
 
