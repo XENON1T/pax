@@ -130,10 +130,6 @@ def header_unpacker(raw_header):
 class EveInput(InputFromFolder):
     file_extension = 'eve'
 
-    def __init__(self, config_values, processor):
-        super().__init__(config_values, processor)
-        self.event_number = 0
-
     def open(self, filename):
         """Opens an EVE file so we can start reading events"""
         print("Opening .eve file")
@@ -212,8 +208,7 @@ class EveInput(InputFromFolder):
 
         event.dataset_name = self.current_filename  # now metadata available
         # as eve files do not have event numbers just count them
-        self.event_number += 1
-        event.event_number = self.event_number
+        event.event_number = event_position
         if self.file_caen_pars['zle'] == 0:
             # Zero length encoding disabled
             # Data is just a big bunch of samples from one channel, then next channel, etc
