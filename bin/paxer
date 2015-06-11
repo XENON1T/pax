@@ -76,10 +76,10 @@ class OutputEvents(multiprocessing.Process):
 
         while True:
             can_end = self.input_done.is_set() and self.process_done.is_set()
-            print(self.input_done.is_set(),
-                  self.process_done.is_set(),
-                  self.output_done.is_set())
-            print('blocks waiting input:', self.task_queue.qsize(),
+            print('input_done:', self.input_done.is_set(),
+                  'process_done:', self.process_done.is_set(),
+                  'output_done:', self.output_done.is_set(),
+                  'blocks waiting input:', self.task_queue.qsize(),
                   'blocks waiting output:', self.result_queue.qsize())
             try:
                 next_events = self.result_queue.get(block=True,
@@ -97,7 +97,7 @@ class OutputEvents(multiprocessing.Process):
                     break
                 else:
                     continue
-        print('bye')
+
         return
 
 parser = argparse.ArgumentParser(description="Process XENON data")
@@ -266,12 +266,9 @@ else:  # Parallel processing
     # Enqueue jobs
     events = []
     n = 10 # chunk in threads (TODO: what is best n?)
-    input_count = 0
+
     for event in p.get_events():
         events.append(event)
-        input_count += 1
-        if input_count >= 100:
-            break
         if len(events) > n:
             tasks.put(events)
             events = []
