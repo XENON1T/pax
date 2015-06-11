@@ -144,7 +144,7 @@ def main():
                                    config_dict=config_dict)
 
                 p.run()
-
+                
             except pymongo.errors.ServerSelectionTimeoutError as e:
                 log.exception(e)
                 collection.update(query,

@@ -193,10 +193,10 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
                              IOMongoDB):
     def startup(self):
         IOMongoDB.startup(self) # Setup with baseclass
-
+        
         # Load constants from config
         self.window = self.config['window']
-        self.multiplicity =self.config['multiplicity']
+        self.multiplicity = self.config['multiplicity']
         self.left = self.config['left_extension']
         self.right = self.config['right_extension']
 
