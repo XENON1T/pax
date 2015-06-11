@@ -88,15 +88,24 @@ Yes, in fact several of the developers do this, much to the sadness of the other
 Unfortunately, Windows + Python3 + Root is not exactly a winning team; if you use windows you'll be stuck
 with the other 433 output formats we have.
 
----------------------------------------
-How do I get Python 3.4 with ROOT working on Ubuntu 14?
----------------------------------------
+-------------------------
+How do I get ROOT working
+-------------------------
+
+ROOT is a dependency and you're expected to install it yourself.  That said, we offer the follow two scripts that should install it for you.  Be sure that your GCC compiler version is more than 4.8 because ROOT requires that now.  Most problems people experience with `pax` are related to problems within the ROOT system.  We're working with them to make it better.  In the meantime, try these scripts::
+
+  
+  source travis/linux_setup.sh  # Only run for Ubuntu
+  source travis/install-ROOT.sh
+  
+If it fails for your system, feel free to try to fix it and let us know so we can update the script.  You can always look within the shell script to see what we're doing if you run into an issue.    
+
 * Just follow the instructions on `the PyROOT page <https://github.com/XENON1T/pax/blob/master/docs/pyroot.rst>`_.
 
 -------------
 Snappy on OSX
 -------------
 
-After instally snappy through macports, please run::
+After instally `snappy` through MacPorts, please run::
 
   CFLAGS=-I/opt/local/include LDFLAGS=-L/opt/local/lib pip install python-snappy
