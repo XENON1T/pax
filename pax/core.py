@@ -9,6 +9,7 @@ from io import StringIO
 import itertools
 import os
 import re
+import time
 from configparser import ConfigParser, ExtendedInterpolation
 
 try:
@@ -409,6 +410,14 @@ class Processor:
         else:
             raise ValueError("No plugin named %s has been initialized." % name)
 
+    def get_metadata(self):
+        return dict(run_number=self.config['DEFAULT']['run_number'],
+                    tpc=self.config['DEFAULT']['tpc_name'],
+                    file_builder_name='pax',
+                    file_builder_version=pax.__version__,
+                    timestamp=time.time(),
+                    configuration=self.config)
+
     def process_event(self, event):
         """Process one event with all action plugins. Returns processed event."""
         total_plugins = len(self.action_plugins)
@@ -497,12 +506,12 @@ class Processor:
 
             if total_time > 0:
                 timing_report.add_row(['TOTAL',
-                                   round(100., 1),
-                                   round(total_time / events_actually_processed,
-                                         1),
-                                   round(1000 * events_actually_processed / total_time,
-                                         1),
-                                   round(total_time / 1000, 1)])
+                                       round(100., 1),
+                                       round(total_time / events_actually_processed,
+                                             1),
+                                       round(1000 * events_actually_processed / total_time,
+                                             1),
+                                       round(total_time / 1000, 1)])
             else:
                 timing_report.add_row(['TOTAL',
                                        round(100., 1),
@@ -514,3 +523,15 @@ class Processor:
         # Shutdown all plugins now -- don't wait until this Processor instance gets deleted
         if clean_shutdown:
             self.shutdown()
+
+    def shutdown(self):
+        """Call shutdown on all plugins"""
+        self.log.debug("Shutting down all plugins...")
+        if self.input_plugin is not None:
+            self.log.debug("Shutting down %s..." % self.input_plugin.name)
+            self.input_plugin.shutdown()
+            self.input_plugin.has_shut_down = True
+        for ap in self.action_plugins:
+            self.log.debug("Shutting down %s..." % ap.name)
+            ap.shutdown()
+            ap.has_shut_down = True

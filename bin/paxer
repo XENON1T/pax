@@ -3,6 +3,7 @@
 
 import argparse
 import os
+import sys
 import multiprocessing
 from itertools import zip_longest
 
@@ -21,6 +22,14 @@ class Consumer(multiprocessing.Process):
         multiprocessing.Process.__init__(self)
         self.task_queue = task_queue
         self.result_queue = result_queue
+
+
+parser = argparse.ArgumentParser(description="Process XENON data")
+parser.add_argument('--input',  default=None, help="File, database or directory to read events from", nargs='?')
+parser.add_argument('--output', default=None, help="File, database or directory to write events to",  nargs='?')
+
+# Parallelization control
+parser.add_argument('--cpus', default=1, help="Number of CPUs to use. Default is 1; can be 'all'.",  nargs='?')
 
 # Log level control
 parser.add_argument('--log', default=None, help="Set log level, e.g. 'debug'")
@@ -72,6 +81,16 @@ parser.add_argument('--stop_after',
 
 args = parser.parse_args()
 
+max_cpus = multiprocessing.cpu_count()
+if args.cpus == 'all':
+    args.cpus = max_cpus
+if args.cpus > max_cpus:
+    raise ValueError("Can't parallelize over %d cpu's, you only have %d..." % (args.cpus, max_cpus))
+
+##
+# Build configuration for paxer
+##
+
 # Take config from previous file
 if args.redo:
     from pandas import HDFStore
@@ -96,69 +115,88 @@ for argname, configname in (
         ('output',     'output_name'),
         ('log',        'logging_level'),
         ('stop_after', 'stop_after'),
-        ('event',      'events_to_process'),
-    ):
+        ('event',      'events_to_process')):
     value = getattr(args, argname)
     if value is not None:
         override_dict['pax'][configname] = value
 
 # Overrides for plotting
-if args.plot_to_dir or args.plot :
+if args.plot_to_dir or args.plot:
     override_dict['pax']['output'] = 'Plotting.PlotEventSummary'
     if args.plot_to_dir:
         override_dict['Plotting.PlotEventSummary'] = {'output_dir': args.plot_to_dir}
 
 ##
-# Load configuration and run the processor
+# Single-core processing
 ##
-override_dict['pax']['plugin_group_names'] = ['input']
-p = core.Processor(config_names=args.config,
-                   config_paths=args.config_path,
-                   config_dict=override_dict)
+if args.cpus == 1:
+    pax_instance = core.Processor(config_names=args.config,
+                                  config_paths=args.config_path,
+                                  config_dict=override_dict)
 
-override_dict['pax']['plugin_group_names'] = ['dsp', 'transform']
+    try:
+        pax_instance.run()
+    except (KeyboardInterrupt, SystemExit):
+        print("\nShutting down all plugins...")
+        pax_instance.shutdown()
+        print("Exiting")
+        sys.exit()
 
-# Establish communication queues
-tasks = multiprocessing.JoinableQueue()
-results = multiprocessing.Queue()
+##
+# Parallel processing
+##
+else:
+    if os.name == 'nt':
+        raise NotImplementedError("Pax parallelization is not supported under Windows (due to lack of fork).")
 
-# Start consumers
-num_consumers = multiprocessing.cpu_count()
-p.log.info('Creating %d consumers',
-           num_consumers)
-consumers = [ Consumer(tasks, results,
-                       args.config,
-                       args.config_path,
-                       override_dict) for i in range(num_consumers) ]
-for w in consumers:
-    w.start()
+    override_dict['pax']['plugin_group_names'] = ['input']
+    p = core.Processor(config_names=args.config,
+                       config_paths=args.config_path,
+                       config_dict=override_dict)
 
-# Enqueue jobs
-num_jobs = 0
+    override_dict['pax']['plugin_group_names'] = ['dsp', 'transform']
 
-for events in grouper(p.get_events(), 10):
-    tasks.put(events)
-    num_jobs += 1
+    # Establish communication queues
+    tasks = multiprocessing.JoinableQueue()
+    results = multiprocessing.Queue()
 
-p.shutdown()
+    # Start consumers
+    num_consumers = args.cpus
+    p.log.info('Creating %d consumers',
+               num_consumers)
+    consumers = [Consumer(tasks, results,
+                          args.config,
+                          args.config_path,
+                          override_dict) for _ in range(num_consumers)]
+    for w in consumers:
+        w.start()
 
-# Add a poison pill for each consumer
-for i in range(num_consumers):
-    tasks.put(None)
+    # Enqueue jobs
+    num_jobs = 0
 
-# Wait for all of the tasks to finish
-tasks.join()
+    for events in grouper(p.get_events(), 10):
+        tasks.put(events)
+        num_jobs += 1
 
-override_dict['pax']['plugin_group_names'] = ['output']
-p = core.Processor(config_names=args.config,
-                   config_paths=args.config_path,
-                   config_dict=override_dict)
+    p.shutdown()
 
-# Start printing results
-while num_jobs:
+    # Add a poison pill for each consumer
+    for i in range(num_consumers):
+        tasks.put(None)
 
-    for event in results.get():
-        p.process_event(event)
-    num_jobs -= 1
+    # Wait for all of the tasks to finish
+    tasks.join()
 
-p.shutdown()
+    override_dict['pax']['plugin_group_names'] = ['output']
+    p = core.Processor(config_names=args.config,
+                       config_paths=args.config_path,
+                       config_dict=override_dict)
+
+    # Start printing results
+    while num_jobs:
+
+        for event in results.get():
+            p.process_event(event)
+        num_jobs -= 1
+
+    p.shutdown()
