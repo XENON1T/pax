@@ -4,18 +4,84 @@
 import argparse
 import os
 import sys
+import multiprocessing
+from itertools import zip_longest
 
 from pax import core, utils
 
+class ProcessorEvents(multiprocessing.Process):
 
-##
-# Parse command line arguments
-##
-parser = argparse.ArgumentParser(description="Process XENON1T data")
+    def __init__(self, task_queue, result_queue,
+                 config_names, config_path, config_dict):
+        multiprocessing.Process.__init__(self)
 
-# Input and output overrides
+        self.task_queue = task_queue
+        self.result_queue = result_queue
+
+        self.config_names = config_names
+        self.config_path = config_path
+        self.config_dict = config_dict
+
+    def run(self):
+        p = core.Processor(config_names=self.config_names,
+                           config_paths=self.config_path,
+                           config_dict=self.config_dict)
+
+        while True:
+            next_events = self.task_queue.get()
+            answer = []
+            if next_events is None:
+                # Poison pill means shutdown
+                p.log.info('Exiting')
+                p.shutdown()
+                self.task_queue.task_done()
+                break
+            for event in next_events:
+                if event is not None:
+                    answer.append(p.process_event(event))
+
+            self.result_queue.put(answer)
+        return
+
+
+class OutputEvents(multiprocessing.Process):
+
+    def __init__(self, result_queue,
+                 config_names, config_path, config_dict):
+        multiprocessing.Process.__init__(self)
+
+        self.result_queue = result_queue
+
+        self.config_names = config_names
+        self.config_path = config_path
+        self.config_dict = config_dict
+
+    def run(self):
+        p = core.Processor(config_names=self.config_names,
+                           config_paths=self.config_path,
+                           config_dict=self.config_dict)
+
+        while True:
+            next_events = self.result_queue.get()
+
+            if next_events is None:
+                # Poison pill means shutdown
+                p.log.info('Exiting')
+                p.shutdown()
+                self.result_queue.task_done()
+                break
+            for event in next_events:
+                if event is not None:
+                    p.process_event(event)
+
+        return
+
+parser = argparse.ArgumentParser(description="Process XENON data")
 parser.add_argument('--input',  default=None, help="File, database or directory to read events from", nargs='?')
 parser.add_argument('--output', default=None, help="File, database or directory to write events to",  nargs='?')
+
+# Parallelization control
+parser.add_argument('--cpus', default=1, help="Number of CPUs to use. Default is 1; can be 'all'.",  nargs='?')
 
 # Log level control
 parser.add_argument('--log', default=None, help="Set log level, e.g. 'debug'")
@@ -35,6 +101,12 @@ parser.add_argument(
     default=[],
     nargs='+',
     help="Path(s) of the configuration file(s) to use."
+)
+# ... or load the configuration from a previous processed data file
+parser.add_argument(
+    '--redo',
+    default='',
+    help="Path of the HDF5 data file to redo."
 )
 
 # Plotting override
@@ -61,38 +133,136 @@ parser.add_argument('--stop_after',
 
 args = parser.parse_args()
 
-override_dict = {'pax': {}}
+max_cpus = multiprocessing.cpu_count()
+if args.cpus == 'all':
+    args.cpus = max_cpus
+
+##
+# Build configuration for paxer
+##
+
+# Take config from previous file
+if args.redo:
+    from pandas import HDFStore
+    import json
+    file_to_redo = core.data_file_name(args.redo)
+    store = HDFStore(file_to_redo)
+    if len(store['pax_info']) > 1:
+        print("Warning: This file contains data from several processings. Will use config from last!\n")
+    override_dict = json.loads(store['pax_info'].iloc[-1]['configuration_json'])
+    # Add _redone to output name, unless user has specified an output name
+    if not args.output:
+        redo_path, ext = os.path.splitext(args.redo)    # Remove .hdf from path
+        redo_path += '_redone'
+        print("Output path of redone processing not specified: will write to %s\n" % redo_path)
+        args.output = redo_path
+    store.close()
+else:
+    override_dict = {'pax': {}}
 
 for argname, configname in (
         ('input',      'input_name'),
         ('output',     'output_name'),
         ('log',        'logging_level'),
         ('stop_after', 'stop_after'),
-        ('event',      'events_to_process'),
-    ):
+        ('event',      'events_to_process')):
     value = getattr(args, argname)
     if value is not None:
         override_dict['pax'][configname] = value
 
 # Overrides for plotting
-if args.plot_to_dir or args.plot :
+if args.plot_to_dir or args.plot:
     override_dict['pax']['output'] = 'Plotting.PlotEventSummary'
     if args.plot_to_dir:
         override_dict['Plotting.PlotEventSummary'] = {'output_dir': args.plot_to_dir}
 
-##
-# Load configuration and run the processor
-##
-pax_instance = core.Processor(
-                   config_names=args.config,
-                   config_paths=args.config_path,
-                   config_dict=override_dict
-               )
 
-try:
-    pax_instance.run()
-except (KeyboardInterrupt, SystemExit):
-    print("\nShutting down all plugins...")
-    pax_instance.stop()
-    print("Exiting")
-    sys.exit()
+
+def status(input_count, tasks, results):
+    print('events read in:', input_count,
+          'blocks waiting input:', tasks.qsize(),
+          'blocks waiting output:', results.qsize())
+
+##
+# Single-core processing
+##
+if args.cpus == 1:
+    pax_instance = core.Processor(config_names=args.config,
+                                  config_paths=args.config_path,
+                                  config_dict=override_dict)
+
+    try:
+        pax_instance.run()
+    except (KeyboardInterrupt, SystemExit):
+        print("\nShutting down all plugins...")
+        pax_instance.shutdown()
+        print("Exiting")
+        sys.exit()
+
+
+else:  # Parallel processing
+    if os.name == 'nt':
+        raise NotImplementedError("Pax parallelization is not supported under "
+                                  "Windows (due to lack of fork).")
+
+    override_dict['pax']['plugin_group_names'] = ['input']
+    p = core.Processor(config_names=args.config,
+                       config_paths=args.config_path,
+                       config_dict=override_dict)
+
+    override_dict['pax']['plugin_group_names'] = ['dsp', 'transform']
+
+    # Establish communication queues
+    tasks = multiprocessing.JoinableQueue()
+    results = multiprocessing.JoinableQueue()
+
+    # Start consumers
+    num_consumers = args.cpus
+    p.log.info('Creating %d consumers',
+               num_consumers)
+    consumers = [ProcessorEvents(tasks, results,
+                                 args.config,
+                                 args.config_path,
+                                 override_dict) for _ in range(num_consumers)]
+    consumer_output = OutputEvents(results,
+                                   args.config,
+                                   args.config_path,
+                                   override_dict)
+
+    for w in consumers + [consumer_output]:
+        w.start()
+
+    # Enqueue jobs
+    events = []
+    n = 100
+    input_count = 0
+    for event in p.get_events():
+        events.append(event)
+        input_count += 1
+        if len(events) > n:
+            tasks.put(events)
+            status(input_count, tasks, results)
+            events = []
+    else:
+        if len(events):
+            tasks.put(events)
+    status(input_count, tasks, results)
+    p.shutdown()
+
+    # Add a poison pill for each consumer
+    for i in range(num_consumers):
+        tasks.put(None)
+
+    # Wait for all of the tasks to finish
+
+    while not tasks.empty():
+        status(input_count, tasks, results)
+
+    tasks.join()
+    results.put(None)
+
+    while not results.empty():
+        status(input_count, tasks, results)
+    results.join()
+
+    print("Done")
