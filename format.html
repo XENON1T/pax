@@ -211,7 +211,7 @@ in &#8216;start_time&#8217;.</p>
 
 </dd></dl>
 
-<p>There are variables within the class that refer to <a class="reference internal" href="pax.html#pax.datastructure.Peak" title="pax.datastructure.Peak"><code class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></code></a> and <a class="reference internal" href="pax.html#pax.datastructure.SumWaveform" title="pax.datastructure.SumWaveform"><code class="xref py py-class docutils literal"><span class="pre">pax.datastructure.SumWaveform</span></code></a> objects.  These have their own class structure.  For example, both S1 and S2 peaks follow the following syntax.</p>
+<p>There are variables within the class that refer to <a class="reference internal" href="pax.html#pax.datastructure.Peak" title="pax.datastructure.Peak"><code class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></code></a> and <a class="reference internal" href="pax.html#pax.datastructure.ReconstructedPosition" title="pax.datastructure.ReconstructedPosition"><code class="xref py py-class docutils literal"><span class="pre">pax.datastructure.ReconstructedPosition</span></code></a> objects.  These have their own class structure.  For example, both S1 and S2 peaks follow the following syntax.</p>
 <dl class="class">
 <dt id="pax.datastructure.Peak">
 <em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">Peak</code><span class="sig-paren">(</span><em>kwargs_dict=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak" title="Permalink to this definition">¶</a></dt>
@@ -362,48 +362,7 @@ In new pax, is height of highest hit</p>
 
 </dd></dl>
 
-<p>Waveforms, which are not typically saved, follow the following format.</p>
-<dl class="class">
-<dt id="pax.datastructure.SumWaveform">
-<em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">SumWaveform</code><span class="sig-paren">(</span><em>kwargs_dict=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#SumWaveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.SumWaveform" title="Permalink to this definition">¶</a></dt>
-<dd><p>Class used to store sum (filtered or not) waveform information.</p>
-<dl class="attribute">
-<dt id="pax.datastructure.SumWaveform.channel_list">
-<code class="descname">channel_list</code><em class="property"> = array([], dtype=uint16)</em><a class="headerlink" href="#pax.datastructure.SumWaveform.channel_list" title="Permalink to this definition">¶</a></dt>
-<dd><p>Array of PMT numbers included in this waveform</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.SumWaveform.detector">
-<code class="descname">detector</code><em class="property"> = 'none'</em><a class="headerlink" href="#pax.datastructure.SumWaveform.detector" title="Permalink to this definition">¶</a></dt>
-<dd><p>Name of the detector this waveform belongs to (e.g. tpc or veto)</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.datastructure.SumWaveform.is_filtered">
-<code class="descname">is_filtered</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#SumWaveform.is_filtered"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.SumWaveform.is_filtered" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.SumWaveform.name">
-<code class="descname">name</code><em class="property"> = 'none'</em><a class="headerlink" href="#pax.datastructure.SumWaveform.name" title="Permalink to this definition">¶</a></dt>
-<dd><p>Name of this sum waveform</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.SumWaveform.name_of_filter">
-<code class="descname">name_of_filter</code><em class="property"> = 'none'</em><a class="headerlink" href="#pax.datastructure.SumWaveform.name_of_filter" title="Permalink to this definition">¶</a></dt>
-<dd><p>Name of the filter used (or &#8216;none&#8217;)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.SumWaveform.samples">
-<code class="descname">samples</code><em class="property"> = array([], dtype=float64)</em><a class="headerlink" href="#pax.datastructure.SumWaveform.samples" title="Permalink to this definition">¶</a></dt>
-<dd><p>Array of samples, units of pe/bin.</p>
-</dd></dl>
-
-</dd></dl>
-
+<p>Each reconstruction algorithm creates a <a class="reference internal" href="pax.html#pax.datastructure.ReconstructedPosition" title="pax.datastructure.ReconstructedPosition"><code class="xref py py-class docutils literal"><span class="pre">pax.datastructure.ReconstructedPosition</span></code></a> using just the peak information.</p>
 <dl class="class">
 <dt id="pax.datastructure.ReconstructedPosition">
 <em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">ReconstructedPosition</code><span class="sig-paren">(</span><em>kwargs_dict=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#ReconstructedPosition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.ReconstructedPosition" title="Permalink to this definition">¶</a></dt>
@@ -520,6 +479,48 @@ Note: in Pulse the same number is stored in ADC-counts</p>
 <dt id="pax.datastructure.Hit.right">
 <code class="descname">right</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Hit.right" title="Permalink to this definition">¶</a></dt>
 <dd><p>Index of right bound (INCLUSIVE!!) of peak</p>
+</dd></dl>
+
+</dd></dl>
+
+<p>Waveforms, which are not typically saved, follow the following format.</p>
+<dl class="class">
+<dt id="pax.datastructure.SumWaveform">
+<em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">SumWaveform</code><span class="sig-paren">(</span><em>kwargs_dict=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#SumWaveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.SumWaveform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class used to store sum (filtered or not) waveform information.</p>
+<dl class="attribute">
+<dt id="pax.datastructure.SumWaveform.channel_list">
+<code class="descname">channel_list</code><em class="property"> = array([], dtype=uint16)</em><a class="headerlink" href="#pax.datastructure.SumWaveform.channel_list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Array of PMT numbers included in this waveform</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.SumWaveform.detector">
+<code class="descname">detector</code><em class="property"> = 'none'</em><a class="headerlink" href="#pax.datastructure.SumWaveform.detector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name of the detector this waveform belongs to (e.g. tpc or veto)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.SumWaveform.is_filtered">
+<code class="descname">is_filtered</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#SumWaveform.is_filtered"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.SumWaveform.is_filtered" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.SumWaveform.name">
+<code class="descname">name</code><em class="property"> = 'none'</em><a class="headerlink" href="#pax.datastructure.SumWaveform.name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name of this sum waveform</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.SumWaveform.name_of_filter">
+<code class="descname">name_of_filter</code><em class="property"> = 'none'</em><a class="headerlink" href="#pax.datastructure.SumWaveform.name_of_filter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name of the filter used (or &#8216;none&#8217;)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.SumWaveform.samples">
+<code class="descname">samples</code><em class="property"> = array([], dtype=float64)</em><a class="headerlink" href="#pax.datastructure.SumWaveform.samples" title="Permalink to this definition">¶</a></dt>
+<dd><p>Array of samples, units of pe/bin.</p>
 </dd></dl>
 
 </dd></dl>
