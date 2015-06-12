@@ -236,7 +236,6 @@ class EveInput(InputFromFolder):
                         left=0,
                         raw_data=np.array(chdata, dtype=np.int16)
                     ))
-            self.current_evefile.seek(4, 1)  # skip the 0xaffe
 
         elif self.file_caen_pars['zle'] == 1:
             # print(len(self.file_caen_pars["chan_active"]))
@@ -256,8 +255,7 @@ class EveInput(InputFromFolder):
 
                 for ch_i in channels_included:  # enumerate(channels_active):
                     position = self.current_evefile.tell()
-                    temp = np.fromfile(self.current_evefile, dtype=np.uint32, count=1)
-                    channel_size = temp[0]
+                    channel_size = np.fromfile(self.current_evefile, dtype=np.uint32, count=1)[0]
                     sample_position = 0
                     while (self.current_evefile.tell() < position + channel_size * 4):
                         cword = np.fromfile(self.current_evefile, dtype=np.uint32, count=1)[0]
@@ -270,7 +268,7 @@ class EveInput(InputFromFolder):
                             event.pulses.append(Pulse(
                                 channel=ch_i + 8 * board_i,
                                 left=sample_position,
-                                raw_data=np.array(chdata, dtype=np.int16)
+                                raw_data=chdata
                             ))
                             sample_position += 2 * (cword & (2 ** 20 - 1))
 
@@ -288,7 +286,3 @@ class EveInput(InputFromFolder):
 
         return event
 
-    def read_zle_channels(self):
-        # read signal header
-        raw_signal_header = np.fromfile(self.current_evefile, dtype=eve_signal_header, count=1)[0]
-        eve_signal_header = header_unpacker(raw_signal_header)
