@@ -2,7 +2,12 @@
 Event format
 ============
 
+In this document, we explain the `pax` event class.  This even class is central to how `pax` works but also in how you analyze the resulting data.
+
+
+
 All data available for the current event is stored in the event data structure. Input plugins are required to fill the event with a bare amount of raw information. Transform plugins subsequently add their processed variables. 
+
 
 .. autoclass:: pax.datastructure.Event
     :members:
