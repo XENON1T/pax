@@ -75,12 +75,13 @@ up, run:</p>
 $ bash Anaconda3-2.1.0-Linux-x86_64.sh
 $ export PATH=~/anaconda3/bin:$PATH  # If installed in default location
 $ conda update conda
+$ conda install numpy scipy matplotlib pandas pytables cython h5py numba pip scikit-learn # optional but handy
 </pre></div>
 </div>
 <p>Alternatively, you can install Python 3.4 from the <a class="reference external" href="https://www.python.org/">python webpage</a>
 or your OS&#8217;s package management system. See the FAQ for more information.</p>
 <p>Though most of our dependencies are solved by using Anaconda, there is one
-dependency that often cannot be installed on olders machiens. You must separately
+dependency that often cannot be installed on olders machines. You must separately
 install the <a class="reference external" href="https://code.google.com/p/snappy/">snappy compression library</a>,
 which is C++ code that must be compiled and is used for raw data access. If
 you&#8217;re using Ubuntu and have super user permissions, you could just install the libsnappy-dev package.
@@ -114,7 +115,7 @@ installed, which you can test by running at the command line:</p>
 </div>
 <p>This should automatically install any python modules pax depends on.</p>
 <p>Now you should be able to run the command &#8216;paxer&#8217;.</p>
-<p>For information on how to setup the code for contributing, please see the
+<p>If you want to modify the code (i.e., have the source code), please see the
 <a class="reference external" href="CONTRIBUTING.rst">relevant documentation section</a>.</p>
 </div>
 </div>
@@ -123,7 +124,7 @@ installed, which you can test by running at the command line:</p>
 <p>This section assumes that pax is installed, either from the instructions above
 or via <a class="reference external" href="http://xenon1t.github.io/pax/faq.html#how-do-i-run-pax-at-lngs-on-xecluster">the FAQ on running the code at LNGS</a>.</p>
 <p>You can run the program by, for example, running:</p>
-<div class="highlight-python"><div class="highlight"><pre>paxer --config XED --input /archive/data/xenon100/run_14/xe100_150213_1411/xe100_150213_1411_000000.xed --event 0 --plot
+<div class="highlight-python"><div class="highlight"><pre>paxer --input /archive/data/xenon100/run_14/xe100_150213_1411/xe100_150213_1411_000000.xed --event 0 --plot
 </pre></div>
 </div>
 <p>For other options and a list of command line arguments, please run:</p>

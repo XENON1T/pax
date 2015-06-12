@@ -133,15 +133,21 @@ install the missing module using easy_install, or Gohlke&#8217;s page mentioned 
 <p>Unfortunately, Windows + Python3 + Root is not exactly a winning team; if you use windows you&#8217;ll be stuck
 with the other 433 output formats we have.</p>
 </div>
-<div class="section" id="how-do-i-get-python-3-4-with-root-working-on-ubuntu-14">
-<h2>How do I get Python 3.4 with ROOT working on Ubuntu 14?<a class="headerlink" href="#how-do-i-get-python-3-4-with-root-working-on-ubuntu-14" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="how-do-i-get-root-working">
+<h2>How do I get ROOT working<a class="headerlink" href="#how-do-i-get-root-working" title="Permalink to this headline">¶</a></h2>
+<p>ROOT is a dependency and you&#8217;re expected to install it yourself.  That said, we offer the follow two scripts that should install it for you.  Be sure that your GCC compiler version is more than 4.8 because ROOT requires that now.  Most problems people experience with <cite>pax</cite> are related to problems within the ROOT system.  We&#8217;re working with them to make it better.  In the meantime, try these scripts:</p>
+<div class="highlight-python"><div class="highlight"><pre>source travis/linux_setup.sh  # Only run for Ubuntu
+source travis/install-ROOT.sh
+</pre></div>
+</div>
+<p>If it fails for your system, feel free to try to fix it and let us know so we can update the script.  You can always look within the shell script to see what we&#8217;re doing if you run into an issue.</p>
 <ul class="simple">
 <li>Just follow the instructions on <a class="reference external" href="https://github.com/XENON1T/pax/blob/master/docs/pyroot.rst">the PyROOT page</a>.</li>
 </ul>
 </div>
 <div class="section" id="snappy-on-osx">
 <h2>Snappy on OSX<a class="headerlink" href="#snappy-on-osx" title="Permalink to this headline">¶</a></h2>
-<p>After instally snappy through macports, please run:</p>
+<p>After instally <cite>snappy</cite> through MacPorts, please run:</p>
 <div class="highlight-python"><div class="highlight"><pre>CFLAGS=-I/opt/local/include LDFLAGS=-L/opt/local/lib pip install python-snappy
 </pre></div>
 </div>
@@ -161,7 +167,7 @@ with the other 433 output formats we have.</p>
 <li><a class="reference internal" href="#how-do-i-run-pax-at-nikhef">How do I run <cite>pax</cite> at Nikhef?</a></li>
 <li><a class="reference internal" href="#how-do-i-run-git-at-lngs-on-xecluster">How do I run <cite>git</cite> at LNGS on xecluster</a></li>
 <li><a class="reference internal" href="#can-i-set-up-pax-on-my-windows-machine">Can I set up pax on my windows machine?</a></li>
-<li><a class="reference internal" href="#how-do-i-get-python-3-4-with-root-working-on-ubuntu-14">How do I get Python 3.4 with ROOT working on Ubuntu 14?</a></li>
+<li><a class="reference internal" href="#how-do-i-get-root-working">How do I get ROOT working</a></li>
 <li><a class="reference internal" href="#snappy-on-osx">Snappy on OSX</a></li>
 </ul>
 </li>
