@@ -28,12 +28,13 @@ up, run::
   $ bash Anaconda3-2.1.0-Linux-x86_64.sh
   $ export PATH=~/anaconda3/bin:$PATH  # If installed in default location
   $ conda update conda
+  $ conda install numpy scipy matplotlib pandas pytables cython h5py numba pip scikit-learn # optional but handy
 
 Alternatively, you can install Python 3.4 from the `python webpage <https://www.python.org/>`_ 
 or your OS's package management system. See the FAQ for more information.
 
 Though most of our dependencies are solved by using Anaconda, there is one
-dependency that often cannot be installed on olders machiens. You must separately 
+dependency that often cannot be installed on olders machines. You must separately 
 install the `snappy compression library <https://code.google.com/p/snappy/>`_,
 which is C++ code that must be compiled and is used for raw data access. If 
 you're using Ubuntu and have super user permissions, you could just install the libsnappy-dev package.  
@@ -51,10 +52,8 @@ You should now be able to run the following command::
 
   $ python -m snappy
 
-
 For installation on Windows, see `the FAQ <http://xenon1t.github.io/pax/faq.html#can-i-set-up-pax-on-my-windows-machine>`_. 
 Also within the FAQs, you can find other useful hints.
-
 
 Installing pax
 --------------
@@ -72,7 +71,7 @@ This should automatically install any python modules pax depends on.
 
 Now you should be able to run the command 'paxer'.
 
-For information on how to setup the code for contributing, please see the
+If you want to modify the code (i.e., have the source code), please see the
 `relevant documentation section`_.
 
 .. _relevant documentation section: CONTRIBUTING.rst
@@ -86,7 +85,7 @@ or via `the FAQ on running the code at LNGS <http://xenon1t.github.io/pax/faq.ht
 
 You can run the program by, for example, running::
 
-  paxer --config XED --input /archive/data/xenon100/run_14/xe100_150213_1411/xe100_150213_1411_000000.xed --event 0 --plot
+  paxer --input /archive/data/xenon100/run_14/xe100_150213_1411/xe100_150213_1411_000000.xed --event 0 --plot
 
 For other options and a list of command line arguments, please run::
 
