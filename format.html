@@ -54,7 +54,10 @@
             
   <div class="section" id="event-format">
 <h1>Event format<a class="headerlink" href="#event-format" title="Permalink to this headline">¶</a></h1>
-<p>All data available for the current event is stored in the event data structure. Input plugins are required to fill the event with a bare amount of raw information. Transform plugins subsequently add their processed variables.</p>
+<p>In this document, we explain what lies within the <cite>pax</cite> event class and how to use it.  This even class is central to how <cite>pax</cite> works but also in how you analyze the resulting data.  All communication within <cite>pax</cite> is done by passing around this event class, therefore it contains all the information you should need.  We also serialize this event class to various outputs that contain all of the information below.</p>
+<p>Please be aware that the event class is a tree, where e.g. there is a list of peak objects associated with the event.  Lastly, this document is automatically updated every release, so please feel free to expand upon the documentation in the source code (see pax/datastructure.py).</p>
+<div class="section" id="event">
+<h2>Event<a class="headerlink" href="#event" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="pax.datastructure.Event">
 <em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">Event</code><span class="sig-paren">(</span><em>n_channels</em>, <em>start_time</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event" title="Permalink to this definition">¶</a></dt>
@@ -211,7 +214,9 @@ in &#8216;start_time&#8217;.</p>
 
 </dd></dl>
 
-<p>There are variables within the class that refer to <a class="reference internal" href="pax.html#pax.datastructure.Peak" title="pax.datastructure.Peak"><code class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></code></a> and <a class="reference internal" href="pax.html#pax.datastructure.ReconstructedPosition" title="pax.datastructure.ReconstructedPosition"><code class="xref py py-class docutils literal"><span class="pre">pax.datastructure.ReconstructedPosition</span></code></a> objects.  These have their own class structure.  For example, both S1 and S2 peaks follow the following syntax.</p>
+</div>
+<div class="section" id="peak">
+<h2>Peak<a class="headerlink" href="#peak" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="pax.datastructure.Peak">
 <em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">Peak</code><span class="sig-paren">(</span><em>kwargs_dict=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak" title="Permalink to this definition">¶</a></dt>
@@ -362,7 +367,9 @@ In new pax, is height of highest hit</p>
 
 </dd></dl>
 
-<p>Each reconstruction algorithm creates a <a class="reference internal" href="pax.html#pax.datastructure.ReconstructedPosition" title="pax.datastructure.ReconstructedPosition"><code class="xref py py-class docutils literal"><span class="pre">pax.datastructure.ReconstructedPosition</span></code></a> using just the peak information.</p>
+</div>
+<div class="section" id="reconstructedposition">
+<h2>ReconstructedPosition<a class="headerlink" href="#reconstructedposition" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="pax.datastructure.ReconstructedPosition">
 <em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">ReconstructedPosition</code><span class="sig-paren">(</span><em>kwargs_dict=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#ReconstructedPosition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.ReconstructedPosition" title="Permalink to this definition">¶</a></dt>
@@ -409,6 +416,9 @@ In new pax, is height of highest hit</p>
 
 </dd></dl>
 
+</div>
+<div class="section" id="hit">
+<h2>Hit<a class="headerlink" href="#hit" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="pax.datastructure.Hit">
 <em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">Hit</code><span class="sig-paren">(</span><em>kwargs_dict=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Hit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Hit" title="Permalink to this definition">¶</a></dt>
@@ -483,7 +493,9 @@ Note: in Pulse the same number is stored in ADC-counts</p>
 
 </dd></dl>
 
-<p>Waveforms, which are not typically saved, follow the following format.</p>
+</div>
+<div class="section" id="waveforms">
+<h2>Waveforms<a class="headerlink" href="#waveforms" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="pax.datastructure.SumWaveform">
 <em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">SumWaveform</code><span class="sig-paren">(</span><em>kwargs_dict=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#SumWaveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.SumWaveform" title="Permalink to this definition">¶</a></dt>
@@ -526,6 +538,7 @@ Note: in Pulse the same number is stored in ADC-counts</p>
 </dd></dl>
 
 </div>
+</div>
 
 
           </div>
@@ -533,6 +546,18 @@ Note: in Pulse the same number is stored in ADC-counts</p>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Event format</a><ul>
+<li><a class="reference internal" href="#event">Event</a></li>
+<li><a class="reference internal" href="#peak">Peak</a></li>
+<li><a class="reference internal" href="#reconstructedposition">ReconstructedPosition</a></li>
+<li><a class="reference internal" href="#hit">Hit</a></li>
+<li><a class="reference internal" href="#waveforms">Waveforms</a></li>
+</ul>
+</li>
+</ul>
+
   <h4>Previous topic</h4>
   <p class="topless"><a href="usage.html"
                         title="previous chapter">Usage</a></p>
