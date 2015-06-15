@@ -252,9 +252,10 @@ def main():
             if len(events) > n:
                 tasks.put(events)
                 events = []
-        else:
-            if len(events):
-                tasks.put(events)
+
+        # If anything left over
+        if len(events):
+            tasks.put(events)
         p.shutdown()
 
         # Input stage done
