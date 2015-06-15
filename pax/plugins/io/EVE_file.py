@@ -97,6 +97,7 @@ eve_signal_header_unpacked_noZLE = np.dtype([
     ("trigger_time_tag", "<u4")
 ])
 
+
 def header_unpacker(raw_header):
     # unpacking
     """
@@ -140,7 +141,7 @@ class EveInput(InputFromFolder):
         fmd = np.fromfile(self.current_evefile, dtype=eve_event_header, count=1)[0]
         # self.file_metadata = header_unpacker(self.file_metadata)
         self.file_caen_pars = np.fromfile(self.current_evefile, dtype=eve_caen1724_par_t, count=1)[0]
-        first, last = self.get_first_and_last_event_number(filename)
+        # self.get_first_and_last_event_number(filename)     # apparently this is called explicitly anyway
         # print(self.event_positions)
         self.start_time = self.file_metadata["timestamp"]
         self.sample_duration = 10 * units.ns
@@ -274,7 +275,7 @@ class EveInput(InputFromFolder):
 
         # TODO: Check we have read all data for this event
         affe = hex(np.fromfile(self.current_evefile, dtype=np.uint32, count=1)[0])
-        if (affe == 0xaffe):
+        if affe != '0xaffe':
             print("WARNING : EVENT DID NOT END WITH 0XAFFE!! INSTEAD IT ENDED WITH ", affe)
         if event_position != len(self.event_positions) - 1:
             current_pos = self.current_evefile.tell()
@@ -285,4 +286,3 @@ class EveInput(InputFromFolder):
                                        event_position, event.event_number, should_be_at_pos, current_pos))
 
         return event
-
