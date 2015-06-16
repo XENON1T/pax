@@ -3,7 +3,7 @@ Contributing
 ============
 
 Contributions are welcome, and they are greatly appreciated! Every
-little bit helps, and credit will always be given.
+little bit helps.
 
 You can contribute in many ways:
 
@@ -25,18 +25,23 @@ Fix Bugs
 ~~~~~~~~
 
 Look through the GitHub issues for bugs. Anything tagged with "bug"
-is open to whoever wants to implement it.
+is open to whoever wants to implement it.  There is also a "help wanted" flag that 
+indicates what is open to anybody to help.  
 
 Implement Features
 ~~~~~~~~~~~~~~~~~~
 
 Look through the GitHub issues for features. Anything tagged with "feature"
-is open to whoever wants to implement it.
+is open to whoever wants to implement it, if no other name is assigned.
 
 Write Documentation
 ~~~~~~~~~~~~~~~~~~~
 
-pax could always use more documentation, whether as part of the official pax docs, in docstrings, or even on the wiki.
+`pax` could always use more documentation, whether as part of the official pax docs, in docstrings, or even on the wiki.  The documentation is automatically generated with sphinx.  You can generate the docs by going into the docs folder and running::
+
+    $ make html
+    
+Feel free to expand the documentation however you find helpful.
 
 Submit Feedback
 ~~~~~~~~~~~~~~~
@@ -47,8 +52,6 @@ If you are proposing a feature:
 
 * Explain in detail how it would work.
 * Keep the scope as narrow as possible, to make it easier to implement.
-* Remember that this is a volunteer-driven project, and that contributions
-  are welcome :)
 
 Get Started with developing!
 ----------------------------
@@ -100,7 +103,24 @@ Before you submit a pull request, check that it meets these guidelines:
 2. If the pull request adds functionality, the docs should be updated. Put
    your new functionality into a function with a docstring, and add the
    feature to the list in README.rst.
+   
+Every pull request will be reviewed.  This review will happen with somebody who was not
+the original author of the pull request.  The person doing the reviewing will spend between 
+30 minutes and one hour reviewing the code.  They will check that your new code contributes
+something to the project, will be used, is tested, is clear what it does, and is documented.
+Typically, there will be one round of iteration that should not take more than 1 day of work
+for the person authoring the pull request.  Lastly, the person doing the review will ensure
+that the Travis CI build passes.  Once the reviewer is confident that this pull request
+does not result in untested code that nobody understands or uses, the reviewer does the merge.
 
+For very small changes, you may commit directly to the master breanch if you are already
+a frequent contributor or maintainer.  If your change is actually not small or you aren't
+a frequent commiter, your commit may be undone.
+
+If your change is large,  please consider breaking up your changes into smaller increments.
+If this is not possible, please contact the developers via an issue to discuss how to proceed.
+It is just really difficult to manage a project if major changes come unexpectedly.  Therefore,
+we recommend you commit early and often.
 
 Tips
 ----
