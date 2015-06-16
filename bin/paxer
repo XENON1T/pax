@@ -271,8 +271,7 @@ def main():
         process_done.set()  # processing done
 
         output_done.wait()  # wait until output done
-        print("Done.  Thank you for waiting and your pax experience was "
-              "enjoyable. We hope you come back soon")  # Say goodbye politely.
+        print("All events processed.  Exiting...")
 
 
 def get_args():
