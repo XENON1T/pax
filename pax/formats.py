@@ -295,7 +295,7 @@ class ROOTDump(BulkOutputFormat):
 
 class PandasFormat(BulkOutputFormat):
     pandas_format_key = None
-    supports_array_fields = True
+    supports_array_fields = False
 
     def open(self, name, mode):
         self.filename = name

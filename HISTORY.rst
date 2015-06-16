@@ -4,6 +4,31 @@ History
 -------
 
 ------------------
+3.1.2 (2015-06-07)
+------------------
+
+* Update requirements.txt
+
+  * Require new numba version since use new features
+  * Pymongo3 required for all our Mongo setups
+
+------------------
+3.1.1 (2015-06-07)
+------------------
+
+* Fixed merge issue with minor release (mea culpa)
+
+------------------
+3.1.0 (2015-06-07)
+------------------
+
+* Simplified hit finder (#167)
+* ZLE in waveform simulator
+* BSON output
+* Cleanup of Travis building
+* Various bug fixes
+
+------------------
 3.0.0 (2015-04-20)
 ------------------
 

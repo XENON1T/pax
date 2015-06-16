@@ -224,36 +224,35 @@ class Pulse(StrictModel):
     A DAQ pulse can also be thought of as a pulse in a PMT.
     """
 
-    #: Starttime of this occurence within event
+    #: Start time of this pulse: samples
     #:
-    #: Units are samples.  This nonnegative number starts at zero and is an integere because
+    #: Units are samples. This nonnegative number starts at zero and is an integer because
     #: it's an index.
     left = INT_NAN
 
-    #: Stoptime of this occurence within event
+    #: Stoptime of this pulse within event
     #:
     #: Units are samples and this time is inclusive of last sample.  This nonnegative number
-    #: starts at zero and is an integere because it's an index.
+    #: starts at zero and is an integer because it's an index.
     right = INT_NAN
 
-    #: Channel the pulse belongs to (integer)
+    #: Channel number the pulse belongs to
     channel = INT_NAN
 
-    #: Maximum amplitude (in ADC counts; float)
-    #: Will remain nan if channel's gain is 0
-    #: baseline_correction, if any, has been substracted
-    height = float('nan')
+    #: Raw wave data (numpy array of int16, ADC counts)
+    raw_data = np.array([], np.int16)
 
-    #: Noise sigma for this pulse (in ADC counts)
-    #: Will remain nan unless pulse is processed by hitfinder
-    noise_sigma = float('nan')
-
-    #: Baseline (in ADC counts, but float!) relative to configured reference baseline
-    #: Will remain nan if pulse is not processed by hitfinder
+    #: Baseline in ADC counts relative to reference baseline -- but float!
     baseline = float('nan')
 
-    #: Raw wave data (in ADC counts, NOT pe/bin!; numpy array of int16)
-    raw_data = np.array([], np.int16)
+    #: Maximum amplitude reached in the pulse (in ADC counts above baseline)
+    maximum = float('nan')
+
+    #: Minimum amplitude (in ADC counts above baseline, so should be negative)
+    minimum = float('nan')
+
+    #: Noise sigma for this pulse (in ADC counts - but float!)
+    noise_sigma = float('nan')
 
     @property
     def length(self):
@@ -299,7 +298,8 @@ class Event(StrictModel):
     #:
     #: Time that the first sample starts. This is a 64-bit number that follows the
     #: UNIX clock. Or rather, it starts from January 1, 1970.  This must be an integer
-    #: because floats have rounding that result in imprecise times.
+    #: because floats have rounding that result in imprecise times.  You could
+    #: think of this as the time of the earliest sample.
     start_time = 0
 
     #: Integer stop time of the event in nanoseconds
@@ -310,6 +310,7 @@ class Event(StrictModel):
     stop_time = 0
 
     #: Time duration of a sample (in pax units, i.e. ns)
+    #: For V1724 digitizers (e.g. XENON), this is 10 nanoseconds always.
     #: This is also in config, but we need it here too, to convert between event duration and length in samples
     #: Must be an int for same reason as start_time and stop_time
     #: DO NOT set to 10 ns as default, otherwise no way to check if it was given to constructor!
@@ -354,12 +355,14 @@ class Event(StrictModel):
 
         # Cheat to init stop_time from length and duration
         if 'length' in kwargs and self.sample_duration and not self.stop_time:
-            self.stop_time = int(
-                self.start_time + kwargs['length'] * self.sample_duration)
+            self.stop_time = int(self.start_time + kwargs['length'] * self.sample_duration)
 
         if not self.stop_time or not self.sample_duration:
             raise ValueError("Cannot initialize an event with an unknown length: " +
                              "pass sample_duration and either stop_time or length")
+
+        if self.duration() <= 0:
+            raise ValueError("Negative event duration")
 
         if not partial:
             # Initialize numpy arrays -- need to have n_channels and self.length

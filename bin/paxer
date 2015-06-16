@@ -7,7 +7,7 @@ import sys
 import multiprocessing
 from itertools import zip_longest
 
-from pax import core
+from pax import core, utils
 
 def grouper(iterable, n, fillvalue=None):
     "Collect data into fixed-length chunks or blocks"
@@ -39,7 +39,7 @@ parser.add_argument('--log', default=None, help="Set log level, e.g. 'debug'")
 parser.add_argument(
     '--config',
     default='XENON100',
-    choices=core.get_named_configuration_options(),
+    choices=utils.get_named_configuration_options(),
     nargs='+',
     help="Name(s) of the pax configuration(s) to use."
 )
@@ -94,12 +94,12 @@ if args.cpus > max_cpus:
 # Take config from previous file
 if args.redo:
     from pandas import HDFStore
-    import json
+    from bson.json_util import loads
     file_to_redo = core.data_file_name(args.redo)
     store = HDFStore(file_to_redo)
     if len(store['pax_info']) > 1:
         print("Warning: This file contains data from several processings. Will use config from last!\n")
-    override_dict = json.loads(store['pax_info'].iloc[-1]['configuration_json'])
+    override_dict = loads(store['pax_info'].iloc[-1]['configuration_json'])
     # Add _redone to output name, unless user has specified an output name
     if not args.output:
         redo_path, ext = os.path.splitext(args.redo)    # Remove .hdf from path

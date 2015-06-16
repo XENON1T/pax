@@ -5,8 +5,7 @@ from scipy.optimize import fmin_powell
 
 from pax import plugin
 from pax.datastructure import ReconstructedPosition
-from pax.utils import InterpolatingMap
-from pax.core import data_file_name
+from pax.utils import InterpolatingMap, data_file_name
 
 
 class PosRecChiSquareGamma(plugin.TransformPlugin):
@@ -151,9 +150,9 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
                                    " %s x: %f y: %f, appending chi_square_gamma: %f ndf: %d"
                                    % (position.algorithm, position.x, position.y, position.goodness_of_fit, self.ndf))
 
-                    # If a weighted sum is already calculated for this peak, use it as start position
-                    if position.algorithm == 'PosRecWeightedSum' and not self.mode == 'no_reconstruct':
-                        self.log.debug('Using weighted sum by PosRecWeightedSum as minimizer start position')
+                    # If a neural net position is already calculated for this peak, use it as start position
+                    if position.algorithm == 'NeuralNet' and not self.mode == 'no_reconstruct':
+                        self.log.debug('Using NeuralNet position as minimizer start position')
 
                         start_x = position.x
                         start_y = position.y

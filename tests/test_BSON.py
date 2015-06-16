@@ -67,7 +67,8 @@ class TestBSON(unittest.TestCase):
             self.assertEqual(len(events), 2)
 
             event = events[0]
-            self.assertEqual(len(event.pulses), 1942)
+            # Not the same as in the XED file due to concatenation of adjacent pulses
+            self.assertEqual(len(event.pulses), 1746)
 
             pulse = event.pulses[0]
 

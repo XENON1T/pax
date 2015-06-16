@@ -1,7 +1,7 @@
 import os
-import json
 import shutil
 import time
+from bson.json_util import dumps
 
 import numpy as np
 
@@ -45,7 +45,7 @@ class BulkOutput(plugin.OutputPlugin):
         #   dtype   :       dtype of numpy record (includes field names),
         # }
 
-        metadata_dump = json.dumps(self.processor.get_metadata())
+        metadata_dump = dumps(self.processor.get_metadata())
 
         self.data = {
             # Write pax configuration and version to pax_info dataframe
@@ -125,7 +125,8 @@ class BulkOutput(plugin.OutputPlugin):
         for dfname in self.data.keys():
             self.log.debug("Converting %s " % dfname)
             # Set index at which next set of tuples begins
-            self.data[dfname]['first_index'] = len(self.data[dfname]['tuples'])
+            self.data[dfname]['first_index'] = len(self.data[dfname]['tuples']) + \
+                self.data[dfname].get('first_index', 0)
             # Convert tuples to records
             newrecords = np.array(self.data[dfname]['tuples'], self.data[dfname]['dtype'])
             # Clear tuples. Enjoy the freed memory.
@@ -202,7 +203,7 @@ class BulkOutput(plugin.OutputPlugin):
             if isinstance(field_value, list):
 
                 assert field_name in self.data[m_name]['subcollection_fields']
-                child_class_name = self.data[m_name]['subcollection_fields'][field_name]
+                child_class_name = self.data[m_name]['subcollection_fields'][field_name].__name__
 
                 # Store the absolute start index & number of children
                 child_start = self.get_index_of(child_class_name)
@@ -365,23 +366,30 @@ class ReadFromBulkOutput(plugin.InputPlugin):
 
             event = self.convert_record(datastructure.Event, e_record)
 
-            for peak_i, p_record in enumerate(peaks):
-                peak = self.convert_record(datastructure.Peak, p_record)
+            if self.config.get('read_hits_only', False):
+                # Read in only hits for reclustering
+                for hit_record in in_this_event['Hit']:
+                    cp = self.convert_record(datastructure.Hit, hit_record)
+                    event.all_hits.append(cp)
+            else:
 
-                if self.read_recposes:
-                    for rp_record in in_this_event['ReconstructedPosition'][
-                            in_this_event['ReconstructedPosition']['Peak'] == peak_i]:
-                        peak.reconstructed_positions.append(
-                            self.convert_record(datastructure.ReconstructedPosition, rp_record)
-                        )
+                for peak_i, p_record in enumerate(peaks):
+                    peak = self.convert_record(datastructure.Peak, p_record)
 
-                if self.read_hits:
-                    for hit_record in in_this_event['Hit'][(in_this_event['Hit']['Peak'] == peak_i)]:
-                        cp = self.convert_record(datastructure.Hit, self._numpy_record_to_dict(hit_record))
-                        peak.hits.append(cp)
-                        event.all_hits.append(cp)
+                    if self.read_recposes:
+                        for rp_record in in_this_event['ReconstructedPosition'][
+                                in_this_event['ReconstructedPosition']['Peak'] == peak_i]:
+                            peak.reconstructed_positions.append(
+                                self.convert_record(datastructure.ReconstructedPosition, rp_record)
+                            )
 
-                event.peaks.append(peak)
+                    if self.read_hits:
+                        for hit_record in in_this_event['Hit'][(in_this_event['Hit']['Peak'] == peak_i)]:
+                            cp = self.convert_record(datastructure.Hit, hit_record)
+                            peak.hits.append(cp)
+                            event.all_hits.append(cp)
+
+                    event.peaks.append(peak)
 
             self.total_time_taken += (time.time() - ts) * 1000
             yield event

@@ -4,12 +4,12 @@ The only I/O stuff here is pax event creation, everything else is in the Wavefor
 """
 
 import logging
+import math
+import time
 
 import numpy as np
 from scipy import stats
 
-import math
-import time
 from pax import units, utils, datastructure
 from pax.utils import Memoize
 
@@ -79,6 +79,13 @@ class Simulator(object):
         )
         log.debug('Simulating %s samples before and %s samples after PMT pulse centers.' % (
             self.config['samples_before_pulse_center'], self.config['samples_after_pulse_center']))
+
+        # Load real noise data from file, if requested
+        if self.config['real_noise_file']:
+            self.noise_data = np.load(utils.data_file_name(self.config['real_noise_file']))['arr_0']
+            # The silly XENON100 PMT offset again: it's relevant for indexing the array of noise data
+            # (which is one row per channel)
+            self.channel_offset = 1 if self.config['pmt_0_is_fake'] else 0
 
     def s2_electrons(self, electrons_generated=None, z=0., t=0.):
         """Return a list of electron arrival times in the ELR region caused by an S2 process.
@@ -296,25 +303,40 @@ class Simulator(object):
         for channel, photon_detection_times in hitpattern.arrival_times_per_channel.items():
             photon_detection_times = np.array(photon_detection_times)
 
-            if len(photon_detection_times) == 0:
-                continue  # No photons in this channel
-
             #  Add padding, sort (eh.. or were we already sorted? and is sorting necessary at all??)
             all_pmt_pulse_centers = np.sort(photon_detection_times + self.config['event_padding'])
 
-            for pmt_pulse_centers in utils.cluster_by_diff(all_pmt_pulse_centers, 2 * self.config['zle_padding']):
+            if self.config['cheap_zle']:
+                # No photons in this channel -- don't bother simulating noise
+                if len(photon_detection_times) == 0:
+                    continue
+                # Cluster into pulses for cheap ZLE
+                pmt_pulse_center_clusters = utils.cluster_by_diff(all_pmt_pulse_centers, 2 * self.config['zle_padding'])
+            else:
+                # All in one cluster...
+                pmt_pulse_center_clusters = [all_pmt_pulse_centers]
+
+            for pmt_pulse_centers in pmt_pulse_center_clusters:
 
                 # Build the waveform pulse by pulse (bin by bin was slow, hope this
                 # is faster)
 
                 # Compute offset & center index for each pe-pulse
+                # 'index' refers to the (hypothetical) event waveform, as usual
                 pmt_pulse_centers = np.array(pmt_pulse_centers, dtype=np.int)
                 offsets = pmt_pulse_centers % dt
                 center_index = (pmt_pulse_centers - offsets) / dt   # Absolute index in waveform of pe-pulse center
                 center_index = center_index.astype(np.int)
 
-                start_index = np.min(center_index) - int(self.config['zle_padding'] / dt)
-                end_index = max(center_index) + int(self.config['zle_padding'] / dt)
+                if self.config['cheap_zle']:
+                    # For cheap ZLE, define some padding around the cluster
+                    start_index = np.min(center_index) - int(self.config['zle_padding'] / dt)
+                    end_index = max(center_index) + int(self.config['zle_padding'] / dt)
+                else:
+                    # Simulate an event-long waveform in this channel
+                    # Remember start padding has already been added to times, so just one padding in end_index
+                    start_index = 0
+                    end_index = event.length() - 1
                 pulse_length = end_index - start_index + 1
 
                 current_wave = np.zeros(pulse_length)
@@ -385,32 +407,54 @@ class Simulator(object):
 
                         current_wave[left_index: righter_index] += generated_pulse
 
-                # Add white noise current
-                if self.config['white_noise_sigma'] is not None:
+                # Did you order some Gaussian current noise with that?
+                if self.config['gaus_noise_sigma']:
                     # / dt is for charge -> current conversion, as in pmt_pulse_current
                     noise_sigma_current = self.config['white_noise_sigma'] * self.config['gains'][channel] / dt,
                     current_wave += np.random.normal(0,
                                                      noise_sigma_current,
                                                      len(current_wave))
 
-                # Convert current to digitizer count and store.
-                # Don't baseline correct, clip or flip down here, we do that at
-                # the very end when all signals are combined. Think Ohm's law.
-                temp = current_wave
-                temp *= self.config['pmt_circuit_load_resistor']  # Resistance
-                temp *= self.config['external_amplification']    # k (scale)
-                temp /= dV  # Voltage
+                # Convert from PMT current to ADC counts
+                adc_wave = current_wave
+                adc_wave *= self.config['pmt_circuit_load_resistor']    # Now in voltage
+                adc_wave *= self.config['external_amplification']       # Now in voltage after amplifier
+                adc_wave /= dV                                          # Now in float ADC counts above baseline
+                adc_wave = np.trunc(adc_wave)                           # Now in integer ADC counts "" ""
+                # Could round instead of trunk... who cares?
 
-                # PMT signals are 'up side down' when viewed on scope.
-                temp = self.config['digitizer_reference_baseline'] - np.trunc(temp)
+                # PMT signals are negative excursions, so flip them.
+                adc_wave = - adc_wave
 
-                # Digitizers have finite number of bits per channel
-                temp = np.clip(temp, 0, 2 ** (self.config['digitizer_bits']))
+                # Did you want to superpose onto real noise samples?
+                if self.config['real_noise_file']:
+                    sample_size = self.config['real_noise_sample_size']
+                    available_noise_samples = self.noise_data.shape[1] / sample_size
+                    needed_noise_samples = int(math.ceil(pulse_length / sample_size))
+                    chosen_noise_sample_numbers = np.random.randint(0,
+                                                                    available_noise_samples - 1,
+                                                                    needed_noise_samples)
+                    # Extract the chosen noise samples and concatenate them
+                    # Have to use a listcomp here, unless you know a way to select multiple slices in numpy?
+                    #  -- yeah making an index list with np.arange would work, but honestly??
+                    real_noise = np.concatenate([
+                        self.noise_data[channel + self.channel_offset][nsn * sample_size:(nsn + 1) * sample_size]
+                        for nsn in chosen_noise_sample_numbers
+                    ])
+                    adc_wave += real_noise[:pulse_length]
+
+                else:
+                    # If you don't want to superpose onto real noise,
+                    # we should add a reference baseline
+                    adc_wave += self.config['digitizer_reference_baseline']
+
+                # Digitizers have finite number of bits per channel, so clip the signal.
+                adc_wave = np.clip(adc_wave, 0, 2 ** (self.config['digitizer_bits']))
 
                 event.pulses.append(datastructure.Pulse(
                     channel=channel,
                     left=start_index,
-                    raw_data=temp.astype(np.int16)))
+                    raw_data=adc_wave.astype(np.int16)))
 
         if len(event.pulses) == 0:
             return None
