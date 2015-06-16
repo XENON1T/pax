@@ -11,7 +11,7 @@ change any units!
 In contrast to the existing units.py, explicit_units.py does not generate the attributes via the vars() command.
 Instead all necessary units are defined explicitly. With this code completion within IDEs will work and no more
 warnings are shown.
-Also probably never used units like nHz can be considered to be missed out.
+Also probably never used units like nHz can be left out.
 """
 
 # From physics.nist.gov, January 2015
