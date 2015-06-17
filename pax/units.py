@@ -16,7 +16,7 @@ Also probably never used units like nHz can be left out.
 
 # From physics.nist.gov, January 2015
 electron_charge_SI = 1.602176565 * 10 ** (-19)
-boltzmannConstant_SI = 1.3806488 * 10 ** (-23)
+# boltzmannConstant_SI = 1.3806488 * 10 ** (-23)
 
 m = 10 ** 2  # distances in cm
 s = 10 ** 9  # times in ns
@@ -108,4 +108,4 @@ cm = 10 ** (-2) * m
 Td = 10 ** (-17) * V / cm ** 2  # noqa
 
 electron_charge = electron_charge_SI * C
-boltzmannConstant = boltzmannConstant_SI * J / K
+#boltzmannConstant = boltzmannConstant_SI * J / K
