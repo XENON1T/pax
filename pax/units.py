@@ -100,6 +100,7 @@ kV = 10 ** 3 * V
 kA = 10 ** 3 * A
 kN = 10 ** 3 * N
 kOhm = 10 ** 3 * Ohm
+kbar = 10 ** 3 * bar
 kPa = 10 ** 3 * Pa
 
 
@@ -117,6 +118,7 @@ MV = 10 ** 6 * V
 MA = 10 ** 6 * A
 MN = 10 ** 6 * N
 MOhm = 10 ** 6 * Ohm
+Mbar = 10 ** 6 * bar
 MPa = 10 ** 6 * Pa
 
 
@@ -133,6 +135,7 @@ GV = 10 ** 9 * V
 GA = 10 ** 9 * A
 GN = 10 ** 9 * N
 GOhm = 10 ** 9 * Ohm
+Gbar = 10 ** 9 * bar
 GPa = 10 ** 9 * Pa
 
 
