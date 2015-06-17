@@ -45,7 +45,7 @@ class TestPaxUnits(unittest.TestCase):
         prefixes = {'': 0, 'n': -9, 'u': -6, 'm': -3, 'k': 3, 'M': 6, 'G': 9}
         for (name, value) in list(base_units.items()):
             for (p_name, p_factor) in list(prefixes.items()):
-                self.assertEqual(getattr(units, p_name + name), float(10 ** p_factor * value))
-        self.assertEqual(units.cm, base_units['cm'])
+                self.assertAlmostEqual(getattr(units, p_name + name), float(10 ** p_factor * value))
+        self.assertAlmostEqual(units.cm, base_units['cm'])
 if __name__ == '__main__':
     unittest.main()
