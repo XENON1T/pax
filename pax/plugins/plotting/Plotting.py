@@ -354,10 +354,12 @@ class PlotChannelWaveforms2D(PlotBase):
     Circle color indicates log(peak amplitude / noise amplitude), size indicates peak integral.
     """
 
-    def plot_event(self, event):
-        dt = self.config['sample_duration']
-        time_scale = dt / units.us
+    def substartup(self):
+        plt.figure(figsize=(200,10))
+        self.dt = self.config['sample_duration']
+        self.time_scale = self.dt / units.s
 
+    def plot_event(self, event):
         # TODO: change from lines to squares
         for pulse in event.pulses:
             if pulse.maximum is None:
@@ -369,7 +371,7 @@ class PlotChannelWaveforms2D(PlotBase):
             # color_factor = np.clip(np.log10(oc.height) / 2, 0, 1)
             color_factor = 0
 
-            plt.gca().add_patch(Rectangle((pulse.left * time_scale, pulse.channel), pulse.length * time_scale, 1,
+            plt.gca().add_patch(Rectangle((pulse.left * self.time_scale, pulse.channel), pulse.length * self.time_scale, 1,
                                           facecolor=plt.cm.gnuplot2(color_factor),
                                           edgecolor='none',
                                           alpha=0.5))
@@ -381,7 +383,7 @@ class PlotChannelWaveforms2D(PlotBase):
         for hit in event.all_hits:
             color_factor = min(hit.height / hit.noise_sigma, 15)/15
             result.append([
-                (0.5 + hit.center / dt) * time_scale,                  # X
+                (0.5 + hit.center / self.dt) * self.time_scale,                  # X
                 0.5 + hit.channel,                                     # Y
                 color_factor,                                          # Color (in [0,1] -> [Blue, Red])
                 10 * min(10, hit.area),                                # Size
@@ -410,11 +412,11 @@ class PlotChannelWaveforms2D(PlotBase):
         # Annotate the channel groups and boundaries
         for i in range(len(channel_ranges)):
             plt.plot(
-                [0, event.length() * time_scale],
+                [0, event.length() * self.time_scale],
                 [channel_ranges[i][1]] * 2,
                 color='black', alpha=0.2)
             plt.text(
-                0.03 * event.length() * time_scale,
+                0.03 * event.length() * self.time_scale,
                 (channel_ranges[i][1] +
                     (channel_ranges[i + 1][1] if i < len(channel_ranges) - 1 else self.config['n_channels'])
                  ) / 2,
@@ -436,7 +438,7 @@ class PlotChannelWaveforms2D(PlotBase):
         self.draw_trigger_mark(0)
 
         # Make sure we always see all channels
-        plt.xlim((0, event.length() * time_scale))
+        plt.xlim((0, event.length() * self.time_scale))
         plt.ylim((0, self.config['n_channels']))
 
         plt.xlabel('Time (us)')

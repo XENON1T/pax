@@ -288,7 +288,8 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
             self.log.info("Searching for pulses after %s",
                           sampletime_fmt(search_after))
             # times is in digitizer samples
-            times = list(c.find({'time': {'$gt': self._to_mt(search_after)}},
+            times = list(c.find({'time': {'$gt': self._to_mt(search_after),
+                                          '$lt': self._to_mt(search_after + 60.0 * units.s)}},
                                 projection=[START_KEY, STOP_KEY],
                                 **self.mongo_find_options))
 
@@ -326,8 +327,10 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
                             start_time=x[0],
                             sample_duration=self.sample_duration,
                             stop_time=x[-1],
-                            partial=True)
+                            partial=True,
+                            event_number = 0)
 
+            break
             for i, this_range in enumerate(self.ranges):
                 # Start pax's timer so we can measure how fast this plugin goes
                 ts = time.time()
@@ -341,7 +344,8 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
                             start_time=t0,
                             sample_duration=self.sample_duration,
                             stop_time=t1,
-                            partial=True)
+                            partial=True,
+                            i = i)
 
             # If run ended, begin cleanup
             #
