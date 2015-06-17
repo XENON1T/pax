@@ -15,8 +15,8 @@ class TestPaxUnits(unittest.TestCase):
         self.assertAlmostEqual(units.Ohm, 1.6021765699999998e-10)
 
         # From physics.nist.gov, January 2015
-        electron_charge_SI = 1.602176565 * 10 ** (-19)
-        boltzmannConstant_SI = 1.3806488 * 10 ** (-23)
+        electron_charge_si = 1.602176565 * 10 ** (-19)
+        boltzmannconstant_si = 1.3806488 * 10 ** (-23)
 
         base_units = {
             'm': 10 ** 2,  # distances in cm
@@ -25,12 +25,12 @@ class TestPaxUnits(unittest.TestCase):
             # datastructure!
             'eV': 1,  # energies in eV
             # Charge in number of electrons (so voltage will be in Volts)
-            'C': 1 / electron_charge_SI,
+            'C': 1 / electron_charge_si,
             'K': 1,  # Temperature in Kelvins
         }
 
         base_units['Hz'] = 1 / base_units['s']
-        base_units['J'] = base_units['eV'] / electron_charge_SI
+        base_units['J'] = base_units['eV'] / electron_charge_si
         base_units['g'] = 10 ** (-3) * base_units['J'] * base_units['s'] ** 2 / base_units['m'] ** 2
         base_units['V'] = base_units['J'] / base_units['C']
         base_units['A'] = base_units['C'] / base_units['s']
@@ -43,7 +43,7 @@ class TestPaxUnits(unittest.TestCase):
         prefixes = {'': 0, 'n': -9, 'u': -6, 'm': -3, 'c': -2, 'k': 3, 'M': 6, 'G': 9}
         for (name, value) in list(base_units.items()):
             for (p_name, p_factor) in list(prefixes.items()):
-                self.assertEqual(getattr(units, p_name + name), float(10 ** (p_factor) * value))
+                self.assertEqual(getattr(units, p_name + name), float(10 ** p_factor * value))
 
 if __name__ == '__main__':
     unittest.main()

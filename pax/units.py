@@ -35,7 +35,7 @@ Pa = N / m ** 2
 bar = 10 ** 5 * Pa
 Ohm = V / A
 
-###### 10 ^ -3 base units
+# 10 ^ -3 base units
 mm = 10 ** (-3) * m
 ms = 10 ** (-3) * s
 mK = 10 ** (-3) * K
@@ -51,7 +51,7 @@ mPa = 10 ** (-3) * Pa
 mbar = 10 ** (-3) * bar
 mOhm = 10 ** (-3) * Ohm
 
-###### 10 ^ -6 base units
+# 10 ^ -6 base units
 um = 10 ** (-6) * m
 us = 10 ** (-6) * s
 uK = 10 ** (-6) * K
@@ -67,7 +67,7 @@ uPa = 10 ** (-6) * Pa
 ubar = 10 ** (-6) * bar
 uOhm = 10 ** (-6) * Ohm
 
-###### 10 ^ -9 base units
+# 10 ^ -9 base units
 nm = 10 ** (-9) * m
 ns = 10 ** (-9) * s
 nK = 10 ** (-9) * K
@@ -75,9 +75,9 @@ nC = 10 ** (-9) * C
 
 nJ = 10 ** (-9) * J
 ug = 10 ** (-9) * kg
-uV = 10 ** (-9) * V
+nV = 10 ** (-9) * V
 
-####### 10 ^ 3 base units
+# 10 ^ 3 base units
 km = 10 ** 3 * m
 kJ = 10 ** 3 * J
 kV = 10 ** 3 * V
@@ -88,7 +88,7 @@ kOhm = 10 ** 3 * Ohm
 kPa = 10 ** 3 * Pa
 keV = 10 ** 3 * eV
 
-####### 10 ^ 6 base units
+# 10 ^ 6 base units
 MJ = 10 ** 6 * J
 MV = 10 ** 6 * V
 MHz = 10 ** 6 * Hz
@@ -97,12 +97,12 @@ MOhm = 10 ** 6 * Ohm
 MPa = 10 ** 6 * Pa
 MeV = 10 ** 6 * eV
 
-####### 10 ^ 9 base units
+# 10 ^ 9 base units
 GJ = 10 ** 9 * J
 GHz = 10 ** 9 * Hz
 GPa = 10 ** 9 * Pa
 
-####### other units
+# other units
 cm = 10 ** (-2) * m
 # Townsend (unit for reduced electric field)
 Td = 10 ** (-17) * V / cm ** 2  # noqa
