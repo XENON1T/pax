@@ -39,13 +39,14 @@ class TestPaxUnits(unittest.TestCase):
         base_units['bar'] = 10 ** 5 * base_units['Pa']
         base_units['Ohm'] = base_units['V'] / base_units['A']
 
-        base_units['cm'] = base_units['m'] / 100
+
 
         # Make variables for ns, uHz, kOhm, etc.
         prefixes = {'': 0, 'n': -9, 'u': -6, 'm': -3, 'k': 3, 'M': 6, 'G': 9}
         for (name, value) in list(base_units.items()):
             for (p_name, p_factor) in list(prefixes.items()):
                 self.assertAlmostEqual(getattr(units, p_name + name), float(10 ** p_factor * value))
+        base_units['cm'] = base_units['m'] / 100
         self.assertAlmostEqual(units.cm, base_units['cm'])
 if __name__ == '__main__':
     unittest.main()
