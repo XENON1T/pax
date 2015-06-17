@@ -11,6 +11,22 @@ Subpackages
 Submodules
 ----------
 
+pax.FolderIO module
+-------------------
+
+.. automodule:: pax.FolderIO
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.celery_tasks module
+-----------------------
+
+.. automodule:: pax.celery_tasks
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pax.core module
 ---------------
 
