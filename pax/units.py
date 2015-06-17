@@ -1,17 +1,8 @@
 """Define unit system for pax (i.e., seconds, etc.)
 
 This sets up variables for the various unit abbreviations, ensuring we always
-have a 'consistent' unit system.
-You can change base_units without breaking the consistency of any physical
-relations
-
-Please change comments in this code if you change any units. Better yet, don't
-change any units!
-
-In contrast to the existing units.py, explicit_units.py does not generate the attributes via the vars() command.
-Instead all necessary units are defined explicitly. With this code completion within IDEs will work and no more
-warnings are shown.
-Also probably never used units like nHz can be left out.
+have a 'consistent' unit system.  There are almost no cases that you should
+change this without talking with a maintainer.
 """
 
 # From physics.nist.gov, January 2015
@@ -21,7 +12,7 @@ boltzmannConstant_SI = 1.3806488 * 10 ** (-23)
 m = 10 ** 2  # distances in cm
 s = 10 ** 9  # times in ns
 eV = 1  # energies in eV
-C = 1 / electron_charge_SI  # Charge in number of electrons (so voltage will be in Volts)
+C = 1 / electron_charge_SI  # Charge in # electrons, so voltage in Volts
 K = 1  # Temperature in Kelvins
 
 # derived units
@@ -137,7 +128,6 @@ GN = 10 ** 9 * N
 GOhm = 10 ** 9 * Ohm
 Gbar = 10 ** 9 * bar
 GPa = 10 ** 9 * Pa
-
 
 # other units
 cm = 10 ** (-2) * m
