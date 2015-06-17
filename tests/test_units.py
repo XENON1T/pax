@@ -16,7 +16,7 @@ class TestPaxUnits(unittest.TestCase):
 
         # From physics.nist.gov, January 2015
         electron_charge_si = 1.602176565 * 10 ** (-19)
-        boltzmannconstant_si = 1.3806488 * 10 ** (-23)
+        # boltzmannconstant_si = 1.3806488 * 10 ** (-23)
 
         base_units = {
             'm': 10 ** 2,  # distances in cm
