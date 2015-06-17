@@ -1,8 +1,8 @@
-import json
 import glob
 import os
 import time
 import shutil
+from bson import json_util
 
 from pax import utils, plugin
 
@@ -188,7 +188,8 @@ class WriteToFolder(plugin.OutputPlugin):
 
         # Write the metadata to JSON
         with open(os.path.join(self.output_dir, 'pax_info.json'), 'w') as outfile:
-            json.dump(self.processor.get_metadata(), outfile, sort_keys=True)
+            outfile.write(json_util.dumps(self.processor.get_metadata(),
+                          sort_keys=True))
 
         # Start the temporary file. Events will first be written here, until events_per_file is reached
         self.tempfile = os.path.join(self.output_dir, 'temp.' + self.file_extension)

@@ -39,10 +39,10 @@ class BasePlugin(object):
             self.log.debug("Deleting %s, shutdown has NOT occurred yet!" % self.name)
             y = self.shutdown()
             if y is not None:
-                raise RuntimeError('Shutdown of %s returned a %s instead of None.' % (
-                    self.name, type(y)))
-        else:
-            self.log.debug("Deleting %s, shutdown has already occurred" % self.name)
+                raise RuntimeError('Shutdown of %s returned a %s instead of None.' % (self.name,
+                                                                                      type(y)))
+        #else:
+        #    self.log.debug("Deleting %s, shutdown has already occurred" % self.name)
 
     @staticmethod
     def _timeit(method):

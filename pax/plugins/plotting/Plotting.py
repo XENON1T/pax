@@ -355,7 +355,7 @@ class PlotChannelWaveforms2D(PlotBase):
     """
 
     def substartup(self):
-        plt.figure(figsize=(200,10))
+        plt.figure(figsize=(30,10))
         self.dt = self.config['sample_duration']
         self.time_scale = self.dt / units.s
 

@@ -190,6 +190,9 @@ class IOMongoDB():
         for i in range(0, len(l), n):
             yield l[i:i + n]
 
+    def shutdown(self):
+        for connection in self.connections:
+            connection.close()
 
 class MongoDBReadUntriggered(plugin.InputPlugin,
                              IOMongoDB):
@@ -198,10 +201,12 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
         IOMongoDB.startup(self) # Setup with baseclass
         
         # Load constants from config
-        self.window = self.config['window']
-        self.multiplicity = self.config['multiplicity']
-        self.left = self.config['left_extension']
-        self.right = self.config['right_extension']
+        self.window = int(self.config['window'])
+        self.multiplicity = int(self.config['multiplicity'])
+        self.left = float(self.config['left_extension'])
+        self.right = float(self.config['right_extension'])
+
+        self.mega_event = bool(self.config['mega_event'])
 
         self.log.info("Building events with:")
         self.log.info("\tSliding window: %0.2f us", self.window / units.us * units.ns)
@@ -289,7 +294,8 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
                           sampletime_fmt(search_after))
             # times is in digitizer samples
             times = list(c.find({'time': {'$gt': self._to_mt(search_after),
-                                          '$lt': self._to_mt(search_after + 60.0 * units.s)}},
+                                          #'$lt': self._to_mt(search_after + 60.0 * units.s)
+                                          }},
                                 projection=[START_KEY, STOP_KEY],
                                 **self.mongo_find_options))
 
@@ -297,6 +303,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
             if n == 0:
                 self.log.fatal("Nothing found, continue")
                 time.sleep(1)  # todo: configure
+                break  # todo: remove
                 continue
 
             x = [[self._from_mt(doc[START_KEY]),
@@ -323,14 +330,18 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
             self.log.info("Found %d events", len(self.ranges))
             self.number_of_events = len(self.ranges)
 
-            yield Event(n_channels=self.config['n_channels'],
+            if self.mega_event:
+                # Used for trigger efficiency studies
+                self.log.info("Mega event")
+                yield Event(n_channels=self.config['n_channels'],
                             start_time=x[0],
                             sample_duration=self.sample_duration,
                             stop_time=x[-1],
                             partial=True,
                             event_number = 0)
+                break
 
-            break
+
             for i, this_range in enumerate(self.ranges):
                 # Start pax's timer so we can measure how fast this plugin goes
                 ts = time.time()
@@ -345,7 +356,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
                             sample_duration=self.sample_duration,
                             stop_time=t1,
                             partial=True,
-                            i = i)
+                            event_number = i)
 
             # If run ended, begin cleanup
             #
@@ -371,7 +382,8 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, IOMongoDB):
         event = Event(start_time=event.start_time,
                       stop_time=event.stop_time,
                       n_channels=self.config['n_channels'],
-                      sample_duration=self.sample_duration)
+                      sample_duration=self.sample_duration,
+                      event_number=event.event_number)
 
         self.log.info("Building event in range [%s, %s]",
                       sampletime_fmt(t0),
