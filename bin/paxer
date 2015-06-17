@@ -1,202 +1,336 @@
 #!/usr/bin/env python
-""" Processor for Analyzing XENON - command line interface """
+""" Processor for Analyzing XENON - command line interface
+
+This is the main entry point for running standalone pax.  You can configure via
+the command line most operations for running with pax.  Typically, you'll
+specify a configuration via the --config command line argument.
+"""
 
 import argparse
 import os
 import sys
+import copy
+import json
+import queue
 import multiprocessing
-from itertools import zip_longest
 
 from pax import core, utils
 
-def grouper(iterable, n, fillvalue=None):
-    "Collect data into fixed-length chunks or blocks"
-    # grouper('ABCDEFG', 3, 'x') --> ABC DEF Gxx"
-    args = [iter(iterable)] * n
-    return zip_longest(*args, fillvalue=fillvalue)
 
-class Consumer(multiprocessing.Process):
+class BaseProcess(multiprocessing.Process):
+
+    """Base class for starting pax threads
+    """
 
     def __init__(self, task_queue, result_queue,
+                 input_done, process_done, output_done,
                  config_names, config_path, config_dict):
         multiprocessing.Process.__init__(self)
+
+        # Queues for feeding events in and out
         self.task_queue = task_queue
         self.result_queue = result_queue
 
+        # Multiprocessing 'Events'. These are booleans that indicated whether
+        # each stage has finished.
+        self.input_done = input_done
+        self.process_done = process_done
+        self.output_done = output_done
 
-parser = argparse.ArgumentParser(description="Process XENON data")
-parser.add_argument('--input',  default=None, help="File, database or directory to read events from", nargs='?')
-parser.add_argument('--output', default=None, help="File, database or directory to write events to",  nargs='?')
+        # pax configuations
+        self.config_names = config_names
+        self.config_path = config_path
+        self.config_dict = config_dict
 
-# Parallelization control
-parser.add_argument('--cpus', default=1, help="Number of CPUs to use. Default is 1; can be 'all'.",  nargs='?')
+    def run(self):
+        # Defined in subclass
+        raise NotImplementedError()
 
-# Log level control
-parser.add_argument('--log', default=None, help="Set log level, e.g. 'debug'")
 
-# Configuration control
-# Pass in a name to use a pre-cooked config from config:
-parser.add_argument(
-    '--config',
-    default='XENON100',
-    choices=utils.get_named_configuration_options(),
-    nargs='+',
-    help="Name(s) of the pax configuration(s) to use."
-)
-# ... or pass in a path to your own config file:
-parser.add_argument(
-    '--config_path',
-    default=[],
-    nargs='+',
-    help="Path(s) of the configuration file(s) to use."
-)
-# ... or load the configuration from a previous processed data file
-parser.add_argument(
-    '--redo',
-    default='',
-    help="Path of the HDF5 data file to redo."
-)
+class ProcessorEvents(BaseProcess):
 
-# Plotting override
-plotting_control_group = parser.add_mutually_exclusive_group()
-plotting_control_group.add_argument(
-    '--plot',
-    action='store_const',
-    const=True,
-    help='Plot summed waveforms on screen',
-)
-plotting_control_group.add_argument(
-    '--plot_to_dir',
-    help='Save summed waveform plots in directory',
-)
+    """Thread for processing single events
 
-# Control events to process
-parser.add_argument('--event',
-                    type=int,
-                    nargs='+',
-                    help="Process particular event(s).")
-parser.add_argument('--stop_after',
-                    type=int,
-                    help="Stop after STOP_AFTER events have been processed.")
+    This thread will be fed via the task queue and report its results via the
+    result queue.  It will initialize its own 'pax' Processor instance.  It
+    waits until it has received a 'poisson pill', which tells it to shut down.
+    """
 
-args = parser.parse_args()
+    def run(self):
+        # Initialize pax instance
+        p = core.Processor(config_names=self.config_names,
+                           config_paths=self.config_path,
+                           config_dict=self.config_dict)
 
-max_cpus = multiprocessing.cpu_count()
-if args.cpus == 'all':
-    args.cpus = max_cpus
-if args.cpus > max_cpus:
-    raise ValueError("Can't parallelize over %d cpu's, you only have %d..." % (args.cpus, max_cpus))
+        # Loop until a 'poisson pill' found (next_events == None)
+        while True:
+            next_events = self.task_queue.get()
+            answer = []
+            if next_events is None:  # Poison pill of None means shutdown
+                p.log.info('Exiting')
+                p.shutdown()
+                self.task_queue.task_done()
+                break
 
-##
-# Build configuration for paxer
-##
+            # If not None, means these are events to process
+            for event in next_events:
+                answer.append(p.process_event(event))
 
-# Take config from previous file
-if args.redo:
-    from pandas import HDFStore
-    from bson.json_util import loads
-    file_to_redo = core.data_file_name(args.redo)
-    store = HDFStore(file_to_redo)
-    if len(store['pax_info']) > 1:
-        print("Warning: This file contains data from several processings. Will use config from last!\n")
-    override_dict = loads(store['pax_info'].iloc[-1]['configuration_json'])
-    # Add _redone to output name, unless user has specified an output name
-    if not args.output:
-        redo_path, ext = os.path.splitext(args.redo)    # Remove .hdf from path
-        redo_path += '_redone'
-        print("Output path of redone processing not specified: will write to %s\n" % redo_path)
-        args.output = redo_path
-    store.close()
-else:
-    override_dict = {'pax': {}}
+            # Notify queue that these events processed
+            self.task_queue.task_done()
 
-for argname, configname in (
-        ('input',      'input_name'),
-        ('output',     'output_name'),
-        ('log',        'logging_level'),
-        ('stop_after', 'stop_after'),
-        ('event',      'events_to_process')):
-    value = getattr(args, argname)
-    if value is not None:
-        override_dict['pax'][configname] = value
+            # Put output to result queue to await being picked up by Output
+            # thread
+            self.result_queue.put(answer)
 
-# Overrides for plotting
-if args.plot_to_dir or args.plot:
-    override_dict['pax']['output'] = 'Plotting.PlotEventSummary'
-    if args.plot_to_dir:
-        override_dict['Plotting.PlotEventSummary'] = {'output_dir': args.plot_to_dir}
+        return
 
-##
-# Single-core processing
-##
-if args.cpus == 1:
-    pax_instance = core.Processor(config_names=args.config,
-                                  config_paths=args.config_path,
-                                  config_dict=override_dict)
 
-    try:
-        pax_instance.run()
-    except (KeyboardInterrupt, SystemExit):
-        print("\nShutting down all plugins...")
-        pax_instance.shutdown()
-        print("Exiting")
-        sys.exit()
+class OutputEvents(BaseProcess):
 
-##
-# Parallel processing
-##
-else:
-    if os.name == 'nt':
-        raise NotImplementedError("Pax parallelization is not supported under Windows (due to lack of fork).")
+    """Thread for writing events to disk
 
-    override_dict['pax']['plugin_group_names'] = ['input']
-    p = core.Processor(config_names=args.config,
-                       config_paths=args.config_path,
-                       config_dict=override_dict)
+    Typically, there should only be one Output instance since often output
+    operations are not parallelizable.
+    """
 
-    override_dict['pax']['plugin_group_names'] = ['dsp', 'transform']
+    def run(self):
+        # Initialize pax instance
+        p = core.Processor(config_names=self.config_names,
+                           config_paths=self.config_path,
+                           config_dict=self.config_dict)
 
-    # Establish communication queues
-    tasks = multiprocessing.JoinableQueue()
-    results = multiprocessing.Queue()
+        #  Wait until can_end == True
+        while True:
+            # Need to check if we can end before we fetch events because
+            # of the race condition where input and processing are done, but
+            # there are still events left in the results queue waiting to be
+            # processed
+            can_end = self.input_done.is_set() and self.process_done.is_set()
 
-    # Start consumers
-    num_consumers = args.cpus
-    p.log.info('Creating %d consumers',
-               num_consumers)
-    consumers = [Consumer(tasks, results,
-                          args.config,
-                          args.config_path,
-                          override_dict) for _ in range(num_consumers)]
-    for w in consumers:
-        w.start()
+            # Useful statistics
+            print('input_done:', self.input_done.is_set(),
+                  'process_done:', self.process_done.is_set(),
+                  'output_done:', self.output_done.is_set(),
+                  'blocks waiting input:', self.task_queue.qsize(),
+                  'blocks waiting output:', self.result_queue.qsize())
 
-    # Enqueue jobs
-    num_jobs = 0
+            try:
+                # Get events, or raise queue.Empty if timed out
+                next_events = self.result_queue.get(block=True,
+                                                    timeout=1)  # second
 
-    for events in grouper(p.get_events(), 10):
-        tasks.put(events)
-        num_jobs += 1
+                # If events, write them to output
+                for event in next_events:
+                    p.process_event(event)
 
-    p.shutdown()
+                # Tell result queue that events processed
+                self.result_queue.task_done()
+            except queue.Empty:
+                # If queue is empty, and input and processing done, then exit
+                # the while loop.
+                if can_end:
+                    self.output_done.set()
+                    p.shutdown()
+                    break
 
-    # Add a poison pill for each consumer
-    for i in range(num_consumers):
-        tasks.put(None)
+        return
 
-    # Wait for all of the tasks to finish
-    tasks.join()
 
-    override_dict['pax']['plugin_group_names'] = ['output']
-    p = core.Processor(config_names=args.config,
-                       config_paths=args.config_path,
-                       config_dict=override_dict)
+def main():
+    args = get_args()
 
-    # Start printing results
-    while num_jobs:
+    # Compute numbers of CPUs that can be used
+    max_cpus = multiprocessing.cpu_count()
+    if args.cpus == 'all':
+        args.cpus = max_cpus
+    else:
+        args.cpus = int(args.cpus)
 
-        for event in results.get():
-            p.process_event(event)
-        num_jobs -= 1
+    # (if requested) Take config from previous file
+    if args.redo:
+        from pandas import HDFStore
 
-    p.shutdown()
+        file_to_redo = core.data_file_name(args.redo)
+        store = HDFStore(file_to_redo)
+
+        if len(store['pax_info']) > 1:
+            print("Warning: This file contains data from several processings. "
+                  "Will use config from last!\n")
+        override_dict = json.loads(store['pax_info'].iloc[-1]['configuration_json'])
+
+        # Add _redone to output name, unless user has specified an output name
+        if not args.output:
+            redo_path, ext = os.path.splitext(args.redo)  # Remove .hdf from path
+            redo_path += '_redone'
+            print("Output path of redone processing not specified: will "
+                  "write to %s\n" % redo_path)
+            args.output = redo_path
+        store.close()
+    else:
+        override_dict = {'pax': {}}
+
+    # Feed certain command line args into pax configuration format
+    for argname, configname in (('input',      'input_name'),
+                                ('output',     'output_name'),
+                                ('log',        'logging_level'),
+                                ('stop_after', 'stop_after'),
+                                ('event',      'events_to_process')):
+        value = getattr(args, argname)
+        if value is not None:
+            override_dict['pax'][configname] = value
+
+    # Overrides for plotting
+    if args.plot_to_dir or args.plot:
+        override_dict['pax']['output'] = 'Plotting.PlotEventSummary'
+        if args.plot_to_dir:
+            override_dict['Plotting.PlotEventSummary'] = {'output_dir': args.plot_to_dir}
+
+    ##
+    # Single-core processing
+    ##
+    if args.cpus == 1:
+        pax_instance = core.Processor(config_names=args.config,
+                                      config_paths=args.config_path,
+                                      config_dict=override_dict)
+
+        try:
+            pax_instance.run()
+        except (KeyboardInterrupt, SystemExit):
+            print("\nShutting down all plugins...")
+            pax_instance.shutdown()
+            print("Exiting")
+            sys.exit()
+    else:  # Parallel processing
+        if os.name == 'nt':
+            raise NotImplementedError("Pax parallelization is not supported "
+                                      "under Windows (due to lack of fork).")
+
+        override_dict['pax']['plugin_group_names'] = ['input']
+        p = core.Processor(config_names=args.config,
+                           config_paths=args.config_path,
+                           config_dict=copy.deepcopy(override_dict))
+
+        override_dict['pax']['plugin_group_names'] = ['dsp', 'transform']
+
+        # Keep track of processing state that threads can see
+        input_done = multiprocessing.Event()
+        process_done = multiprocessing.Event()
+        output_done = multiprocessing.Event()
+
+        # Establish communication queues
+        tasks = multiprocessing.JoinableQueue()
+        results = multiprocessing.JoinableQueue()
+
+        # Start consumers
+        num_consumers = args.cpus
+        p.log.info('Creating %d consumers',
+                   num_consumers)
+        consumers = [ProcessorEvents(tasks, results,
+                                     input_done, process_done, output_done,
+                                     args.config,
+                                     args.config_path,
+                                     config_dict=copy.deepcopy(override_dict)) for _ in range(num_consumers)]
+
+        override_dict['pax']['plugin_group_names'] = ['output']
+        consumer_output = OutputEvents(tasks, results,
+                                       input_done, process_done, output_done,
+                                       args.config,
+                                       args.config_path,
+                                       config_dict=copy.deepcopy(override_dict))
+
+        # Start all worker threads
+        for w in consumers + [consumer_output]:
+            w.start()
+
+        # Enqueue jobs
+        events = []
+        n = 10  # chunk in threads (TODO: what is best n?)
+
+        for event in p.get_events():
+            events.append(event)
+            if len(events) > n:
+                tasks.put(events)
+                events = []
+
+        # If anything left over
+        if len(events):
+            tasks.put(events)
+        p.shutdown()
+
+        # Input stage done
+        input_done.set()
+
+        # Put poison pills to tell thread to quit
+        for i in range(num_consumers):
+            tasks.put(None)
+
+        print("Wait for consumers to finish")
+        tasks.join()  # blocks until processing done
+
+        process_done.set()  # processing done
+
+        output_done.wait()  # wait until output done
+        print("All events processed.  Exiting...")
+
+
+def get_args():
+    """Process command line arguments"""
+    parser = argparse.ArgumentParser(description="Process XENON data")
+    parser.add_argument('--input', default=None,
+                        help="File, database or directory to read events from",
+                        nargs='?')
+    parser.add_argument('--output', default=None,
+                        help="File, database or directory to write events to",
+                        nargs='?')
+    # Parallelization control
+    parser.add_argument('--cpus', default=1,
+                        help="Number of CPUs to use. Default is 1; can be "
+                             "'all'.",
+                        nargs='?')
+    # Log level control
+    parser.add_argument('--log', default=None,
+                        help="Set log level, e.g. 'debug'")
+    # Configuration control
+    # Pass in a name to use a pre-cooked config from config:
+    parser.add_argument('--config',
+                        default='XENON100',
+                        choices=utils.get_named_configuration_options(),
+                        nargs='+',
+                        help="Name(s) of the pax configuration(s) to use.")
+    # ... or pass in a path to your own config file:
+    parser.add_argument('--config_path',
+                        default=[],
+                        nargs='+',
+                        help="Path(s) of the configuration file(s) to use."
+                        )
+    # ... or load the configuration from a previous processed data file
+    parser.add_argument('--redo',
+                        default='',
+                        help="Path of the HDF5 data file to redo."
+                        )
+    # Plotting override
+    plotting_control_group = parser.add_mutually_exclusive_group()
+    plotting_control_group.add_argument('--plot',
+                                        action='store_const',
+                                        const=True,
+                                        help='Plot summed waveforms on screen',
+                                        )
+    plotting_control_group.add_argument('--plot_to_dir',
+                                        help='Save summed waveform plots in '
+                                             'directory',
+                                        )
+    # Control events to process
+    parser.add_argument('--event',
+                        type=int,
+                        nargs='+',
+                        help="Process particular event(s).")
+    parser.add_argument('--stop_after',
+                        type=int,
+                        help="Stop after STOP_AFTER events have been processed.")
+    args = parser.parse_args()
+    return args
+
+
+if __name__ == "__main__":
+    main()
