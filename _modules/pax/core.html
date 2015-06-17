@@ -356,7 +356,7 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Invalid log level: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">log_spec</span><span class="p">)</span>
 
         <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">numeric_level</span><span class="p">,</span>
-                            <span class="n">format</span><span class="o">=</span><span class="s">&#39;</span><span class="si">%(name)s</span><span class="s"> </span><span class="si">%(processName)-10s</span><span class="s"> L</span><span class="si">%(lineno)s</span><span class="s"> </span><span class="si">%(levelname)s</span><span class="s"> </span><span class="si">%(message)s</span><span class="s">&#39;</span><span class="p">)</span>
+                            <span class="n">format</span><span class="o">=</span><span class="s">&#39;</span><span class="si">%(name)s</span><span class="s"> L</span><span class="si">%(lineno)s</span><span class="s"> </span><span class="si">%(levelname)s</span><span class="s"> </span><span class="si">%(message)s</span><span class="s">&#39;</span><span class="p">)</span>
 
         <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;processor&#39;</span><span class="p">)</span>
         <span class="n">logger</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Logging initialized with level </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">log_spec</span><span class="p">)</span>
@@ -468,7 +468,6 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_plugin</span><span class="o">.</span><span class="n">has_shut_down</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Attempt to run a Processor twice.&quot;</span><span class="p">)</span>
 
-        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c"># in case loop does not run</span>
         <span class="c"># This is the actual event loop.  &#39;tqdm&#39; is a progress bar.</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">event</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tqdm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_events</span><span class="p">(),</span>
                                        <span class="n">desc</span><span class="o">=</span><span class="s">&#39;Event&#39;</span><span class="p">,</span>
@@ -484,6 +483,7 @@
         <span class="k">else</span><span class="p">:</span>   <span class="c"># If no break occurred:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;All events from input source have been processed.&quot;</span><span class="p">)</span>
 
+        <span class="c"># TODO: not nice, accessing the loop var outside the loop.. What if loop was never run?</span>
         <span class="n">events_actually_processed</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pax&#39;</span><span class="p">][</span><span class="s">&#39;print_timing_report&#39;</span><span class="p">]:</span>
@@ -499,49 +499,38 @@
             <span class="n">total_time</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">plugin</span><span class="o">.</span><span class="n">total_time_taken</span> <span class="k">for</span> <span class="n">plugin</span> <span class="ow">in</span> <span class="n">all_plugins</span><span class="p">])</span>
 
             <span class="k">for</span> <span class="n">plugin</span> <span class="ow">in</span> <span class="n">all_plugins</span><span class="p">:</span>
+
                 <span class="n">t</span> <span class="o">=</span> <span class="n">plugin</span><span class="o">.</span><span class="n">total_time_taken</span>
-
-                <span class="k">if</span> <span class="n">t</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">time_per_event_ms</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">t</span> <span class="o">/</span> <span class="n">events_actually_processed</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-
+                <span class="n">time_per_event_ms</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">t</span> <span class="o">/</span> <span class="n">events_actually_processed</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">t</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">event_rate_hz</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+                <span class="k">else</span><span class="p">:</span>
                     <span class="n">event_rate_hz</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="mi">1000</span> <span class="o">*</span> <span class="n">events_actually_processed</span> <span class="o">/</span> <span class="n">t</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
                     <span class="k">if</span> <span class="n">event_rate_hz</span> <span class="o">&gt;</span> <span class="mi">100</span><span class="p">:</span>
                         <span class="n">event_rate_hz</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
 
-                    <span class="n">timing_report</span><span class="o">.</span><span class="n">add_row</span><span class="p">([</span><span class="n">plugin</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
-                                           <span class="nb">round</span><span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="n">t</span> <span class="o">/</span> <span class="n">total_time</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
-                                           <span class="n">time_per_event_ms</span><span class="p">,</span>
-                                           <span class="n">event_rate_hz</span><span class="p">,</span>
-                                           <span class="nb">round</span><span class="p">(</span><span class="n">t</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">timing_report</span><span class="o">.</span><span class="n">add_row</span><span class="p">([</span><span class="n">plugin</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
-                                           <span class="mi">0</span><span class="p">,</span>
-                                           <span class="mi">0</span><span class="p">,</span>
-                                           <span class="s">&#39;n/a&#39;</span><span class="p">,</span>
-                                           <span class="nb">round</span><span class="p">(</span><span class="n">t</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+                <span class="n">timing_report</span><span class="o">.</span><span class="n">add_row</span><span class="p">([</span><span class="n">plugin</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                                       <span class="nb">round</span><span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="n">t</span> <span class="o">/</span> <span class="n">total_time</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                                       <span class="n">time_per_event_ms</span><span class="p">,</span>
+                                       <span class="n">event_rate_hz</span><span class="p">,</span>
+                                       <span class="nb">round</span><span class="p">(</span><span class="n">t</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
 
-            <span class="k">if</span> <span class="n">total_time</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">timing_report</span><span class="o">.</span><span class="n">add_row</span><span class="p">([</span><span class="s">&#39;TOTAL&#39;</span><span class="p">,</span>
-                                       <span class="nb">round</span><span class="p">(</span><span class="mf">100.</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
-                                       <span class="nb">round</span><span class="p">(</span><span class="n">total_time</span> <span class="o">/</span> <span class="n">events_actually_processed</span><span class="p">,</span>
-                                             <span class="mi">1</span><span class="p">),</span>
-                                       <span class="nb">round</span><span class="p">(</span><span class="mi">1000</span> <span class="o">*</span> <span class="n">events_actually_processed</span> <span class="o">/</span> <span class="n">total_time</span><span class="p">,</span>
-                                             <span class="mi">1</span><span class="p">),</span>
-                                       <span class="nb">round</span><span class="p">(</span><span class="n">total_time</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">timing_report</span><span class="o">.</span><span class="n">add_row</span><span class="p">([</span><span class="s">&#39;TOTAL&#39;</span><span class="p">,</span>
-                                       <span class="nb">round</span><span class="p">(</span><span class="mf">100.</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
-                                       <span class="mi">0</span><span class="p">,</span>
-                                       <span class="s">&#39;n/a&#39;</span><span class="p">,</span>
-                                       <span class="nb">round</span><span class="p">(</span><span class="n">total_time</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+            <span class="n">timing_report</span><span class="o">.</span><span class="n">add_row</span><span class="p">([</span><span class="s">&#39;TOTAL&#39;</span><span class="p">,</span>
+                                   <span class="nb">round</span><span class="p">(</span><span class="mf">100.</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                                   <span class="nb">round</span><span class="p">(</span><span class="n">total_time</span> <span class="o">/</span> <span class="n">events_actually_processed</span><span class="p">,</span>
+                                         <span class="mi">1</span><span class="p">),</span>
+                                   <span class="nb">round</span><span class="p">(</span><span class="mi">1000</span> <span class="o">*</span> <span class="n">events_actually_processed</span> <span class="o">/</span> <span class="n">total_time</span><span class="p">,</span>
+                                         <span class="mi">1</span><span class="p">),</span>
+                                   <span class="nb">round</span><span class="p">(</span><span class="n">total_time</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Timing report:</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">timing_report</span><span class="p">))</span>
 
         <span class="c"># Shutdown all plugins now -- don&#39;t wait until this Processor instance gets deleted</span>
         <span class="k">if</span> <span class="n">clean_shutdown</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
-</div>
-<div class="viewcode-block" id="Processor.shutdown"><a class="viewcode-back" href="../../pax.html#pax.core.Processor.shutdown">[docs]</a>    <span class="k">def</span> <span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Call shutdown on all plugins&quot;&quot;&quot;</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Shutting down all plugins...&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">stop</span><span class="p">()</span>
+
+    <span class="c"># Call shutdown on all plugins</span></div>
+<div class="viewcode-block" id="Processor.stop"><a class="viewcode-back" href="../../pax.html#pax.core.Processor.stop">[docs]</a>    <span class="k">def</span> <span class="nf">stop</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Shutting down all plugins...&quot;</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_plugin</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Shutting down </span><span class="si">%s</span><span class="s">...&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_plugin</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>

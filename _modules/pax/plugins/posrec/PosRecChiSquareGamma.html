@@ -85,6 +85,9 @@
         <span class="c"># List of integers of which PMTs to use, this algorithm uses the top pmt array to reconstruct</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pmts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_top&#39;</span><span class="p">]</span>
 
+        <span class="c"># Set area threshold, minimum area for a peak to be reconstructed</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">area_threshold</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;area_threshold&#39;</span><span class="p">]</span>
+
         <span class="c"># (x,y) Locations of these PMTs.  This is stored as a dictionary such</span>
         <span class="c"># that self.pmt_locations[int] = {&#39;x&#39; : int, &#39;y&#39; : int, &#39;z&#39; : None}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pmt_locations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pmt_locations&#39;</span><span class="p">]</span>
@@ -208,6 +211,12 @@
 
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s">&#39;no_reconstruct&#39;</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">event</span>
+
+            <span class="c"># Only reconstruct peak if it has an area of more then area_threshold pe</span>
+            <span class="c"># Setting a very low threshold is bad for speed</span>
+            <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">area</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">area_threshold</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Peak area below threshold, skipping to the next peak&quot;</span><span class="p">)</span>
+                <span class="k">continue</span>
 
             <span class="c"># Start minimization</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Starting minimizer for position reconstruction&quot;</span><span class="p">)</span>

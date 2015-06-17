@@ -62,7 +62,7 @@
 <span class="kn">from</span> <span class="nn">pax.datastructure</span> <span class="kn">import</span> <span class="n">Event</span>
 
 
-<div class="viewcode-block" id="BasePlugin"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.BasePlugin">[docs]</a><span class="k">class</span> <span class="nc">BasePlugin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="BasePlugin"><a class="viewcode-back" href="../../pax.html#pax.plugin.BasePlugin">[docs]</a><span class="k">class</span> <span class="nc">BasePlugin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_values</span><span class="p">,</span> <span class="n">processor</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
@@ -109,18 +109,18 @@
 
         <span class="k">return</span> <span class="n">timed</span>
 
-<div class="viewcode-block" id="BasePlugin.startup"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.BasePlugin.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="BasePlugin.startup"><a class="viewcode-back" href="../../pax.html#pax.plugin.BasePlugin.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> does not define a startup&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
         <span class="k">pass</span>
 </div>
-<div class="viewcode-block" id="BasePlugin.process_event"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.BasePlugin.process_event">[docs]</a>    <span class="k">def</span> <span class="nf">process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="BasePlugin.process_event"><a class="viewcode-back" href="../../pax.html#pax.plugin.BasePlugin.process_event">[docs]</a>    <span class="k">def</span> <span class="nf">process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
 </div>
-<div class="viewcode-block" id="BasePlugin.shutdown"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.BasePlugin.shutdown">[docs]</a>    <span class="k">def</span> <span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="BasePlugin.shutdown"><a class="viewcode-back" href="../../pax.html#pax.plugin.BasePlugin.shutdown">[docs]</a>    <span class="k">def</span> <span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">pass</span>
 
 </div></div>
-<div class="viewcode-block" id="InputPlugin"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.InputPlugin">[docs]</a><span class="k">class</span> <span class="nc">InputPlugin</span><span class="p">(</span><span class="n">BasePlugin</span><span class="p">):</span>
+<div class="viewcode-block" id="InputPlugin"><a class="viewcode-back" href="../../pax.html#pax.plugin.InputPlugin">[docs]</a><span class="k">class</span> <span class="nc">InputPlugin</span><span class="p">(</span><span class="n">BasePlugin</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;Base class for data inputs</span>
 
@@ -131,7 +131,7 @@
 
     <span class="c"># TODO: how/where do we check if the input plugin has already shut down?</span>
 
-<div class="viewcode-block" id="InputPlugin.get_single_event"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.InputPlugin.get_single_event">[docs]</a>    <span class="k">def</span> <span class="nf">get_single_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+<div class="viewcode-block" id="InputPlugin.get_single_event"><a class="viewcode-back" href="../../pax.html#pax.plugin.InputPlugin.get_single_event">[docs]</a>    <span class="k">def</span> <span class="nf">get_single_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Single event support not implemented for this input plugin... &quot;</span> <span class="o">+</span>
                          <span class="s">&quot;Iterating though events until we find event </span><span class="si">%s</span><span class="s">!&quot;</span> <span class="o">%</span> <span class="n">index</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_events</span><span class="p">():</span>
@@ -141,24 +141,24 @@
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Event </span><span class="si">%d</span><span class="s"> not found&quot;</span> <span class="o">%</span> <span class="n">index</span><span class="p">)</span>
 </div>
     <span class="nd">@BasePlugin._timeit</span>
-<div class="viewcode-block" id="InputPlugin.get_events"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.InputPlugin.get_events">[docs]</a>    <span class="k">def</span> <span class="nf">get_events</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="InputPlugin.get_events"><a class="viewcode-back" href="../../pax.html#pax.plugin.InputPlugin.get_events">[docs]</a>    <span class="k">def</span> <span class="nf">get_events</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Get next event from the data source</span>
 
 <span class="sd">        Raise a StopIteration when done</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
 </div>
-<div class="viewcode-block" id="InputPlugin.process_event"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.InputPlugin.process_event">[docs]</a>    <span class="k">def</span> <span class="nf">process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="InputPlugin.process_event"><a class="viewcode-back" href="../../pax.html#pax.plugin.InputPlugin.process_event">[docs]</a>    <span class="k">def</span> <span class="nf">process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&#39;Input plugins cannot process data.&#39;</span><span class="p">)</span>
 
 </div></div>
-<div class="viewcode-block" id="TransformPlugin"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.TransformPlugin">[docs]</a><span class="k">class</span> <span class="nc">TransformPlugin</span><span class="p">(</span><span class="n">BasePlugin</span><span class="p">):</span>
+<div class="viewcode-block" id="TransformPlugin"><a class="viewcode-back" href="../../pax.html#pax.plugin.TransformPlugin">[docs]</a><span class="k">class</span> <span class="nc">TransformPlugin</span><span class="p">(</span><span class="n">BasePlugin</span><span class="p">):</span>
 
-<div class="viewcode-block" id="TransformPlugin.transform_event"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.TransformPlugin.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+<div class="viewcode-block" id="TransformPlugin.transform_event"><a class="viewcode-back" href="../../pax.html#pax.plugin.TransformPlugin.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 </div>
     <span class="nd">@BasePlugin._timeit</span>
-<div class="viewcode-block" id="TransformPlugin.process_event"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.TransformPlugin.process_event">[docs]</a>    <span class="k">def</span> <span class="nf">process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+<div class="viewcode-block" id="TransformPlugin.process_event"><a class="viewcode-back" href="../../pax.html#pax.plugin.TransformPlugin.process_event">[docs]</a>    <span class="k">def</span> <span class="nf">process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_shut_down</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> was asked to process an event, but it has already shut down!&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
 
@@ -181,13 +181,13 @@
         <span class="k">return</span> <span class="n">result</span>
 
 </div></div>
-<div class="viewcode-block" id="OutputPlugin"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.OutputPlugin">[docs]</a><span class="k">class</span> <span class="nc">OutputPlugin</span><span class="p">(</span><span class="n">BasePlugin</span><span class="p">):</span>
+<div class="viewcode-block" id="OutputPlugin"><a class="viewcode-back" href="../../pax.html#pax.plugin.OutputPlugin">[docs]</a><span class="k">class</span> <span class="nc">OutputPlugin</span><span class="p">(</span><span class="n">BasePlugin</span><span class="p">):</span>
 
-<div class="viewcode-block" id="OutputPlugin.write_event"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.OutputPlugin.write_event">[docs]</a>    <span class="k">def</span> <span class="nf">write_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+<div class="viewcode-block" id="OutputPlugin.write_event"><a class="viewcode-back" href="../../pax.html#pax.plugin.OutputPlugin.write_event">[docs]</a>    <span class="k">def</span> <span class="nf">write_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 </div>
     <span class="nd">@BasePlugin._timeit</span>
-<div class="viewcode-block" id="OutputPlugin.process_event"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.OutputPlugin.process_event">[docs]</a>    <span class="k">def</span> <span class="nf">process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+<div class="viewcode-block" id="OutputPlugin.process_event"><a class="viewcode-back" href="../../pax.html#pax.plugin.OutputPlugin.process_event">[docs]</a>    <span class="k">def</span> <span class="nf">process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_shut_down</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> was asked to process an event, but it has already shut down!&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">write_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
