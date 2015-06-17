@@ -322,10 +322,18 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
             self.log.info("Found %d events", len(self.ranges))
             self.number_of_events = len(self.ranges)
 
+            yield Event(n_channels=self.config['n_channels'],
+                            start_time=x[0],
+                            sample_duration=self.sample_duration,
+                            stop_time=x[-1],
+                            partial=True)
+
             for i, this_range in enumerate(self.ranges):
                 # Start pax's timer so we can measure how fast this plugin goes
                 ts = time.time()
                 t0, t1 = [int(t) for t in this_range]
+        # docs.append({'test' : 0,
+        #                     'docs' : pulses})
 
                 self.total_time_taken += (time.time() - ts) * 1000
 
@@ -377,9 +385,6 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, IOMongoDB):
             data = pulse_doc['data']
 
             time_within_event = self._from_mt(pulse_doc[START_KEY]) - t0  # ns
-
-            self.log.info("Sample %s",
-                          sampletime_fmt(time_within_event))
 
             if self.compressed:
                 data = snappy.decompress(data)
