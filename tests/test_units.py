@@ -8,9 +8,6 @@ import unittest
 
 from pax import units
 
-__author__ = 'tunnell'
-
-
 class TestPaxUnits(unittest.TestCase):
 
     def test_parsing(self):

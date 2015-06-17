@@ -114,8 +114,7 @@ class TransformPlugin(BasePlugin):
             raise RuntimeError("%s was asked to process an event, but it has already shut down!" % self.name)
 
         if event is None:
-            raise RuntimeError(
-                "%s transform received a 'None' event." % self.name)
+            raise RuntimeError("%s transform received a 'None' event." % self.name)
         elif not isinstance(event, Event):
             raise RuntimeError("%s transform received wrongly typed event. %s" % (self.name,
                                                                                   event))

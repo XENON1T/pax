@@ -92,7 +92,7 @@ class IOMongoDB():
         self.run_doc = self.mongo['run']['collection'].find_one_and_update(self.query,
                                                                            update)
         self.sort_key = [(START_KEY, 1),
-                         (START_KEY, 1)]
+                         (STOP_KEY, 1)]
 
         self.mongo_find_options = {'sort': self.sort_key,
                                    'cursor_type': pymongo.cursor.CursorType.EXHAUST}
@@ -206,6 +206,8 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
         self.left = float(self.config['left_extension'])
         self.right = float(self.config['right_extension'])
 
+        # Used when measuring trigger efficiency.  Turns everything into just
+        # one really big event.
         self.mega_event = bool(self.config['mega_event'])
 
         self.log.info("Building events with:")
@@ -275,6 +277,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
 
     def get_events(self):
         self.last_time = 0  # ns
+        ts = time.time()
 
         while not self.data_taking_ended:
             # Grab new run document in case run ended.  This much happen before
@@ -293,7 +296,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
             self.log.info("Searching for pulses after %s",
                           sampletime_fmt(search_after))
             # times is in digitizer samples
-            times = list(c.find({'time': {'$gt': self._to_mt(search_after),
+            times = list(c.find({START_KEY: {'$gt': self._to_mt(search_after),
                                           #'$lt': self._to_mt(search_after + 60.0 * units.s)
                                           }},
                                 projection=[START_KEY, STOP_KEY],
@@ -342,6 +345,8 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
                 break
 
 
+            self.total_time_taken += (time.time() - ts) * 1000
+
             for i, this_range in enumerate(self.ranges):
                 # Start pax's timer so we can measure how fast this plugin goes
                 ts = time.time()
@@ -376,7 +381,7 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, IOMongoDB):
 
         self.setup_input()
 
-    def process_event(self, event):
+    def transform_event(self, event):
         t0, t1 = int(event.start_time), int(event.stop_time)  # ns
 
         event = Event(start_time=event.start_time,
@@ -389,11 +394,16 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, IOMongoDB):
                       sampletime_fmt(t0),
                       sampletime_fmt(t1))
 
-        query = {START_KEY: {"$gte": self._to_mt(t0)},
-                 STOP_KEY: {"$lte": self._to_mt(t1)}}
+        query = {START_KEY: {"$gte": self._to_mt(t0),
+                             "$lte": self._to_mt(t1)},
+                 #STOP_KEY: {"$lte": self._to_mt(t1)}
+                 }
 
         self.mongo_iterator = self.mongo['input']['collection'].find(query,
                                                                      **self.mongo_find_options)
+
+        #self.log.fatal(self.mongo_iterator.explain())
+        #input()
         pulse_objects = []
 
         for i, pulse_doc in enumerate(self.mongo_iterator):

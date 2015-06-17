@@ -22,6 +22,15 @@ def main():
                         action='store_true',
                         help="Event builder will not wait for new data")
 
+    parser.add_argument('--processed',
+                        action='store_true',
+                        help="Write processed files too")
+
+    parser.add_argument('--mega_event',
+                        action='store_true',
+                        help="used for trigger efficiency")
+
+
     trigger_group = parser.add_argument_group(title='Event builder settings',
                                            description='Configure trigger')
 
@@ -130,11 +139,23 @@ def main():
             log.info("Building events for %s",
                          run_doc['name'])
 
-            filename = 'raw_%s.avro' % run_doc['name']
+
+            filename = '%s' % run_doc['name']
+
+            if args.processed:
+                plugin_group_names = ['input',  'preprocessing',  'dsp',
+                                      'transform', 'output']
+                output = ['BulkOutput.BulkOutput', 'BulkOutput.BulkOutput']
+            else:
+                plugin_group_names = ['input',  'preprocessing', 'output']
+                output = ['BSON.WriteZippedBSON']
 
             config_names = 'eventbuilder'
             config_dict = {'DEFAULT' : {'run_doc' : run_doc['_id']},
-                            #'output_name' : filename,
+                           'pax' : {'plugin_group_names' : plugin_group_names,
+                                    'output' : output,
+                                    'output_name' : filename,},
+
                            'MongoDB' : {'runs_database_location' : {'address' : args.address,
                                                                     'database' : args.database,
                                                                     'port' : args.port,
@@ -143,7 +164,8 @@ def main():
                                         'window' : args.window * units.us,
                                         'left' : args.left * units.us,
                                         'right' : args.right * units.us,
-                                        'multiplicity' : args.multiplicity
+                                        'multiplicity' : args.multiplicity,
+                                        'mega_event' : args.mega_event
                                        }
                            }
             try:
