@@ -10,6 +10,7 @@ notifications:
     - ctunnell@nikhef.nl
     - jaalbers@nikhef.nl
     - bartp@nikhef.nl
+    - a_buss09@uni-muenster.de
 
 services:
   - mongodb
