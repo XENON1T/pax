@@ -528,8 +528,104 @@ Will be called by get_single_event (and once by startup)</p>
 </dd></dl>
 
 </div>
-<div class="section" id="pax-plugins-io-mongodb-module">
-<h2>pax.plugins.io.MongoDB module<a class="headerlink" href="#pax-plugins-io-mongodb-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-pax.plugins.io.MongoDB">
+<span id="pax-plugins-io-mongodb-module"></span><h2>pax.plugins.io.MongoDB module<a class="headerlink" href="#module-pax.plugins.io.MongoDB" title="Permalink to this headline">¶</a></h2>
+<p>Interfacing to DAQ via MongoDB</p>
+<p>The DAQ uses MongoDB for input and output.  The classes defined hear allow the
+user to read data from the DAQ and also inject raw occurences into the DAQ.</p>
+<dl class="class">
+<dt id="pax.plugins.io.MongoDB.MongoDBFakeDAQOutput">
+<em class="property">class </em><code class="descclassname">pax.plugins.io.MongoDB.</code><code class="descname">MongoDBFakeDAQOutput</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBFakeDAQOutput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBFakeDAQOutput" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.OutputPlugin" title="pax.plugin.OutputPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.OutputPlugin</span></code></a></p>
+<p>Inject PMT pulses into DAQ to test trigger.</p>
+<p>This plugin aims to emulate the DAQReader by creating run control documents
+and feeding raw data into the DAQ&#8217;s MongoDB format.  Consult here for more
+on formats:</p>
+<p><a class="reference external" href="https://docs.google.com/drawings/d/1dytKBmMARsZtuyUmLbzm9IbXM1hre">https://docs.google.com/drawings/d/1dytKBmMARsZtuyUmLbzm9IbXM1hre</a>
+-knkEIU4X3Ot8U/edit</p>
+<p>Note: write run document after output collection created.</p>
+<dl class="staticmethod">
+<dt id="pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.chunks">
+<em class="property">static </em><code class="descname">chunks</code><span class="sig-paren">(</span><em>l</em>, <em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBFakeDAQOutput.chunks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.chunks" title="Permalink to this definition">¶</a></dt>
+<dd><p>Yield successive n-sized chunks from l.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.get_connection">
+<code class="descname">get_connection</code><span class="sig-paren">(</span><em>hostname</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBFakeDAQOutput.get_connection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.get_connection" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.handle_occurences">
+<code class="descname">handle_occurences</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBFakeDAQOutput.handle_occurences"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.handle_occurences" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.shutdown">
+<code class="descname">shutdown</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBFakeDAQOutput.shutdown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.shutdown" title="Permalink to this definition">¶</a></dt>
+<dd><p>Notify run database that datataking stopped</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.startup">
+<code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBFakeDAQOutput.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.startup" title="Permalink to this definition">¶</a></dt>
+<dd><p>Setup</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.write_event">
+<code class="descname">write_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBFakeDAQOutput.write_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBFakeDAQOutput.write_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.plugins.io.MongoDB.MongoDBInput">
+<em class="property">class </em><code class="descclassname">pax.plugins.io.MongoDB.</code><code class="descname">MongoDBInput</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInput" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.InputPlugin" title="pax.plugin.InputPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.InputPlugin</span></code></a></p>
+<p>Read data from DAQ database</p>
+<p>This assumes that an event builder has run.</p>
+<dl class="method">
+<dt id="pax.plugins.io.MongoDB.MongoDBInput.get_events">
+<code class="descname">get_events</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInput.get_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInput.get_events" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generator of events from Mongo</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.MongoDB.MongoDBInput.number_events">
+<code class="descname">number_events</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInput.number_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInput.number_events" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.MongoDB.MongoDBInput.startup">
+<code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInput.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInput.startup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.plugins.io.MongoDB.MongoDBInputTriggered">
+<em class="property">class </em><code class="descclassname">pax.plugins.io.MongoDB.</code><code class="descname">MongoDBInputTriggered</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInputTriggered"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInputTriggered" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.InputPlugin" title="pax.plugin.InputPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.InputPlugin</span></code></a></p>
+<p>Read triggered data produced by kodiaq with MongoDB output</p>
+<p>This must be run after the data aquisition is finished.</p>
+<dl class="method">
+<dt id="pax.plugins.io.MongoDB.MongoDBInputTriggered.get_events">
+<code class="descname">get_events</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInputTriggered.get_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInputTriggered.get_events" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.MongoDB.MongoDBInputTriggered.startup">
+<code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInputTriggered.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInputTriggered.startup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.MongoDB.MongoDBInputTriggered.total_number_events">
+<code class="descname">total_number_events</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBInputTriggered.total_number_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBInputTriggered.total_number_events" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </div>
 <div class="section" id="module-pax.plugins.io.Pickle">
 <span id="pax-plugins-io-pickle-module"></span><h2>pax.plugins.io.Pickle module<a class="headerlink" href="#module-pax.plugins.io.Pickle" title="Permalink to this headline">¶</a></h2>
@@ -846,7 +942,7 @@ code for details.</p>
 <li><a class="reference internal" href="#module-pax.plugins.io.BSON">pax.plugins.io.BSON module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.BulkOutput">pax.plugins.io.BulkOutput module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.FolderIO">pax.plugins.io.FolderIO module</a></li>
-<li><a class="reference internal" href="#pax-plugins-io-mongodb-module">pax.plugins.io.MongoDB module</a></li>
+<li><a class="reference internal" href="#module-pax.plugins.io.MongoDB">pax.plugins.io.MongoDB module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.Pickle">pax.plugins.io.Pickle module</a></li>
 <li><a class="reference internal" href="#pax-plugins-io-root-module">pax.plugins.io.ROOT module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.RawWaveformDump">pax.plugins.io.RawWaveformDump module</a></li>
