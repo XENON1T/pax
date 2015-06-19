@@ -355,7 +355,7 @@ class PlotChannelWaveforms2D(PlotBase):
     """
 
     def substartup(self):
-        plt.figure(figsize=(30,10))
+        plt.figure(figsize=(30, 10))
         self.dt = self.config['sample_duration']
         self.time_scale = self.dt / units.s
 
@@ -371,7 +371,9 @@ class PlotChannelWaveforms2D(PlotBase):
             # color_factor = np.clip(np.log10(oc.height) / 2, 0, 1)
             color_factor = 0
 
-            plt.gca().add_patch(Rectangle((pulse.left * self.time_scale, pulse.channel), pulse.length * self.time_scale, 1,
+            plt.gca().add_patch(Rectangle((pulse.left * self.time_scale, pulse.channel),
+                                          pulse.length * self.time_scale,
+                                          1,
                                           facecolor=plt.cm.gnuplot2(color_factor),
                                           edgecolor='none',
                                           alpha=0.5))
@@ -381,7 +383,7 @@ class PlotChannelWaveforms2D(PlotBase):
 
         result = []
         for hit in event.all_hits:
-            color_factor = min(hit.height / hit.noise_sigma, 15)/15
+            color_factor = min(hit.height / hit.noise_sigma, 15) / 15
             result.append([
                 (0.5 + hit.center / self.dt) * self.time_scale,                  # X
                 0.5 + hit.channel,                                     # Y

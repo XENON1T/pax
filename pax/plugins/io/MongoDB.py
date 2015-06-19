@@ -194,12 +194,13 @@ class IOMongoDB():
         for connection in self.connections:
             connection.close()
 
+
 class MongoDBReadUntriggered(plugin.InputPlugin,
                              IOMongoDB):
 
     def startup(self):
-        IOMongoDB.startup(self) # Setup with baseclass
-        
+        IOMongoDB.startup(self)  # Setup with baseclass
+
         # Load constants from config
         self.window = int(self.config['window'])
         self.multiplicity = int(self.config['multiplicity'])
@@ -297,8 +298,8 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
                           sampletime_fmt(search_after))
             # times is in digitizer samples
             times = list(c.find({START_KEY: {'$gt': self._to_mt(search_after),
-                                          #'$lt': self._to_mt(search_after + 60.0 * units.s)
-                                          }},
+                                             '$lt': self._to_mt(search_after + 60.0 * units.s)
+                                             }},
                                 projection=[START_KEY, STOP_KEY],
                                 **self.mongo_find_options))
 
@@ -341,9 +342,8 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
                             sample_duration=self.sample_duration,
                             stop_time=x[-1],
                             partial=True,
-                            event_number = 0)
+                            event_number=0)
                 break
-
 
             self.total_time_taken += (time.time() - ts) * 1000
 
@@ -361,7 +361,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
                             sample_duration=self.sample_duration,
                             stop_time=t1,
                             partial=True,
-                            event_number = i)
+                            event_number=i)
 
             # If run ended, begin cleanup
             #
@@ -396,14 +396,14 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, IOMongoDB):
 
         query = {START_KEY: {"$gte": self._to_mt(t0),
                              "$lte": self._to_mt(t1)},
-                 #STOP_KEY: {"$lte": self._to_mt(t1)}
+                 # STOP_KEY: {"$lte": self._to_mt(t1)}
                  }
 
         self.mongo_iterator = self.mongo['input']['collection'].find(query,
                                                                      **self.mongo_find_options)
 
-        #self.log.fatal(self.mongo_iterator.explain())
-        #input()
+        # self.log.fatal(self.mongo_iterator.explain())
+        # input()
         pulse_objects = []
 
         for i, pulse_doc in enumerate(self.mongo_iterator):
@@ -415,8 +415,7 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, IOMongoDB):
             if self.compressed:
                 data = snappy.decompress(data)
 
-            id = str((pulse_doc['module'],
-                      pulse_doc['channel']))
+            id = (pulse_doc['module'], pulse_doc['channel'])
             if id in self.pmt_mappings:
                 channel = self.pmt_mappings[id]
 
@@ -433,23 +432,6 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, IOMongoDB):
         event.pulses = pulse_objects
         return event
 
-
-class MongoDBWriteTriggered(plugin.OutputPlugin,
-                            IOMongoDB):
-
-    def startup(self):
-        IOMongoDB.startup(self)  # Setup with baseclass
-        self.setup_access('output')
-        self.c = self.mongo['output']['collection']
-
-    def write_event(self, event_class):
-        # Write the data to database
-
-        # Convert event class to pymongo-able dictionary
-        event_dict = event_class.to_dict(convert_numpy_arrays_to='bytes')
-
-        # Insert dictionary into database
-        self.c.write(event_dict)
 
 class MongoDBWriteTriggered(plugin.OutputPlugin,
                             IOMongoDB):

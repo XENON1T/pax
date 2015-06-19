@@ -11,7 +11,6 @@ from pax import datastructure
 from pax.FolderIO import InputFromFolder, WriteToFolder
 
 
-
 ##
 # JSON
 ##
@@ -43,7 +42,8 @@ class WriteJSON(WriteToFolder):
         self.current_file = open(filename, mode='w')
 
     def write_event_to_current_file(self, event):
-        self.current_file.write(event.to_json(fields_to_ignore=self.config['fields_to_ignore']))
+        self.current_file.write(
+            event.to_json(fields_to_ignore=self.config['fields_to_ignore']))
         self.current_file.write("\n")
 
     def close(self):
@@ -55,6 +55,7 @@ class WriteJSON(WriteToFolder):
 ##
 
 class ReadBSON(InputFromFolder):
+
     """Read raw BSON data from a concatenated-BSON file or a folder of such files
     """
     file_extension = 'bson'
@@ -81,7 +82,8 @@ class WriteBSON(WriteToFolder):
         self.current_file = open(filename, mode='wb')
 
     def write_event_to_current_file(self, event):
-        self.current_file.write(event.to_bson(fields_to_ignore=self.config['fields_to_ignore']))
+        self.current_file.write(
+            event.to_bson(fields_to_ignore=self.config['fields_to_ignore']))
 
     def close(self):
         self.current_file.close()
@@ -92,6 +94,7 @@ class WriteBSON(WriteToFolder):
 ##
 
 class ReadZippedBSON(InputFromFolder):
+
     """Read a folder of zipfiles containing gzipped BSON files
     """
     file_extension = 'zip'
@@ -114,6 +117,7 @@ class ReadZippedBSON(InputFromFolder):
 
 
 class WriteZippedBSON(WriteToFolder):
+
     """Write raw data to a folder of zipfiles containing gzipped BSONs
     """
     file_extension = 'zip'

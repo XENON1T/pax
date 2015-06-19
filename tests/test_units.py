@@ -8,6 +8,7 @@ import unittest
 
 from pax import units
 
+
 class TestPaxUnits(unittest.TestCase):
 
     def test_parsing(self):
