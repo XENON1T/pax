@@ -64,12 +64,11 @@ class BulkOutput(plugin.OutputPlugin):
         self.events_ready_for_conversion = 0
 
         # Init the output format
-        self.output_format = of = flat_data_formats[
-            self.config['output_format']](log=self.log)
+        self.output_format = of = flat_data_formats[self.config['output_format']](log=self.log)
 
         if self.config['append_data'] and self.config['overwrite_data']:
-            raise ValueError(
-                'Invalid configuration for BulkOutput: Cannot both append and overwrite')
+            raise ValueError('Invalid configuration for BulkOutput: Cannot both'
+                             ' append and overwrite')
 
         # Check if options are supported
         if not of.supports_write_in_chunks and self.config['write_in_chunks']:
@@ -78,8 +77,8 @@ class BulkOutput(plugin.OutputPlugin):
             self.config['write_in_chunks'] = False
 
         if self.config['append_data'] and not of.supports_append:
-            self.log.warning(
-                'Output format %s does not support append: setting to False.')
+            self.log.warning('Output format %s does not support append: setting'
+                             ' to False.')
             self.config['append_data'] = False
 
         # Append extension to outfile, if this format has one
@@ -90,8 +89,8 @@ class BulkOutput(plugin.OutputPlugin):
         outfile = self.config['output_name']
         if os.path.exists(outfile):
             if self.config['append_data'] and of.supports_append:
-                self.log.info(
-                    'Output file/dir %s already exists: appending.' % outfile)
+                self.log.info('Output file/dir %s already exists: '
+                              'appending.' % outfile)
             elif self.config['overwrite_data']:
                 self.log.info('Output file/dir %s already exists, and you '
                               'wanted to overwrite, so deleting it!' % outfile)
@@ -118,8 +117,8 @@ class BulkOutput(plugin.OutputPlugin):
         Store all the event data internally, write to disk when appropriate.
         This function follows the plugin API.
         """
-        self._model_to_tuples(
-            event, index_fields=[('Event', event.event_number), ])
+        self._model_to_tuples(event,
+                              index_fields=[('Event', event.event_number), ])
         self.events_ready_for_conversion += 1
 
         if self.events_ready_for_conversion >= self.config['buffer_size']:
@@ -136,16 +135,16 @@ class BulkOutput(plugin.OutputPlugin):
             self.data[dfname]['first_index'] = len(self.data[dfname]['tuples']) + \
                 self.data[dfname].get('first_index', 0)
             # Convert tuples to records
-            newrecords = np.array(
-                self.data[dfname]['tuples'], self.data[dfname]['dtype'])
+            newrecords = np.array(self.data[dfname]['tuples'],
+                                  self.data[dfname]['dtype'])
             # Clear tuples. Enjoy the freed memory.
             self.data[dfname]['tuples'] = []
             # Append new records
             if self.data[dfname]['records'] is None:
                 self.data[dfname]['records'] = newrecords
             else:
-                self.data[dfname]['records'] = np.concatenate(
-                    (self.data[dfname]['records'], newrecords))
+                self.data[dfname]['records'] = np.concatenate((self.data[dfname]['records'],
+                                                               newrecords))
         self.events_ready_for_conversion = 0
 
     def _write_to_disk(self):
@@ -159,8 +158,8 @@ class BulkOutput(plugin.OutputPlugin):
             self.log.warning('No events to write: did you crash pax?')
             return
         if self.data['Event']['records'] is not None:
-            self.output_format.write_data(
-                {k: v['records'] for k, v in self.data.items()})
+            self.output_format.write_data({k: v['records'] for k,
+                                                               v in self.data.items()})
         # Delete records we've just written to disk
         for d in self.data.keys():
             self.data[d]['records'] = None
@@ -218,8 +217,7 @@ class BulkOutput(plugin.OutputPlugin):
             if isinstance(field_value, list):
 
                 assert field_name in self.data[m_name]['subcollection_fields']
-                child_class_name = self.data[m_name][
-                    'subcollection_fields'][field_name].__name__
+                child_class_name = self.data[m_name]['subcollection_fields'][field_name].__name__
 
                 # Store the absolute start index & number of children
                 child_start = self.get_index_of(child_class_name)
@@ -237,8 +235,9 @@ class BulkOutput(plugin.OutputPlugin):
                 # Convert each child_model to a dataframe, with a new index
                 # appended to the index trail
                 for new_index, child_model in enumerate(field_value):
-                    self._model_to_tuples(child_model, index_fields + [(type(child_model).__name__,
-                                                                        new_index)])
+                    self._model_to_tuples(child_model,
+                                          index_fields + [(type(child_model).__name__,
+                                                           new_index)])
 
             elif isinstance(field_value, np.ndarray) and not self.output_format.supports_array_fields:
                 # Hack for formats without array field support: NumpyArrayFields must get their own dataframe
@@ -265,8 +264,8 @@ class BulkOutput(plugin.OutputPlugin):
                 m_data.append(field_value)
                 if first_time_seen:
                     # Store this field's data type
-                    self.data[m_name]['dtype'].append(
-                        self._numpy_field_dtype(field_name, field_value))
+                    self.data[m_name]['dtype'].append(self._numpy_field_dtype(field_name,
+                                                                              field_value))
 
         # Store m_indices + m_data in self.data['tuples']
         self.data[m_name]['tuples'].append(tuple(m_indices + m_data))
@@ -317,8 +316,7 @@ class ReadFromBulkOutput(plugin.InputPlugin):
         self.read_hits = self.config['read_hits']
         self.read_recposes = self.config['read_recposes']
 
-        self.output_format = of = flat_data_formats[
-            self.config['format']](log=self.log)
+        self.output_format = of = flat_data_formats[self.config['format']](log=self.log)
         if not of.supports_read_back:
             raise NotImplementedError("Output format %s does not "
                                       "support reading data back in!" % self.config['format'])
@@ -363,8 +361,9 @@ class ReadFromBulkOutput(plugin.InputPlugin):
 
                     new_pos = min(self.max_n[dname],
                                   self.current_pos[dname] + self.chunk_size)
-                    new_chunk = of.read_data(
-                        dname, self.current_pos[dname], new_pos)
+                    new_chunk = of.read_data(dname,
+                                             self.current_pos[dname],
+                                             new_pos)
                     self.current_pos[dname] = new_pos
 
                     # Add new chunk to cache
@@ -407,14 +406,14 @@ class ReadFromBulkOutput(plugin.InputPlugin):
                         for rp_record in in_this_event['ReconstructedPosition'][
                                 in_this_event['ReconstructedPosition']['Peak'] == peak_i]:
                             peak.reconstructed_positions.append(
-                                self.convert_record(
-                                    datastructure.ReconstructedPosition, rp_record)
+                                self.convert_record(datastructure.ReconstructedPosition,
+                                                    rp_record)
                             )
 
                     if self.read_hits:
                         for hit_record in in_this_event['Hit'][(in_this_event['Hit']['Peak'] == peak_i)]:
-                            cp = self.convert_record(
-                                datastructure.Hit, hit_record)
+                            cp = self.convert_record(datastructure.Hit,
+                                                     hit_record)
                             peak.hits.append(cp)
                             event.all_hits.append(cp)
 

@@ -36,11 +36,12 @@ class BasePlugin(object):
 
     def __del__(self):
         if not self.has_shut_down:
-            self.log.debug(
-                "Deleting %s, shutdown has NOT occurred yet!" % self.name)
+            self.log.debug("Deleting %s, shutdown has NOT occurred "
+                           "yet!" % self.name)
             y = self.shutdown()
             if y is not None:
-                raise RuntimeError('Shutdown of %s returned a %s instead of None.' % (self.name,
+                raise RuntimeError('Shutdown of %s returned a %s instead of '
+                                   'None.' % (self.name,
                                                                                       type(y)))
         # else:
         #    self.log.debug("Deleting %s, shutdown has already occurred" % self.name)
@@ -62,8 +63,7 @@ class BasePlugin(object):
         return timed
 
     def startup(self):
-        self.log.debug("%s does not define a startup" %
-                       self.__class__.__name__)
+        self.log.debug("%s does not define a startup" % self.__class__.__name__)
         pass
 
     def process_event(self):
@@ -114,15 +114,16 @@ class TransformPlugin(BasePlugin):
     @BasePlugin._timeit
     def process_event(self, event):
         if self.has_shut_down:
-            raise RuntimeError(
-                "%s was asked to process an event, but it has already shut down!" % self.name)
+            raise RuntimeError("%s was asked to process an event, but it "
+                               "has already shut down!" % self.name)
 
         if event is None:
             raise RuntimeError(
                 "%s transform received a 'None' event." % self.name)
         elif not isinstance(event, Event):
-            raise RuntimeError("%s transform received wrongly typed event. %s" % (self.name,
-                                                                                  event))
+            raise RuntimeError("%s transform received wrongly "
+                               "typed event. %s" % (self.name,
+                                                    event))
         #  The actual work is done in this line
         result = self.transform_event(event)
 
@@ -144,7 +145,7 @@ class OutputPlugin(BasePlugin):
     @BasePlugin._timeit
     def process_event(self, event):
         if self.has_shut_down:
-            raise RuntimeError(
-                "%s was asked to process an event, but it has already shut down!" % self.name)
+            raise RuntimeError("%s was asked to process an event, but it "
+                               "has already shut down!" % self.name)
         self.write_event(event)
         return event
