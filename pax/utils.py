@@ -68,7 +68,7 @@ class InterpolatingMap(object):
     All interpolation is done linearly.
     Cartesian coordinates are supported, cylindrical coordinates (z, r, phi) may also work...
 
-    The map must be specified as a json containing a dictionary with keys
+    The map must be specified as a json translating to a dictionary with keys
         'coordinate_system' :   [['x', x_min, x_max, n_x], ['y',...
         'your_map_name' :       [[valuex1y1, valuex1y2, ..], [valuex2y1, valuex2y2, ..], ...
         'another_map_name' :    idem
@@ -76,6 +76,10 @@ class InterpolatingMap(object):
         'description':          'Say what the maps are, who you are, your favorite food, etc',
         'timestamp':            unix epoch seconds timestamp
     with the straightforward generalization to 1d and 3d.
+
+    For a 0d placeholder map, the map value must be a single number, and the coordinate system must be [].
+
+    The json can be gzip compressed: if so, it must have a .gz extension.
 
     See also examples/generate_mock_correction_map.py
     """
@@ -85,7 +89,7 @@ class InterpolatingMap(object):
         self.log = logging.getLogger('InterpolatingMap')
         self.log.debug('Loading JSON map %s' % filename)
 
-        if filename[-3:] == '.gz':
+        if filename.endswith('.gz'):
             bla = gzip.open(filename).read()
             self.data = json.loads(bla.decode())
         else:
@@ -100,8 +104,12 @@ class InterpolatingMap(object):
 
         for map_name in self.map_names:
 
+            # 0 D -- placeholder maps which take no arguments and always return a single value
+            if self.dimensions == 0:
+                itp_fun = lambda: self.data[map_name]
+
             # 1 D interpolation
-            if self.dimensions == 1:
+            elif self.dimensions == 1:
                 itp_fun = interpolate.interp1d(x=np.linspace(*(cs[0][1])),
                                                y=self.data[map_name])
 

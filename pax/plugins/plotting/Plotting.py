@@ -5,13 +5,12 @@ Use matplotlib to display various things about the event.
 
 import random
 import os
+import time
 
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D  # noqa
 from matplotlib.patches import Rectangle
 import numpy as np
 
-import time
 from pax import plugin, units
 
 
@@ -399,13 +398,13 @@ class PlotChannelWaveforms2D(PlotBase):
         # Plot the bottom/top/veto boundaries
         # Assumes the detector names' lexical order is the same as the channel order!
         channel_ranges = [
-            ('top',     min(self.config['channels_top'])),
-            ('bottom',  min(self.config['channels_bottom'])),
+            ('top', min(self.config['channels_top']), np.mean(self.config['channels_top'])),
+            ('bottom', min(self.config['channels_bottom']), np.mean(self.config['channels_bottom'])),
         ]
         for det, chs in self.config['channels_in_detector'].items():
             if det == 'tpc':
                 continue
-            channel_ranges.append((det, min(chs)))
+            channel_ranges.append((det, min(chs), np.mean(chs)))
 
         # Annotate the channel groups and boundaries
         for i in range(len(channel_ranges)):
@@ -415,9 +414,7 @@ class PlotChannelWaveforms2D(PlotBase):
                 color='black', alpha=0.2)
             plt.text(
                 0.03 * event.length() * time_scale,
-                (channel_ranges[i][1] +
-                    (channel_ranges[i + 1][1] if i < len(channel_ranges) - 1 else self.config['n_channels'])
-                 ) / 2,
+                channel_ranges[i][2] + 0.5,  # add 0.5 for better alignment for small TPCs. Irrelevant for big ones
                 channel_ranges[i][0])
 
         # Information about suspicious channels

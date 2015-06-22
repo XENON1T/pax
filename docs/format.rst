@@ -45,5 +45,13 @@ Waveforms
 .. autoclass:: pax.datastructure.SumWaveform
     :members:
     :undoc-members:
-    
+
+-----
+Pulse
+-----
+
+.. autoclass:: pax.datastructure.Pulse
+    :members:
+    :undoc-members:
+
 
