@@ -7,10 +7,8 @@ import os
 import pickle
 import re
 
-
 from pax import plugin
-
-from pax.plugins.io.FolderIO import InputFromFolder, WriteToFolder
+from pax.FolderIO import InputFromFolder, WriteToFolder
 
 
 class WriteToStackedPickleFolder(WriteToFolder):

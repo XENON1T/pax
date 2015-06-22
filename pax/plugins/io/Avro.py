@@ -20,7 +20,7 @@ import numpy as np
 
 import pax      # For version number
 from pax import datastructure
-from pax.plugins.io.FolderIO import InputFromFolder, WriteToFolder
+from pax.FolderIO import InputFromFolder, WriteToFolder
 
 
 class ReadAvro(InputFromFolder):
