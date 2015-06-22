@@ -8,7 +8,7 @@
     
     <title>Event format &mdash; Processor for Analyzing XENON1T 3.1.2 documentation</title>
     
-    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
@@ -25,7 +25,11 @@
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="Processor for Analyzing XENON1T 3.1.2 documentation" href="index.html" />
     <link rel="next" title="Plugins" href="plugin.html" />
-    <link rel="prev" title="Usage" href="usage.html" /> 
+    <link rel="prev" title="Usage" href="usage.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
   </head>
   <body role="document">
     <div class="related" role="navigation" aria-label="related navigation">
@@ -60,7 +64,7 @@
 <h2>Event<a class="headerlink" href="#event" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="pax.datastructure.Event">
-<em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">Event</code><span class="sig-paren">(</span><em>n_channels</em>, <em>start_time</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">Event</code><span class="sig-paren">(</span><em>n_channels</em>, <em>start_time</em>, <em>partial=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event" title="Permalink to this definition">¶</a></dt>
 <dd><p>Event class</p>
 <p>Stores high level information about the triggered event.</p>
 <dl class="method">
@@ -538,73 +542,6 @@ Note: in Pulse the same number is stored in ADC-counts</p>
 </dd></dl>
 
 </div>
-<div class="section" id="pulse">
-<h2>Pulse<a class="headerlink" href="#pulse" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="pax.datastructure.Pulse">
-<em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">Pulse</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Pulse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Pulse" title="Permalink to this definition">¶</a></dt>
-<dd><p>A DAQ pulse</p>
-<p>A DAQ pulse can also be thought of as a pulse in a PMT.</p>
-<dl class="attribute">
-<dt id="pax.datastructure.Pulse.baseline">
-<code class="descname">baseline</code><em class="property"> = nan</em><a class="headerlink" href="#pax.datastructure.Pulse.baseline" title="Permalink to this definition">¶</a></dt>
-<dd><p>Baseline in ADC counts relative to reference baseline &#8211; but float!</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Pulse.channel">
-<code class="descname">channel</code><em class="property"> = -99999</em><a class="headerlink" href="#pax.datastructure.Pulse.channel" title="Permalink to this definition">¶</a></dt>
-<dd><p>Channel number the pulse belongs to</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Pulse.left">
-<code class="descname">left</code><em class="property"> = -99999</em><a class="headerlink" href="#pax.datastructure.Pulse.left" title="Permalink to this definition">¶</a></dt>
-<dd><p>Start time of this pulse: samples</p>
-<p>Units are samples. This nonnegative number starts at zero and is an integer because
-it&#8217;s an index.</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Pulse.length">
-<code class="descname">length</code><a class="headerlink" href="#pax.datastructure.Pulse.length" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Pulse.maximum">
-<code class="descname">maximum</code><em class="property"> = nan</em><a class="headerlink" href="#pax.datastructure.Pulse.maximum" title="Permalink to this definition">¶</a></dt>
-<dd><p>Maximum amplitude reached in the pulse (in ADC counts above baseline)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Pulse.minimum">
-<code class="descname">minimum</code><em class="property"> = nan</em><a class="headerlink" href="#pax.datastructure.Pulse.minimum" title="Permalink to this definition">¶</a></dt>
-<dd><p>Minimum amplitude (in ADC counts above baseline, so should be negative)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Pulse.noise_sigma">
-<code class="descname">noise_sigma</code><em class="property"> = nan</em><a class="headerlink" href="#pax.datastructure.Pulse.noise_sigma" title="Permalink to this definition">¶</a></dt>
-<dd><p>Noise sigma for this pulse (in ADC counts - but float!)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Pulse.raw_data">
-<code class="descname">raw_data</code><em class="property"> = array([], dtype=int16)</em><a class="headerlink" href="#pax.datastructure.Pulse.raw_data" title="Permalink to this definition">¶</a></dt>
-<dd><p>Raw wave data (numpy array of int16, ADC counts)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Pulse.right">
-<code class="descname">right</code><em class="property"> = -99999</em><a class="headerlink" href="#pax.datastructure.Pulse.right" title="Permalink to this definition">¶</a></dt>
-<dd><p>Stoptime of this pulse within event</p>
-<p>Units are samples and this time is inclusive of last sample.  This nonnegative number
-starts at zero and is an integer because it&#8217;s an index.</p>
-</dd></dl>
-
-</dd></dl>
-
-</div>
 </div>
 
 
@@ -621,7 +558,6 @@ starts at zero and is an integer because it&#8217;s an index.</p>
 <li><a class="reference internal" href="#reconstructedposition">ReconstructedPosition</a></li>
 <li><a class="reference internal" href="#hit">Hit</a></li>
 <li><a class="reference internal" href="#waveforms">Waveforms</a></li>
-<li><a class="reference internal" href="#pulse">Pulse</a></li>
 </ul>
 </li>
 </ul>
@@ -656,27 +592,20 @@ starts at zero and is an integer because it&#8217;s an index.</p>
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="plugin.html" title="Plugins"
-             >next</a> |</li>
-        <li class="right" >
-          <a href="usage.html" title="Usage"
-             >previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Processor for Analyzing XENON1T 3.1.2 documentation</a> &raquo;</li> 
-      </ul>
+    <div class="footer">
+      &copy;2014, Christopher Tunnell.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
+      
+      |
+      <a href="_sources/format.txt"
+          rel="nofollow">Page source</a></li>
     </div>
-    <div class="footer" role="contentinfo">
-        &copy; Copyright 2014, Christopher Tunnell.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
-    </div>
+
+    
+
+    
   </body>
 </html>

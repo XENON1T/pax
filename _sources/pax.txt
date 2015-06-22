@@ -11,6 +11,14 @@ Subpackages
 Submodules
 ----------
 
+pax.FolderIO module
+-------------------
+
+.. automodule:: pax.FolderIO
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pax.core module
 ---------------
 
@@ -31,6 +39,14 @@ pax.datastructure module
 ------------------------
 
 .. automodule:: pax.datastructure
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.event_builder module
+------------------------
+
+.. automodule:: pax.event_builder
     :members:
     :undoc-members:
     :show-inheritance:

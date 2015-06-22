@@ -8,7 +8,7 @@
     
     <title>pax package &mdash; Processor for Analyzing XENON1T 3.1.2 documentation</title>
     
-    <link rel="stylesheet" href="_static/classic.css" type="text/css" />
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     
     <script type="text/javascript">
@@ -23,7 +23,11 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 3.1.2 documentation" href="index.html" /> 
+    <link rel="top" title="Processor for Analyzing XENON1T 3.1.2 documentation" href="index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
   </head>
   <body role="document">
     <div class="related" role="navigation" aria-label="related navigation">
@@ -69,7 +73,7 @@
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.Avro">pax.plugins.io.Avro module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.BSON">pax.plugins.io.BSON module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.BulkOutput">pax.plugins.io.BulkOutput module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.FolderIO">pax.plugins.io.FolderIO module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#pax-plugins-io-folderio-module">pax.plugins.io.FolderIO module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.MongoDB">pax.plugins.io.MongoDB module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.Pickle">pax.plugins.io.Pickle module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#pax-plugins-io-root-module">pax.plugins.io.ROOT module</a></li>
@@ -105,6 +109,142 @@
 </div>
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-pax.FolderIO">
+<span id="pax-folderio-module"></span><h2>pax.FolderIO module<a class="headerlink" href="#module-pax.FolderIO" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pax.FolderIO.InputFromFolder">
+<em class="property">class </em><code class="descclassname">pax.FolderIO.</code><code class="descname">InputFromFolder</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/FolderIO.html#InputFromFolder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.FolderIO.InputFromFolder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.plugin.InputPlugin" title="pax.plugin.InputPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.InputPlugin</span></code></a></p>
+<p>Read from a folder containing several small files, each containing events</p>
+<dl class="method">
+<dt id="pax.FolderIO.InputFromFolder.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/FolderIO.html#InputFromFolder.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.FolderIO.InputFromFolder.close" title="Permalink to this definition">¶</a></dt>
+<dd><p>Close the currently open file</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.FolderIO.InputFromFolder.file_extension">
+<code class="descname">file_extension</code><em class="property"> = ''</em><a class="headerlink" href="#pax.FolderIO.InputFromFolder.file_extension" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.FolderIO.InputFromFolder.get_all_events_in_current_file">
+<code class="descname">get_all_events_in_current_file</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/FolderIO.html#InputFromFolder.get_all_events_in_current_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.FolderIO.InputFromFolder.get_all_events_in_current_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uses random access to iterate over all events</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.FolderIO.InputFromFolder.get_events">
+<code class="descname">get_events</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/FolderIO.html#InputFromFolder.get_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.FolderIO.InputFromFolder.get_events" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterate through all events in the file / folder</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.FolderIO.InputFromFolder.get_first_and_last_event_number">
+<code class="descname">get_first_and_last_event_number</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/FolderIO.html#InputFromFolder.get_first_and_last_event_number"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.FolderIO.InputFromFolder.get_first_and_last_event_number" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the first and last event number in file specified by filename</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.FolderIO.InputFromFolder.get_single_event">
+<code class="descname">get_single_event</code><span class="sig-paren">(</span><em>*args</em>, <em>**kw</em><span class="sig-paren">)</span><a class="headerlink" href="#pax.FolderIO.InputFromFolder.get_single_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.FolderIO.InputFromFolder.get_single_event_in_current_file">
+<code class="descname">get_single_event_in_current_file</code><span class="sig-paren">(</span><em>event_position</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/FolderIO.html#InputFromFolder.get_single_event_in_current_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.FolderIO.InputFromFolder.get_single_event_in_current_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Uses iteration to emulate random access to events
+Note &#8211; this takes the event POSITION in the file, not the absolute event number!</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.FolderIO.InputFromFolder.init_file">
+<code class="descname">init_file</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/FolderIO.html#InputFromFolder.init_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.FolderIO.InputFromFolder.init_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Find out the first and last event contained in filename
+Appends {&#8216;filename&#8217;: ..., &#8216;first_event&#8217;: ..., &#8216;last_event&#8217;:...} to self.raw_data_files</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.FolderIO.InputFromFolder.open">
+<code class="descname">open</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/FolderIO.html#InputFromFolder.open"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.FolderIO.InputFromFolder.open" title="Permalink to this definition">¶</a></dt>
+<dd><p>Opens the file specified by filename for reading</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.FolderIO.InputFromFolder.select_file">
+<code class="descname">select_file</code><span class="sig-paren">(</span><em>i</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/FolderIO.html#InputFromFolder.select_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.FolderIO.InputFromFolder.select_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Selects the ith file from self.raw_data_files for reading
+Will be called by get_single_event (and once by startup)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.FolderIO.InputFromFolder.shutdown">
+<code class="descname">shutdown</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/FolderIO.html#InputFromFolder.shutdown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.FolderIO.InputFromFolder.shutdown" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.FolderIO.InputFromFolder.startup">
+<code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/FolderIO.html#InputFromFolder.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.FolderIO.InputFromFolder.startup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.FolderIO.WriteToFolder">
+<em class="property">class </em><code class="descclassname">pax.FolderIO.</code><code class="descname">WriteToFolder</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/FolderIO.html#WriteToFolder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.FolderIO.WriteToFolder" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.plugin.OutputPlugin" title="pax.plugin.OutputPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.OutputPlugin</span></code></a></p>
+<p>Write to a folder containing several small files, each containing &lt;= a fixed number of events</p>
+<dl class="method">
+<dt id="pax.FolderIO.WriteToFolder.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/FolderIO.html#WriteToFolder.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.FolderIO.WriteToFolder.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.FolderIO.WriteToFolder.close_current_file">
+<code class="descname">close_current_file</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/FolderIO.html#WriteToFolder.close_current_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.FolderIO.WriteToFolder.close_current_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Closes the currently open file, if there is one. Also handles temporary file renaming.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.FolderIO.WriteToFolder.file_extension">
+<code class="descname">file_extension</code><em class="property"> = None</em><a class="headerlink" href="#pax.FolderIO.WriteToFolder.file_extension" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.FolderIO.WriteToFolder.open">
+<code class="descname">open</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/FolderIO.html#WriteToFolder.open"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.FolderIO.WriteToFolder.open" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.FolderIO.WriteToFolder.open_new_file">
+<code class="descname">open_new_file</code><span class="sig-paren">(</span><em>first_event_number</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/FolderIO.html#WriteToFolder.open_new_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.FolderIO.WriteToFolder.open_new_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Opens a new file, closing any old open ones</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.FolderIO.WriteToFolder.shutdown">
+<code class="descname">shutdown</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/FolderIO.html#WriteToFolder.shutdown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.FolderIO.WriteToFolder.shutdown" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.FolderIO.WriteToFolder.startup">
+<code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/FolderIO.html#WriteToFolder.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.FolderIO.WriteToFolder.startup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.FolderIO.WriteToFolder.write_event">
+<code class="descname">write_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/FolderIO.html#WriteToFolder.write_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.FolderIO.WriteToFolder.write_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write one more event to the folder, opening/closing files as needed</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.FolderIO.WriteToFolder.write_event_to_current_file">
+<code class="descname">write_event_to_current_file</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/FolderIO.html#WriteToFolder.write_event_to_current_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.FolderIO.WriteToFolder.write_event_to_current_file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 </div>
 <div class="section" id="module-pax.core">
 <span id="pax-core-module"></span><h2>pax.core module<a class="headerlink" href="#module-pax.core" title="Permalink to this headline">¶</a></h2>
@@ -176,9 +316,10 @@ If you do, you get in trouble if you start a new Processor instance that tries t
 </dd></dl>
 
 <dl class="method">
-<dt id="pax.core.Processor.stop">
-<code class="descname">stop</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/core.html#Processor.stop"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor.stop" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dt id="pax.core.Processor.shutdown">
+<code class="descname">shutdown</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/core.html#Processor.shutdown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor.shutdown" title="Permalink to this definition">¶</a></dt>
+<dd><p>Call shutdown on all plugins</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -282,7 +423,7 @@ names of functionality between major releases.  You may add variables in minor
 releases.  Patch releases cannot modify this.</p>
 <dl class="class">
 <dt id="pax.datastructure.Event">
-<em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">Event</code><span class="sig-paren">(</span><em>n_channels</em>, <em>start_time</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">Event</code><span class="sig-paren">(</span><em>n_channels</em>, <em>start_time</em>, <em>partial=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.data_model.StrictModel" title="pax.data_model.StrictModel"><code class="xref py py-class docutils literal"><span class="pre">pax.data_model.StrictModel</span></code></a></p>
 <p>Event class</p>
 <p>Stores high level information about the triggered event.</p>
@@ -818,6 +959,14 @@ starts at zero and is an integer because it&#8217;s an index.</p>
 </dd></dl>
 
 </div>
+<div class="section" id="module-pax.event_builder">
+<span id="pax-event-builder-module"></span><h2>pax.event_builder module<a class="headerlink" href="#module-pax.event_builder" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="pax.event_builder.run">
+<code class="descclassname">pax.event_builder.</code><code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/event_builder.html#run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.event_builder.run" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
 <div class="section" id="module-pax.exceptions">
 <span id="pax-exceptions-module"></span><h2>pax.exceptions module<a class="headerlink" href="#module-pax.exceptions" title="Permalink to this headline">¶</a></h2>
 <dl class="exception">
@@ -1182,7 +1331,7 @@ This is</p>
 
 <dl class="attribute">
 <dt id="pax.formats.ROOTDump.numpy_type">
-<code class="descname">numpy_type</code><em class="property"> = {'D': &lt;class 'numpy.float64'&gt;, 'F': &lt;class 'numpy.float32'&gt;, 'L': &lt;class 'numpy.int64'&gt;, 'I': &lt;class 'numpy.int32'&gt;, 'O': &lt;class 'bool'&gt;, 'C': dtype('O')}</em><a class="headerlink" href="#pax.formats.ROOTDump.numpy_type" title="Permalink to this definition">¶</a></dt>
+<code class="descname">numpy_type</code><em class="property"> = {'F': &lt;class 'numpy.float32'&gt;, 'D': &lt;class 'numpy.float64'&gt;, 'I': &lt;class 'numpy.int32'&gt;, 'L': &lt;class 'numpy.int64'&gt;, 'O': &lt;class 'bool'&gt;, 'C': dtype('O')}</em><a class="headerlink" href="#pax.formats.ROOTDump.numpy_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -1197,7 +1346,7 @@ This is</p>
 
 <dl class="attribute">
 <dt id="pax.formats.ROOTDump.root_type">
-<code class="descname">root_type</code><em class="property"> = {'int32': '/I', 'float32': '/F', 'S': '/C', 'float64': '/D', 'int64': '/L', 'bool': '/O'}</em><a class="headerlink" href="#pax.formats.ROOTDump.root_type" title="Permalink to this definition">¶</a></dt>
+<code class="descname">root_type</code><em class="property"> = {'float64': '/D', 'bool': '/O', 'float32': '/F', 'int64': '/L', 'int32': '/I', 'S': '/C'}</em><a class="headerlink" href="#pax.formats.ROOTDump.root_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -1523,9 +1672,11 @@ Stolen from <a class="reference external" href="http://stackoverflow.com/questio
 <li><a class="reference internal" href="#">pax package</a><ul>
 <li><a class="reference internal" href="#subpackages">Subpackages</a></li>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-pax.FolderIO">pax.FolderIO module</a></li>
 <li><a class="reference internal" href="#module-pax.core">pax.core module</a></li>
 <li><a class="reference internal" href="#pax-data-model-module">pax.data_model module</a></li>
 <li><a class="reference internal" href="#module-pax.datastructure">pax.datastructure module</a></li>
+<li><a class="reference internal" href="#module-pax.event_builder">pax.event_builder module</a></li>
 <li><a class="reference internal" href="#module-pax.exceptions">pax.exceptions module</a></li>
 <li><a class="reference internal" href="#module-pax.formats">pax.formats module</a></li>
 <li><a class="reference internal" href="#module-pax.plugin">pax.plugin module</a></li>
@@ -1561,21 +1712,20 @@ Stolen from <a class="reference external" href="http://stackoverflow.com/questio
       </div>
       <div class="clearer"></div>
     </div>
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             >index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Processor for Analyzing XENON1T 3.1.2 documentation</a> &raquo;</li> 
-      </ul>
+    <div class="footer">
+      &copy;2014, Christopher Tunnell.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
+      
+      |
+      <a href="_sources/pax.txt"
+          rel="nofollow">Page source</a></li>
     </div>
-    <div class="footer" role="contentinfo">
-        &copy; Copyright 2014, Christopher Tunnell.
-      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.3.1.
-    </div>
+
+    
+
+    
   </body>
 </html>
