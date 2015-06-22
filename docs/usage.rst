@@ -16,17 +16,17 @@ To use processor for Analyzing XENON1T, see /bin/paxer --help for available opti
 
         optional arguments:
           -h, --help            show this help message and exit
-          --input [INPUT]       File, database or directory to read events from
+          --input [INPUT]       File, database or directory to read events from. Default: $PAX_PATH/pax/data/*
           
-          --output [OUTPUT]     File, database or directory to write events to
+          --output [OUTPUT]     File, database or directory to write events to. Default: output.hdf5
           
           --log LOG             Set log level, e.g. 'debug'
           
           --config {3d_plotter,bern,daq_injector,Mongo,newDSP,XAMS,XED,XENON100,XENON1T} [{3d_plotter,bern,daq_injector,Mongo,newDSP,XAMS,XED,XENON100,XENON1T} ...]
-                                Name(s) of the pax configuration(s) to use.
+                                Name(s) of the pax configuration(s) to use. 
           --config_path CONFIG_PATH [CONFIG_PATH ...]
-                                Path(s) of the configuration file(s) to use.
-          --plot                Plot summed waveforms on screen
+                                Path(s) of the configuration file(s) to use. 
+          --plot                Plot summed waveforms on screen using the PlotEventSummaray class in $PAX_PATH/pax/plugins/plotting/Plotting.py. The EventSummary plots a summed waveform, a hitpattern of top and/or bottom pmts respectively, and magnifications for the largest S1 and S2 peaks, if any.
           --plot_to_dir PLOT_TO_DIR
                                 Save summed waveform plots in directory
           --event EVENT [EVENT ...]
