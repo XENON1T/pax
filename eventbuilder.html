@@ -56,8 +56,10 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="module-pax.eventbuilder">
-<span id="event-builder"></span><h1>Event builder<a class="headerlink" href="#module-pax.eventbuilder" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="event-builder">
+<h1>Event builder<a class="headerlink" href="#event-builder" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="module-pax.eventbuilder">
+<span id="core-routines"></span><h2>Core routines<a class="headerlink" href="#module-pax.eventbuilder" title="Permalink to this headline">¶</a></h2>
 <p>Event builder routines</p>
 <p>The event builder is responsible for finding events within the DAQ output
 stream and turning this into events that the end user can process.  The data is
@@ -101,7 +103,10 @@ efficiency.</p>
 <p>Find a dataset to process, then process it with settings from command line.</p>
 </dd></dl>
 
-<span class="target" id="module-pax.plugins.io.MongoDB"></span><p>Interfacing to MongoDB</p>
+</div>
+<div class="section" id="module-pax.plugins.io.MongoDB">
+<span id="mongodb-interface"></span><h2>MongoDB interface<a class="headerlink" href="#module-pax.plugins.io.MongoDB" title="Permalink to this headline">¶</a></h2>
+<p>Interfacing to MongoDB</p>
 <p>MongoDB is used as a data backend within the DAQ.  For example, &#8216;kodiaq&#8217;, which
 reads out the digitizers, will write data to MongoDB.  This data from kodiaq can
 either be triggered or untriggered. In the case of untriggered, an event builder
@@ -233,6 +238,7 @@ that we can parallelize.</p>
 </dd></dl>
 
 </div>
+</div>
 
 
           </div>
@@ -240,6 +246,15 @@ that we can parallelize.</p>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Event builder</a><ul>
+<li><a class="reference internal" href="#module-pax.eventbuilder">Core routines</a></li>
+<li><a class="reference internal" href="#module-pax.plugins.io.MongoDB">MongoDB interface</a></li>
+</ul>
+</li>
+</ul>
+
   <h4>Previous topic</h4>
   <p class="topless"><a href="plugin.html"
                         title="previous chapter">Plugins</a></p>
