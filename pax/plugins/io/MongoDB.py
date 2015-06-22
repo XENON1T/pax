@@ -352,7 +352,6 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
                             start_time=x[0],
                             sample_duration=self.sample_duration,
                             stop_time=x[-1],
-                            partial=True,
                             event_number=0)
                 break
 
@@ -369,7 +368,6 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
                             start_time=t0,
                             sample_duration=self.sample_duration,
                             stop_time=t1,
-                            partial=True,
                             event_number=i)
 
             # If run ended, begin cleanup

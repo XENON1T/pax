@@ -364,13 +364,10 @@ class Event(StrictModel):
         if self.duration() <= 0:
             raise ValueError("Negative event duration")
 
-        if not partial:
-            # Initialize numpy arrays -- need to have n_channels and self.length
-            # TODO: don't initialize these if is already in kwargs
-            # TODO: better yet, make an alternate init or something?
-            self.noise_pulses_in = np.zeros(n_channels, dtype=np.int)
-            self.n_hits_rejected = np.zeros(n_channels, dtype=np.int)
-            self.is_channel_suspicious = np.zeros(n_channels, dtype=np.bool)
+        # Initialize numpy arrays -- need to have n_channels and self.length
+        self.noise_pulses_in = np.zeros(n_channels, dtype=np.int)
+        self.n_hits_rejected = np.zeros(n_channels, dtype=np.int)
+        self.is_channel_suspicious = np.zeros(n_channels, dtype=np.bool)
 
     @classmethod
     def empty_event(cls):
