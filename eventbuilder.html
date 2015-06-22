@@ -56,11 +56,51 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="event-builder">
-<h1>Event builder<a class="headerlink" href="#event-builder" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="event">
-<h2>Event<a class="headerlink" href="#event" title="Permalink to this headline">¶</a></h2>
-</div>
+  <div class="section" id="module-pax.eventbuilder">
+<span id="event-builder"></span><h1>Event builder<a class="headerlink" href="#module-pax.eventbuilder" title="Permalink to this headline">¶</a></h1>
+<p>Event builder routines</p>
+<p>The event builder is responsible for finding events within the DAQ output
+stream and turning this into events that the end user can process.  The data is
+fetched untriggered, which means that there is no event structure.  Or rather,
+it is just a stream of PMT pulses that need to be assembled into events.  This
+is exactly what this code does.  There are two inputs requires:</p>
+<ul class="simple">
+<li>Location of runs database</li>
+<li>Trigger settings</li>
+</ul>
+<dl class="docutils">
+<dt>This code is meant to run in production, therefore a runs database must be</dt>
+<dd>provided.  This code will use this database to locate what data needs to be
+processed and handle it appropriately.</dd>
+</dl>
+<p>This code is also responsible triggering (i.e., deciding which events to
+record).  At present there are two stages to the triggering: a pretrigger and
+a pax-event trigger.  The pretrigger is a simple sliding window coincidence
+trigger that runs over the data to identify possible signals.  The parameters
+of this are then, clearly, the size of the window and the coincidence
+requirement.  Another parameter is how much data to save around the discovered
+peak, which often is an S2.</p>
+<p>The second level trigger, which we often do not run, processed the event in pax
+and is used to make, e.g., radial cuts.  At present, the code just writes HDF5
+files.</p>
+<p>It is worth mentioning that is an &#8216;expert modes&#8217; with a flag for mega events:
+an event of one second is made that can be used for computing the trigger
+efficiency.</p>
+<p>The entry point to this code is typically via bin/event-builder.</p>
+<dl class="function">
+<dt id="pax.eventbuilder.handle_args">
+<code class="descclassname">pax.eventbuilder.</code><code class="descname">handle_args</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/eventbuilder.html#handle_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.eventbuilder.handle_args" title="Permalink to this definition">¶</a></dt>
+<dd><p>Command line argument processing</p>
+<p>This routine is also responsible for setting up logging.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.eventbuilder.run">
+<code class="descclassname">pax.eventbuilder.</code><code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/eventbuilder.html#run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.eventbuilder.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start running the event builder</p>
+<p>Find a dataset to process, then process it with settings from command line.</p>
+</dd></dl>
+
 </div>
 
 
@@ -69,14 +109,6 @@
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-  <h3><a href="index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Event builder</a><ul>
-<li><a class="reference internal" href="#event">Event</a></li>
-</ul>
-</li>
-</ul>
-
   <h4>Previous topic</h4>
   <p class="topless"><a href="plugin.html"
                         title="previous chapter">Plugins</a></p>

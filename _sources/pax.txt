@@ -43,10 +43,10 @@ pax.datastructure module
     :undoc-members:
     :show-inheritance:
 
-pax.event_builder module
-------------------------
+pax.eventbuilder module
+-----------------------
 
-.. automodule:: pax.event_builder
+.. automodule:: pax.eventbuilder
     :members:
     :undoc-members:
     :show-inheritance:

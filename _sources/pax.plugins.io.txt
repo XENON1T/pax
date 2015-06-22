@@ -28,14 +28,6 @@ pax.plugins.io.BulkOutput module
     :undoc-members:
     :show-inheritance:
 
-pax.plugins.io.FolderIO module
-------------------------------
-
-.. automodule:: pax.plugins.io.FolderIO
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 pax.plugins.io.MongoDB module
 -----------------------------
 
@@ -48,14 +40,6 @@ pax.plugins.io.Pickle module
 ----------------------------
 
 .. automodule:: pax.plugins.io.Pickle
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pax.plugins.io.ROOT module
---------------------------
-
-.. automodule:: pax.plugins.io.ROOT
     :members:
     :undoc-members:
     :show-inheritance:

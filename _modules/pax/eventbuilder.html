@@ -1,0 +1,301 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pax.eventbuilder &mdash; Processor for Analyzing XENON1T 3.1.2 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '3.1.2',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Processor for Analyzing XENON1T 3.1.2 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Processor for Analyzing XENON1T 3.1.2 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pax.eventbuilder</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;Event builder routines</span>
+
+<span class="sd">The event builder is responsible for finding events within the DAQ output</span>
+<span class="sd">stream and turning this into events that the end user can process.  The data is</span>
+<span class="sd">fetched untriggered, which means that there is no event structure.  Or rather,</span>
+<span class="sd">it is just a stream of PMT pulses that need to be assembled into events.  This</span>
+<span class="sd">is exactly what this code does.  There are two inputs requires:</span>
+
+<span class="sd">* Location of runs database</span>
+<span class="sd">* Trigger settings</span>
+
+<span class="sd">This code is meant to run in production, therefore a runs database must be</span>
+<span class="sd"> provided.  This code will use this database to locate what data needs to be</span>
+<span class="sd"> processed and handle it appropriately.</span>
+
+<span class="sd">This code is also responsible triggering (i.e., deciding which events to</span>
+<span class="sd">record).  At present there are two stages to the triggering: a pretrigger and</span>
+<span class="sd">a pax-event trigger.  The pretrigger is a simple sliding window coincidence</span>
+<span class="sd">trigger that runs over the data to identify possible signals.  The parameters</span>
+<span class="sd">of this are then, clearly, the size of the window and the coincidence</span>
+<span class="sd">requirement.  Another parameter is how much data to save around the discovered</span>
+<span class="sd">peak, which often is an S2.</span>
+
+<span class="sd">The second level trigger, which we often do not run, processed the event in pax</span>
+<span class="sd">and is used to make, e.g., radial cuts.  At present, the code just writes HDF5</span>
+<span class="sd">files.</span>
+
+<span class="sd">It is worth mentioning that is an &#39;expert modes&#39; with a flag for mega events:</span>
+<span class="sd">an event of one second is made that can be used for computing the trigger</span>
+<span class="sd">efficiency.</span>
+
+<span class="sd">The entry point to this code is typically via bin/event-builder.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">argparse</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">pymongo</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">core</span><span class="p">,</span> <span class="n">units</span>
+
+
+<div class="viewcode-block" id="run"><a class="viewcode-back" href="../../pax.html#pax.eventbuilder.run">[docs]</a><span class="k">def</span> <span class="nf">run</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Start running the event builder</span>
+
+<span class="sd">    Find a dataset to process, then process it with settings from command line.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">args</span><span class="p">,</span> <span class="n">log</span> <span class="o">=</span> <span class="n">handle_args</span><span class="p">()</span>
+
+    <span class="n">query</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;trigger.status&quot;</span> <span class="p">:</span> <span class="s">&quot;waiting_to_be_processed&quot;</span><span class="p">}</span>
+
+
+    <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Searching for run&quot;</span><span class="p">)</span>
+
+    <span class="n">client</span> <span class="o">=</span> <span class="n">pymongo</span><span class="o">.</span><span class="n">MongoClient</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">address</span><span class="p">,</span>
+                                 <span class="n">args</span><span class="o">.</span><span class="n">port</span><span class="p">,</span>
+                                 <span class="n">serverSelectionTimeoutMS</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">client</span><span class="o">.</span><span class="n">admin</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="s">&#39;ping&#39;</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Connection successful to </span><span class="si">%s</span><span class="s">:</span><span class="si">%d</span><span class="s">&quot;</span><span class="p">,</span>
+                  <span class="n">args</span><span class="o">.</span><span class="n">address</span><span class="p">,</span>
+                  <span class="n">args</span><span class="o">.</span><span class="n">port</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">pymongo</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">ConnectionFailure</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">fatal</span><span class="p">(</span><span class="s">&quot;Cannot connect to MongoDB at </span><span class="si">%s</span><span class="s">:</span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">address</span><span class="p">,</span>
+                                                          <span class="n">args</span><span class="o">.</span><span class="n">port</span><span class="p">))</span>
+        <span class="k">raise</span>
+
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Fetching databases: </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">database</span><span class="p">)</span>
+    <span class="n">db</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_database</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">database</span><span class="p">)</span>
+
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Getting collection: </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">collection</span><span class="p">)</span>
+    <span class="n">collection</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">get_collection</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">collection</span><span class="p">)</span>
+
+    <span class="k">while</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">run_doc</span> <span class="o">=</span> <span class="n">collection</span><span class="o">.</span><span class="n">find_one_and_update</span><span class="p">(</span><span class="n">query</span><span class="p">,</span>
+                                             <span class="p">{</span><span class="s">&#39;$set&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;trigger.status&#39;</span> <span class="p">:</span> <span class="s">&#39;staging&#39;</span><span class="p">}})</span>
+
+        <span class="k">if</span> <span class="n">run_doc</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">impatient</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Too impatient to wait for data, exiting...&quot;</span><span class="p">)</span>
+                <span class="k">break</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;No data to process... waiting </span><span class="si">%d</span><span class="s"> seconds&quot;</span><span class="p">,</span>
+                         <span class="n">args</span><span class="o">.</span><span class="n">wait</span><span class="p">)</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">wait</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Building events for </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span>
+                         <span class="n">run_doc</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">])</span>
+
+
+            <span class="n">filename</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">run_doc</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">processed</span><span class="p">:</span>
+                <span class="n">plugin_group_names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;input&#39;</span><span class="p">,</span>  <span class="s">&#39;preprocessing&#39;</span><span class="p">,</span>  <span class="s">&#39;dsp&#39;</span><span class="p">,</span>
+                                      <span class="s">&#39;transform&#39;</span><span class="p">,</span> <span class="s">&#39;output&#39;</span><span class="p">]</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;BulkOutput.BulkOutput&#39;</span><span class="p">,</span> <span class="s">&#39;BulkOutput.BulkOutput&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">plugin_group_names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;input&#39;</span><span class="p">,</span>  <span class="s">&#39;preprocessing&#39;</span><span class="p">,</span> <span class="s">&#39;output&#39;</span><span class="p">]</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;BSON.WriteZippedBSON&#39;</span><span class="p">]</span>
+
+            <span class="n">config_names</span> <span class="o">=</span> <span class="s">&#39;eventbuilder&#39;</span>
+            <span class="n">config_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;DEFAULT&#39;</span> <span class="p">:</span> <span class="p">{</span><span class="s">&#39;run_doc&#39;</span> <span class="p">:</span> <span class="n">run_doc</span><span class="p">[</span><span class="s">&#39;_id&#39;</span><span class="p">]},</span>
+                           <span class="s">&#39;pax&#39;</span> <span class="p">:</span> <span class="p">{</span><span class="s">&#39;plugin_group_names&#39;</span> <span class="p">:</span> <span class="n">plugin_group_names</span><span class="p">,</span>
+                                    <span class="s">&#39;output&#39;</span> <span class="p">:</span> <span class="n">output</span><span class="p">,</span>
+                                    <span class="s">&#39;output_name&#39;</span> <span class="p">:</span> <span class="n">filename</span><span class="p">,},</span>
+
+                           <span class="s">&#39;MongoDB&#39;</span> <span class="p">:</span> <span class="p">{</span><span class="s">&#39;runs_database_location&#39;</span> <span class="p">:</span> <span class="p">{</span><span class="s">&#39;address&#39;</span> <span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">address</span><span class="p">,</span>
+                                                                    <span class="s">&#39;database&#39;</span> <span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">database</span><span class="p">,</span>
+                                                                    <span class="s">&#39;port&#39;</span> <span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">port</span><span class="p">,</span>
+                                                                    <span class="s">&#39;collection&#39;</span> <span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">collection</span>
+                                                                <span class="p">},</span>
+                                        <span class="s">&#39;window&#39;</span> <span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">window</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">us</span><span class="p">,</span>
+                                        <span class="s">&#39;left&#39;</span> <span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">left</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">us</span><span class="p">,</span>
+                                        <span class="s">&#39;right&#39;</span> <span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">right</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">us</span><span class="p">,</span>
+                                        <span class="s">&#39;multiplicity&#39;</span> <span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">multiplicity</span><span class="p">,</span>
+                                        <span class="s">&#39;mega_event&#39;</span> <span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">mega_event</span>
+                                       <span class="p">}</span>
+                           <span class="p">}</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">p</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">Processor</span><span class="p">(</span><span class="n">config_names</span><span class="o">=</span><span class="n">config_names</span><span class="p">,</span>
+                                   <span class="n">config_dict</span><span class="o">=</span><span class="n">config_dict</span><span class="p">)</span>
+
+                <span class="n">p</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+
+            <span class="k">except</span> <span class="n">pymongo</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">ServerSelectionTimeoutError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+                <span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+                <span class="n">collection</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">query</span><span class="p">,</span>
+                                  <span class="p">{</span><span class="s">&#39;$set&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;trigger.status&#39;</span> <span class="p">:</span> <span class="s">&#39;error&#39;</span><span class="p">}})</span>
+
+</div>
+<div class="viewcode-block" id="handle_args"><a class="viewcode-back" href="../../pax.html#pax.eventbuilder.handle_args">[docs]</a><span class="k">def</span> <span class="nf">handle_args</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Command line argument processing</span>
+
+<span class="sd">    This routine is also responsible for setting up logging.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s">&quot;Build XENON1T events from the&quot;</span>
+                                                 <span class="s">&quot; data aquisiton. This tools &quot;</span>
+                                                 <span class="s">&quot;starts the distributed &quot;</span>
+                                                 <span class="s">&quot;processing of events.&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;--impatient&#39;</span><span class="p">,</span>
+                        <span class="n">action</span><span class="o">=</span><span class="s">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s">&quot;Event builder will not wait for new data&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;--processed&#39;</span><span class="p">,</span>
+                        <span class="n">action</span><span class="o">=</span><span class="s">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s">&quot;Write processed files too&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;--mega_event&#39;</span><span class="p">,</span>
+                        <span class="n">action</span><span class="o">=</span><span class="s">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s">&quot;used for trigger efficiency&quot;</span><span class="p">)</span>
+    <span class="n">trigger_group</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s">&#39;Event builder settings&#39;</span><span class="p">,</span>
+                                              <span class="n">description</span><span class="o">=</span><span class="s">&#39;Configure trigger&#39;</span><span class="p">)</span>
+    <span class="n">trigger_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;--multiplicity&#39;</span><span class="p">,</span>
+                               <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+                               <span class="n">help</span><span class="o">=</span><span class="s">&#39;Number pulses required for coincidence &#39;</span>
+                                    <span class="s">&#39;trigger&#39;</span><span class="p">,</span>
+                               <span class="n">default</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">trigger_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;--window&#39;</span><span class="p">,</span>
+                               <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+                               <span class="n">help</span><span class="o">=</span><span class="s">&#39;Size of sliding window (us)&#39;</span><span class="p">,</span>
+                               <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">trigger_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;--left&#39;</span><span class="p">,</span>
+                               <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+                               <span class="n">help</span><span class="o">=</span><span class="s">&#39;Left extension to save (us)&#39;</span><span class="p">)</span>
+    <span class="n">trigger_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;--right&#39;</span><span class="p">,</span>
+                               <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+                               <span class="n">help</span><span class="o">=</span><span class="s">&#39;Right extension to save (us)&#39;</span><span class="p">)</span>
+    <span class="n">run_db_str</span> <span class="o">=</span> <span class="s">&#39;The runs database stores all metadata about runs, including&#39;</span> \
+                 <span class="s">&#39; which are waiting to be triggered. Communication is &#39;</span> \
+                 <span class="s">&#39;required to find data.  More information on the MongoDB &#39;</span> \
+                 <span class="s">&#39;jargon (e.g., &quot;collection&quot;) can be found in their docs.&#39;</span>
+    <span class="n">run_db_group</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s">&#39;Runs database settings&#39;</span><span class="p">,</span>
+                                             <span class="n">description</span><span class="o">=</span><span class="n">run_db_str</span><span class="p">)</span>
+    <span class="n">run_db_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;--address&#39;</span><span class="p">,</span>
+                              <span class="n">default</span><span class="o">=</span><span class="s">&#39;daqeb0&#39;</span><span class="p">,</span>
+                              <span class="n">help</span><span class="o">=</span><span class="s">&#39;Address or hostname of MongoDB instance.&#39;</span><span class="p">)</span>
+    <span class="n">run_db_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;--database&#39;</span><span class="p">,</span>
+                              <span class="n">default</span><span class="o">=</span><span class="s">&#39;online&#39;</span><span class="p">,</span>
+                              <span class="n">help</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">run_db_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;--collection&#39;</span><span class="p">,</span>
+                              <span class="n">default</span><span class="o">=</span><span class="s">&#39;runs&#39;</span><span class="p">,</span>
+                              <span class="n">help</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">run_db_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;--port&#39;</span><span class="p">,</span>
+                              <span class="n">default</span><span class="o">=</span><span class="mi">27000</span><span class="p">,</span>
+                              <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+                              <span class="n">help</span><span class="o">=</span><span class="s">&#39;Listening port of MongoDB.&#39;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;--wait&#39;</span><span class="p">,</span>
+                        <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                        <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s">&quot;Wait time between searching if no data&quot;</span><span class="p">)</span>
+    <span class="c"># Log level control</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;--log&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s">&quot;Set log level, e.g. &#39;debug&#39;&quot;</span><span class="p">)</span>
+    <span class="c"># set up logging to file - see previous section for more details</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">basicConfig</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">,</span>
+                        <span class="n">format</span><span class="o">=</span><span class="s">&#39;</span><span class="si">%(asctime)s</span><span class="s"> </span><span class="si">%(name)s</span><span class="s"> </span><span class="si">%(levelname)-8s</span><span class="s"> %(&#39;</span>
+                               <span class="s">&#39;message)s&#39;</span><span class="p">,</span>
+                        <span class="n">datefmt</span><span class="o">=</span><span class="s">&#39;%m-</span><span class="si">%d</span><span class="s"> %H:%M&#39;</span><span class="p">,</span>
+                        <span class="n">filename</span><span class="o">=</span><span class="s">&#39;myapp.log&#39;</span><span class="p">,</span>
+                        <span class="n">filemode</span><span class="o">=</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+    <span class="c"># define a Handler which writes INFO messages or higher to the sys.stderr</span>
+    <span class="n">console</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">()</span>
+    <span class="n">console</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
+    <span class="c"># set a format which is simpler for console use</span>
+    <span class="n">formatter</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span>
+        <span class="s">&#39;</span><span class="si">%(asctime)s</span><span class="s"> </span><span class="si">%(name)-12s</span><span class="s">: </span><span class="si">%(levelname)-8s</span><span class="s"> </span><span class="si">%(message)s</span><span class="s">&#39;</span><span class="p">)</span>
+    <span class="c"># tell the handler to use this format</span>
+    <span class="n">console</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">formatter</span><span class="p">)</span>
+    <span class="c"># add the handler to the root logger</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">addHandler</span><span class="p">(</span><span class="n">console</span><span class="p">)</span>
+    <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;eb&#39;</span><span class="p">)</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">args</span><span class="p">,</span> <span class="n">log</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2014, Christopher Tunnell.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

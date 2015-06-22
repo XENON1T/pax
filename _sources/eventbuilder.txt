@@ -2,11 +2,8 @@
 Event builder
 =============
 
------
-Event
------
 
-
-.. autoclass:: pax.event_builder
-
-
+.. automodule:: pax.eventbuilder
+    :members:
+    :undoc-members:
+    :show-inheritance:
