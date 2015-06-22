@@ -66,6 +66,10 @@ def sampletime_fmt(num):
 class IOMongoDB():
 
     def startup(self):
+        self.start_key = self.config['start_key']
+        self.stop_key = self.config['stop_key']
+
+
         if START_KEY == STOP_KEY:
             raise ValueError("START_KEY and STOP_KEY must be different."
                              "Otherwise, must modify query logic.")
@@ -351,8 +355,6 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
                 # Start pax's timer so we can measure how fast this plugin goes
                 ts = time.time()
                 t0, t1 = [int(t) for t in this_range]
-        # docs.append({'test' : 0,
-        #                     'docs' : pulses})
 
                 self.total_time_taken += (time.time() - ts) * 1000
 

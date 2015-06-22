@@ -46,8 +46,7 @@ class BulkOutput(plugin.OutputPlugin):
         #   dtype   :       dtype of numpy record (includes field names),
         # }
 
-        # self.processor.get_metadata()) TODO: type error
-        metadata_dump = dumps({})
+        metadata_dump = dumps(self.processor.get_metadata())
 
         self.data = {
             # Write pax configuration and version to pax_info dataframe

@@ -410,11 +410,11 @@ class PlotChannelWaveforms2D(PlotBase):
         # Annotate the channel groups and boundaries
         for i in range(len(channel_ranges)):
             plt.plot(
-                [0, event.length() * self.time_scale],
+                [0, event.length() * time_scale],
                 [channel_ranges[i][1]] * 2,
                 color='black', alpha=0.2)
             plt.text(
-                0.03 * event.length() * self.time_scale,
+                0.03 * event.length() * time_scale,
                 (channel_ranges[i][1] +
                     (channel_ranges[i + 1][1] if i < len(channel_ranges) - 1 else self.config['n_channels'])
                  ) / 2,
