@@ -450,6 +450,9 @@ classes are provided for MongoDB access.  More information is in the docstrings.
 <dt id="pax.plugins.io.MongoDB.MongoDBReadUntriggered">
 <em class="property">class </em><code class="descclassname">pax.plugins.io.MongoDB.</code><code class="descname">MongoDBReadUntriggered</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBReadUntriggered"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBReadUntriggered" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.InputPlugin" title="pax.plugin.InputPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.InputPlugin</span></code></a>, <a class="reference internal" href="#pax.plugins.io.MongoDB.IOMongoDB" title="pax.plugins.io.MongoDB.IOMongoDB"><code class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.MongoDB.IOMongoDB</span></code></a></p>
+<p>Read from MongoDB and build events</p>
+<p>This will perform a sliding window trigger on the times.  No PMT pulse
+data is read in this class to ensure speed.</p>
 <dl class="method">
 <dt id="pax.plugins.io.MongoDB.MongoDBReadUntriggered.get_events">
 <code class="descname">get_events</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBReadUntriggered.get_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBReadUntriggered.get_events" title="Permalink to this definition">¶</a></dt>
@@ -488,6 +491,10 @@ drift length.  n is the number of possible ranges.</p>
 <dt id="pax.plugins.io.MongoDB.MongoDBReadUntriggeredFiller">
 <em class="property">class </em><code class="descclassname">pax.plugins.io.MongoDB.</code><code class="descname">MongoDBReadUntriggeredFiller</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBReadUntriggeredFiller"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBReadUntriggeredFiller" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></code></a>, <a class="reference internal" href="#pax.plugins.io.MongoDB.IOMongoDB" title="pax.plugins.io.MongoDB.IOMongoDB"><code class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.MongoDB.IOMongoDB</span></code></a></p>
+<p>Read untriggered data from MongoDB into event classes</p>
+<p>After MongoDBReadUntriggered has identified events, this class actually
+reads out the raw data from MongoDB.  This is a separate class to ensure
+that we can parallelize.</p>
 <dl class="method">
 <dt id="pax.plugins.io.MongoDB.MongoDBReadUntriggeredFiller.startup">
 <code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#MongoDBReadUntriggeredFiller.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.MongoDBReadUntriggeredFiller.startup" title="Permalink to this definition">¶</a></dt>

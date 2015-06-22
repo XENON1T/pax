@@ -99,8 +99,7 @@
         <span class="c">#   dtype   :       dtype of numpy record (includes field names),</span>
         <span class="c"># }</span>
 
-        <span class="c"># self.processor.get_metadata()) TODO: type error</span>
-        <span class="n">metadata_dump</span> <span class="o">=</span> <span class="n">dumps</span><span class="p">({})</span>
+        <span class="n">metadata_dump</span> <span class="o">=</span> <span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">get_metadata</span><span class="p">())</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="p">{</span>
             <span class="c"># Write pax configuration and version to pax_info dataframe</span>
