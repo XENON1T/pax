@@ -158,7 +158,7 @@ class BulkOutput(plugin.OutputPlugin):
             return
         if self.data['Event']['records'] is not None:
             self.output_format.write_data({k: v['records'] for k,
-                                                               v in self.data.items()})
+                                           v in self.data.items()})
         # Delete records we've just written to disk
         for d in self.data.keys():
             self.data[d]['records'] = None

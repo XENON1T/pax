@@ -46,8 +46,7 @@ def run():
     """
     args, log = handle_args()
 
-    query = {"trigger.status" : "waiting_to_be_processed"}
-
+    query = {"trigger.status": "waiting_to_be_processed"}
 
     log.info("Searching for run")
 
@@ -72,7 +71,7 @@ def run():
 
     while 1:
         run_doc = collection.find_one_and_update(query,
-                                             {'$set': {'trigger.status' : 'staging'}})
+                                                 {'$set': {'trigger.status': 'staging'}})
 
         if run_doc is None:
             if args.impatient:
@@ -84,8 +83,7 @@ def run():
                 time.sleep(args.wait)
         else:
             log.info("Building events for %s",
-                         run_doc['name'])
-
+                     run_doc['name'])
 
             filename = '%s' % run_doc['name']
 
@@ -98,21 +96,21 @@ def run():
                 output = ['BSON.WriteZippedBSON']
 
             config_names = 'eventbuilder'
-            config_dict = {'DEFAULT' : {'run_doc' : run_doc['_id']},
-                           'pax' : {'plugin_group_names' : plugin_group_names,
-                                    'output' : output,
-                                    'output_name' : filename,},
+            config_dict = {'DEFAULT': {'run_doc': run_doc['_id']},
+                           'pax': {'plugin_group_names': plugin_group_names,
+                                   'output': output,
+                                   'output_name': filename, },
 
-                           'MongoDB' : {'runs_database_location' : {'address' : args.address,
-                                                                    'database' : args.database,
-                                                                    'port' : args.port,
-                                                                    'collection' : args.collection
-                                                                },
-                                        'window' : args.window * units.us,
-                                        'left' : args.left * units.us,
-                                        'right' : args.right * units.us,
-                                        'multiplicity' : args.multiplicity,
-                                        'mega_event' : args.mega_event
+                           'MongoDB': {'runs_database_location': {'address': args.address,
+                                                                  'database': args.database,
+                                                                  'port': args.port,
+                                                                  'collection': args.collection
+                                                                  },
+                                       'window': args.window * units.us,
+                                       'left': args.left * units.us,
+                                       'right': args.right * units.us,
+                                       'multiplicity': args.multiplicity,
+                                       'mega_event': args.mega_event
                                        }
                            }
             try:
@@ -124,7 +122,7 @@ def run():
             except pymongo.errors.ServerSelectionTimeoutError as e:
                 log.exception(e)
                 collection.update(query,
-                                  {'$set': {'trigger.status' : 'error'}})
+                                  {'$set': {'trigger.status': 'error'}})
 
 
 def handle_args():

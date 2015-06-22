@@ -69,7 +69,6 @@ class IOMongoDB():
         self.start_key = self.config['start_key']
         self.stop_key = self.config['stop_key']
 
-
         if START_KEY == STOP_KEY:
             raise ValueError("START_KEY and STOP_KEY must be different."
                              "Otherwise, must modify query logic.")
@@ -201,13 +200,12 @@ class IOMongoDB():
 
 class MongoDBReadUntriggered(plugin.InputPlugin,
                              IOMongoDB):
+
     """Read from MongoDB and build events
 
     This will perform a sliding window trigger on the times.  No PMT pulse
     data is read in this class to ensure speed.
     """
-
-
 
     def startup(self):
         IOMongoDB.startup(self)  # Setup with baseclass
@@ -382,6 +380,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
 
 
 class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, IOMongoDB):
+
     """Read untriggered data from MongoDB into event classes
 
     After MongoDBReadUntriggered has identified events, this class actually

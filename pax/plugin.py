@@ -42,7 +42,7 @@ class BasePlugin(object):
             if y is not None:
                 raise RuntimeError('Shutdown of %s returned a %s instead of '
                                    'None.' % (self.name,
-                                                                                      type(y)))
+                                              type(y)))
         # else:
         #    self.log.debug("Deleting %s, shutdown has already occurred" % self.name)
 
