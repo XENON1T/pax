@@ -18,7 +18,7 @@ import numpy as np
 
 from pax import units
 from pax.datastructure import Event, Pulse
-from pax.plugins.io.FolderIO import InputFromFolder
+from pax.FolderIO import InputFromFolder
 
 """  File header provided by FPPGui. This has only to be read once. Byte order is a relict from times where "Big Endian"
 processors where not unusual. See Wikipedia "byte order" about that topic in necessary.
