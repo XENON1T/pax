@@ -1,21 +1,18 @@
 """
-This plug-in reads raw waveform data from a Xenon100 XED file.
+These plugins read & write raw waveform data from a Xenon100 XED file.
 The XED file format is documented in Guillaume Plante's PhD thesis.
 This is code does not use the libxdio C-library though.
 
-At the moment this plugin supports:
-    - sequential reading as well as searching for a particular event;
-    - reading a single XED file or an entire dataset (in a directory);
-    - one 'chunk' per event, it raises an exception if it sees more than one chunk;
-    - zle0 sample encoding, not raw;
-    - bzip2 or uncompressed chunk data compression, not any other compression scheme.
-
-None of these would be very difficult to fix, if we ever intend to do any large-scale
-reprocessing of the XED-files we have.
-
-Some metadata from the XED file is stored in event['metadata'], see the end of this
-code for details.
+The read plugin supports:
+ - sequential reading and random access (XED has an index, so this is easy)
+ - one 'XED chunk' per event, it raises an exception if it sees more than one chunk.
+   This seems to be fine for all the XENON100 data I've looked at.
+ - zle0 and raw sample encoding;
+ - bzip2 or uncompressed chunk data compression, not any other compression scheme.
+ 
+The write plugin always writes zle0 XED files with bzip2 data compression.
 """
+
 
 import bz2
 import io
