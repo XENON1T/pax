@@ -25,7 +25,7 @@ import numpy as np
 from pax import units
 from pax.datastructure import Event, Pulse
 
-from pax.FolderIO import InputFromFolder
+from pax.FolderIO import InputFromFolder, WriteToFolder
 
 
 xed_file_header = np.dtype([
