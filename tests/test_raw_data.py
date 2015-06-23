@@ -19,12 +19,24 @@ plugins_to_test = [
         'read_plugin':  'BSON.ReadZippedBSON',
         'write_plugin': 'BSON.WriteZippedBSON',
     },
+    {
+        'name':         'XED',
+        'read_plugin':  'XED.ReadXED',
+        'write_plugin': 'XED.WriteXED',
+    },
+    {
+        'name':         'Avro',
+        'read_plugin':  'Avro.ReadAvro',
+        'write_plugin': 'Avro.WriteAvro',
+    },
 ]
 
 
-class TestBSON(unittest.TestCase):
+class TestRawData(unittest.TestCase):
 
     def test_write_read(self):
+        """Tests a pair of raw data read&write plugins by writing 2 events from XED, then reading them back
+        """
         # If this test errors in a strange way, the directory may not get deleted.
         # So make it somewhere the os knows to delete it sometime
         tempdir = tempfile.TemporaryDirectory()
@@ -35,33 +47,33 @@ class TestBSON(unittest.TestCase):
             print("\n\nNow testing %s\n" % plugin_info['name'])
 
             config = {'pax': {'events_to_process': [0, 1],
-                              'input': 'XED.XedInput',
+                              'input': 'XED.ReadXED',
                               'output': plugin_info['write_plugin']},
                       plugin_info['write_plugin']: {'output_name': tempdir.name,
                                                     'overwrite_output': True}}
 
-            pax_xed_to_bson = core.Processor(config_names='XENON100',
-                                             config_dict=config)
+            pax_xed_to_format_tested = core.Processor(config_names='XENON100',
+                                                      config_dict=config)
 
             # Wrap this in a try-except, to ensure the read plugin shutdown is run BEFORE the tempdir shutdown
             try:
-                pax_xed_to_bson.run()
+                pax_xed_to_format_tested.run()
             except Exception as e:
-                pax_xed_to_bson.stop()
+                pax_xed_to_format_tested.stop()
                 raise e
 
             config = {'pax': {'events_to_process': [0, 1],
                               'input': plugin_info['read_plugin']},
                       plugin_info['read_plugin']: {'input_name': tempdir.name}}
 
-            pax_bson = core.Processor(config_names='XENON100',
-                                      config_dict=config)
-            self.read_plugin = pax_bson.input_plugin
+            pax_read_format_tested = core.Processor(config_names='XENON100',
+                                                    config_dict=config)
+            self.read_plugin = pax_read_format_tested.input_plugin
 
             try:
                 events = list(self.read_plugin.get_events())
             except Exception as e:
-                pax_bson.stop()
+                pax_read_format_tested.stop()
                 raise e
 
             self.assertEqual(len(events), 2)
@@ -77,7 +89,7 @@ class TestBSON(unittest.TestCase):
                                  [16006, 16000, 15991, 16004, 16004, 16006, 16000, 16000,
                                   15995, 16010])
 
-            pax_bson.stop()    # Needed to close the file in time before dir gets removed
+            pax_read_format_tested.stop()    # Needed to close the file in time before dir gets removed
 
         # Cleaning up the temporary dir explicitly (otherwise tempfile gives warning):
         tempdir.cleanup()

@@ -96,7 +96,7 @@ like `my_file.ini`::
 
    [pax]
     parent_configuration = 'XENON100'
-    input = 'XED.XedInput'
+    input = 'XED.ReadXED'
     output = [ 'Plotting.PlotChannelWaveforms3D',
                #'Plotting.PlotEventSummary',
         ]

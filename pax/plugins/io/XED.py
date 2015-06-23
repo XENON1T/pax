@@ -58,7 +58,7 @@ xed_event_header = np.dtype([
 ])
 
 
-class XedInput(InputFromFolder):
+class ReadXED(InputFromFolder):
 
     file_extension = 'xed'
 
