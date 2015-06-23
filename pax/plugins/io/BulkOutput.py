@@ -1,7 +1,7 @@
 import os
-import json
 import shutil
 import time
+from bson.json_util import dumps
 
 import numpy as np
 
@@ -10,6 +10,7 @@ from pax.formats import flat_data_formats
 
 
 class BulkOutput(plugin.OutputPlugin):
+
     """Output data to flat table formats
     Convert our data structure to numpy record arrays, one for each class (Event, Peak, ReconstructedPosition, ...).
     Then output to one of several output formats (see formats.py)
@@ -45,13 +46,14 @@ class BulkOutput(plugin.OutputPlugin):
         #   dtype   :       dtype of numpy record (includes field names),
         # }
 
-        metadata_dump = json.dumps(self.processor.get_metadata())
+        metadata_dump = dumps(self.processor.get_metadata())
 
         self.data = {
             # Write pax configuration and version to pax_info dataframe
             # Will be a table with one row
             # If you append to an existing HDF5 file, it will make a second row
-            # TODO: However, it will probably crash if the configuration is a longer string...
+            # TODO: However, it will probably crash if the configuration is a
+            # longer string...
             'pax_info': {
                 'tuples':       [(metadata_dump,)],
                 'records':      None,
@@ -64,7 +66,8 @@ class BulkOutput(plugin.OutputPlugin):
         self.output_format = of = flat_data_formats[self.config['output_format']](log=self.log)
 
         if self.config['append_data'] and self.config['overwrite_data']:
-            raise ValueError('Invalid configuration for BulkOutput: Cannot both append and overwrite')
+            raise ValueError('Invalid configuration for BulkOutput: Cannot both'
+                             ' append and overwrite')
 
         # Check if options are supported
         if not of.supports_write_in_chunks and self.config['write_in_chunks']:
@@ -73,7 +76,8 @@ class BulkOutput(plugin.OutputPlugin):
             self.config['write_in_chunks'] = False
 
         if self.config['append_data'] and not of.supports_append:
-            self.log.warning('Output format %s does not support append: setting to False.')
+            self.log.warning('Output format %s does not support append: setting'
+                             ' to False.')
             self.config['append_data'] = False
 
         # Append extension to outfile, if this format has one
@@ -84,7 +88,8 @@ class BulkOutput(plugin.OutputPlugin):
         outfile = self.config['output_name']
         if os.path.exists(outfile):
             if self.config['append_data'] and of.supports_append:
-                self.log.info('Output file/dir %s already exists: appending.' % outfile)
+                self.log.info('Output file/dir %s already exists: '
+                              'appending.' % outfile)
             elif self.config['overwrite_data']:
                 self.log.info('Output file/dir %s already exists, and you '
                               'wanted to overwrite, so deleting it!' % outfile)
@@ -111,7 +116,8 @@ class BulkOutput(plugin.OutputPlugin):
         Store all the event data internally, write to disk when appropriate.
         This function follows the plugin API.
         """
-        self._model_to_tuples(event, index_fields=[('Event', event.event_number), ])
+        self._model_to_tuples(event,
+                              index_fields=[('Event', event.event_number), ])
         self.events_ready_for_conversion += 1
 
         if self.events_ready_for_conversion >= self.config['buffer_size']:
@@ -128,27 +134,31 @@ class BulkOutput(plugin.OutputPlugin):
             self.data[dfname]['first_index'] = len(self.data[dfname]['tuples']) + \
                 self.data[dfname].get('first_index', 0)
             # Convert tuples to records
-            newrecords = np.array(self.data[dfname]['tuples'], self.data[dfname]['dtype'])
+            newrecords = np.array(self.data[dfname]['tuples'],
+                                  self.data[dfname]['dtype'])
             # Clear tuples. Enjoy the freed memory.
             self.data[dfname]['tuples'] = []
             # Append new records
             if self.data[dfname]['records'] is None:
                 self.data[dfname]['records'] = newrecords
             else:
-                self.data[dfname]['records'] = np.concatenate((self.data[dfname]['records'], newrecords))
+                self.data[dfname]['records'] = np.concatenate((self.data[dfname]['records'],
+                                                               newrecords))
         self.events_ready_for_conversion = 0
 
     def _write_to_disk(self):
         """Write buffered data to disk
         """
         self.log.debug("Writing to disk...")
-        # If any records are present, call output format to write records to disk
+        # If any records are present, call output format to write records to
+        # disk
         if 'Event' not in self.data:
             # The processor crashed, don't want to make things worse!
             self.log.warning('No events to write: did you crash pax?')
             return
         if self.data['Event']['records'] is not None:
-            self.output_format.write_data({k: v['records'] for k, v in self.data.items()})
+            self.output_format.write_data({k: v['records'] for k,
+                                           v in self.data.items()})
         # Delete records we've just written to disk
         for d in self.data.keys():
             self.data[d]['records'] = None
@@ -160,7 +170,8 @@ class BulkOutput(plugin.OutputPlugin):
         self.output_format.close()
 
     def get_index_of(self, mname):
-        # Returns index +1 of last last entry in self.data[mname]. Returns -1 if no mname seen before.
+        # Returns index +1 of last last entry in self.data[mname]. Returns -1
+        # if no mname seen before.
         if mname not in self.data:
             return 0
         else:
@@ -188,13 +199,15 @@ class BulkOutput(plugin.OutputPlugin):
                 # Initialize dtype with the index fields
                 'dtype':                [(x[0], np.int) for x in index_fields],
                 'index_depth':          len(m_indices),
-                # Dictionary of collection field's {field_names: collection class name}
+                # Dictionary of collection field's {field_names: collection
+                # class name}
                 'subcollection_fields': m.get_list_field_info(),
                 'first_index':          0
             }
             first_time_seen = True
 
-        # Grab all data into data_dict -- and more importantly, handle subcollections
+        # Grab all data into data_dict -- and more importantly, handle
+        # subcollections
         for field_name, field_value in m.get_fields_data():
 
             if field_name in self.config['fields_to_ignore']:
@@ -218,25 +231,31 @@ class BulkOutput(plugin.OutputPlugin):
                 m_data.append(child_start)
 
                 # We'll ship model collections off to their own tuples (later record arrays)
-                # Convert each child_model to a dataframe, with a new index appended to the index trail
+                # Convert each child_model to a dataframe, with a new index
+                # appended to the index trail
                 for new_index, child_model in enumerate(field_value):
-                    self._model_to_tuples(child_model, index_fields + [(type(child_model).__name__,
-                                                                       new_index)])
+                    self._model_to_tuples(child_model,
+                                          index_fields + [(type(child_model).__name__,
+                                                           new_index)])
 
             elif isinstance(field_value, np.ndarray) and not self.output_format.supports_array_fields:
                 # Hack for formats without array field support: NumpyArrayFields must get their own dataframe
                 #  -- assumes field names are unique!
-                # dataframe columns = str(positions in the array) ('0', '1', '2', ...)
+                # dataframe columns = str(positions in the array) ('0', '1',
+                # '2', ...)
 
                 # Is this the first time we see this numpy array field?
                 if field_name not in self.data:
-                    assert first_time_seen    # Must be the first time we see dataframe as well
+                    # Must be the first time we see dataframe as well
+                    assert first_time_seen
                     self.data[field_name] = {
                         'tuples':          [],
                         'records':         None,
-                        # Initialize dtype with the index fields + every column in array becomes a field.... :-(
+                        # Initialize dtype with the index fields + every column
+                        # in array becomes a field.... :-(
                         'dtype':           [(x[0], np.int) for x in index_fields] +
-                                           [(str(i), field_value.dtype) for i in range(len(field_value))],
+                                           [(str(i), field_value.dtype)
+                                            for i in range(len(field_value))],
                         'index_depth':     len(m_indices),
                     }
 
@@ -244,7 +263,8 @@ class BulkOutput(plugin.OutputPlugin):
                 m_data.append(field_value)
                 if first_time_seen:
                     # Store this field's data type
-                    self.data[m_name]['dtype'].append(self._numpy_field_dtype(field_name, field_value))
+                    self.data[m_name]['dtype'].append(self._numpy_field_dtype(field_name,
+                                                                              field_value))
 
         # Store m_indices + m_data in self.data['tuples']
         self.data[m_name]['tuples'].append(tuple(m_indices + m_data))
@@ -271,6 +291,7 @@ class BulkOutput(plugin.OutputPlugin):
 
 
 class ReadFromBulkOutput(plugin.InputPlugin):
+
     """Read data from BulkOutput for reprocessing
 
     'Reprocessing' means: reading in old processed data, then start somewhere in middle of processing chain,
@@ -307,7 +328,8 @@ class ReadFromBulkOutput(plugin.InputPlugin):
         if self.read_recposes:
             self.dnames.append('ReconstructedPosition')
 
-        self.cache = {}        # Dict of numpy record arrays just read from disk, waiting to be sorted
+        # Dict of numpy record arrays just read from disk, waiting to be sorted
+        self.cache = {}
         self.max_n = {x: of.n_in_data(x) for x in self.dnames}
         self.number_of_events = self.max_n['Event']
         self.current_pos = {x: 0 for x in self.dnames}
@@ -331,13 +353,16 @@ class ReadFromBulkOutput(plugin.InputPlugin):
                 while dname not in self.cache or len(self.cache[dname]) == 0 \
                         or self.cache[dname][0]['Event'] == self.cache[dname][-1]['Event']:
 
-                    # If no data of this dname left in the file, we of course stop filling the cache
+                    # If no data of this dname left in the file, we of course
+                    # stop filling the cache
                     if self.current_pos[dname] == self.max_n[dname]:
                         break
 
                     new_pos = min(self.max_n[dname],
                                   self.current_pos[dname] + self.chunk_size)
-                    new_chunk = of.read_data(dname, self.current_pos[dname], new_pos)
+                    new_chunk = of.read_data(dname,
+                                             self.current_pos[dname],
+                                             new_pos)
                     self.current_pos[dname] = new_pos
 
                     # Add new chunk to cache
@@ -380,12 +405,14 @@ class ReadFromBulkOutput(plugin.InputPlugin):
                         for rp_record in in_this_event['ReconstructedPosition'][
                                 in_this_event['ReconstructedPosition']['Peak'] == peak_i]:
                             peak.reconstructed_positions.append(
-                                self.convert_record(datastructure.ReconstructedPosition, rp_record)
+                                self.convert_record(datastructure.ReconstructedPosition,
+                                                    rp_record)
                             )
 
                     if self.read_hits:
                         for hit_record in in_this_event['Hit'][(in_this_event['Hit']['Peak'] == peak_i)]:
-                            cp = self.convert_record(datastructure.Hit, hit_record)
+                            cp = self.convert_record(datastructure.Hit,
+                                                     hit_record)
                             peak.hits.append(cp)
                             event.all_hits.append(cp)
 
@@ -395,7 +422,8 @@ class ReadFromBulkOutput(plugin.InputPlugin):
             yield event
 
     def convert_record(self, class_to_load_to, record):
-        # We defined a nice custom init for event... ahem... now we have to do cumbersome stuff...
+        # We defined a nice custom init for event... ahem... now we have to do
+        # cumbersome stuff...
         if class_to_load_to == datastructure.Event:
             result = datastructure.Event(n_channels=self.config['n_channels'],
                                          start_time=record['start_time'],
@@ -405,7 +433,8 @@ class ReadFromBulkOutput(plugin.InputPlugin):
             result = class_to_load_to()
         for k, v in self._numpy_record_to_dict(record).items():
             # If result doesn't have this attribute, ignore it
-            # This happens for n_peaks etc. and attributes that have been removed
+            # This happens for n_peaks etc. and attributes that have been
+            # removed
             if hasattr(result, k):
                 setattr(result, k, v)
         return result

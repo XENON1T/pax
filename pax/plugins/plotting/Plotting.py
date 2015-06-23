@@ -5,13 +5,12 @@ Use matplotlib to display various things about the event.
 
 import random
 import os
+import time
 
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D  # noqa
 from matplotlib.patches import Rectangle
 import numpy as np
 
-import time
 from pax import plugin, units
 
 
@@ -399,8 +398,8 @@ class PlotChannelWaveforms2D(PlotBase):
         # Plot the bottom/top/veto boundaries
         # Assumes the detector names' lexical order is the same as the channel order!
         channel_ranges = [
-            ('top',     min(self.config['channels_top'])),
-            ('bottom',  min(self.config['channels_bottom'])),
+            ('top', min(self.config['channels_top'])),
+            ('bottom', min(self.config['channels_bottom'])),
         ]
         for det, chs in self.config['channels_in_detector'].items():
             if det == 'tpc':
@@ -416,7 +415,7 @@ class PlotChannelWaveforms2D(PlotBase):
             plt.text(
                 0.03 * event.length() * time_scale,
                 (channel_ranges[i][1] +
-                    (channel_ranges[i + 1][1] if i < len(channel_ranges) - 1 else self.config['n_channels'])
+                 (channel_ranges[i + 1][1] if i < len(channel_ranges) - 1 else self.config['n_channels'])
                  ) / 2,
                 channel_ranges[i][0])
 

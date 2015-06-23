@@ -12,3 +12,4 @@ avro-python3          # Raw data format
 python-snappy>=0.5
 numba>=0.19
 scikit-learn
+h5py

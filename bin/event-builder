@@ -1,0 +1,7 @@
+#!/usr/bin/env python
+"""Processor for Analyzing XENON - command line interface """
+
+from pax.eventbuilder import run
+
+if __name__ == "__main__":
+    run()

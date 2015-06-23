@@ -59,7 +59,7 @@ class TestRawData(unittest.TestCase):
             try:
                 pax_xed_to_format_tested.run()
             except Exception as e:
-                pax_xed_to_format_tested.stop()
+                pax_xed_to_format_tested.shutdown()
                 raise e
 
             config = {'pax': {'events_to_process': [0, 1],
@@ -73,7 +73,7 @@ class TestRawData(unittest.TestCase):
             try:
                 events = list(self.read_plugin.get_events())
             except Exception as e:
-                pax_read_format_tested.stop()
+                pax_xed_to_format_tested.shutdown()
                 raise e
 
             self.assertEqual(len(events), 2)
@@ -89,7 +89,7 @@ class TestRawData(unittest.TestCase):
                                  [16006, 16000, 15991, 16004, 16004, 16006, 16000, 16000,
                                   15995, 16010])
 
-            pax_read_format_tested.stop()    # Needed to close the file in time before dir gets removed
+            pax_xed_to_format_tested.shutdown()    # Needed to close the file in time before dir gets removed
 
         # Cleaning up the temporary dir explicitly (otherwise tempfile gives warning):
         tempdir.cleanup()

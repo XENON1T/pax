@@ -10,6 +10,8 @@ processing and other data processing on the XENON100/XENON1T raw data.
     :target: https://magnum.travis-ci.com/XENON1T/pax
 .. image:: https://coveralls.io/repos/XENON1T/pax/badge.svg?branch=master
     :target: https://coveralls.io/r/XENON1T/pax?branch=master
+.. image:: http://img.shields.io/badge/gitter-XENON1T/pax-blue.svg 
+    :target: https://gitter.im/XENON1T/pax
 
 Installation
 =============
