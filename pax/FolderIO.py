@@ -231,7 +231,10 @@ class WriteToFolder(plugin.OutputPlugin):
                                                        self.file_extension)))
 
     def shutdown(self):
-        self.close_current_file()
+        if self.has_shut_down:
+            self.log.error("Attempt to shutdown %s twice!" % self.__class__.__name__)
+        else:
+            self.close_current_file()
 
     ##
     # Child class should override these

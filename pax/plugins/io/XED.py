@@ -9,7 +9,7 @@ The read plugin supports:
    This seems to be fine for all the XENON100 data I've looked at.
  - zle0 and raw sample encoding;
  - bzip2 or uncompressed chunk data compression, not any other compression scheme.
- 
+
 The write plugin always writes zle0 XED files with bzip2 data compression.
 """
 
