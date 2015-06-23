@@ -11,8 +11,9 @@ Development Lead
 Contributors
 ------------
 
+* Axel Buß <a_buss09@uni-muenster.de>
 * Sander Breur <sanderb@nikhef.nl>
 * Daniel Coderre <daniel.coderre@lhep.unibe.ch>
-* Alper Topçuoğlu <alper.topcuoglu@student.uva.nl>
 * Bart Pelssers <bartp@nikhef.nl>
-* Axel Buß <a_buss09@uni-muenster.de>
+* Alper Topçuoğlu <alper.topcuoglu@student.uva.nl>
+
