@@ -1,4 +1,4 @@
-#!/bin/bash
+# This will install ROOT and you run it by running "source install-ROOT.sh"
 
 
 if [ -z "$ROOT" ]; then
