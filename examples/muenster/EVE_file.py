@@ -223,15 +223,9 @@ class EveInput(InputFromFolder):
                 for ch_i, channel_is_active in enumerate(channels_active):
                     if channel_is_active == 0:
                         continue  # skip unused channels
-                    chdata = []
+                    chdata = np.fromfile(self.current_evefile, dtype=np.int16,
+                                         count=int(event_signal_header["page_size"]))
 
-                    for j in range(int(event_signal_header[
-                                           "page_size"] / 2)):  # divide by 2 because there are two samples in each word
-                        data_word1 = np.fromfile(self.current_evefile, dtype=np.int16, count=1)[0]
-                        data_word2 = np.fromfile(self.current_evefile, dtype=np.int16, count=1)[0]
-                        chdata.append(data_word1)  # first sample in 4byte word
-                        chdata.append(data_word2)  # second sample in 4byte word
-                    # chdata = np.array(chdata)
                     event.pulses.append(Pulse(
                         channel=ch_i + 8 * board_i,
                         left=0,
