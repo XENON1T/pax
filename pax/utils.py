@@ -17,6 +17,8 @@ import numpy as np
 from scipy import interpolate
 import matplotlib.pyplot as plt
 
+from pax import units
+
 log = logging.getLogger('pax_utils')
 
 
@@ -180,6 +182,27 @@ class InterpolatingMap(object):
 ##
 # General helper functions
 ##
+
+def adc_to_pe(config, channel, use_reference_gain=False, use_reference_gain_if_zero=False):
+    """Gives the conversion factor from ADC counts above baseline to pe/bin
+    Use as: w_in_pe_bin = adc_to_pe(config, channel) * w_in_adc_above_baseline
+      - config should be a configuration dictionary (self.config in a pax plugin)
+      - If use_reference_gain is True, will always use config.get('pmt_reference_gain', 2e6) rather than the channel gain
+      - If use_reference_gain_if_zero=True will do the above only if channel gain is 0.
+    If neither of these are true, and gain is 0, will return 0.
+    """
+    c = config
+    adc_to_e = c['sample_duration'] * c['digitizer_voltage_range'] / (
+        2 ** (c['digitizer_bits']) *
+        c['pmt_circuit_load_resistor'] *
+        c['external_amplification'] *
+        units.electron_charge)
+    pmt_gain = c['gains'][channel]
+    if use_reference_gain_if_zero and pmt_gain == 0 or use_reference_gain:
+        pmt_gain = c.get('pmt_reference_gain', 2e6)
+    if pmt_gain == 0:
+        return 0
+    return adc_to_e / pmt_gain
 
 def chunk_in_ntuples(iterable, n, fillvalue=None):
     """ Chunks an iterable into a list of tuples
