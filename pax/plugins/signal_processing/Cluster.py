@@ -105,7 +105,7 @@ class ClusterPlugin(plugin.TransformPlugin):
                     # Classify noise and lone hits
                     # TODO: Noise classification should be configurable!
                     is_noise = peak.n_noise_channels / peak.n_contributing_channels > \
-                               self.config['max_noise_channels_over_contributing_channels']
+                        self.config['max_noise_channels_over_contributing_channels']
                     is_lone_hit = peak.n_contributing_channels == 1
                     if is_noise:
                         peak.type = 'noise'
