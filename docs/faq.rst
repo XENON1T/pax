@@ -98,7 +98,7 @@ ROOT is a dependency and you're expected to install it yourself.  That said, we 
   source travis/linux_setup.sh  # Only run for Ubuntu
   source travis/install-ROOT.sh
   
-If it fails for your system, feel free to try to fix it and let us know so we can update the script.  You can always look within the shell script to see what we're doing if you run into an issue.    
+If it fails for your system, feel free to try to fix it and let us know so we can update the script.  You can always look within the shell script to see what we're doing if you run into an issue.
 
 * Just follow the instructions on `the PyROOT page <https://github.com/XENON1T/pax/blob/master/docs/pyroot.rst>`_.
 

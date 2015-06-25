@@ -31,7 +31,7 @@ class TestPaxUnits(unittest.TestCase):
 
         base_units['Hz'] = 1 / base_units['s']
         base_units['J'] = base_units['eV'] / electron_charge_si
-        base_units['g'] = 1e-3 * base_units['J'] * base_units['s']**2 / base_units['m']**2
+        base_units['g'] = 1e-3 * base_units['J'] * base_units['s'] ** 2 / base_units['m'] ** 2
         base_units['V'] = base_units['J'] / base_units['C']
         base_units['A'] = base_units['C'] / base_units['s']
         base_units['N'] = base_units['J'] / base_units['m']
