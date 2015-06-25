@@ -1,4 +1,3 @@
-"""Neural network reconstruction algorithms"""
 import numpy as np
 
 from pax import plugin
