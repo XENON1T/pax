@@ -13,7 +13,7 @@ import numba
 import matplotlib.pyplot as plt
 import os
 
-from pax import plugin, datastructure, units, utils
+from pax import plugin, datastructure, utils
 
 
 class FindHits(plugin.TransformPlugin):

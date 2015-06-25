@@ -1,6 +1,6 @@
 import numpy as np
 
-from pax import plugin, datastructure, units, utils
+from pax import plugin, datastructure, utils
 
 
 class SumWaveform(plugin.TransformPlugin):

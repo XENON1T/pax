@@ -187,7 +187,7 @@ def adc_to_pe(config, channel, use_reference_gain=False, use_reference_gain_if_z
     """Gives the conversion factor from ADC counts above baseline to pe/bin
     Use as: w_in_pe_bin = adc_to_pe(config, channel) * w_in_adc_above_baseline
       - config should be a configuration dictionary (self.config in a pax plugin)
-      - If use_reference_gain is True, will always use config.get('pmt_reference_gain', 2e6) rather than the channel gain
+      - If use_reference_gain is True, will always use config.get('pmt_reference_gain', 2e6) rather than the pmt gain
       - If use_reference_gain_if_zero=True will do the above only if channel gain is 0.
     If neither of these are true, and gain is 0, will return 0.
     """
@@ -203,6 +203,7 @@ def adc_to_pe(config, channel, use_reference_gain=False, use_reference_gain_if_z
     if pmt_gain == 0:
         return 0
     return adc_to_e / pmt_gain
+
 
 def chunk_in_ntuples(iterable, n, fillvalue=None):
     """ Chunks an iterable into a list of tuples
