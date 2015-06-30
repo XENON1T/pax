@@ -1,6 +1,5 @@
 import os
 import shutil
-import time
 from bson.json_util import dumps
 
 import numpy as np
@@ -341,7 +340,6 @@ class ReadFromBulkOutput(plugin.InputPlugin):
         of = self.output_format
 
         for event_i in range(self.number_of_events):
-            ts = time.time()    # Start the clock
 
             in_this_event = {}
 
@@ -419,7 +417,6 @@ class ReadFromBulkOutput(plugin.InputPlugin):
 
                     event.peaks.append(peak)
 
-            self.total_time_taken += (time.time() - ts) * 1000
             yield event
 
     def convert_record(self, class_to_load_to, record):

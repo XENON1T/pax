@@ -21,7 +21,7 @@ import numpy as np
 from prettytable import PrettyTable     # Timing report
 from tqdm import tqdm                   # Progress bar
 import pax      # Needed for pax.__version__
-from pax import units, simulation, utils
+from pax import units, simulation, utils, exceptions
 
 # For diagnosing suspected memory leaks, uncomment this code
 # and similar code in process_event
@@ -168,6 +168,8 @@ class Processor:
             if not just_testing:
                 self.log.warning("No action plugins specified: this will be a "
                                  "pretty boring processing run...")
+
+        self.timer = utils.Timer()
 
     def load_configuration(self, config_names, config_paths, config_string, config_dict):
         """Load a configuration -- see init's docstring
@@ -391,12 +393,17 @@ class Processor:
 
         for j, plugin in enumerate(self.action_plugins):
             self.log.debug("%s (step %d/%d)" % (plugin.__class__.__name__, j, total_plugins))
-            event = plugin.process_event(event)
+            try:
+                event = plugin.process_event(event)
+            except exceptions.SkipEvent:
+                plugin.total_time_taken += self.timer.punch()
+                self.log.debug("%s ordered us to skip this event, obeying..." % plugin.name)
+                break
+            plugin.total_time_taken += self.timer.punch()
 
         # Uncomment to diagnose memory leaks
         # gc.collect()  # don't care about stuff that would be garbage collected properly
         # objgraph.show_growth(limit=5)
-
         return event
 
     def run(self, clean_shutdown=True):
@@ -421,9 +428,13 @@ class Processor:
 
         i = 0  # in case loop does not run
         # This is the actual event loop.  'tqdm' is a progress bar.
+
+        self.timer.punch()
         for i, event in enumerate(tqdm(self.get_events(),
                                        desc='Event',
                                        total=self.total_number_events)):
+            self.input_plugin.total_time_taken += self.timer.punch()
+
             if i >= self.stop_after:
                 self.log.info("User-defined limit of %d events reached." % i)
                 break

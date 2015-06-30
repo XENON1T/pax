@@ -9,6 +9,7 @@ import inspect
 import json
 import gzip
 import logging
+import time
 import os
 import glob
 from itertools import zip_longest
@@ -280,3 +281,19 @@ class Memoize:
         except KeyError:
             self.memoized[args] = self.function(*args)
             return self.memoized[args]
+
+
+class Timer:
+    """Simple stopwatch timer
+    punch() returns ms since timer creation or last punch
+    """
+    last_t = 0
+
+    def __init__(self):
+        self.punch()
+
+    def punch(self):
+        now = time.time()
+        result = (now - self.last_t) * 1000
+        self.last_t = now
+        return result

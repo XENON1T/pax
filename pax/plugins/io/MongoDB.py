@@ -6,10 +6,10 @@ either be triggered or untriggered. In the case of untriggered, an event builder
 must be run on the data and will result in triggered data.  Input and output
 classes are provided for MongoDB access.  More information is in the docstrings.
 """
+import time
+
 import numpy as np
 import numba
-
-import time
 import pymongo
 import snappy
 
@@ -287,7 +287,6 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
 
     def get_events(self):
         self.last_time = 0  # ns
-        ts = time.time()
 
         while not self.data_taking_ended:
             # Grab new run document in case run ended.  This much happen before
@@ -353,14 +352,8 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
                             event_number=0)
                 break
 
-            self.total_time_taken += (time.time() - ts) * 1000
-
             for i, this_range in enumerate(self.ranges):
-                # Start pax's timer so we can measure how fast this plugin goes
-                ts = time.time()
                 t0, t1 = [int(t) for t in this_range]
-
-                self.total_time_taken += (time.time() - ts) * 1000
 
                 yield Event(n_channels=self.config['n_channels'],
                             start_time=t0,
