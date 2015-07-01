@@ -10,8 +10,16 @@ Tests for `pax` module.
 
 import unittest
 import inspect
+import tempfile
+import os
 
 from pax import core, plugin, datastructure
+
+dummy_plugin = """
+from pax import plugin
+class FunkyTransform(plugin.TransformPlugin):
+    gnork = True
+"""
 
 
 class TestPax(unittest.TestCase):
@@ -110,6 +118,21 @@ class TestPax(unittest.TestCase):
         for p in mypax.action_plugins:
             self.assertIsInstance(p, (plugin.TransformPlugin, plugin.OutputPlugin))
             p.shutdown()    # To close output file we just wrote, normally happens after .run()
+
+    def test_custom_plugin_location(self):
+        """Tests loading a plugin from a custom location"""
+        tempdir = tempfile.TemporaryDirectory()
+        with open(os.path.join(tempdir.name, 'temp_plugin_file.py'), mode='w') as outfile:
+            outfile.write(dummy_plugin)
+        mypax = core.Processor(config_dict={'pax': {'plugin_group_names':   ['bla'],
+                                                    'plugin_paths':         [tempdir.name],
+                                                    'bla':                  'temp_plugin_file.FunkyTransform'}},
+                               just_testing=True)
+        self.assertIsInstance(mypax, core.Processor)
+        pl = mypax.get_plugin_by_name('FunkyTransform')
+        self.assertIsInstance(pl, plugin.TransformPlugin)
+        self.assertTrue(hasattr(pl, 'gnork'))
+        tempdir.cleanup()
 
     ##
     # Test event processing

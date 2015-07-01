@@ -26,7 +26,7 @@ Fix Bugs
 
 Look through the GitHub issues for bugs. Anything tagged with "bug"
 is open to whoever wants to implement it.  There is also a "help wanted" flag that 
-indicates what is open to anybody to help.  
+indicates what is open to anybody to help.
 
 Implement Features
 ~~~~~~~~~~~~~~~~~~

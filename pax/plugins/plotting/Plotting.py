@@ -11,7 +11,11 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 import numpy as np
 
-from pax import plugin, units
+# Init stuff for 3d plotting
+# Please do not remove, although it appears to be unused, 3d plotting won't work without it
+from mpl_toolkits.mplot3d import Axes3D     # noqa
+
+from pax import plugin, units, utils
 
 
 class PlotBase(plugin.OutputPlugin):
@@ -261,80 +265,66 @@ class PlottingHitPattern(PlotBase):
                     self._plot(peak, ax, getattr(self, 'channels_%s' % array))
 
 
-class PlotChannelWaveforms3D(PlotBase):  # user sets variables xlim, ylim for 3D plot
+class PlotChannelWaveforms3D(PlotBase):
 
-    """Plot an event
-
-    Will make a fancy '3D' plot with different y positions for all channels. User sets variables for plot.
+    """Plot the waveform of several channels in 3D, with different y positions for all channels.
     """
 
     def plot_event(self, event):
         dt = self.config['sample_duration']
-        # top : 1-98, bottom : 99-178, Top Shield Array: PMTs 179..210, Bottom Shield Array: PMTs 211..242
-        ylim_channel_start = 0
-        ylim_channel_end = 242
-        xlim_time_start = 0  # s1: 205.5 , s2: 260
-        xlim_time_end = 400  # [us] S1: 206.5, s2: 270
 
-        # [pe/(bin*V)] = time_resolution [s/bin]
-        #               / ( resistor [V*s/C] * gain [] * amplification [] * electric_charge [C/pe] )
-        # For Xenon100 (gain 2e6, amplification 10, resistor 50, time resolution 10ns/bin),
-        # this gives 62.4 pe/(bin*V), so 1 pe/bin is 16.0 mV; 1 mV is 0.0624 pe/bin.
+        # Configurable limits
+        channels_start = self.config.get('channel_start', min(self.config['channels_in_detector']['tpc']))
+        channels_end = self.config.get('channel_start', max(self.config['channels_in_detector']['tpc']))
+        t_start = self.config.get('t_start', 0 * units.us)
+        t_end = self.config.get('t_end', event.duration())
 
         fig = plt.figure(figsize=(self.size_multiplier * 4, self.size_multiplier * 2))
         ax = fig.gca(projection='3d')
 
-        # Plot each individual pulse
         global_max_amplitude = 0
-        for oc in event.pulses:
-            start_index = oc.left
-            channel = oc.channel
-            end_index = oc.right
-
-            # Takes only channels in the range we want to plot
-            if not ylim_channel_start <= channel <= ylim_channel_end:
+        for pulse in event.pulses:
+            # Take only channels in the range we want to plot
+            if not channels_start <= pulse.channel <= channels_end:
                 continue
 
-            # Take only pulses that start in the time window
-            # -- But don't you also want pulses which start outside, but end inside the window?
-            if not xlim_time_start * 100 <= start_index <= xlim_time_end * 100:
+            # Take only pulses that fall (at least partially) in the time window we want to plot
+            if pulse.right * dt < t_start or pulse.left * dt > t_end:
                 continue
 
-            waveform = event.channel_waveforms[channel, start_index: end_index + 1]
+            w = self.config['digitizer_reference_baseline'] + pulse.baseline - pulse.raw_data.astype(np.float64)
+            w *= utils.adc_to_pe(self.config, pulse.channel, use_reference_gain=True)
             if self.config['log_scale']:
-                # TODO: this will still give nan's if waveform drops below 1 pe_nominal / bin...
-                waveform = np.log10(1 + waveform)
+                # This will still give nan's if waveform drops below 1 pe_nominal / bin...
+                # TODO: So... will it crash? or just fall outside range?
+                w = np.log10(1 + w)
 
             # We need to keep track of this, apparently gca can't scale itself?
-            global_max_amplitude = max(np.max(waveform), global_max_amplitude)
+            global_max_amplitude = max(np.max(w), global_max_amplitude)
 
             ax.plot(
-                np.linspace(start_index, start_index + len(waveform) - 1, len(waveform)) * dt / units.us,
-                channel * np.ones(len(waveform)),
-                zs=waveform,
+                np.linspace(pulse.left, pulse.right, pulse.length) * dt / units.us,
+                pulse.channel * np.ones(pulse.length),
+                zs=w,
                 zdir='z',
-                label=str(channel)
+                label=str(pulse.channel)
             )
 
         # Plot the sum waveform
-        lefti = xlim_time_start * 100
-        righti = xlim_time_end * 100
-        waveform = event.get_sum_waveform('tpc').samples[lefti:righti]
-        scale = global_max_amplitude / np.max(waveform)
-        time = np.array(np.linspace(lefti, righti, righti - lefti))
+        w = event.get_sum_waveform('tpc').samples[int(t_start / dt):int(t_end / dt) + 1]
         ax.plot(
-            time / 100,
-            (ylim_channel_end + 1) * np.ones(len(waveform)),  # time to micro sec
-            zs=waveform * scale,
+            np.linspace(t_start, t_end, len(w)) / units.us,
+            (channels_end + 1) * np.ones(len(w)),
+            zs=w * global_max_amplitude / np.max(w),
             zdir='z',
-            label=str(channel)
+            label='Tpc'
         )
 
         ax.set_xlabel('Time [$\mu$s]')
-        ax.set_xlim3d(xlim_time_start, xlim_time_end)
+        ax.set_xlim3d(t_start / units.us, t_end / units.us)
 
         ax.set_ylabel('Channel number')
-        ax.set_ylim3d(ylim_channel_start, ylim_channel_end)
+        ax.set_ylim3d(channels_start, channels_end)
 
         zlabel = 'Pulse height [pe_nominal / %d ns]' % (self.config['sample_duration'] / units.ns)
         if self.config['log_scale']:
@@ -398,13 +388,13 @@ class PlotChannelWaveforms2D(PlotBase):
         # Plot the bottom/top/veto boundaries
         # Assumes the detector names' lexical order is the same as the channel order!
         channel_ranges = [
-            ('top', min(self.config['channels_top'])),
-            ('bottom', min(self.config['channels_bottom'])),
+            ('top', min(self.config['channels_top']), np.mean(self.config['channels_top'])),
+            ('bottom', min(self.config['channels_bottom']), np.mean(self.config['channels_bottom'])),
         ]
         for det, chs in self.config['channels_in_detector'].items():
             if det == 'tpc':
                 continue
-            channel_ranges.append((det, min(chs)))
+            channel_ranges.append((det, min(chs), np.mean(chs)))
 
         # Annotate the channel groups and boundaries
         for i in range(len(channel_ranges)):
@@ -414,9 +404,7 @@ class PlotChannelWaveforms2D(PlotBase):
                 color='black', alpha=0.2)
             plt.text(
                 0.03 * event.length() * time_scale,
-                (channel_ranges[i][1] +
-                 (channel_ranges[i + 1][1] if i < len(channel_ranges) - 1 else self.config['n_channels'])
-                 ) / 2,
+                channel_ranges[i][2] + 0.5,  # add 0.5 for better alignment for small TPCs. Irrelevant for big ones
                 channel_ranges[i][0])
 
         # Information about suspicious channels

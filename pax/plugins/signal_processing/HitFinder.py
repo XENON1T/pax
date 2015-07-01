@@ -13,7 +13,7 @@ import numba
 import matplotlib.pyplot as plt
 import os
 
-from pax import plugin, datastructure, units
+from pax import plugin, datastructure, utils
 
 
 class FindHits(plugin.TransformPlugin):
@@ -29,14 +29,6 @@ class FindHits(plugin.TransformPlugin):
         if self.make_diagnostic_plots != 'never':
             if not os.path.exists(self.make_diagnostic_plots_in):
                 os.makedirs(self.make_diagnostic_plots_in)
-
-        # Conversion factor: multiply by this to convert from ADC counts above baseline -> electrons
-        # Still has to be divided by PMT gain to go to photo-electrons (done below)
-        self.adc_to_e = c['sample_duration'] * c['digitizer_voltage_range'] / (
-            2 ** (c['digitizer_bits']) *
-            c['pmt_circuit_load_resistor'] *
-            c['external_amplification'] *
-            units.electron_charge)
 
         # Keep track of how many times the "too many hits" warning has been shown
         self.too_many_hits_warnings_shown = 0
@@ -115,7 +107,7 @@ class FindHits(plugin.TransformPlugin):
 
             # Store the found hits in the datastructure
             # Convert area, noise_sigma and height from adc counts -> pe
-            adc_to_pe = self.adc_to_e / pmt_gain
+            adc_to_pe = utils.adc_to_pe(self.config, channel)
             noise_sigma_pe = pulse.noise_sigma * adc_to_pe
             for i, hit in enumerate(hits_found):
 
