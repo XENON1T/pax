@@ -337,7 +337,9 @@ class WriteXED(WriteToFolder):
         event_index = np.cumsum(np.concatenate((np.array([0], dtype='<u4'),
                                                 np.array([len(e) for e in self.events], dtype='<u4')[:-1])))
         event_index += 80 + 4 * len(event_index)
-        event_index.tofile(self.current_xed)
+        # Arcane windows / linux difference here: on linux this gets converted to a 64-bit array???
+        # astype('<u4') fixes it
+        event_index.astype('<u4').tofile(self.current_xed)
 
         # Write event data
         for e in self.events:
