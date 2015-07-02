@@ -15,7 +15,7 @@ class BuildInteractions(plugin.TransformPlugin):
     xy_posrec_preference = ['algo1', 'algo2', ...]
     """
     def startup(self):
-        if not 'xy_posrec_preference' in self.config:
+        if 'xy_posrec_preference' not in self.config:
             raise ValueError('Configuration for %s must contain xy_posrec_preference' % self.name)
 
     def transform_event(self, event):

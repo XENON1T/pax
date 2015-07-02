@@ -28,7 +28,6 @@ setup(
     packages=[  'pax',
                 'pax.config',
                 'pax.plugins',
-                'pax.plugins.corrections',
                 'pax.plugins.interaction_processing',
                 'pax.plugins.peak_processing',
                 'pax.plugins.plotting',
