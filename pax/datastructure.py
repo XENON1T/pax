@@ -16,7 +16,7 @@ import math
 from pax import units
 
 # DO NOT use Model instead of StrictModel:
-# It improves performance, but kills serialization (numpy int types will apear in class etc)
+# It improves performance, but kills serialization (numpy int types will appear in class etc)
 # TODO: For Hit class, we may want Model for performance?
 #       Look where the numpy int types get in, force them to python ints.
 from pax.data_model import StrictModel, ListField
@@ -30,13 +30,13 @@ class ReconstructedPosition(StrictModel):
 
     Each reconstruction algorithm creates one of these.
     """
-    x = 0.0  #: x position (cm)
-    y = 0.0  #: y position (cm)
+    x = float('nan')  #: x position (cm)
+    y = float('nan')  #: y position (cm)
 
     #: goodness-of-fit parameter generated with PosRecChiSquareGamma
-    goodness_of_fit = 0.0
+    goodness_of_fit = float('nan')
     # : number of degrees of freedom calculated with PosRecChiSquareGamma
-    ndf = 0.0
+    ndf = float('nan')
 
     #: Name of algorithm used for computation
     algorithm = 'none'
@@ -51,6 +51,7 @@ class ReconstructedPosition(StrictModel):
     def r(self):
         return math.sqrt(self.x ** 2 + self.y ** 2)
 
+    #: phi position, i.e. angle wrt the x=0 axis in the xy plane (radians)
     @property
     def phi(self):
         return math.atan2(self.y, self.x)
@@ -159,6 +160,13 @@ class Peak(StrictModel):
 
     #: List of reconstructed positions (instances of :class:`pax.datastructure.ReconstructedPosition`)
     reconstructed_positions = ListField(ReconstructedPosition)
+
+    def get_reconstructed_position_from_algorithm(self, algorithm):
+        """Return reconstructed position found by algorithm, or None if the peak doesn't have one"""
+        for rp in self.reconstructed_positions:
+            if rp.algorithm == algorithm:
+                return rp
+        return None
 
     #: Weighted root mean square deviation of top hitpattern (cm)
     top_hitpattern_spread = 0.0
@@ -279,6 +287,95 @@ class Pulse(StrictModel):
             self.right = self.left + len(self.raw_data) - 1
 
 
+class Interaction(StrictModel):
+    """An interaction in the TPC, reconstructed from a pair of S1 and S2 peaks.
+    """
+    #: The S1 peak of the interaction
+    s1 = Peak()
+
+    #: The S2 peak of the interaction
+    s2 = Peak()
+
+    ##
+    # Position information
+    ##
+
+    #: The reconstructed position of the interaction
+    x = float('nan')  #: x position (cm)
+    y = float('nan')  #: y position (cm)
+    #: goodness-of-fit parameter of s2 hitpattern to x,y position reconstructed by PosRecChiSquareGamma
+    xy_posrec_goodness_of_fit = float('nan')
+    #: number of degrees of freedom calculated with PosRecChiSquareGamma
+    xy_posrec_ndf = float('nan')
+    #: Algorithm used for xy position reconstructed
+    xy_posrec_algorithm = 'none'
+
+    drift_time = float('nan')  #: drift time (ns) between S1 and S2
+    z = float('nan')  #: z position (cm), calculated from drift time
+
+
+    #: r position (cm)
+    @property
+    def r(self):
+        return math.sqrt(self.x ** 2 + self.y ** 2)
+
+    #: phi position, i.e. angle wrt the x=0 axis in the xy plane (radians)
+    @property
+    def phi(self):
+        return math.atan2(self.y, self.x)
+
+    def set_position(self, recpos):
+        """Sets the x, y position of the interaction
+        based on a :class:`pax.datastructure.ReconstructedPosition` object"""
+        self.x = recpos.x
+        self.y = recpos.y
+        self.xy_posrec_algorithm = recpos.algorithm
+        self.xy_posrec_ndf = recpos.ndf
+        self.xy_posrec_goodness_of_fit = recpos.goodness_of_fit
+
+    ##
+    # Energy estimation
+    ##
+
+    #: Multiplicative correction to s1 area based on position (due to LCE variations)
+    s1_area_correction = 1.0
+
+    @property
+    def corrected_s1_area(self):
+        return self.s1.area * self.s1_area_correction
+
+    #: Multiplicative correction to s2 area based on position (due to electron lifetime and LCE variations)
+    s2_area_correction = 1.0
+
+    @property
+    def corrected_s2_area(self):
+        return self.s2.area * self.s2_area_correction
+
+    #: log10(corrected S2 area / corrected S1 area). Used for recoil type discrimination.
+    @property
+    def log_cs2_cs1(self):
+        return np.log10(self.corrected_s2_area / self.corrected_s1_area)
+
+    # #: Estimated interaction energy in keV (ee? nr?)
+    # energy = float('nan')
+    #
+    # #: Estimated error on interaction energy in keV (ee? nr?)
+    # energy_error = float('nan')
+
+    ##
+    # Likelihoods
+    ##
+
+    #: Likelihood of s2 width based on z position
+    s2_width_likelihood = float('nan')
+
+    #: Likelihood of s1 asymmetry based on z position
+    s1_asymmetry_likelihood = float('nan')
+
+    #: Likelihood of s1 hitpattern spread based on z position
+    s1_hitpattern_spread_likelihood = float('nan')
+
+
 class Event(StrictModel):
     """Event class
 
@@ -316,20 +413,19 @@ class Event(StrictModel):
     #: DO NOT set to 10 ns as default, otherwise no way to check if it was given to constructor!
     sample_duration = 0
 
-    #: List of peaks
-    #:
-    #: Returns a list of :class:`pax.datastructure.Peak` classes.
+    #: A list of :class:`pax.datastructure.Interaction` objects.
+    interactions = ListField(Peak)
+
+    #: A list of :class:`pax.datastructure.Peak` objects.
     peaks = ListField(Peak)
 
     #: Temporary list of hits -- will be shipped off to peaks later
     all_hits = ListField(Hit)
 
-    #: Returns a list of sum waveforms
-    #:
-    #: Returns an :class:`pax.datastructure.SumWaveform` class.
+    #: A list :class:`pax.datastructure.SumWaveform` objects.
     sum_waveforms = ListField(SumWaveform)
 
-    #: A python list of all pulses in the event (containing instances of the Pulse class)
+    #: A list of all pulses in the event (containing instances of the Pulse class)
     #: An pulse holds a stream of samples in one channel, as provided by the digitizer.
     pulses = ListField(Pulse)
 
@@ -401,7 +497,7 @@ class Event(StrictModel):
         """
         return int(self.duration() / self.sample_duration)
 
-    def S1s(self, detector='tpc', sort_key='area', reverse=True):  # noqa
+    def s1s(self, detector='tpc', sort_key='area', reverse=True):  # noqa
         """List of S1 (scintillation) signals in this event
 
         Returns a list of :class:`pax.datastructure.Peak` objects
@@ -410,9 +506,12 @@ class Event(StrictModel):
         The returned list is sorted DESCENDING (i.e. reversed!) by the key sort_key (default area)
         unless you pass reverse=False, then it is ascending.
         """
-        return self._get_peaks_by_type('s1', sort_key, reverse, detector)
+        return self.get_peaks_by_type('s1', sort_key, reverse, detector)
 
-    def S2s(self, detector='tpc', sort_key='area', reverse=True):  # noqa
+    def S1s(self, *args, **kwargs):
+        return self.s1s(*args, **kwargs)
+
+    def s2s(self, detector='tpc', sort_key='area', reverse=True):  # noqa
         """List of S2 (ionization) signals in this event
 
         Returns a list of :class:`pax.datastructure.Peak` objects
@@ -421,9 +520,12 @@ class Event(StrictModel):
         The returned list is sorted DESCENDING (i.e. reversed!) by the key sort_key (default area)
         unless you pass reverse=False, then it is ascending.
         """
-        return self._get_peaks_by_type('s2', sort_key, reverse, detector)
+        return self.get_peaks_by_type('s2', sort_key, reverse, detector)
 
-    def _get_peaks_by_type(self, desired_type, sort_key, reverse=True, detector='tpc'):
+    def S2s(self, *args, **kwargs):
+        return self.s2s(*args, **kwargs)
+
+    def get_peaks_by_type(self, desired_type, sort_key='area', reverse=True, detector='tpc'):
         """Helper function for retrieving only certain types of peaks
         Returns a list of :class:`pax.datastructure.Peak` objects
           whose type is desired_type, and

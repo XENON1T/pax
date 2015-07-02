@@ -119,7 +119,10 @@ class Model(object):
         for k, v in self.get_fields_data():
             if k in fields_to_ignore:
                 continue
-            if isinstance(v, list):
+            if isinstance(v, Model):
+                result[k] = v.to_dict(convert_numpy_arrays_to=convert_numpy_arrays_to,
+                                      fields_to_ignore=fields_to_ignore)
+            elif isinstance(v, list):
                 result[k] = [el.to_dict(convert_numpy_arrays_to=convert_numpy_arrays_to,
                                         fields_to_ignore=fields_to_ignore) for el in v]
             elif isinstance(v, np.ndarray) and convert_numpy_arrays_to is not None:
