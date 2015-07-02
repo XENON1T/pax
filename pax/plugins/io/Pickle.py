@@ -8,28 +8,43 @@ import pickle
 import re
 
 from pax import plugin
-from pax.FolderIO import ReadZipped, WriteZipped
-
-##
-# Zipped pickles
-##
-class PickleIO():
-
-    def from_format(self, doc):
-        return pickle.loads(doc)
-
-    def to_format(self, event):
-        return pickle.dumps(event)
+from pax.FolderIO import InputFromFolder, WriteToFolder
 
 
-class ReadZippedPickles(PickleIO, ReadZipped):
-    """Read a folder of zipfiles containing gzipped pickle files"""
-    pass
+class WriteToStackedPickleFolder(WriteToFolder):
+
+    file_extension = 'stackedpickle'
+
+    def open(self, filename):
+        self.current_file = open(filename, 'wb')
+        # self.current_file = gzip.open(filename,
+        #                               'wb',
+        #                               compresslevel=self.config.get('compression_level', 4))
+
+    def write_event_to_current_file(self, event):
+        pickle.dump(event, self.current_file)
+
+    def close(self):
+        self.current_file.close()
 
 
-class WriteZippedPickles(PickleIO, WriteZipped):
-    """Write raw data to a folder of zipfiles containing gzipped pickles"""
-    pass
+class ReadFromStackedPickleFolder(InputFromFolder):
+
+    file_extension = 'stackedpickle'
+
+    def open(self, filename):
+        self.current_file = gzip.open(filename, "rb")
+
+    def get_all_events_in_current_file(self):
+        while True:
+            try:
+                event = pickle.load(self.current_file)
+            except EOFError:
+                break
+            yield event
+
+    def close(self):
+        self.current_file.close()
 
 
 ##

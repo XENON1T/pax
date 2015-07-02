@@ -2,36 +2,20 @@
 JSON and BSON-based data output
 """
 import json
+import zipfile
+import gzip
 
 import bson
 
 from pax import datastructure
-from pax.FolderIO import InputFromFolder, WriteToFolder, ReadZipped, WriteZipped
+from pax.FolderIO import InputFromFolder, WriteToFolder
 
 
 ##
 # JSON
 ##
-class JSONIO():
 
-    def from_format(self, doc):
-        return datastructure.Event(**json.loads(doc))
-
-    def to_format(self, event):
-        return event.to_json(fields_to_ignore=self.config['fields_to_ignore'])
-
-
-class ReadZippedJSON(JSONIO, ReadZipped):
-    """Read a folder of zipfiles containing gzipped JSON files"""
-    pass
-
-
-class WriteZippedJSON(JSONIO, WriteZipped):
-    """Write raw data to a folder of zipfiles containing gzipped JSONs"""
-    pass
-
-
-class ReadJSON(JSONIO, InputFromFolder):
+class ReadJSON(InputFromFolder):
 
     """Read raw data from a folder of newline-separated-JSON files
     """
@@ -42,13 +26,13 @@ class ReadJSON(JSONIO, InputFromFolder):
 
     def get_all_events_in_current_file(self):
         for line in self.current_file:
-            yield self.from_format(line)
+            yield datastructure.Event(**json.loads(line))
 
     def close(self):
         self.current_file.close()
 
 
-class WriteJSON(JSONIO, WriteToFolder):
+class WriteJSON(WriteToFolder):
 
     """Write raw data to a folder of newline-separated-JSON files
     """
@@ -58,7 +42,7 @@ class WriteJSON(JSONIO, WriteToFolder):
         self.current_file = open(filename, mode='w')
 
     def write_event_to_current_file(self, event):
-        self.current_file.write(self.to_format(event))
+        self.current_file.write(event.to_json(fields_to_ignore=self.config['fields_to_ignore']))
         self.current_file.write("\n")
 
     def close(self):
@@ -69,24 +53,7 @@ class WriteJSON(JSONIO, WriteToFolder):
 # BSON
 ##
 
-class BSONIO():
-
-    def from_format(self, doc):
-        return datastructure.Event.from_bson(doc)
-
-    def to_format(self, event):
-        return event.to_bson(fields_to_ignore=self.config['fields_to_ignore'])
-
-class ReadZippedBSON(BSONIO, ReadZipped):
-    """Read a folder of zipfiles containing gzipped BSON files"""
-    pass
-
-class WriteZippedBSON(BSONIO, WriteZipped):
-    """Write raw data to a folder of zipfiles containing gzipped BSONs"""
-    pass
-
-
-class ReadBSON(InputFromFolder, BSONIO):
+class ReadBSON(InputFromFolder):
 
     """Read raw BSON data from a concatenated-BSON file or a folder of such files
     """
@@ -104,7 +71,7 @@ class ReadBSON(InputFromFolder, BSONIO):
             yield datastructure.Event(**doc)
 
 
-class WriteBSON(WriteToFolder, BSONIO):
+class WriteBSON(WriteToFolder):
 
     """Write raw data to a folder of concatenated-BSON files
     """
@@ -114,7 +81,52 @@ class WriteBSON(WriteToFolder, BSONIO):
         self.current_file = open(filename, mode='wb')
 
     def write_event_to_current_file(self, event):
-        self.current_file.write(self.to_format(event))
+        self.current_file.write(event.to_bson(fields_to_ignore=self.config['fields_to_ignore']))
+
+    def close(self):
+        self.current_file.close()
+
+
+##
+# Zipped BSON
+##
+
+class ReadZippedBSON(InputFromFolder):
+
+    """Read a folder of zipfiles containing gzipped BSON files
+    """
+    file_extension = 'zip'
+
+    def open(self, filename):
+        self.current_file = zipfile.ZipFile(filename)
+        self.event_numbers = sorted([int(x)
+                                     for x in self.current_file.namelist()])
+
+    def get_single_event_in_current_file(self, event_position):
+        event_name_in_zip = str(self.event_numbers[event_position])
+        with self.current_file.open(event_name_in_zip) as event_file_in_zip:
+            doc = event_file_in_zip.read()
+            doc = gzip.decompress(doc)
+            return datastructure.Event.from_bson(doc)
+
+    def close(self):
+        """Close the currently open file"""
+        self.current_file.close()
+
+
+class WriteZippedBSON(WriteToFolder):
+
+    """Write raw data to a folder of zipfiles containing gzipped BSONs
+    """
+    file_extension = 'zip'
+
+    def open(self, filename):
+        self.current_file = zipfile.ZipFile(filename, mode='w')
+
+    def write_event_to_current_file(self, event):
+        self.current_file.writestr(str(event.event_number),
+                                   gzip.compress(event.to_bson(fields_to_ignore=self.config['fields_to_ignore']),
+                                                 self.config['compresslevel']))
 
     def close(self):
         self.current_file.close()
