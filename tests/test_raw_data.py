@@ -10,14 +10,14 @@ plugins_to_test = [
         'write_plugin': 'BSON.WriteBSON',
     },
     {
-        'name':         'JSON',
-        'read_plugin':  'BSON.ReadJSON',
-        'write_plugin': 'BSON.WriteJSON',
-    },
-    {
         'name':         'ZippedBSON',
         'read_plugin':  'BSON.ReadZippedBSON',
         'write_plugin': 'BSON.WriteZippedBSON',
+    },
+    {
+        'name':         'JSON',
+        'read_plugin':  'BSON.ReadJSON',
+        'write_plugin': 'BSON.WriteJSON',
     },
     {
         'name':         'XED',
@@ -28,6 +28,11 @@ plugins_to_test = [
         'name':         'Avro',
         'read_plugin':  'Avro.ReadAvro',
         'write_plugin': 'Avro.WriteAvro',
+    },
+    {
+        'name':         'ZippedPickles',
+        'read_plugin':  'Pickle.ReadZippedPickles',
+        'write_plugin': 'Pickle.WriteZippedPickles',
     },
 ]
 

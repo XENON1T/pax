@@ -12,26 +12,9 @@ from pax.FolderIO import InputFromFolder, WriteToFolder, ReadZipped, WriteZipped
 ##
 # JSON
 ##
-class JSONIO():
-
-    def from_format(self, doc):
-        return datastructure.Event(**json.loads(doc))
-
-    def to_format(self, event):
-        return event.to_json(fields_to_ignore=self.config['fields_to_ignore'])
 
 
-class ReadZippedJSON(JSONIO, ReadZipped):
-    """Read a folder of zipfiles containing gzipped JSON files"""
-    pass
-
-
-class WriteZippedJSON(JSONIO, WriteZipped):
-    """Write raw data to a folder of zipfiles containing gzipped JSONs"""
-    pass
-
-
-class ReadJSON(JSONIO, InputFromFolder):
+class ReadJSON(InputFromFolder):
 
     """Read raw data from a folder of newline-separated-JSON files
     """
@@ -42,13 +25,13 @@ class ReadJSON(JSONIO, InputFromFolder):
 
     def get_all_events_in_current_file(self):
         for line in self.current_file:
-            yield self.from_format(line)
+            yield datastructure.Event(**json.loads(line))
 
     def close(self):
         self.current_file.close()
 
 
-class WriteJSON(JSONIO, WriteToFolder):
+class WriteJSON(WriteToFolder):
 
     """Write raw data to a folder of newline-separated-JSON files
     """
@@ -58,7 +41,7 @@ class WriteJSON(JSONIO, WriteToFolder):
         self.current_file = open(filename, mode='w')
 
     def write_event_to_current_file(self, event):
-        self.current_file.write(self.to_format(event))
+        self.current_file.write(event.to_json(fields_to_ignore=self.config['fields_to_ignore']))
         self.current_file.write("\n")
 
     def close(self):
@@ -77,9 +60,11 @@ class BSONIO():
     def to_format(self, event):
         return event.to_bson(fields_to_ignore=self.config['fields_to_ignore'])
 
+
 class ReadZippedBSON(BSONIO, ReadZipped):
     """Read a folder of zipfiles containing gzipped BSON files"""
     pass
+
 
 class WriteZippedBSON(BSONIO, WriteZipped):
     """Write raw data to a folder of zipfiles containing gzipped BSONs"""

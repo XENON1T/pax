@@ -10,9 +10,12 @@ import re
 from pax import plugin
 from pax.FolderIO import ReadZipped, WriteZipped
 
+
 ##
 # Zipped pickles
 ##
+
+
 class PickleIO():
 
     def from_format(self, doc):
@@ -34,6 +37,7 @@ class WriteZippedPickles(PickleIO, WriteZipped):
 
 ##
 # Single events to pickles
+# TOD: This is quite old code, we're keeping it for compatibility with pftest only
 ##
 
 class WriteToPickleFile(plugin.OutputPlugin):

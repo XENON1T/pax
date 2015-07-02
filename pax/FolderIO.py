@@ -169,7 +169,7 @@ class WriteToFolder(plugin.OutputPlugin):
     """Write to a folder containing several small files, each containing <= a fixed number of events"""
 
     def startup(self):
-        self.events_per_file = self.config['events_per_file']
+        self.events_per_file = self.config.get('events_per_file', 50)
         self.first_event_in_current_file = None
         self.last_event_written = None
 
