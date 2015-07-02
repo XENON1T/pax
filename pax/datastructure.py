@@ -303,16 +303,21 @@ class Interaction(StrictModel):
     #: The reconstructed position of the interaction
     x = float('nan')  #: x position (cm)
     y = float('nan')  #: y position (cm)
+
     #: goodness-of-fit parameter of s2 hitpattern to x,y position reconstructed by PosRecChiSquareGamma
     xy_posrec_goodness_of_fit = float('nan')
+
     #: number of degrees of freedom calculated with PosRecChiSquareGamma
     xy_posrec_ndf = float('nan')
+
     #: Algorithm used for xy position reconstructed
     xy_posrec_algorithm = 'none'
 
-    drift_time = float('nan')  #: drift time (ns) between S1 and S2
-    z = float('nan')  #: z position (cm), calculated from drift time
+    #: drift time (ns) between S1 and S2
+    drift_time = float('nan')
 
+    #: z position (cm), calculated from drift time
+    z = float('nan')
 
     #: r position (cm)
     @property
@@ -414,7 +419,7 @@ class Event(StrictModel):
     sample_duration = 0
 
     #: A list of :class:`pax.datastructure.Interaction` objects.
-    interactions = ListField(Peak)
+    interactions = ListField(Interaction)
 
     #: A list of :class:`pax.datastructure.Peak` objects.
     peaks = ListField(Peak)

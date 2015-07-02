@@ -60,18 +60,20 @@ class Model(object):
                 default_value = getattr(self, k)
                 if type(default_value) == np.ndarray:
                     if isinstance(v, np.ndarray):
-                        setattr(self, k, v)
+                        pass
                     elif isinstance(v, bytes):
                         # Numpy arrays can be also initialized from a 'string' of bytes...
-                        setattr(self, k, np.fromstring(v, dtype=default_value.dtype))
+                        v = np.fromstring(v, dtype=default_value.dtype)
                     elif hasattr(v, '__iter__'):
                         # ... or an iterable
-                        setattr(self, k, np.array(v, dtype=default_value.dtype))
+                        v = np.array(v, dtype=default_value.dtype)
                     else:
                         raise ValueError("Can't initialize field %s: "
                                          "don't know how to make a numpy array from a %s" % (k, type(v)))
-                else:
-                    setattr(self, k, v)
+                elif isinstance(default_value, Model):
+                    v = default_value.__class__(**v)
+
+                setattr(self, k, v)
 
     @classmethod        # Use only in initialization (or if attributes are fixed, as for StrictModel)
     @Memoize            # Caching decorator, improves performance if a model is initialized often
