@@ -271,8 +271,8 @@ class Simulator(object):
             self.config['pmt_fall_time'],
         )
 
-    def make_hitpattern(self, photon_times):
-        return SimulatedHitpattern(config=self.config, photon_timings=photon_times)
+    def make_hitpattern(self, photon_times, x=0, y=0, z=0):
+        return SimulatedHitpattern(config=self.config, photon_timings=photon_times, x=x, y=y, z=z)
 
     def to_pax_event(self, hitpattern):
         """Simulate PMT response to a hitpattern of photons
@@ -466,9 +466,18 @@ class Simulator(object):
 
 class SimulatedHitpattern(object):
 
-    def __init__(self, config, photon_timings):
+    def __init__(self, config, photon_timings, x=0, y=0, z=0):
         self.config = config
-        # TODO: specify x, y, z, let photon distribution depend on it
+
+        # Init lce map the first time a hitpattern is loaded -- ugly code!
+        if not hasattr(self.__class__, 's2_lce_map'):
+            self.__class__.s2_lce_map = utils.InterpolatingMap(filename=utils.data_file_name(self.config['s2_lce_map']))
+
+        # Add the minimum and maximum times, and number of times
+        # hitlist_to_waveforms would have to go through weird flattening stuff to determine these
+        self.min = min(photon_timings)
+        self.max = max(photon_timings)
+        self.n_photons = len(photon_timings)
 
         if not len(photon_timings):
             raise ValueError('Need at least 1 photon timing to '
@@ -481,23 +490,74 @@ class SimulatedHitpattern(object):
             len(photon_timings)
         )
 
-        # The number of pmts which can receive a photon
+        # First shuffle all timings in the array, so channel 1 doesn't always get the first photon
+        np.random.shuffle(photon_timings)
+
+        # All channels which can receive photons (depends on configuration, magical dead pmt avoidance etc)
         ch_for_photons = self.config['channels_for_photons']
-        n_channels = len(ch_for_photons)
+
+        if z == - self.config['gate_to_anode_distance']:
+            # Generated at anode: use S2 LCE data
+            top_chs_for_photons = [ch for ch in self.config['channels_top']
+                                   if ch in self.config['channels_for_photons']]
+
+            bottom_chs_for_photons = [ch for ch in self.config['channels_bottom']
+                                      if ch in self.config['channels_for_photons']]
+
+            # How much should go to the top array?
+            n_top = np.random.binomial(n=self.n_photons, p=self.config['s2_mean_area_fraction_top'])
+
+            arr_t_p_c = self.distribute_photons_by_lcemap(photon_timings=photon_timings[:n_top],
+                                                          channels=top_chs_for_photons,
+                                                          lce_map=self.s2_lce_map,
+                                                          coordinate_tuple=(x, y))
+
+            # Randomly distribute S2 photons in bottom array
+            arr_t_p_c.update(self.randomize_photons_over_channels(photon_timings[n_top:],
+                                                                  bottom_chs_for_photons))
+
+        else:
+            # S1 LCE: completely uniformm for now
+            arr_t_p_c = self.randomize_photons_over_channels(photon_timings, ch_for_photons)
+
+        self.arrival_times_per_channel = arr_t_p_c
+
+    def distribute_photons_by_lcemap(self, photon_timings, channels, lce_map, coordinate_tuple):
+        # Calculate cumulative sum of relative LCEs at this position
+
+        lces = [lce_map.get_value(*coordinate_tuple, map_name=str(ch)) for ch in channels]
+        lces = np.array(lces)
+        # Normalize so all photons go somewhere
+        lces /= np.sum(lces)
+
+        # Generate channels indices in channels list according to LCE
+        channel_index_for_p = np.searchsorted(np.cumsum(lces), np.random.uniform(0, 1, len(photon_timings)))
+
+        # Count number of photons in each channel, update arrival times per channel
+        hitp = np.bincount(channel_index_for_p, minlength=len(channels))
+        assert len(hitp) == len(channels)
+        assert np.sum(hitp) == len(photon_timings)
+
+        photons_distributed = 0
+        arrival_times_per_channel = {}
+        for index, ph_in_ch in enumerate(hitp):
+            start_index = photons_distributed
+            arrival_times_per_channel[channels[index]] = \
+                photon_timings[start_index:start_index + ph_in_ch]
+            photons_distributed += ph_in_ch
+        assert photons_distributed == len(photon_timings)
+
+        return arrival_times_per_channel
+
+    def randomize_photons_over_channels(self, photon_timings, channels):
+        n_channels = len(channels)
 
         if n_channels == 1:
             photons_per_channel = [photon_timings]
 
         else:
-
-            # First shuffle all timings in the array, so channel 1 doesn't always
-            # get the first photon
-            np.random.shuffle(photon_timings)
-
-            # Now generate n_channels integers < n_channels to denote the splitting
-            # points
-            # TODO: think carefully about these +1 and -1's Without the +1 S1sClose
-            # failed
+            # Generate n_channels integers < n_channels to denote the splitting points
+            # TODO: think carefully about these +1 and -1's Without the +1 S1sClose failed
             split_points = np.sort(np.random.randint(0,
                                                      len(photon_timings) + 1,
                                                      n_channels - 1))
@@ -516,13 +576,7 @@ class SimulatedHitpattern(object):
 
         # Merge the result in a dictionary, which we return
         # TODO: zip can probably do this faster!
-        self.arrival_times_per_channel = {ch_for_photons[i]: photons_per_channel[i] for i in range(n_channels)}
-
-        # Add the minimum and maximum times, and number of times
-        # hitlist_to_waveforms would have to go through weird flattening stuff to determine these
-        self.min = min(photon_timings)
-        self.max = max(photon_timings)
-        self.n_photons = len(photon_timings)
+        return {channels[i]: photons_per_channel[i] for i in range(n_channels)}
 
     def __add__(self, other):
         # Don't reuse __init__, we don't want another TTS correction..
@@ -588,6 +642,7 @@ def exp_pulse(t, q, tr, tf):
 
 @Memoize
 def _truncated_gauss(my_mean, my_std, left_boundary, right_boundary):
+    """NB: the mean & std are only used to fix the boundaries, this is still a standardized normal otherwise!"""
     return stats.truncnorm(
         (left_boundary - my_mean) / my_std,
         (right_boundary - my_mean) / my_std)
