@@ -24,7 +24,8 @@ class BuildInteractions(plugin.TransformPlugin):
 
         s2s = event.s2s()
         s2_area_limit = self.config.get('s2_pairing_threshold', 0)
-        s2s = [p for p in s2s if p.area > s2_area_limit]
+        s2s = [p for p in s2s if p.area >= s2_area_limit]
+        s2s = s2s[:min(len(s2s), self.config.get('pair_n_s2s'))]
 
         for s1 in s1s:
             for s2 in s2s:
