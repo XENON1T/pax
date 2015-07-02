@@ -339,7 +339,7 @@ class Interaction(StrictModel):
         self.xy_posrec_goodness_of_fit = recpos.goodness_of_fit
 
     ##
-    # Energy estimation
+    # Interaction properties
     ##
 
     #: Multiplicative correction to s1 area based on position (due to LCE variations)

@@ -1,5 +1,7 @@
 
-from pax import plugin
+import numpy as np
+
+from pax import plugin, utils
 from pax.datastructure import Interaction
 
 
@@ -55,5 +57,22 @@ class BuildInteractions(plugin.TransformPlugin):
 
 class BasicInteractionProperties(plugin.TransformPlugin):
     """"""
+
+    def startup(self):
+        self.s1_correction_map = utils.InterpolatingMap(utils.data_file_name(self.config['s1_correction_map']))
+        self.s2_correction_map = utils.InterpolatingMap(utils.data_file_name(self.config['s2_correction_map']))
+
     def transform_event(self, event):
+
+        for ia in event.interactions:
+            # Electron lifetime correction
+            ia.s2_area_correction *= np.exp(ia.drift_time / self.config['electron_lifetime_liquid'])
+
+            # Determine z position from drift time
+            ia.z = ia.drift_time / self.config['drift_velocity_liquid']
+
+            # S1 and S2 corrections
+            ia.s1_area_correction *= self.s1_correction_map.get_value_at(ia)
+            ia.s2_area_correction *= self.s2_correction_map.get_value_at(ia)
+
         return event
