@@ -39,6 +39,9 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
         # Set area threshold, minimum area for a peak to be reconstructed
         self.area_threshold = self.config['area_threshold']
 
+        # Set the TPC radius squared
+        self.tpc_radius_squared = self.config['tpc_radius']**2
+
         # (x,y) Locations of these PMTs.  This is stored as a dictionary such
         # that self.pmt_locations[int] = {'x' : int, 'y' : int, 'z' : None}
         self.pmt_locations = self.config['pmt_locations']
@@ -77,8 +80,8 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
         x = position[0]
         y = position[1]
 
-        # Cutoff value at r=15 cm, chi_square_gamma is +infinity here
-        if x ** 2 + y ** 2 > 225:
+        # Cutoff value at TPC radius, chi_square_gamma is +infinity here
+        if x ** 2 + y ** 2 > self.tpc_radius_squared:
             return float('inf')
 
         function_value = 0
@@ -206,6 +209,10 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
                 self.log.warning("Help! Optimizer gave me an ndarray instead of float... "
                                  "To be precise, I got this: %s" % str(chi_square_gamma))
                 chi_square_gamma = float('nan')
+
+            # If the minimizer failed do not report a position
+            if chi_square_gamma == float('nan'):
+                x = y = float('nan')
 
             self.log.debug("Reconstructed event at x: %f y: %f chi_square_gamma:"
                            " %f ndf: %d" % (x, y, chi_square_gamma, self.ndf))
