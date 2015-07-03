@@ -514,7 +514,7 @@ class SimulatedHitpattern(object):
 
             # Randomly distribute S2 photons in bottom array
             arr_t_p_c.update(randomize_photons_over_channels(photon_timings[n_top:],
-                                                            bottom_chs_for_photons))
+                                                             bottom_chs_for_photons))
 
         else:
             # S1 LCE: completely uniformm for now
@@ -625,6 +625,7 @@ def distribute_photons_by_lcemap(photon_timings, channels, lce_map, coordinate_t
     assert photons_distributed == len(photon_timings)
 
     return arrival_times_per_channel
+
 
 def randomize_photons_over_channels(photon_timings, channels):
     n_channels = len(channels)
