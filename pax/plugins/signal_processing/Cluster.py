@@ -322,6 +322,7 @@ class GapSize(ClusterPlugin):
             boundary = max(boundary, hit.right + gap_size_threshold)
         return clusters
 
+
 class GapSize_s1trigger(ClusterPlugin):
     """Clusters hits based on gaps = times not covered by any hits.
     Any gap longer than max_gap_size starts a new cluster.
@@ -329,8 +330,8 @@ class GapSize_s1trigger(ClusterPlugin):
     XENON100 (can be generalized for other detectors). The first time intervall will use a minimum gap size 
     (specficied with s1_gap_threshold), while afterwards only S2s are expected, where the usual GapSize algorithm takes 
     place. This is feasible as long as the s1 signals are strong enough to generate the trigger as it is the case for 
-    Kr83m, Cs137 and brings the advantage, that s1 signals will be separated if they occur with a short time difference but
-    the s2 signals will not be affected. 
+    Kr83m, Cs137 and brings the advantage, that s1 signals will be separated if they occur with a short time difference 
+    while the s2 signals will not be affected. 
     """
 
     def startup(self):
