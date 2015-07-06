@@ -1367,7 +1367,7 @@ This is</p>
 
 <dl class="attribute">
 <dt id="pax.formats.ROOTDump.numpy_type">
-<code class="descname">numpy_type</code><em class="property"> = {'F': &lt;class 'numpy.float32'&gt;, 'D': &lt;class 'numpy.float64'&gt;, 'O': &lt;class 'bool'&gt;, 'I': &lt;class 'numpy.int32'&gt;, 'C': dtype('O'), 'L': &lt;class 'numpy.int64'&gt;}</em><a class="headerlink" href="#pax.formats.ROOTDump.numpy_type" title="Permalink to this definition">¶</a></dt>
+<code class="descname">numpy_type</code><em class="property"> = {'L': &lt;class 'numpy.int64'&gt;, 'D': &lt;class 'numpy.float64'&gt;, 'I': &lt;class 'numpy.int32'&gt;, 'C': dtype('O'), 'F': &lt;class 'numpy.float32'&gt;, 'O': &lt;class 'bool'&gt;}</em><a class="headerlink" href="#pax.formats.ROOTDump.numpy_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -1382,7 +1382,7 @@ This is</p>
 
 <dl class="attribute">
 <dt id="pax.formats.ROOTDump.root_type">
-<code class="descname">root_type</code><em class="property"> = {'float64': '/D', 'S': '/C', 'bool': '/O', 'int32': '/I', 'int64': '/L', 'float32': '/F'}</em><a class="headerlink" href="#pax.formats.ROOTDump.root_type" title="Permalink to this definition">¶</a></dt>
+<code class="descname">root_type</code><em class="property"> = {'float32': '/F', 'float64': '/D', 'S': '/C', 'bool': '/O', 'int32': '/I', 'int64': '/L'}</em><a class="headerlink" href="#pax.formats.ROOTDump.root_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -1602,7 +1602,7 @@ e.g. a list clustering routine that isn&#8217;t in some standard, library but se
 <p>All interpolation is done linearly.
 Cartesian coordinates are supported, cylindrical coordinates (z, r, phi) may also work...</p>
 <dl class="docutils">
-<dt>The map must be specified as a json containing a dictionary with keys</dt>
+<dt>The map must be specified as a json translating to a dictionary with keys</dt>
 <dd>&#8216;coordinate_system&#8217; :   [[&#8216;x&#8217;, x_min, x_max, n_x], [&#8216;y&#8217;,...
 &#8216;your_map_name&#8217; :       [[valuex1y1, valuex1y2, ..], [valuex2y1, valuex2y2, ..], ...
 &#8216;another_map_name&#8217; :    idem
@@ -1611,6 +1611,8 @@ Cartesian coordinates are supported, cylindrical coordinates (z, r, phi) may als
 &#8216;timestamp&#8217;:            unix epoch seconds timestamp</dd>
 </dl>
 <p>with the straightforward generalization to 1d and 3d.</p>
+<p>For a 0d placeholder map, the map value must be a single number, and the coordinate system must be [].</p>
+<p>The json can be gzip compressed: if so, it must have a .gz extension.</p>
 <p>See also examples/generate_mock_correction_map.py</p>
 <dl class="attribute">
 <dt id="pax.utils.InterpolatingMap.data_field_names">
@@ -1642,6 +1644,21 @@ position - pax.datastructure.ReconstructedPosition instance</p>
 <dt id="pax.utils.Memoize">
 <em class="property">class </em><code class="descclassname">pax.utils.</code><code class="descname">Memoize</code><span class="sig-paren">(</span><em>function</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/utils.html#Memoize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.utils.Memoize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.utils.adc_to_pe">
+<code class="descclassname">pax.utils.</code><code class="descname">adc_to_pe</code><span class="sig-paren">(</span><em>config</em>, <em>channel</em>, <em>use_reference_gain=False</em>, <em>use_reference_gain_if_zero=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/utils.html#adc_to_pe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.utils.adc_to_pe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gives the conversion factor from ADC counts above baseline to pe/bin
+Use as: w_in_pe_bin = adc_to_pe(config, channel) * w_in_adc_above_baseline</p>
+<blockquote>
+<div><ul class="simple">
+<li>config should be a configuration dictionary (self.config in a pax plugin)</li>
+<li>If use_reference_gain is True, will always use config.get(&#8216;pmt_reference_gain&#8217;, 2e6) rather than the pmt gain</li>
+<li>If use_reference_gain_if_zero=True will do the above only if channel gain is 0.</li>
+</ul>
+</div></blockquote>
+<p>If neither of these are true, and gain is 0, will return 0.</p>
 </dd></dl>
 
 <dl class="function">

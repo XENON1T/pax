@@ -92,6 +92,9 @@
         <span class="c"># Set area threshold, minimum area for a peak to be reconstructed</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">area_threshold</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;area_threshold&#39;</span><span class="p">]</span>
 
+        <span class="c"># Set the TPC radius squared</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">tpc_radius_squared</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;tpc_radius&#39;</span><span class="p">]</span><span class="o">**</span><span class="mi">2</span>
+
         <span class="c"># (x,y) Locations of these PMTs.  This is stored as a dictionary such</span>
         <span class="c"># that self.pmt_locations[int] = {&#39;x&#39; : int, &#39;y&#39; : int, &#39;z&#39; : None}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pmt_locations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pmt_locations&#39;</span><span class="p">]</span>
@@ -130,8 +133,8 @@
         <span class="n">x</span> <span class="o">=</span> <span class="n">position</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="n">y</span> <span class="o">=</span> <span class="n">position</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 
-        <span class="c"># Cutoff value at r=15 cm, chi_square_gamma is +infinity here</span>
-        <span class="k">if</span> <span class="n">x</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">y</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">&gt;</span> <span class="mi">225</span><span class="p">:</span>
+        <span class="c"># Cutoff value at TPC radius, chi_square_gamma is +infinity here</span>
+        <span class="k">if</span> <span class="n">x</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="n">y</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">tpc_radius_squared</span><span class="p">:</span>
             <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;inf&#39;</span><span class="p">)</span>
 
         <span class="n">function_value</span> <span class="o">=</span> <span class="mi">0</span>
@@ -259,6 +262,10 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Help! Optimizer gave me an ndarray instead of float... &quot;</span>
                                  <span class="s">&quot;To be precise, I got this: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="n">chi_square_gamma</span><span class="p">))</span>
                 <span class="n">chi_square_gamma</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
+
+            <span class="c"># If the minimizer failed do not report a position</span>
+            <span class="k">if</span> <span class="n">chi_square_gamma</span> <span class="o">==</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">):</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="n">y</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
 
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Reconstructed event at x: </span><span class="si">%f</span><span class="s"> y: </span><span class="si">%f</span><span class="s"> chi_square_gamma:&quot;</span>
                            <span class="s">&quot; </span><span class="si">%f</span><span class="s"> ndf: </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">chi_square_gamma</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ndf</span><span class="p">))</span>

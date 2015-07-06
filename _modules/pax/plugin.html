@@ -95,7 +95,7 @@
             <span class="k">if</span> <span class="n">y</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&#39;Shutdown of </span><span class="si">%s</span><span class="s"> returned a </span><span class="si">%s</span><span class="s"> instead of &#39;</span>
                                    <span class="s">&#39;None.&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span>
-                                                                                      <span class="nb">type</span><span class="p">(</span><span class="n">y</span><span class="p">)))</span>
+                                              <span class="nb">type</span><span class="p">(</span><span class="n">y</span><span class="p">)))</span>
         <span class="c"># else:</span>
         <span class="c">#    self.log.debug(&quot;Deleting %s, shutdown has already occurred&quot; % self.name)</span>
 
@@ -127,7 +127,6 @@
 
 </div></div>
 <div class="viewcode-block" id="InputPlugin"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.InputPlugin">[docs]</a><span class="k">class</span> <span class="nc">InputPlugin</span><span class="p">(</span><span class="n">BasePlugin</span><span class="p">):</span>
-
     <span class="sd">&quot;&quot;&quot;Base class for data inputs</span>
 
 <span class="sd">    This class cannot be parallelized since events are read in a specific order</span>

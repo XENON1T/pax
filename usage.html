@@ -81,8 +81,8 @@
 <td>show this help message and exit</td></tr>
 </tbody>
 </table>
-<p>&#8211;input [INPUT]       File, database or directory to read events from</p>
-<p>&#8211;output [OUTPUT]     File, database or directory to write events to</p>
+<p>&#8211;input [INPUT]       File, database or directory to read events from. Default: $PAX_PATH/pax/data/*</p>
+<p>&#8211;output [OUTPUT]     File, database or directory to write events to. Default: output.hdf5</p>
 <table class="docutils option-list" frame="void" rules="none">
 <col class="option" />
 <col class="description" />
@@ -104,7 +104,7 @@
 <tbody valign="top">
 <tr><td class="option-group">
 <kbd><span class="option">--plot</span></kbd></td>
-<td>Plot summed waveforms on screen</td></tr>
+<td>Plot summed waveforms on screen using the PlotEventSummaray class in $PAX_PATH/pax/plugins/plotting/Plotting.py. The EventSummary plots a summed waveform, a hitpattern of top and/or bottom pmts respectively, and magnifications for the largest S1 and S2 peaks, if any.</td></tr>
 <tr><td class="option-group" colspan="2">
 <kbd><span class="option">--plot_to_dir <var>PLOT_TO_DIR</var></span></kbd></td>
 </tr>
