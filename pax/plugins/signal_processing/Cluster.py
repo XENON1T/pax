@@ -326,15 +326,18 @@ class GapSize_s1trigger(ClusterPlugin):
     """Clusters hits based on gaps = times not covered by any hits.
     Any gap longer than max_gap_size starts a new cluster.
     Difference to normal GapSize algorithm is a separation of the time window by the expected trigger position, e.g here
-    XENON100 (can be generalized for other detectors). The first time intervall will use a minimum gap size, while afterwards 
-    only S2s are expected, where the usual GapSize algorithm takes place. This is feasible as long as the s1 signals are 
-    strong enough to generate the trigger as it is the case for Kr83m, Cs137 etc..
+    XENON100 (can be generalized for other detectors). The first time intervall will use a minimum gap size 
+    (specficied with s1_gap_threshold), while afterwards only S2s are expected, where the usual GapSize algorithm takes 
+    place. This is feasible as long as the s1 signals are strong enough to generate the trigger as it is the case for 
+    Kr83m, Cs137 and brings the advantage, that s1 signals will be separated if they occur with a short time difference but
+    the s2 signals will not be affected. 
     """
 
     def startup(self):
         super().startup()
         # Convert gap threshold to samples (is in time (ns) in config)
         self.s1_gap_threshold = self.config['s1_gap_threshold'] / self.dt
+        # Threshold for the first time intervall for a better s1 separation
         self.large_gap_threshold = self.config['large_gap_threshold'] / self.dt
         self.small_gap_threshold = self.config['small_gap_threshold'] / self.dt
         self.transition_point = self.config['transition_point']
@@ -345,6 +348,7 @@ class GapSize_s1trigger(ClusterPlugin):
         clusters = []
         for i, hit in enumerate(hits):
             if hit.index_of_maximum <= 21000:
+                # Choose the time window threshold, e.g XENON100 trigger position
                 if (hit.left) > boundary:
                     # Hit starts after current boundary: new cluster
                     clusters.append([])
@@ -361,6 +365,7 @@ class GapSize_s1trigger(ClusterPlugin):
                 boundary = max(boundary, hit.right + gap_size_threshold)
 
             if hit.index_of_maximum > 21000:
+                # Choose the time window threshold, e.g  XENON100 trigger position
                 if hit.left > boundary:
                     # Hit starts after current boundary: new cluster
                     clusters.append([])
