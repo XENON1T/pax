@@ -469,10 +469,6 @@ class SimulatedHitpattern(object):
     def __init__(self, config, photon_timings, x=0, y=0, z=0):
         self.config = config
 
-        # Init lce map the first time a hitpattern is loaded -- ugly code!
-        if not hasattr(self.__class__, 's2_lce_map'):
-            self.__class__.s2_lce_map = utils.InterpolatingMap(filename=utils.data_file_name(self.config['s2_lce_map']))
-
         # Add the minimum and maximum times, and number of times
         # hitlist_to_waveforms would have to go through weird flattening stuff to determine these
         self.min = min(photon_timings)
@@ -480,8 +476,7 @@ class SimulatedHitpattern(object):
         self.n_photons = len(photon_timings)
 
         if not len(photon_timings):
-            raise ValueError('Need at least 1 photon timing to '
-                             'produce a valid hitpattern')
+            raise ValueError('Need at least 1 photon timing to produce a valid hitpattern')
 
         # Correct for PMT TTS
         photon_timings += np.random.normal(
@@ -496,7 +491,12 @@ class SimulatedHitpattern(object):
         # All channels which can receive photons (depends on configuration, magical dead pmt avoidance etc)
         ch_for_photons = self.config['channels_for_photons']
 
-        if z == - self.config['gate_to_anode_distance']:
+        if z == - self.config['gate_to_anode_distance'] and self.config.get('s2_lce_map', None) is not None:
+            # Init lce map the first time a hitpattern is loaded -- ugly code!
+            if not hasattr(self.__class__, 's2_lce_map'):
+                mf = utils.data_file_name(self.config['s2_lce_map'])
+                self.__class__.s2_lce_map = utils.InterpolatingMap(filename=mf)
+
             # Generated at anode: use S2 LCE data
             top_chs_for_photons = [ch for ch in self.config['channels_top']
                                    if ch in self.config['channels_for_photons']]
@@ -517,7 +517,7 @@ class SimulatedHitpattern(object):
                                                              bottom_chs_for_photons))
 
         else:
-            # S1 LCE: completely uniformm for now
+            # S1, or S2 LCE map not present: distribute photons uniformly
             arr_t_p_c = randomize_photons_over_channels(photon_timings, ch_for_photons)
 
         self.arrival_times_per_channel = arr_t_p_c
