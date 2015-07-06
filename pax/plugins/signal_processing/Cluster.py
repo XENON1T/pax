@@ -327,9 +327,9 @@ class GapSize_s1trigger(ClusterPlugin):
     """Clusters hits based on gaps = times not covered by any hits.
     Any gap longer than max_gap_size starts a new cluster.
     Difference to normal GapSize algorithm is a separation of the time window by the expected trigger position, e.g here
-    XENON100 (can be generalized for other detectors). The first time intervall will use a minimum gap size (specficied 
-    with s1_gap_threshold), while afterwards only S2s are expected, where the usual GapSize algorithm takes place. This 
-    is feasible as long as the s1 signals are strong enough to generate the trigger as it is the case for Kr83m, Cs137 
+    XENON100 (can be generalized for other detectors). The first time intervall will use a minimum gap size (specficied
+    with s1_gap_threshold), while afterwards only S2s are expected, where the usual GapSize algorithm takes place. This
+    is feasible as long as the s1 signals are strong enough to generate the trigger as it is the case for Kr83m, Cs137
     and brings the advantage, that s1 signals will be separated if they occur with a short time difference while the S2
     signals will not be affected. """
 
