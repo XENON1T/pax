@@ -318,9 +318,9 @@ class GapSize(ClusterPlugin):
             area += hit.area
 
             # Can we start applying the tighter threshold?
-            # if area > self.transition_point:
-            #     # Yes, there's no chance this is a single electron: use a tighter clustering boundary
-            #     gap_size_threshold = self.small_gap_threshold
+            if area > self.transition_point:
+                # Yes, there's no chance this is a single electron: use a tighter clustering boundary
+                gap_size_threshold = self.small_gap_threshold
 
             # Extend the boundary at which a new clusters starts, if needed
             boundary = max(boundary, hit.right + gap_size_threshold)
