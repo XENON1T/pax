@@ -4,6 +4,19 @@ History
 -------
 
 ------------------
+3.2.0 (2015-07-06)
+------------------
+
+* Multithreading of paxer (see --help)
+* Clustering bug fixed (#186)
+* Contribution section for non-XENON TPCs in examples.
+* Chi2 algorithm now runs by default (and has energy cutoff for speed)
+* Event builder pretrigger merged into pax
+* Units now statically defined
+* Various docs improvements
+
+
+------------------
 3.1.2 (2015-06-07)
 ------------------
 
