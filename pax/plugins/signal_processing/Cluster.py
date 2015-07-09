@@ -325,3 +325,134 @@ class GapSize(ClusterPlugin):
             # Extend the boundary at which a new clusters starts, if needed
             boundary = max(boundary, hit.right + gap_size_threshold)
         return clusters
+
+
+class NaturalBreaks(ClusterPlugin):
+    """Split hits by a variation on the 'natural breaks' algoritghm.
+
+
+    """
+
+    def startup(self):
+        super().startup()
+        self.max_gap_size_in_cluster = self.config['max_gap_size_in_cluster'] / self.dt
+        self.min_gap_size_for_break = self.config['min_gap_size_for_break'] / self.dt
+        self.max_n_gaps_to_test = self.config['max_n_gaps_to_test']
+        self.min_split_goodness = eval(self.config['min_split_goodness'])
+
+    def cluster_hits(self, hits):
+        # Store basic quantities as attributes for access in several methods
+        # Hits are already sorted by left
+        self.left = np.array([h.left for h in hits])
+        self.right = np.array([h.right for h in hits])
+        self.area = np.array([h.area for h in hits])
+        self.gaps = np.zeros_like(self.left)
+
+        if len(hits) == 0:
+            return []
+
+        # Cluster hits by breaking on large enough gaps
+        # gap = distance between hit left and largest right of any hits before it (lower left)
+        # The first hit is always easy:
+        farthest_right = hits[0].right
+        clusters = []
+        current_hits = [0]
+
+        # First hit has no defined gap size: it won't be taken into account in the median
+        self.gaps[0] = 0
+
+        for i, hit in enumerate(hits):
+            if i == 0:
+                # We already dealt with the first hit
+                continue
+
+            if hit.left > farthest_right + self.max_gap_size_in_cluster:
+                # This hit belongs to a new cluster. Declustering the cluster we just finished.
+                clusters += self.decluster(current_hits)
+                current_hits = []
+                self.gaps[i] = 0
+
+            else:
+                # If the gap size is negative, the hit is totally inside a larger hit
+                # We'll record a gap size of 0 instead
+                self.gaps[i] = max(0, hit.left - farthest_right)
+
+            current_hits.append(i)
+
+            # Update the farthest right value seen in this cluster
+            farthest_right = max(farthest_right, hit.right)
+
+        # Decluster the final cluster
+        clusters += self.decluster(current_hits)
+
+        return clusters
+
+    def decluster(self, hit_indices):
+        """Decluster hits by variant on natural breaks algorithm. Return list of lists of hit_indices."""
+        # Handle trivial cases
+        if len(hit_indices) == 0:
+            raise RuntimeError("Empty list passed to decluster!")
+        elif len(hit_indices) == 1:
+            return [hit_indices]
+
+        self.log.debug("Got %d hits (%d-%d) to decluster" % (len(hit_indices),
+                                                             self.left[hit_indices[0]],
+                                                             self.right[hit_indices[-1]]))
+
+        # Which gaps should we test?
+        # The first gap in this cluster is not a meaningful quantity
+        # (it's the distance to the last hit from the previous cluster)
+        gaps = self.gaps[hit_indices[1:]]
+
+        # Get indices of the self.max_n_gaps_to_test largest gaps
+        for gap_i in indices_of_largest_n(gaps, self.max_n_gaps_to_test):
+            if gaps[gap_i] < self.min_gap_size_for_break:
+                break
+
+            # Index of hit index in hit_indices to split hits on :-)
+            split_i = gap_i + 1
+
+            # Compute the natural break quantity for this break
+            split_goodness = self.split_goodness(hit_indices, split_i)
+
+            # Should we split? If so, call decluster recursively
+            n = len(hit_indices)
+            if split_goodness > self.min_split_goodness(n):
+                self.log.debug("SPLITTING at %d  (%s > %s)" % (split_i,
+                                                               split_goodness,
+                                                               self.min_split_goodness(n)))
+                return self.decluster(hit_indices[:split_i]) + self.decluster(hit_indices[split_i:])
+            else:
+                self.log.debug("Proposed split at %d not good enough (%s < %s)" % (split_i,
+                                                                                   split_goodness,
+                                                                                   self.min_split_goodness(n)))
+
+        # If we get here, no declustering needed
+        return [hit_indices]
+
+    def split_goodness(self, hit_indices, split_index):
+        """Return goodness of split for splitting everything >= split_index into right cluster, < into left."""
+        # Maybe replace this with a numba algorithm if this is a bottleneck?
+        if split_index >= len(hit_indices) or split_index <= 0:
+            raise ValueError("%d is a ridiculous split index for %d hits" % len(hit_indices), split_index)
+        x = np.concatenate((self.left[hit_indices], self.right[hit_indices]))
+        xleft = np.concatenate((self.left[hit_indices][:split_index],
+                               self.right[hit_indices][:split_index]))
+        xright = np.concatenate((self.left[hit_indices][split_index:],
+                                self.right[hit_indices][split_index:]))
+        return 0.5 * sum_abs_dev(x) / (sum_abs_dev(xleft) + sum_abs_dev(xright) +
+                                       # Add a rough distance between split hits penalty term
+                                       # to discourage 2-hit cluster splitting
+                                       self.left[hit_indices[split_index]] -
+                                       self.right[hit_indices[split_index - 1]]) - 1
+
+
+def indices_of_largest_n(a, n):
+    """Return indices of n largest elements in a"""
+    if len(a) == 0:
+        return []
+    return np.argsort(-a)[:min(n, len(a))]
+
+
+def sum_abs_dev(x):
+    return np.sum(np.abs(x - np.mean(x)))
