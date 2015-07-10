@@ -328,9 +328,18 @@ class GapSize(ClusterPlugin):
 
 
 class NaturalBreaks(ClusterPlugin):
-    """Split hits by a variation on the 'natural breaks' algoritghm.
+    """Split hits by a variation on the 'natural breaks' algorithm.
+    The clustering proceeds in two steps:
+     1) Hits are clustered by breaking whenever a gap larger than max_gap_size_in_cluster is encountered.
+     2) Next, These clusters are declustered. Any gaps larger than min_gap_size_for_break are tested by computing
+        a 'goodness of split' for splitting the cluster at that point.
+        If it is larger than min_split_goodness(n_hits), the cluster is split at that gap and the declustering is
+         called recursively for the newly minted clusters.
 
-
+    The threshold function min_split_goodness(n_hits) has to be chosen so that S1s and S2s are not split up.
+    This can be done by simulating them with pax's integrated waveform simulator.
+    Keep in mind that this simulation has to be re-done with every significant change in a detector property
+    that affects the signal shape (in particular, a change in electric fields).
     """
 
     def startup(self):
@@ -431,20 +440,36 @@ class NaturalBreaks(ClusterPlugin):
         return [hit_indices]
 
     def split_goodness(self, hit_indices, split_index):
-        """Return goodness of split for splitting everything >= split_index into right cluster, < into left."""
-        # Maybe replace this with a numba algorithm if this is a bottleneck?
+        """Return "goodness of split" for splitting everything >= split_index into right cluster, < into left.
+        "goodness of split" = 0.5 * sad(all_hits) / (sad(left cluster) + sad(right cluster) + gap between clusters) - 1
+          where sad = weighted (by area) sum of absolute deviation from mean,
+          calculated on all *endpoints* of hits in the cluster
+          The gap between clusters is added in the denominator as a penalty term against splitting very small signals.
+          The reason we use sum absolute deviation instead of the root of the sum square deviation is that the latter
+           is more sensitive to outliers. Clustering should NOT trim tails of peaks.
+        This usually takes a value around [-1, 1], but can go much higher if the split is good.
+
+        The reason we use endpoints, rather than hit centers, is compatibility with high-energy signals.
+        These can have a single long hit in all channels, which won't have any short hits near to its center.
+        """
+        # If the performance of this function becomes a bottleneck, we can replace it with a numba algorithm.
         if split_index >= len(hit_indices) or split_index <= 0:
             raise ValueError("%d is a ridiculous split index for %d hits" % len(hit_indices), split_index)
         x = np.concatenate((self.left[hit_indices], self.right[hit_indices]))
+        a = np.concatenate((self.area[hit_indices], self.area[hit_indices]))
         xleft = np.concatenate((self.left[hit_indices][:split_index],
-                               self.right[hit_indices][:split_index]))
+                                self.right[hit_indices][:split_index]))
+        aleft = np.concatenate((self.area[hit_indices][:split_index],
+                                self.area[hit_indices][:split_index]))
         xright = np.concatenate((self.left[hit_indices][split_index:],
-                                self.right[hit_indices][split_index:]))
-        return 0.5 * sum_abs_dev(x) / (sum_abs_dev(xleft) + sum_abs_dev(xright) +
-                                       # Add a rough distance between split hits penalty term
-                                       # to discourage 2-hit cluster splitting
-                                       self.left[hit_indices[split_index]] -
-                                       self.right[hit_indices[split_index - 1]]) - 1
+                                 self.right[hit_indices][split_index:]))
+        aright = np.concatenate((self.area[hit_indices][split_index:],
+                                 self.area[hit_indices][split_index:]))
+        return 0.5 * sum_abs_dev(x, weights=a) / (
+            sum_abs_dev(xleft, weights=aleft) + sum_abs_dev(xright, weights=aright) +
+            #
+            self.left[hit_indices[split_index]] -
+            self.right[hit_indices[split_index - 1]]) - 1
 
 
 def indices_of_largest_n(a, n):
@@ -454,5 +479,13 @@ def indices_of_largest_n(a, n):
     return np.argsort(-a)[:min(n, len(a))]
 
 
-def sum_abs_dev(x):
-    return np.sum(np.abs(x - np.mean(x)))
+def sum_abs_dev(x, weights=None):
+    sum_w = np.sum(weights)
+    if weights is None:
+        return np.sum(np.abs(x - np.mean(x)))
+    elif sum_w == 0:
+        raise ValueError("Weights sum to zero: can't be normalized")
+    else:
+        # To normalize to the case with all weights 1, we multipy by len(x) / sum_w
+        #
+        return np.sum(weights * np.abs(x - np.mean(x))) * len(x) / sum_w
