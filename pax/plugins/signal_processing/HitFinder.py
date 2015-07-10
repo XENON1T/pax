@@ -76,7 +76,9 @@ class FindHits(plugin.TransformPlugin):
                                 - self.config['height_over_min_low_threshold'] * pulse.minimum)
 
             # Call the numba hit finder -- see its docstring for description
-            n_hits_found = find_intervals_above_threshold(w, high_threshold, low_threshold, hits_buffer)
+            n_hits_found = find_intervals_above_threshold(
+                w, high_threshold, low_threshold, hits_buffer,
+                dynamic_low_threshold_coeff=self.config['dynamic_low_threshold_coeff'])
 
             # Only view the part of hits_buffer that contains hits found in this event
             # The rest of hits_buffer contains -1's or stuff from previous pulses
@@ -216,7 +218,7 @@ class FindHits(plugin.TransformPlugin):
 
 
 @numba.jit(nopython=True)
-def find_intervals_above_threshold(w, high_threshold, low_threshold, result_buffer):
+def find_intervals_above_threshold(w, high_threshold, low_threshold, result_buffer, dynamic_low_threshold_coeff=0):
     """Fills result_buffer with l, r bounds of intervals in w > low_threshold which exceed high_threshold somewhere
         result_buffer: numpy N*2 array of ints, will be filled by function.
     Returns: number of intervals found
@@ -243,6 +245,9 @@ def find_intervals_above_threshold(w, high_threshold, low_threshold, result_buff
 
             if x > high_threshold:
                 current_interval_passed_test = True
+                # Raise lower threshold to a fraction of the hit height
+                # This helps against tails (due to amplifiers?) for REALLY high hits
+                low_threshold = max(low_threshold, dynamic_low_threshold_coeff*x)
 
             if x <= low_threshold or i == last_index_in_w:
 
