@@ -29,6 +29,6 @@ class PosRecMaxPMT(plugin.TransformPlugin):
             peak.reconstructed_positions.append(ReconstructedPosition({
                 'x': self.config['pmt_locations'][max_pmt]['x'],
                 'y': self.config['pmt_locations'][max_pmt]['y'],
-                'algorithm': 'MaxPMT'}))
+                'algorithm': self.name}))
 
         return event
