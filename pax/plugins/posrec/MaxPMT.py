@@ -18,8 +18,6 @@ class PosRecMaxPMT(plugin.TransformPlugin):
     def transform_event(self, event):
         """Reconstruct the position of S2s in an event.
         """
-
-        # For every S2 peak found in the event
         for peak in event.S2s():
 
             input_areas = peak.area_per_channel[self.input_channels]

@@ -464,6 +464,46 @@ class Simulator(object):
         return event
 
 
+##
+# Hitpattern simulation
+##
+
+def distribute_photons_by_lcemap(photon_timings, channels, lce_map, coordinate_tuple):
+    # Calculate relative LCEs at this position
+    lces = np.array([lce_map.get_value(*coordinate_tuple, map_name=str(ch)) for ch in channels])
+    # Due to interpolation, probabilities can come out negative or normalization can be messed up. Deal with this:
+    lces = np.clip(lces, 0, 1)
+    lces /= np.sum(lces)
+    return randomize_photons_over_channels(photon_timings, channels, relative_lce_per_channel=lces)
+
+
+def randomize_photons_over_channels(photon_timings, channels, relative_lce_per_channel=None):
+    """Distribute photon_timings over channels according to relative_lce_per_channel
+
+    :param photon_timings: list of photon arrival times (floats)
+    :param channels: list of channel numbers (ints)
+    :param relative_lce_per_channel: list of relative lce per channel. Should be >= 0 and sum to 1.
+                                     If omitted, will distribute photons uniformly over channels.
+    :return:dictionary ch -> [photon arrival times]
+    """
+    # Ensure photon_timings is randomized, so first channel doesn't always get first photon
+    # May have been done before, can't hurt to do it again
+    np.random.shuffle(photon_timings)
+
+    # Generate a channel index for every photon
+    channel_index_for_p = np.random.choice(np.array(channels),
+                                           size=len(photon_timings),
+                                           p=relative_lce_per_channel)
+
+    # Count number of photons in each channel
+    hitp, _ = np.histogram(channel_index_for_p, bins=np.concatenate((channels, [np.max(channels) + 1])))
+    assert len(hitp) == len(channels)
+    assert np.sum(hitp) == len(photon_timings)
+
+    # Split photon times according to hitpattern
+    return dict(zip(channels, np.split(photon_timings, np.cumsum(hitp))))
+
+
 class SimulatedHitpattern(object):
 
     def __init__(self, config, photon_timings, x=0, y=0, z=0):
@@ -486,6 +526,8 @@ class SimulatedHitpattern(object):
         )
 
         # First shuffle all timings in the array, so channel 1 doesn't always get the first photon
+        # Don't rely on randomize_photons_over_channels to do this, we'll be splitting top v bottom here
+        # and want that split to be random too.
         np.random.shuffle(photon_timings)
 
         # All channels which can receive photons (depends on configuration, magical dead pmt avoidance etc)
@@ -551,7 +593,7 @@ class SimulatedHitpattern(object):
 # Photon pulse generation
 ##
 
-# I pulled this out of Simulator: caching using Memoize gave me trouble on methods due to the self argument
+# I pulled this out of the Simulator class: caching using Memoize gave me trouble on methods due to the self argument
 # There's still a method pmt_pulse_current, but it just calls pmt_pulse_current_raw defined below
 
 @Memoize
@@ -584,6 +626,10 @@ def exp_pulse(t, q, tr, tf):
         return q / (tr + tf) * (tr + tf * (1 - math.exp(-t / (c * tf))))
 
 
+##
+# PMT gain sampling
+##
+
 @Memoize
 def _truncated_gauss(my_mean, my_std, left_boundary, right_boundary):
     """NB: the mean & std are only used to fix the boundaries, this is still a standardized normal otherwise!"""
@@ -597,62 +643,3 @@ def truncated_gauss_rvs(my_mean, my_std, left_boundary, right_boundary, n_rvs):
     See http://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.stats.truncnorm.html
     """
     return _truncated_gauss(my_mean, my_std, left_boundary, right_boundary).rvs(n_rvs) * my_std + my_mean
-
-
-def distribute_photons_by_lcemap(photon_timings, channels, lce_map, coordinate_tuple):
-    # Calculate cumulative sum of relative LCEs at this position
-
-    lces = [lce_map.get_value(*coordinate_tuple, map_name=str(ch)) for ch in channels]
-    lces = np.array(lces)
-    # Normalize so all photons go somewhere
-    lces /= np.sum(lces)
-
-    # Generate channels indices in channels list according to LCE
-    channel_index_for_p = np.searchsorted(np.cumsum(lces), np.random.uniform(0, 1, len(photon_timings)))
-
-    # Count number of photons in each channel, update arrival times per channel
-    hitp = np.bincount(channel_index_for_p, minlength=len(channels))
-    assert len(hitp) == len(channels)
-    assert np.sum(hitp) == len(photon_timings)
-
-    photons_distributed = 0
-    arrival_times_per_channel = {}
-    for index, ph_in_ch in enumerate(hitp):
-        start_index = photons_distributed
-        arrival_times_per_channel[channels[index]] = \
-            photon_timings[start_index:start_index + ph_in_ch]
-        photons_distributed += ph_in_ch
-    assert photons_distributed == len(photon_timings)
-
-    return arrival_times_per_channel
-
-
-def randomize_photons_over_channels(photon_timings, channels):
-    n_channels = len(channels)
-
-    if n_channels == 1:
-        photons_per_channel = [photon_timings]
-
-    else:
-        # Generate n_channels integers < n_channels to denote the splitting points
-        # TODO: think carefully about these +1 and -1's Without the +1 S1sClose failed
-        split_points = np.sort(np.random.randint(0,
-                                                 len(photon_timings) + 1,
-                                                 n_channels - 1))
-
-        # Split the array according to the split points
-        # numpy correctly inserts empty arrays if a split point occurs twice if split_points is sorted
-        photons_per_channel = np.split(photon_timings,
-                                       split_points)
-
-        # This distributes stuff in some pattern, favouring the center... odd
-        # So: shuffle to randomize the photon distribution again, just to be sure
-        # TODO: this needs to be checked properly. Is this still the case?
-        np.random.shuffle(photons_per_channel)
-
-    # Check we have not generated any photons or lost any
-    # assert sum(list(map(len, photons_per_channel))) == len(photon_timings)
-
-    # Merge the result in a dictionary, which we return
-    # TODO: zip can probably do this faster!
-    return {channels[i]: photons_per_channel[i] for i in range(n_channels)}
