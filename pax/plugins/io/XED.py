@@ -287,15 +287,17 @@ class WriteXED(WriteToFolder):
         # Compress the event data so far
         event_data = bz2.compress(event_data, compresslevel=self.config['compresslevel'])
 
-        # Required size of the channel mask in bytes -- for some reason it needs to be rounded to 4-byte blocks
-        n_mask_bytes = 4 * math.ceil(self.config['n_channels'] / 32)
-
         channels_included = set([p.channel for p in event.pulses])
-        is_channel_included = np.zeros(n_mask_bytes * 8, dtype=np.int)
+
         if self.config['pmt_0_is_fake']:
+            # Required size of the channel mask in bytes -- for some reason it needs to be rounded to 4-byte blocks
+            n_mask_bytes = 4 * math.ceil((self.config['n_channels'] - 1) / 32)
+            is_channel_included = np.zeros(n_mask_bytes * 8, dtype=np.int)
             for ch in range(1, self.config['n_channels'] - 1):
                 is_channel_included[ch - 1] = ch in channels_included
         else:
+            n_mask_bytes = 4 * math.ceil(self.config['n_channels'] / 32)
+            is_channel_included = np.zeros(n_mask_bytes * 8, dtype=np.int)
             for ch in range(self.config['n_channels']):
                 is_channel_included[ch] = ch in channels_included
 
@@ -317,7 +319,7 @@ class WriteXED(WriteToFolder):
                                samples_in_event=event.length(),
                                voltage_range=self.config['digitizer_voltage_range'],
                                sampling_frequency=1 / self.config['sample_duration'] / units.Hz,
-                               channels=self.config['n_channels'])
+                               channels=self.config['n_channels'] - (1 if self.config['pmt_0_is_fake'] else 0))
         event_header_arr = _dict_to_numpy_recarray(event_data_dict, dtype=xed_event_header)
         event_data = event_header_arr.tobytes() + channel_mask.tobytes() + event_data
 
