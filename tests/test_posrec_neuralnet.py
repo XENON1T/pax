@@ -37,7 +37,7 @@ class TestPosRecNeuralNet(unittest.TestCase):
         self.assertEqual(len(e.S2s()), 1)
         self.assertEqual(len(e.peaks[0].reconstructed_positions), 1)
         rp = e.peaks[0].reconstructed_positions[0]
-        self.assertEqual(rp.algorithm, 'NeuralNet')
+        self.assertEqual(rp.algorithm, self.plugin.name)
         self.assertEqual(rp.x, 11.076582570681966)
         self.assertEqual(rp.y, 6.831207460290031)
 
