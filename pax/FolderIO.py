@@ -178,12 +178,14 @@ class WriteToFolder(plugin.OutputPlugin):
                     if input().lower() not in ('y', 'yes'):
                         print("\nFine, Exiting pax...\n")
                         exit()
+                self.log.info("Overwriting output directory %s" % self.output_dir)
                 shutil.rmtree(self.output_dir)
                 os.mkdir(self.output_dir)
             else:
                 raise ValueError("Output directory %s already exists, can't write your %ss there!" % (
                     self.output_dir, self.file_extension))
         else:
+            self.log.info("Creating output directory %s" % self.output_dir)
             os.mkdir(self.output_dir)
 
         # Write the metadata to JSON

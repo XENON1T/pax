@@ -108,6 +108,7 @@ class BulkOutput(plugin.OutputPlugin):
             os.mkdir(outfile)
 
         # Open the output file
+        self.log.info("Opening output file/directory %s" % self.config['output_name'])
         self.output_format.open(self.config['output_name'], mode='w')
 
     def write_event(self, event):
