@@ -10,7 +10,6 @@ See format for more information on the event object.
 import logging
 
 from pax.datastructure import Event
-from pax import exceptions
 
 
 class BasePlugin(object):
@@ -76,12 +75,18 @@ class InputPlugin(BasePlugin):
 
 class ProcessPlugin(BasePlugin):
     """Plugin that can process events"""
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Give the logger another name, we need self.log for the adapter
+        self._log = self.log
 
     def process_event(self, event=None):
         if not isinstance(event, Event):
             raise RuntimeError("%s received a %s instead of an Event" % (self.name, type(event)))
         if self.has_shut_down:
             raise RuntimeError("%s was asked to process an event, but it has already shut down!" % self.name)
+        # Setup the logging adapter which will prepend [Event: ...] to the logging messages
+        self.log = EventLoggingAdapter(self._log, dict(event_number=event.event_number))
         event = self._process_event(event)
         if not isinstance(event, Event):
             raise RuntimeError("%s returned a %s instead of an event." % (self.name, type(event)))
@@ -115,27 +120,9 @@ class OutputPlugin(ProcessPlugin):
         return event
 
 
-class SelectionPlugin(ProcessPlugin):
-    def __init__(self, *args, **kwargs):
-        self.events_selected = 0
-        self.events_seen = 0
-        super().__init__(*args, **kwargs)
-
-    def test_event(self, event):
-        """Do magic. Return True (event passes) or False (event fails, continue immediately to next event)"""
-        raise NotImplementedError
-
-    def _process_event(self, event):
-        self.events_seen += 1
-        result = self.test_event(event)
-        if not isinstance(result, bool):
-            raise RuntimeError("%s returned a %s instead of True or False" % (self.name, type(event)))
-        if result:
-            self.events_selected += 1
-            return event
-        else:
-            raise exceptions.SkipEvent
-
-    @property
-    def fraction_accepted(self):
-        return self.events_selected / self.events_seen
+class EventLoggingAdapter(logging.LoggerAdapter):
+    """Prepends event number to log messages
+    Adapted from https://docs.python.org/3.4/howto/logging-cookbook.html#context-info
+    """
+    def process(self, msg, kwargs):
+        return '[Event %s] %s' % (self.extra['event_number'], msg), kwargs
