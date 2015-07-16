@@ -7,6 +7,7 @@ import random
 import os
 import time
 
+import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 import numpy as np
@@ -225,32 +226,44 @@ class PlotSumWaveformEntireEvent(PlotBase):
 class PlottingHitPattern(PlotBase):
 
     def substartup(self):
-        self.channels_top = self.config['channels_top']
-        self.channels_bottom = self.config['channels_bottom']
-        self.pmt_locations = self.config['pmt_locations']
+        # Grab PMT numbers and x, y locations
+        self.locations = np.array([[self.config['pmt_locations'][ch]['x'],
+                                    self.config['pmt_locations'][ch]['y']]
+                                   for ch in range(self.config['n_channels'])])
+        self.pmts = {array: self.config['channels_%s' % array] for array in ('top', 'bottom')}
 
-    def _plot(self, peak, ax, pmts):
-        area = []
-        points = []
-        for pmt in pmts:
-            area.append(peak.area_per_channel[pmt])
-            points.append((self.pmt_locations[pmt]['x'],
-                           self.pmt_locations[pmt]['y']))
+    def _plot(self, peak, ax, array, show_colorbar=False):
+        # Plot the hitpattern
+        pmts_hit = [ch for ch in self.pmts[array] if peak.does_channel_contribute[ch]]
+        q = ax.scatter(*self.locations[pmts_hit].T,
+                       c=peak.area_per_channel[pmts_hit],
+                       norm=matplotlib.colors.LogNorm(),
+                       vmin=1e-1,
+                       vmax=1e4,
+                       alpha=0.4,
+                       s=250)
 
-        area = np.array(area)
-        total_area = np.sum(area[area > 0])
-        c = ax.scatter(*zip(*points), s=5000 * area / total_area, c=area, cmap=plt.cm.hot)
-        c.set_alpha(0.75)
-        ax.set_xticklabels([])
-        ax.set_yticklabels([])
+        if show_colorbar:
+            plt.gcf().colorbar(mappable=q, label='Area of hits in PMT', ax=ax,
+                               orientation='horizontal')
+
+        # Plot the PMT numbers
+        for pmt in pmts_hit:
+            ax.text(self.locations[pmt, 0], self.locations[pmt, 1], pmt,
+                    fontsize=6, va='center', ha='center', color='black')
+
+        # Plot the detector radius
+        r = self.config['tpc_radius']
+        ax.add_artist(plt.Circle((0, 0), r, edgecolor='black', fill=None))
+        ax.set_xlim(-1.2*r, 1.2*r)
+        ax.set_ylim(-1.2*r, 1.2*r)
 
     def plot_event(self, event, show=('S1', 'S2'), show_dominant_array_only=True, subplots_to_use=None):
         if subplots_to_use is None:
             f, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, sharex='col', sharey='row')
             subplots_to_use = [ax1, ax2, ax3, ax4]
 
-        for peak_type, dominant_array in (
-                ('S1', 'bottom'), ('S2', 'top')):
+        for peak_type, dominant_array in (('S1', 'bottom'), ('S2', 'top')):
             if peak_type not in show:
                 continue
             peak_list = getattr(event, peak_type + 's')()
@@ -261,8 +274,7 @@ class PlottingHitPattern(PlotBase):
                         continue
                     ax = subplots_to_use.pop(0)
                     ax.set_title('%s %s' % (peak_type, array))
-
-                    self._plot(peak, ax, getattr(self, 'channels_%s' % array))
+                    self._plot(peak, ax, array, show_colorbar=False)
 
 
 class PlotChannelWaveforms3D(PlotBase):
@@ -358,7 +370,7 @@ class PlotChannelWaveforms2D(PlotBase):
             # color_factor = np.clip(np.log10(oc.height) / 2, 0, 1)
             color_factor = 0
 
-            plt.gca().add_patch(Rectangle((pulse.left * time_scale, pulse.channel), pulse.length * time_scale, 1,
+            plt.gca().add_patch(Rectangle((pulse.left * time_scale, pulse.channel - 0.5), pulse.length * time_scale, 1,
                                           facecolor=plt.cm.gnuplot2(color_factor),
                                           edgecolor='none',
                                           alpha=0.5))
@@ -371,7 +383,7 @@ class PlotChannelWaveforms2D(PlotBase):
             color_factor = min(hit.height / hit.noise_sigma, 15)/15
             result.append([
                 (0.5 + hit.center / dt) * time_scale,                  # X
-                0.5 + hit.channel,                                     # Y
+                hit.channel,                                           # Y
                 color_factor,                                          # Color (in [0,1] -> [Blue, Red])
                 10 * min(10, hit.area),                                # Size
                 (1 if hit.is_rejected else 0),                         # Is rejected? If not, will make green
@@ -462,17 +474,15 @@ class PlotEventSummary(PlotBase):
             q.plot_event(event, show_legend=False)
 
             self.log.debug("Plotting largest S2...")
-            ax = plt.subplot2grid((rows, cols), (0, 3))
-            ax.yaxis.set_label_position("right")
-            ax.yaxis.set_ticks_position("right")
+            plt.subplot2grid((rows, cols), (0, 1))
             q = PlotSumWaveformLargestS2(self.config, self.processor)
             q.plot_event(event, show_legend=False)
 
             self.log.debug("Plotting hitpatterns...")
             q = PlottingHitPattern(self.config, self.processor)
             q.plot_event(event, show_dominant_array_only=True, subplots_to_use=[
-                plt.subplot2grid((rows, cols), (0, 1)),
-                plt.subplot2grid((rows, cols), (0, 2))
+                plt.subplot2grid((rows, cols), (0, 2)),
+                plt.subplot2grid((rows, cols), (0, 3))
             ])
 
         self.log.debug("Plotting sum waveform...")
