@@ -393,12 +393,7 @@ class Processor:
 
         for j, plugin in enumerate(self.action_plugins):
             self.log.debug("%s (step %d/%d)" % (plugin.__class__.__name__, j, total_plugins))
-            try:
-                event = plugin.process_event(event)
-            except exceptions.SkipEvent:
-                plugin.total_time_taken += self.timer.punch()
-                self.log.debug("%s ordered us to skip this event, obeying..." % plugin.name)
-                break
+            event = plugin.process_event(event)
             plugin.total_time_taken += self.timer.punch()
 
         # Uncomment to diagnose memory leaks
