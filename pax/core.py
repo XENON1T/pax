@@ -21,7 +21,7 @@ import numpy as np
 from prettytable import PrettyTable     # Timing report
 from tqdm import tqdm                   # Progress bar
 import pax      # Needed for pax.__version__
-from pax import units, simulation, utils, exceptions
+from pax import units, simulation, utils
 
 # For diagnosing suspected memory leaks, uncomment this code
 # and similar code in process_event
