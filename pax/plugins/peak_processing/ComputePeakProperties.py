@@ -20,9 +20,10 @@ class BasicProperties(plugin.TransformPlugin):
             peak.index_of_maximum = peak.hits[highest_peak_index].index_of_maximum
             peak.height = peak.hits[highest_peak_index].height
 
-            # Compute the area per pmt.
+            # Compute the area and height per pmt.
             for s in peak.hits:
                 peak.area_per_channel[s.channel] += s.area
+                peak.height_per_channel[s.channel] = max(peak.height_per_channel[s.channel], s.height)
 
             # Compute the total area
             peak.area = np.sum(peak.area_per_channel)

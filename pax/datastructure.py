@@ -118,22 +118,25 @@ class Peak(StrictModel):
     #: Peaks in individual channels that make up this peak
     hits = ListField(Hit)
 
-    #: Array of areas in each PMT.
-    area_per_channel = np.array([], dtype='float64')
+    #: Array of areas in each PMT (pe)
+    area_per_channel = np.array([], dtype=np.float64)
 
-    #: Does a channel have no hits, but digitizer shows data?
-    does_channel_have_noise = np.array([], dtype=np.bool)
+    #: Height of highest hit in channel (pe/bin)
+    height_per_channel = np.array([], dtype=np.float64)
 
-    #: Does a PMT see 'something significant'? (thresholds configurable)
-    does_channel_contribute = np.array([], dtype=np.bool)
+    #: How many hits does each channel have?
+    n_hits_per_channel = np.array([], dtype=np.int16)
+
+    #: How many coincident pulses without hits that contribute to this peak does each channel have?
+    n_noise_pulses_per_channel = np.array([], dtype=np.int8)
 
     @property
     def contributing_channels(self):
-        return np.where(self.does_channel_contribute)[0]
+        return np.where(self.n_hits_per_channel > 0)[0]
 
     @property
     def noise_channels(self):
-        return np.where(self.does_channel_have_noise)[0]
+        return np.where(self.n_noise_pulses_per_channel > 0)[0]
 
     ##
     # Time distribution information
@@ -173,8 +176,10 @@ class Peak(StrictModel):
     # Signal / noise info
     ##
 
-    #: Number of PMTS which see something significant (depends on settings) ~~ "coincidence level"
+    #: Number of PMTS which have a hit in the peak
     n_contributing_channels = 0
+    n_contributing_channels_top = 0
+    n_contributing_channels_bottom = 0
 
     #: Number of channels that show no hits, but digitizer shows data
     n_noise_channels = 0
@@ -189,8 +194,7 @@ class Peak(StrictModel):
     #: Index in the event's sum waveform at which this peak has its maximum.
     index_of_maximum = 0
 
-    #: Height of highest point in peak (in pe/bin)
-    #: In new pax, is height of highest hit
+    #: Height of highest hit in peak (in pe/bin)
     height = 0.0
 
 

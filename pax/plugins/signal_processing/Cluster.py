@@ -71,11 +71,12 @@ class ClusterPlugin(plugin.TransformPlugin):
                         raise RuntimeError("Every peak should have a hit... what's going on?")
 
                     peak = datastructure.Peak({
-                        'hits':            [hits_to_cluster[i] for i in this_peak_s_hit_indices],
-                        'detector':                 detector,
-                        'area_per_channel':         np.zeros(self.n_channels),
-                        'does_channel_contribute':  np.zeros(self.n_channels, dtype='bool'),
-                        'does_channel_have_noise':  np.zeros(self.n_channels, dtype='bool'),
+                        'hits':                        [hits_to_cluster[i] for i in this_peak_s_hit_indices],
+                        'detector':                    detector,
+                        'area_per_channel':            np.zeros(self.n_channels),
+                        'n_hits_per_channel':          np.zeros(self.n_channels, dtype=np.int16),
+                        'n_noise_pulses_per_channel':  np.zeros(self.n_channels, dtype=np.int8),
+                        'height_per_channel':          np.zeros(self.n_channels),
                     })
 
                     # Compute basic properties of peak, needed later in the plugin
@@ -85,8 +86,15 @@ class ClusterPlugin(plugin.TransformPlugin):
                     for hit in peak.hits:
                         peak.left = min(peak.left, hit.left)
                         peak.right = max(peak.right, hit.right)
-                        peak.does_channel_contribute[hit.channel] = True
+                        peak.n_hits_per_channel[hit.channel] += 1
+                    peak.n_contributing_channels_top = np.sum(peak.n_hits_per_channel[self.config['channels_top']])
+                    peak.n_contributing_channels_bottom = np.sum(
+                        peak.n_hits_per_channel[self.config['channels_bottom']])
                     peak.n_contributing_channels = len(peak.contributing_channels)
+                    peak.n_contributing_channels_top = len(np.intersect1d(self.config['channels_top'],
+                                                                          peak.contributing_channels))
+                    peak.n_contributing_channels_bottom = len(np.intersect1d(self.config['channels_bottom'],
+                                                                             peak.contributing_channels))
 
                     if peak.n_contributing_channels == 0:
                         raise RuntimeError(
@@ -99,8 +107,8 @@ class ClusterPlugin(plugin.TransformPlugin):
                                          if pulse.left <= peak.right and pulse.right >= peak.left]
                     for oc in coincident_pulses:
                         channel = oc.channel
-                        if not peak.does_channel_contribute[channel]:
-                            peak.does_channel_have_noise[channel] = True
+                        if not peak.n_hits_per_channel[channel]:
+                            peak.n_noise_pulses_per_channel[channel] += 1
                     peak.n_noise_channels = len(peak.noise_channels)
 
                     # Classify noise and lone hits
