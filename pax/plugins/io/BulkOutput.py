@@ -259,6 +259,7 @@ class BulkOutput(plugin.OutputPlugin):
                                             for i in range(len(field_value))],
                         'index_depth':     len(m_indices),
                     }
+                self.data[field_name]['tuples'].append(tuple(m_indices + field_value.tolist()))
 
             else:
                 m_data.append(field_value)
