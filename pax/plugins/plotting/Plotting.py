@@ -399,10 +399,15 @@ class PlotChannelWaveforms2D(PlotBase):
 
         # Plot the bottom/top/veto boundaries
         # Assumes the detector names' lexical order is the same as the channel order!
-        channel_ranges = [
-            ('top', min(self.config['channels_top']), np.mean(self.config['channels_top'])),
-            ('bottom', min(self.config['channels_bottom']), np.mean(self.config['channels_bottom'])),
-        ]
+        channel_ranges = []
+        if self.config['channels_top']:
+            channel_ranges.append(('top',
+                                   min(self.config['channels_top']),
+                                   np.mean(self.config['channels_top'])))
+        if self.config['channels_bottom']:
+            channel_ranges.append(('bottom',
+                                   min(self.config['channels_bottom']),
+                                   np.mean(self.config['channels_bottom'])))
         for det, chs in self.config['channels_in_detector'].items():
             if det == 'tpc':
                 continue
