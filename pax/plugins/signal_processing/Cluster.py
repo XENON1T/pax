@@ -6,7 +6,6 @@ from pax import plugin, datastructure, utils
 
 
 class ClusterPlugin(plugin.TransformPlugin):
-
     """Base plugin for clustering
 
     Individual channel peaks into groups, and labels them as noise / lone_pulse / unknown
@@ -71,11 +70,11 @@ class ClusterPlugin(plugin.TransformPlugin):
                         raise RuntimeError("Every peak should have a hit... what's going on?")
 
                     peak = datastructure.Peak({
-                        'hits':            [hits_to_cluster[i] for i in this_peak_s_hit_indices],
-                        'detector':                 detector,
-                        'area_per_channel':         np.zeros(self.n_channels),
-                        'does_channel_contribute':  np.zeros(self.n_channels, dtype='bool'),
-                        'does_channel_have_noise':  np.zeros(self.n_channels, dtype='bool'),
+                        'hits': [hits_to_cluster[i] for i in this_peak_s_hit_indices],
+                        'detector': detector,
+                        'area_per_channel': np.zeros(self.n_channels),
+                        'does_channel_contribute': np.zeros(self.n_channels, dtype='bool'),
+                        'does_channel_have_noise': np.zeros(self.n_channels, dtype='bool'),
                     })
 
                     # Compute basic properties of peak, needed later in the plugin
@@ -177,7 +176,6 @@ class ClusterPlugin(plugin.TransformPlugin):
 
 
 class MeanShift(ClusterPlugin):
-
     """Clusters hits using mean-shift algorithm
 
     http://en.wikipedia.org/wiki/Mean_shift
@@ -273,7 +271,6 @@ class MeanShift(ClusterPlugin):
 
 
 class HitDifference(ClusterPlugin):
-
     """Clusters hits based on times between their maxima
     If any hit maximum is separated by more than max_difference from the next,
     it starts a new cluster.
@@ -286,7 +283,6 @@ class HitDifference(ClusterPlugin):
 
 
 class GapSize(ClusterPlugin):
-
     """Clusters hits based on gaps = times not covered by any hits.
     Any gap longer than max_gap_size starts a new cluster.
     Difference with HitDifference: this takes interval nature of hits into account
@@ -300,7 +296,7 @@ class GapSize(ClusterPlugin):
         self.transition_point = self.config['transition_point']
 
     def cluster_hits(self, hits):
-        # If a hit has a left > this, it will form a new cluster
+        # If the next hit starts at a sample > this, start a new cluster
         boundary = -999999999
         clusters = []
         for i, hit in enumerate(hits):
@@ -324,4 +320,65 @@ class GapSize(ClusterPlugin):
 
             # Extend the boundary at which a new clusters starts, if needed
             boundary = max(boundary, hit.right + gap_size_threshold)
+        return clusters
+
+
+class GapSize_s1trigger(ClusterPlugin):
+    """Clusters hits based on gaps = times not covered by any hits.
+    Any gap longer than max_gap_size starts a new cluster.
+    Difference to normal GapSize algorithm is a separation of the time window by the expected trigger position, e.g here
+    XENON100 (can be generalized for other detectors). The first time intervall will use a minimum gap size (specficied
+    with s1_gap_threshold), while afterwards only S2s are expected, where the usual GapSize algorithm takes place. This
+    is feasible as long as the s1 signals are strong enough to generate the trigger as it is the case for Kr83m, Cs137
+    and brings the advantage, that s1 signals will be separated if they occur with a short time difference while the S2
+    signals will not be affected. """
+
+    def startup(self):
+        super().startup()
+        # Convert gap threshold to samples (is in time (ns) in config)
+        self.s1_gap_threshold = self.config['s1_gap_threshold'] / self.dt
+        # Threshold for the first time intervall for a better s1 separation
+        self.large_gap_threshold = self.config['large_gap_threshold'] / self.dt
+        self.small_gap_threshold = self.config['small_gap_threshold'] / self.dt
+        self.transition_point = self.config['transition_point']
+
+    def cluster_hits(self, hits):
+        # If a hit has a left > this, it will form a new cluster
+        boundary = -999999999
+        clusters = []
+        for i, hit in enumerate(hits):
+            if hit.index_of_maximum <= 21000:
+                # Choose the time window threshold, e.g XENON100 trigger position
+                if (hit.left) > boundary:
+                    # Hit starts after current boundary: new cluster
+                    clusters.append([])
+                    # (Re)set area and thresholds
+                    area = 0
+                    gap_size_threshold = self.s1_gap_threshold
+                    boundary = hit.right + gap_size_threshold
+
+                # Add this hit to the cluster
+                clusters[-1].append(i)
+                area += hit.area
+
+                # Extend the boundary at which a new clusters starts, if needed
+                boundary = max(boundary, hit.right + gap_size_threshold)
+
+            if hit.index_of_maximum > 21000:
+                # Choose the time window threshold, e.g  XENON100 trigger position
+                if hit.left > boundary:
+                    # Hit starts after current boundary: new cluster
+                    clusters.append([])
+                    # (Re)set area and thresholds
+                    area = 0
+                    gap_size_threshold = self.large_gap_threshold
+                    boundary = hit.right + gap_size_threshold
+
+                # Add this hit to the cluster
+                clusters[-1].append(i)
+                area += hit.area
+
+                # Extend the boundary at which a new clusters starts, if needed
+                boundary = max(boundary, hit.right + gap_size_threshold)
+
         return clusters
