@@ -86,6 +86,20 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
 
         function_value = 0
 
+        # Get all LCE map values for the live PMTs at position x,y
+        map_values = []
+        for pmt in self.pmts:
+            if self.gains[pmt] == 0:
+                continue
+
+            map_values.append(max(0, self.maps.get_value(x,
+                                                         y,
+                                                         map_name=str(pmt))))
+
+        # Renormalize the values
+        map_values = np.array(map_values) / np.array(map_values).sum()
+        index = 0
+
         # Iterate over all pmts, adding each pmts contribution to function_value
         for pmt in self.pmts:
             # Exclude dead pmts
@@ -96,7 +110,8 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
             pmt_error = (self.qe_errors[pmt] / self.qes[pmt]) ** 4 + (self.gain_errors[pmt] / self.gains[pmt]) ** 2
 
             # Lookup value from LCE map for pmt at position x,y
-            map_value = self.maps.get_value(x, y, map_name=str(pmt))
+            map_value = map_values[index]
+            index += 1
 
             term_numerator = (photons_in_pmt + min(photons_in_pmt, 1) - self.area_photons * map_value) ** 2
             term_denominator = photons_in_pmt ** 2 * pmt_error + self.area_photons * map_value + 1.0
@@ -172,6 +187,10 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
                 self.log.debug("Peak area below threshold, skipping to the next peak")
                 continue
 
+            # Set initial search direction of the minimizer to center to avoid edge effects
+            direc = np.array([[-np.sign(start_x), 0],
+                              [0, -np.sign(start_y)]])
+
             # Start minimization
             self.log.debug("Starting minimizer for position reconstruction")
 
@@ -191,7 +210,7 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
                                                                       maxfun=None,
                                                                       full_output=1,
                                                                       disp=0,
-                                                                      direc=None,
+                                                                      direc=direc,
                                                                       retall=0)
 
             self.log.debug("Minimizer warnflag: %d" % warnflag)
