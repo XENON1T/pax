@@ -497,9 +497,15 @@ def randomize_photons_over_channels(photon_timings, channels, relative_lce_per_c
 
     # Count number of photons in each channel
     hitp, _ = np.histogram(channel_index_for_p, bins=np.concatenate((channels, [np.max(channels) + 1])))
-    assert len(hitp) == len(channels)
-    assert np.sum(hitp) == len(photon_timings)
-
+    if not len(hitp) == len(channels):
+        raise RuntimeError("You found a simulator bug!\n"
+                           "Hitpattern has wrong length "
+                           "(%d, should be %d)" % (len(hitp), len(channels)))
+    if not np.sum(hitp) == len(photon_timings):
+        raise RuntimeError("You found a simulator bug!\n"
+                           "Hitpattern has wrong number of photons "
+                           "(%d, should be %d)" % (np.sum(hitp), len(photon_timings)))
+    
     # Split photon times according to hitpattern
     return dict(zip(channels, np.split(photon_timings, np.cumsum(hitp))))
 
