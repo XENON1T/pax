@@ -117,7 +117,6 @@ class WaveformSimulator(plugin.InputPlugin):
     def get_instructions_for_next_event(self):
         raise NotImplementedError()
 
-    @plugin.BasePlugin._timeit
     def simulate_single_event(self, instructions):
         self.truth_peaks = []
 

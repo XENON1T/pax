@@ -1,6 +1,5 @@
 import glob
 import os
-import time
 import shutil
 from bson import json_util
 
@@ -92,16 +91,12 @@ class InputFromFolder(plugin.InputPlugin):
         """Iterate through all events in the file / folder"""
         # We must keep track of time ourselves, BasePlugin.timeit is a function decorator,
         # so it won't work well with generators like get_events for an input plugin
-        self.ts = time.time()
         for file_i, file_info in enumerate(self.raw_data_files):
             if self.current_file_number != file_i:
                 self.select_file(file_i)
             for event in self.get_all_events_in_current_file():
-                self.total_time_taken += (time.time() - self.ts) * 1000
                 yield event
-                self.ts = time.time()       # Restart clock
 
-    @plugin.BasePlugin._timeit
     def get_single_event(self, event_number):
         """Get a single event, automatically selecting the right file"""
         if not self.current_first_event <= event_number <= self.current_last_event:
