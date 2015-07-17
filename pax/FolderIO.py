@@ -84,6 +84,7 @@ class InputFromFolder(plugin.InputPlugin):
                                                                 len(self.raw_data_files)))
 
         self.open(self.current_filename)
+        self.event_numbers_in_current_file = self.get_event_numbers_in_current_file()
 
     def shutdown(self):
         self.close()
@@ -117,7 +118,14 @@ class InputFromFolder(plugin.InputPlugin):
             else:
                 raise ValueError("None of the loaded files contains event %d!" % event_number)
 
-        return self.get_single_event_in_current_file(event_number - self.current_first_event)
+        if event_number not in self.event_numbers_in_current_file:
+            raise ValueError("Event %d does not exist in the file containing events %d - %d!\n"
+                             "Event numbers which do exist in file: %s" % (event_number,
+                                                                           self.current_first_event,
+                                                                           self.current_last_event,
+                                                                           self.event_numbers_in_current_file))
+
+        return self.get_single_event_in_current_file(event_number)
 
     # If reading in from a folder-of-files format not written by FolderIO,
     # you'll probably have to overwrite this. (e.g. XED does)
@@ -141,25 +149,31 @@ class InputFromFolder(plugin.InputPlugin):
         pass
 
     ##
-    # Override this if you support random access
+    # Override this if you support non-continuous event numbers
     ##
-    def get_single_event_in_current_file(self, event_position):
-        """Uses iteration to emulate random access to events
-        Note -- this takes the event POSITION in the file, not the absolute event number!
-        """
-        for event_i, event in enumerate(self.get_all_events_in_current_file()):
-            if event_i == event_position:
-                return event
-        raise RuntimeError("Current file has no %d th event, and some check didn't pick this up.\n"
-                           "Either the file is very nasty, or the reader is bugged!" % event_position)
+    def get_event_numbers_in_current_file(self):
+        return list(range(self.current_first_event, self.current_last_event + 1))
 
     ##
-    # Override this if you DO NOT support random access, or if random access is slower
+    # Override this if you support random access
+    ##
+    def get_single_event_in_current_file(self, event_number):
+        """Uses iteration to emulate random access to events
+        This does not check if the event actually exist: get_events is supposed to do that.
+        """
+        for event_i, event in enumerate(self.get_all_events_in_current_file()):
+            if event.event_number == event_number:
+                return event
+        raise RuntimeError("Current file has no event %d, and some check didn't pick this up.\n"
+                           "Either the file is very nasty, or the reader is bugged!" % event_number)
+
+    ##
+    # Override this if you DO NOT support random access, or if random access is slower than iteration
     ##
     def get_all_events_in_current_file(self):
         """Uses random access to iterate over all events"""
-        for event_i in range(self.current_first_event, self.current_last_event + 1):
-            yield self.get_single_event_in_current_file(event_i - self.current_first_event)
+        for event_number in self.event_numbers_in_current_file:
+            yield self.get_single_event_in_current_file(event_number)
 
 
 class WriteToFolder(plugin.OutputPlugin):
