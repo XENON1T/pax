@@ -505,7 +505,7 @@ def randomize_photons_over_channels(photon_timings, channels, relative_lce_per_c
         raise RuntimeError("You found a simulator bug!\n"
                            "Hitpattern has wrong number of photons "
                            "(%d, should be %d)" % (np.sum(hitp), len(photon_timings)))
-    
+
     # Split photon times according to hitpattern
     return dict(zip(channels, np.split(photon_timings, np.cumsum(hitp))))
 
