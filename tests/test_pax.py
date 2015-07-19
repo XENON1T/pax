@@ -188,5 +188,27 @@ class TestPax(unittest.TestCase):
                           1.5248293965443862, 1.5214431653719354, 1.1431245035453605,
                           1.119126521198631, 0.8370846398458212, 0.3965132112382404])
 
+    def test_event_selection(self):
+        mypax = core.Processor(config_names=['XED', 'XerawdpImitation'],
+                               config_dict={'pax': {
+                                   'plugin_group_names': ['input', 'select', 'output'],
+                                   'input': 'Dummy.DummyInput',
+                                   'select': 'Dummy.SelectEvenEvents',
+                                   'output': 'Dummy.DummyOutput'}})
+        sel_plugin = mypax.get_plugin_by_name('SelectEvenEvents')
+        event_generator = mypax.get_events()
+        dummy_output = mypax.get_plugin_by_name('DummyOutput')
+        for i in range(10):
+            event = next(event_generator)
+            n_before = dummy_output.events_written
+            event = mypax.process_event(event)
+            if event.event_number % 2 == 0:
+                self.assertEqual(dummy_output.events_written, n_before + 1)
+            else:
+                self.assertEqual(dummy_output.events_written, n_before)
+        self.assertEqual(sel_plugin.events_seen, 10)
+        self.assertEqual(sel_plugin.events_selected, 5)
+        self.assertEqual(sel_plugin.fraction_accepted, 0.5)
+
 if __name__ == '__main__':
     unittest.main()

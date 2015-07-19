@@ -21,7 +21,7 @@ import numpy as np
 from prettytable import PrettyTable     # Timing report
 from tqdm import tqdm                   # Progress bar
 import pax      # Needed for pax.__version__
-from pax import units, simulation, utils
+from pax import units, simulation, utils, exceptions
 
 # For diagnosing suspected memory leaks, uncomment this code
 # and similar code in process_event
@@ -137,19 +137,25 @@ class Processor:
 
             self.total_number_events = min(self.input_plugin.number_of_events, self.stop_after)
 
-            # How should the events be generated?
-            if 'events_to_process' in pc and pc['events_to_process'] is not None:
-                # The user specified which events to process:
+            # Did the user specify an event number file (newline delimited)?
+            # If so, read it and put the events in pc['events_to_process']
+            if pc.get('events_to_process_file', None) is not None:
+                with open(pc['events_to_process_file'], mode='r') as f:
+                    pc['events_to_process'] = list(map(int, f.readlines()))
+
+            # Did the user specify which events to process?
+            if pc.get('events_to_process', None) is not None:
                 self.total_number_events = min(len(pc['events_to_process']), self.stop_after)
 
-                def get_events():
+                def get_specific_events():
                     for event_number in pc['events_to_process']:
                         yield self.input_plugin.get_single_event(event_number)
-            else:
-                # Let the input plugin decide which events to process:
-                get_events = self.input_plugin.get_events
+                self.get_events = get_specific_events
 
-            self.get_events = get_events
+            else:
+                # Normal case, let the input plugin decide which events to process:
+                self.get_events = self.input_plugin.get_events
+
         else:
             # During tests there is often no input plugin
             # events are added manually
@@ -393,7 +399,12 @@ class Processor:
 
         for j, plugin in enumerate(self.action_plugins):
             self.log.debug("%s (step %d/%d)" % (plugin.__class__.__name__, j, total_plugins))
-            event = plugin.process_event(event)
+            try:
+                event = plugin.process_event(event)
+            except exceptions.SkipEvent:
+                plugin.total_time_taken += self.timer.punch()
+                self.log.debug("%s ordered us to skip this event, obeying..." % plugin.name)
+                break
             plugin.total_time_taken += self.timer.punch()
 
         # Uncomment to diagnose memory leaks
