@@ -104,7 +104,7 @@ class ReadZippedBSON(InputFromFolder):
         self.current_file = zipfile.ZipFile(filename)
         self.event_numbers = sorted([int(x)
                                      for x in self.current_file.namelist()])
-        if self.config['decryption_key_file']:
+        if self.config.get('decryption_key_file', None) is not None:
             with open(utils.data_file_name(self.config['decryption_key_file']), 'rb') as f:
                 self.decryption_key = pickle.load(f)
 
@@ -140,7 +140,7 @@ class WriteZippedBSON(WriteToFolder):
 
     def open(self, filename):
         self.current_file = zipfile.ZipFile(filename, mode='w')
-        if self.config['encryption_key_file']:
+        if self.config.get('encryption_key_file', None) is not None:
             with open(utils.data_file_name(self.config['encryption_key_file']), 'rb') as f:
                 self.encryption_key = pickle.load(f)
 
