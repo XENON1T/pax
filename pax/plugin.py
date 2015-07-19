@@ -9,6 +9,7 @@ See format for more information on the event object.
 """
 import logging
 
+from pax import exceptions
 from pax.datastructure import Event
 
 
@@ -126,3 +127,29 @@ class EventLoggingAdapter(logging.LoggerAdapter):
     """
     def process(self, msg, kwargs):
         return '[Event %s] %s' % (self.extra['event_number'], msg), kwargs
+
+
+class SelectionPlugin(ProcessPlugin):
+    def __init__(self, *args, **kwargs):
+        self.events_selected = 0
+        self.events_seen = 0
+        super().__init__(*args, **kwargs)
+
+    def test_event(self, event):
+        """Do magic. Return True (event passes) or False (event fails, continue immediately to next event)"""
+        raise NotImplementedError
+
+    def _process_event(self, event):
+        self.events_seen += 1
+        result = self.test_event(event)
+        if not isinstance(result, bool):
+            raise RuntimeError("%s returned a %s instead of True or False" % (self.name, type(event)))
+        if result:
+            self.events_selected += 1
+            return event
+        else:
+            raise exceptions.SkipEvent
+
+    @property
+    def fraction_accepted(self):
+        return self.events_selected / self.events_seen

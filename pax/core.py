@@ -21,7 +21,7 @@ import numpy as np
 from prettytable import PrettyTable     # Timing report
 from tqdm import tqdm                   # Progress bar
 import pax      # Needed for pax.__version__
-from pax import units, simulation, utils
+from pax import units, simulation, utils, exceptions
 
 # For diagnosing suspected memory leaks, uncomment this code
 # and similar code in process_event
@@ -393,7 +393,12 @@ class Processor:
 
         for j, plugin in enumerate(self.action_plugins):
             self.log.debug("%s (step %d/%d)" % (plugin.__class__.__name__, j, total_plugins))
-            event = plugin.process_event(event)
+            try:
+                event = plugin.process_event(event)
+            except exceptions.SkipEvent:
+                plugin.total_time_taken += self.timer.punch()
+                self.log.debug("%s ordered us to skip this event, obeying..." % plugin.name)
+                break
             plugin.total_time_taken += self.timer.punch()
 
         # Uncomment to diagnose memory leaks
