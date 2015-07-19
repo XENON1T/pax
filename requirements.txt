@@ -8,6 +8,7 @@ prettytable          # Timing report formatting
 pandas>=0.16         # Used for some optional I/O stuff
 flake8
 python-snappy>=0.5   # Needed to decompress Mongo events. Can be a pain to install.
+avro-python3         # Old raw data format, will soon be discontinued
 numba>=0.19
 scikit-learn
 h5py                 # Default output format (for now)
