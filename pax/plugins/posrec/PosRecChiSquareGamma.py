@@ -39,8 +39,8 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
         # Set area threshold, minimum area for a peak to be reconstructed
         self.area_threshold = self.config['area_threshold']
 
-        # Set the TPC radius squared
-        self.tpc_radius_squared = self.config['tpc_radius']**2
+        # Set the TPC radius squared, add 1% to avoid edge effects
+        self.tpc_radius_squared = (self.config['tpc_radius'] * 1.01)**2
 
         # (x,y) Locations of these PMTs.  This is stored as a dictionary such
         # that self.pmt_locations[int] = {'x' : int, 'y' : int, 'z' : None}
@@ -188,8 +188,10 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
                 continue
 
             # Set initial search direction of the minimizer to center to avoid edge effects
-            direc = np.array([[-np.sign(start_x), 0],
-                              [0, -np.sign(start_y)]])
+            s = lambda d: 1 if d < 0 else -1
+
+            direc = np.array([[s(start_x), 0],
+                              [0, s(start_y)]])
 
             # Start minimization
             self.log.debug("Starting minimizer for position reconstruction")
