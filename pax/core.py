@@ -137,19 +137,23 @@ class Processor:
 
             self.total_number_events = min(self.input_plugin.number_of_events, self.stop_after)
 
-            # How should the events be generated?
-            if 'events_to_process' in pc and pc['events_to_process'] is not None:
+            # Parse the event numbers file, if one is given
+            if pc.get('event_numbers_file', None) is not None:
+                with open(pc['event_numbers_file'], mode='r') as f:
+                    pc['events_to_process'] = list(map(int, f.readlines()))
+
+            if pc.get('events_to_process', None) is not None:
                 # The user specified which events to process:
                 self.total_number_events = min(len(pc['events_to_process']), self.stop_after)
 
                 def get_events():
                     for event_number in pc['events_to_process']:
                         yield self.input_plugin.get_single_event(event_number)
+                self.get_events = get_events
             else:
                 # Let the input plugin decide which events to process:
-                get_events = self.input_plugin.get_events
+                self.get_events = self.input_plugin.get_events
 
-            self.get_events = get_events
         else:
             # During tests there is often no input plugin
             # events are added manually
