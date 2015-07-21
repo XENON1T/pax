@@ -3,7 +3,7 @@ import os
 import shutil
 from bson import json_util
 
-from pax import utils, plugin
+from pax import utils, plugin, exceptions
 
 
 class InputFromFolder(plugin.InputPlugin):
@@ -149,12 +149,15 @@ class InputFromFolder(plugin.InputPlugin):
                            "Either the file is very nasty, or the reader is bugged!" % event_position)
 
     ##
-    # Override this if you DO NOT support random access, or if random access is slower
+    # Override this if you DO NOT support random access, or if random access is slower than iteration
     ##
     def get_all_events_in_current_file(self):
         """Uses random access to iterate over all events"""
-        for event_i in range(self.current_first_event, self.current_last_event + 1):
-            yield self.get_single_event_in_current_file(event_i - self.current_first_event)
+        for event_number in range(self.current_first_event, self.current_last_event + 1):
+            try:
+                yield self.get_single_event_in_current_file(event_number - self.current_first_event)
+            except exceptions.CantReadBlindedEvent:
+                self.log.info("Event %d is blinded, but no decryption key was provided. Skipping..." % event_number)
 
 
 class WriteToFolder(plugin.OutputPlugin):

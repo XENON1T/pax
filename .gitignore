@@ -1,7 +1,6 @@
 *.py[cod]
 
 # Data
-*.pklz
 *.xed
 *.root
 *.png
