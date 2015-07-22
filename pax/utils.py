@@ -204,11 +204,15 @@ class Vector2DGridMap(InterpolatingMap):
                 map_data = np.array(image_interpolation.zoom(map_data, zoom=zoom_factor))
                 n_x, n_y = map_data.shape
             else:
+                print(map_data.shape)
+                n_maps = map_data.shape[2]
                 upsampled = []
-                for original in tqdm(map_data.T, desc='Upsampling map'):
-                    upsampled.append(image_interpolation.zoom(original, zoom=zoom_factor).T)
+                for i in tqdm(range(n_maps)):
+                    original = map_data[:, :, i]
+                    upsampled.append(image_interpolation.zoom(original.T, zoom=zoom_factor))
                 map_data = np.array(upsampled).T
                 n_x, n_y, _ = map_data.shape
+                print(map_data.shape)
 
         def get_data(x, y):
             return map_data[int((x - x_min)/x_spacing + 0.5),
@@ -218,7 +222,8 @@ class Vector2DGridMap(InterpolatingMap):
 
     def get_value(self, *coordinates, map_name='map'):
         """Returns the value of the map at the position given by coordinates"""
-        return self.interpolators[map_name](*coordinates)
+        #TODO: this reversed business is retarded, should check if map is ok
+        return self.interpolators[map_name](*reversed(coordinates))
 
 
 ##
