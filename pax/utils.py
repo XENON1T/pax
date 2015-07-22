@@ -16,7 +16,9 @@ from itertools import zip_longest
 
 import numpy as np
 from scipy import interpolate
+from scipy.ndimage import interpolation as image_interpolation
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 from pax import units
 
@@ -88,7 +90,7 @@ class InterpolatingMap(object):
     """
     data_field_names = ['timestamp', 'description', 'coordinate_system', 'name']
 
-    def __init__(self, filename):
+    def __init__(self, filename, **kwargs):
         self.log = logging.getLogger('InterpolatingMap')
         self.log.debug('Loading JSON map %s' % filename)
 
@@ -106,35 +108,12 @@ class InterpolatingMap(object):
         self.log.debug("Map names found: %s" % self.map_names)
 
         for map_name in self.map_names:
-
-            # 0 D -- placeholder maps which take no arguments and always return a single value
+            map_data = np.array(self.data[map_name])
             if self.dimensions == 0:
-                itp_fun = lambda: self.data[map_name]
-
-            # 1 D interpolation
-            elif self.dimensions == 1:
-                itp_fun = interpolate.interp1d(x=np.linspace(*(cs[0][1])),
-                                               y=self.data[map_name])
-
-            # 2D interpolation
-            elif self.dimensions == 2:
-                itp_fun = interpolate.RectBivariateSpline(x=np.linspace(*(cs[0][1])),
-                                                          y=np.linspace(*(cs[1][1])),
-                                                          z=np.array(self.data[map_name]).T,
-                                                          s=0)
-
-            # 3D interpolation
-            elif self.dimensions == 3:
-                # LinearNDInterpolator wants points as [(x1,y1,z1), (x2, y2, z2), ...]
-                all_x, all_y, all_z = np.meshgrid(np.linspace(*(cs[0][1])),
-                                                  np.linspace(*(cs[1][1])),
-                                                  np.linspace(*(cs[2][1])))
-                points = np.array([np.ravel(all_x), np.ravel(all_y), np.ravel(all_z)]).T
-                values = np.ravel(self.data[map_name])
-                itp_fun = interpolate.LinearNDInterpolator(points, values)
-
+                # 0 D -- placeholder maps which take no arguments and always return a single value
+                itp_fun = lambda: map_data
             else:
-                raise RuntimeError("Can't use a %s-dimensional correction map!" % self.dimensions)
+                itp_fun = self.init_map(map_data, **kwargs)
 
             self.interpolators[map_name] = itp_fun
 
@@ -151,6 +130,35 @@ class InterpolatingMap(object):
             return float(result[0])
         except TypeError:
             return float(result)    # We don't want a 0d numpy array, which the 1d and 2d interpolators seem to give
+
+    def init_map(self, map_data, **kwargs):
+        # 1 D interpolation
+        cs = self.coordinate_system
+        if self.dimensions == 1:
+            #TODO: intper1d is very inefficient for regular grids
+            return interpolate.interp1d(x=np.linspace(*(cs[0][1])),
+                                        y=map_data)
+
+        # 2D interpolation
+        elif self.dimensions == 2:
+            return interpolate.RectBivariateSpline(x=np.linspace(*(cs[0][1])),
+                                                   y=np.linspace(*(cs[1][1])),
+                                                   z=np.array(map_data).T,
+                                                   s=0)
+
+        # 3D interpolation
+        elif self.dimensions == 3:
+            #TODO: LinearNDInterpolator is very inefficient for regular grids
+            # LinearNDInterpolator wants points as [(x1,y1,z1), (x2, y2, z2), ...]
+            all_x, all_y, all_z = np.meshgrid(np.linspace(*(cs[0][1])),
+                                              np.linspace(*(cs[1][1])),
+                                              np.linspace(*(cs[2][1])))
+            points = np.array([np.ravel(all_x), np.ravel(all_y), np.ravel(all_z)]).T
+            values = np.ravel(map_data)
+            return interpolate.LinearNDInterpolator(points, values)
+
+        else:
+            raise RuntimeError("Can't use a %s-dimensional correction map!" % self.dimensions)
 
     def plot(self, map_name='map', to_file=None):
         """Make a quick plot of the map map_name, for diagnostic purposes only"""
@@ -178,6 +186,39 @@ class InterpolatingMap(object):
         else:
             plt.show()
         plt.close()
+
+
+class Vector2DGridMap(InterpolatingMap):
+
+    def init_map(self, map_data, zoom_factor=1, **kwargs):
+        x_min, x_max, n_x = self.coordinate_system[0][1]
+        x_spacing = (x_max-x_min)/(n_x-1)
+        y_min, y_max, n_y = self.coordinate_system[0][1]
+        y_spacing = (y_max-y_min)/(n_y-1)
+
+        if zoom_factor != 1:
+            try:
+                map_data[0, 0, 0]
+            except IndexError:
+                # Non-vectormap
+                map_data = np.array(image_interpolation.zoom(map_data, zoom=zoom_factor))
+                n_x, n_y = map_data.shape
+            else:
+                upsampled = []
+                for original in tqdm(map_data.T, desc='Upsampling map'):
+                    upsampled.append(image_interpolation.zoom(original, zoom=zoom_factor).T)
+                map_data = np.array(upsampled).T
+                n_x, n_y, _ = map_data.shape
+
+        def get_data(x, y):
+            return map_data[int((x - x_min)/x_spacing + 0.5),
+                            int((y - y_min)/y_spacing + 0.5)]
+
+        return get_data
+
+    def get_value(self, *coordinates, map_name='map'):
+        """Returns the value of the map at the position given by coordinates"""
+        return self.interpolators[map_name](*coordinates)
 
 
 ##

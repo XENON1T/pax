@@ -5,7 +5,6 @@ from scipy.optimize import fmin_powell
 
 from pax import plugin
 from pax.datastructure import ReconstructedPosition
-from pax.utils import InterpolatingMap, data_file_name
 
 
 class PosRecChiSquareGamma(plugin.TransformPlugin):
@@ -36,36 +35,34 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
         # List of integers of which PMTs to use, this algorithm uses the top pmt array to reconstruct
         self.pmts = self.config['channels_top']
 
+        # (x,y) Locations of these PMTs, stored as np.array([(x,y), (x,y), ...])
+        self.pmt_locations = np.zeros((len(self.pmts), 2))
+        for ch in self.pmts:
+            for dim in ('x', 'y'):
+                self.pmt_locations[ch][{'x': 0, 'y': 1}[dim]] = self.config['pmt_locations'][ch][dim]
+
         # Set area threshold, minimum area for a peak to be reconstructed
         self.area_threshold = self.config['area_threshold']
 
         # Set the TPC radius squared, add 1% to avoid edge effects
         self.tpc_radius_squared = (self.config['tpc_radius'] * 1.01)**2
 
-        # (x,y) Locations of these PMTs.  This is stored as a dictionary such
-        # that self.pmt_locations[int] = {'x' : int, 'y' : int, 'z' : None}
-        self.pmt_locations = self.config['pmt_locations']
-
         # Load LCE maps
-        self.lce_map_file_name = self.config['lce_map_file_name']
-        self.maps = InterpolatingMap(data_file_name(self.lce_map_file_name))
+        self.s2_lce_map = self.processor.simulator.s2_lce_map
 
         # Load gains (gains from config file, gain error 0.5 pe for all pmts for now)
-        self.gains = self.config['gains']
-        self.gain_errors = [0.5 for i in range(99)]  # test for now, make config variable
+        self.gains = np.array(self.config['gains'])[self.pmts]
+        self.gain_errors = np.ones(len(self.pmts)) * 0.5  # TODO: remove placeholder
 
         # Load QE (for now use arbitrary values)
-        self.qes = [0.3 for i in range(99)]  # test for now, make config variable
-        self.qe_errors = [0.009 for i in range(99)]  # test for now, make config variable
+        self.qes = np.ones(len(self.pmts)) * 0.3  # TODO: remove placeholder
+        self.qe_errors = np.ones(len(self.pmts)) * 0.009  # TODO: remove placeholder
 
         # Number of pmts (minus dead pmts)
-        self.n_channels = 0
-        for pmt in self.pmts:
-            if not self.gains[pmt] == 0:
-                self.n_channels += 1
+        self.is_pmt_alive = self.gains > 0
 
         # Number of degrees of freedom, n_channels - model degrees of freedom (x,y) - 1
-        self.ndf = self.n_channels - 2 - 1
+        self.ndf = np.count_nonzero(self.is_pmt_alive) - 2 - 1
 
         # Log the total number of calls and success rate to debug, see shutdown
         self.total_rec_calls = 0
@@ -84,41 +81,20 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
         if x ** 2 + y ** 2 > self.tpc_radius_squared:
             return float('inf')
 
-        function_value = 0
-
         # Get all LCE map values for the live PMTs at position x,y
-        map_values = []
-        for pmt in self.pmts:
-            if self.gains[pmt] == 0:
-                continue
+        map_values = self.s2_lce_map.get_value(x, y)
+        assert len(map_values) == len(self.pmts)
 
-            map_values.append(max(0, self.maps.get_value(x,
-                                                         y,
-                                                         map_name=str(pmt))))
+        # Convert to relative LCEs among living PMTs
+        map_values[True ^ self.is_pmt_alive] = 0
+        map_values /= map_values.sum()
+        map_values = np.clip(map_values, 0, 1)
 
-        # Renormalize the values
-        map_values = np.array(map_values) / np.array(map_values).sum()
-        index = 0
-
-        # Iterate over all pmts, adding each pmts contribution to function_value
-        for pmt in self.pmts:
-            # Exclude dead pmts
-            if self.gains[pmt] == 0:
-                continue
-
-            photons_in_pmt = self.hits[pmt] / self.qes[pmt]
-            pmt_error = (self.qe_errors[pmt] / self.qes[pmt]) ** 4 + (self.gain_errors[pmt] / self.gains[pmt]) ** 2
-
-            # Lookup value from LCE map for pmt at position x,y
-            map_value = map_values[index]
-            index += 1
-
-            term_numerator = (photons_in_pmt + min(photons_in_pmt, 1) - self.area_photons * map_value) ** 2
-            term_denominator = photons_in_pmt ** 2 * pmt_error + self.area_photons * map_value + 1.0
-
-            function_value += term_numerator / term_denominator
-
-        return function_value
+        # Compute the chi2gamma for each PMT, add up contributions from living PMTs
+        term_numerator = (self.photons + np.clip(self.photons, 1, float('inf')) - self.area_photons * map_values) ** 2
+        term_denominator = self.photons ** 2 * self.pmt_errors + self.area_photons * map_values + 1.0
+        function_values = term_numerator / term_denominator
+        return np.sum(function_values[self.is_pmt_alive])
 
     def transform_event(self, event):
         """Reconstruct the position of S2s in an event.
@@ -133,31 +109,25 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
         for peak in event.S2s():
             # This is an array where every i-th element is how many pe
             # were seen by the i-th PMT
-            self.hits = peak.area_per_channel
+            self.hits = peak.area_per_channel[self.pmts]
+            self.photons = self.hits / self.qes
 
             # Total number of detected photons in the top array (pe/qe)
-            self.area_photons = 0.0
+            self.area_photons = self.photons.sum()
 
-            # Highest number of pe seen in one PMT and the id of this PMT
-            max_pmt = 0
-            max_pmt_id = 0
+            # Error term per PMT in chi2 function
+            self.pmt_errors = np.zeros(len(self.pmts))
+            self.pmt_errors[self.is_pmt_alive] = (self.qe_errors[self.is_pmt_alive] / self.qes[self.is_pmt_alive]) ** 4
+            self.pmt_errors[self.is_pmt_alive] += (self.gain_errors[self.is_pmt_alive] /
+                                                   self.gains[self.is_pmt_alive]) ** 2
 
             # Calculate which pmt has maximum signal
-            for pmt in self.pmts:
-                # Exclude dead pmts
-                if self.gains[pmt] == 0 or str(self.hits[pmt]) == 'nan' or self.qes[pmt] == 0:
-                    continue
-
-                if self.hits[pmt] > max_pmt:
-                    max_pmt = self.hits[pmt]
-                    max_pmt_id = pmt
-
-                self.area_photons += self.hits[pmt] / self.qes[pmt]
+            max_pmt_index = np.argmax(self.photons)
 
             # Start position for minimizer, if no weighted sum position is present
             # use max pmt location as minimizer start position
-            start_x = self.pmt_locations[max_pmt_id]['x']
-            start_y = self.pmt_locations[max_pmt_id]['y']
+            start_x = self.pmt_locations[max_pmt_index][0]
+            start_y = self.pmt_locations[max_pmt_index][1]
 
             if not self.mode == 'only_reconstruct':
                 # Check for reconstructed positions by other algorithms, if found, calculate chi_square_gamma for those
