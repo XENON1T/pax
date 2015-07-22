@@ -16,9 +16,7 @@ from itertools import zip_longest
 
 import numpy as np
 from scipy import interpolate
-from scipy.ndimage import interpolation as image_interpolation
 import matplotlib.pyplot as plt
-from tqdm import tqdm
 
 from pax import units
 
@@ -135,7 +133,7 @@ class InterpolatingMap(object):
         # 1 D interpolation
         cs = self.coordinate_system
         if self.dimensions == 1:
-            #TODO: intper1d is very inefficient for regular grids
+            # TODO: intper1d is very inefficient for regular grids!!
             return interpolate.interp1d(x=np.linspace(*(cs[0][1])),
                                         y=map_data)
 
@@ -148,7 +146,7 @@ class InterpolatingMap(object):
 
         # 3D interpolation
         elif self.dimensions == 3:
-            #TODO: LinearNDInterpolator is very inefficient for regular grids
+            # TODO: LinearNDInterpolator is very inefficient for regular grids!!
             # LinearNDInterpolator wants points as [(x1,y1,z1), (x2, y2, z2), ...]
             all_x, all_y, all_z = np.meshgrid(np.linspace(*(cs[0][1])),
                                               np.linspace(*(cs[1][1])),
@@ -197,24 +195,11 @@ class Vector2DGridMap(InterpolatingMap):
         y_spacing = (y_max-y_min)/(n_y-1)
 
         if zoom_factor != 1:
-            try:
-                map_data[0, 0, 0]
-            except IndexError:
-                # Non-vectormap
-                map_data = np.array(image_interpolation.zoom(map_data, zoom=zoom_factor))
-                n_x, n_y = map_data.shape
-            else:
-                print(map_data.shape)
-                n_maps = map_data.shape[2]
-                upsampled = []
-                for i in tqdm(range(n_maps)):
-                    original = map_data[:, :, i]
-                    upsampled.append(image_interpolation.zoom(original.T, zoom=zoom_factor))
-                map_data = np.array(upsampled).T
-                n_x, n_y, _ = map_data.shape
-                print(map_data.shape)
+            self.log.warning('Upsampling not yet implemented!')
 
         def get_data(x, y):
+            if np.isnan(x) or np.isnan(y):
+                return float('nan') * np.ones_like(map_data[0, 0])
             return map_data[int((x - x_min)/x_spacing + 0.5),
                             int((y - y_min)/y_spacing + 0.5)]
 
@@ -222,8 +207,7 @@ class Vector2DGridMap(InterpolatingMap):
 
     def get_value(self, *coordinates, map_name='map'):
         """Returns the value of the map at the position given by coordinates"""
-        #TODO: this reversed business is retarded, should check if map is ok
-        return self.interpolators[map_name](*reversed(coordinates))
+        return self.interpolators[map_name](*coordinates)
 
 
 ##

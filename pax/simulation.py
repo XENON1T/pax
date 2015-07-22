@@ -476,7 +476,7 @@ class Simulator(object):
 ##
 
 def distribute_photons_by_lcemap(photon_timings, channels, lce_map, coordinate_tuple):
-    #TODO: only works if channels drawn from top, or from all channels (i.e. first index 0)
+    # TODO: only works if channels drawn from top, or from all channels (i.e. first index 0)
     # Calculate relative LCEs at this position
     lces = lce_map.get_value(*coordinate_tuple)[channels]
     # Due to interpolation, probabilities can come out negative or normalization can be messed up. Deal with this:

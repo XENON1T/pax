@@ -142,7 +142,9 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
                                    % (position.algorithm, position.x, position.y, position.goodness_of_fit, self.ndf))
 
                     # If a neural net position is already calculated for this peak, use it as start position
-                    if position.algorithm == 'NeuralNet' and not self.mode == 'no_reconstruct':
+                    if position.algorithm == 'NeuralNet' \
+                            and not self.mode == 'no_reconstruct' \
+                            and self.config.get('seed_from_neural_net'):
                         self.log.debug('Using NeuralNet position as minimizer start position')
 
                         start_x = position.x
@@ -178,7 +180,7 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
                                                                       args=(),
                                                                       xtol=0.0001,
                                                                       ftol=0.0001,
-                                                                      maxiter=5,
+                                                                      maxiter=10,
                                                                       maxfun=None,
                                                                       full_output=1,
                                                                       disp=0,
