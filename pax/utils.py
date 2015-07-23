@@ -16,6 +16,7 @@ from itertools import zip_longest
 
 import numpy as np
 from scipy import interpolate
+from scipy.ndimage.interpolation import zoom as image_zoom
 import matplotlib.pyplot as plt
 
 from pax import units
@@ -190,12 +191,22 @@ class Vector2DGridMap(InterpolatingMap):
 
     def init_map(self, map_data, zoom_factor=1, **kwargs):
         x_min, x_max, n_x = self.coordinate_system[0][1]
-        x_spacing = (x_max-x_min)/(n_x-1)
         y_min, y_max, n_y = self.coordinate_system[0][1]
-        y_spacing = (y_max-y_min)/(n_y-1)
 
         if zoom_factor != 1:
-            self.log.warning('Upsampling not yet implemented!')
+            if len(map_data.shape) == 2:
+                map_data = self.upsample_map(map_data, zoom_factor)
+                n_x, n_y = map_data.shape
+            else:
+                n_maps = map_data.shape[2]
+                new_map_data = np.zeros((zoom_factor * n_x, zoom_factor * n_y, n_maps))
+                for map_i in range(n_maps):
+                    new_map_data[:, :, map_i] = self.upsample_map(map_data[:, :, map_i], zoom_factor)
+                map_data = new_map_data
+                n_x, n_y, _ = map_data.shape
+
+        x_spacing = (x_max-x_min)/(n_x-1)
+        y_spacing = (y_max-y_min)/(n_y-1)
 
         def get_data(x, y):
             if np.isnan(x) or np.isnan(y):
@@ -208,6 +219,11 @@ class Vector2DGridMap(InterpolatingMap):
     def get_value(self, *coordinates, map_name='map'):
         """Returns the value of the map at the position given by coordinates"""
         return self.interpolators[map_name](*coordinates)
+
+    @staticmethod
+    def upsample_map(map_data, zoom_factor):
+        # Upsample the map using bilinear (order=1) spline interpolation
+        return image_zoom(map_data, zoom_factor, order=1)
 
 
 ##
