@@ -87,8 +87,8 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
 
         # Convert to relative LCEs among living PMTs
         map_values[True ^ self.is_pmt_alive] = 0
-        map_values /= map_values.sum()
         map_values = np.clip(map_values, 0, 1)
+        map_values /= map_values.sum()
 
         # Compute the chi2gamma for each PMT, add up contributions from living PMTs
         term_numerator = (self.photons + np.clip(self.photons, 1, float('inf')) - self.area_photons * map_values) ** 2
