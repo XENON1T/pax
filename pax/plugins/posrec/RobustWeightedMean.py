@@ -6,6 +6,14 @@ from pax.datastructure import ReconstructedPosition
 
 
 class PosRecRobustWeightedMean(plugin.TransformPlugin):
+    """Reconstruct S2 positions using an iterative weighted mean algorithm. For each S2:
+    1. Compute area-weighted mean of top hitpattern
+    2. Compute the area-weighted mean distance of all remaining PMTs from this position.
+    3. Remove PMTs which are 'outliers': further than outlier_threshold * mean distance from the weighted mean position
+       If all PMTs are outliers (can happen if hitpattern is really bizarre), only the furthest one is removed
+    This is repeated until step 3 removes no outliers, or there are less than min_pmts_left PMTs left after step 3.
+    """
+
     def startup(self):
         self.outlier_threshold = self.config['outlier_threshold']
 
@@ -27,6 +35,10 @@ class PosRecRobustWeightedMean(plugin.TransformPlugin):
             # and then would have to adapt PosRecTest. Or we could make does_channel_contribute a property...
             pmts = np.intersect1d(np.where(peak.area_per_channel > 0)[0],
                                   self.pmts)
+
+            if len(pmts) <= 1:
+                # How on earth did this get classified as S2??
+                wmp = [float('nan'), float('nan')]
 
             while True:
 
@@ -54,6 +66,10 @@ class PosRecRobustWeightedMean(plugin.TransformPlugin):
                 else:
                     # Remove all outliers
                     pmts = pmts[True ^ is_outlier]
+
+                # Give up if there are too few PMTs left
+                if len(pmts) <= self.config['min_pmts_left']:
+                    break
 
             peak.reconstructed_positions.append(ReconstructedPosition(x=wmp[0], y=wmp[1],
                                                                       algorithm=self.name))

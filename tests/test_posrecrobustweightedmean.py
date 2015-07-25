@@ -25,7 +25,7 @@ class TestPosRecRobustWeightedmean(unittest.TestCase):
                              'area_per_channel': bla}))
         return e
 
-    def test_get_maxpmt_plugin(self):
+    def test_get_plugin(self):
         self.assertIsInstance(self.plugin, plugin.TransformPlugin)
         self.assertEqual(self.plugin.__class__.__name__, 'PosRecRobustWeightedMean')
 
