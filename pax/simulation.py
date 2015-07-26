@@ -291,6 +291,10 @@ class Simulator(object):
             sample_duration=self.config['sample_duration'],
         )
 
+        # Ensure the event length is even (else it cannot be written to XED)
+        if event.length() % 2 != 0:
+            event.stop_time += self.config['sample_duration']
+
         log.debug("Now performing hitpattern to waveform conversion for %s photons" % hitpattern.n_photons)
         # TODO: Account for random initial digitizer state  wrt interaction?
         # Where?
