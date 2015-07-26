@@ -10,6 +10,8 @@ The read plugin supports:
  - zle0 and raw sample encoding;
  - bzip2 or uncompressed chunk data compression, not any other compression scheme.
 
+If an XED file has non-continuous event numbers, searching for individual events WILL NOT WORK
+
 The write plugin always writes zle0 XED files with bzip2 data compression.
 """
 
@@ -94,7 +96,9 @@ class ReadXED(InputFromFolder):
             )
             self.event_positions = self.event_positions[:self.file_metadata['events_in_file']]
 
-    def get_single_event_in_current_file(self, event_position):
+    def get_single_event_in_current_file(self, event_number):
+        # Determine event's index in the file. Assumes event numbers are continuous!!
+        event_position = event_number - self.file_metadata['first_event_number']
 
         # Seek to the requested event
         self.current_xedfile.seek(self.event_positions[event_position])

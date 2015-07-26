@@ -137,19 +137,23 @@ class Processor:
 
             self.total_number_events = min(self.input_plugin.number_of_events, self.stop_after)
 
-            # How should the events be generated?
-            if 'events_to_process' in pc and pc['events_to_process'] is not None:
+            # Parse the event numbers file, if one is given
+            if pc.get('event_numbers_file', None) is not None:
+                with open(pc['event_numbers_file'], mode='r') as f:
+                    pc['events_to_process'] = list(map(int, f.readlines()))
+
+            if pc.get('events_to_process', None) is not None:
                 # The user specified which events to process:
                 self.total_number_events = min(len(pc['events_to_process']), self.stop_after)
 
                 def get_events():
                     for event_number in pc['events_to_process']:
                         yield self.input_plugin.get_single_event(event_number)
+                self.get_events = get_events
             else:
                 # Let the input plugin decide which events to process:
-                get_events = self.input_plugin.get_events
+                self.get_events = self.input_plugin.get_events
 
-            self.get_events = get_events
         else:
             # During tests there is often no input plugin
             # events are added manually
@@ -168,6 +172,8 @@ class Processor:
             if not just_testing:
                 self.log.warning("No action plugins specified: this will be a "
                                  "pretty boring processing run...")
+
+        self.timer = utils.Timer()
 
     def load_configuration(self, config_names, config_paths, config_string, config_dict):
         """Load a configuration -- see init's docstring
@@ -392,11 +398,11 @@ class Processor:
         for j, plugin in enumerate(self.action_plugins):
             self.log.debug("%s (step %d/%d)" % (plugin.__class__.__name__, j, total_plugins))
             event = plugin.process_event(event)
+            plugin.total_time_taken += self.timer.punch()
 
         # Uncomment to diagnose memory leaks
         # gc.collect()  # don't care about stuff that would be garbage collected properly
         # objgraph.show_growth(limit=5)
-
         return event
 
     def run(self, clean_shutdown=True):
@@ -421,9 +427,13 @@ class Processor:
 
         i = 0  # in case loop does not run
         # This is the actual event loop.  'tqdm' is a progress bar.
+
+        self.timer.punch()
         for i, event in enumerate(tqdm(self.get_events(),
                                        desc='Event',
                                        total=self.total_number_events)):
+            self.input_plugin.total_time_taken += self.timer.punch()
+
             if i >= self.stop_after:
                 self.log.info("User-defined limit of %d events reached." % i)
                 break

@@ -5,18 +5,18 @@ from pax import core, plugin
 from pax.datastructure import Event, Peak
 
 
-class TestPosRecNeuralNet(unittest.TestCase):
+class TestPosRecMaxPMT(unittest.TestCase):
 
     def setUp(self):
         self.pax = core.Processor(config_names='XENON100', just_testing=True, config_dict={'pax': {
             'plugin_group_names': ['test'],
-            'test':               'NeuralNet.PosRecNeuralNet'}})
-        self.plugin = self.pax.get_plugin_by_name('PosRecNeuralNet')
+            'test':               'MaxPMT.PosRecMaxPMT'}})
+        self.plugin = self.pax.get_plugin_by_name('PosRecMaxPMT')
 
     @staticmethod
-    def example_event(channels_with_something):
+    def example_event(channels_with_something, area_per_channel=1):
         bla = np.zeros(243)
-        bla[np.array(channels_with_something)] = 1
+        bla[np.array(channels_with_something)] = area_per_channel
         e = Event.empty_event()
         e.peaks.append(Peak({'left':  5,
                              'right': 9,
@@ -25,12 +25,17 @@ class TestPosRecNeuralNet(unittest.TestCase):
                              'area_per_channel': bla}))
         return e
 
-    def test_get_nn_plugin(self):
+    def test_get_maxpmt_plugin(self):
         self.assertIsInstance(self.plugin, plugin.TransformPlugin)
-        self.assertEqual(self.plugin.__class__.__name__, 'PosRecNeuralNet')
+        self.assertEqual(self.plugin.__class__.__name__, 'PosRecMaxPMT')
 
     def test_posrec(self):
-        e = self.example_event([40, 41, 42])
+        """Test a hitpattern of all ones and one 2 (at PMT 42)"""
+        ch = 42     # Could test more locations, little point
+        hitp = np.ones(len(self.plugin.config['channels_top']))
+        hitp[ch] = 2
+        e = self.example_event(channels_with_something=self.plugin.config['channels_top'],
+                               area_per_channel=hitp)
         e = self.plugin.transform_event(e)
         self.assertIsInstance(e, Event)
         self.assertEqual(len(e.peaks), 1)
@@ -38,9 +43,8 @@ class TestPosRecNeuralNet(unittest.TestCase):
         self.assertEqual(len(e.peaks[0].reconstructed_positions), 1)
         rp = e.peaks[0].reconstructed_positions[0]
         self.assertEqual(rp.algorithm, self.plugin.name)
-        self.assertEqual(rp.x, 11.076582570681966)
-        self.assertEqual(rp.y, 6.831207460290031)
-
+        self.assertEqual(rp.x, self.plugin.config['pmt_locations'][ch]['x'])
+        self.assertEqual(rp.y, self.plugin.config['pmt_locations'][ch]['y'])
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,6 +1,5 @@
 import os
 import shutil
-import time
 from bson.json_util import dumps
 
 import numpy as np
@@ -108,6 +107,7 @@ class BulkOutput(plugin.OutputPlugin):
             os.mkdir(outfile)
 
         # Open the output file
+        self.log.info("Opening output file/directory %s" % self.config['output_name'])
         self.output_format.open(self.config['output_name'], mode='w')
 
     def write_event(self, event):
@@ -258,6 +258,7 @@ class BulkOutput(plugin.OutputPlugin):
                                             for i in range(len(field_value))],
                         'index_depth':     len(m_indices),
                     }
+                self.data[field_name]['tuples'].append(tuple(m_indices + field_value.tolist()))
 
             else:
                 m_data.append(field_value)
@@ -340,7 +341,6 @@ class ReadFromBulkOutput(plugin.InputPlugin):
         of = self.output_format
 
         for event_i in range(self.number_of_events):
-            ts = time.time()    # Start the clock
 
             in_this_event = {}
 
@@ -418,7 +418,6 @@ class ReadFromBulkOutput(plugin.InputPlugin):
 
                     event.peaks.append(peak)
 
-            self.total_time_taken += (time.time() - ts) * 1000
             yield event
 
     def convert_record(self, class_to_load_to, record):

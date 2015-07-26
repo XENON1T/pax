@@ -11,6 +11,7 @@ Contents:
    format
    plugin
    eventbuilder
+   simulator
    contributing
    faq
    authors
