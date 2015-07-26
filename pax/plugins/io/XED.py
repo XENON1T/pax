@@ -296,7 +296,8 @@ class WriteXED(WriteToFolder):
                         skip = pulse.left - prevpulse.right - 1
                     else:
                         skip = pulse.left
-                    channel_data += self.skip_control_word(to_skip=skip)
+                    if skip != 0:
+                        channel_data += self.skip_control_word(to_skip=skip)
                 # Write data control word, then data
                 channel_data += self.data_control_word(data_length=pulse.length)
                 channel_data += pulse.raw_data.tobytes()
