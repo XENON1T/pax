@@ -155,6 +155,7 @@ class ReadXED(InputFromFolder):
                     left=0,
                     raw_data=chdata
                 ))
+
         elif event_layer_metadata['type'] == b'zle0':
             # Read the channel bitmask to find out which channels are included in this event.
             # Lots of possibilities for errors here: 4-byte groupings, 1-byte groupings, little-endian...
@@ -254,6 +255,25 @@ class WriteXED(WriteToFolder):
         self.events = []
         self.first_event_number = None
 
+    def skip_control_word(self, to_skip):
+        if to_skip % 2 != 0:
+            raise ValueError("to_skip must be even, you gave %d" % to_skip)
+        if to_skip == 0:
+            raise ValueError("to_skip cannot be 0")
+        if self.config['skip2_bug']:
+            # Write a series of skip 2 control words rather than one skip control word
+            q = np.ones(to_skip / 2) * 2
+            return q.astype('<u4').tobytes()
+        else:
+            return np.array([to_skip / 2], dtype='<u4').tobytes()
+
+    def data_control_word(self, data_length):
+        if data_length % 2 != 0:
+            raise ValueError("Data length must be even, you gave %d" % data_length)
+        if data_length == 0:
+            raise ValueError("Data length cannot be 0")
+        return np.array([2 ** 31 + data_length / 2], dtype='<u4').tobytes()
+
     def write_event_to_current_file(self, event):
 
         if self.first_event_number is None:
@@ -269,16 +289,19 @@ class WriteXED(WriteToFolder):
                 # Write skip control word, unless we're at the very start
                 if pulse.left != 0:
                     if prevpulse is not None:
-                        skip = (pulse.left - prevpulse.right - 1) / 2
+                        skip = pulse.left - prevpulse.right - 1
                     else:
-                        skip = pulse.left / 2
-                    channel_data += np.array([skip], dtype='<u4').tobytes()
-                # Write data control word
-                channel_data += np.array([2 ** 31 + pulse.length / 2], dtype='<u4').tobytes()
-                # Write data
+                        skip = pulse.left
+                    channel_data += self.skip_control_word(to_skip=skip)
+                # Write data control word, then data
+                channel_data += self.data_control_word(data_length=pulse.length)
                 channel_data += pulse.raw_data.tobytes()
                 prevpulse = pulse
-            # No final skip control word?
+            remaining = event.length() - prevpulse.right - 1
+            # Write final skip control word
+            if remaining != 0:
+                channel_data += self.skip_control_word(to_skip=remaining)
+
             # Add the channel size to the start
             channel_data = np.array([1 + len(channel_data) / 4], dtype='<u4').tobytes() + channel_data
             # Add this to the event_data
