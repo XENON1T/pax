@@ -20,20 +20,25 @@ class PosRecRobustWeightedMean(plugin.TransformPlugin):
         # List of integers of which PMTs to use, this algorithm uses the top pmt array to reconstruct
         self.pmts = self.config['channels_top']
 
-        # (x,y) Locations of these PMTs, stored as np.array([(x,y), (x,y), ...])
+        # (x,y) Locations of PMTs, stored as np.array([(x,y), (x,y), ...])
         self.pmt_locations = np.zeros((len(self.pmts), 2))
         for ch in self.pmts:
             for dim in ('x', 'y'):
                 self.pmt_locations[ch][{'x': 0, 'y': 1}[dim]] = self.config['pmt_locations'][ch][dim]
 
+        self.outer_ring_pmts = self.config['outer_ring_pmts']
+        self.outer_ring_multiplication_factor = self.config.get('outer_ring_multiplication_factor', 1)
+
     def transform_event(self, event):
 
         for peak in event.S2s():
 
-            # Start with all PMTs in self.pmts that have a hit
-            # Could use peak.contributing_channels, but this is calculated in ComputePeakProperties
-            # and then would have to adapt PosRecTest. Or we could make does_channel_contribute a property...
-            pmts = np.intersect1d(np.where(peak.area_per_channel > 0)[0],
+            # Upweigh the outer ring to compensate for their partial obscuration by the TPC wall
+            area_per_channel = peak.area_per_channel.copy()
+            area_per_channel[self.outer_ring_pmts] *= self.outer_ring_multiplication_factor
+
+            # Start with all PMTs in self.pmts that have some area
+            pmts = np.intersect1d(np.where(area_per_channel > 0)[0],
                                   self.pmts)
 
             if len(pmts) <= 1:
@@ -44,7 +49,7 @@ class PosRecRobustWeightedMean(plugin.TransformPlugin):
 
                 # Get locations and hitpattern of remaining PMTs
                 pmt_locs = self.pmt_locations[pmts]
-                hitpattern = peak.area_per_channel[pmts]
+                hitpattern = area_per_channel[pmts]
 
                 # Compute the weighted mean position (2-vector)
                 wmp = np.average(pmt_locs, weights=hitpattern, axis=0)

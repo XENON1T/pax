@@ -31,7 +31,7 @@ class TestPosRecRobustWeightedmean(unittest.TestCase):
 
     def test_posrec(self):
         """Test a hitpattern with an outlier"""
-        e = self.example_event(channels_with_something=[8, 89, 91, 95, 93, 97, 98],
+        e = self.example_event(channels_with_something=[33, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98],
                                area_per_channel=1)
         e = self.plugin.transform_event(e)
         self.assertIsInstance(e, Event)
