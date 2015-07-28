@@ -87,6 +87,13 @@ class Simulator(object):
             # (which is one row per channel)
             self.channel_offset = 1 if self.config['pmt_0_is_fake'] else 0
 
+        # Init s2 per pmt lce map
+        if self.config.get('s2_lce_map', None) is not None:
+            self.s2_lce_map = utils.Vector2DGridMap(filename=utils.data_file_name(self.config['s2_lce_map']),
+                                                    zoom_factor=self.config.get('s2_lce_map_zoom_factor', 1))
+        else:
+            self.s2_lce_map = None
+
     def s2_electrons(self, electrons_generated=None, z=0., t=0.):
         """Return a list of electron arrival times in the ELR region caused by an S2 process.
 
@@ -272,7 +279,7 @@ class Simulator(object):
         )
 
     def make_hitpattern(self, photon_times, x=0, y=0, z=0):
-        return SimulatedHitpattern(config=self.config, photon_timings=photon_times, x=x, y=y, z=z)
+        return SimulatedHitpattern(simulator=self, photon_timings=photon_times, x=x, y=y, z=z)
 
     def to_pax_event(self, hitpattern):
         """Simulate PMT response to a hitpattern of photons
@@ -469,8 +476,9 @@ class Simulator(object):
 ##
 
 def distribute_photons_by_lcemap(photon_timings, channels, lce_map, coordinate_tuple):
+    # TODO: only works if channels drawn from top, or from all channels (i.e. first index 0)
     # Calculate relative LCEs at this position
-    lces = np.array([lce_map.get_value(*coordinate_tuple, map_name=str(ch)) for ch in channels])
+    lces = lce_map.get_value(*coordinate_tuple)[channels]
     # Due to interpolation, probabilities can come out negative or normalization can be messed up. Deal with this:
     lces = np.clip(lces, 0, 1)
     lces /= np.sum(lces)
@@ -512,8 +520,8 @@ def randomize_photons_over_channels(photon_timings, channels, relative_lce_per_c
 
 class SimulatedHitpattern(object):
 
-    def __init__(self, config, photon_timings, x=0, y=0, z=0):
-        self.config = config
+    def __init__(self, simulator, photon_timings, x=0, y=0, z=0):
+        self.config = simulator.config
 
         # Add the minimum and maximum times, and number of times
         # hitlist_to_waveforms would have to go through weird flattening stuff to determine these
@@ -539,12 +547,7 @@ class SimulatedHitpattern(object):
         # All channels which can receive photons (depends on configuration, magical dead pmt avoidance etc)
         ch_for_photons = self.config['channels_for_photons']
 
-        if z == - self.config['gate_to_anode_distance'] and self.config.get('s2_lce_map', None) is not None:
-            # Init lce map the first time a hitpattern is loaded -- ugly code!
-            if not hasattr(self.__class__, 's2_lce_map'):
-                mf = utils.data_file_name(self.config['s2_lce_map'])
-                self.__class__.s2_lce_map = utils.InterpolatingMap(filename=mf)
-
+        if z == - self.config['gate_to_anode_distance'] and simulator.s2_lce_map is not None:
             # Generated at anode: use S2 LCE data
             top_chs_for_photons = [ch for ch in self.config['channels_top']
                                    if ch in self.config['channels_for_photons']]
@@ -557,7 +560,7 @@ class SimulatedHitpattern(object):
 
             arr_t_p_c = distribute_photons_by_lcemap(photon_timings=photon_timings[:n_top],
                                                      channels=top_chs_for_photons,
-                                                     lce_map=self.s2_lce_map,
+                                                     lce_map=simulator.s2_lce_map,
                                                      coordinate_tuple=(x, y))
 
             # Randomly distribute S2 photons in bottom array
