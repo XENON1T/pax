@@ -408,7 +408,7 @@ class Simulator(object):
                         current_wave[left_index: righter_index] += generated_pulse
 
                 # Did you order some Gaussian current noise with that?
-                if self.config['gaus_noise_sigma']:
+                if self.config['gauss_noise_sigma']:
                     # / dt is for charge -> current conversion, as in pmt_pulse_current
                     noise_sigma_current = self.config['gauss_noise_sigma'] * self.config['gains'][channel] / dt,
                     current_wave += np.random.normal(0,
