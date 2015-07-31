@@ -705,10 +705,16 @@ class PeakViewer(PlotBase):
         self.draw_peak()
 
     def main_s1(self):
+        if len(self.event.S1s()) < 1:
+            self.log.info("This event has no S1s.")
+            return
         self.peak_i = np.argmax([p.area if p.type == 's1' else 0 for p in self.peaks])
         self.draw_peak()
 
     def main_s2(self):
+        if len(self.event.S2s()) < 1:
+            self.log.info("This event has no S2s.")
+            return
         self.peak_i = np.argmax([p.area if p.type == 's2' else 0 for p in self.peaks])
         self.draw_peak()
 
