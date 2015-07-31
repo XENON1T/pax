@@ -48,7 +48,7 @@ class PlotBase(plugin.OutputPlugin):
         self.pmts = {array: self.config['channels_%s' % array] for array in ('top', 'bottom')}
         self.pmt_locations = np.array([[self.config['pmt_locations'][ch]['x'],
                                         self.config['pmt_locations'][ch]['y']]
-                                        for ch in range(self.config['n_channels'])])
+                                       for ch in range(self.config['n_channels'])])
 
         self.hitpattern_limits = (1e-1, 1e4)
         self.substartup()
@@ -168,8 +168,7 @@ class PlotBase(plugin.OutputPlugin):
                                       connectionstyle="angle3,"
                                                       "angleA=0,"
                                                       "angleB=-90")
-                ax.hlines(y, (peak.left - 1) * self.samples_to_us,
-                           peak.right * self.samples_to_us)
+                ax.hlines(y, (peak.left - 1) * self.samples_to_us, peak.right * self.samples_to_us)
                 ax.annotate('%s:%s' % (peak.type, int(peak.area)),
                             xy=(x, y),
                             xytext=(x, ytext),
@@ -194,9 +193,9 @@ class PlotBase(plugin.OutputPlugin):
         for peak in peaks:
             shade_color = self.peak_colors.get(peak.type, 'black') if peak.detector == 'tpc' else 'red'
             ax.axvspan((peak.left - 1) * self.samples_to_us,
-                        peak.right * self.samples_to_us,
-                        color=shade_color,
-                        alpha=0.1)
+                       peak.right * self.samples_to_us,
+                       color=shade_color,
+                       alpha=0.1)
 
     def draw_trigger_mark(self, y=0, ax=None):
         """Draw a marker (orange star) indicating the event's trigger time"""
@@ -414,9 +413,9 @@ class PlotChannelWaveforms2D(PlotBase):
             color_factor = 0
 
             ax.add_patch(Rectangle((pulse.left * time_scale, pulse.channel - 0.5), pulse.length * time_scale, 1,
-                                    facecolor=plt.cm.gnuplot2(color_factor),
-                                    edgecolor='none',
-                                    alpha=0.5))
+                                   facecolor=plt.cm.gnuplot2(color_factor),
+                                   edgecolor='none',
+                                   alpha=0.5))
 
         # Plot the channel peaks as dots
         self.log.debug('Plotting channel peaks...')
@@ -574,7 +573,6 @@ class PeakViewer(PlotBase):
         q = PlotSumWaveformEntireEvent(self.config, self.processor)
         q.plot_event(event, show_legend=True, ax=event_wv_ax)
         event_wv_ax.get_xaxis().set_visible(False)
-        #plt.setp(event_wv_ax.get_xticklabels(), visible=False)
 
         ##
         # Whereami plot
@@ -687,18 +685,16 @@ class PeakViewer(PlotBase):
             peak.hit_time_mean / units.us,)
         peak_text += 'Area: %0.2f pe, contained in %d hits in %d channels\n' % (
             peak.area, len(peak.hits), len(peak.contributing_channels))
-        peak_text += 'Fraction in top: %0.2f\n' % (peak.area_fraction_top)
+        peak_text += 'Fraction in top: %0.2f\n' % peak.area_fraction_top
         peak_text += 'Peak widths: hit time std = %dns,\n' \
-                     ' 50%% area hits range = %dns, 90%% area hits range = %dns\n' % (
-            peak.hit_time_std,
-            peak.range_50p_area,
-            peak.range_90p_area)
+                     ' 50%% area hits range = %dns, 90%% area hits range = %dns\n' % (peak.hit_time_std,
+                                                                                      peak.range_50p_area,
+                                                                                      peak.range_90p_area)
         self.peak_text.set_text(self.wrap_multiline(peak_text, self.max_characters))
 
     @staticmethod
     def wrap_multiline(text, max_characters):
         return "\n".join(["\n".join(textwrap.wrap(q, max_characters)) for q in text.splitlines()])
-
 
     def next_peak(self):
         self.peak_i += 1
@@ -709,11 +705,11 @@ class PeakViewer(PlotBase):
         self.draw_peak()
 
     def main_s1(self):
-        self.peak_i = np.argmax([p.area  if p.type == 's1' else 0 for p in self.peaks])
+        self.peak_i = np.argmax([p.area if p.type == 's1' else 0 for p in self.peaks])
         self.draw_peak()
 
     def main_s2(self):
-        self.peak_i = np.argmax([p.area  if p.type == 's2' else 0 for p in self.peaks])
+        self.peak_i = np.argmax([p.area if p.type == 's2' else 0 for p in self.peaks])
         self.draw_peak()
 
     def make_button(self, rect, label, on_click):
