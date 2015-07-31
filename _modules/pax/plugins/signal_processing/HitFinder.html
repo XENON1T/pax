@@ -30,20 +30,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../../../../genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="../../../../py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../../index.html">Processor for Analyzing XENON1T 3.2.0 documentation</a> &raquo;</li>
-          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -53,9 +40,7 @@
   <h1>Source code for pax.plugins.signal_processing.HitFinder</h1><div class="highlight"><pre>
 <span class="sd">&quot;&quot;&quot;Hit finding plugin</span>
 
-<span class="sd">If you get an error from either of the numba methods in this plugin (exception from native function blahblah)</span>
-<span class="sd">Try commenting the @jit decorators, which will run a slow, pure-python version of the methods, allowing you to debug.</span>
-<span class="sd">Don&#39;t forget to re-enable the @jit -- otherwise it will run quite slow!</span>
+
 <span class="sd">&quot;&quot;&quot;</span>
 
 
@@ -70,6 +55,59 @@
 
 
 <div class="viewcode-block" id="FindHits"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.HitFinder.FindHits">[docs]</a><span class="k">class</span> <span class="nc">FindHits</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Finds hits in pulses</span>
+<span class="sd">    First, the baseline is computed as the mean of the first initial_baseline_samples in the pulse.</span>
+<span class="sd">    Next, hits are found based on a high and low threshold:</span>
+<span class="sd">     - A hit starts/ends when it passes the low_threshold</span>
+<span class="sd">     - A hit has to pass the high_threshold somewhere.</span>
+
+<span class="sd">    Thresholds can be set on three different quantities. These are computed per pulse, the highest is used.</span>
+<span class="sd">    Here high/positive means &#39;signal like&#39; (i.e. the PMT voltage becomes more negative)</span>
+
+<span class="sd">    1) Height over noise threshold</span>
+<span class="sd">           Options: height_over_noise_high_threshold, height_over_noise_low_threshold</span>
+<span class="sd">       This threshold operates on the height above baseline / noise level</span>
+<span class="sd">       The noise level is deteremined in each pulse as</span>
+<span class="sd">         (&lt;(w - baseline)**2&gt;)**0.5</span>
+<span class="sd">       with the average running *only* over samples &lt; baseline!</span>
+
+<span class="sd">    2) Absolute ADC counts above baseline</span>
+<span class="sd">           Options: absolute_adc_counts_high_threshold, absolute_adc_counts_low_threshold</span>
+<span class="sd">       If there is measurable noise in the waveform, you don&#39;t want the thresholds to fall to 0 and crash pax.</span>
+<span class="sd">       This happens for pulses constant on initial_baseline_samples.</span>
+<span class="sd">       Please use this as a deep fallback only, unless you know what mess you&#39;re getting yourself into!</span>
+
+<span class="sd">    3) - Height / minimum</span>
+<span class="sd">           Options: height_over_min_high_threshold, height_over_min_LOW_threshold</span>
+<span class="sd">       Using this threshold protects you against sudden up &amp; down fluctuations, especially in large pulses</span>
+<span class="sd">       However, keep in mind that one large downfluctuation will cause a sensitivity loss throughout an entire pulse;</span>
+<span class="sd">       if you have ZLE off, this may be a bad idea...</span>
+<span class="sd">       This threshold operates on the (-) height above baseline / height below baseline of the lowest sample in pulse</span>
+
+
+<span class="sd">    Edge cases:</span>
+
+<span class="sd">    1) After large peaks the zero-length encoding can fail, making a huge pulse with many hits.</span>
+<span class="sd">       If more than max_hits_per_pulse hits are found in a pulse, the rest will be ignored.</span>
+<span class="sd">       If this threshold is set too low, you risk missing some hits in such events.</span>
+<span class="sd">       If set too high, it will degrade performance. Don&#39;t set to infinity, we need to allocate memory for this...</span>
+
+<span class="sd">    2) Very high hits (near ADC saturation) sometimes have a long tail. To protect against this, we raise the</span>
+<span class="sd">       low threshold to a fraction dynamic_low_threshold_coeff of the hit height after a hit has been encountered.</span>
+<span class="sd">       This is a temporary change for just the remainder of a pulse.</span>
+<span class="sd">       Also, if the hit height * dynamic_low_threshold_coeff is lower than the low threshold, nothing is changed.</span>
+
+<span class="sd">    Diagnostic plot options:</span>
+<span class="sd">        make_diagnostic_plots can be always, never, tricky cases, no hits, hits only. This controls whether to make</span>
+<span class="sd">        diagnostic plots showing individual pulses and the hitfinder&#39;s interpretation of them. For details on what</span>
+<span class="sd">        constitutes a tricky case, check the source.</span>
+<span class="sd">        make_diagnostic_plots_in sets the directory where the diagnostic plots are created.</span>
+
+<span class="sd">    Debugging tip:</span>
+<span class="sd">    If you get an error from one of the numba methods in this plugin (exception from native function blahblah)</span>
+<span class="sd">    Try commenting the @jit decorators, which will run a slow, pure-python version of the methods,</span>
+<span class="sd">    allowing you to debug. Don&#39;t forget to re-enable the @jit -- otherwise it will run quite slow!</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="FindHits.startup"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.HitFinder.FindHits.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">c</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span>
@@ -129,7 +167,9 @@
                                 <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;height_over_min_low_threshold&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">pulse</span><span class="o">.</span><span class="n">minimum</span><span class="p">)</span>
 
             <span class="c"># Call the numba hit finder -- see its docstring for description</span>
-            <span class="n">n_hits_found</span> <span class="o">=</span> <span class="n">find_intervals_above_threshold</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">high_threshold</span><span class="p">,</span> <span class="n">low_threshold</span><span class="p">,</span> <span class="n">hits_buffer</span><span class="p">)</span>
+            <span class="n">n_hits_found</span> <span class="o">=</span> <span class="n">find_intervals_above_threshold</span><span class="p">(</span>
+                <span class="n">w</span><span class="p">,</span> <span class="n">high_threshold</span><span class="p">,</span> <span class="n">low_threshold</span><span class="p">,</span> <span class="n">hits_buffer</span><span class="p">,</span>
+                <span class="n">dynamic_low_threshold_coeff</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;dynamic_low_threshold_coeff&#39;</span><span class="p">])</span>
 
             <span class="c"># Only view the part of hits_buffer that contains hits found in this event</span>
             <span class="c"># The rest of hits_buffer contains -1&#39;s or stuff from previous pulses</span>
@@ -269,7 +309,7 @@
 
 </div></div>
 <span class="nd">@numba.jit</span><span class="p">(</span><span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
-<div class="viewcode-block" id="find_intervals_above_threshold"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.HitFinder.find_intervals_above_threshold">[docs]</a><span class="k">def</span> <span class="nf">find_intervals_above_threshold</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">high_threshold</span><span class="p">,</span> <span class="n">low_threshold</span><span class="p">,</span> <span class="n">result_buffer</span><span class="p">):</span>
+<div class="viewcode-block" id="find_intervals_above_threshold"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.HitFinder.find_intervals_above_threshold">[docs]</a><span class="k">def</span> <span class="nf">find_intervals_above_threshold</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">high_threshold</span><span class="p">,</span> <span class="n">low_threshold</span><span class="p">,</span> <span class="n">result_buffer</span><span class="p">,</span> <span class="n">dynamic_low_threshold_coeff</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Fills result_buffer with l, r bounds of intervals in w &gt; low_threshold which exceed high_threshold somewhere</span>
 <span class="sd">        result_buffer: numpy N*2 array of ints, will be filled by function.</span>
 <span class="sd">    Returns: number of intervals found</span>
@@ -296,6 +336,9 @@
 
             <span class="k">if</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="n">high_threshold</span><span class="p">:</span>
                 <span class="n">current_interval_passed_test</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="c"># Raise lower threshold to a fraction of the hit height</span>
+                <span class="c"># This helps against tails (due to amplifiers?) for REALLY high hits</span>
+                <span class="n">low_threshold</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">low_threshold</span><span class="p">,</span> <span class="n">dynamic_low_threshold_coeff</span><span class="o">*</span><span class="n">x</span><span class="p">)</span>
 
             <span class="k">if</span> <span class="n">x</span> <span class="o">&lt;=</span> <span class="n">low_threshold</span> <span class="ow">or</span> <span class="n">i</span> <span class="o">==</span> <span class="n">last_index_in_w</span><span class="p">:</span>
 
@@ -396,7 +439,15 @@
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../../search.html" method="get">
@@ -419,7 +470,7 @@
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>
 

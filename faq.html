@@ -31,25 +31,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="authors.html" title="Credits"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="contributing.html" title="Contributing"
-             accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Processor for Analyzing XENON1T 3.2.0 documentation</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -156,6 +138,30 @@ source travis/install-ROOT.sh
 </pre></div>
 </div>
 </div>
+<div class="section" id="how-do-i-use-pax-to-reduce-raw-data-files">
+<h2>How do I use pax to reduce raw data files?<a class="headerlink" href="#how-do-i-use-pax-to-reduce-raw-data-files" title="Permalink to this headline">¶</a></h2>
+<p>First, you need to know the event numbers of the events you want. Use whatever analysis tool you like for this.</p>
+<p>If it is just a few events, you can use the <cite>&#8211;events</cite> switch like so:</p>
+<div class="highlight-python"><div class="highlight"><pre>paxer --config reduce_raw_data --input your_dataset --output your_reduced_dataset --event 3 45 937 ...
+</pre></div>
+</div>
+<p>This will produce your reduced raw data set in your_reduced_dataset. It will be in the ZippedBSON format, as that&#8217;s the only format that supports non-continuous event numbers (at least, for now).</p>
+<p>If you want more than a few events, make a newline-separated file of event numbers like so:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="mi">3</span>
+<span class="mi">45</span>
+<span class="mi">937</span>
+<span class="o">...</span>
+</pre></div>
+</div>
+<p>and save this as e.g. your_event_number_file.txt. Then use:</p>
+<div class="highlight-python"><div class="highlight"><pre>paxer --config reduce_raw_data --input your_dataset --output your_reduced_dataset --event_numbers_file your_event_number_file.txt
+</pre></div>
+</div>
+<p>If the dataset you want to reduce is not in the default input format (currently XED), you also want to give pax a configuration which overrides the read plugin with the read plugin of that format. For example, to reduce a ZippedBSON dataset, use:</p>
+<div class="highlight-python"><div class="highlight"><pre>paxer --config ZippedBSON reduce_raw_data --input your_dataset --output your_reduced_dataset --event_numbers_file your_event_file.txt
+</pre></div>
+</div>
+</div>
 </div>
 
 
@@ -173,16 +179,19 @@ source travis/install-ROOT.sh
 <li><a class="reference internal" href="#can-i-set-up-pax-on-my-windows-machine">Can I set up pax on my windows machine?</a></li>
 <li><a class="reference internal" href="#how-do-i-get-root-working">How do I get ROOT working</a></li>
 <li><a class="reference internal" href="#snappy-on-osx">Snappy on OSX</a></li>
+<li><a class="reference internal" href="#how-do-i-use-pax-to-reduce-raw-data-files">How do I use pax to reduce raw data files?</a></li>
 </ul>
 </li>
 </ul>
-
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="contributing.html"
-                        title="previous chapter">Contributing</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="authors.html"
-                        title="next chapter">Credits</a></p>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="contributing.html" title="previous chapter">Contributing</a></li>
+      <li>Next: <a href="authors.html" title="next chapter">Credits</a></li>
+  </ul></li>
+</ul>
+</div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -212,11 +221,11 @@ source travis/install-ROOT.sh
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
       <a href="_sources/faq.txt"
-          rel="nofollow">Page source</a></li>
+          rel="nofollow">Page source</a>
     </div>
 
     

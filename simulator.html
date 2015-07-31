@@ -1,0 +1,211 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Waveform simulator docs – very early draft &mdash; Processor for Analyzing XENON1T 3.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '3.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="Processor for Analyzing XENON1T 3.2.0 documentation" href="index.html" />
+    <link rel="next" title="Contributing" href="contributing.html" />
+    <link rel="prev" title="Event builder" href="eventbuilder.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="waveform-simulator-docs-very-early-draft">
+<h1>Waveform simulator docs – very early draft<a class="headerlink" href="#waveform-simulator-docs-very-early-draft" title="Permalink to this headline">¶</a></h1>
+</div>
+<div class="section" id="what-it-does">
+<h1>What it does<a class="headerlink" href="#what-it-does" title="Permalink to this headline">¶</a></h1>
+<p>Simulate ADC waveforms resulting from S1 photons and/or S2 electrons released in a liquid xenon TPC and feed them into pax.</p>
+<p>It does not do yield estimation, i.e. convert energy depositions to number of photons and electrons &#8211; use GEANT4/NEST/whatever for that.</p>
+</div>
+<div class="section" id="how-to-use-it">
+<h1>How to use it<a class="headerlink" href="#how-to-use-it" title="Permalink to this headline">¶</a></h1>
+<p><strong>Case 1: using all of the simulator to make waveforms.</strong> For this, use pax with <cite>–config XENON100 Simulation –input your_instructions.csv</cite> (replace XENON100 with your TPC settings file if you’re simulating for another TPC). See below for the format of this instructions file.You’ll also want to specify an output format that is convenient for whatever you actually want to do with the waveforms: formats like pickle, JSON and BSON are easy to use (if you use python), but we also offer Avro, HDF5, CSV, HTML, ROOT, and soon XED. If you need a specific format not in this list, let us know, we may be bribable. Of course, if you use pax for plotting and analyzing the simulated waveforms, you may not need to output raw waveforms at all.</p>
+<p><strong>Case 2:: using just a small part of the simulator</strong>, such as the S1 photon time distribution, or the S2 per-PMT light distribution. In this case it is faster to <cite>from pax import core</cite> in your own python script, do <cite>mypax=core.Processor()</cite>, and call methods of <cite>mypax.simulation</cite>.  See examples/PosRecTest for an example of using the simulator like this.</p>
+</div>
+<div class="section" id="instruction-file-format">
+<h1>Instruction file format<a class="headerlink" href="#instruction-file-format" title="Permalink to this headline">¶</a></h1>
+<p>The instruction files read by the simulator are csv files with one row per simulated interaction (S1 AND S2, although you can turn of either &#8211; or even both, but that&#8217;s silly).</p>
+<p>The meaning of the columns is as follows:</p>
+<blockquote>
+<div><ul class="simple">
+<li><strong>instruction</strong>: All interactions with the same instruction number will be put into the same event. In principle these are simulated once, unless <cite>event_repetitions</cite> is set (to an integer larger than 1).</li>
+<li><strong>recoil_type</strong>: NR or ER. This will only affect the S1 pulse shape.</li>
+<li><strong>x</strong>: the x-position of the interaction in cm (in the coordinate system also used for the top PMT array), or the string <cite>random</cite>. In the latter case, the x &amp; y position will be sampled randomly from a uniform distribution in a circle with radius <cite>tpc_radius</cite> (an option in the DEFAULT section of the configuration).</li>
+<li><strong>y</strong>: the y-position of the interaction in cm (in the coordinate system also used for the top PMT array). If x was set to <cite>random</cite>, whatever you put here is ignored. So you can put <cite>random</cite> here too, or your favourite band names, whatever. You cannot choose x randomly but not y, or vice versa.</li>
+<li><strong>depth</strong>: the z-position of the interaction in cm below the gate mesh.</li>
+<li><strong>s1_photons</strong>: how many S1 photons to simulate. Whether these will all be detected by the PMTs will depend on the configuration settings, in particular <cite>s1_detection_efficiency</cite>.</li>
+<li><strong>s2_electrons</strong>: how many S2 electrons to simulate. Whether these will all arrive in the gas gap will depend on the configuration settings, in particular <cite>electron_lifetime_liquid</cite>.</li>
+<li><strong>t</strong>: Time of the interaction in nanoseconds since the start of the event. Keep in mind the S2 electrons take time to drift as well, so the S2 will appear (much) later in the event.</li>
+</ul>
+</div></blockquote>
+</div>
+<div class="section" id="implementation-details">
+<h1>Implementation details<a class="headerlink" href="#implementation-details" title="Permalink to this headline">¶</a></h1>
+<dl class="docutils">
+<dt>The waveform simulator consists of two parts:</dt>
+<dd><ul class="first last simple">
+<li>An <strong>input plugin</strong> (WaveformSimulator) which lives in pax.plugins.io. This takes care of processing the instructions file, then calling the right commands for s1 and s2 generation, gluing the stages of the simulation process together, and finally outputting a file <cite>fax_truth.csv</cite> for your convenience which tells you what was actually simulated (i.e. where the each signal actually ended up in the event). This file is a csv file with one row per simulated peak (S1 or S2); the columns should speak for themselves.</li>
+<li>The <strong>Simulator class</strong> which lives in pax.simulation. Every instance of the main Processor class has one simulator instance accessible by its <cite>simulator</cite> attribute. This does all the heavy lifting; here you’ll find all the physics code: random sampling distributions, diffusion model, etc.</li>
+</ul>
+</dd>
+</dl>
+<p>Roughly, the life of a simulated waveform consists of several stages</p>
+<ol class="arabic simple">
+<li><strong>Instruction</strong>. A line in the csv which says how many S2 electons and how many S1 photons to generate, at which place in the TPC and at which time relative to the start of an event.</li>
+<li><strong>Photon production time lists</strong> for each signal (S1 and S2): a list of times (in ns since the start of the event) when a photon is produced for a specific signal.  For S2 generation, there is an intermediary step: a list of times when an electron arrives in the gas.</li>
+<li><strong>Hitpattern(s)</strong>: an object which knows which PMTs get hit by a photon at which time. Each signal first gets its own hitpattern object; the photon distribution takes into account (if possible) the location at which they are produced. Finally, all hitpatterns in an event are merged into a single hitpattern object.</li>
+<li>A <strong>pax event</strong> containing the actual simulated ADC waveforms. This is passed to the next plugin in pax (either a processing plugin or straight to an output plugin), from whose point of view it is indistinguishable from real data.</li>
+</ol>
+<p>Electrical noise is added in the final step. ZLE emulation is not performed in the simulator, but by a separate plugin (SoftwareZLE) which you may or may not choose to run. <a class="footnote-reference" href="#id4" id="id1">[1]</a></p>
+</div>
+<div class="section" id="photon-production-time-simulation">
+<h1>Photon production time simulation<a class="headerlink" href="#photon-production-time-simulation" title="Permalink to this headline">¶</a></h1>
+<p>[FIXME] See <a class="reference external" href="https://xecluster.lngs.infn.it/dokuwiki/doku.php?id=xenon:xenon1t:fax:presentation4june2014">https://xecluster.lngs.infn.it/dokuwiki/doku.php?id=xenon:xenon1t:fax:presentation4june2014</a> for some outdated info.</p>
+</div>
+<div class="section" id="hitpattern-building">
+<h1>Hitpattern building<a class="headerlink" href="#hitpattern-building" title="Permalink to this headline">¶</a></h1>
+<p>Now that we know when the photons will be produced, we must figure out which PMTS see these photons. This depends on the location of the photon production, and can only be done properly if per-PMT position-dependent LCE maps are available. Information about the identity of the signal (S1 or S2) is no longer present at this stage; we get a list of photon production times from the previous stage, and must additionally pass the position at which these photons are produced.</p>
+<p>For XENON100, LCE maps (generated from the GEANT4 Monte Carlo) are only available for S2 signals, and only for the top PMTs (which see just slightly more than 50% of the S2 light). These were extracted from Xerawdp, from a datafile used by the chi2 position reconstruction. This is a set of two-dimensional maps, since S2 is are always generated at the same z-position. <a class="footnote-reference" href="#id5" id="id2">[2]</a></p>
+<p>To trigger the use of these S2 LCE maps, the z-position of the anode (<cite>-gate_anode_distance</cite>) must be specified as the photon production location (the WaveformSimulator I/O plugin will take care of this behind the scenes), and the config option <cite>s2_lce_map</cite> must be set to the filename of the map file. This map file format is documented in InterpolatingMap; it must contain a 2d (x, y) map for each PMT number in the top array containing the PMTs relative LCE at that position (where relative is understood so the total for all PMTs in top array is 1 at each position, modulo small interpolation artefacts). The number of S2 photons that arrive at the top array is drawn from a binomial with p= <cite>s2_mean_area_fraction_top</cite>; the rest go to the bottom array, and are randomly distributed over all (see next paragraph for qualifying remark) PMTs there. <a class="footnote-reference" href="#id6" id="id3">[3]</a></p>
+<p>If any other z-position is specified, the x y and z positions you pass are ignored and the photons are distributed randomly and uniformly over all PMTs. Well, not necessarily all PMTs… if <cite>pmt_0_is_fake</cite> is set, channel 0 will never receive photons; if <cite>magically_avoid_dead_pmts = True</cite>, dead PMTs (gain=0) will also never receive photons, if <cite>magically_avoid_s1_excluded_pmts = True</cite> and <cite>channels_excluded_for_s1</cite> is present in the config (only for XerawdpImitation), the channels in channels_excluded_for_s1 also don’t receive any photons. While it is not the default, you often want to set magically_avoid_dead_pmts = True: this way the number of photons specified in the instruction file matches the photons observed.</p>
+<p>Internally, the hitpattern is stored as an object (<cite>SimulatedHitpattern</cite>).This holds the photon arrival times per channel in the dictionary attribute <cite>s2_mean_area_fraction_top</cite>. There are  also attributes for convenient access to the min and max hit time (needed in the waveform building stage to determine the event length) and the total n_photons.  On initializing the hitpattern, the photon times are corrected for the PMT transition time spread. In the future we might correct them for capture time as well, but this will require a set of 3d per-PMT histograms, or running an actual ray tracer for every photon (very slow). [FIXME, Cyril sent me per-array xyz arrival time maps a while ago].</p>
+<p>In the WaveformSimulator IO plugin, the SimulatedHitpattern’s for several signals (S1 and S2 for every simulated interaction) are added (by overloaded + on the object) into a single SimulatedHitpattern object, which is passed to the next stage.</p>
+</div>
+<div class="section" id="waveform-building">
+<h1>Waveform building<a class="headerlink" href="#waveform-building" title="Permalink to this headline">¶</a></h1>
+<p>The final stage of the waveform simulator emulates the response of the PMT’ s and digitizers to the detected photons. Each PMT’s/channel&#8217;s waveform is simulated separately, then the results are combined into a single pax event containing a full (XENON100: 400 us) waveform for every channel. In this final step, real electrical noise is added. ZLE emulation is not performed in the simulator, but by a separate plugin (SoftwareZLE).</p>
+<ol class="arabic simple">
+<li>For each photon which arrives in the channel, the charge it deposits in digitizer bins close to its arrival time is calculated.</li>
+</ol>
+<blockquote>
+<div><ol class="loweralpha simple">
+<li>The transition time of the photon signal in the PMT is added to the arrival time. A Gaussian model is used with configurable mean (of no consequence) and sigma. The sigma can be deduced from PMT transition time spread measurements by dividing by 2.35 (the FWHM of a Gaussian in units of its standard deviation). Gaussians are notorious for poorly modeling tails of distributions [ref Taleb for fun?], so this model is ill-suited for studies sensitive to outliers in transition time &#8211; for example, low-energy S1 pulse shape studies in a detector which, like Xenon1T , use PMTs with transition time spread comparable to the liquid xenon excimer decay times.</li>
+<li>A PMT gain value is sampled, separately for each photon, from a Gaussian truncated at zero, with mean and sigma as determined by the PMT gain calibration. The use of a Gaussian model again implies we ignore details of the tail of high photon-pulse area &#8211; no known studies are particularly sensitive to this. By treating each photon separately and independently, we ignore PMT saturation effects. [not important: PMTs linear, have enough time to recover in long stretches of nothing between S1s/S2s, if single S2s get large the ADCs will saturate first?]</li>
+<li>Using the photon arrival time, we calculate in which digitiser bin in the centre of the photon signal is to fall, as well as the offset of the signal centre in that bin. Since PMT pulse generation is the most performance-critical part, a key optimization is made: the offset in the bin is rounded to the nearest nanosecond (or a different, configurable precision), so only a fixed number of pulse shapes are produced in the next step, which can be cached.</li>
+<li>The charge deposited in each bin is computed. We integrate a normalized model PMT pulse –  see figure …, two exponentials stitched together –between the boundaries of several digitizer bins close to the signal center. The rise and fall time of the exponentials are set to agree with photon-pulse shape measurements, described in […]. The charge deposited in bins further away from the center than a configurable number of rise / fall times from the center is ignored. Finally, the pulse is multiplied with the gain drawn in step [b].</li>
+<li>The pulse is added to an initially empty waveform, in the right place.</li>
+</ol>
+</div></blockquote>
+<ol class="arabic simple" start="2">
+<li>Extra white noise current can now be added to the waveform, drawing for each sample from a Gaussian with 0 mean configurable sigma. By default this feature is turned off.</li>
+<li>The waveform is converted to ADC counts deviation from baseline, using the load resistance,  digitizer voltage resolution, and external amplification.</li>
+<li>Real digitizer background output is superposed on the waveform. Small 150-sample data segments, taken from LED calibration events just before the LED starts firing, are randomly selected and concatenated. ((Noise data is BIG. Including 100 different 400us events would take a &gt;1GB noise databank (ref Sander&#8217;s dataset). You can do it, but don&#8217;t come to me complaining about the speed you&#8217;ll get. A more practical way is to take many small samples occasionally, then concatenate them in different combinations.)) This concatenation leads to more and more sudden baseline shifts than in real background output, but ensures the simulated background is sufficiently varied to make hitfinder tests robust. Each channel’s noise data is chosen separately, so any inter-channel noise correlations are currently not reproduced in the simulator! [FIXME] Alternatively, a fixed baseline can be added instead.</li>
+</ol>
+<p>5.      The waveform is clipped to fall within values the digitizer can show, to model ADC saturation correctly.
+This process is repeated for each channel &#8211; even those that receive no photons, as they will still record noise. Finally, the waveforms for all channels are combined into a Pax event object, ready to be processed further.</p>
+<table class="docutils footnote" frame="void" id="id4" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[1]</a></td><td>There is an option (called cheap_zle), off by default, to limit noise generation to just around detected photons. This will increases the speed of the simulation, at a loss of correctness, since noise can also trigger the ZLE by itself.</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="id5" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id2">[2]</a></td><td>Well, actually every S2 results from track of electron-Xenon interactions along the 2.5mm gas gap, but we usually neglect differences in light distribution from different parts of the track. This is not entirely accurate, in particular, because photons generated near the end of the track have a higher likelihood to be detected by the bottom PMT array, most likely because the wires of the anode are shadowing the top array at this point. See <a class="reference external" href="https://xecluster.lngs.infn.it/dokuwiki/doku.php?id=xenon:xenon100:analysis:single_e_waveform_model">https://xecluster.lngs.infn.it/dokuwiki/doku.php?id=xenon:xenon100:analysis:single_e_waveform_model</a>.</td></tr>
+</tbody>
+</table>
+<table class="docutils footnote" frame="void" id="id6" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id3">[3]</a></td><td>This is an approximation, necessary due to the lack of S2 LCE maps for the bottom array. From what I&#8217;ve seen from S2s, this isn&#8217;t a bad approximation, but I haven&#8217;t tested it quantitatively.</td></tr>
+</tbody>
+</table>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Waveform simulator docs – very early draft</a></li>
+<li><a class="reference internal" href="#what-it-does">What it does</a></li>
+<li><a class="reference internal" href="#how-to-use-it">How to use it</a></li>
+<li><a class="reference internal" href="#instruction-file-format">Instruction file format</a></li>
+<li><a class="reference internal" href="#implementation-details">Implementation details</a></li>
+<li><a class="reference internal" href="#photon-production-time-simulation">Photon production time simulation</a></li>
+<li><a class="reference internal" href="#hitpattern-building">Hitpattern building</a></li>
+<li><a class="reference internal" href="#waveform-building">Waveform building</a></li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="eventbuilder.html" title="previous chapter">Event builder</a></li>
+      <li>Next: <a href="contributing.html" title="next chapter">Contributing</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/simulator.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2014, Christopher Tunnell.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+      |
+      <a href="_sources/simulator.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>

@@ -30,20 +30,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../../../../genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="../../../../py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../../index.html">Processor for Analyzing XENON1T 3.2.0 documentation</a> &raquo;</li>
-          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -66,6 +53,33 @@
 <span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">units</span><span class="p">,</span> <span class="n">utils</span>
 
 
+<div class="viewcode-block" id="uniform_circle_rv"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.WaveformSimulator.uniform_circle_rv">[docs]</a><span class="k">def</span> <span class="nf">uniform_circle_rv</span><span class="p">(</span><span class="n">radius</span><span class="p">,</span> <span class="n">n_samples</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Sample x,y uniformly in acircle with radius&quot;&quot;&quot;</span>
+
+    <span class="k">if</span> <span class="n">n_samples</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">just_give_one</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="n">n_samples</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">just_give_one</span> <span class="o">=</span> <span class="bp">False</span>
+
+    <span class="n">xs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">ys</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">sample_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_samples</span><span class="p">):</span>
+        <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="n">radius</span><span class="p">,</span> <span class="n">radius</span><span class="p">)</span>
+            <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="n">radius</span><span class="p">,</span> <span class="n">radius</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">x</span><span class="o">**</span><span class="mi">2</span> <span class="o">+</span> <span class="n">y</span><span class="o">**</span><span class="mi">2</span> <span class="o">&lt;=</span> <span class="n">radius</span><span class="o">**</span><span class="mi">2</span><span class="p">:</span>
+                <span class="k">break</span>
+        <span class="n">xs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">ys</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">just_give_one</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">xs</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">ys</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">xs</span><span class="p">,</span> <span class="n">ys</span>
+
+</div>
 <div class="viewcode-block" id="WaveformSimulator"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulator">[docs]</a><span class="k">class</span> <span class="nc">WaveformSimulator</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">InputPlugin</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot; Common I/O for waveform simulator plugins</span>
@@ -112,7 +126,7 @@
                 <span class="p">})</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">truth_peaks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">true_peak</span><span class="p">)</span>
 </div>
-<div class="viewcode-block" id="WaveformSimulator.s2"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.s2">[docs]</a>    <span class="k">def</span> <span class="nf">s2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">electrons</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
+<div class="viewcode-block" id="WaveformSimulator.s2"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.s2">[docs]</a>    <span class="k">def</span> <span class="nf">s2</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">electrons</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
         <span class="n">electron_times</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulator</span><span class="o">.</span><span class="n">s2_electrons</span><span class="p">(</span><span class="n">electrons_generated</span><span class="o">=</span><span class="n">electrons</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="n">z</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">electron_times</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">None</span>
@@ -120,7 +134,11 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">photon_times</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">store_true_peak</span><span class="p">(</span><span class="s">&#39;s2&#39;</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">photon_times</span><span class="p">,</span> <span class="n">electron_times</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulator</span><span class="o">.</span><span class="n">make_hitpattern</span><span class="p">(</span><span class="n">photon_times</span><span class="p">)</span>
+        <span class="c"># Generate S2 hitpattern &quot;at the anode&quot;: cue for  simulator to use the S2 LCE map</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulator</span><span class="o">.</span><span class="n">make_hitpattern</span><span class="p">(</span><span class="n">photon_times</span><span class="p">,</span>
+                                              <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span>
+                                              <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>
+                                              <span class="n">z</span><span class="o">=-</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gate_to_anode_distance&#39;</span><span class="p">])</span>
 </div>
 <div class="viewcode-block" id="WaveformSimulator.s1"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.s1">[docs]</a>    <span class="k">def</span> <span class="nf">s1</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">photons</span><span class="p">,</span> <span class="n">recoil_type</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -134,13 +152,12 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">photon_times</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">store_true_peak</span><span class="p">(</span><span class="s">&#39;s1&#39;</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">photon_times</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulator</span><span class="o">.</span><span class="n">make_hitpattern</span><span class="p">(</span><span class="n">photon_times</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulator</span><span class="o">.</span><span class="n">make_hitpattern</span><span class="p">(</span><span class="n">photon_times</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="n">z</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="WaveformSimulator.get_instructions_for_next_event"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.get_instructions_for_next_event">[docs]</a>    <span class="k">def</span> <span class="nf">get_instructions_for_next_event</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
 </div>
-    <span class="nd">@plugin.BasePlugin._timeit</span>
-    <span class="k">def</span> <span class="nf">simulate_single_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instructions</span><span class="p">):</span>
+<div class="viewcode-block" id="WaveformSimulator.simulate_single_event"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.simulate_single_event">[docs]</a>    <span class="k">def</span> <span class="nf">simulate_single_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">instructions</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">truth_peaks</span> <span class="o">=</span> <span class="p">[]</span>
 
         <span class="n">hitpatterns</span> <span class="o">=</span> <span class="p">[]</span>
@@ -148,18 +165,33 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Simulating </span><span class="si">%s</span><span class="s"> photons and </span><span class="si">%s</span><span class="s"> electrons at </span><span class="si">%s</span><span class="s"> cm depth, at t=</span><span class="si">%s</span><span class="s"> ns&quot;</span> <span class="o">%</span> <span class="p">(</span>
                 <span class="n">q</span><span class="p">[</span><span class="s">&#39;s1_photons&#39;</span><span class="p">],</span> <span class="n">q</span><span class="p">[</span><span class="s">&#39;s2_electrons&#39;</span><span class="p">],</span> <span class="n">q</span><span class="p">[</span><span class="s">&#39;depth&#39;</span><span class="p">],</span> <span class="n">q</span><span class="p">[</span><span class="s">&#39;t&#39;</span><span class="p">]</span>
             <span class="p">))</span>
+
+            <span class="c"># Should we choose x and yrandomly?</span>
+            <span class="k">if</span> <span class="n">q</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;random&#39;</span><span class="p">:</span>
+                <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">uniform_circle_rv</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;tpc_radius&#39;</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">x</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">])</span>
+                <span class="n">y</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="s">&#39;y&#39;</span><span class="p">])</span>
+
+            <span class="k">if</span> <span class="n">q</span><span class="p">[</span><span class="s">&#39;depth&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;random&#39;</span><span class="p">:</span>
+                <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;tpc_length&#39;</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">z</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="s">&#39;depth&#39;</span><span class="p">])</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">cm</span>
+
             <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="s">&#39;s1_photons&#39;</span><span class="p">]):</span>
-                <span class="n">hitpatterns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">s1</span><span class="p">(</span><span class="n">photons</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="s">&#39;s1_photons&#39;</span><span class="p">]),</span> <span class="n">recoil_type</span><span class="o">=</span><span class="n">q</span><span class="p">[</span><span class="s">&#39;recoil_type&#39;</span><span class="p">],</span> <span class="n">t</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="s">&#39;t&#39;</span><span class="p">]))</span>
-                <span class="p">)</span>
+                <span class="n">hitpatterns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">s1</span><span class="p">(</span><span class="n">photons</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="s">&#39;s1_photons&#39;</span><span class="p">]),</span>
+                                           <span class="n">recoil_type</span><span class="o">=</span><span class="n">q</span><span class="p">[</span><span class="s">&#39;recoil_type&#39;</span><span class="p">],</span>
+                                           <span class="n">t</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="s">&#39;t&#39;</span><span class="p">]),</span>
+                                           <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span>
+                                           <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>
+                                           <span class="n">z</span><span class="o">=</span><span class="n">z</span><span class="p">))</span>
+
             <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="s">&#39;s2_electrons&#39;</span><span class="p">]):</span>
-                <span class="n">hitpatterns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">s2</span><span class="p">(</span>
-                        <span class="n">electrons</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="s">&#39;s2_electrons&#39;</span><span class="p">]),</span>
-                        <span class="n">z</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="s">&#39;depth&#39;</span><span class="p">])</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">cm</span><span class="p">,</span>
-                        <span class="n">t</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="s">&#39;t&#39;</span><span class="p">])</span>
-                    <span class="p">)</span>
-                <span class="p">)</span>
+                <span class="n">hitpatterns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">s2</span><span class="p">(</span><span class="n">electrons</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="s">&#39;s2_electrons&#39;</span><span class="p">]),</span>
+                                           <span class="n">t</span><span class="o">=</span><span class="nb">float</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="s">&#39;t&#39;</span><span class="p">]),</span>
+                                           <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span>
+                                           <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span>
+                                           <span class="n">z</span><span class="o">=</span><span class="n">z</span><span class="p">))</span>
 
         <span class="c"># Combine the hitpatterns by their overloaded addition operator, then simulate waveforms</span>
         <span class="n">event</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulator</span><span class="o">.</span><span class="n">to_pax_event</span><span class="p">(</span><span class="nb">sum</span><span class="p">([</span><span class="n">h</span> <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">hitpatterns</span> <span class="k">if</span> <span class="n">h</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">]))</span>
@@ -179,7 +211,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">all_truth_peaks</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">truth_peaks</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">event</span>
-
+</div>
 <div class="viewcode-block" id="WaveformSimulator.get_events"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.get_events">[docs]</a>    <span class="k">def</span> <span class="nf">get_events</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
 
         <span class="k">for</span> <span class="n">instruction_number</span><span class="p">,</span> <span class="n">instructions</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_instructions_for_next_event</span><span class="p">()):</span>
@@ -295,7 +327,15 @@
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../../search.html" method="get">
@@ -318,7 +358,7 @@
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>
 

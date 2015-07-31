@@ -4,6 +4,14 @@ pax.plugins.posrec package
 Submodules
 ----------
 
+pax.plugins.posrec.MaxPMT module
+--------------------------------
+
+.. automodule:: pax.plugins.posrec.MaxPMT
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pax.plugins.posrec.NeuralNet module
 -----------------------------------
 

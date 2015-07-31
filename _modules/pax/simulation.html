@@ -30,20 +30,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../../genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="../../py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">Processor for Analyzing XENON1T 3.2.0 documentation</a> &raquo;</li>
-          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -139,6 +126,13 @@
             <span class="c"># The silly XENON100 PMT offset again: it&#39;s relevant for indexing the array of noise data</span>
             <span class="c"># (which is one row per channel)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">channel_offset</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pmt_0_is_fake&#39;</span><span class="p">]</span> <span class="k">else</span> <span class="mi">0</span>
+
+        <span class="c"># Init s2 per pmt lce map</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;s2_lce_map&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">s2_lce_map</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">Vector2DGridMap</span><span class="p">(</span><span class="n">filename</span><span class="o">=</span><span class="n">utils</span><span class="o">.</span><span class="n">data_file_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;s2_lce_map&#39;</span><span class="p">]),</span>
+                                                    <span class="n">zoom_factor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;s2_lce_map_zoom_factor&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">s2_lce_map</span> <span class="o">=</span> <span class="bp">None</span>
 
 <div class="viewcode-block" id="Simulator.s2_electrons"><a class="viewcode-back" href="../../pax.html#pax.simulation.Simulator.s2_electrons">[docs]</a>    <span class="k">def</span> <span class="nf">s2_electrons</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">electrons_generated</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mf">0.</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="mf">0.</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return a list of electron arrival times in the ELR region caused by an S2 process.</span>
@@ -324,8 +318,8 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pmt_fall_time&#39;</span><span class="p">],</span>
         <span class="p">)</span>
 </div>
-<div class="viewcode-block" id="Simulator.make_hitpattern"><a class="viewcode-back" href="../../pax.html#pax.simulation.Simulator.make_hitpattern">[docs]</a>    <span class="k">def</span> <span class="nf">make_hitpattern</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">photon_times</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">SimulatedHitpattern</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="n">photon_timings</span><span class="o">=</span><span class="n">photon_times</span><span class="p">)</span>
+<div class="viewcode-block" id="Simulator.make_hitpattern"><a class="viewcode-back" href="../../pax.html#pax.simulation.Simulator.make_hitpattern">[docs]</a>    <span class="k">def</span> <span class="nf">make_hitpattern</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">photon_times</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">SimulatedHitpattern</span><span class="p">(</span><span class="n">simulator</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">photon_timings</span><span class="o">=</span><span class="n">photon_times</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="n">z</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="Simulator.to_pax_event"><a class="viewcode-back" href="../../pax.html#pax.simulation.Simulator.to_pax_event">[docs]</a>    <span class="k">def</span> <span class="nf">to_pax_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hitpattern</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Simulate PMT response to a hitpattern of photons</span>
@@ -461,9 +455,9 @@
                         <span class="n">current_wave</span><span class="p">[</span><span class="n">left_index</span><span class="p">:</span> <span class="n">righter_index</span><span class="p">]</span> <span class="o">+=</span> <span class="n">generated_pulse</span>
 
                 <span class="c"># Did you order some Gaussian current noise with that?</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gaus_noise_sigma&#39;</span><span class="p">]:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gauss_noise_sigma&#39;</span><span class="p">]:</span>
                     <span class="c"># / dt is for charge -&gt; current conversion, as in pmt_pulse_current</span>
-                    <span class="n">noise_sigma_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;white_noise_sigma&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]</span> <span class="o">/</span> <span class="n">dt</span><span class="p">,</span>
+                    <span class="n">noise_sigma_current</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gauss_noise_sigma&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]</span> <span class="o">/</span> <span class="n">dt</span><span class="p">,</span>
                     <span class="n">current_wave</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span>
                                                      <span class="n">noise_sigma_current</span><span class="p">,</span>
                                                      <span class="nb">len</span><span class="p">(</span><span class="n">current_wave</span><span class="p">))</span>
@@ -516,16 +510,67 @@
                   <span class="s">&quot;created.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">length</span><span class="p">(),</span> <span class="nb">len</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">pulses</span><span class="p">)))</span>
         <span class="k">return</span> <span class="n">event</span>
 
+
+<span class="c">##</span>
+<span class="c"># Hitpattern simulation</span>
+<span class="c">##</span>
 </div></div>
+<div class="viewcode-block" id="distribute_photons_by_lcemap"><a class="viewcode-back" href="../../pax.html#pax.simulation.distribute_photons_by_lcemap">[docs]</a><span class="k">def</span> <span class="nf">distribute_photons_by_lcemap</span><span class="p">(</span><span class="n">photon_timings</span><span class="p">,</span> <span class="n">channels</span><span class="p">,</span> <span class="n">lce_map</span><span class="p">,</span> <span class="n">coordinate_tuple</span><span class="p">):</span>
+    <span class="c"># TODO: only works if channels drawn from top, or from all channels (i.e. first index 0)</span>
+    <span class="c"># Calculate relative LCEs at this position</span>
+    <span class="n">lces</span> <span class="o">=</span> <span class="n">lce_map</span><span class="o">.</span><span class="n">get_value</span><span class="p">(</span><span class="o">*</span><span class="n">coordinate_tuple</span><span class="p">)[</span><span class="n">channels</span><span class="p">]</span>
+    <span class="c"># Due to interpolation, probabilities can come out negative or normalization can be messed up. Deal with this:</span>
+    <span class="n">lces</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">lces</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">lces</span> <span class="o">/=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">lces</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">randomize_photons_over_channels</span><span class="p">(</span><span class="n">photon_timings</span><span class="p">,</span> <span class="n">channels</span><span class="p">,</span> <span class="n">relative_lce_per_channel</span><span class="o">=</span><span class="n">lces</span><span class="p">)</span>
+
+</div>
+<div class="viewcode-block" id="randomize_photons_over_channels"><a class="viewcode-back" href="../../pax.html#pax.simulation.randomize_photons_over_channels">[docs]</a><span class="k">def</span> <span class="nf">randomize_photons_over_channels</span><span class="p">(</span><span class="n">photon_timings</span><span class="p">,</span> <span class="n">channels</span><span class="p">,</span> <span class="n">relative_lce_per_channel</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Distribute photon_timings over channels according to relative_lce_per_channel</span>
+
+<span class="sd">    :param photon_timings: list of photon arrival times (floats)</span>
+<span class="sd">    :param channels: list of channel numbers (ints)</span>
+<span class="sd">    :param relative_lce_per_channel: list of relative lce per channel. Should be &gt;= 0 and sum to 1.</span>
+<span class="sd">                                     If omitted, will distribute photons uniformly over channels.</span>
+<span class="sd">    :return:dictionary ch -&gt; [photon arrival times]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c"># Ensure photon_timings is randomized, so first channel doesn&#39;t always get first photon</span>
+    <span class="c"># May have been done before, can&#39;t hurt to do it again</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">photon_timings</span><span class="p">)</span>
+
+    <span class="c"># Generate a channel index for every photon</span>
+    <span class="n">channel_index_for_p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">channels</span><span class="p">),</span>
+                                           <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">photon_timings</span><span class="p">),</span>
+                                           <span class="n">p</span><span class="o">=</span><span class="n">relative_lce_per_channel</span><span class="p">)</span>
+
+    <span class="c"># Count number of photons in each channel</span>
+    <span class="n">hitp</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">channel_index_for_p</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">channels</span><span class="p">,</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">channels</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">hitp</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">channels</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;You found a simulator bug!</span><span class="se">\n</span><span class="s">&quot;</span>
+                           <span class="s">&quot;Hitpattern has wrong length &quot;</span>
+                           <span class="s">&quot;(</span><span class="si">%d</span><span class="s">, should be </span><span class="si">%d</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hitp</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">channels</span><span class="p">)))</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">hitp</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">photon_timings</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;You found a simulator bug!</span><span class="se">\n</span><span class="s">&quot;</span>
+                           <span class="s">&quot;Hitpattern has wrong number of photons &quot;</span>
+                           <span class="s">&quot;(</span><span class="si">%d</span><span class="s">, should be </span><span class="si">%d</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">hitp</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">photon_timings</span><span class="p">)))</span>
+
+    <span class="c"># Split photon times according to hitpattern</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">channels</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">photon_timings</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">hitp</span><span class="p">))))</span>
+
+</div>
 <div class="viewcode-block" id="SimulatedHitpattern"><a class="viewcode-back" href="../../pax.html#pax.simulation.SimulatedHitpattern">[docs]</a><span class="k">class</span> <span class="nc">SimulatedHitpattern</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">photon_timings</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
-        <span class="c"># TODO: specify x, y, z, let photon distribution depend on it</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">simulator</span><span class="p">,</span> <span class="n">photon_timings</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">config</span>
+
+        <span class="c"># Add the minimum and maximum times, and number of times</span>
+        <span class="c"># hitlist_to_waveforms would have to go through weird flattening stuff to determine these</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">photon_timings</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">photon_timings</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_photons</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">photon_timings</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">photon_timings</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Need at least 1 photon timing to &#39;</span>
-                             <span class="s">&#39;produce a valid hitpattern&#39;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Need at least 1 photon timing to produce a valid hitpattern&#39;</span><span class="p">)</span>
 
         <span class="c"># Correct for PMT TTS</span>
         <span class="n">photon_timings</span> <span class="o">+=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span>
@@ -534,48 +579,39 @@
             <span class="nb">len</span><span class="p">(</span><span class="n">photon_timings</span><span class="p">)</span>
         <span class="p">)</span>
 
-        <span class="c"># The number of pmts which can receive a photon</span>
-        <span class="n">ch_for_photons</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_for_photons&#39;</span><span class="p">]</span>
-        <span class="n">n_channels</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ch_for_photons</span><span class="p">)</span>
+        <span class="c"># First shuffle all timings in the array, so channel 1 doesn&#39;t always get the first photon</span>
+        <span class="c"># Don&#39;t rely on randomize_photons_over_channels to do this, we&#39;ll be splitting top v bottom here</span>
+        <span class="c"># and want that split to be random too.</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">photon_timings</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">n_channels</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="n">photons_per_channel</span> <span class="o">=</span> <span class="p">[</span><span class="n">photon_timings</span><span class="p">]</span>
+        <span class="c"># All channels which can receive photons (depends on configuration, magical dead pmt avoidance etc)</span>
+        <span class="n">ch_for_photons</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_for_photons&#39;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">z</span> <span class="o">==</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gate_to_anode_distance&#39;</span><span class="p">]</span> <span class="ow">and</span> <span class="n">simulator</span><span class="o">.</span><span class="n">s2_lce_map</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="c"># Generated at anode: use S2 LCE data</span>
+            <span class="n">top_chs_for_photons</span> <span class="o">=</span> <span class="p">[</span><span class="n">ch</span> <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_top&#39;</span><span class="p">]</span>
+                                   <span class="k">if</span> <span class="n">ch</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_for_photons&#39;</span><span class="p">]]</span>
+
+            <span class="n">bottom_chs_for_photons</span> <span class="o">=</span> <span class="p">[</span><span class="n">ch</span> <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_bottom&#39;</span><span class="p">]</span>
+                                      <span class="k">if</span> <span class="n">ch</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_for_photons&#39;</span><span class="p">]]</span>
+
+            <span class="c"># How much should go to the top array?</span>
+            <span class="n">n_top</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">n_photons</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;s2_mean_area_fraction_top&#39;</span><span class="p">])</span>
+
+            <span class="n">arr_t_p_c</span> <span class="o">=</span> <span class="n">distribute_photons_by_lcemap</span><span class="p">(</span><span class="n">photon_timings</span><span class="o">=</span><span class="n">photon_timings</span><span class="p">[:</span><span class="n">n_top</span><span class="p">],</span>
+                                                     <span class="n">channels</span><span class="o">=</span><span class="n">top_chs_for_photons</span><span class="p">,</span>
+                                                     <span class="n">lce_map</span><span class="o">=</span><span class="n">simulator</span><span class="o">.</span><span class="n">s2_lce_map</span><span class="p">,</span>
+                                                     <span class="n">coordinate_tuple</span><span class="o">=</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">))</span>
+
+            <span class="c"># Randomly distribute S2 photons in bottom array</span>
+            <span class="n">arr_t_p_c</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">randomize_photons_over_channels</span><span class="p">(</span><span class="n">photon_timings</span><span class="p">[</span><span class="n">n_top</span><span class="p">:],</span>
+                                                             <span class="n">bottom_chs_for_photons</span><span class="p">))</span>
 
         <span class="k">else</span><span class="p">:</span>
+            <span class="c"># S1, or S2 LCE map not present: distribute photons uniformly</span>
+            <span class="n">arr_t_p_c</span> <span class="o">=</span> <span class="n">randomize_photons_over_channels</span><span class="p">(</span><span class="n">photon_timings</span><span class="p">,</span> <span class="n">ch_for_photons</span><span class="p">)</span>
 
-            <span class="c"># First shuffle all timings in the array, so channel 1 doesn&#39;t always</span>
-            <span class="c"># get the first photon</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">photon_timings</span><span class="p">)</span>
-
-            <span class="c"># Now generate n_channels integers &lt; n_channels to denote the splitting</span>
-            <span class="c"># points</span>
-            <span class="c"># TODO: think carefully about these +1 and -1&#39;s Without the +1 S1sClose</span>
-            <span class="c"># failed</span>
-            <span class="n">split_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span>
-                                                     <span class="nb">len</span><span class="p">(</span><span class="n">photon_timings</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
-                                                     <span class="n">n_channels</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
-
-            <span class="c"># Split the array according to the split points</span>
-            <span class="c"># numpy correctly inserts empty arrays if a split point occurs twice if split_points is sorted</span>
-            <span class="n">photons_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">photon_timings</span><span class="p">,</span>
-                                           <span class="n">split_points</span><span class="p">)</span>
-
-            <span class="c"># This distributes stuff in some pattern, favouring the center... odd</span>
-            <span class="c"># So: shuffle to randomize the photon distribution</span>
-            <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">photons_per_channel</span><span class="p">)</span>
-
-        <span class="c"># Check we have not generated any photons or lost any</span>
-        <span class="c"># assert sum(list(map(len, photons_per_channel))) == len(photon_timings)</span>
-
-        <span class="c"># Merge the result in a dictionary, which we return</span>
-        <span class="c"># TODO: zip can probably do this faster!</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">arrival_times_per_channel</span> <span class="o">=</span> <span class="p">{</span><span class="n">ch_for_photons</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span> <span class="n">photons_per_channel</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_channels</span><span class="p">)}</span>
-
-        <span class="c"># Add the minimum and maximum times, and number of times</span>
-        <span class="c"># hitlist_to_waveforms would have to go through weird flattening stuff to determine these</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">min</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">photon_timings</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">max</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">photon_timings</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">n_photons</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">photon_timings</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">arrival_times_per_channel</span> <span class="o">=</span> <span class="n">arr_t_p_c</span>
 
     <span class="k">def</span> <span class="nf">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">):</span>
         <span class="c"># Don&#39;t reuse __init__, we don&#39;t want another TTS correction..</span>
@@ -606,7 +642,7 @@
 <span class="c"># Photon pulse generation</span>
 <span class="c">##</span>
 
-<span class="c"># I pulled this out of Simulator: caching using Memoize gave me trouble on methods due to the self argument</span>
+<span class="c"># I pulled this out of the Simulator class: caching using Memoize gave me trouble on methods due to the self argument</span>
 <span class="c"># There&#39;s still a method pmt_pulse_current, but it just calls pmt_pulse_current_raw defined below</span>
 </div>
 <span class="nd">@Memoize</span>
@@ -639,8 +675,13 @@
         <span class="k">return</span> <span class="n">q</span> <span class="o">/</span> <span class="p">(</span><span class="n">tr</span> <span class="o">+</span> <span class="n">tf</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">tr</span> <span class="o">+</span> <span class="n">tf</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">math</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">t</span> <span class="o">/</span> <span class="p">(</span><span class="n">c</span> <span class="o">*</span> <span class="n">tf</span><span class="p">))))</span>
 
 
+<span class="c">##</span>
+<span class="c"># PMT gain sampling</span>
+<span class="c">##</span>
+
 <span class="nd">@Memoize</span>
 <span class="k">def</span> <span class="nf">_truncated_gauss</span><span class="p">(</span><span class="n">my_mean</span><span class="p">,</span> <span class="n">my_std</span><span class="p">,</span> <span class="n">left_boundary</span><span class="p">,</span> <span class="n">right_boundary</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;NB: the mean &amp; std are only used to fix the boundaries, this is still a standardized normal otherwise!&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">stats</span><span class="o">.</span><span class="n">truncnorm</span><span class="p">(</span>
         <span class="p">(</span><span class="n">left_boundary</span> <span class="o">-</span> <span class="n">my_mean</span><span class="p">)</span> <span class="o">/</span> <span class="n">my_std</span><span class="p">,</span>
         <span class="p">(</span><span class="n">right_boundary</span> <span class="o">-</span> <span class="n">my_mean</span><span class="p">)</span> <span class="o">/</span> <span class="n">my_std</span><span class="p">)</span>
@@ -657,7 +698,15 @@
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
@@ -680,7 +729,7 @@
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>
 

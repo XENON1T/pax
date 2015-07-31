@@ -30,20 +30,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../../../../genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="../../../../py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../../index.html">Processor for Analyzing XENON1T 3.2.0 documentation</a> &raquo;</li>
-          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -155,9 +142,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">event_numbers</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
                                      <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_file</span><span class="o">.</span><span class="n">namelist</span><span class="p">()])</span>
 </div>
-<div class="viewcode-block" id="ReadZippedBSON.get_single_event_in_current_file"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BSON.ReadZippedBSON.get_single_event_in_current_file">[docs]</a>    <span class="k">def</span> <span class="nf">get_single_event_in_current_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_position</span><span class="p">):</span>
-        <span class="n">event_name_in_zip</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">event_numbers</span><span class="p">[</span><span class="n">event_position</span><span class="p">])</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_file</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">event_name_in_zip</span><span class="p">)</span> <span class="k">as</span> <span class="n">event_file_in_zip</span><span class="p">:</span>
+<div class="viewcode-block" id="ReadZippedBSON.get_event_numbers_in_current_file"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BSON.ReadZippedBSON.get_event_numbers_in_current_file">[docs]</a>    <span class="k">def</span> <span class="nf">get_event_numbers_in_current_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_numbers</span>
+</div>
+<div class="viewcode-block" id="ReadZippedBSON.get_single_event_in_current_file"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BSON.ReadZippedBSON.get_single_event_in_current_file">[docs]</a>    <span class="k">def</span> <span class="nf">get_single_event_in_current_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_number</span><span class="p">):</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_file</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">event_number</span><span class="p">))</span> <span class="k">as</span> <span class="n">event_file_in_zip</span><span class="p">:</span>
             <span class="n">doc</span> <span class="o">=</span> <span class="n">event_file_in_zip</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
             <span class="n">doc</span> <span class="o">=</span> <span class="n">gzip</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">datastructure</span><span class="o">.</span><span class="n">Event</span><span class="o">.</span><span class="n">from_bson</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
@@ -189,7 +178,15 @@
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../../search.html" method="get">
@@ -212,7 +209,7 @@
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>
 

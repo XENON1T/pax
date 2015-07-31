@@ -109,3 +109,31 @@ Snappy on OSX
 After instally `snappy` through MacPorts, please run::
 
   CFLAGS=-I/opt/local/include LDFLAGS=-L/opt/local/lib pip install python-snappy
+
+
+------------------------------------------
+How do I use pax to reduce raw data files?
+------------------------------------------
+
+First, you need to know the event numbers of the events you want. Use whatever analysis tool you like for this.
+
+If it is just a few events, you can use the `--events` switch like so::
+
+  paxer --config reduce_raw_data --input your_dataset --output your_reduced_dataset --event 3 45 937 ...
+
+This will produce your reduced raw data set in your_reduced_dataset. It will be in the ZippedBSON format, as that's the only format that supports non-continuous event numbers (at least, for now).
+
+If you want more than a few events, make a newline-separated file of event numbers like so::
+
+  3
+  45
+  937
+  ...
+
+and save this as e.g. your_event_number_file.txt. Then use::
+
+  paxer --config reduce_raw_data --input your_dataset --output your_reduced_dataset --event_numbers_file your_event_number_file.txt
+
+If the dataset you want to reduce is not in the default input format (currently XED), you also want to give pax a configuration which overrides the read plugin with the read plugin of that format. For example, to reduce a ZippedBSON dataset, use::
+
+  paxer --config ZippedBSON reduce_raw_data --input your_dataset --output your_reduced_dataset --event_numbers_file your_event_file.txt

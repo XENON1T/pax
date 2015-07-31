@@ -29,19 +29,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Processor for Analyzing XENON1T 3.2.0 documentation</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -83,6 +71,7 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="pax.plugins.posrec.html">pax.plugins.posrec package</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.posrec.html#submodules">Submodules</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.posrec.html#module-pax.plugins.posrec.MaxPMT">pax.plugins.posrec.MaxPMT module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.posrec.html#module-pax.plugins.posrec.NeuralNet">pax.plugins.posrec.NeuralNet module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.posrec.html#module-pax.plugins.posrec.PosRecChiSquareGamma">pax.plugins.posrec.PosRecChiSquareGamma module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.posrec.html#module-pax.plugins.posrec.PosSimple">pax.plugins.posrec.PosSimple module</a></li>
@@ -133,6 +122,11 @@
 </dd></dl>
 
 <dl class="method">
+<dt id="pax.FolderIO.InputFromFolder.get_event_numbers_in_current_file">
+<code class="descname">get_event_numbers_in_current_file</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/FolderIO.html#InputFromFolder.get_event_numbers_in_current_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.FolderIO.InputFromFolder.get_event_numbers_in_current_file" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="pax.FolderIO.InputFromFolder.get_events">
 <code class="descname">get_events</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/FolderIO.html#InputFromFolder.get_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.FolderIO.InputFromFolder.get_events" title="Permalink to this definition">¶</a></dt>
 <dd><p>Iterate through all events in the file / folder</p>
@@ -146,14 +140,15 @@
 
 <dl class="method">
 <dt id="pax.FolderIO.InputFromFolder.get_single_event">
-<code class="descname">get_single_event</code><span class="sig-paren">(</span><em>*args</em>, <em>**kw</em><span class="sig-paren">)</span><a class="headerlink" href="#pax.FolderIO.InputFromFolder.get_single_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<code class="descname">get_single_event</code><span class="sig-paren">(</span><em>event_number</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/FolderIO.html#InputFromFolder.get_single_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.FolderIO.InputFromFolder.get_single_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a single event, automatically selecting the right file</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="pax.FolderIO.InputFromFolder.get_single_event_in_current_file">
-<code class="descname">get_single_event_in_current_file</code><span class="sig-paren">(</span><em>event_position</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/FolderIO.html#InputFromFolder.get_single_event_in_current_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.FolderIO.InputFromFolder.get_single_event_in_current_file" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_single_event_in_current_file</code><span class="sig-paren">(</span><em>event_number</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/FolderIO.html#InputFromFolder.get_single_event_in_current_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.FolderIO.InputFromFolder.get_single_event_in_current_file" title="Permalink to this definition">¶</a></dt>
 <dd><p>Uses iteration to emulate random access to events
-Note &#8211; this takes the event POSITION in the file, not the absolute event number!</p>
+This does not check if the event actually exist: get_events is supposed to do that.</p>
 </dd></dl>
 
 <dl class="method">
@@ -190,7 +185,7 @@ Will be called by get_single_event (and once by startup)</p>
 
 <dl class="class">
 <dt id="pax.FolderIO.WriteToFolder">
-<em class="property">class </em><code class="descclassname">pax.FolderIO.</code><code class="descname">WriteToFolder</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/FolderIO.html#WriteToFolder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.FolderIO.WriteToFolder" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pax.FolderIO.</code><code class="descname">WriteToFolder</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/FolderIO.html#WriteToFolder"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.FolderIO.WriteToFolder" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.plugin.OutputPlugin" title="pax.plugin.OutputPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.OutputPlugin</span></code></a></p>
 <p>Write to a folder containing several small files, each containing &lt;= a fixed number of events</p>
 <dl class="method">
@@ -1367,7 +1362,7 @@ This is</p>
 
 <dl class="attribute">
 <dt id="pax.formats.ROOTDump.numpy_type">
-<code class="descname">numpy_type</code><em class="property"> = {'F': &lt;class 'numpy.float32'&gt;, 'O': &lt;class 'bool'&gt;, 'C': dtype('O'), 'I': &lt;class 'numpy.int32'&gt;, 'L': &lt;class 'numpy.int64'&gt;, 'D': &lt;class 'numpy.float64'&gt;}</em><a class="headerlink" href="#pax.formats.ROOTDump.numpy_type" title="Permalink to this definition">¶</a></dt>
+<code class="descname">numpy_type</code><em class="property"> = {'C': dtype('O'), 'I': &lt;class 'numpy.int32'&gt;, 'O': &lt;class 'bool'&gt;, 'L': &lt;class 'numpy.int64'&gt;, 'F': &lt;class 'numpy.float32'&gt;, 'D': &lt;class 'numpy.float64'&gt;}</em><a class="headerlink" href="#pax.formats.ROOTDump.numpy_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -1382,7 +1377,7 @@ This is</p>
 
 <dl class="attribute">
 <dt id="pax.formats.ROOTDump.root_type">
-<code class="descname">root_type</code><em class="property"> = {'int64': '/L', 'float32': '/F', 'int32': '/I', 'float64': '/D', 'S': '/C', 'bool': '/O'}</em><a class="headerlink" href="#pax.formats.ROOTDump.root_type" title="Permalink to this definition">¶</a></dt>
+<code class="descname">root_type</code><em class="property"> = {'float32': '/F', 'bool': '/O', 'S': '/C', 'int64': '/L', 'float64': '/D', 'int32': '/I'}</em><a class="headerlink" href="#pax.formats.ROOTDump.root_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -1421,11 +1416,6 @@ transform would modify the event object.</p>
 <em class="property">class </em><code class="descclassname">pax.plugin.</code><code class="descname">BasePlugin</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugin.html#BasePlugin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.BasePlugin" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <dl class="method">
-<dt id="pax.plugin.BasePlugin.process_event">
-<code class="descname">process_event</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugin.html#BasePlugin.process_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.BasePlugin.process_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
 <dt id="pax.plugin.BasePlugin.shutdown">
 <code class="descname">shutdown</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugin.html#BasePlugin.shutdown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.BasePlugin.shutdown" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -1438,6 +1428,19 @@ transform would modify the event object.</p>
 </dd></dl>
 
 <dl class="class">
+<dt id="pax.plugin.EventLoggingAdapter">
+<em class="property">class </em><code class="descclassname">pax.plugin.</code><code class="descname">EventLoggingAdapter</code><span class="sig-paren">(</span><em>logger</em>, <em>extra</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugin.html#EventLoggingAdapter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.EventLoggingAdapter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">logging.LoggerAdapter</span></code></p>
+<p>Prepends event number to log messages
+Adapted from <a class="reference external" href="https://docs.python.org/3.4/howto/logging-cookbook.html#context-info">https://docs.python.org/3.4/howto/logging-cookbook.html#context-info</a></p>
+<dl class="method">
+<dt id="pax.plugin.EventLoggingAdapter.process">
+<code class="descname">process</code><span class="sig-paren">(</span><em>msg</em>, <em>kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugin.html#EventLoggingAdapter.process"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.EventLoggingAdapter.process" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
 <dt id="pax.plugin.InputPlugin">
 <em class="property">class </em><code class="descclassname">pax.plugin.</code><code class="descname">InputPlugin</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugin.html#InputPlugin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.InputPlugin" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.plugin.BasePlugin" title="pax.plugin.BasePlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.BasePlugin</span></code></a></p>
@@ -1445,8 +1448,9 @@ transform would modify the event object.</p>
 <p>This class cannot be parallelized since events are read in a specific order</p>
 <dl class="method">
 <dt id="pax.plugin.InputPlugin.get_events">
-<code class="descname">get_events</code><span class="sig-paren">(</span><em>*args</em>, <em>**kw</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugin.html#InputPlugin.get_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.InputPlugin.get_events" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<code class="descname">get_events</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugin.html#InputPlugin.get_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.InputPlugin.get_events" title="Permalink to this definition">¶</a></dt>
+<dd><p>Iterate over all events in the data source</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="pax.plugin.InputPlugin.get_single_event">
@@ -1458,42 +1462,41 @@ transform would modify the event object.</p>
 <code class="descname">number_of_events</code><em class="property"> = 0</em><a class="headerlink" href="#pax.plugin.InputPlugin.number_of_events" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
-<dl class="method">
-<dt id="pax.plugin.InputPlugin.process_event">
-<code class="descname">process_event</code><span class="sig-paren">(</span><em>event=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugin.html#InputPlugin.process_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.InputPlugin.process_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </dd></dl>
 
 <dl class="class">
 <dt id="pax.plugin.OutputPlugin">
-<em class="property">class </em><code class="descclassname">pax.plugin.</code><code class="descname">OutputPlugin</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugin.html#OutputPlugin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.OutputPlugin" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.plugin.BasePlugin" title="pax.plugin.BasePlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.BasePlugin</span></code></a></p>
-<dl class="method">
-<dt id="pax.plugin.OutputPlugin.process_event">
-<code class="descname">process_event</code><span class="sig-paren">(</span><em>*args</em>, <em>**kw</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugin.html#OutputPlugin.process_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.OutputPlugin.process_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
+<em class="property">class </em><code class="descclassname">pax.plugin.</code><code class="descname">OutputPlugin</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugin.html#OutputPlugin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.OutputPlugin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.plugin.ProcessPlugin" title="pax.plugin.ProcessPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.ProcessPlugin</span></code></a></p>
 <dl class="method">
 <dt id="pax.plugin.OutputPlugin.write_event">
 <code class="descname">write_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugin.html#OutputPlugin.write_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.OutputPlugin.write_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Do magic. Return None.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.plugin.ProcessPlugin">
+<em class="property">class </em><code class="descclassname">pax.plugin.</code><code class="descname">ProcessPlugin</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugin.html#ProcessPlugin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.ProcessPlugin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.plugin.BasePlugin" title="pax.plugin.BasePlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.BasePlugin</span></code></a></p>
+<p>Plugin that can process events</p>
+<dl class="method">
+<dt id="pax.plugin.ProcessPlugin.process_event">
+<code class="descname">process_event</code><span class="sig-paren">(</span><em>event=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugin.html#ProcessPlugin.process_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.ProcessPlugin.process_event" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="class">
 <dt id="pax.plugin.TransformPlugin">
-<em class="property">class </em><code class="descclassname">pax.plugin.</code><code class="descname">TransformPlugin</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugin.html#TransformPlugin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.TransformPlugin" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.plugin.BasePlugin" title="pax.plugin.BasePlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.BasePlugin</span></code></a></p>
-<dl class="method">
-<dt id="pax.plugin.TransformPlugin.process_event">
-<code class="descname">process_event</code><span class="sig-paren">(</span><em>*args</em>, <em>**kw</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugin.html#TransformPlugin.process_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.TransformPlugin.process_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
+<em class="property">class </em><code class="descclassname">pax.plugin.</code><code class="descname">TransformPlugin</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugin.html#TransformPlugin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.TransformPlugin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.plugin.ProcessPlugin" title="pax.plugin.ProcessPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.ProcessPlugin</span></code></a></p>
 <dl class="method">
 <dt id="pax.plugin.TransformPlugin.transform_event">
 <code class="descname">transform_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugin.html#TransformPlugin.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugin.TransformPlugin.transform_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dd><p>Do your magic. Return event</p>
+</dd></dl>
 
 </dd></dl>
 
@@ -1504,7 +1507,7 @@ transform would modify the event object.</p>
 The only I/O stuff here is pax event creation, everything else is in the WaveformSimulator plugins</p>
 <dl class="class">
 <dt id="pax.simulation.SimulatedHitpattern">
-<em class="property">class </em><code class="descclassname">pax.simulation.</code><code class="descname">SimulatedHitpattern</code><span class="sig-paren">(</span><em>config</em>, <em>photon_timings</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#SimulatedHitpattern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.SimulatedHitpattern" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pax.simulation.</code><code class="descname">SimulatedHitpattern</code><span class="sig-paren">(</span><em>simulator</em>, <em>photon_timings</em>, <em>x=0</em>, <em>y=0</em>, <em>z=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#SimulatedHitpattern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.SimulatedHitpattern" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 </dd></dl>
 
@@ -1519,7 +1522,7 @@ The only I/O stuff here is pax event creation, everything else is in the Wavefor
 
 <dl class="method">
 <dt id="pax.simulation.Simulator.make_hitpattern">
-<code class="descname">make_hitpattern</code><span class="sig-paren">(</span><em>photon_times</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.make_hitpattern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.make_hitpattern" title="Permalink to this definition">¶</a></dt>
+<code class="descname">make_hitpattern</code><span class="sig-paren">(</span><em>photon_times</em>, <em>x=0</em>, <em>y=0</em>, <em>z=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.make_hitpattern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.make_hitpattern" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -1575,6 +1578,32 @@ returns start_time (in units, ie ns), pmt waveform matrix</p>
 </dd></dl>
 
 <dl class="function">
+<dt id="pax.simulation.distribute_photons_by_lcemap">
+<code class="descclassname">pax.simulation.</code><code class="descname">distribute_photons_by_lcemap</code><span class="sig-paren">(</span><em>photon_timings</em>, <em>channels</em>, <em>lce_map</em>, <em>coordinate_tuple</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#distribute_photons_by_lcemap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.distribute_photons_by_lcemap" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pax.simulation.randomize_photons_over_channels">
+<code class="descclassname">pax.simulation.</code><code class="descname">randomize_photons_over_channels</code><span class="sig-paren">(</span><em>photon_timings</em>, <em>channels</em>, <em>relative_lce_per_channel=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#randomize_photons_over_channels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.randomize_photons_over_channels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Distribute photon_timings over channels according to relative_lce_per_channel</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>photon_timings</strong> &#8211; list of photon arrival times (floats)</li>
+<li><strong>channels</strong> &#8211; list of channel numbers (ints)</li>
+<li><strong>relative_lce_per_channel</strong> &#8211; list of relative lce per channel. Should be &gt;= 0 and sum to 1.
+If omitted, will distribute photons uniformly over channels.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<p>:return:dictionary ch -&gt; [photon arrival times]</p>
+</dd></dl>
+
+<dl class="function">
 <dt id="pax.simulation.truncated_gauss_rvs">
 <code class="descclassname">pax.simulation.</code><code class="descname">truncated_gauss_rvs</code><span class="sig-paren">(</span><em>my_mean</em>, <em>my_std</em>, <em>left_boundary</em>, <em>right_boundary</em>, <em>n_rvs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#truncated_gauss_rvs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.truncated_gauss_rvs" title="Permalink to this definition">¶</a></dt>
 <dd><p>Get Gauss with specified mean and std, truncated to boundaries
@@ -1596,7 +1625,7 @@ change this without talking with a maintainer.</p>
 e.g. a list clustering routine that isn&#8217;t in some standard, library but several plugins depend on it</p>
 <dl class="class">
 <dt id="pax.utils.InterpolatingMap">
-<em class="property">class </em><code class="descclassname">pax.utils.</code><code class="descname">InterpolatingMap</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/utils.html#InterpolatingMap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.utils.InterpolatingMap" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pax.utils.</code><code class="descname">InterpolatingMap</code><span class="sig-paren">(</span><em>filename</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/utils.html#InterpolatingMap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.utils.InterpolatingMap" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Builds a scalar function of space using interpolation from sampling points on a regular grid.</p>
 <p>All interpolation is done linearly.
@@ -1633,6 +1662,11 @@ position - pax.datastructure.ReconstructedPosition instance</p>
 </dd></dl>
 
 <dl class="method">
+<dt id="pax.utils.InterpolatingMap.init_map">
+<code class="descname">init_map</code><span class="sig-paren">(</span><em>map_data</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/utils.html#InterpolatingMap.init_map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.utils.InterpolatingMap.init_map" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="pax.utils.InterpolatingMap.plot">
 <code class="descname">plot</code><span class="sig-paren">(</span><em>map_name='map'</em>, <em>to_file=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/utils.html#InterpolatingMap.plot"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.utils.InterpolatingMap.plot" title="Permalink to this definition">¶</a></dt>
 <dd><p>Make a quick plot of the map map_name, for diagnostic purposes only</p>
@@ -1644,6 +1678,46 @@ position - pax.datastructure.ReconstructedPosition instance</p>
 <dt id="pax.utils.Memoize">
 <em class="property">class </em><code class="descclassname">pax.utils.</code><code class="descname">Memoize</code><span class="sig-paren">(</span><em>function</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/utils.html#Memoize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.utils.Memoize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.utils.Timer">
+<em class="property">class </em><code class="descclassname">pax.utils.</code><code class="descname">Timer</code><a class="reference internal" href="_modules/pax/utils.html#Timer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.utils.Timer" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Simple stopwatch timer
+punch() returns ms since timer creation or last punch</p>
+<dl class="attribute">
+<dt id="pax.utils.Timer.last_t">
+<code class="descname">last_t</code><em class="property"> = 0</em><a class="headerlink" href="#pax.utils.Timer.last_t" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.utils.Timer.punch">
+<code class="descname">punch</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/utils.html#Timer.punch"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.utils.Timer.punch" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.utils.Vector2DGridMap">
+<em class="property">class </em><code class="descclassname">pax.utils.</code><code class="descname">Vector2DGridMap</code><span class="sig-paren">(</span><em>filename</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/utils.html#Vector2DGridMap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.utils.Vector2DGridMap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.utils.InterpolatingMap" title="pax.utils.InterpolatingMap"><code class="xref py py-class docutils literal"><span class="pre">pax.utils.InterpolatingMap</span></code></a></p>
+<dl class="method">
+<dt id="pax.utils.Vector2DGridMap.get_value">
+<code class="descname">get_value</code><span class="sig-paren">(</span><em>*coordinates</em>, <em>map_name='map'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/utils.html#Vector2DGridMap.get_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.utils.Vector2DGridMap.get_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the value of the map at the position given by coordinates</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.utils.Vector2DGridMap.init_map">
+<code class="descname">init_map</code><span class="sig-paren">(</span><em>map_data</em>, <em>zoom_factor=1</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/utils.html#Vector2DGridMap.init_map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.utils.Vector2DGridMap.init_map" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="staticmethod">
+<dt id="pax.utils.Vector2DGridMap.upsample_map">
+<em class="property">static </em><code class="descname">upsample_map</code><span class="sig-paren">(</span><em>map_data</em>, <em>zoom_factor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/utils.html#Vector2DGridMap.upsample_map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.utils.Vector2DGridMap.upsample_map" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
 </dd></dl>
 
 <dl class="function">
@@ -1740,7 +1814,13 @@ Stolen from <a class="reference external" href="http://stackoverflow.com/questio
 </ul>
 </li>
 </ul>
-
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -1770,11 +1850,11 @@ Stolen from <a class="reference external" href="http://stackoverflow.com/questio
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
       <a href="_sources/pax.txt"
-          rel="nofollow">Page source</a></li>
+          rel="nofollow">Page source</a>
     </div>
 
     
