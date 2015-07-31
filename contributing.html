@@ -72,7 +72,22 @@ is open to whoever wants to implement it, if no other name is assigned.</p>
 <div class="highlight-python"><div class="highlight"><pre>$ make html
 </pre></div>
 </div>
+<p>Make sure to have updated Sphinx by:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ pip install -U sphinx
+</pre></div>
+</div>
 <p>Feel free to expand the documentation however you find helpful.</p>
+<p>Now you can also update the documentation on the site if needed. Go to the folder where pax is cloned and run:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ git clone git@github.com:XENON1T/pax.git paxdocs
+$ cd paxdocs
+$ git pull
+$ git checkout gh-pages
+</pre></div>
+</div>
+<p>You are now ready to make the docs for the site. Go into the pax directory and run:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ make docs
+</pre></div>
+</div>
 </div>
 <div class="section" id="submit-feedback">
 <h3>Submit Feedback<a class="headerlink" href="#submit-feedback" title="Permalink to this headline">¶</a></h3>
