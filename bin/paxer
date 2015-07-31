@@ -164,10 +164,11 @@ def main():
             override_dict['pax'][configname] = value
 
     # Overrides for plotting
-    if args.plot_to_dir or args.plot:
+    if args.plot_to_dir:
         override_dict['pax']['output'] = 'Plotting.PlotEventSummary'
-        if args.plot_to_dir:
-            override_dict['Plotting.PlotEventSummary'] = {'output_dir': args.plot_to_dir}
+        override_dict['Plotting.PlotEventSummary'] = {'output_dir': args.plot_to_dir}
+    if args.plot:
+        override_dict['pax']['output'] = 'Plotting.PeakViewer'
 
     ##
     # Single-core processing

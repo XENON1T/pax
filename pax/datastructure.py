@@ -410,7 +410,7 @@ class Event(StrictModel):
         The returned list is sorted DESCENDING (i.e. reversed!) by the key sort_key (default area)
         unless you pass reverse=False, then it is ascending.
         """
-        return self._get_peaks_by_type('s1', sort_key, reverse, detector)
+        return self.get_peaks_by_type('s1', sort_key=sort_key, reverse=reverse, detector=detector)
 
     def S2s(self, detector='tpc', sort_key='area', reverse=True):  # noqa
         """List of S2 (ionization) signals in this event
@@ -421,9 +421,9 @@ class Event(StrictModel):
         The returned list is sorted DESCENDING (i.e. reversed!) by the key sort_key (default area)
         unless you pass reverse=False, then it is ascending.
         """
-        return self._get_peaks_by_type('s2', sort_key, reverse, detector)
+        return self.get_peaks_by_type(desired_type='s2', sort_key=sort_key, reverse=reverse, detector=detector)
 
-    def _get_peaks_by_type(self, desired_type, sort_key, reverse=True, detector='tpc'):
+    def get_peaks_by_type(self, desired_type='all', detector='tpc', sort_key='area', reverse=True):
         """Helper function for retrieving only certain types of peaks
         Returns a list of :class:`pax.datastructure.Peak` objects
           whose type is desired_type, and
@@ -434,10 +434,10 @@ class Event(StrictModel):
         # Extract only peaks of a certain type
         peaks = []
         for peak in self.peaks:
-            if peak.detector is not 'all':
+            if peak.detector != 'all':
                 if peak.detector != detector:
                     continue
-            if peak.type.lower() != desired_type:
+            if desired_type != 'all' and peak.type.lower() != desired_type:
                 continue
             peaks.append(peak)
 
