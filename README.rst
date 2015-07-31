@@ -26,11 +26,11 @@ This should make it easier to install our code than typical experiments, and if 
 isn't true, please let us know (See `relevant documentation section`_).  To set this
 up, run::
 
-  $ wget http://repo.continuum.io/anaconda3/Anaconda3-2.1.0-Linux-x86_64.sh
-  $ bash Anaconda3-2.1.0-Linux-x86_64.sh
-  $ export PATH=~/anaconda3/bin:$PATH  # If installed in default location
-  $ conda update conda
-  $ conda install numpy scipy matplotlib pandas pytables cython h5py numba pip scikit-learn # optional but handy
+  wget http://repo.continuum.io/anaconda3/Anaconda3-2.1.0-Linux-x86_64.sh
+  bash Anaconda3-2.1.0-Linux-x86_64.sh
+  export PATH=~/anaconda3/bin:$PATH  # If installed in default location
+  conda update conda
+  conda install numpy scipy matplotlib pandas pytables cython h5py numba pip scikit-learn # optional but handy
 
 Alternatively, you can install Python 3.4 from the `python webpage <https://www.python.org/>`_ 
 or your OS's package management system. See the FAQ for more information.
@@ -42,17 +42,17 @@ which is C++ code that must be compiled and is used for raw data access. If
 you're using Ubuntu and have super user permissions, you could just install the libsnappy-dev package.  
 However, we recommend you do the following::
 
-  $ wget https://snappy.googlecode.com/files/snappy-1.1.1.tar.gz
-  $ tar xvfz snappy-1.1.1.tar.gz 
-  $ cd snappy-1.1.1
-  $ ./configure --prefix=`conda info --root`
-  $ make install
-  $ cd ~
-  $ CFLAGS=-I`conda info --root`/include LDFLAGS=-L`conda info --root`/lib pip install python-snappy
+  wget https://snappy.googlecode.com/files/snappy-1.1.1.tar.gz
+  tar xvfz snappy-1.1.1.tar.gz 
+  cd snappy-1.1.1
+  ./configure --prefix=`conda info --root`
+  make install
+  cd ~
+  CFLAGS=-I`conda info --root`/include LDFLAGS=-L`conda info --root`/lib pip install python-snappy
   
 You should now be able to run the following command::
 
-  $ python -m snappy
+  python -m snappy
 
 For installation on Windows, see `the FAQ <http://xenon1t.github.io/pax/faq.html#can-i-set-up-pax-on-my-windows-machine>`_. 
 Also within the FAQs, you can find other useful hints.
