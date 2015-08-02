@@ -741,6 +741,10 @@ class FindPeaks(plugin.TransformPlugin):
             'left':             left,
             'right':            right,
             'detector':         'tpc',
+            'area_per_channel':            np.zeros(self.config['n_channels']),
+            'n_hits_per_channel':          np.zeros(self.config['n_channels'], dtype=np.int16),
+            'n_noise_pulses_per_channel':  np.zeros(self.config['n_channels'], dtype=np.int8),
+            'height_per_channel':          np.zeros(self.config['n_channels']),
         }))
 
         # Recursion for large s2s
@@ -887,15 +891,14 @@ class ComputePeakProperties(plugin.TransformPlugin):
                         continue
                     if area > self.config['coincidence_threshold'] * (2 * 10 ** 6 / self.config['gains'][channel]):
                         contributing_pmts.append(channel)
-                peak.does_channel_contribute = np.array(
+                does_channel_contribute = np.array(
                     [ch in contributing_pmts for ch in range(self.config['n_channels'])],
                     dtype=np.bool)
             else:
                 # Hack to ensure S2s won't get pruned:
-                peak.does_channel_contribute = np.ones(self.config['n_channels'], dtype=np.bool)
+                does_channel_contribute = np.ones(self.config['n_channels'], dtype=np.bool)
 
-            peak.n_contributing_channels = len(peak.contributing_channels)
-            peak.does_channel_have_noise = np.zeros(self.config['n_channels'], dtype=np.bool)
+            peak.n_contributing_channels = len(np.where(does_channel_contribute > 0)[0])
 
         # Prune excess S1s
         event.peaks = sort_and_prune_by(
