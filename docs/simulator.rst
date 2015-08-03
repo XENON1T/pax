@@ -1,23 +1,30 @@
 Waveform simulator docs – very early draft
 ==========================================
 
-
+------------
 What it does
-============
+------------
 Simulate ADC waveforms resulting from S1 photons and/or S2 electrons released in a liquid xenon TPC and feed them into pax. 
 
 It does not do yield estimation, i.e. convert energy depositions to number of photons and electrons -- use GEANT4/NEST/whatever for that.
 
+-------------
 How to use it
-=============
+-------------
 
-**Case 1: using all of the simulator to make waveforms.** For this, use pax with `–config XENON100 Simulation –input your_instructions.csv` (replace XENON100 with your TPC settings file if you’re simulating for another TPC). See below for the format of this instructions file.You’ll also want to specify an output format that is convenient for whatever you actually want to do with the waveforms: formats like pickle, JSON and BSON are easy to use (if you use python), but we also offer Avro, HDF5, CSV, HTML, ROOT, and soon XED. If you need a specific format not in this list, let us know, we may be bribable. Of course, if you use pax for plotting and analyzing the simulated waveforms, you may not need to output raw waveforms at all.
+**Case 1: use all of the simulator to make waveforms.** For this, use pax with `–config XENON100 Simulation –input your_instructions.csv` (replace XENON100 with your TPC settings file if you’re simulating for another TPC). See below for the format of this instructions file.You’ll also want to specify an output format that is convenient for whatever you actually want to do with the waveforms: formats like pickle, JSON and BSON are easy to use (if you use python), but we also offer Avro, HDF5, CSV, HTML, ROOT, and soon XED. If you need a specific format not in this list, let us know, we may be bribable. Of course, if you use pax for plotting and analyzing the simulated waveforms, you may not need to output raw waveforms at all.
 
-**Case 2:: using just a small part of the simulator**, such as the S1 photon time distribution, or the S2 per-PMT light distribution. In this case it is faster to `from pax import core` in your own python script, do `mypax=core.Processor()`, and call methods of `mypax.simulation`.  See examples/PosRecTest for an example of using the simulator like this.
+**Case 2: use just a small part of the simulator library**, such as the S1 photon time distribution, or the S2 per-PMT light distribution. In this case it is faster to make your own script with::
+
+    from pax import core
+    mypax = core.Processor(config_dict={'pax': {'plugin_group_names':[]}})
+    sim = mypax.simulator
+Now `sim` is an instance of the Simulator class, and you can call the methods from the 'library reference' section below. See examples/PosRecTest for an example of using the simulator like this.
 
 
+-----------------------
 Instruction file format
-=======================
+-----------------------
 The instruction files read by the simulator are csv files with one row per simulated interaction (S1 AND S2, although you can turn of either -- or even both, but that's silly). 
 
 The meaning of the columns is as follows:
@@ -31,9 +38,9 @@ The meaning of the columns is as follows:
  * **s2_electrons**: how many S2 electrons to simulate. Whether these will all arrive in the gas gap will depend on the configuration settings, in particular `electron_lifetime_liquid`.
  * **t**: Time of the interaction in nanoseconds since the start of the event. Keep in mind the S2 electrons take time to drift as well, so the S2 will appear (much) later in the event.
  
-
+----------------------
 Implementation details
-======================
+----------------------
 
 The waveform simulator consists of two parts:
  - An **input plugin** (WaveformSimulator) which lives in pax.plugins.io. This takes care of processing the instructions file, then calling the right commands for s1 and s2 generation, gluing the stages of the simulation process together, and finally outputting a file `fax_truth.csv` for your convenience which tells you what was actually simulated (i.e. where the each signal actually ended up in the event). This file is a csv file with one row per simulated peak (S1 or S2); the columns should speak for themselves.
@@ -50,12 +57,12 @@ Electrical noise is added in the final step. ZLE emulation is not performed in t
 
 
 Photon production time simulation
-=================================
-[FIXME] See https://xecluster.lngs.infn.it/dokuwiki/doku.php?id=xenon:xenon1t:fax:presentation4june2014 for some outdated info.
+---------------------------------
+[FIXME] See https://xecluster.lngs.infn.it/dokuwiki/doku.php?id=xenon:xenon1t:fax:presentation4june2014 for some outdated info. Also see the library reference below.
 
 
 Hitpattern building
-===================
+-------------------
 
 Now that we know when the photons will be produced, we must figure out which PMTS see these photons. This depends on the location of the photon production, and can only be done properly if per-PMT position-dependent LCE maps are available. Information about the identity of the signal (S1 or S2) is no longer present at this stage; we get a list of photon production times from the previous stage, and must additionally pass the position at which these photons are produced.
 
@@ -70,7 +77,7 @@ Internally, the hitpattern is stored as an object (`SimulatedHitpattern`).This h
 In the WaveformSimulator IO plugin, the SimulatedHitpattern’s for several signals (S1 and S2 for every simulated interaction) are added (by overloaded + on the object) into a single SimulatedHitpattern object, which is passed to the next stage. 
 
 Waveform building
-=================
+-----------------
 The final stage of the waveform simulator emulates the response of the PMT’ s and digitizers to the detected photons. Each PMT’s/channel's waveform is simulated separately, then the results are combined into a single pax event containing a full (XENON100: 400 us) waveform for every channel. In this final step, real electrical noise is added. ZLE emulation is not performed in the simulator, but by a separate plugin (SoftwareZLE).
 
 1.	For each photon which arrives in the channel, the charge it deposits in digitizer bins close to its arrival time is calculated.
@@ -93,6 +100,30 @@ The final stage of the waveform simulator emulates the response of the PMT’ s 
 
 5.	The waveform is clipped to fall within values the digitizer can show, to model ADC saturation correctly.
 This process is repeated for each channel -- even those that receive no photons, as they will still record noise. Finally, the waveforms for all channels are combined into a Pax event object, ready to be processed further.
+
+
+------------------------------------
+Waveform simulator library reference
+------------------------------------
+
+This is a reference for all methods in pax's waveform simulator library. To use the methods of the Simulator class, see "Case 2" at the start of this file.
+
+.. automodule:: pax.simulation
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+-----------------------------------------
+Waveform simulator input plugin reference
+-----------------------------------------
+
+This is a reference for the WaveformSimulator input plugin. You probably won't have to deal with this directly.
+
+.. automodule:: pax.plugins.io.WaveformSimulator
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 
 .. [1] There is an option (called cheap_zle), off by default, to limit noise generation to just around detected photons. This will increases the speed of the simulation, at a loss of correctness, since noise can also trigger the ZLE by itself.
 

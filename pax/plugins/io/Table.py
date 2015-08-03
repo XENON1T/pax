@@ -8,7 +8,7 @@ from pax import plugin, exceptions, datastructure
 from pax.formats import flat_data_formats
 
 
-class BulkOutput(plugin.OutputPlugin):
+class TableWriter(plugin.OutputPlugin):
 
     """Output data to flat table formats
     Convert our data structure to numpy record arrays, one for each class (Event, Peak, ReconstructedPosition, ...).
@@ -24,7 +24,7 @@ class BulkOutput(plugin.OutputPlugin):
 
     Available configuration options:
 
-     - output_format:      Name of output format to produce. Must be child class of BulkOutputFormat
+     - output_format:      Name of output format to produce. Must be child class of TableFormat
      - output_name:        The name of the output file or folder, WITHOUT file extension.
      - fields_to_ignore:   Fields which will not be stored.
      - overwrite_data:     If True, overwrite if a file/directory with the same name exists
@@ -65,7 +65,7 @@ class BulkOutput(plugin.OutputPlugin):
         self.output_format = of = flat_data_formats[self.config['output_format']](log=self.log)
 
         if self.config['append_data'] and self.config['overwrite_data']:
-            raise ValueError('Invalid configuration for BulkOutput: Cannot both'
+            raise ValueError('Invalid configuration for TableWriter: Cannot both'
                              ' append and overwrite')
 
         # Check if options are supported
@@ -291,9 +291,9 @@ class BulkOutput(plugin.OutputPlugin):
             return name, type(x)
 
 
-class ReadFromBulkOutput(plugin.InputPlugin):
+class TableReader(plugin.InputPlugin):
 
-    """Read data from BulkOutput for reprocessing
+    """Read data from TableWriter for reprocessing
 
     'Reprocessing' means: reading in old processed data, then start somewhere in middle of processing chain,
     (e.g. redo classification), and finally write to new file.

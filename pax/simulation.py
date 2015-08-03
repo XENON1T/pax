@@ -470,58 +470,90 @@ class Simulator(object):
                   "created." % (event.length(), len(event.pulses)))
         return event
 
+    def distribute_s2_photons(self, n_photons, x, y):
+        # How many photons to the top array?
+        n_top = np.random.binomial(n=n_photons, p=self.config['s2_mean_area_fraction_top'])
+
+        # Distribute a fraction of the top photons randomly, if the user asked for it
+        # This enables robustness testing of the position reconstruction
+        p_random = self.config.get('randomize_fraction_of_s2_top_array_photons', 0)
+        if p_random:
+            n_random = np.random.binomial(n=n_photons, p=p_random)
+            hitp = self.distribute_photons_by_lcemap(n_top - n_random, self.s2_lce_map, (x, y))
+            hitp += self.randomize_photons_over_channels(n_random, channels=self.config['channels_top'])
+        else:
+            hitp = self.distribute_photons_by_lcemap(n_photons, self.s2_lce_map, (x, y))
+
+        # The bottom photons are distributed randomly
+        hitp += self.randomize_photons_over_channels(n_photons - n_top,
+                                                     channels=self.config['channels_bottom'])
+        return hitp
+
+    def distribute_photons_by_lcemap(self, n_photons, lce_map, coordinate_tuple):
+        # TODO: assumes channels drawn from top, or from all channels (i.e. first index 0!!!)
+        lces = lce_map.get_value(*coordinate_tuple)
+        return self.randomize_photons_over_channels(n_photons,
+                                                    channels=range(len(lces)),
+                                                    relative_lce_per_channel=lces)
+
+    def randomize_photons_over_channels(self, n_photons, channels=None, relative_lce_per_channel=None):
+        """Distribute photon_timings over channels according to relative_lce_per_channel
+
+        :param n_photons: number of photons to distribute
+        :param channels: list of channel numbers that can receive photons. This will still be filtered
+         to include only channels in self.config['channels_for_photons'].
+        :param relative_lce_per_channel: list of relative lce per channel. Should be >= 0 and sum to 1.
+                                         If omitted, will distribute photons uniformly over channels.
+        :return: array of length sim.config['n_channels'] with photon counts per channel
+        """
+        # Include only channels that can receive photons
+        if channels is None:
+            channels = np.array(self.config['channels_for_photons'])
+        else:
+            channels = np.array(channels)
+            sel = np.in1d(channels, self.config['channels_for_photons'])
+            channels = channels[sel]
+            if relative_lce_per_channel is not None:
+                relative_lce_per_channel = relative_lce_per_channel[sel]
+
+        # Ensure relative LCEs are valid to one:
+        if relative_lce_per_channel is not None:
+            relative_lce_per_channel = np.clip(relative_lce_per_channel, 0, 1)
+            relative_lce_per_channel /= np.sum(relative_lce_per_channel)
+
+        # Generate a channel index for every photon
+        channel_index_for_p = np.random.choice(channels, size=n_photons, p=relative_lce_per_channel)
+
+        # Count number of photons in each channel
+        hitp, _ = np.histogram(channel_index_for_p,
+                               bins=self.config['n_channels'], range=(0, self.config['n_channels']-1))
+
+        if not len(hitp) == self.config['n_channels']:
+            raise RuntimeError("You found a simulator bug!\n"
+                               "Hitpattern has wrong length "
+                               "(%d, should be %d)" % (len(hitp), len(channels)))
+        if not np.sum(hitp) == n_photons:
+            raise RuntimeError("You found a simulator bug!\n"
+                               "Hitpattern has wrong number of photons "
+                               "(%d, should be %d)" % (np.sum(hitp), n_photons))
+        return hitp
+
 
 ##
 # Hitpattern simulation
 ##
 
-def distribute_photons_by_lcemap(photon_timings, channels, lce_map, coordinate_tuple):
-    # TODO: only works if channels drawn from top, or from all channels (i.e. first index 0)
-    # Calculate relative LCEs at this position
-    lces = lce_map.get_value(*coordinate_tuple)[channels]
-    # Due to interpolation, probabilities can come out negative or normalization can be messed up. Deal with this:
-    lces = np.clip(lces, 0, 1)
-    lces /= np.sum(lces)
-    return randomize_photons_over_channels(photon_timings, channels, relative_lce_per_channel=lces)
-
-
-def randomize_photons_over_channels(photon_timings, channels, relative_lce_per_channel=None):
-    """Distribute photon_timings over channels according to relative_lce_per_channel
-
-    :param photon_timings: list of photon arrival times (floats)
-    :param channels: list of channel numbers (ints)
-    :param relative_lce_per_channel: list of relative lce per channel. Should be >= 0 and sum to 1.
-                                     If omitted, will distribute photons uniformly over channels.
-    :return:dictionary ch -> [photon arrival times]
-    """
-    # Ensure photon_timings is randomized, so first channel doesn't always get first photon
-    # May have been done before, can't hurt to do it again
-    np.random.shuffle(photon_timings)
-
-    # Generate a channel index for every photon
-    channel_index_for_p = np.random.choice(np.array(channels),
-                                           size=len(photon_timings),
-                                           p=relative_lce_per_channel)
-
-    # Count number of photons in each channel
-    hitp, _ = np.histogram(channel_index_for_p, bins=np.concatenate((channels, [np.max(channels) + 1])))
-    if not len(hitp) == len(channels):
-        raise RuntimeError("You found a simulator bug!\n"
-                           "Hitpattern has wrong length "
-                           "(%d, should be %d)" % (len(hitp), len(channels)))
-    if not np.sum(hitp) == len(photon_timings):
-        raise RuntimeError("You found a simulator bug!\n"
-                           "Hitpattern has wrong number of photons "
-                           "(%d, should be %d)" % (np.sum(hitp), len(photon_timings)))
-
-    # Split photon times according to hitpattern
-    return dict(zip(channels, np.split(photon_timings, np.cumsum(hitp))))
-
-
 class SimulatedHitpattern(object):
 
     def __init__(self, simulator, photon_timings, x=0, y=0, z=0):
         self.config = simulator.config
+
+        # Correct for PMT TTS
+        photon_timings += np.random.normal(
+            self.config['pmt_transit_time_mean'],
+            self.config['pmt_transit_time_spread'],
+            len(photon_timings)
+        )
 
         # Add the minimum and maximum times, and number of times
         # hitlist_to_waveforms would have to go through weird flattening stuff to determine these
@@ -532,50 +564,24 @@ class SimulatedHitpattern(object):
         if not len(photon_timings):
             raise ValueError('Need at least 1 photon timing to produce a valid hitpattern')
 
-        # Correct for PMT TTS
-        photon_timings += np.random.normal(
-            self.config['pmt_transit_time_mean'],
-            self.config['pmt_transit_time_spread'],
-            len(photon_timings)
-        )
-
-        # First shuffle all timings in the array, so channel 1 doesn't always get the first photon
+        # Shuffle all timings in the array, so channel 1 doesn't always get the first photon
         # Don't rely on randomize_photons_over_channels to do this, we'll be splitting top v bottom here
         # and want that split to be random too.
         np.random.shuffle(photon_timings)
 
-        # All channels which can receive photons (depends on configuration, magical dead pmt avoidance etc)
-        ch_for_photons = self.config['channels_for_photons']
-
         if z == - self.config['gate_to_anode_distance'] and simulator.s2_lce_map is not None:
             # Generated at anode: use S2 LCE data
-            top_chs_for_photons = [ch for ch in self.config['channels_top']
-                                   if ch in self.config['channels_for_photons']]
-
-            bottom_chs_for_photons = [ch for ch in self.config['channels_bottom']
-                                      if ch in self.config['channels_for_photons']]
-
-            # How much should go to the top array?
-            n_top = np.random.binomial(n=self.n_photons, p=self.config['s2_mean_area_fraction_top'])
-
-            arr_t_p_c = distribute_photons_by_lcemap(photon_timings=photon_timings[:n_top],
-                                                     channels=top_chs_for_photons,
-                                                     lce_map=simulator.s2_lce_map,
-                                                     coordinate_tuple=(x, y))
-
-            # Randomly distribute S2 photons in bottom array
-            arr_t_p_c.update(randomize_photons_over_channels(photon_timings[n_top:],
-                                                             bottom_chs_for_photons))
-
+            hitp = simulator.distribute_s2_photons(self.n_photons, x, y)
         else:
             # S1, or S2 LCE map not present: distribute photons uniformly
-            arr_t_p_c = randomize_photons_over_channels(photon_timings, ch_for_photons)
+            hitp = simulator.randomize_photons_over_channels(self.n_photons)
 
-        self.arrival_times_per_channel = arr_t_p_c
+        # Split photon times over channels
+        self.arrival_times_per_channel = dict(zip(range(simulator.config['n_channels']),
+                                                  np.split(photon_timings, np.cumsum(hitp))))
 
     def __add__(self, other):
         # Don't reuse __init__, we don't want another TTS correction..
-        # TODO: hm, maybe we shouldn't do TTS correction here?
         # print("add called self=%s, other=%s" % (type(self), type(other)))
         self.min = min(self.min, other.min)
         self.max = max(self.max, other.max)
