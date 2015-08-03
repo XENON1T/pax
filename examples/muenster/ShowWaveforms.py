@@ -5,7 +5,7 @@ and plot the waveforms in a single plot
 
 import matplotlib as plt
 
-import pax.plugins.plotting.Plotting
+import pax.plugins.io.Plotting
 
 
 class ShowWaveforms(pax.PlotBase):
