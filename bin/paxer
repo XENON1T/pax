@@ -164,10 +164,11 @@ def main():
             override_dict['pax'][configname] = value
 
     # Overrides for plotting
-    if args.plot_to_dir:
+    if args.plot_to_dir or args.plot:
         override_dict['pax']['output'] = 'Plotting.PlotEventSummary'
+    if args.plot_to_dir:
         override_dict['Plotting.PlotEventSummary'] = {'output_dir': args.plot_to_dir}
-    if args.plot:
+    if args.plot_interactive:
         override_dict['pax']['output'] = 'Plotting.PeakViewer'
 
     ##
@@ -286,19 +287,19 @@ def get_args():
     parser.add_argument('--config_path',
                         default=[],
                         nargs='+',
-                        help="Path(s) of the configuration file(s) to use."
-                        )
+                        help="Path(s) of the configuration file(s) to use.")
     # Plotting override
     plotting_control_group = parser.add_mutually_exclusive_group()
     plotting_control_group.add_argument('--plot',
                                         action='store_const',
                                         const=True,
-                                        help='Plot summed waveforms on screen',
-                                        )
+                                        help='Plot summed waveforms on screen')
+    plotting_control_group.add_argument('--plot_interactive',
+                                        action='store_const',
+                                        const=True,
+                                        help='Plot interactive peak browser on screen')
     plotting_control_group.add_argument('--plot_to_dir',
-                                        help='Save summed waveform plots in '
-                                             'directory',
-                                        )
+                                        help='Save summed waveform plots in directory')
     # Control events to process
     parser.add_argument('--event',
                         type=int,
