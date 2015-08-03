@@ -20,8 +20,11 @@ class SoftwareZLE(plugin.TransformPlugin):
         zle_intervals_buffer = self.zle_intervals_buffer
 
         for pulse in event.pulses:
+            if pulse.left % 2 != 0:
+                raise ValueError("Cannot ZLE in XED-compatible way "
+                                 "if pulse starts at odd sample index (%d)" % pulse.left)
 
-            # Subtract the referemce baseline, invert
+            # Subtract the reference baseline, invert
             # TODO: Does the ZLE know a better baseline? I guess not...
             w = pulse.raw_data.copy()
             w = self.config['digitizer_reference_baseline'] - w
@@ -73,6 +76,15 @@ class SoftwareZLE(plugin.TransformPlugin):
                             itv_i += 1
                         else:
                             break
+
+                # Truncate the interval to the nearest even start and odd stop index
+                # We use truncation rather than extension to ensure data always exists
+                # pulse.left is guaranteed to be even
+                if start % 2 != 0:
+                    start += 1
+                if stop % 2 != 1:
+                    stop -= 1
+                assert (stop - start + 1) % 2 == 0
 
                 if self.debug:
                     plt.axvspan(start, stop, alpha=0.3, color='green')
