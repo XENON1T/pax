@@ -1,0 +1,211 @@
+<xerawdp>
+	<global>
+		<verbosity>3</verbosity> <!-- 0: none, 1: minimal, 2: extensive, 3: debug -->
+		<dataset_name_format>xe100_YYMMDD_hhmm</dataset_name_format>
+		<raw_data_dir>/home/aalbers/xed_xdp_test/raw/</raw_data_dir>
+		<processed_data_dir>/home/aalbers/xed_xdp_test/processed/</processed_data_dir>
+		<merged_data_dir>/home/aalbers/xed_xdp_test/merged/</merged_data_dir>
+		<minimum_bias_data_dir>/home/aalbers/xed_xdp_test/min_bias/</minimum_bias_data_dir>
+		<processing_level>3</processing_level>
+	</global>
+	<pmts>
+		<top_pmts>1-98</top_pmts>
+		<bottom_pmts>99-178</bottom_pmts>
+		<top_veto_pmts>179-210</top_veto_pmts>
+		<bottom_veto_pmts>211-242</bottom_veto_pmts>
+		<external_gains>1-242:10.00</external_gains>
+		<calibration_source>
+			<here>
+				<!-- average gains from run_10 (fit from 110303 to 110808) (exceptions: PMT 68, average from 110408; PMT 90, average from 110616)  -->
+				<header>gain gain_err qe</header>
+				<values>1:[2.7154e+06 149548 24.500], 2:[2.87565e+06 159554 26.400], 3:[1.94155e+06 86764 23.700], 4:[2.0682e+06 95519.2 24.100], 5:[1.88615e+06 77174.6 25.200], 6:[1.8684e+06 49338.3 25.200], 7:[2.1523e+06 104217 23.400], 8:[1.90605e+06 118898 23.000], 9:[0 0 24.100], 10:[2.055e+06 91835.2 24.100], 11:[1.93025e+06 109794 23.700], 12:[0 0 26.000], 13:[1.965e+06 92861.3 24.900], 14:[2.1119e+06 109139 25.200], 15:[2.16965e+06 125085 26.400], 16:[2.21945e+06 160420 24.100], 17:[2.0964e+06 81974.4 25.600], 18:[2.0979e+06 88150.3 24.500], 19:[2.10885e+06 58439.8 24.500], 20:[2.092e+06 116139 25.600], 21:[1.98915e+06 97621.6 23.400], 22:[2.04095e+06 46892 24.100], 23:[1.6373e+06 162628 25.300], 24:[1.94575e+06 108514 23.000], 25:[2.17005e+06 82551.2 24.500], 26:[2.19258e+06 49640.2 24.100], 27:[1.98245e+06 83896.2 24.100], 28:[1.9421e+06 64479.5 25.600], 29:[2.23705e+06 121574 24.900], 30:[2.15215e+06 113892 23.700], 31:[2.22225e+06 64459.2 23.700], 32:[2.21605e+06 43865 25.600], 33:[1.3353e+06 33344.9 25.600], 34:[2.06885e+06 68726.3 25.200], 35:[2.0795e+06 44399.6 24.900], 36:[2.1419e+06 81351.6 24.500], 37:[2.04605e+06 47558.2 24.500], 38:[2.0085e+06 44429.1 24.900], 39:[0 0 24.100], 40:[2.06095e+06 52810.5 26.700], 41:[1.94335e+06 36127.8 25.600], 42:[1.85535e+06 39886.7 25.600], 43:[2.0572e+06 51007.6 26.700], 44:[2.00085e+06 51107.8 24.100], 45:[1.93495e+06 40096.5 23.000], 46:[2.17875e+06 45823.3 23.700], 47:[2.02465e+06 44523.4 25.200], 48:[2.0687e+06 46947.9 25.600], 49:[2.15575e+06 38756.7 23.100], 50:[2.11005e+06 68005.5 23.700], 51:[2.1444e+06 53208.6 23.700], 52:[1.9414e+06 52409.4 25.200], 53:[2.11415e+06 38959.1 24.100], 54:[2.05185e+06 55189.2 27.500], 55:[2.215e+06 43384.3 23.700], 56:[2.08195e+06 40577.4 24.500], 57:[2.16565e+06 60111.5 24.900], 58:[0 0 0.0000], 59:[2.26055e+06 61610.4 21.500], 60:[2.15685e+06 50555.9 24.100], 61:[2.04835e+06 43891.9 26.000], 62:[2.0871e+06 53884.2 24.900], 63:[1.9664e+06 43429.6 22.200], 64:[2.2217e+06 58030.2 24.900], 65:[2.0996e+06 49433.9 24.900], 66:[2.13395e+06 43960.5 26.400], 67:[2.04845e+06 33169.5 24.100], 68:[2.146666e+06 47920.57 23.700], 69:[2.2068e+06 57229.6 22.600], 70:[2.2311e+06 42812.5 23.700], 71:[2.14545e+06 70470.2 26.400], 72:[2.2317e+06 60168.2 25.200], 73:[2.199e+06 47827.5 26.700], 74:[2.0516e+06 48731.5 24.900], 75:[1.9684e+06 30277.3 25.600], 76:[2.06905e+06 62734.1 25.200], 77:[1.9784e+06 44954.1 24.100], 78:[1.9499e+06 31524.4 24.500], 79:[2.08825e+06 35737.5 24.100], 80:[2.2286e+06 57862.8 24.100], 81:[2.17215e+06 40178.1 23.700], 82:[1.98535e+06 37631.1 24.900], 83:[2.0952e+06 59195.3 24.500], 84:[1.9559e+06 37648.5 24.500], 85:[1.88335e+06 54310.6 26.400], 86:[1.97825e+06 50037.4 26.400], 87:[2.12175e+06 33753.2 24.100], 88:[1.836e+06 51653.7 24.900], 89:[2.12325e+06 37784.1 25.200], 90:[2.026111e+06 27495.88 23.000], 91:[2.2726e+06 44245.8 22.600], 92:[2.21575e+06 46125.5 23.000], 93:[2.15205e+06 45183.8 24.500], 94:[1.91565e+06 62928.1 25.200], 95:[1.87775e+06 58657 26.700], 96:[2.34545e+06 53913.4 24.500], 97:[2.1649e+06 71048.2 23.000], 98:[1.9546e+06 38611 23.400], 99:[1.8562e+06 34242.8 29.000], 100:[0 0 0.0000], 101:[1.9575e+06 24474.5 0.0000], 102:[2.281e+06 37881.1 27.600], 103:[1.9994e+06 24442.3 24.100], 104:[1.90975e+06 55739.8 31.100], 105:[0 0 0.0000], 106:[1.73255e+06 22440.6 0.0000], 107:[2.1125e+06 24967.5 32.400], 108:[1.9159e+06 23618.7 0.0000], 109:[2.01385e+06 40233.6 24.600], 110:[2.1239e+06 42849.2 24.200], 111:[1.96195e+06 33722.1 0.0000], 112:[1.82135e+06 28758.7 0.0000], 113:[1.8995e+06 29003.8 0.0000], 114:[1.808e+06 17587.8 0.0000], 115:[2.12995e+06 35435.4 0.0000], 116:[2.01245e+06 40738.6 0.0000], 117:[1.94195e+06 30299 0.0000], 118:[2.05385e+06 26515.5 23.800], 119:[2.0051e+06 24511.9 0.0000], 120:[1.99125e+06 14616.7 0.0000], 121:[1.8305e+06 31051 0.0000], 122:[1.95215e+06 26971.3 0.0000], 123:[2.00275e+06 29412.2 0.0000], 124:[2.1081e+06 36478 0.0000], 125:[1.9401e+06 43405.4 0.0000], 126:[1.95425e+06 28345.6 0.0000], 127:[1.9691e+06 21449.1 31.000], 128:[2.188e+06 28248.3 0.0000], 129:[2.14285e+06 35078.5 0.0000], 130:[2.0576e+06 33795.9 0.0000], 131:[2.2093e+06 23585.4 0.0000], 132:[2.14435e+06 28118.1 0.0000], 133:[2.0333e+06 24025.8 0.0000], 134:[1.9324e+06 27681.2 0.0000], 135:[1.96695e+06 29202 0.0000], 136:[1.9735e+06 32044 0.0000], 137:[1.89785e+06 25404.7 0.0000], 138:[2.0887e+06 33857.9 0.0000], 139:[1.663e+06 21577 0.0000], 140:[2.2429e+06 34642.4 0.0000], 141:[1.71745e+06 38560.1 35.200], 142:[1.95635e+06 20222.4 0.0000], 143:[1.8946e+06 39913 0.0000], 144:[1.89805e+06 25430.5 0.0000], 145:[1.6773e+06 33433.2 0.0000], 146:[1.99635e+06 25981.2 0.000], 147:[1.81125e+06 39827.5 32.500], 148:[1.6722e+06 138659 0.000], 149:[1.89005e+06 41078.2 0.000], 150:[2.1034e+06 30445.7 0.000], 151:[1.67265e+06 33456.8 35.500], 152:[1.96915e+06 51074.4 0.0000], 153:[2.161e+06 36535.4 0.0000], 154:[1.77455e+06 37711.2 0.0000], 155:[1.93255e+06 49785.3 0.0000], 156:[1.813e+06 47339.9 0.0000], 157:[1.93807e+06 36821.3 0.0000], 158:[2.0209e+06 42074.4 27.100], 159:[2.0476e+06 49106.6 27.100], 160:[1.82135e+06 51325.3 0.0000], 161:[1.79145e+06 38532.9 0.0000], 162:[1.7209e+06 28122.7 0.0000], 163:[2.05195e+06 35810.7 0.0000], 164:[1.90385e+06 37165 0.0000], 165:[1.8019e+06 42192.7 0.0000], 166:[1.99575e+06 80130.9 0.0000], 167:[1.55025e+06 60287.9 0.0000], 168:[1.2008e+06 68586 0.0000], 169:[1.8961e+06 69803.1 0.0000], 170:[2.00525e+06 61069.8 0.0000], 171:[2.02275e+06 54898.7 0.0000], 172:[1.8355e+06 54846.2 34.200], 173:[1.92225e+06 33181.4 35.800], 174:[1.9489e+06 45622.6 29.400], 175:[2.0903e+06 42739 23.700], 176:[1.91055e+06 65134.8 27.500], 177:[0 0 29.100], 178:[1.83135e+06 50162.9 24.600], 179:[2.0121e+06 59177.5 23.500], 180:[2.0743e+06 73575 23.400], 181:[2.50205e+06 76066 24.600], 182:[1.3392e+06 179681 23.900], 183:[1.8142e+06 90856.6 24.200], 184:[1.89553e+06 135115 26.000], 185:[1.97505e+06 71282.1 22.900], 186:[2.04785e+06 63698.2 24.700], 187:[1.94685e+06 102073 24.500], 188:[2.1443e+06 36007.8 24.600], 189:[2.0001e+06 63570.5 22.600], 190:[2.01775e+06 108877 24.500], 191:[0 0 23.400], 192:[1.94215e+06 152277 23.000], 193:[2.11755e+06 155614 23.800], 194:[1.52995e+06 146712 25.600], 195:[0 0 25.900], 196:[1.92375e+06 54967.9 24.100], 197:[1.74905e+06 59744.1 23.000], 198:[1.9403e+06 40008.1 23.800], 199:[1.97195e+06 110870 25.800], 200:[1.91915e+06 67688.6 26.600], 201:[1.8884e+06 148161 20.800], 202:[2.18445e+06 56357.2 23.500], 203:[2.1638e+06 80535.5 24.100], 204:[1.9837e+06 70793.1 25.200], 205:[2.0109e+06 118422 25.600], 206:[2.0557e+06 81379 26.000], 207:[1.9849e+06 66678 24.500], 208:[2.04515e+06 64560.7 24.600], 209:[2.13255e+06 78106.4 22.600], 210:[1.7915e+06 100507 25.600], 211:[2.0506e+06 53461.7 22.900], 212:[2.0006e+06 87098.7 21.400], 213:[2.03995e+06 69074.5 21.100], 214:[1.8314e+06 63622.1 21.500], 215:[2.03535e+06 59073.4 24.100], 216:[1.75901e+06 331354 23.500], 217:[2.0623e+06 52481.9 23.700], 218:[2.1111e+06 95846.6 22.500], 219:[1.9459e+06 100967 20.400], 220:[1.97375e+06 47827.5 25.600], 221:[2.1778e+06 57558.5 22.400], 222:[1.9146e+06 67130.6 26.400], 223:[1.9814e+06 37849.9 24.100], 224:[0 0 23.200], 225:[1.99415e+06 103423 20.900], 226:[2.06975e+06 35313.2 21.800], 227:[2.20125e+06 45914.7 22.100], 228:[2.0693e+06 44370.1 21.400], 229:[1.96485e+06 31908.7 26.700], 230:[1.93875e+06 75135 20.500], 231:[1.9721e+06 75566.4 24.500], 232:[1.8695e+06 103961 22.200], 233:[1.99565e+06 58761.9 21.400], 234:[2.14915e+06 83290.9 0.0000], 235:[0 0 25.100], 236:[2.1134e+06 72472.9 22.500], 237:[1.8048e+06 97733 24.500], 238:[1.9217e+06 104448 20.300], 239:[1.80555e+06 117994 27.100], 240:[1.8982e+06 111124 24.500], 241:[1.89347e+06 169011 26.400], 242:[1.9014e+06 111515 23.700]</values>
+			</here>
+		</calibration_source>
+	</pmts>
+	<raw_data>
+		<nb_baseline_samples>46</nb_baseline_samples>
+	</raw_data>
+	<peak_finding>
+		<s1>
+			<excluded_pmts>1-2, 145, 148, 157, 171, 177</excluded_pmts>
+			<max_nb_peaks>32</max_nb_peaks>
+			<filter>
+				<raised_cosine>
+					<low_pass>1</low_pass>
+					<limit>0.03</limit>
+					<roll_off>0.2</roll_off>
+					<length>31</length>
+				</raised_cosine>
+			</filter>
+			<right_limit_height_threshold>0.05</right_limit_height_threshold> <!-- volts -->
+			<signal_threshold>0.003</signal_threshold> <!-- volts -->
+			<peak_window>60</peak_window> <!-- samples -->
+			<pre_peak_samples>10</pre_peak_samples> <!-- samples -->
+			<max_length>60</max_length> <!-- samples -->
+			<pre_peak_avg_window>50</pre_peak_avg_window> <!-- samples -->
+			<post_peak_avg_window>10</post_peak_avg_window> <!-- samples -->
+			<pre_peak_avg_threshold>0.01</pre_peak_avg_threshold>
+			<post_peak_avg_threshold>0.04</post_peak_avg_threshold>
+			<filtered_width_threshold>50</filtered_width_threshold> <!-- samples -->
+			<negative_excursion_fraction_threshold>3.</negative_excursion_fraction_threshold>
+			<height_fraction_threshold>0.005</height_fraction_threshold>
+			<samples_below_threshold>2</samples_below_threshold> <!-- samples -->
+			<coincidence_threshold>7.e5</coincidence_threshold> <!-- e- -->
+		</s1>
+		<s2>
+			<!--<excluded_pmts></excluded_pmts>-->
+			<max_nb_peaks>32</max_nb_peaks>
+			<large_peaks>
+				<filter>
+					<raised_cosine>
+						<low_pass>1</low_pass>
+						<limit>0.03</limit>
+						<roll_off>0.2</roll_off>
+						<length>31</length>
+					</raised_cosine>
+				</filter>
+				<signal_threshold>0.01</signal_threshold> <!-- volts -->
+				<dynamic_fraction_signal_threshold>0.001</dynamic_fraction_signal_threshold>
+				<min_width>35</min_width> <!-- samples -->
+				<min_interval_width>60</min_interval_width> <!-- samples -->
+				<pre_interval_avg_window>21</pre_interval_avg_window> <!-- samples -->
+				<post_interval_avg_window>21</post_interval_avg_window> <!-- samples -->
+				<pre_top_level_interval_avg_threshold>0.05</pre_top_level_interval_avg_threshold>
+				<post_top_level_interval_avg_threshold>0.05</post_top_level_interval_avg_threshold>
+				<pre_interval_avg_threshold>0.25</pre_interval_avg_threshold>
+				<post_interval_avg_threshold>0.25</post_interval_avg_threshold>
+				<overlapping_peaks_threshold>0.125</overlapping_peaks_threshold>
+				<left_height_fraction_threshold>0.005</left_height_fraction_threshold>
+				<right_height_fraction_threshold>0.002</right_height_fraction_threshold>
+				<large_peak_slope_threshold>0.005</large_peak_slope_threshold> <!-- volts/bin -->
+				<small_peak_slope_threshold>0.02</small_peak_slope_threshold> <!-- volts/bin -->
+				<small_peak_threshold>0.625</small_peak_threshold> <!-- volts -->
+			</large_peaks>
+			<tiny_peaks>
+				<filter>
+					<custom>
+						<coefficients>0, 0.103, 0.371, 0.691, 0.933, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.933, 0.691, 0.371, 0.103, 0</coefficients>
+					</custom>
+				</filter>
+				<right_limit_height_threshold>10.</right_limit_height_threshold> <!-- volts -->
+				<signal_threshold>0.001</signal_threshold> <!-- volts -->
+				<min_interval_width>40</min_interval_width> <!-- samples -->
+				<max_interval_width>200</max_interval_width> <!-- samples -->
+				<aspect_ratio_threshold>0.001</aspect_ratio_threshold> <!-- volts/bin -->
+				<pre_peak_avg_window>10</pre_peak_avg_window> <!-- samples -->
+				<post_peak_avg_window>10</post_peak_avg_window> <!-- samples -->
+				<pre_peak_avg_threshold>0.05</pre_peak_avg_threshold>
+				<post_peak_avg_threshold>0.05</post_peak_avg_threshold>
+				<height_fraction_threshold>0.01</height_fraction_threshold>
+			</tiny_peaks>
+		</s2>
+	</peak_finding>
+	<signals>
+		<signal_threshold>0.35</signal_threshold> <!-- pe -->
+		<saturation_threshold>2.196</saturation_threshold> <!-- volts -->
+		<s1>
+			<coincidence_excluded_pmts>1-2, 145, 148, 157, 171, 177</coincidence_excluded_pmts>
+			<total_signal_excluded_pmts>1-2, 145, 148, 157, 171, 177</total_signal_excluded_pmts>
+			<coincidence_window>2</coincidence_window> <!-- samples -->
+		</s1>
+		<!--<s2>
+			<coincidence_excluded_pmts></coincidence_excluded_pmts>
+			<total_signal_excluded_pmts></total_signal_excluded_pmts>
+		</s2>-->
+	</signals>
+	<position_reconstruction>
+		<electron_drift_velocity>1.73</electron_drift_velocity> <!-- mm/us -->
+		<drift_length_thermal_shrinkage_factor>0.9869</drift_length_thermal_shrinkage_factor> <!-- % -->
+		<max_pmt>
+			<use_algorithm>1</use_algorithm>
+		</max_pmt>
+		<svm>
+			<use_algorithm>1</use_algorithm>
+			<r_model_file_name>/usr/local/share/xerawdp-0.4.5/models/position_r_apr2010_2.5mm_d_9_12_39_58.model</r_model_file_name>
+			<x_model_file_name>/usr/local/share/xerawdp-0.4.5/models/position_x_apr2010_2.5mm_d_9_12_39_58.model</x_model_file_name>
+			<y_model_file_name>/usr/local/share/xerawdp-0.4.5/models/position_y_apr2010_2.5mm_d_9_12_39_58.model</y_model_file_name>
+		</svm>
+		<nn> 
+			<use_algorithm>1</use_algorithm>
+			<xy_model_name>nn_missing_9_12_39_58</xy_model_name>
+		</nn>
+		<chi2> 
+			<use_algorithm>1</use_algorithm>
+			<lce_map_file_name>/usr/local/share/xerawdp-0.4.5/models/xy-lce-map2.5mm.dat</lce_map_file_name>
+		</chi2>
+	</position_reconstruction>
+	<position_correction>
+		<apply_correction>1</apply_correction>
+		<correction_name>Xenon100ZR</correction_name>
+		<map_file_name>/usr/local/share/xerawdp-0.4.5/models/zr-20101004.dat</map_file_name>
+	</position_correction>
+	<signal_corrections>
+		<s1>
+			<spatial_correction>
+				<apply_correction>1</apply_correction>
+			</spatial_correction>
+			<xyz_spatial_correction>
+				<apply_correction>1</apply_correction>
+				<map_file_name>/usr/local/share/xerawdp-0.4.5/models/s1xyzmap-20111215.dat</map_file_name>
+			</xyz_spatial_correction>
+		</s1>
+		<s2>
+			<axial_correction>
+				<apply_correction>1</apply_correction>
+				<analysis_done_by>fit</analysis_done_by> <!-- uncomment to use a specific analysis -->
+				<electron_lifetime>611.70</electron_lifetime> <!-- us, value overwritten by process.py (if used) -->
+			</axial_correction>
+			<transverse_correction>
+				<apply_correction>1</apply_correction>
+				<top>
+					<interpolate>
+						<epsilon>12.</epsilon>
+						<smoothness>0.</smoothness>
+					</interpolate>
+					<map_file_name>/usr/local/share/xerawdp-0.4.5/models/cmap-s2tottop-20120130.dat</map_file_name>
+				</top>
+				<bottom>
+					<interpolate>
+						<epsilon>12.</epsilon>
+						<smoothness>0.</smoothness>
+					</interpolate>
+					<map_file_name>/usr/local/share/xerawdp-0.4.5/models/cmap-s2totbottom-20120130.dat</map_file_name>
+				</bottom>
+			</transverse_correction>
+		</s2>
+		<s2_width>
+			<transverse_correction>
+				<apply_correction>1</apply_correction>
+				<coefficients> -0.008119, 64.14, 0.827383, -0.172574, 0.050694</coefficients>
+				<map_file_name>/usr/local/share/xerawdp-0.4.5/models/cmap-s2width-20111216.dat</map_file_name>
+			</transverse_correction>
+		</s2_width>
+		<s2_low_width>
+			<transverse_correction>
+				<apply_correction>1</apply_correction>
+				<coefficients> -0.007431, 96.45, 4.992, -0.131332, 0.056916</coefficients>
+				<map_file_name>/usr/local/share/xerawdp-0.4.5/models/cmap-s2lowwidth-20111216.dat</map_file_name>
+			</transverse_correction>
+		</s2_low_width>
+	</signal_corrections>
+	<event_selection>
+	        <apply_selection>0</apply_selection>
+		<method>LowEnergy</method>
+		<coefficients>200.</coefficients>
+	</event_selection>
+	<extras>
+		<s1_pattern_likelihood>
+			<compute_quantity>1</compute_quantity>
+			<map_file_name>/usr/local/share/xerawdp-0.4.5/models/pmtptn-20101210.dat</map_file_name>
+		</s1_pattern_likelihood>
+	</extras>
+	<blind_mode>
+		<use_blind_mode>0</use_blind_mode>
+		<cut>(log10(cS2sTotBottom[0]/cS1sTot[0])) &gt; ((2.4357) + (-0.0733998)*(cS1sTot[0])+ (0.00359197)*((cS1sTot[0])^2)+ (-9.39834e-05 )*((cS1sTot[0])^3)+ (1.34239e-06)*((cS1sTot[0])^4)+ (-9.79347e-09)*((cS1sTot[0])^5)+ (2.84814e-11)*((cS1sTot[0])^6)) || (cS1sTot[0] &lt; 2.) || (cS1sTot[0] &gt; 100.)</cut>
+
+	</blind_mode>
+	<minimum_bias>
+		<cut>(NbS2Peaks &gt; 0) &amp;&amp; (S1sCoin[0] &gt; 1) &amp;&amp; (cS1sTot[0] &lt; 200.)</cut>
+		<prefix>mb_</prefix>
+	</minimum_bias>
+</xerawdp>

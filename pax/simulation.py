@@ -298,6 +298,10 @@ class Simulator(object):
             sample_duration=self.config['sample_duration'],
         )
 
+        # Ensure the event length is even (else it cannot be written to XED)
+        if event.length() % 2 != 0:
+            event.stop_time += self.config['sample_duration']
+
         log.debug("Now performing hitpattern to waveform conversion for %s photons" % hitpattern.n_photons)
         # TODO: Account for random initial digitizer state  wrt interaction?
         # Where?
@@ -482,7 +486,7 @@ class Simulator(object):
             hitp = self.distribute_photons_by_lcemap(n_top - n_random, self.s2_lce_map, (x, y))
             hitp += self.randomize_photons_over_channels(n_random, channels=self.config['channels_top'])
         else:
-            hitp = self.distribute_photons_by_lcemap(n_photons, self.s2_lce_map, (x, y))
+            hitp = self.distribute_photons_by_lcemap(n_top, self.s2_lce_map, (x, y))
 
         # The bottom photons are distributed randomly
         hitp += self.randomize_photons_over_channels(n_photons - n_top,
@@ -525,8 +529,10 @@ class Simulator(object):
         channel_index_for_p = np.random.choice(channels, size=n_photons, p=relative_lce_per_channel)
 
         # Count number of photons in each channel
+        # Note the histogram range must include n_channels, even though n_channels-1 is the maximum value
+        # This is because of how numpy handles values on bin edges
         hitp, _ = np.histogram(channel_index_for_p,
-                               bins=self.config['n_channels'], range=(0, self.config['n_channels']-1))
+                               bins=self.config['n_channels'], range=(0, self.config['n_channels']))
 
         if not len(hitp) == self.config['n_channels']:
             raise RuntimeError("You found a simulator bug!\n"
