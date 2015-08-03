@@ -14,12 +14,12 @@ How to use it
 
 **Case 1: use all of the simulator to make waveforms.** For this, use pax with `–config XENON100 Simulation –input your_instructions.csv` (replace XENON100 with your TPC settings file if you’re simulating for another TPC). See below for the format of this instructions file.You’ll also want to specify an output format that is convenient for whatever you actually want to do with the waveforms: formats like pickle, JSON and BSON are easy to use (if you use python), but we also offer Avro, HDF5, CSV, HTML, ROOT, and soon XED. If you need a specific format not in this list, let us know, we may be bribable. Of course, if you use pax for plotting and analyzing the simulated waveforms, you may not need to output raw waveforms at all.
 
-**Case 2:: use just a small part of the simulator library**, such as the S1 photon time distribution, or the S2 per-PMT light distribution. In this case it is faster to make your own script with::
+**Case 2: use just a small part of the simulator library**, such as the S1 photon time distribution, or the S2 per-PMT light distribution. In this case it is faster to make your own script with::
 
     from pax import core
     mypax = core.Processor(config_dict={'pax': {'plugin_group_names':[]}})
     sim = mypax.simulator
-Now `sim` is an instance of the Simulator class, and you can cal all methods documented in the 'library reference' section below. See examples/PosRecTest for an example of using the simulator like this.
+Now `sim` is an instance of the Simulator class, and you can call the methods from the 'library reference' section below. See examples/PosRecTest for an example of using the simulator like this.
 
 
 -----------------------
@@ -106,7 +106,7 @@ This process is repeated for each channel -- even those that receive no photons,
 Waveform simulator library reference
 ------------------------------------
 
-This is a reference for all methods in pax's waveform simulator library. To use the methods of the main Simulator class, see
+This is a reference for all methods in pax's waveform simulator library. To use the methods of the Simulator class, see "Case 2" at the start of this file.
 
 .. automodule:: pax.simulation
     :members:
