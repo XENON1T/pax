@@ -482,7 +482,7 @@ class Simulator(object):
             hitp = self.distribute_photons_by_lcemap(n_top - n_random, self.s2_lce_map, (x, y))
             hitp += self.randomize_photons_over_channels(n_random, channels=self.config['channels_top'])
         else:
-            hitp = self.distribute_photons_by_lcemap(n_photons, self.s2_lce_map, (x, y))
+            hitp = self.distribute_photons_by_lcemap(n_top, self.s2_lce_map, (x, y))
 
         # The bottom photons are distributed randomly
         hitp += self.randomize_photons_over_channels(n_photons - n_top,
