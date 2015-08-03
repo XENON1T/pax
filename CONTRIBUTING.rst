@@ -41,7 +41,24 @@ Write Documentation
 
     $ make html
     
+Make sure to have updated Sphinx by::
+    
+    $ pip install -U sphinx
+    
 Feel free to expand the documentation however you find helpful.
+
+Now you can also update the documentation on the site if needed. Go to the folder where pax is cloned and run::
+    
+    $ git clone git@github.com:XENON1T/pax.git paxdocs
+    $ cd paxdocs
+    $ git pull
+    $ git checkout gh-pages
+    
+
+You are now ready to make the docs for the site. Go into the pax directory and run::
+    
+    $ make docs
+       
 
 Submit Feedback
 ~~~~~~~~~~~~~~~

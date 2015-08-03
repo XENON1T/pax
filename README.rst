@@ -26,33 +26,33 @@ This should make it easier to install our code than typical experiments, and if 
 isn't true, please let us know (See `relevant documentation section`_).  To set this
 up, run::
 
-  $ wget http://repo.continuum.io/anaconda3/Anaconda3-2.1.0-Linux-x86_64.sh
-  $ bash Anaconda3-2.1.0-Linux-x86_64.sh
-  $ export PATH=~/anaconda3/bin:$PATH  # If installed in default location
-  $ conda update conda
-  $ conda install numpy scipy matplotlib pandas pytables cython h5py numba pip scikit-learn # optional but handy
+  wget http://repo.continuum.io/anaconda3/Anaconda3-2.1.0-Linux-x86_64.sh
+  bash Anaconda3-2.1.0-Linux-x86_64.sh
+  export PATH=~/anaconda3/bin:$PATH  # If installed in default location
+  conda update conda
+  conda install numpy scipy matplotlib pandas pytables cython h5py numba pip scikit-learn # optional but handy
 
 Alternatively, you can install Python 3.4 from the `python webpage <https://www.python.org/>`_ 
 or your OS's package management system. See the FAQ for more information.
 
 Though most of our dependencies are solved by using Anaconda, there is one
-dependency that often cannot be installed on olders machines. You must separately 
+dependency that often cannot be installed on older machines. You must separately
 install the `snappy compression library <https://code.google.com/p/snappy/>`_,
 which is C++ code that must be compiled and is used for raw data access. If 
 you're using Ubuntu and have super user permissions, you could just install the libsnappy-dev package.  
 However, we recommend you do the following::
 
-  $ wget https://snappy.googlecode.com/files/snappy-1.1.1.tar.gz
-  $ tar xvfz snappy-1.1.1.tar.gz 
-  $ cd snappy-1.1.1
-  $ ./configure --prefix=`conda info --root`
-  $ make install
-  $ cd ~
-  $ CFLAGS=-I`conda info --root`/include LDFLAGS=-L`conda info --root`/lib pip install python-snappy
+  wget https://snappy.googlecode.com/files/snappy-1.1.1.tar.gz
+  tar xvfz snappy-1.1.1.tar.gz 
+  cd snappy-1.1.1
+  ./configure --prefix=`conda info --root`
+  make install
+  cd ~
+  CFLAGS=-I`conda info --root`/include LDFLAGS=-L`conda info --root`/lib pip install python-snappy
   
 You should now be able to run the following command::
 
-  $ python -m snappy
+  python -m snappy
 
 For installation on Windows, see `the FAQ <http://xenon1t.github.io/pax/faq.html#can-i-set-up-pax-on-my-windows-machine>`_. 
 Also within the FAQs, you can find other useful hints.
@@ -69,9 +69,9 @@ You must have access to the private XENON1T github repository.  You can get this
 
     pip install git+https://github.com/XENON1T/pax.git
 
-This should automatically install any python modules pax depends on. 
+This should automatically install any python modules pax depends on. If it does not, try using `conda` or `pip` to install missing dependencies.
 
-Now you should be able to run the command 'paxer'.
+Now you should be able to run the command 'paxer --help'.
 
 If you want to modify the code (i.e., have the source code), please see the
 `relevant documentation section`_.
@@ -79,8 +79,9 @@ If you want to modify the code (i.e., have the source code), please see the
 .. _relevant documentation section: CONTRIBUTING.rst
 
 
-First steps
-===========
+
+Tutorial
+========
 
 This section assumes that pax is installed, either from the instructions above
 or via `the FAQ on running the code at LNGS <http://xenon1t.github.io/pax/faq.html#how-do-i-run-pax-at-lngs-on-xecluster>`_.
@@ -98,7 +99,7 @@ like `my_file.ini`::
 
    [pax]
     parent_configuration = 'XENON100'
-    input = 'XED.XedInput'
+    input = 'XED.ReadXED'
     output = [ 'Plotting.PlotChannelWaveforms3D',
                #'Plotting.PlotEventSummary',
         ]
@@ -108,8 +109,7 @@ like `my_file.ini`::
     #output_dir = 'plots'  # Uncomment to write plot to disk
 
 
-
-You can load this file with `paxer` by doing the following::
+You can load this file with `paxer` by using the `config_path` option::
 
   paxer --config_path my_file.ini --input /archive/data/xenon100/run_14/xe100_150213_1411/xe100_150213_1411_000000.xed --event 0
 
@@ -118,36 +118,4 @@ playing with what is in the list of outputs.  For example, you can reactivate
 the `PlotEventSummary` that was produced in the first command from above.
 
 At this point, you can look through other configuration files and explore what
-plugins are in `pax` for doing more sophisticated things.
-
-Features
-========
-
-Here is a list of some of the nice features you can play with:
-
-* Digital signal processing
-
- * Sum waveform for top, bottom, veto
- * Filtering with raised cosine filter
- * Peak finding of S1 and S2
-
-* I/O
-
- * ROOT
- * MongoDB (used online for DAQ)
- * Raw data from XENON100 and XENON1T (XED and Avro)
- * Plots
-
-* Position reconstruction of events
-
- * Charge-weighted sum (x, y) reconstruction
- * (x, y) Reconstruction using chi-square-gamma minimization
- * Neural-net reconstruction
-
-
-* Interactive display
-
- * Interactive waveform with peaks annotated
- * PMT top layer hit pattern
- * Display is web browser-based. Allows navigation (next event, switch plot)
-   within browser
+plugins are in `pax` for doing more sophisticated things. `_base.ini` and `XENON100.ini` are a good place to start.

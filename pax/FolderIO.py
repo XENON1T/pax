@@ -1,6 +1,9 @@
 import glob
+import gzip
 import os
 import shutil
+import zipfile
+
 from bson import json_util
 
 from pax import utils, plugin
@@ -175,7 +178,7 @@ class WriteToFolder(plugin.OutputPlugin):
     """Write to a folder containing several small files, each containing <= a fixed number of events"""
 
     def startup(self):
-        self.events_per_file = self.config['events_per_file']
+        self.events_per_file = self.config.get('events_per_file', 50)
         self.first_event_in_current_file = None
         self.last_event_written = None
 
@@ -242,7 +245,10 @@ class WriteToFolder(plugin.OutputPlugin):
                                                        self.file_extension)))
 
     def shutdown(self):
-        self.close_current_file()
+        if self.has_shut_down:
+            self.log.error("Attempt to shutdown %s twice!" % self.__class__.__name__)
+        else:
+            self.close_current_file()
 
     ##
     # Child class should override these
@@ -257,4 +263,55 @@ class WriteToFolder(plugin.OutputPlugin):
         raise NotImplementedError
 
     def close(self):
+        raise NotImplementedError
+
+
+##
+# Zipfile of events
+##
+
+class ReadZipped(InputFromFolder):
+
+    """Read a folder of zipfiles containing [some format]
+    """
+    file_extension = 'zip'
+
+    def open(self, filename):
+        self.current_file = zipfile.ZipFile(filename)
+        self.event_numbers = sorted([int(x)
+                                     for x in self.current_file.namelist()])
+
+    def get_single_event_in_current_file(self, event_position):
+        event_name_in_zip = str(self.event_numbers[event_position])
+        with self.current_file.open(event_name_in_zip) as event_file_in_zip:
+            doc = event_file_in_zip.read()
+            doc = gzip.decompress(doc)
+            return self.from_format(doc)
+
+    def close(self):
+        """Close the currently open file"""
+        self.current_file.close()
+
+    def from_format(self, doc):
+        raise NotImplementedError
+
+
+class WriteZipped(WriteToFolder):
+
+    """Write raw data to a folder of zipfiles containing [some format]
+    """
+    file_extension = 'zip'
+
+    def open(self, filename):
+        self.current_file = zipfile.ZipFile(filename, mode='w')
+
+    def write_event_to_current_file(self, event):
+        self.current_file.writestr(str(event.event_number),
+                                   gzip.compress(self.to_format(event),
+                                                 self.config.get('compresslevel', 4)))
+
+    def close(self):
+        self.current_file.close()
+
+    def to_format(self, doc):
         raise NotImplementedError

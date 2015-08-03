@@ -1,32 +1,33 @@
 """
-This plug-in reads raw waveform data from a Xenon100 XED file.
+These plugins read & write raw waveform data from a Xenon100 XED file.
 The XED file format is documented in Guillaume Plante's PhD thesis.
 This is code does not use the libxdio C-library though.
 
-At the moment this plugin supports:
-    - sequential reading as well as searching for a particular event;
-    - reading a single XED file or an entire dataset (in a directory);
-    - one 'chunk' per event, it raises an exception if it sees more than one chunk;
-    - zle0 sample encoding, not raw;
-    - bzip2 or uncompressed chunk data compression, not any other compression scheme.
+The read plugin supports:
+ - sequential reading and random access (XED has an index, so this is easy)
+ - one 'XED chunk' per event, it raises an exception if it sees more than one chunk.
+   This seems to be fine for all the XENON100 data I've looked at.
+ - zle0 and raw sample encoding;
+ - bzip2 or uncompressed chunk data compression, not any other compression scheme.
+
 If an XED file has non-continuous event numbers, searching for individual events WILL NOT WORK
 
-None of these would be very difficult to fix, if we ever intend to do any large-scale
-reprocessing of the XED-files we have.
-
-Some metadata from the XED file is stored in event['metadata'], see the end of this
-code for details.
+The write plugin always writes zle0 XED files with bzip2 data compression.
 """
+
 
 import bz2
 import io
+import time
+from itertools import groupby
 import math
 
 import numpy as np
 
 from pax import units
 from pax.datastructure import Event, Pulse
-from pax.FolderIO import InputFromFolder
+
+from pax.FolderIO import InputFromFolder, WriteToFolder
 
 
 xed_file_header = np.dtype([
@@ -56,7 +57,7 @@ xed_event_header = np.dtype([
 ])
 
 
-class XedInput(InputFromFolder):
+class ReadXED(InputFromFolder):
 
     file_extension = 'xed'
 
@@ -85,7 +86,7 @@ class XedInput(InputFromFolder):
 
         # Handle for special case of last XED file
         # Index size is larger than the actual number of events written:
-        # The writer didn't know how many events there were left at s
+        # The writer didn't know how many events there were left when it started reserving space for index
         if self.file_metadata['events_in_file'] < self.file_metadata['event_index_size']:
             self.log.info(
                 ("The XED file claims there are %d events in the file, "
@@ -106,7 +107,6 @@ class XedInput(InputFromFolder):
         event_layer_metadata = np.fromfile(self.current_xedfile,
                                            dtype=xed_event_header,
                                            count=1)[0]
-
         if event_layer_metadata['chunks'] != 1:
             raise NotImplementedError("Can't read this XED file: event with %s chunks found!"
                                       % event_layer_metadata['chunks'])
@@ -159,6 +159,7 @@ class XedInput(InputFromFolder):
                     left=0,
                     raw_data=chdata
                 ))
+
         elif event_layer_metadata['type'] == b'zle0':
             # Read the channel bitmask to find out which channels are included in this event.
             # Lots of possibilities for errors here: 4-byte groupings, 1-byte groupings, little-endian...
@@ -168,6 +169,7 @@ class XedInput(InputFromFolder):
             mask_bits = np.unpackbits(np.fromfile(self.current_xedfile,
                                                   dtype='uint8',
                                                   count=mask_bytes))
+
             # +1 as first pmt is 1 in Xenon100
             channels_included = [i + 1 for i, bit in enumerate(reversed(mask_bits))
                                  if bit == 1]
@@ -175,6 +177,7 @@ class XedInput(InputFromFolder):
             # Decompress the event data (actually, the data from a single 'chunk')
             # into fake binary file (io.BytesIO)
             # 28 is the chunk header size.
+
             data_to_decompress = self.current_xedfile.read(event_layer_metadata['size'] - 28 - mask_bytes)
             try:
                 chunk_fake_file = io.BytesIO(bz2.decompress(data_to_decompress))
@@ -224,6 +227,7 @@ class XedInput(InputFromFolder):
                             left=sample_position,
                             raw_data=samples_pulse
                         ))
+
                         sample_position += len(samples_pulse)
 
         else:
@@ -240,3 +244,146 @@ class XedInput(InputFromFolder):
                                        event_position, event.event_number, should_be_at_pos, current_pos))
 
         return event
+
+
+class WriteXED(WriteToFolder):
+    """
+    The XED is written 'inside out' in memory, then written to disk
+    This way we don't have to update size fields in headers.
+    """
+
+    file_extension = 'xed'
+
+    def open(self, filename):
+        self.current_xed = open(filename, 'wb')
+        self.events = []
+        self.first_event_number = None
+
+    def skip_control_word(self, to_skip):
+        if to_skip % 2 != 0:
+            raise ValueError("to_skip must be even, you gave %d" % to_skip)
+        if to_skip == 0:
+            raise ValueError("to_skip cannot be 0")
+        if self.config['skip2_bug']:
+            # Write a series of skip 2 control words rather than one skip control word
+            q = np.ones(to_skip / 2) * 2
+            return q.astype('<u4').tobytes()
+        else:
+            return np.array([to_skip / 2], dtype='<u4').tobytes()
+
+    def data_control_word(self, data_length):
+        if data_length % 2 != 0:
+            raise ValueError("Data length must be even, you gave %d" % data_length)
+        if data_length == 0:
+            raise ValueError("Data length cannot be 0")
+        return np.array([2 ** 31 + data_length / 2], dtype='<u4').tobytes()
+
+    def write_event_to_current_file(self, event):
+
+        if self.first_event_number is None:
+            self.first_event_number = event.event_number
+        event_data = b''
+
+        # First write the pulse data
+        for channel, pulses_in_channel in groupby(event.pulses, key=lambda p: p.channel):
+            pulses_in_channel = list(pulses_in_channel)
+            channel_data = b''
+            prevpulse = None
+            for pulse in sorted(pulses_in_channel, key=lambda p: p.left):
+                # Write skip control word, unless we're at the very start
+                if pulse.left != 0:
+                    if prevpulse is not None:
+                        skip = pulse.left - prevpulse.right - 1
+                    else:
+                        skip = pulse.left
+                    if skip != 0:
+                        channel_data += self.skip_control_word(to_skip=skip)
+                # Write data control word, then data
+                channel_data += self.data_control_word(data_length=pulse.length)
+                channel_data += pulse.raw_data.tobytes()
+                prevpulse = pulse
+            remaining = event.length() - prevpulse.right - 1
+            # Write final skip control word
+            if remaining != 0:
+                channel_data += self.skip_control_word(to_skip=remaining)
+
+            # Add the channel size to the start
+            channel_data = np.array([1 + len(channel_data) / 4], dtype='<u4').tobytes() + channel_data
+            # Add this to the event_data
+            event_data += channel_data
+
+        # Compress the event data so far
+        event_data = bz2.compress(event_data, compresslevel=self.config['compresslevel'])
+
+        channels_included = set([p.channel for p in event.pulses])
+
+        if self.config['pmt_0_is_fake']:
+            # Required size of the channel mask in bytes -- for some reason it needs to be rounded to 4-byte blocks
+            n_mask_bytes = 4 * math.ceil((self.config['n_channels'] - 1) / 32)
+            is_channel_included = np.zeros(n_mask_bytes * 8, dtype=np.int)
+            for ch in range(1, self.config['n_channels'] - 1):
+                is_channel_included[ch - 1] = ch in channels_included
+        else:
+            n_mask_bytes = 4 * math.ceil(self.config['n_channels'] / 32)
+            is_channel_included = np.zeros(n_mask_bytes * 8, dtype=np.int)
+            for ch in range(self.config['n_channels']):
+                is_channel_included[ch] = ch in channels_included
+
+        # Reverse channel included bits... for some reason?
+        is_channel_included = is_channel_included[::-1]
+
+        channel_mask = np.packbits(is_channel_included)
+
+        # Add event header and channel mask to event data
+        event_data_dict = dict(dataset_name=b'generated_by_pax',
+                               utc_time=int(event.start_time / units.s),
+                               utc_time_usec=int(event.start_time % units.s / units.us),
+                               event_number=event.event_number,
+                               chunks=1,
+                               type=b'zle0',     # ??
+                               size=28 + n_mask_bytes + len(event_data),    # 28 is the size of the chunk header
+                               sample_precision=self.config['digitizer_bits'],
+                               flags=2,    # Stolen from X100 files, probably
+                               samples_in_event=event.length(),
+                               voltage_range=self.config['digitizer_voltage_range'],
+                               sampling_frequency=1 / self.config['sample_duration'] / units.Hz,
+                               channels=self.config['n_channels'] - (1 if self.config['pmt_0_is_fake'] else 0))
+        event_header_arr = _dict_to_numpy_recarray(event_data_dict, dtype=xed_event_header)
+        event_data = event_header_arr.tobytes() + channel_mask.tobytes() + event_data
+
+        self.events.append(event_data)
+
+    def close(self):
+
+        # Write file header
+        file_header_dict = dict(dataset_name=b'generated_by_pax',
+                                creation_time=time.time(),
+                                first_event_number=self.first_event_number,
+                                events_in_file=len(self.events),
+                                event_index_size=len(self.events))
+        _dict_to_numpy_recarray(file_header_dict, dtype=xed_file_header).tofile(self.current_xed)
+
+        # Write event index. 80 is the event header size.
+        event_index = np.cumsum(np.concatenate((np.array([0], dtype='<u4'),
+                                                np.array([len(e) for e in self.events], dtype='<u4')[:-1])))
+        event_index += 80 + 4 * len(event_index)
+        # Arcane windows / linux difference here: on linux this gets converted to a 64-bit array???
+        # astype('<u4') fixes it
+        event_index.astype('<u4').tofile(self.current_xed)
+
+        # Write event data
+        for e in self.events:
+            self.current_xed.write(e)
+
+        self.current_xed.close()
+
+        self.events = []
+        self.first_event_number = None
+
+
+def _dict_to_numpy_recarray(d, dtype):
+    """Why is this so difficult? Stackoverflow says np.array(dict.items(), dtype=dt) should work, but it doesn't...
+    """
+    fieldnames = list(map(lambda x: x[0], dtype.descr))
+    data_tuple = tuple(d[f] for f in fieldnames)
+    return np.array([data_tuple], dtype=dtype)
