@@ -36,7 +36,7 @@ Alternatively, you can install Python 3.4 from the `python webpage <https://www.
 or your OS's package management system. See the FAQ for more information.
 
 Though most of our dependencies are solved by using Anaconda, there is one
-dependency that often cannot be installed on olders machines. You must separately 
+dependency that often cannot be installed on older machines. You must separately
 install the `snappy compression library <https://code.google.com/p/snappy/>`_,
 which is C++ code that must be compiled and is used for raw data access. If 
 you're using Ubuntu and have super user permissions, you could just install the libsnappy-dev package.  
@@ -69,9 +69,9 @@ You must have access to the private XENON1T github repository.  You can get this
 
     pip install git+https://github.com/XENON1T/pax.git
 
-This should automatically install any python modules pax depends on. 
+This should automatically install any python modules pax depends on. If it does not, try using `conda` or `pip` to install missing dependencies.
 
-Now you should be able to run the command 'paxer'.
+Now you should be able to run the command 'paxer --help'.
 
 If you want to modify the code (i.e., have the source code), please see the
 `relevant documentation section`_.
@@ -79,8 +79,13 @@ If you want to modify the code (i.e., have the source code), please see the
 .. _relevant documentation section: CONTRIBUTING.rst
 
 
-First steps
-===========
+========
+Usage
+========
+
+
+Tutorial
+--------
 
 This section assumes that pax is installed, either from the instructions above
 or via `the FAQ on running the code at LNGS <http://xenon1t.github.io/pax/faq.html#how-do-i-run-pax-at-lngs-on-xecluster>`_.
@@ -92,6 +97,8 @@ You can run the program by, for example, running::
 For other options and a list of command line arguments, please run::
 
   paxer --help
+
+For more advanced usage you would want to change the configuration: you can make your own configuration file like so:
 
 If you want to do something nonstandard, you can create your own configuration file
 like `my_file.ini`::
@@ -118,36 +125,4 @@ playing with what is in the list of outputs.  For example, you can reactivate
 the `PlotEventSummary` that was produced in the first command from above.
 
 At this point, you can look through other configuration files and explore what
-plugins are in `pax` for doing more sophisticated things.
-
-Features
-========
-
-Here is a list of some of the nice features you can play with:
-
-* Digital signal processing
-
- * Sum waveform for top, bottom, veto
- * Filtering with raised cosine filter
- * Peak finding of S1 and S2
-
-* I/O
-
- * ROOT
- * MongoDB (used online for DAQ)
- * Raw data from XENON100 and XENON1T (XED and Avro)
- * Plots
-
-* Position reconstruction of events
-
- * Charge-weighted sum (x, y) reconstruction
- * (x, y) Reconstruction using chi-square-gamma minimization
- * Neural-net reconstruction
-
-
-* Interactive display
-
- * Interactive waveform with peaks annotated
- * PMT top layer hit pattern
- * Display is web browser-based. Allows navigation (next event, switch plot)
-   within browser
+plugins are in `pax` for doing more sophisticated things. `_base.ini` and `XENON100.ini` are a good place to start.
