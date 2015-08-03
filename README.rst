@@ -79,13 +79,9 @@ If you want to modify the code (i.e., have the source code), please see the
 .. _relevant documentation section: CONTRIBUTING.rst
 
 
-========
-Usage
-========
-
 
 Tutorial
---------
+========
 
 This section assumes that pax is installed, either from the instructions above
 or via `the FAQ on running the code at LNGS <http://xenon1t.github.io/pax/faq.html#how-do-i-run-pax-at-lngs-on-xecluster>`_.
@@ -97,8 +93,6 @@ You can run the program by, for example, running::
 For other options and a list of command line arguments, please run::
 
   paxer --help
-
-For more advanced usage you would want to change the configuration: you can make your own configuration file like so:
 
 If you want to do something nonstandard, you can create your own configuration file
 like `my_file.ini`::
@@ -115,8 +109,7 @@ like `my_file.ini`::
     #output_dir = 'plots'  # Uncomment to write plot to disk
 
 
-
-You can load this file with `paxer` by doing the following::
+You can load this file with `paxer` by using the `config_path` option::
 
   paxer --config_path my_file.ini --input /archive/data/xenon100/run_14/xe100_150213_1411/xe100_150213_1411_000000.xed --event 0
 
