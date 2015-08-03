@@ -3,9 +3,9 @@
 History
 -------
 
-----------------
-Upcoming release
-----------------
+------------------
+3.3.0 (2015-08-03)
+------------------
 
 * Natural break declustering (#187)
 * Improvements to chi2gamma accuracy and speed (#193, #196)
