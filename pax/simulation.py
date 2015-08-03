@@ -525,8 +525,10 @@ class Simulator(object):
         channel_index_for_p = np.random.choice(channels, size=n_photons, p=relative_lce_per_channel)
 
         # Count number of photons in each channel
+        # Note the histogram range must include n_channels, even though n_channels-1 is the maximum value
+        # This is because of how numpy handles values on bin edges
         hitp, _ = np.histogram(channel_index_for_p,
-                               bins=self.config['n_channels'], range=(0, self.config['n_channels']-1))
+                               bins=self.config['n_channels'], range=(0, self.config['n_channels']))
 
         if not len(hitp) == self.config['n_channels']:
             raise RuntimeError("You found a simulator bug!\n"
