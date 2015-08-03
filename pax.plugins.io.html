@@ -29,7 +29,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">  
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Processor for Analyzing XENON1T 3.2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -287,107 +299,8 @@ information about Avro can be found at:</p>
 </dd></dl>
 
 </div>
-<div class="section" id="module-pax.plugins.io.BulkOutput">
-<span id="pax-plugins-io-bulkoutput-module"></span><h2>pax.plugins.io.BulkOutput module<a class="headerlink" href="#module-pax.plugins.io.BulkOutput" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="pax.plugins.io.BulkOutput.BulkOutput">
-<em class="property">class </em><code class="descclassname">pax.plugins.io.BulkOutput.</code><code class="descname">BulkOutput</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/BulkOutput.html#BulkOutput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BulkOutput.BulkOutput" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.OutputPlugin" title="pax.plugin.OutputPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.OutputPlugin</span></code></a></p>
-<p>Output data to flat table formats
-Convert our data structure to numpy record arrays, one for each class (Event, Peak, ReconstructedPosition, ...).
-Then output to one of several output formats (see formats.py)</p>
-<p>For each index, an extra column is added (e.g. ReconstructedPosition has an extra column &#8216;Event&#8217;, &#8216;Peak&#8217;
-and &#8216;ReconstructedPosition&#8217;, each restarting from 0 whenever the corresponding higher-level entity changes).</p>
-<p>The timestamp, pax configuration and version number are stored in a separate table/array: pax_info.</p>
-<p>Because numpy arrays are optimized for working with large data structures, converting/appending each instance
-separately would take long. Hence, we store data in lists first, then convert those once we&#8217;ve collected a bunch.</p>
-<p>Available configuration options:</p>
-<blockquote>
-<div><ul>
-<li><p class="first">output_format:      Name of output format to produce. Must be child class of BulkOutputFormat</p>
-</li>
-<li><p class="first">output_name:        The name of the output file or folder, WITHOUT file extension.</p>
-</li>
-<li><p class="first">fields_to_ignore:   Fields which will not be stored.</p>
-</li>
-<li><p class="first">overwrite_data:     If True, overwrite if a file/directory with the same name exists</p>
-</li>
-<li><dl class="first docutils">
-<dt>string_data_length: Maximum length of strings in string data fields; longer strings will be truncated.</dt>
-<dd><p class="first last">(the pax configuration is always stored fully)</p>
-</dd>
-</dl>
-</li>
-<li><p class="first">append_data:        Append data to an existing file, if output format supports it</p>
-</li>
-<li><p class="first">buffer_size:        Convert to numpy record arrays after every nth event.</p>
-</li>
-<li><dl class="first docutils">
-<dt>write_in_chunks:    Write to disk every time after converting to numpy record arrays, if the output format</dt>
-<dd><p class="first last">supports it. Else all data is kept in memory, then written to disk on shutdown.</p>
-</dd>
-</dl>
-</li>
-</ul>
-</div></blockquote>
-<dl class="method">
-<dt id="pax.plugins.io.BulkOutput.BulkOutput.get_index_of">
-<code class="descname">get_index_of</code><span class="sig-paren">(</span><em>mname</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/BulkOutput.html#BulkOutput.get_index_of"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BulkOutput.BulkOutput.get_index_of" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.BulkOutput.BulkOutput.shutdown">
-<code class="descname">shutdown</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/BulkOutput.html#BulkOutput.shutdown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BulkOutput.BulkOutput.shutdown" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.BulkOutput.BulkOutput.startup">
-<code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/BulkOutput.html#BulkOutput.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BulkOutput.BulkOutput.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.BulkOutput.BulkOutput.write_event">
-<code class="descname">write_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/BulkOutput.html#BulkOutput.write_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BulkOutput.BulkOutput.write_event" title="Permalink to this definition">¶</a></dt>
-<dd><p>Receive event and determine what to do with it</p>
-<p>Store all the event data internally, write to disk when appropriate.
-This function follows the plugin API.</p>
-</dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.io.BulkOutput.ReadFromBulkOutput">
-<em class="property">class </em><code class="descclassname">pax.plugins.io.BulkOutput.</code><code class="descname">ReadFromBulkOutput</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/BulkOutput.html#ReadFromBulkOutput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BulkOutput.ReadFromBulkOutput" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.InputPlugin" title="pax.plugin.InputPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.InputPlugin</span></code></a></p>
-<p>Read data from BulkOutput for reprocessing</p>
-<p>&#8216;Reprocessing&#8217; means: reading in old processed data, then start somewhere in middle of processing chain,
-(e.g. redo classification), and finally write to new file.</p>
-<p>Reprocessing WITHOUT reading in the individual hits is very fast. This is fine for re-doing
-peak classification and anything higher-level we may come up with.</p>
-<p>For re-doing clustering and/or peak property computation you must read in the hits, which is slow.
-The speed is set by overhead in the datastructure: 1/3 of runtime due to type checking, rest due to
-converting between all the internal formats). We can try to optimize this at some point.</p>
-<p>However, for this kind of reprocessing we may eventually need to read the raw data and build a sum waveform
-as well, which takes time too.</p>
-<p>TODO: Check if all the tables / dnames we want to read in are present in the file, else give error</p>
-<dl class="method">
-<dt id="pax.plugins.io.BulkOutput.ReadFromBulkOutput.convert_record">
-<code class="descname">convert_record</code><span class="sig-paren">(</span><em>class_to_load_to</em>, <em>record</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/BulkOutput.html#ReadFromBulkOutput.convert_record"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BulkOutput.ReadFromBulkOutput.convert_record" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.BulkOutput.ReadFromBulkOutput.get_events">
-<code class="descname">get_events</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/BulkOutput.html#ReadFromBulkOutput.get_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BulkOutput.ReadFromBulkOutput.get_events" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get events from processed data source</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.BulkOutput.ReadFromBulkOutput.startup">
-<code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/BulkOutput.html#ReadFromBulkOutput.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.BulkOutput.ReadFromBulkOutput.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
+<div class="section" id="pax-plugins-io-bulkoutput-module">
+<h2>pax.plugins.io.BulkOutput module<a class="headerlink" href="#pax-plugins-io-bulkoutput-module" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="module-pax.plugins.io.MongoDB">
 <span id="pax-plugins-io-mongodb-module"></span><h2>pax.plugins.io.MongoDB module<a class="headerlink" href="#module-pax.plugins.io.MongoDB" title="Permalink to this headline">¶</a></h2>
@@ -414,7 +327,7 @@ classes are provided for MongoDB access.  More information is in the docstrings.
 
 <dl class="method">
 <dt id="pax.plugins.io.MongoDB.IOMongoDB.setup_access">
-<code class="descname">setup_access</code><span class="sig-paren">(</span><em>name</em>, <em>address</em>, <em>database</em>, <em>collection</em>, <em>port=27017</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#IOMongoDB.setup_access"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.IOMongoDB.setup_access" title="Permalink to this definition">¶</a></dt>
+<code class="descname">setup_access</code><span class="sig-paren">(</span><em>name</em>, <em>address</em>, <em>database</em>, <em>collection</em>, <em>port=27017</em>, <em>compressed=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/MongoDB.html#IOMongoDB.setup_access"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.MongoDB.IOMongoDB.setup_access" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -720,7 +633,7 @@ Defaults to s1_default_recombination_time.</li>
 <dl class="class">
 <dt id="pax.plugins.io.WaveformSimulator.WaveformSimulatorFromCSV">
 <em class="property">class </em><code class="descclassname">pax.plugins.io.WaveformSimulator.</code><code class="descname">WaveformSimulatorFromCSV</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulatorFromCSV"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromCSV" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.WaveformSimulator.WaveformSimulator" title="pax.plugins.io.WaveformSimulator.WaveformSimulator"><code class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.WaveformSimulator.WaveformSimulator</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="simulator.html#pax.plugins.io.WaveformSimulator.WaveformSimulator" title="pax.plugins.io.WaveformSimulator.WaveformSimulator"><code class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.WaveformSimulator.WaveformSimulator</span></code></a></p>
 <dl class="method">
 <dt id="pax.plugins.io.WaveformSimulator.WaveformSimulatorFromCSV.get_instructions_for_next_event">
 <code class="descname">get_instructions_for_next_event</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulatorFromCSV.get_instructions_for_next_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromCSV.get_instructions_for_next_event" title="Permalink to this definition">¶</a></dt>
@@ -742,7 +655,7 @@ Defaults to s1_default_recombination_time.</li>
 <dl class="class">
 <dt id="pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST">
 <em class="property">class </em><code class="descclassname">pax.plugins.io.WaveformSimulator.</code><code class="descname">WaveformSimulatorFromNEST</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulatorFromNEST"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.WaveformSimulator.WaveformSimulator" title="pax.plugins.io.WaveformSimulator.WaveformSimulator"><code class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.WaveformSimulator.WaveformSimulator</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="simulator.html#pax.plugins.io.WaveformSimulator.WaveformSimulator" title="pax.plugins.io.WaveformSimulator.WaveformSimulator"><code class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.WaveformSimulator.WaveformSimulator</span></code></a></p>
 <dl class="method">
 <dt id="pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST.get_instructions_for_next_event">
 <code class="descname">get_instructions_for_next_event</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulatorFromNEST.get_instructions_for_next_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST.get_instructions_for_next_event" title="Permalink to this definition">¶</a></dt>
@@ -840,7 +753,7 @@ code for details.</p>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.Avro">pax.plugins.io.Avro module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.BSON">pax.plugins.io.BSON module</a></li>
-<li><a class="reference internal" href="#module-pax.plugins.io.BulkOutput">pax.plugins.io.BulkOutput module</a></li>
+<li><a class="reference internal" href="#pax-plugins-io-bulkoutput-module">pax.plugins.io.BulkOutput module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.MongoDB">pax.plugins.io.MongoDB module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.Pickle">pax.plugins.io.Pickle module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.RawWaveformDump">pax.plugins.io.RawWaveformDump module</a></li>
@@ -850,13 +763,7 @@ code for details.</p>
 </ul>
 </li>
 </ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="index.html">Documentation overview</a><ul>
-  </ul></li>
-</ul>
-</div>
+
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -886,11 +793,11 @@ code for details.</p>
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
       
       |
       <a href="_sources/pax.plugins.io.txt"
-          rel="nofollow">Page source</a>
+          rel="nofollow">Page source</a></li>
     </div>
 
     

@@ -30,7 +30,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">  
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="readme.html" title="Installation"
+             accesskey="N">next</a> |</li>
+        <li class="nav-item nav-item-0"><a href="#">Processor for Analyzing XENON1T 3.2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -39,6 +54,11 @@
             
   <div class="section" id="welcome-to-processor-for-analyzing-xenon1t-s-documentation">
 <h1>Welcome to processor for Analyzing XENON1T&#8217;s documentation!<a class="headerlink" href="#welcome-to-processor-for-analyzing-xenon1t-s-documentation" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li>Python docstrings from all plugins: <a class="reference internal" href="py-modindex.html"><span>Module Index</span></a></li>
+<li>Alphabetical <a class="reference internal" href="genindex.html"><span>Index</span></a></li>
+<li><a class="reference internal" href="search.html"><span>Search Page</span></a></li>
+</ul>
 <p>Contents:</p>
 <div class="toctree-wrapper compound">
 <ul>
@@ -47,9 +67,17 @@
 <li class="toctree-l2"><a class="reference internal" href="readme.html#installing-pax">Installing pax</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="readme.html#first-steps">First steps</a></li>
-<li class="toctree-l1"><a class="reference internal" href="readme.html#features">Features</a></li>
-<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage</a></li>
+<li class="toctree-l1"><a class="reference internal" href="readme.html#tutorial">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="faq.html#how-do-i-run-pax-at-lngs-on-xecluster">How do I run <cite>pax</cite> at LNGS on xecluster?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html#how-do-i-run-pax-at-nikhef">How do I run <cite>pax</cite> at Nikhef?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html#how-do-i-run-git-at-lngs-on-xecluster">How do I run <cite>git</cite> at LNGS on xecluster</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html#can-i-set-up-pax-on-my-windows-machine">Can I set up pax on my windows machine?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html#how-do-i-get-root-working">How do I get ROOT working</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html#snappy-on-osx">Snappy on OSX</a></li>
+<li class="toctree-l2"><a class="reference internal" href="faq.html#how-do-i-use-pax-to-reduce-raw-data-files">How do I use pax to reduce raw data files?</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="format.html">Event format</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="format.html#event">Event</a></li>
 <li class="toctree-l2"><a class="reference internal" href="format.html#peak">Peak</a></li>
@@ -70,29 +98,20 @@
 <li class="toctree-l2"><a class="reference internal" href="eventbuilder.html#module-pax.plugins.io.MongoDB">MongoDB interface</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="simulator.html">Waveform simulator docs – very early draft</a></li>
-<li class="toctree-l1"><a class="reference internal" href="simulator.html#what-it-does">What it does</a></li>
-<li class="toctree-l1"><a class="reference internal" href="simulator.html#how-to-use-it">How to use it</a></li>
-<li class="toctree-l1"><a class="reference internal" href="simulator.html#instruction-file-format">Instruction file format</a></li>
-<li class="toctree-l1"><a class="reference internal" href="simulator.html#implementation-details">Implementation details</a></li>
-<li class="toctree-l1"><a class="reference internal" href="simulator.html#photon-production-time-simulation">Photon production time simulation</a></li>
-<li class="toctree-l1"><a class="reference internal" href="simulator.html#hitpattern-building">Hitpattern building</a></li>
-<li class="toctree-l1"><a class="reference internal" href="simulator.html#waveform-building">Waveform building</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simulator.html">Waveform simulator docs – very early draft</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="simulator.html#what-it-does">What it does</a></li>
+<li class="toctree-l2"><a class="reference internal" href="simulator.html#how-to-use-it">How to use it</a></li>
+<li class="toctree-l2"><a class="reference internal" href="simulator.html#instruction-file-format">Instruction file format</a></li>
+<li class="toctree-l2"><a class="reference internal" href="simulator.html#implementation-details">Implementation details</a></li>
+<li class="toctree-l2"><a class="reference internal" href="simulator.html#waveform-simulator-library-reference">Waveform simulator library reference</a></li>
+<li class="toctree-l2"><a class="reference internal" href="simulator.html#waveform-simulator-input-plugin-reference">Waveform simulator input plugin reference</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="contributing.html">Contributing</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="contributing.html#types-of-contributions">Types of Contributions</a></li>
 <li class="toctree-l2"><a class="reference internal" href="contributing.html#get-started-with-developing">Get Started with developing!</a></li>
 <li class="toctree-l2"><a class="reference internal" href="contributing.html#pull-request-guidelines">Pull Request Guidelines</a></li>
 <li class="toctree-l2"><a class="reference internal" href="contributing.html#tips">Tips</a></li>
-</ul>
-</li>
-<li class="toctree-l1"><a class="reference internal" href="faq.html">Frequently Asked Questions</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="faq.html#how-do-i-run-pax-at-lngs-on-xecluster">How do I run <cite>pax</cite> at LNGS on xecluster?</a></li>
-<li class="toctree-l2"><a class="reference internal" href="faq.html#how-do-i-run-pax-at-nikhef">How do I run <cite>pax</cite> at Nikhef?</a></li>
-<li class="toctree-l2"><a class="reference internal" href="faq.html#how-do-i-run-git-at-lngs-on-xecluster">How do I run <cite>git</cite> at LNGS on xecluster</a></li>
-<li class="toctree-l2"><a class="reference internal" href="faq.html#can-i-set-up-pax-on-my-windows-machine">Can I set up pax on my windows machine?</a></li>
-<li class="toctree-l2"><a class="reference internal" href="faq.html#how-do-i-get-root-working">How do I get ROOT working</a></li>
-<li class="toctree-l2"><a class="reference internal" href="faq.html#snappy-on-osx">Snappy on OSX</a></li>
-<li class="toctree-l2"><a class="reference internal" href="faq.html#how-do-i-use-pax-to-reduce-raw-data-files">How do I use pax to reduce raw data files?</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="authors.html">Credits</a><ul>
@@ -101,6 +120,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="history.html">History</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="history.html#upcoming-release">Upcoming release</a></li>
 <li class="toctree-l2"><a class="reference internal" href="history.html#id1">3.2.0 (2015-07-06)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="history.html#id2">3.1.2 (2015-06-07)</a></li>
 <li class="toctree-l2"><a class="reference internal" href="history.html#id3">3.1.1 (2015-06-07)</a></li>
@@ -122,14 +142,6 @@
 </ul>
 </div>
 </div>
-<div class="section" id="indices-and-tables">
-<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
-<ul class="simple">
-<li><a class="reference internal" href="genindex.html"><span>Index</span></a></li>
-<li><a class="reference internal" href="py-modindex.html"><span>Module Index</span></a></li>
-<li><a class="reference internal" href="search.html"><span>Search Page</span></a></li>
-</ul>
-</div>
 
 
           </div>
@@ -137,19 +149,9 @@
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
-  <h3><a href="#">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Welcome to processor for Analyzing XENON1T&#8217;s documentation!</a></li>
-<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="#">Documentation overview</a><ul>
-      <li>Next: <a href="readme.html" title="next chapter">Installation</a></li>
-  </ul></li>
-</ul>
-</div>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="readme.html"
+                        title="next chapter">Installation</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -179,11 +181,11 @@
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
       
       |
       <a href="_sources/index.txt"
-          rel="nofollow">Page source</a>
+          rel="nofollow">Page source</a></li>
     </div>
 
     

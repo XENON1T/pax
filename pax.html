@@ -29,7 +29,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">  
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Processor for Analyzing XENON1T 3.2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -46,13 +58,13 @@
 <li class="toctree-l2"><a class="reference internal" href="pax.plugins.html#subpackages">Subpackages</a><ul>
 <li class="toctree-l3"><a class="reference internal" href="pax.plugins.corrections.html">pax.plugins.corrections package</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.corrections.html#submodules">Submodules</a></li>
-<li class="toctree-l4"><a class="reference internal" href="pax.plugins.corrections.html#module-pax.plugins.corrections.ExampleCorrection">pax.plugins.corrections.ExampleCorrection module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.corrections.html#pax-plugins-corrections-examplecorrection-module">pax.plugins.corrections.ExampleCorrection module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.corrections.html#module-pax.plugins.corrections">Module contents</a></li>
 </ul>
 </li>
 <li class="toctree-l3"><a class="reference internal" href="pax.plugins.for_tests.html">pax.plugins.for_tests package</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.for_tests.html#submodules">Submodules</a></li>
-<li class="toctree-l4"><a class="reference internal" href="pax.plugins.for_tests.html#module-pax.plugins.for_tests.Dummy">pax.plugins.for_tests.Dummy module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.for_tests.html#pax-plugins-for-tests-dummy-module">pax.plugins.for_tests.Dummy module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.for_tests.html#module-pax.plugins.for_tests">Module contents</a></li>
 </ul>
 </li>
@@ -60,7 +72,7 @@
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#submodules">Submodules</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.Avro">pax.plugins.io.Avro module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.BSON">pax.plugins.io.BSON module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.BulkOutput">pax.plugins.io.BulkOutput module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#pax-plugins-io-bulkoutput-module">pax.plugins.io.BulkOutput module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.MongoDB">pax.plugins.io.MongoDB module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.Pickle">pax.plugins.io.Pickle module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.RawWaveformDump">pax.plugins.io.RawWaveformDump module</a></li>
@@ -1026,71 +1038,9 @@ even if not all the python modules for all the formats are installed.</li>
 </ul>
 </div></blockquote>
 <dl class="class">
-<dt id="pax.formats.BulkOutputFormat">
-<em class="property">class </em><code class="descclassname">pax.formats.</code><code class="descname">BulkOutputFormat</code><span class="sig-paren">(</span><em>log=&lt;logging.Logger object&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/formats.html#BulkOutputFormat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.BulkOutputFormat" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>Base class for bulk output formats</p>
-<dl class="method">
-<dt id="pax.formats.BulkOutputFormat.close">
-<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/formats.html#BulkOutputFormat.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.BulkOutputFormat.close" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pax.formats.BulkOutputFormat.data_types_present">
-<code class="descname">data_types_present</code><a class="headerlink" href="#pax.formats.BulkOutputFormat.data_types_present" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pax.formats.BulkOutputFormat.file_extension">
-<code class="descname">file_extension</code><em class="property"> = 'DIRECTORY'</em><a class="headerlink" href="#pax.formats.BulkOutputFormat.file_extension" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.formats.BulkOutputFormat.open">
-<code class="descname">open</code><span class="sig-paren">(</span><em>name</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/formats.html#BulkOutputFormat.open"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.BulkOutputFormat.open" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pax.formats.BulkOutputFormat.prefers_python_strings">
-<code class="descname">prefers_python_strings</code><em class="property"> = False</em><a class="headerlink" href="#pax.formats.BulkOutputFormat.prefers_python_strings" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.formats.BulkOutputFormat.read_data">
-<code class="descname">read_data</code><span class="sig-paren">(</span><em>df_name</em>, <em>start</em>, <em>end</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/formats.html#BulkOutputFormat.read_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.BulkOutputFormat.read_data" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pax.formats.BulkOutputFormat.supports_append">
-<code class="descname">supports_append</code><em class="property"> = False</em><a class="headerlink" href="#pax.formats.BulkOutputFormat.supports_append" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pax.formats.BulkOutputFormat.supports_array_fields">
-<code class="descname">supports_array_fields</code><em class="property"> = False</em><a class="headerlink" href="#pax.formats.BulkOutputFormat.supports_array_fields" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pax.formats.BulkOutputFormat.supports_read_back">
-<code class="descname">supports_read_back</code><em class="property"> = False</em><a class="headerlink" href="#pax.formats.BulkOutputFormat.supports_read_back" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pax.formats.BulkOutputFormat.supports_write_in_chunks">
-<code class="descname">supports_write_in_chunks</code><em class="property"> = False</em><a class="headerlink" href="#pax.formats.BulkOutputFormat.supports_write_in_chunks" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.formats.BulkOutputFormat.write_data">
-<code class="descname">write_data</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/formats.html#BulkOutputFormat.write_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.BulkOutputFormat.write_data" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
 <dt id="pax.formats.HDF5Dump">
 <em class="property">class </em><code class="descclassname">pax.formats.</code><code class="descname">HDF5Dump</code><span class="sig-paren">(</span><em>log=&lt;logging.Logger object&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/formats.html#HDF5Dump"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.HDF5Dump" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.formats.BulkOutputFormat" title="pax.formats.BulkOutputFormat"><code class="xref py py-class docutils literal"><span class="pre">pax.formats.BulkOutputFormat</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#pax.formats.TableFormat" title="pax.formats.TableFormat"><code class="xref py py-class docutils literal"><span class="pre">pax.formats.TableFormat</span></code></a></p>
 <dl class="method">
 <dt id="pax.formats.HDF5Dump.close">
 <code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/formats.html#HDF5Dump.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.HDF5Dump.close" title="Permalink to this definition">¶</a></dt>
@@ -1146,7 +1096,7 @@ even if not all the python modules for all the formats are installed.</li>
 <dl class="class">
 <dt id="pax.formats.NumpyDump">
 <em class="property">class </em><code class="descclassname">pax.formats.</code><code class="descname">NumpyDump</code><span class="sig-paren">(</span><em>log=&lt;logging.Logger object&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/formats.html#NumpyDump"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.NumpyDump" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.formats.BulkOutputFormat" title="pax.formats.BulkOutputFormat"><code class="xref py py-class docutils literal"><span class="pre">pax.formats.BulkOutputFormat</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#pax.formats.TableFormat" title="pax.formats.TableFormat"><code class="xref py py-class docutils literal"><span class="pre">pax.formats.TableFormat</span></code></a></p>
 <dl class="method">
 <dt id="pax.formats.NumpyDump.close">
 <code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/formats.html#NumpyDump.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.NumpyDump.close" title="Permalink to this definition">¶</a></dt>
@@ -1213,7 +1163,7 @@ even if not all the python modules for all the formats are installed.</li>
 <dl class="class">
 <dt id="pax.formats.PandasFormat">
 <em class="property">class </em><code class="descclassname">pax.formats.</code><code class="descname">PandasFormat</code><span class="sig-paren">(</span><em>log=&lt;logging.Logger object&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/formats.html#PandasFormat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.PandasFormat" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.formats.BulkOutputFormat" title="pax.formats.BulkOutputFormat"><code class="xref py py-class docutils literal"><span class="pre">pax.formats.BulkOutputFormat</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#pax.formats.TableFormat" title="pax.formats.TableFormat"><code class="xref py py-class docutils literal"><span class="pre">pax.formats.TableFormat</span></code></a></p>
 <dl class="method">
 <dt id="pax.formats.PandasFormat.open">
 <code class="descname">open</code><span class="sig-paren">(</span><em>name</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/formats.html#PandasFormat.open"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.PandasFormat.open" title="Permalink to this definition">¶</a></dt>
@@ -1332,7 +1282,7 @@ even if not all the python modules for all the formats are installed.</li>
 <dl class="class">
 <dt id="pax.formats.ROOTDump">
 <em class="property">class </em><code class="descclassname">pax.formats.</code><code class="descname">ROOTDump</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/formats.html#ROOTDump"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.ROOTDump" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.formats.BulkOutputFormat" title="pax.formats.BulkOutputFormat"><code class="xref py py-class docutils literal"><span class="pre">pax.formats.BulkOutputFormat</span></code></a></p>
+<dd><p>Bases: <a class="reference internal" href="#pax.formats.TableFormat" title="pax.formats.TableFormat"><code class="xref py py-class docutils literal"><span class="pre">pax.formats.TableFormat</span></code></a></p>
 <p>Write data to ROOT file</p>
 <p>Convert numpy structered array, every array becomes a TTree.
 Every record becomes a TBranch.
@@ -1362,7 +1312,7 @@ This is</p>
 
 <dl class="attribute">
 <dt id="pax.formats.ROOTDump.numpy_type">
-<code class="descname">numpy_type</code><em class="property"> = {'O': &lt;class 'bool'&gt;, 'C': dtype('O'), 'L': &lt;class 'numpy.int64'&gt;, 'I': &lt;class 'numpy.int32'&gt;, 'D': &lt;class 'numpy.float64'&gt;, 'F': &lt;class 'numpy.float32'&gt;}</em><a class="headerlink" href="#pax.formats.ROOTDump.numpy_type" title="Permalink to this definition">¶</a></dt>
+<code class="descname">numpy_type</code><em class="property"> = {'O': &lt;class 'bool'&gt;, 'F': &lt;class 'numpy.float32'&gt;, 'D': &lt;class 'numpy.float64'&gt;, 'L': &lt;class 'numpy.int64'&gt;, 'C': dtype('O'), 'I': &lt;class 'numpy.int32'&gt;}</em><a class="headerlink" href="#pax.formats.ROOTDump.numpy_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -1377,7 +1327,7 @@ This is</p>
 
 <dl class="attribute">
 <dt id="pax.formats.ROOTDump.root_type">
-<code class="descname">root_type</code><em class="property"> = {'int32': '/I', 'bool': '/O', 'S': '/C', 'int64': '/L', 'float32': '/F', 'float64': '/D'}</em><a class="headerlink" href="#pax.formats.ROOTDump.root_type" title="Permalink to this definition">¶</a></dt>
+<code class="descname">root_type</code><em class="property"> = {'float32': '/F', 'int32': '/I', 'float64': '/D', 'bool': '/O', 'int64': '/L', 'S': '/C'}</em><a class="headerlink" href="#pax.formats.ROOTDump.root_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -1398,6 +1348,68 @@ This is</p>
 <dl class="method">
 <dt id="pax.formats.ROOTDump.write_data">
 <code class="descname">write_data</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/formats.html#ROOTDump.write_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.ROOTDump.write_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.formats.TableFormat">
+<em class="property">class </em><code class="descclassname">pax.formats.</code><code class="descname">TableFormat</code><span class="sig-paren">(</span><em>log=&lt;logging.Logger object&gt;</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/formats.html#TableFormat"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.TableFormat" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Base class for bulk output formats</p>
+<dl class="method">
+<dt id="pax.formats.TableFormat.close">
+<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/formats.html#TableFormat.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.TableFormat.close" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pax.formats.TableFormat.data_types_present">
+<code class="descname">data_types_present</code><a class="headerlink" href="#pax.formats.TableFormat.data_types_present" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pax.formats.TableFormat.file_extension">
+<code class="descname">file_extension</code><em class="property"> = 'DIRECTORY'</em><a class="headerlink" href="#pax.formats.TableFormat.file_extension" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.formats.TableFormat.open">
+<code class="descname">open</code><span class="sig-paren">(</span><em>name</em>, <em>mode</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/formats.html#TableFormat.open"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.TableFormat.open" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pax.formats.TableFormat.prefers_python_strings">
+<code class="descname">prefers_python_strings</code><em class="property"> = False</em><a class="headerlink" href="#pax.formats.TableFormat.prefers_python_strings" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.formats.TableFormat.read_data">
+<code class="descname">read_data</code><span class="sig-paren">(</span><em>df_name</em>, <em>start</em>, <em>end</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/formats.html#TableFormat.read_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.TableFormat.read_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pax.formats.TableFormat.supports_append">
+<code class="descname">supports_append</code><em class="property"> = False</em><a class="headerlink" href="#pax.formats.TableFormat.supports_append" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pax.formats.TableFormat.supports_array_fields">
+<code class="descname">supports_array_fields</code><em class="property"> = False</em><a class="headerlink" href="#pax.formats.TableFormat.supports_array_fields" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pax.formats.TableFormat.supports_read_back">
+<code class="descname">supports_read_back</code><em class="property"> = False</em><a class="headerlink" href="#pax.formats.TableFormat.supports_read_back" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pax.formats.TableFormat.supports_write_in_chunks">
+<code class="descname">supports_write_in_chunks</code><em class="property"> = False</em><a class="headerlink" href="#pax.formats.TableFormat.supports_write_in_chunks" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.formats.TableFormat.write_data">
+<code class="descname">write_data</code><span class="sig-paren">(</span><em>data</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/formats.html#TableFormat.write_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.formats.TableFormat.write_data" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
@@ -1516,6 +1528,16 @@ The only I/O stuff here is pax event creation, everything else is in the Wavefor
 <em class="property">class </em><code class="descclassname">pax.simulation.</code><code class="descname">Simulator</code><span class="sig-paren">(</span><em>config_to_init</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <dl class="method">
+<dt id="pax.simulation.Simulator.distribute_photons_by_lcemap">
+<code class="descname">distribute_photons_by_lcemap</code><span class="sig-paren">(</span><em>n_photons</em>, <em>lce_map</em>, <em>coordinate_tuple</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.distribute_photons_by_lcemap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.distribute_photons_by_lcemap" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.simulation.Simulator.distribute_s2_photons">
+<code class="descname">distribute_s2_photons</code><span class="sig-paren">(</span><em>n_photons</em>, <em>x</em>, <em>y</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.distribute_s2_photons"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.distribute_s2_photons" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
 <dt id="pax.simulation.Simulator.get_luminescence_times">
 <code class="descname">get_luminescence_times</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.get_luminescence_times"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.get_luminescence_times" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -1529,6 +1551,30 @@ The only I/O stuff here is pax event creation, everything else is in the Wavefor
 <dt id="pax.simulation.Simulator.pmt_pulse_current">
 <code class="descname">pmt_pulse_current</code><span class="sig-paren">(</span><em>gain</em>, <em>offset=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.pmt_pulse_current"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.pmt_pulse_current" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.simulation.Simulator.randomize_photons_over_channels">
+<code class="descname">randomize_photons_over_channels</code><span class="sig-paren">(</span><em>n_photons</em>, <em>channels=None</em>, <em>relative_lce_per_channel=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.randomize_photons_over_channels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.randomize_photons_over_channels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Distribute photon_timings over channels according to relative_lce_per_channel</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>n_photons</strong> &#8211; number of photons to distribute</li>
+<li><strong>channels</strong> &#8211; list of channel numbers that can receive photons. This will still be filtered
+to include only channels in self.config[&#8216;channels_for_photons&#8217;].</li>
+<li><strong>relative_lce_per_channel</strong> &#8211; list of relative lce per channel. Should be &gt;= 0 and sum to 1.
+If omitted, will distribute photons uniformly over channels.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">array of length sim.config[&#8216;n_channels&#8217;] with photon counts per channel</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
 
 <dl class="method">
 <dt id="pax.simulation.Simulator.s1_photons">
@@ -1575,32 +1621,6 @@ Returns None if you pass a hitlist without any hits
 returns start_time (in units, ie ns), pmt waveform matrix</p>
 </dd></dl>
 
-</dd></dl>
-
-<dl class="function">
-<dt id="pax.simulation.distribute_photons_by_lcemap">
-<code class="descclassname">pax.simulation.</code><code class="descname">distribute_photons_by_lcemap</code><span class="sig-paren">(</span><em>photon_timings</em>, <em>channels</em>, <em>lce_map</em>, <em>coordinate_tuple</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#distribute_photons_by_lcemap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.distribute_photons_by_lcemap" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="function">
-<dt id="pax.simulation.randomize_photons_over_channels">
-<code class="descclassname">pax.simulation.</code><code class="descname">randomize_photons_over_channels</code><span class="sig-paren">(</span><em>photon_timings</em>, <em>channels</em>, <em>relative_lce_per_channel=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#randomize_photons_over_channels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.randomize_photons_over_channels" title="Permalink to this definition">¶</a></dt>
-<dd><p>Distribute photon_timings over channels according to relative_lce_per_channel</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
-<li><strong>photon_timings</strong> &#8211; list of photon arrival times (floats)</li>
-<li><strong>channels</strong> &#8211; list of channel numbers (ints)</li>
-<li><strong>relative_lce_per_channel</strong> &#8211; list of relative lce per channel. Should be &gt;= 0 and sum to 1.
-If omitted, will distribute photons uniformly over channels.</li>
-</ul>
-</td>
-</tr>
-</tbody>
-</table>
-<p>:return:dictionary ch -&gt; [photon arrival times]</p>
 </dd></dl>
 
 <dl class="function">
@@ -1814,13 +1834,7 @@ Stolen from <a class="reference external" href="http://stackoverflow.com/questio
 </ul>
 </li>
 </ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="index.html">Documentation overview</a><ul>
-  </ul></li>
-</ul>
-</div>
+
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -1850,11 +1864,11 @@ Stolen from <a class="reference external" href="http://stackoverflow.com/questio
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
       
       |
       <a href="_sources/pax.txt"
-          rel="nofollow">Page source</a>
+          rel="nofollow">Page source</a></li>
     </div>
 
     

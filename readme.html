@@ -24,14 +24,32 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="Processor for Analyzing XENON1T 3.2.0 documentation" href="index.html" />
-    <link rel="next" title="Usage" href="usage.html" />
+    <link rel="next" title="Frequently Asked Questions" href="faq.html" />
     <link rel="prev" title="Welcome to processor for Analyzing XENON1T’s documentation!" href="index.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">  
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="right" >
+          <a href="faq.html" title="Frequently Asked Questions"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Welcome to processor for Analyzing XENON1T’s documentation!"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Processor for Analyzing XENON1T 3.2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -58,32 +76,32 @@ scientific python distribution <a class="reference external" href="https://store
 This should make it easier to install our code than typical experiments, and if this
 isn&#8217;t true, please let us know (See <a class="reference external" href="CONTRIBUTING.rst">relevant documentation section</a>).  To set this
 up, run:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ wget http://repo.continuum.io/anaconda3/Anaconda3-2.1.0-Linux-x86_64.sh
-$ bash Anaconda3-2.1.0-Linux-x86_64.sh
-$ export PATH=~/anaconda3/bin:$PATH  # If installed in default location
-$ conda update conda
-$ conda install numpy scipy matplotlib pandas pytables cython h5py numba pip scikit-learn # optional but handy
+<div class="highlight-python"><div class="highlight"><pre>wget http://repo.continuum.io/anaconda3/Anaconda3-2.1.0-Linux-x86_64.sh
+bash Anaconda3-2.1.0-Linux-x86_64.sh
+export PATH=~/anaconda3/bin:$PATH  # If installed in default location
+conda update conda
+conda install numpy scipy matplotlib pandas pytables cython h5py numba pip scikit-learn # optional but handy
 </pre></div>
 </div>
 <p>Alternatively, you can install Python 3.4 from the <a class="reference external" href="https://www.python.org/">python webpage</a>
 or your OS&#8217;s package management system. See the FAQ for more information.</p>
 <p>Though most of our dependencies are solved by using Anaconda, there is one
-dependency that often cannot be installed on olders machines. You must separately
+dependency that often cannot be installed on older machines. You must separately
 install the <a class="reference external" href="https://code.google.com/p/snappy/">snappy compression library</a>,
 which is C++ code that must be compiled and is used for raw data access. If
 you&#8217;re using Ubuntu and have super user permissions, you could just install the libsnappy-dev package.
 However, we recommend you do the following:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ wget https://snappy.googlecode.com/files/snappy-1.1.1.tar.gz
-$ tar xvfz snappy-1.1.1.tar.gz
-$ cd snappy-1.1.1
-$ ./configure --prefix=`conda info --root`
-$ make install
-$ cd ~
-$ CFLAGS=-I`conda info --root`/include LDFLAGS=-L`conda info --root`/lib pip install python-snappy
+<div class="highlight-python"><div class="highlight"><pre>wget https://snappy.googlecode.com/files/snappy-1.1.1.tar.gz
+tar xvfz snappy-1.1.1.tar.gz
+cd snappy-1.1.1
+./configure --prefix=`conda info --root`
+make install
+cd ~
+CFLAGS=-I`conda info --root`/include LDFLAGS=-L`conda info --root`/lib pip install python-snappy
 </pre></div>
 </div>
 <p>You should now be able to run the following command:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ python -m snappy
+<div class="highlight-python"><div class="highlight"><pre>python -m snappy
 </pre></div>
 </div>
 <p>For installation on Windows, see <a class="reference external" href="http://xenon1t.github.io/pax/faq.html#can-i-set-up-pax-on-my-windows-machine">the FAQ</a>.
@@ -100,14 +118,14 @@ installed, which you can test by running at the command line:</p>
 <div class="highlight-python"><div class="highlight"><pre>pip install git+https://github.com/XENON1T/pax.git
 </pre></div>
 </div>
-<p>This should automatically install any python modules pax depends on.</p>
-<p>Now you should be able to run the command &#8216;paxer&#8217;.</p>
+<p>This should automatically install any python modules pax depends on. If it does not, try using <cite>conda</cite> or <cite>pip</cite> to install missing dependencies.</p>
+<p>Now you should be able to run the command &#8216;paxer &#8211;help&#8217;.</p>
 <p>If you want to modify the code (i.e., have the source code), please see the
 <a class="reference external" href="CONTRIBUTING.rst">relevant documentation section</a>.</p>
 </div>
 </div>
-<div class="section" id="first-steps">
-<h1>First steps<a class="headerlink" href="#first-steps" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="tutorial">
+<h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
 <p>This section assumes that pax is installed, either from the instructions above
 or via <a class="reference external" href="http://xenon1t.github.io/pax/faq.html#how-do-i-run-pax-at-lngs-on-xecluster">the FAQ on running the code at LNGS</a>.</p>
 <p>You can run the program by, for example, running:</p>
@@ -132,7 +150,7 @@ like <cite>my_file.ini</cite>:</p>
  #output_dir = &#39;plots&#39;  # Uncomment to write plot to disk
 </pre></div>
 </div>
-<p>You can load this file with <cite>paxer</cite> by doing the following:</p>
+<p>You can load this file with <cite>paxer</cite> by using the <cite>config_path</cite> option:</p>
 <div class="highlight-python"><div class="highlight"><pre>paxer --config_path my_file.ini --input /archive/data/xenon100/run_14/xe100_150213_1411/xe100_150213_1411_000000.xed --event 0
 </pre></div>
 </div>
@@ -140,53 +158,7 @@ like <cite>my_file.ini</cite>:</p>
 playing with what is in the list of outputs.  For example, you can reactivate
 the <cite>PlotEventSummary</cite> that was produced in the first command from above.</p>
 <p>At this point, you can look through other configuration files and explore what
-plugins are in <cite>pax</cite> for doing more sophisticated things.</p>
-</div>
-<div class="section" id="features">
-<h1>Features<a class="headerlink" href="#features" title="Permalink to this headline">¶</a></h1>
-<p>Here is a list of some of the nice features you can play with:</p>
-<ul class="simple">
-<li>Digital signal processing</li>
-</ul>
-<blockquote>
-<div><ul class="simple">
-<li>Sum waveform for top, bottom, veto</li>
-<li>Filtering with raised cosine filter</li>
-<li>Peak finding of S1 and S2</li>
-</ul>
-</div></blockquote>
-<ul class="simple">
-<li>I/O</li>
-</ul>
-<blockquote>
-<div><ul class="simple">
-<li>ROOT</li>
-<li>MongoDB (used online for DAQ)</li>
-<li>Raw data from XENON100 and XENON1T (XED and Avro)</li>
-<li>Plots</li>
-</ul>
-</div></blockquote>
-<ul class="simple">
-<li>Position reconstruction of events</li>
-</ul>
-<blockquote>
-<div><ul class="simple">
-<li>Charge-weighted sum (x, y) reconstruction</li>
-<li>(x, y) Reconstruction using chi-square-gamma minimization</li>
-<li>Neural-net reconstruction</li>
-</ul>
-</div></blockquote>
-<ul class="simple">
-<li>Interactive display</li>
-</ul>
-<blockquote>
-<div><ul class="simple">
-<li>Interactive waveform with peaks annotated</li>
-<li>PMT top layer hit pattern</li>
-<li>Display is web browser-based. Allows navigation (next event, switch plot)
-within browser</li>
-</ul>
-</div></blockquote>
+plugins are in <cite>pax</cite> for doing more sophisticated things. <cite>_base.ini</cite> and <cite>XENON100.ini</cite> are a good place to start.</p>
 </div>
 
 
@@ -202,18 +174,15 @@ within browser</li>
 <li><a class="reference internal" href="#installing-pax">Installing pax</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#first-steps">First steps</a></li>
-<li><a class="reference internal" href="#features">Features</a></li>
+<li><a class="reference internal" href="#tutorial">Tutorial</a></li>
 </ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="index.html" title="previous chapter">Welcome to processor for Analyzing XENON1T&#8217;s documentation!</a></li>
-      <li>Next: <a href="usage.html" title="next chapter">Usage</a></li>
-  </ul></li>
-</ul>
-</div>
+
+  <h4>Previous topic</h4>
+  <p class="topless"><a href="index.html"
+                        title="previous chapter">Welcome to processor for Analyzing XENON1T&#8217;s documentation!</a></p>
+  <h4>Next topic</h4>
+  <p class="topless"><a href="faq.html"
+                        title="next chapter">Frequently Asked Questions</a></p>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -243,11 +212,11 @@ within browser</li>
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
       
       |
       <a href="_sources/readme.txt"
-          rel="nofollow">Page source</a>
+          rel="nofollow">Page source</a></li>
     </div>
 
     

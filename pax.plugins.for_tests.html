@@ -29,7 +29,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">  
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Processor for Analyzing XENON1T 3.2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -41,49 +53,8 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-pax.plugins.for_tests.Dummy">
-<span id="pax-plugins-for-tests-dummy-module"></span><h2>pax.plugins.for_tests.Dummy module<a class="headerlink" href="#module-pax.plugins.for_tests.Dummy" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="pax.plugins.for_tests.Dummy.DummyInput">
-<em class="property">class </em><code class="descclassname">pax.plugins.for_tests.Dummy.</code><code class="descname">DummyInput</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/for_tests/Dummy.html#DummyInput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.for_tests.Dummy.DummyInput" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.InputPlugin" title="pax.plugin.InputPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.InputPlugin</span></code></a></p>
-<dl class="method">
-<dt id="pax.plugins.for_tests.Dummy.DummyInput.get_events">
-<code class="descname">get_events</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/for_tests/Dummy.html#DummyInput.get_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.for_tests.Dummy.DummyInput.get_events" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.for_tests.Dummy.DummyOutput">
-<em class="property">class </em><code class="descclassname">pax.plugins.for_tests.Dummy.</code><code class="descname">DummyOutput</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/for_tests/Dummy.html#DummyOutput"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.for_tests.Dummy.DummyOutput" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.OutputPlugin" title="pax.plugin.OutputPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.OutputPlugin</span></code></a></p>
-<p>Stores last event in self.last_event, useful for testing</p>
-<dl class="method">
-<dt id="pax.plugins.for_tests.Dummy.DummyOutput.write_event">
-<code class="descname">write_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/for_tests/Dummy.html#DummyOutput.write_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.for_tests.Dummy.DummyOutput.write_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.for_tests.Dummy.DummyTransform">
-<em class="property">class </em><code class="descclassname">pax.plugins.for_tests.Dummy.</code><code class="descname">DummyTransform</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/for_tests/Dummy.html#DummyTransform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.for_tests.Dummy.DummyTransform" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></code></a></p>
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.for_tests.Dummy.DummyTransform2">
-<em class="property">class </em><code class="descclassname">pax.plugins.for_tests.Dummy.</code><code class="descname">DummyTransform2</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/for_tests/Dummy.html#DummyTransform2"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.for_tests.Dummy.DummyTransform2" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></code></a></p>
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.for_tests.Dummy.DummyTransform3">
-<em class="property">class </em><code class="descclassname">pax.plugins.for_tests.Dummy.</code><code class="descname">DummyTransform3</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/for_tests/Dummy.html#DummyTransform3"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.for_tests.Dummy.DummyTransform3" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></code></a></p>
-</dd></dl>
-
+<div class="section" id="pax-plugins-for-tests-dummy-module">
+<h2>pax.plugins.for_tests.Dummy module<a class="headerlink" href="#pax-plugins-for-tests-dummy-module" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="module-pax.plugins.for_tests">
 <span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pax.plugins.for_tests" title="Permalink to this headline">¶</a></h2>
@@ -100,18 +71,12 @@
   <ul>
 <li><a class="reference internal" href="#">pax.plugins.for_tests package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#module-pax.plugins.for_tests.Dummy">pax.plugins.for_tests.Dummy module</a></li>
+<li><a class="reference internal" href="#pax-plugins-for-tests-dummy-module">pax.plugins.for_tests.Dummy module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.for_tests">Module contents</a></li>
 </ul>
 </li>
 </ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="index.html">Documentation overview</a><ul>
-  </ul></li>
-</ul>
-</div>
+
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -141,11 +106,11 @@
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
       
       |
       <a href="_sources/pax.plugins.for_tests.txt"
-          rel="nofollow">Page source</a>
+          rel="nofollow">Page source</a></li>
     </div>
 
     

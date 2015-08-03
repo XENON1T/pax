@@ -30,7 +30,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">  
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Processor for Analyzing XENON1T 3.2.0 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -52,7 +65,7 @@
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 
-<span class="n">base_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;BulkOutput&#39;</span><span class="p">)</span>
+<span class="n">base_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;TableWriter&#39;</span><span class="p">)</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">import</span> <span class="nn">ROOT</span>   <span class="c"># noqa</span>
@@ -73,7 +86,7 @@
     <span class="n">base_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;You don&#39;t have h5py -- if you use the hdf5 format, pax will crash!&quot;</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="BulkOutputFormat"><a class="viewcode-back" href="../../pax.html#pax.formats.BulkOutputFormat">[docs]</a><span class="k">class</span> <span class="nc">BulkOutputFormat</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+<div class="viewcode-block" id="TableFormat"><a class="viewcode-back" href="../../pax.html#pax.formats.TableFormat">[docs]</a><span class="k">class</span> <span class="nc">TableFormat</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Base class for bulk output formats</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">supports_append</span> <span class="o">=</span> <span class="bp">False</span>
@@ -89,18 +102,18 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">log</span>
 
-<div class="viewcode-block" id="BulkOutputFormat.open"><a class="viewcode-back" href="../../pax.html#pax.formats.BulkOutputFormat.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">mode</span><span class="p">):</span>
+<div class="viewcode-block" id="TableFormat.open"><a class="viewcode-back" href="../../pax.html#pax.formats.TableFormat.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">mode</span><span class="p">):</span>
         <span class="c"># Dir formats don&#39;t need to do anything here</span>
         <span class="k">pass</span>
 </div>
-<div class="viewcode-block" id="BulkOutputFormat.close"><a class="viewcode-back" href="../../pax.html#pax.formats.BulkOutputFormat.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<div class="viewcode-block" id="TableFormat.close"><a class="viewcode-back" href="../../pax.html#pax.formats.TableFormat.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c"># Dir formats don&#39;t need to do anything here</span>
         <span class="k">pass</span>
 </div>
-<div class="viewcode-block" id="BulkOutputFormat.read_data"><a class="viewcode-back" href="../../pax.html#pax.formats.BulkOutputFormat.read_data">[docs]</a>    <span class="k">def</span> <span class="nf">read_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df_name</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
+<div class="viewcode-block" id="TableFormat.read_data"><a class="viewcode-back" href="../../pax.html#pax.formats.TableFormat.read_data">[docs]</a>    <span class="k">def</span> <span class="nf">read_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df_name</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 </div>
-<div class="viewcode-block" id="BulkOutputFormat.write_data"><a class="viewcode-back" href="../../pax.html#pax.formats.BulkOutputFormat.write_data">[docs]</a>    <span class="k">def</span> <span class="nf">write_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+<div class="viewcode-block" id="TableFormat.write_data"><a class="viewcode-back" href="../../pax.html#pax.formats.TableFormat.write_data">[docs]</a>    <span class="k">def</span> <span class="nf">write_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 </div>
     <span class="nd">@property</span>
@@ -108,7 +121,7 @@
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
 </div>
-<div class="viewcode-block" id="NumpyDump"><a class="viewcode-back" href="../../pax.html#pax.formats.NumpyDump">[docs]</a><span class="k">class</span> <span class="nc">NumpyDump</span><span class="p">(</span><span class="n">BulkOutputFormat</span><span class="p">):</span>
+<div class="viewcode-block" id="NumpyDump"><a class="viewcode-back" href="../../pax.html#pax.formats.NumpyDump">[docs]</a><span class="k">class</span> <span class="nc">NumpyDump</span><span class="p">(</span><span class="n">TableFormat</span><span class="p">):</span>
     <span class="n">file_extension</span> <span class="o">=</span> <span class="s">&#39;npz&#39;</span>
     <span class="n">supports_array_fields</span> <span class="o">=</span> <span class="bp">True</span>
     <span class="n">supports_read_back</span> <span class="o">=</span> <span class="bp">True</span>
@@ -139,7 +152,7 @@
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="p">[</span><span class="n">df_name</span><span class="p">])</span>
 
 </div></div>
-<div class="viewcode-block" id="HDF5Dump"><a class="viewcode-back" href="../../pax.html#pax.formats.HDF5Dump">[docs]</a><span class="k">class</span> <span class="nc">HDF5Dump</span><span class="p">(</span><span class="n">BulkOutputFormat</span><span class="p">):</span>
+<div class="viewcode-block" id="HDF5Dump"><a class="viewcode-back" href="../../pax.html#pax.formats.HDF5Dump">[docs]</a><span class="k">class</span> <span class="nc">HDF5Dump</span><span class="p">(</span><span class="n">TableFormat</span><span class="p">):</span>
     <span class="n">file_extension</span> <span class="o">=</span> <span class="s">&#39;hdf5&#39;</span>
     <span class="n">supports_array_fields</span> <span class="o">=</span> <span class="bp">True</span>
     <span class="n">supports_write_in_chunks</span> <span class="o">=</span> <span class="bp">True</span>
@@ -183,7 +196,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="p">[</span><span class="n">df_name</span><span class="p">]</span><span class="o">.</span><span class="n">len</span><span class="p">()</span>
 
 </div></div>
-<div class="viewcode-block" id="ROOTDump"><a class="viewcode-back" href="../../pax.html#pax.formats.ROOTDump">[docs]</a><span class="k">class</span> <span class="nc">ROOTDump</span><span class="p">(</span><span class="n">BulkOutputFormat</span><span class="p">):</span>
+<div class="viewcode-block" id="ROOTDump"><a class="viewcode-back" href="../../pax.html#pax.formats.ROOTDump">[docs]</a><span class="k">class</span> <span class="nc">ROOTDump</span><span class="p">(</span><span class="n">TableFormat</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Write data to ROOT file</span>
 
 <span class="sd">    Convert numpy structered array, every array becomes a TTree.</span>
@@ -218,7 +231,7 @@
         <span class="c"># by python, avoiding segfaults when garbage collecting</span>
         <span class="n">ROOT</span><span class="o">.</span><span class="n">TTree</span><span class="o">.</span><span class="n">__init__</span><span class="o">.</span><span class="n">_creates</span> <span class="o">=</span> <span class="bp">False</span>
         <span class="c"># DON&#39;T use the Python3 super trick here, we want this code to run in python2 as well!</span>
-        <span class="n">BulkOutputFormat</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">TableFormat</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 <div class="viewcode-block" id="ROOTDump.open"><a class="viewcode-back" href="../../pax.html#pax.formats.ROOTDump.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">mode</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s">&#39;w&#39;</span><span class="p">:</span>
@@ -333,7 +346,7 @@
 <span class="c"># Pandas data formats</span>
 <span class="c">##</span>
 </div></div>
-<div class="viewcode-block" id="PandasFormat"><a class="viewcode-back" href="../../pax.html#pax.formats.PandasFormat">[docs]</a><span class="k">class</span> <span class="nc">PandasFormat</span><span class="p">(</span><span class="n">BulkOutputFormat</span><span class="p">):</span>
+<div class="viewcode-block" id="PandasFormat"><a class="viewcode-back" href="../../pax.html#pax.formats.PandasFormat">[docs]</a><span class="k">class</span> <span class="nc">PandasFormat</span><span class="p">(</span><span class="n">TableFormat</span><span class="p">):</span>
     <span class="n">pandas_format_key</span> <span class="o">=</span> <span class="bp">None</span>
     <span class="n">supports_array_fields</span> <span class="o">=</span> <span class="bp">False</span>
 
@@ -438,15 +451,7 @@
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper"><div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../../index.html">Documentation overview</a><ul>
-  <li><a href="../index.html">Module code</a><ul>
-  </ul></li>
-  </ul></li>
-</ul>
-</div>
+        <div class="sphinxsidebarwrapper">
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
@@ -469,7 +474,7 @@
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
       
     </div>
 

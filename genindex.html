@@ -30,7 +30,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">  
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="#" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="index.html">Processor for Analyzing XENON1T 3.2.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -114,18 +126,10 @@
   <dt><a href="pax.html#pax.plugin.BasePlugin">BasePlugin (class in pax.plugin)</a>
   </dt>
 
-      
-  <dt><a href="format.html#pax.datastructure.Peak.bottom_hitpattern_spread">bottom_hitpattern_spread (pax.datastructure.Peak attribute)</a>, <a href="pax.html#pax.datastructure.Peak.bottom_hitpattern_spread">[1]</a>
-  </dt>
-
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="pax.plugins.io.html#pax.plugins.io.BulkOutput.BulkOutput">BulkOutput (class in pax.plugins.io.BulkOutput)</a>
-  </dt>
-
-      
-  <dt><a href="pax.html#pax.formats.BulkOutputFormat">BulkOutputFormat (class in pax.formats)</a>
+  <dt><a href="format.html#pax.datastructure.Peak.bottom_hitpattern_spread">bottom_hitpattern_spread (pax.datastructure.Peak attribute)</a>, <a href="pax.html#pax.datastructure.Peak.bottom_hitpattern_spread">[1]</a>
   </dt>
 
   </dl></td>
@@ -174,10 +178,6 @@
   </dt>
 
         
-  <dt><a href="pax.html#pax.formats.BulkOutputFormat.close">(pax.formats.BulkOutputFormat method)</a>
-  </dt>
-
-        
   <dt><a href="pax.html#pax.formats.HDF5Dump.close">(pax.formats.HDF5Dump method)</a>
   </dt>
 
@@ -191,6 +191,10 @@
 
         
   <dt><a href="pax.html#pax.formats.ROOTDump.close">(pax.formats.ROOTDump method)</a>
+  </dt>
+
+        
+  <dt><a href="pax.html#pax.formats.TableFormat.close">(pax.formats.TableFormat method)</a>
   </dt>
 
         
@@ -290,10 +294,6 @@
   <dt><a href="format.html#pax.datastructure.Peak.contributing_channels">contributing_channels (pax.datastructure.Peak attribute)</a>, <a href="pax.html#pax.datastructure.Peak.contributing_channels">[1]</a>
   </dt>
 
-      
-  <dt><a href="pax.plugins.io.html#pax.plugins.io.BulkOutput.ReadFromBulkOutput.convert_record">convert_record() (pax.plugins.io.BulkOutput.ReadFromBulkOutput method)</a>
-  </dt>
-
   </dl></td>
 </tr></table>
 
@@ -309,14 +309,10 @@
   </dt>
 
       
-  <dt><a href="pax.html#pax.formats.BulkOutputFormat.data_types_present">data_types_present (pax.formats.BulkOutputFormat attribute)</a>
+  <dt><a href="pax.html#pax.formats.HDF5Dump.data_types_present">data_types_present (pax.formats.HDF5Dump attribute)</a>
   </dt>
 
       <dd><dl>
-        
-  <dt><a href="pax.html#pax.formats.HDF5Dump.data_types_present">(pax.formats.HDF5Dump attribute)</a>
-  </dt>
-
         
   <dt><a href="pax.html#pax.formats.NumpyDump.data_types_present">(pax.formats.NumpyDump attribute)</a>
   </dt>
@@ -327,6 +323,10 @@
 
         
   <dt><a href="pax.html#pax.formats.ROOTDump.data_types_present">(pax.formats.ROOTDump attribute)</a>
+  </dt>
+
+        
+  <dt><a href="pax.html#pax.formats.TableFormat.data_types_present">(pax.formats.TableFormat attribute)</a>
   </dt>
 
       </dl></dd>
@@ -352,38 +352,22 @@
   <dt><a href="pax.plugins.io.html#pax.plugins.io.Pickle.DirWithPickleFiles">DirWithPickleFiles (class in pax.plugins.io.Pickle)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="pax.html#pax.simulation.distribute_photons_by_lcemap">distribute_photons_by_lcemap() (in module pax.simulation)</a>
+  <dt><a href="pax.html#pax.simulation.Simulator.distribute_photons_by_lcemap">distribute_photons_by_lcemap() (pax.simulation.Simulator method)</a>, <a href="simulator.html#pax.simulation.Simulator.distribute_photons_by_lcemap">[1]</a>
+  </dt>
+
+      
+  <dt><a href="pax.html#pax.simulation.Simulator.distribute_s2_photons">distribute_s2_photons() (pax.simulation.Simulator method)</a>, <a href="simulator.html#pax.simulation.Simulator.distribute_s2_photons">[1]</a>
   </dt>
 
       
   <dt><a href="format.html#pax.datastructure.Peak.does_channel_contribute">does_channel_contribute (pax.datastructure.Peak attribute)</a>, <a href="pax.html#pax.datastructure.Peak.does_channel_contribute">[1]</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="format.html#pax.datastructure.Peak.does_channel_have_noise">does_channel_have_noise (pax.datastructure.Peak attribute)</a>, <a href="pax.html#pax.datastructure.Peak.does_channel_have_noise">[1]</a>
-  </dt>
-
-      
-  <dt><a href="pax.plugins.for_tests.html#pax.plugins.for_tests.Dummy.DummyInput">DummyInput (class in pax.plugins.for_tests.Dummy)</a>
-  </dt>
-
-      
-  <dt><a href="pax.plugins.for_tests.html#pax.plugins.for_tests.Dummy.DummyOutput">DummyOutput (class in pax.plugins.for_tests.Dummy)</a>
-  </dt>
-
-      
-  <dt><a href="pax.plugins.for_tests.html#pax.plugins.for_tests.Dummy.DummyTransform">DummyTransform (class in pax.plugins.for_tests.Dummy)</a>
-  </dt>
-
-      
-  <dt><a href="pax.plugins.for_tests.html#pax.plugins.for_tests.Dummy.DummyTransform2">DummyTransform2 (class in pax.plugins.for_tests.Dummy)</a>
-  </dt>
-
-      
-  <dt><a href="pax.plugins.for_tests.html#pax.plugins.for_tests.Dummy.DummyTransform3">DummyTransform3 (class in pax.plugins.for_tests.Dummy)</a>
   </dt>
 
       
@@ -408,18 +392,14 @@
   <dt><a href="format.html#pax.datastructure.Event">Event (class in pax.datastructure)</a>, <a href="pax.html#pax.datastructure.Event">[1]</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="format.html#pax.datastructure.Event.event_number">event_number (pax.datastructure.Event attribute)</a>, <a href="pax.html#pax.datastructure.Event.event_number">[1]</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="pax.html#pax.plugin.EventLoggingAdapter">EventLoggingAdapter (class in pax.plugin)</a>
-  </dt>
-
-      
-  <dt><a href="pax.plugins.corrections.html#pax.plugins.corrections.ExampleCorrection.ExampleCorrection">ExampleCorrection (class in pax.plugins.corrections.ExampleCorrection)</a>
   </dt>
 
   </dl></td>
@@ -446,10 +426,6 @@
   </dt>
 
         
-  <dt><a href="pax.html#pax.formats.BulkOutputFormat.file_extension">(pax.formats.BulkOutputFormat attribute)</a>
-  </dt>
-
-        
   <dt><a href="pax.html#pax.formats.HDF5Dump.file_extension">(pax.formats.HDF5Dump attribute)</a>
   </dt>
 
@@ -463,6 +439,10 @@
 
         
   <dt><a href="pax.html#pax.formats.ROOTDump.file_extension">(pax.formats.ROOTDump attribute)</a>
+  </dt>
+
+        
+  <dt><a href="pax.html#pax.formats.TableFormat.file_extension">(pax.formats.TableFormat attribute)</a>
   </dt>
 
         
@@ -588,14 +568,6 @@
   </dt>
 
         
-  <dt><a href="pax.plugins.for_tests.html#pax.plugins.for_tests.Dummy.DummyInput.get_events">(pax.plugins.for_tests.Dummy.DummyInput method)</a>
-  </dt>
-
-        
-  <dt><a href="pax.plugins.io.html#pax.plugins.io.BulkOutput.ReadFromBulkOutput.get_events">(pax.plugins.io.BulkOutput.ReadFromBulkOutput method)</a>
-  </dt>
-
-        
   <dt><a href="eventbuilder.html#pax.plugins.io.MongoDB.MongoDBReadUntriggered.get_events">(pax.plugins.io.MongoDB.MongoDBReadUntriggered method)</a>, <a href="pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBReadUntriggered.get_events">[1]</a>
   </dt>
 
@@ -604,7 +576,7 @@
   </dt>
 
         
-  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.get_events">(pax.plugins.io.WaveformSimulator.WaveformSimulator method)</a>
+  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.get_events">(pax.plugins.io.WaveformSimulator.WaveformSimulator method)</a>, <a href="simulator.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.get_events">[1]</a>
   </dt>
 
       </dl></dd>
@@ -631,20 +603,16 @@
   </dt>
 
       
-  <dt><a href="pax.plugins.io.html#pax.plugins.io.BulkOutput.BulkOutput.get_index_of">get_index_of() (pax.plugins.io.BulkOutput.BulkOutput method)</a>
-  </dt>
-
-      
-  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.get_instructions_for_next_event">get_instructions_for_next_event() (pax.plugins.io.WaveformSimulator.WaveformSimulator method)</a>
+  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.get_instructions_for_next_event">get_instructions_for_next_event() (pax.plugins.io.WaveformSimulator.WaveformSimulator method)</a>, <a href="simulator.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.get_instructions_for_next_event">[1]</a>
   </dt>
 
       <dd><dl>
         
-  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromCSV.get_instructions_for_next_event">(pax.plugins.io.WaveformSimulator.WaveformSimulatorFromCSV method)</a>
+  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromCSV.get_instructions_for_next_event">(pax.plugins.io.WaveformSimulator.WaveformSimulatorFromCSV method)</a>, <a href="simulator.html#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromCSV.get_instructions_for_next_event">[1]</a>
   </dt>
 
         
-  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST.get_instructions_for_next_event">(pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST method)</a>
+  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST.get_instructions_for_next_event">(pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST method)</a>, <a href="simulator.html#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST.get_instructions_for_next_event">[1]</a>
   </dt>
 
       </dl></dd>
@@ -653,15 +621,15 @@
   </dt>
 
       
-  <dt><a href="pax.html#pax.simulation.Simulator.get_luminescence_times">get_luminescence_times() (pax.simulation.Simulator method)</a>
+  <dt><a href="pax.html#pax.simulation.Simulator.get_luminescence_times">get_luminescence_times() (pax.simulation.Simulator method)</a>, <a href="simulator.html#pax.simulation.Simulator.get_luminescence_times">[1]</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="pax.html#pax.core.Processor.get_metadata">get_metadata() (pax.core.Processor method)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="pax.html#pax.utils.get_named_configuration_options">get_named_configuration_options() (in module pax.utils)</a>
   </dt>
@@ -911,7 +879,7 @@
   </dt>
 
       
-  <dt><a href="pax.html#pax.simulation.Simulator.make_hitpattern">make_hitpattern() (pax.simulation.Simulator method)</a>
+  <dt><a href="pax.html#pax.simulation.Simulator.make_hitpattern">make_hitpattern() (pax.simulation.Simulator method)</a>, <a href="simulator.html#pax.simulation.Simulator.make_hitpattern">[1]</a>
   </dt>
 
       
@@ -1064,10 +1032,6 @@
   </dt>
 
         
-  <dt><a href="pax.html#pax.formats.BulkOutputFormat.open">(pax.formats.BulkOutputFormat method)</a>
-  </dt>
-
-        
   <dt><a href="pax.html#pax.formats.HDF5Dump.open">(pax.formats.HDF5Dump method)</a>
   </dt>
 
@@ -1085,6 +1049,10 @@
 
         
   <dt><a href="pax.html#pax.formats.ROOTDump.open">(pax.formats.ROOTDump method)</a>
+  </dt>
+
+        
+  <dt><a href="pax.html#pax.formats.TableFormat.open">(pax.formats.TableFormat method)</a>
   </dt>
 
         
@@ -1235,15 +1203,7 @@
   </dt>
 
       
-  <dt><a href="pax.plugins.corrections.html#module-pax.plugins.corrections.ExampleCorrection">pax.plugins.corrections.ExampleCorrection (module)</a>
-  </dt>
-
-      
   <dt><a href="pax.plugins.for_tests.html#module-pax.plugins.for_tests">pax.plugins.for_tests (module)</a>
-  </dt>
-
-      
-  <dt><a href="pax.plugins.for_tests.html#module-pax.plugins.for_tests.Dummy">pax.plugins.for_tests.Dummy (module)</a>
   </dt>
 
       
@@ -1259,10 +1219,6 @@
   </dt>
 
       
-  <dt><a href="pax.plugins.io.html#module-pax.plugins.io.BulkOutput">pax.plugins.io.BulkOutput (module)</a>
-  </dt>
-
-      
   <dt><a href="eventbuilder.html#module-pax.plugins.io.MongoDB">pax.plugins.io.MongoDB (module)</a>, <a href="pax.plugins.io.html#module-pax.plugins.io.MongoDB">[1]</a>
   </dt>
 
@@ -1275,7 +1231,7 @@
   </dt>
 
       
-  <dt><a href="pax.plugins.io.html#module-pax.plugins.io.WaveformSimulator">pax.plugins.io.WaveformSimulator (module)</a>
+  <dt><a href="pax.plugins.io.html#module-pax.plugins.io.WaveformSimulator">pax.plugins.io.WaveformSimulator (module)</a>, <a href="simulator.html#module-pax.plugins.io.WaveformSimulator">[1]</a>
   </dt>
 
       
@@ -1286,12 +1242,12 @@
   <dt><a href="pax.plugins.posrec.html#module-pax.plugins.posrec">pax.plugins.posrec (module)</a>
   </dt>
 
-  </dl></td>
-  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="pax.plugins.posrec.html#module-pax.plugins.posrec.MaxPMT">pax.plugins.posrec.MaxPMT (module)</a>
   </dt>
 
+  </dl></td>
+  <td style="width: 33%" valign="top"><dl>
       
   <dt><a href="pax.plugins.posrec.html#module-pax.plugins.posrec.NeuralNet">pax.plugins.posrec.NeuralNet (module)</a>
   </dt>
@@ -1321,7 +1277,7 @@
   </dt>
 
       
-  <dt><a href="pax.html#module-pax.simulation">pax.simulation (module)</a>
+  <dt><a href="pax.html#module-pax.simulation">pax.simulation (module)</a>, <a href="simulator.html#module-pax.simulation">[1]</a>
   </dt>
 
       
@@ -1349,7 +1305,7 @@
   </dt>
 
       
-  <dt><a href="pax.html#pax.simulation.Simulator.pmt_pulse_current">pmt_pulse_current() (pax.simulation.Simulator method)</a>
+  <dt><a href="pax.html#pax.simulation.Simulator.pmt_pulse_current">pmt_pulse_current() (pax.simulation.Simulator method)</a>, <a href="simulator.html#pax.simulation.Simulator.pmt_pulse_current">[1]</a>
   </dt>
 
       
@@ -1369,12 +1325,12 @@
   </dt>
 
       
-  <dt><a href="pax.html#pax.formats.BulkOutputFormat.prefers_python_strings">prefers_python_strings (pax.formats.BulkOutputFormat attribute)</a>
+  <dt><a href="pax.html#pax.formats.PandasHDF5.prefers_python_strings">prefers_python_strings (pax.formats.PandasHDF5 attribute)</a>
   </dt>
 
       <dd><dl>
         
-  <dt><a href="pax.html#pax.formats.PandasHDF5.prefers_python_strings">(pax.formats.PandasHDF5 attribute)</a>
+  <dt><a href="pax.html#pax.formats.TableFormat.prefers_python_strings">(pax.formats.TableFormat attribute)</a>
   </dt>
 
       </dl></dd>
@@ -1427,7 +1383,7 @@
   </dt>
 
       
-  <dt><a href="pax.html#pax.simulation.randomize_photons_over_channels">randomize_photons_over_channels() (in module pax.simulation)</a>
+  <dt><a href="pax.html#pax.simulation.Simulator.randomize_photons_over_channels">randomize_photons_over_channels() (pax.simulation.Simulator method)</a>, <a href="simulator.html#pax.simulation.Simulator.randomize_photons_over_channels">[1]</a>
   </dt>
 
       
@@ -1443,14 +1399,10 @@
   </dt>
 
       
-  <dt><a href="pax.html#pax.formats.BulkOutputFormat.read_data">read_data() (pax.formats.BulkOutputFormat method)</a>
+  <dt><a href="pax.html#pax.formats.HDF5Dump.read_data">read_data() (pax.formats.HDF5Dump method)</a>
   </dt>
 
       <dd><dl>
-        
-  <dt><a href="pax.html#pax.formats.HDF5Dump.read_data">(pax.formats.HDF5Dump method)</a>
-  </dt>
-
         
   <dt><a href="pax.html#pax.formats.NumpyDump.read_data">(pax.formats.NumpyDump method)</a>
   </dt>
@@ -1463,6 +1415,10 @@
   <dt><a href="pax.html#pax.formats.ROOTDump.read_data">(pax.formats.ROOTDump method)</a>
   </dt>
 
+        
+  <dt><a href="pax.html#pax.formats.TableFormat.read_data">(pax.formats.TableFormat method)</a>
+  </dt>
+
       </dl></dd>
       
   <dt><a href="pax.plugins.io.html#pax.plugins.io.Avro.ReadAvro">ReadAvro (class in pax.plugins.io.Avro)</a>
@@ -1470,10 +1426,6 @@
 
       
   <dt><a href="pax.plugins.io.html#pax.plugins.io.BSON.ReadBSON">ReadBSON (class in pax.plugins.io.BSON)</a>
-  </dt>
-
-      
-  <dt><a href="pax.plugins.io.html#pax.plugins.io.BulkOutput.ReadFromBulkOutput">ReadFromBulkOutput (class in pax.plugins.io.BulkOutput)</a>
   </dt>
 
       
@@ -1545,11 +1497,11 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.s1">s1() (pax.plugins.io.WaveformSimulator.WaveformSimulator method)</a>
+  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.s1">s1() (pax.plugins.io.WaveformSimulator.WaveformSimulator method)</a>, <a href="simulator.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.s1">[1]</a>
   </dt>
 
       
-  <dt><a href="pax.html#pax.simulation.Simulator.s1_photons">s1_photons() (pax.simulation.Simulator method)</a>
+  <dt><a href="pax.html#pax.simulation.Simulator.s1_photons">s1_photons() (pax.simulation.Simulator method)</a>, <a href="simulator.html#pax.simulation.Simulator.s1_photons">[1]</a>
   </dt>
 
       
@@ -1557,15 +1509,15 @@
   </dt>
 
       
-  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.s2">s2() (pax.plugins.io.WaveformSimulator.WaveformSimulator method)</a>
+  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.s2">s2() (pax.plugins.io.WaveformSimulator.WaveformSimulator method)</a>, <a href="simulator.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.s2">[1]</a>
   </dt>
 
       
-  <dt><a href="pax.html#pax.simulation.Simulator.s2_electrons">s2_electrons() (pax.simulation.Simulator method)</a>
+  <dt><a href="pax.html#pax.simulation.Simulator.s2_electrons">s2_electrons() (pax.simulation.Simulator method)</a>, <a href="simulator.html#pax.simulation.Simulator.s2_electrons">[1]</a>
   </dt>
 
       
-  <dt><a href="pax.html#pax.simulation.Simulator.s2_scintillation">s2_scintillation() (pax.simulation.Simulator method)</a>
+  <dt><a href="pax.html#pax.simulation.Simulator.s2_scintillation">s2_scintillation() (pax.simulation.Simulator method)</a>, <a href="simulator.html#pax.simulation.Simulator.s2_scintillation">[1]</a>
   </dt>
 
       
@@ -1618,19 +1570,15 @@
   </dt>
 
         
-  <dt><a href="pax.plugins.io.html#pax.plugins.io.BulkOutput.BulkOutput.shutdown">(pax.plugins.io.BulkOutput.BulkOutput method)</a>
-  </dt>
-
-        
   <dt><a href="eventbuilder.html#pax.plugins.io.MongoDB.IOMongoDB.shutdown">(pax.plugins.io.MongoDB.IOMongoDB method)</a>, <a href="pax.plugins.io.html#pax.plugins.io.MongoDB.IOMongoDB.shutdown">[1]</a>
   </dt>
 
         
-  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.shutdown">(pax.plugins.io.WaveformSimulator.WaveformSimulator method)</a>
+  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.shutdown">(pax.plugins.io.WaveformSimulator.WaveformSimulator method)</a>, <a href="simulator.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.shutdown">[1]</a>
   </dt>
 
         
-  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromCSV.shutdown">(pax.plugins.io.WaveformSimulator.WaveformSimulatorFromCSV method)</a>
+  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromCSV.shutdown">(pax.plugins.io.WaveformSimulator.WaveformSimulatorFromCSV method)</a>, <a href="simulator.html#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromCSV.shutdown">[1]</a>
   </dt>
 
         
@@ -1639,21 +1587,21 @@
 
       </dl></dd>
       
-  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.simulate_single_event">simulate_single_event() (pax.plugins.io.WaveformSimulator.WaveformSimulator method)</a>
+  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.simulate_single_event">simulate_single_event() (pax.plugins.io.WaveformSimulator.WaveformSimulator method)</a>, <a href="simulator.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.simulate_single_event">[1]</a>
   </dt>
 
       
-  <dt><a href="pax.html#pax.simulation.SimulatedHitpattern">SimulatedHitpattern (class in pax.simulation)</a>
+  <dt><a href="pax.html#pax.simulation.SimulatedHitpattern">SimulatedHitpattern (class in pax.simulation)</a>, <a href="simulator.html#pax.simulation.SimulatedHitpattern">[1]</a>
   </dt>
 
       
-  <dt><a href="pax.html#pax.simulation.Simulator">Simulator (class in pax.simulation)</a>
+  <dt><a href="pax.html#pax.simulation.Simulator">Simulator (class in pax.simulation)</a>, <a href="simulator.html#pax.simulation.Simulator">[1]</a>
   </dt>
 
   </dl></td>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="pax.html#pax.simulation.Simulator.singlet_triplet_delays">singlet_triplet_delays() (pax.simulation.Simulator method)</a>
+  <dt><a href="pax.html#pax.simulation.Simulator.singlet_triplet_delays">singlet_triplet_delays() (pax.simulation.Simulator method)</a>, <a href="simulator.html#pax.simulation.Simulator.singlet_triplet_delays">[1]</a>
   </dt>
 
       
@@ -1690,19 +1638,7 @@
   </dt>
 
         
-  <dt><a href="pax.plugins.corrections.html#pax.plugins.corrections.ExampleCorrection.ExampleCorrection.startup">(pax.plugins.corrections.ExampleCorrection.ExampleCorrection method)</a>
-  </dt>
-
-        
   <dt><a href="pax.plugins.io.html#pax.plugins.io.Avro.WriteAvro.startup">(pax.plugins.io.Avro.WriteAvro method)</a>
-  </dt>
-
-        
-  <dt><a href="pax.plugins.io.html#pax.plugins.io.BulkOutput.BulkOutput.startup">(pax.plugins.io.BulkOutput.BulkOutput method)</a>
-  </dt>
-
-        
-  <dt><a href="pax.plugins.io.html#pax.plugins.io.BulkOutput.ReadFromBulkOutput.startup">(pax.plugins.io.BulkOutput.ReadFromBulkOutput method)</a>
   </dt>
 
         
@@ -1730,15 +1666,15 @@
   </dt>
 
         
-  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.startup">(pax.plugins.io.WaveformSimulator.WaveformSimulator method)</a>
+  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.startup">(pax.plugins.io.WaveformSimulator.WaveformSimulator method)</a>, <a href="simulator.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.startup">[1]</a>
   </dt>
 
         
-  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromCSV.startup">(pax.plugins.io.WaveformSimulator.WaveformSimulatorFromCSV method)</a>
+  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromCSV.startup">(pax.plugins.io.WaveformSimulator.WaveformSimulatorFromCSV method)</a>, <a href="simulator.html#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromCSV.startup">[1]</a>
   </dt>
 
         
-  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST.startup">(pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST method)</a>
+  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST.startup">(pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST method)</a>, <a href="simulator.html#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST.startup">[1]</a>
   </dt>
 
         
@@ -1787,7 +1723,7 @@
   </dt>
 
       
-  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.store_true_peak">store_true_peak() (pax.plugins.io.WaveformSimulator.WaveformSimulator method)</a>
+  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.store_true_peak">store_true_peak() (pax.plugins.io.WaveformSimulator.WaveformSimulator method)</a>, <a href="simulator.html#pax.plugins.io.WaveformSimulator.WaveformSimulator.store_true_peak">[1]</a>
   </dt>
 
       
@@ -1811,24 +1747,20 @@
   </dt>
 
       
-  <dt><a href="pax.html#pax.formats.BulkOutputFormat.supports_append">supports_append (pax.formats.BulkOutputFormat attribute)</a>
+  <dt><a href="pax.html#pax.formats.PandasHDF5.supports_append">supports_append (pax.formats.PandasHDF5 attribute)</a>
   </dt>
 
       <dd><dl>
         
-  <dt><a href="pax.html#pax.formats.PandasHDF5.supports_append">(pax.formats.PandasHDF5 attribute)</a>
+  <dt><a href="pax.html#pax.formats.TableFormat.supports_append">(pax.formats.TableFormat attribute)</a>
   </dt>
 
       </dl></dd>
       
-  <dt><a href="pax.html#pax.formats.BulkOutputFormat.supports_array_fields">supports_array_fields (pax.formats.BulkOutputFormat attribute)</a>
+  <dt><a href="pax.html#pax.formats.HDF5Dump.supports_array_fields">supports_array_fields (pax.formats.HDF5Dump attribute)</a>
   </dt>
 
       <dd><dl>
-        
-  <dt><a href="pax.html#pax.formats.HDF5Dump.supports_array_fields">(pax.formats.HDF5Dump attribute)</a>
-  </dt>
-
         
   <dt><a href="pax.html#pax.formats.NumpyDump.supports_array_fields">(pax.formats.NumpyDump attribute)</a>
   </dt>
@@ -1841,16 +1773,16 @@
   <dt><a href="pax.html#pax.formats.ROOTDump.supports_array_fields">(pax.formats.ROOTDump attribute)</a>
   </dt>
 
+        
+  <dt><a href="pax.html#pax.formats.TableFormat.supports_array_fields">(pax.formats.TableFormat attribute)</a>
+  </dt>
+
       </dl></dd>
       
-  <dt><a href="pax.html#pax.formats.BulkOutputFormat.supports_read_back">supports_read_back (pax.formats.BulkOutputFormat attribute)</a>
+  <dt><a href="pax.html#pax.formats.HDF5Dump.supports_read_back">supports_read_back (pax.formats.HDF5Dump attribute)</a>
   </dt>
 
       <dd><dl>
-        
-  <dt><a href="pax.html#pax.formats.HDF5Dump.supports_read_back">(pax.formats.HDF5Dump attribute)</a>
-  </dt>
-
         
   <dt><a href="pax.html#pax.formats.NumpyDump.supports_read_back">(pax.formats.NumpyDump attribute)</a>
   </dt>
@@ -1863,22 +1795,26 @@
   <dt><a href="pax.html#pax.formats.ROOTDump.supports_read_back">(pax.formats.ROOTDump attribute)</a>
   </dt>
 
+        
+  <dt><a href="pax.html#pax.formats.TableFormat.supports_read_back">(pax.formats.TableFormat attribute)</a>
+  </dt>
+
       </dl></dd>
       
-  <dt><a href="pax.html#pax.formats.BulkOutputFormat.supports_write_in_chunks">supports_write_in_chunks (pax.formats.BulkOutputFormat attribute)</a>
+  <dt><a href="pax.html#pax.formats.HDF5Dump.supports_write_in_chunks">supports_write_in_chunks (pax.formats.HDF5Dump attribute)</a>
   </dt>
 
       <dd><dl>
-        
-  <dt><a href="pax.html#pax.formats.HDF5Dump.supports_write_in_chunks">(pax.formats.HDF5Dump attribute)</a>
-  </dt>
-
         
   <dt><a href="pax.html#pax.formats.PandasHDF5.supports_write_in_chunks">(pax.formats.PandasHDF5 attribute)</a>
   </dt>
 
         
   <dt><a href="pax.html#pax.formats.ROOTDump.supports_write_in_chunks">(pax.formats.ROOTDump attribute)</a>
+  </dt>
+
+        
+  <dt><a href="pax.html#pax.formats.TableFormat.supports_write_in_chunks">(pax.formats.TableFormat attribute)</a>
   </dt>
 
       </dl></dd>
@@ -1888,6 +1824,10 @@
 <h2 id="T">T</h2>
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
+      
+  <dt><a href="pax.html#pax.formats.TableFormat">TableFormat (class in pax.formats)</a>
+  </dt>
+
       
   <dt><a href="pax.html#pax.utils.Timer">Timer (class in pax.utils)</a>
   </dt>
@@ -1905,7 +1845,7 @@
   </dt>
 
       
-  <dt><a href="pax.html#pax.simulation.Simulator.to_pax_event">to_pax_event() (pax.simulation.Simulator method)</a>
+  <dt><a href="pax.html#pax.simulation.Simulator.to_pax_event">to_pax_event() (pax.simulation.Simulator method)</a>, <a href="simulator.html#pax.simulation.Simulator.to_pax_event">[1]</a>
   </dt>
 
   </dl></td>
@@ -1919,10 +1859,6 @@
   </dt>
 
       <dd><dl>
-        
-  <dt><a href="pax.plugins.corrections.html#pax.plugins.corrections.ExampleCorrection.ExampleCorrection.transform_event">(pax.plugins.corrections.ExampleCorrection.ExampleCorrection method)</a>
-  </dt>
-
         
   <dt><a href="eventbuilder.html#pax.plugins.io.MongoDB.MongoDBReadUntriggeredFiller.transform_event">(pax.plugins.io.MongoDB.MongoDBReadUntriggeredFiller method)</a>, <a href="pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBReadUntriggeredFiller.transform_event">[1]</a>
   </dt>
@@ -1969,7 +1905,7 @@
   </dt>
 
       
-  <dt><a href="pax.html#pax.simulation.truncated_gauss_rvs">truncated_gauss_rvs() (in module pax.simulation)</a>
+  <dt><a href="pax.html#pax.simulation.truncated_gauss_rvs">truncated_gauss_rvs() (in module pax.simulation)</a>, <a href="simulator.html#pax.simulation.truncated_gauss_rvs">[1]</a>
   </dt>
 
       
@@ -1983,7 +1919,7 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.uniform_circle_rv">uniform_circle_rv() (in module pax.plugins.io.WaveformSimulator)</a>
+  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.uniform_circle_rv">uniform_circle_rv() (in module pax.plugins.io.WaveformSimulator)</a>, <a href="simulator.html#pax.plugins.io.WaveformSimulator.uniform_circle_rv">[1]</a>
   </dt>
 
       
@@ -2003,7 +1939,7 @@
 <table style="width: 100%" class="indextable genindextable"><tr>
   <td style="width: 33%" valign="top"><dl>
       
-  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST.variables">variables (pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST attribute)</a>
+  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST.variables">variables (pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST attribute)</a>, <a href="simulator.html#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST.variables">[1]</a>
   </dt>
 
   </dl></td>
@@ -2023,15 +1959,15 @@
   </dt>
 
       
-  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulator">WaveformSimulator (class in pax.plugins.io.WaveformSimulator)</a>
+  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulator">WaveformSimulator (class in pax.plugins.io.WaveformSimulator)</a>, <a href="simulator.html#pax.plugins.io.WaveformSimulator.WaveformSimulator">[1]</a>
   </dt>
 
       
-  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromCSV">WaveformSimulatorFromCSV (class in pax.plugins.io.WaveformSimulator)</a>
+  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromCSV">WaveformSimulatorFromCSV (class in pax.plugins.io.WaveformSimulator)</a>, <a href="simulator.html#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromCSV">[1]</a>
   </dt>
 
       
-  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST">WaveformSimulatorFromNEST (class in pax.plugins.io.WaveformSimulator)</a>
+  <dt><a href="pax.plugins.io.html#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST">WaveformSimulatorFromNEST (class in pax.plugins.io.WaveformSimulator)</a>, <a href="simulator.html#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST">[1]</a>
   </dt>
 
       
@@ -2039,14 +1975,10 @@
   </dt>
 
       
-  <dt><a href="pax.html#pax.formats.BulkOutputFormat.write_data">write_data() (pax.formats.BulkOutputFormat method)</a>
+  <dt><a href="pax.html#pax.formats.HDF5Dump.write_data">write_data() (pax.formats.HDF5Dump method)</a>
   </dt>
 
       <dd><dl>
-        
-  <dt><a href="pax.html#pax.formats.HDF5Dump.write_data">(pax.formats.HDF5Dump method)</a>
-  </dt>
-
         
   <dt><a href="pax.html#pax.formats.NumpyDump.write_data">(pax.formats.NumpyDump method)</a>
   </dt>
@@ -2059,6 +1991,10 @@
   <dt><a href="pax.html#pax.formats.ROOTDump.write_data">(pax.formats.ROOTDump method)</a>
   </dt>
 
+        
+  <dt><a href="pax.html#pax.formats.TableFormat.write_data">(pax.formats.TableFormat method)</a>
+  </dt>
+
       </dl></dd>
       
   <dt><a href="pax.html#pax.FolderIO.WriteToFolder.write_event">write_event() (pax.FolderIO.WriteToFolder method)</a>
@@ -2067,14 +2003,6 @@
       <dd><dl>
         
   <dt><a href="pax.html#pax.plugin.OutputPlugin.write_event">(pax.plugin.OutputPlugin method)</a>
-  </dt>
-
-        
-  <dt><a href="pax.plugins.for_tests.html#pax.plugins.for_tests.Dummy.DummyOutput.write_event">(pax.plugins.for_tests.Dummy.DummyOutput method)</a>
-  </dt>
-
-        
-  <dt><a href="pax.plugins.io.html#pax.plugins.io.BulkOutput.BulkOutput.write_event">(pax.plugins.io.BulkOutput.BulkOutput method)</a>
   </dt>
 
         
@@ -2193,13 +2121,7 @@
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
         <div class="sphinxsidebarwrapper">
 
-   <div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="index.html">Documentation overview</a><ul>
-  </ul></li>
-</ul>
-</div>
+   
 
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
@@ -2223,7 +2145,7 @@
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
       
     </div>
 
