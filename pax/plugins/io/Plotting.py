@@ -692,6 +692,8 @@ class PeakViewer(PlotBase):
                                                                                       peak.range_90p_area)
         self.peak_text.set_text(self.wrap_multiline(peak_text, self.max_characters))
 
+        plt.draw()
+
     @staticmethod
     def wrap_multiline(text, max_characters):
         return "\n".join(["\n".join(textwrap.wrap(q, max_characters)) for q in text.splitlines()])
