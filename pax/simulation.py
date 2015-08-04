@@ -510,6 +510,9 @@ class Simulator(object):
                                          If omitted, will distribute photons uniformly over channels.
         :return: array of length sim.config['n_channels'] with photon counts per channel
         """
+        if n_photons == 0:
+            return np.zeros(self.config['n_channels'])
+
         # Include only channels that can receive photons
         if channels is None:
             channels = np.array(self.config['channels_for_photons'])
