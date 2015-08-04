@@ -31,9 +31,12 @@ scientific python distribution `Anaconda <https://store.continuum.io/cshop/anaco
 
 Alternatively, you can install the vanilla Python 3.4 from the `python webpage <https://www.python.org/>`_ 
 or use a pre-installed python. Please note that
- - Only one version of pax can be installed per python installation,
- - You need write permission to the python distribution's directory, 
- - `pax` does *not* run under with python 2!
+
+
+- Only one version of pax can be installed per python installation,
+- You need write permission to the python distribution's directory, 
+- `pax` does *not* run under with python 2!
+
 
 Additional python packages
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
