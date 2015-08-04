@@ -83,7 +83,7 @@ There are two ways to install pax. Either method will automatically try to insta
 
 Option 1: user installation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In this option the pax code will be hidden away somewhere deep in python so you don't accidentally look at it and learn our dangerous secrets. Also, you will only be able to update pax after we've we make a new release (about once a month). If this appeals to you, run::
+In this option the pax code will be hidden away somewhere deep in python's directory structure so you won't accidentally look at it and learn our dangerous secrets. Also, you will only be able to update pax after we make a new release (about once a month). If this appeals to you, run::
 
     pip install git+https://github.com/XENON1T/pax.git
     
@@ -109,18 +109,16 @@ If you think you've made a useful change, you can contribute it! But please chec
 
 Pax Tutorial
 ============
-Now you should be able to run the command 'paxer --help'.
-
 This section assumes that pax is installed, either from the instructions above
 or via `the FAQ on running the code at LNGS <http://xenon1t.github.io/pax/faq.html#how-do-i-run-pax-at-lngs-on-xecluster>`_.
 
-You can run the program by, for example, running::
+Now you should be able to run the command 
+
+    paxer --help
+    
+from anywhere, which will give you a list of other command line options. If you have a graphical display, try `paxer --plot` and `paxer --plot_interactive`. You select some data with the `--input` option::
 
   paxer --input /archive/data/xenon100/run_14/xe100_150213_1411/xe100_150213_1411_000000.xed --event 0 --plot
-
-For other options and a list of command line arguments, please run::
-
-  paxer --help
 
 If you want to do something nonstandard, you can create your own configuration file
 like `my_file.ini`::
