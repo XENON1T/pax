@@ -32,11 +32,9 @@ scientific python distribution `Anaconda <https://store.continuum.io/cshop/anaco
 Alternatively, you can install the vanilla Python 3.4 from the `python webpage <https://www.python.org/>`_ 
 or use a pre-installed python. Please note that
 
-
-- Only one version of pax can be installed per python installation,
-- You need write permission to the python distribution's directory, 
+- Only one version of pax can be installed per python installation;
+- You need write permission to the python distribution's directory; 
 - `pax` does *not* run under with python 2!
-
 
 Additional python packages
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -112,11 +110,11 @@ Pax Tutorial
 This section assumes that pax is installed, either from the instructions above
 or via `the FAQ on running the code at LNGS <http://xenon1t.github.io/pax/faq.html#how-do-i-run-pax-at-lngs-on-xecluster>`_.
 
-Now you should be able to run the command 
+Now you should be able to run the command::
 
-    paxer --help
+  paxer --help
     
-from anywhere, which will give you a list of other command line options. If you have a graphical display, try `paxer --plot` and `paxer --plot_interactive`. You select some data with the `--input` option::
+from anywhere, which will give you a list of other command line options. If you have a graphical display, try `paxer --plot` and `paxer --plot_interactive`. You can select some data with the `--input` option::
 
   paxer --input /archive/data/xenon100/run_14/xe100_150213_1411/xe100_150213_1411_000000.xed --event 0 --plot
 
@@ -143,8 +141,7 @@ You can uncomment the `output_dir` line to write the plots to a file.  Also, try
 playing with what is in the list of outputs.  For example, you can reactivate
 the `PlotEventSummary` that was produced in the first command from above.
 
-At this point, you can look through other configuration files and explore what
-plugins are in `pax` for doing more sophisticated things. `_base.ini` and `XENON100.ini` are a good place to start.
-
+There are many, many configuration options you can change. 
+You can look through other configuration files such as `_base.ini` and `XENON100.ini` to get an idea of what you can do. Also, you can try to explore what plugins are included in pax. You can ask us questions on gitter (click button above) or email. Oh, and did we mention the the documentation at http://xenon1t.github.io/pax/?
 
 .. [1] *Sneaky snappy workaround*: follow the instructions for 'developer installation', but just before `python setup.py develop`, edit `requirements.txt` in the pax folder and put a comment (`#`) sign in front of the `python-snappy>=0.5` line. Save the file and run `python setup.py develop`. Now you can use pax even if you couldn't install snappy. Har-har. If you use anything that involves the MongoDB interface, pax will crash; don't say we didn't warn you.
