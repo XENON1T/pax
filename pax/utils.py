@@ -211,8 +211,10 @@ class Vector2DGridMap(InterpolatingMap):
         def get_data(x, y):
             if np.isnan(x) or np.isnan(y):
                 return float('nan') * np.ones_like(map_data[0, 0])
+            # Remember we're returning an array now... if you don't copy, you'l get a view...
+            # .. then the map will get modified while pax is running... then you will cry...
             return get_data.map_data[int((x - x_min)/x_spacing + 0.5),
-                                     int((y - y_min)/y_spacing + 0.5)]
+                                     int((y - y_min)/y_spacing + 0.5)].copy()
         get_data.map_data = map_data
 
         return get_data
