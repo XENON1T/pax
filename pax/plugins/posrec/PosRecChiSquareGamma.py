@@ -129,7 +129,8 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
             self.pmt_errors += (self.gain_errors[self.is_pmt_in] / self.gains[self.is_pmt_in]) ** 2
 
             # Calculate which pmt has maximum signal
-            max_pmt_index = np.argmax(self.photons)
+            pmts_in = np.array(self.pmts)[self.is_pmt_in]
+            max_pmt_index = pmts_in[np.argmax(self.photons)]
 
             # Start position for minimizer, if no weighted sum position is present
             # use max pmt location as minimizer start position
