@@ -94,6 +94,9 @@ class Hit(StrictModel):
     #: Set to True if rejected by suspicious channel algorithm
     is_rejected = False
 
+    #: Number of samples with ADC saturation in this hit
+    n_saturated = 0
+
 
 class Peak(StrictModel):
     """Peak
@@ -127,6 +130,12 @@ class Peak(StrictModel):
 
     #: Does a PMT see 'something significant'? (thresholds configurable)
     does_channel_contribute = np.array([], dtype=np.bool)
+
+    #: Number of samples with ADC saturation in this peak, per channel
+    n_saturated_per_channel = np.array([], dtype=np.int16)
+
+    #: Total number of samples with ADC saturation threshold in all channels in this peak
+    n_saturated = 0
 
     @property
     def contributing_channels(self):
@@ -497,7 +506,7 @@ class Event(StrictModel):
         The returned list is sorted DESCENDING (i.e. reversed!) by the key sort_key (default area)
         unless you pass reverse=False, then it is ascending.
         """
-        return self.get_peaks_by_type('s1', sort_key, reverse, detector)
+        return self.get_peaks_by_type(desired_type='s1', sort_key=sort_key, reverse=reverse, detector=detector)
 
     def S1s(self, *args, **kwargs):
         return self.s1s(*args, **kwargs)
@@ -511,12 +520,12 @@ class Event(StrictModel):
         The returned list is sorted DESCENDING (i.e. reversed!) by the key sort_key (default area)
         unless you pass reverse=False, then it is ascending.
         """
-        return self.get_peaks_by_type('s2', sort_key, reverse, detector)
+        return self.get_peaks_by_type(desired_type='s2', sort_key=sort_key, reverse=reverse, detector=detector)
 
     def S2s(self, *args, **kwargs):
         return self.s2s(*args, **kwargs)
 
-    def get_peaks_by_type(self, desired_type, sort_key='area', reverse=True, detector='tpc'):
+    def get_peaks_by_type(self, desired_type='all', detector='tpc', sort_key='area', reverse=True):
         """Helper function for retrieving only certain types of peaks
         Returns a list of :class:`pax.datastructure.Peak` objects
           whose type is desired_type, and
@@ -527,10 +536,10 @@ class Event(StrictModel):
         # Extract only peaks of a certain type
         peaks = []
         for peak in self.peaks:
-            if peak.detector is not 'all':
+            if peak.detector != 'all':
                 if peak.detector != detector:
                     continue
-            if peak.type.lower() != desired_type:
+            if desired_type != 'all' and peak.type.lower() != desired_type:
                 continue
             peaks.append(peak)
 

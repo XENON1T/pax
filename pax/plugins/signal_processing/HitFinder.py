@@ -1,9 +1,3 @@
-"""Hit finding plugin
-
-
-"""
-
-
 import numpy as np
 import numba
 
@@ -187,6 +181,13 @@ class FindHits(plugin.TransformPlugin):
                                            height, noise_sigma_pe, high_threshold * adc_to_pe,
                                            area))
 
+                # If the pulse reached saturation, we should also count the saturation in each hit
+                # This is rare enough that it doesn't need to be in numba
+                n_saturated = 0
+                if pulse.maximum - pulse.baseline >= self.config['digitizer_reference_baseline']:
+                    n_saturated = np.count_nonzero(w[hit[0]:hit[1] + 1] >=
+                                                   self.config['digitizer_reference_baseline'] - pulse.baseline)
+
                 # Store the hit
                 # int's need to be cast to avoid weird numpy types in our datastructure
                 # Type checking in data_model takes care of this, but if someone ever turns off type checking
@@ -202,6 +203,7 @@ class FindHits(plugin.TransformPlugin):
                     'height':              height,
                     'noise_sigma':         noise_sigma_pe,
                     'found_in_pulse':      pulse_i,
+                    'n_saturated':         n_saturated,
                 }))
 
             # Diagnostic plotting
@@ -228,6 +230,9 @@ class FindHits(plugin.TransformPlugin):
                     continue
             elif self.make_diagnostic_plots == 'hits only':
                 if len(hits_found) == 0:
+                    continue
+            elif self.make_diagnostic_plots == 'saturated':
+                if not pulse.maximum - pulse.baseline >= self.config['digitizer_reference_baseline']:
                     continue
             else:
                 if self.make_diagnostic_plots != 'always':
@@ -330,10 +335,10 @@ def find_intervals_above_threshold(w, high_threshold, low_threshold, result_buff
 
 @numba.jit(nopython=True)
 def compute_hit_properties(w, raw_hits, argmaxes, areas, centers):
-    """Finds the maximum index, area, and center of gravity of hits in w indicated by (l, r) bounds in raw_hits.
-    Will fill up argmaxes and areas with result.
+    """Finds argmax, area and center of gravity of hits in w indicated by (l, r) bounds in raw_hits.
     raw_hits should be a numpy array of (left, right) bounds (inclusive)
-    centers, argmaxes are returned in samples right of hit start -- you probably want to convert this
+    Other arguments are numpy arrays which will be filled with results.
+    centers, argmaxes are returned in samples right of hit start -- you probably want to convert this!
     Returns nothing
     """
     for hit_i in range(len(raw_hits)):

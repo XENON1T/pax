@@ -10,9 +10,9 @@ class TestPosRecChiSquareGamma(unittest.TestCase):
     def setUp(self):
         self.pax = core.Processor(config_names='XENON100',
                                   just_testing=True,
-                                  config_dict={'pax': {'plugin_group_names':
-                                               ['test'], 'test':
-                                               'PosRecChiSquareGamma.PosRecChiSquareGamma'}})
+                                  config_dict={'pax': {'plugin_group_names': ['test'],
+                                                       'test': 'PosRecChiSquareGamma.PosRecChiSquareGamma',
+                                                       'logging_level': 'debug'}})
         self.plugin = self.pax.get_plugin_by_name('PosRecChiSquareGamma')
 
         self.e = Event.empty_event()
@@ -28,11 +28,10 @@ class TestPosRecChiSquareGamma(unittest.TestCase):
                              'area_per_channel': channels}))
         return e
 
-    def test_get_chisquare_plugin(self):
+    def test_posrec(self):
         self.assertIsInstance(self.plugin, plugin.TransformPlugin)
         self.assertEqual(self.plugin.__class__.__name__, 'PosRecChiSquareGamma')
 
-    def test_posrec(self):
         e = self.example_event([0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0,
                                 0, 1, 1, 0, 0, 3, 6, 7, 2, 2, 0, 0, 0, 0, 0,
                                 1, 1, 0, 0, 0, 0, 0, 1, 2, 0, 0, 0, 1, 2, 2,
@@ -50,8 +49,8 @@ class TestPosRecChiSquareGamma(unittest.TestCase):
         # position agrees within one cm for test
         x_truth = 3.1625
         y_truth = -10.0172
-        self.assertTrue(rp.x < x_truth+1 and rp.x > x_truth-1)
-        self.assertTrue(rp.y < y_truth+1 and rp.y > y_truth-1)
+        self.assertAlmostEqual(rp.x, x_truth, delta=1)
+        self.assertAlmostEqual(rp.y, y_truth, delta=1)
 
 if __name__ == '__main__':
     unittest.main()

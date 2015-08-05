@@ -163,14 +163,14 @@ class TestPax(unittest.TestCase):
     def test_process_single_xed_event(self):
         """ Process the first event from the XED file.
         """
-        # TODO: delete the HD5 file that is created by this
-        mypax = core.Processor(config_names='XED', config_dict={'pax': {'events_to_process': [0]}})
+        config = {'pax': {'events_to_process': [0],
+                          'output': 'Dummy.DummyOutput'}}
+        mypax = core.Processor(config_names='XED', config_dict=config)
         mypax.run()
 
     def test_process_single_xed_event_olddsp(self):
         """ Process the first event from the XED file using Xerawdp matching config
         """
-        # TODO: delete the HD5 file that is created by this
         mypax = core.Processor(config_names=['XED', 'XerawdpImitation'],
                                config_dict={'pax': {
                                    'events_to_process': [0],
@@ -187,6 +187,21 @@ class TestPax(unittest.TestCase):
                           430.28177885354137, 1.9494012301013646, 1.52583418095758,
                           1.5248293965443862, 1.5214431653719354, 1.1431245035453605,
                           1.119126521198631, 0.8370846398458212, 0.3965132112382404])
+
+    def test_process_event_list(self):
+        """ Take a list of event numbers from a file
+        """
+        print("Running event list test")
+        with open('temp_eventlist.txt', mode='w') as outfile:
+            outfile.write("0\n7\n")
+        config = {'pax': {'event_numbers_file': 'temp_eventlist.txt',
+                          'plugin_group_names': ['input', 'output'],
+                          'output': 'Dummy.DummyOutput'}}
+        mypax = core.Processor(config_names='XED', config_dict=config)
+        mypax.run()
+        self.assertEqual(mypax.get_plugin_by_name('DummyOutput').last_event.event_number, 7)
+        os.remove('temp_eventlist.txt')
+
 
 if __name__ == '__main__':
     unittest.main()

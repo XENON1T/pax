@@ -90,7 +90,7 @@ def run():
             if args.processed:
                 plugin_group_names = ['input',  'preprocessing',  'dsp',
                                       'transform', 'output']
-                output = ['BulkOutput.BulkOutput', 'BulkOutput.BulkOutput']
+                output = ['Table.TableWriter']
             else:
                 plugin_group_names = ['input',  'preprocessing', 'output']
                 output = ['BSON.WriteZippedBSON']

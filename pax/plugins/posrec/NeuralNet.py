@@ -1,4 +1,4 @@
-"""Neural network reconstruction algorithms"""
+"""Neural network position reconstruction"""
 import numpy as np
 
 from pax import plugin
@@ -31,8 +31,6 @@ class PosRecNeuralNet(plugin.TransformPlugin):
     def transform_event(self, event):
         """Reconstruct the position of S2s in an event.
         """
-
-        # For every S2 peak found in the event
         for peak in event.S2s():
 
             input_areas = peak.area_per_channel[self.input_channels]
@@ -47,7 +45,6 @@ class PosRecNeuralNet(plugin.TransformPlugin):
                 'y': nn_output[1],
                 'algorithm': self.name}))
 
-        # Return the event such that the next processor can work on it
         return event
 
 

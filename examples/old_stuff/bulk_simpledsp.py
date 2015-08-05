@@ -7,7 +7,7 @@ my_config = """
 [pax]
 parent_configuration = 'SimpleDSP'
 
-[XED.XedInput]
+[XED.ReadXED]
 filename = "%s"
 
 [MongoDB.MongoDBFakeDAQOutput]
