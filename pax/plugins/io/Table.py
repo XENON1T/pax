@@ -443,6 +443,13 @@ class TableReader(plugin.InputPlugin):
 
                     event.peaks.append(peak)
 
+            # Dirty hack for event.s1 and event.s2
+            # I really don't know how to generalize this without making stuff much more difficult!
+            for pt in ('s1', 's2'):
+                peak_id = e_record[pt]
+                if peak_id != datastructure.INT_NAN:
+                    setattr(event, pt, event.peaks[peak_id - e_record['peaks_start']])
+
             yield event
 
     def convert_record(self, class_to_load_to, record):
@@ -457,10 +464,13 @@ class TableReader(plugin.InputPlugin):
             result = class_to_load_to()
         for k, v in self._numpy_record_to_dict(record).items():
             # If result doesn't have this attribute, ignore it
-            # This happens for n_peaks etc. and attributes that have been
-            # removed
-            if hasattr(result, k):
-                setattr(result, k, v)
+            # This happens for n_peaks etc. and attributes that have been ignored on writing
+            if not hasattr(result, k):
+                continue
+            # event.s1 and event.s2 will be dealt with by dirty hack...
+            if isinstance(getattr(result, k), Model):
+                continue
+            setattr(result, k, v)
         return result
 
     def _numpy_record_to_dict(self, record):
