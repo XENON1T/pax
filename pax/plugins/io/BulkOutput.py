@@ -6,6 +6,7 @@ from bson.json_util import dumps
 import numpy as np
 
 from pax import plugin, exceptions, datastructure
+from pax.data_model import Model
 from pax.formats import flat_data_formats
 
 
@@ -206,37 +207,61 @@ class BulkOutput(plugin.OutputPlugin):
             }
             first_time_seen = True
 
+        # Handle the subcollection fields first
+        collection_field_name = {}    # Maps child types to collection field names
+        for field_name, field_type in self.data[m_name]['subcollection_fields'].items():
+            if field_name in self.config['fields_to_ignore']:
+                continue
+
+            field_value = getattr(m, field_name)
+            child_class_name = field_type.__name__
+            collection_field_name[child_class_name] = field_name
+
+            # Store the absolute start index & number of children
+            child_start = self.get_index_of(child_class_name)
+            n_children = len(field_value)
+            if first_time_seen:
+                # Add data types for n_x and x_start field names. Will have int type.
+                self.data[m_name]['dtype'].append(self._numpy_field_dtype('n_%s' % field_name, 0))
+                self.data[m_name]['dtype'].append(self._numpy_field_dtype('%s_start' % field_name, 0))
+            m_data.append(n_children)
+            m_data.append(child_start)
+
+            # We'll ship model collections off to their own tuples (later record arrays)
+            # Convert each child_model to a dataframe, with a new index
+            # appended to the index trail
+            for new_index, child_model in enumerate(field_value):
+                self._model_to_tuples(child_model,
+                                      index_fields + [(type(child_model).__name__,
+                                                       new_index)])
+
         # Grab all data into data_dict -- and more importantly, handle
         # subcollections
         for field_name, field_value in m.get_fields_data():
 
-            if field_name in self.config['fields_to_ignore']:
+            if field_name in self.config['fields_to_ignore'] or isinstance(field_value, list):
                 continue
 
-            if isinstance(field_value, list):
+            elif isinstance(field_value, Model):
+                # Individual child model: store the child number instead
+                child_class_name = field_value.__class__.__name__
 
-                assert field_name in self.data[m_name]['subcollection_fields']
-                child_class_name = self.data[m_name]['subcollection_fields'][field_name].__name__
-
-                # Store the absolute start index & number of children
-                child_start = self.get_index_of(child_class_name)
-                n_children = len(field_value)
                 if first_time_seen:
-                    # Store this field's data type
-                    self.data[m_name]['dtype'].append(
-                        self._numpy_field_dtype('n_%s' % field_name, 0))    # 0 to ensure integer type
-                    self.data[m_name]['dtype'].append(
-                        self._numpy_field_dtype('%s_start' % field_name, 0))
-                m_data.append(n_children)
-                m_data.append(child_start)
+                    self.data[m_name]['dtype'].append(self._numpy_field_dtype(field_name, 0))
 
-                # We'll ship model collections off to their own tuples (later record arrays)
-                # Convert each child_model to a dataframe, with a new index
-                # appended to the index trail
-                for new_index, child_model in enumerate(field_value):
-                    self._model_to_tuples(child_model,
-                                          index_fields + [(type(child_model).__name__,
-                                                           new_index)])
+                # We know the number the next child should get. What number is this one?
+                for child_i_from_back, child in enumerate(reversed(getattr(m,
+                                                                           collection_field_name[child_class_name]))):
+                    # Note the is instead of ==, we really want the same child, not just one that looks the same
+                    if child is field_value:
+                        break
+                else:
+                    # Assume fake child, fallthrough in datastructure (e.g. event without S1)
+                    m_data.append(datastructure.INT_NAN)
+                    continue
+
+                child_i = self.get_index_of(child_class_name) - 1 - child_i_from_back
+                m_data.append(child_i)
 
             elif isinstance(field_value, np.ndarray) and not self.output_format.supports_array_fields:
                 # Hack for formats without array field support: NumpyArrayFields must get their own dataframe

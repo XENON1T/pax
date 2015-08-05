@@ -22,7 +22,7 @@ from pax import units
 from pax.data_model import StrictModel, ListField
 
 
-INT_NAN = -99999  # Do not change without talking to me. -Tunnell 12/3/2015
+INT_NAN = -99999    # Do not change without talking to me. -Tunnell 12/3/2015 ... and me. -Jelle 05/08/2015
 
 
 class ReconstructedPosition(StrictModel):
