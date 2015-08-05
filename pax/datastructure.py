@@ -93,6 +93,9 @@ class Hit(StrictModel):
     #: Set to True if rejected by suspicious channel algorithm
     is_rejected = False
 
+    #: Number of samples with ADC saturation in this hit
+    n_saturated = 0
+
 
 class Peak(StrictModel):
     """Peak
@@ -126,6 +129,12 @@ class Peak(StrictModel):
 
     #: Does a PMT see 'something significant'? (thresholds configurable)
     does_channel_contribute = np.array([], dtype=np.bool)
+
+    #: Number of samples with ADC saturation in this peak, per channel
+    n_saturated_per_channel = np.array([], dtype=np.int16)
+
+    #: Total number of samples with ADC saturation threshold in all channels in this peak
+    n_saturated = 0
 
     @property
     def contributing_channels(self):

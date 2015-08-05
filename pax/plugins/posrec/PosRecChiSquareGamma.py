@@ -61,9 +61,6 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
         # Number of pmts (minus dead pmts)
         self.is_pmt_alive = self.gains > 0
 
-        # Number of degrees of freedom, n_channels - model degrees of freedom (x,y) - 1
-        self.ndf = np.count_nonzero(self.is_pmt_alive) - 2 - 1
-
         # Log the total number of calls and success rate to debug, see shutdown
         self.total_rec_calls = 0
         self.total_rec_success = 0
@@ -82,11 +79,9 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
             return float('inf')
 
         # Get all LCE map values for the live PMTs at position x,y
-        map_values = self.s2_lce_map.get_value(x, y)
-        assert len(map_values) == len(self.pmts)
+        map_values = self.s2_lce_map.get_value(x, y)[self.is_pmt_in]
 
-        # Convert to relative LCEs among living PMTs
-        map_values[True ^ self.is_pmt_alive] = 0
+        # Convert to relative LCEs among included PMTs
         map_values = np.clip(map_values, 0, 1)
         map_values /= map_values.sum()
 
@@ -94,7 +89,10 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
         term_numerator = (self.photons + np.clip(self.photons, 1, float('inf')) - self.area_photons * map_values) ** 2
         term_denominator = self.photons ** 2 * self.pmt_errors + self.area_photons * map_values + 1.0
         function_values = term_numerator / term_denominator
-        return np.sum(function_values[self.is_pmt_alive])
+
+        # assert len(function_values) == np.count_nonzero(self.is_pmt_in)
+
+        return np.sum(function_values)
 
     def transform_event(self, event):
         """Reconstruct the position of S2s in an event.
@@ -107,22 +105,32 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
 
         # For every S2 peak found in the event
         for peak in event.S2s():
+
+            # Which PMTs should we include?
+            self.is_pmt_in = self.is_pmt_alive.copy()
+            if self.config.get('ignore_saturated_PMTs', False):
+                saturated_pmts = np.where(peak.n_saturated_per_channel > 0)[0]
+                self.is_pmt_in[saturated_pmts] = False
+            self.is_pmt_in = self.is_pmt_in[self.pmts]
+
+            # Number of degrees of freedom, n_channels - model degrees of freedom (x,y) - 1
+            self.ndf = np.count_nonzero(self.is_pmt_in) - 2 - 1
+
             # This is an array where every i-th element is how many pe
             # were seen by the i-th PMT
-            self.hits = peak.area_per_channel[self.pmts]
-            self.photons = self.hits / self.qes
+            self.hits = peak.area_per_channel[self.is_pmt_in]
+            self.photons = self.hits / self.qes[self.is_pmt_in]
 
             # Total number of detected photons in the top array (pe/qe)
             self.area_photons = self.photons.sum()
 
             # Error term per PMT in chi2 function
-            self.pmt_errors = np.zeros(len(self.pmts))
-            self.pmt_errors[self.is_pmt_alive] = (self.qe_errors[self.is_pmt_alive] / self.qes[self.is_pmt_alive]) ** 4
-            self.pmt_errors[self.is_pmt_alive] += (self.gain_errors[self.is_pmt_alive] /
-                                                   self.gains[self.is_pmt_alive]) ** 2
+            self.pmt_errors = (self.qe_errors[self.is_pmt_in] / self.qes[self.is_pmt_in]) ** 4
+            self.pmt_errors += (self.gain_errors[self.is_pmt_in] / self.gains[self.is_pmt_in]) ** 2
 
             # Calculate which pmt has maximum signal
-            max_pmt_index = np.argmax(self.photons)
+            pmts_in = np.array(self.pmts)[self.is_pmt_in]
+            max_pmt_index = pmts_in[np.argmax(self.photons)]
 
             # Start position for minimizer, if no weighted sum position is present
             # use max pmt location as minimizer start position
