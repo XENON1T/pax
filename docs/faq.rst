@@ -81,7 +81,7 @@ Yes, in fact several of the developers do this, much to the sadness of the other
    If that fails, try `easy_install important_module`
    If that fails, look for important_module on `Christoph Gohlke's page <http://www.lfd.uci.edu/~gohlke/pythonlibs/>`_
    If that fails, reboot, sacrifice a goat, then try again.
-4. Go to bin and run ``python paxer``. If it shows a waveform plot, you are done.
+4. Go to bin and run ``python paxer --plot``. If it shows a waveform plot, you are done.
    If it complains about a missing module, I guess you shouldn't have ignored those warnings in step 3,
    install the missing module using easy_install, or Gohlke's page mentioned above.
 
