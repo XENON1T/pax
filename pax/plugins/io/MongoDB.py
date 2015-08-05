@@ -287,7 +287,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
 
     def get_events(self):
         self.last_time = 0  # ns
-        
+
         # Used to timeout if DAQ crashes and no data will come
         time_out_counter = time.time()
 
@@ -318,11 +318,11 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
             if n == 0:
                 self.log.fatal("Nothing found, continue")
                 time.sleep(1)  # todo: configure
-                if time.time() - time_out_counter > 60: # seconds
-                  raise RuntimeError('Timed out waiting for new data (DAQ crash?)')
-                
+                if time.time() - time_out_counter > 60:  # seconds
+                    raise RuntimeError('Timed out waiting for new data (DAQ crash?)')
+
                 continue
-            
+
             # Reset timeout counter used for finding crashed DAQ
             time_out_counter = time.time()
 
