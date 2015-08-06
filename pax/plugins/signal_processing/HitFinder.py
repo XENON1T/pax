@@ -281,7 +281,6 @@ def find_intervals_above_threshold(w, high_threshold, low_threshold, result_buff
     Will stop search after N intervals are found, with N the length of result_buffer.
     Boundary indices are inclusive, i.e. the right index is the last index which was still above low_threshold
     """
-    # This function just wraps the numba code below, so you can call it with keyword arguments
     in_candidate_interval = False
     current_interval_passed_test = False
     current_interval = 0
