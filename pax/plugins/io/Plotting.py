@@ -467,7 +467,7 @@ class PlotChannelWaveforms2D(PlotBase):
         self.draw_trigger_mark(0, ax=ax)
 
         # Make sure we always see all channels
-        ax.set_ylim((0, self.config['n_channels']))
+        ax.set_ylim((-0.5, self.config['n_channels'] + 0.5))
         ax.set_xlim(*xlims)
 
         ax.set_xlabel('Time (us)')
