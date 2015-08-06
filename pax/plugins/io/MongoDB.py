@@ -448,7 +448,14 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, IOMongoDB):
 
 class MongoDBWriteTriggered(plugin.OutputPlugin,
                             IOMongoDB):
-
+    """Write entire processed event to MongoDB
+    
+    These events are already triggered.  We first convert event class to a dict,
+    then pymongo converts that to BSON.  We have to convert the numpy arrays to
+    bytes because otherwise we get type errors since pymongo doesn't know about
+    numpy.
+    """
+    
     def startup(self):
         IOMongoDB.startup(self)  # Setup with baseclass
         self.setup_access('output')
