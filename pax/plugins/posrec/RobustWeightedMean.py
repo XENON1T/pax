@@ -44,37 +44,37 @@ class PosRecRobustWeightedMean(plugin.TransformPlugin):
             if len(pmts) <= 1:
                 # How on earth did this get classified as S2??
                 wmp = [float('nan'), float('nan')]
+            else:
+                while True:
+                    # Get locations and hitpattern of remaining PMTs
+                    pmt_locs = self.pmt_locations[pmts]
+                    hitpattern = area_per_channel[pmts]
 
-            while True:
+                    # Compute the weighted mean position (2-vector)
+                    wmp = np.average(pmt_locs, weights=hitpattern, axis=0)
 
-                # Get locations and hitpattern of remaining PMTs
-                pmt_locs = self.pmt_locations[pmts]
-                hitpattern = area_per_channel[pmts]
+                    # Compute the Euclidean distance between PMTs and the wm position
+                    distances = np.sum((wmp[np.newaxis, :] - pmt_locs)**2, axis=1)**0.5
 
-                # Compute the weighted mean position (2-vector)
-                wmp = np.average(pmt_locs, weights=hitpattern, axis=0)
+                    # Compute the weighted mean distance
+                    wmd = np.average(distances, weights=hitpattern)
 
-                # Compute the Euclidean distance between PMTs and the wm position
-                distances = np.sum((wmp[np.newaxis, :] - pmt_locs)**2, axis=1)**0.5
+                    # If there are no outliers, we are done
+                    is_outlier = distances > wmd * self.outlier_threshold
+                    if not np.any(is_outlier):
+                        break
 
-                # Compute the weighted mean distance
-                wmd = np.average(distances, weights=hitpattern)
+                    if np.all(is_outlier):
+                        # All are outliers... remove just the worst
+                        pmts = np.delete(pmts, np.argmax(distances))
+                    else:
+                        # Remove all outliers
+                        pmts = pmts[True ^ is_outlier]
 
-                # If there are no outliers, we are done
-                is_outlier = distances > wmd * self.outlier_threshold
-                if not np.any(is_outlier):
-                    break
-
-                if np.all(is_outlier):
-                    # All are outliers... remove just the worst
-                    pmts = np.delete(pmts, np.argmax(distances))
-                else:
-                    # Remove all outliers
-                    pmts = pmts[True ^ is_outlier]
-
-                # Give up if there are too few PMTs left
-                if len(pmts) <= self.config['min_pmts_left']:
-                    break
+                    # Give up if there are too few PMTs left
+                    # Don't put this as the while condition, want loop to run at least once
+                    if len(pmts) <= self.config['min_pmts_left']:
+                        break
 
             peak.reconstructed_positions.append(ReconstructedPosition(x=wmp[0], y=wmp[1],
                                                                       algorithm=self.name))

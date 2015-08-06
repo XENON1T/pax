@@ -110,6 +110,7 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
             self.is_pmt_in = self.is_pmt_alive.copy()
             if self.config.get('ignore_saturated_PMTs', False):
                 saturated_pmts = np.where(peak.n_saturated_per_channel > 0)[0]
+                saturated_pmts = np.intersect1d(saturated_pmts, self.pmts)
                 self.is_pmt_in[saturated_pmts] = False
             self.is_pmt_in = self.is_pmt_in[self.pmts]
 
