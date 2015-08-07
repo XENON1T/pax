@@ -314,6 +314,13 @@ class Simulator(object):
         for channel, photon_detection_times in hitpattern.arrival_times_per_channel.items():
             photon_detection_times = np.array(photon_detection_times)
 
+            log.debug("Simulating %d photons in channel %d (gain=%s, gain_sigma=%s)" % (
+                len(photon_detection_times), channel,
+                self.config['gains'][channel], self.config['gain_sigmas'][channel]))
+
+            if self.config['pmt_0_is_fake'] and channel == 0:
+                continue
+
             #  Add padding, sort (eh.. or were we already sorted? and is sorting necessary at all??)
             all_pmt_pulse_centers = np.sort(photon_detection_times + self.config['event_padding'])
 
@@ -377,7 +384,7 @@ class Simulator(object):
                     normalized_pulse /= np.sum(normalized_pulse)
                     current_wave = np.convolve(current_wave, normalized_pulse, mode='same')
 
-                else:
+                elif len(center_index) > 0:
 
                     # Use a Gaussian truncated to positive values for the SPE gain distribution
                     gains = truncated_gauss_rvs(
@@ -449,7 +456,7 @@ class Simulator(object):
                     # Have to use a listcomp here, unless you know a way to select multiple slices in numpy?
                     #  -- yeah making an index list with np.arange would work, but honestly??
                     real_noise = np.concatenate([
-                        self.noise_data[channel + self.channel_offset][nsn * sample_size:(nsn + 1) * sample_size]
+                        self.noise_data[channel - self.channel_offset][nsn * sample_size:(nsn + 1) * sample_size]
                         for nsn in chosen_noise_sample_numbers
                     ])
                     adc_wave += real_noise[:pulse_length]
@@ -466,9 +473,6 @@ class Simulator(object):
                     channel=channel,
                     left=start_index,
                     raw_data=adc_wave.astype(np.int16)))
-
-        if len(event.pulses) == 0:
-            return None
 
         log.debug("Simulated pax event of %s samples length and %s pulses "
                   "created." % (event.length(), len(event.pulses)))
