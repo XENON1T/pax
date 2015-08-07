@@ -24,10 +24,17 @@ class SoftwareZLE(plugin.TransformPlugin):
                 raise ValueError("Cannot ZLE in XED-compatible way "
                                  "if pulse starts at odd sample index (%d)" % pulse.left)
 
-            # Subtract the reference baseline, invert
-            # TODO: Does the ZLE know a better baseline? I guess not...
             w = pulse.raw_data.copy()
-            w = self.config['digitizer_reference_baseline'] - w
+
+            samples_for_baseline = self.config.get('initial_baseline_samples', None)
+            if samples_for_baseline is not None:
+                # This tries to do better than the digitizer: compute a baseline for the pulse
+                bs = w[:min(len(w), samples_for_baseline)]
+                w = np.mean(bs) - w
+            else:
+                # This is how the digitizer does it (I think???)
+                # Subtract the reference baseline, invert
+                w = self.config['digitizer_reference_baseline'] - w
 
             if self.debug:
                 plt.plot(w)
