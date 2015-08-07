@@ -583,6 +583,23 @@ class PeakViewer(PlotBase):
         self.whereami_ax.set_axis_off()
 
         ##
+        # Event and peak text
+        ##
+        x_sep_text = 0.07
+        y_sep_text = 0.05
+        x = start_x + 2 * column_x + x_sep_text
+        y = start_y + 4 * row_y + y_sep_middle - y_sep_text
+        event_text = ''
+        event_text += 'Event recorded at %s UTC, %09d ns\n' % (
+            time.strftime("%Y/%m/%d, %H:%M:%S", time.gmtime(self.trigger_time_ns / 10 ** 9)),
+            self.trigger_time_ns % (10 ** 9))
+        suspicious_channels = np.where(event.is_channel_suspicious)[0]
+        event_text += 'Suspicious channels (# hits rejected):\n ' + ', '.join([
+            '%s (%s)' % (ch, event.n_hits_rejected[ch]) for ch in suspicious_channels]) + '\n'
+        self.fig.text(x, y, self.wrap_multiline(event_text, self.max_characters), verticalalignment='top')
+        self.peak_text = self.fig.text(x, start_y + 3 * row_y + y_sep_middle, '', verticalalignment='top')
+
+        ##
         # Get the TPC peaks and select the largest one
         ##
         self.peaks = event.get_peaks_by_type(detector='tpc', sort_key='left', reverse=False)
@@ -590,6 +607,7 @@ class PeakViewer(PlotBase):
         if len(self.peaks) < 1:
             return
         self.peak_i = np.argmax([p.area for p in self.peaks])
+        self.log.debug("Largest peak is %d from 0-%d" % (self.peak_i, len(self.peaks)-1))
 
         ##
         # Peak hitpatterns
@@ -632,25 +650,11 @@ class PeakViewer(PlotBase):
         self.make_button([x + 3 * button_width + buttons_x_space, y, button_width, button_height],
                          'Main S2', self.main_s2)
 
-        ##
-        # Event and peak text
-        ##
-        x_sep_text = 0.07
-        y_sep_text = 0.05
-        x = start_x + 2 * column_x + x_sep_text
-        y = start_y + 4 * row_y + y_sep_middle - y_sep_text
-        event_text = ''
-        event_text += 'Event recorded at %s UTC, %09d ns\n' % (
-            time.strftime("%Y/%m/%d, %H:%M:%S", time.gmtime(self.trigger_time_ns / 10 ** 9)),
-            self.trigger_time_ns % (10 ** 9))
-        suspicious_channels = np.where(event.is_channel_suspicious)[0]
-        event_text += 'Suspicious channels (# hits rejected):\n ' + ', '.join([
-            '%s (%s)' % (ch, event.n_hits_rejected[ch]) for ch in suspicious_channels]) + '\n'
-        self.fig.text(x, y, self.wrap_multiline(event_text, self.max_characters), verticalalignment='top')
-        self.peak_text = self.fig.text(x, start_y + 3 * row_y + y_sep_middle, '', verticalalignment='top')
-
         self.draw_peak()
-        plt.colorbar(self.top_hitp_sc, ax=[self.top_hitp_ax, self.bot_hitp_ax])
+        # Draw the color bar for the top or bottom hitpattern plot (they share them)
+        # In the rare case the top has no data points, take it from the bottom
+        sc_for_hitp = self.top_hitp_sc if self.peaks[self.peak_i].area_fraction_top != 0 else self.bot_hitp_sc
+        plt.colorbar(sc_for_hitp, ax=[self.top_hitp_ax, self.bot_hitp_ax])
 
     def draw_peak(self):
         # Select the requested peak
