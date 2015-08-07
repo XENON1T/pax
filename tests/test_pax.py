@@ -191,7 +191,6 @@ class TestPax(unittest.TestCase):
     def test_process_event_list(self):
         """ Take a list of event numbers from a file
         """
-        print("Running event list test")
         with open('temp_eventlist.txt', mode='w') as outfile:
             outfile.write("0\n7\n")
         config = {'pax': {'event_numbers_file': 'temp_eventlist.txt',
@@ -201,6 +200,17 @@ class TestPax(unittest.TestCase):
         mypax.run()
         self.assertEqual(mypax.get_plugin_by_name('DummyOutput').last_event.event_number, 7)
         os.remove('temp_eventlist.txt')
+
+    def test_simulator(self):
+        """ Process the events in dummy_waveforms.csv
+        """
+        mypax = core.Processor(config_names=['XENON100', 'Simulation'],
+                               config_dict={'pax': {
+                                   'output': 'Dummy.DummyOutput'}})
+        mypax.run()
+        pl = mypax.get_plugin_by_name('DummyOutput')
+        self.assertIsInstance(pl, plugin.OutputPlugin)
+        # TODO: do some checks on the simulator output
 
 
 if __name__ == '__main__':
