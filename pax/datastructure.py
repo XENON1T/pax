@@ -230,7 +230,8 @@ class SumWaveform(StrictModel):
 class Pulse(StrictModel):
     """A DAQ pulse
 
-    A DAQ pulse can also be thought of as a pulse in a PMT.
+    A DAQ pulse can also be thought of as a pulse in a PMT.  Remember that this is
+    inverted.
     """
 
     #: Start time of this pulse: samples
