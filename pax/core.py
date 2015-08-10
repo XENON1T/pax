@@ -140,7 +140,7 @@ class Processor:
             # Parse the event numbers file, if one is given
             if pc.get('event_numbers_file', None) is not None:
                 with open(pc['event_numbers_file'], mode='r') as f:
-                    pc['events_to_process'] = list(map(int, f.readlines()))
+                    pc['events_to_process'] = [int(line.rstrip()) for line in f]
 
             if pc.get('events_to_process', None) is not None:
                 # The user specified which events to process:
