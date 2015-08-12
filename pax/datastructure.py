@@ -57,10 +57,12 @@ class ReconstructedPosition(StrictModel):
 
 
 class Hit(StrictModel):
-    """Peaks found in individual channels
+    """A hit results from, within individual channel, fluctation above baseline.
 
     These are be clustered into ordinary peaks later. This is commonly
-    called a 'hit' in particle physics detectors.
+    called a 'hit' in particle physics detectors.  Very generally, a hit is
+    made every time that the data recorded for one channel flucates above
+    baseline.
     """
     #: Channel in which this peak was found
     channel = 0
