@@ -138,6 +138,17 @@ If the dataset you want to reduce is not in the default input format (currently 
 
   paxer --config ZippedBSON reduce_raw_data --input your_dataset --output your_reduced_dataset --event_numbers_file your_event_file.txt
 
+------------------------------------------
+How do I reduce the file size of my processed data?
+------------------------------------------
+
+For processed data, the default configuration is to store events, peaks and hits. Since there are usually many hits per event, they will take a lot of disk space. If you need to reduce the size size abd you do not need the hit information, check out the line found in `_base.ini` :
+
+  fields_to_ignore = ['all_hits','sum_waveforms','channel_waveforms']
+
+It may look like the hits are already ignored (`'all_hits'`) but there is another property called `'hits'` which is a peak property instead of an event property. Add both to `fields_to_ignore` and you're fine.
+This is also the place to be if you want to reduce your file size in a different way. If you do not need some properties, just add them here and they will be ignored.
+
 
 --------------------------------------------------------------
 How do I use pax to generate files to be processed by Xerawdp?
