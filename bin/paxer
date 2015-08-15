@@ -14,7 +14,66 @@ import queue
 import multiprocessing
 
 import pax    # For version
-from pax import core, utils
+from pax import core, utils, formats
+
+from collections import OrderedDict
+
+# Make the output plugin aliases
+# Don't know yet if we want to display these ordered lexically or conceptually in --help:
+# work with an ordereddict to store the conceptual order in case we change our minds
+output_plugin_aliases = OrderedDict([
+    ('none',  'Dummy.DummyOutput'),
+    ('plot',  'Plotting.PlotEventSummary'),
+    ('plot_interactive',  'Plotting.PeakViewer'),
+])
+# Add output aliases from TableWriter formats
+output_plugin_aliases.update([(fc, ('Table.TableWriter', {'output_format': fc}))
+                              for fc in formats.flat_data_formats.keys()])
+output_plugin_aliases.update([
+    # Zipped formats -- allow arbitrary event numbering
+    ('zpickle', 'Pickle.WriteZippedPickles'),
+    ('zbson', 'BSON.WriteZippedBSON'),
+
+    # Non-zipped formats
+    ('bson',  'BSON.WriteBSON'),
+    ('json',  'BSON.WriteJSON'),
+    ('xed',   'XED.WriteXED'),
+
+    # Old raw formats (deprecated / problematic)
+    ('_raw_pickles', 'Pickle.WriteToPickleFile'),
+    ('_avro',        'Avro.WriteAvro'),
+
+    # Formats that don't have a plugin to read data back
+    ('raw_dump',     'RawWaveformDump.DumpSumWaveformToBinary'),
+    ('mongo',        'Mongo.MongoDBWriteTriggered')
+])
+
+input_plugin_aliases = OrderedDict([
+    ('none',  'Dummy.DummyInput'),
+    ('xed',      'XED.ReadXED'),
+
+    # Zipped formats
+    ('zbson',   'BSON.ReadZippedBSON'),
+    ('zpickle', 'Pickle.ReadZippedPickles'),
+
+    # Nonzipped formats
+    ('bson',    'BSON.ReadBSON'),
+    ('json',    'BSON.ReadJSON'),
+    ('avro',    'Avro.ReadAvro'),
+])
+input_plugin_aliases.update([(fc, ('Table.TableReader', {'format': fc}))
+                             for fc in formats.flat_data_formats.keys()])
+input_plugin_aliases.update([
+    # Simulator input formats shouldn't be here: if you load simulated events you want a different config as well,
+    # so you still want to use the Simulator ini file.
+
+    # Mongo
+    ('mongo_untriggered', 'MongoDBReadUntriggered'),
+    ('mongo_untriggered', 'MongoDBReadUntriggered'),
+
+    # Deprecated formats. Note some plugins have deprecated write code but not read code.
+    ('_raw_pickles',  'Pickle.DirWithPickleFiles'),
+])
 
 
 class BaseProcess(multiprocessing.Process):
@@ -153,21 +212,44 @@ def main():
     override_dict = {'pax': {}}
 
     # Feed certain command line args into pax configuration format
-    for argname, configname in (('input',      'input_name'),
-                                ('output',     'output_name'),
-                                ('log',        'logging_level'),
-                                ('stop_after', 'stop_after'),
-                                ('event_numbers_file', 'event_numbers_file'),
-                                ('event',      'events_to_process')):
+    for argname, configname in (('input',       'input_name'),
+                                ('output',      'output_name'),
+                                ('log',         'logging_level'),
+                                ('stop_after',  'stop_after'),
+                                ('event',       'events_to_process'),
+                                ('event_numbers_file', 'event_numbers_file'),):
         value = getattr(args, argname)
         if value is not None:
             override_dict['pax'][configname] = value
 
+    # Process input type options
+    override_dict['pax']['input'] = []
+    for pa in wraplist(args.input_type):
+        bla = input_plugin_aliases[pa]
+        if isinstance(bla, tuple):
+            # We have a plugin name, extra options tuple
+            plugin_name, override_dict[plugin_name] = bla
+        else:
+            plugin_name = bla
+        override_dict['pax']['input'].append(plugin_name)
+
+    # Process output type options. Code is almost the same... sorry!
+    override_dict['pax']['output'] = []
+    for pa in wraplist(args.output_type):
+        bla = output_plugin_aliases[pa]
+        if isinstance(bla, tuple):
+            # We have a plugin name, extra options tuple
+            plugin_name, override_dict[plugin_name] = bla
+        else:
+            plugin_name = bla
+        override_dict['pax']['output'].append(plugin_name)
+
     # Overrides for plotting
     if args.plot_to_dir or args.plot:
+        override_dict['pax']['output_name'] = 'SCREEN'
         override_dict['pax']['output'] = 'Plotting.PlotEventSummary'
     if args.plot_to_dir:
-        override_dict['Plotting.PlotEventSummary'] = {'output_dir': args.plot_to_dir}
+        override_dict['pax']['output_name'] = args.plot_to_dir
     if args.plot_interactive:
         override_dict['pax']['output'] = 'Plotting.PeakViewer'
 
@@ -261,50 +343,68 @@ def main():
 
 def get_args():
     """Process command line arguments"""
-    parser = argparse.ArgumentParser(description="Process XENON data")
+    parser = argparse.ArgumentParser(description="Processor for XENON data",
+                                     epilog="""For more information, please see the pax documentation at
+                                               http://xenon1t.github.io/pax/ or the pax development site at
+                                               https://github.com/XENON1T/pax.""")
+
+    # Input and output control
     parser.add_argument('--input', default=None,
-                        help="File, database or directory to read events from",
-                        nargs='?')
+                        help="File, database or directory to read events from.",)
     parser.add_argument('--output', default=None,
-                        help="File, database or directory to write events to",
-                        nargs='?')
+                        help="File, database or directory to write events to. "
+                             "Defaults to name constructed from current date and time (YYMMDD_hhmmss). "
+                             "For plotting to screen, use SCREEN.")
+
+    output_type_options = list(reversed(sorted(output_plugin_aliases.keys())))
+    parser.add_argument('--output_type', default='hdf5',
+                        nargs='+', choices=output_type_options,
+                        help='Output format/plugin(s) to use: default is hdf5. '
+                             'Should be a space-separated list; allowed values are: ' +
+                             ', '.join(output_type_options) + '.\n' +
+                             'Use with --config reduce_raw_data if you want to write raw data!',
+                        metavar='OUTPUT_TYPE',
+                        )
+    input_type_options = list(reversed(sorted(input_plugin_aliases.keys())))
+    parser.add_argument('--input_type', default='xed',
+                        choices=input_type_options,
+                        help='Input format/plugin to use: default is xed. '
+                             'Allowed values are: ' +
+                             ', '.join(input_type_options) + '.\n' +
+                             'Use with --config Reprocess if you want to read processed data!',
+                        metavar='INPUT_TYPE',)
+
     # Parallelization control
     parser.add_argument('--cpus', default=1,
-                        help="Number of CPUs to use. Default is 1; can be "
-                             "'all'.",
+                        help="Number of CPUs to use. Default is 1; can be 'all'.",
                         nargs='?')
+
     # Log level control
     parser.add_argument('--log', default=None,
                         help="Set log level, e.g. 'debug'")
+
     # Configuration control
     # Pass in a name to use a pre-cooked config from config:
+    config_options = utils.get_named_configuration_options()
     parser.add_argument('--config',
                         default='XENON100',
-                        choices=utils.get_named_configuration_options(),
+                        choices=config_options,
                         nargs='+',
-                        help="Name(s) of the pax configuration(s) to use.")
-    # ... or pass in a path to your own config file:
+                        metavar='CONFIG',
+                        help="Name(s) of the pax configuration(s) to use: default is XENON100. "
+                             "Should be a space-separated list; allowed-values are: " + \
+                             ', '.join(config_options))
+    # ... or a path to your own config file:
     parser.add_argument('--config_path',
                         default=[],
                         nargs='+',
                         help="Path(s) of the configuration file(s) to use.")
-    # Plotting override
-    plotting_control_group = parser.add_mutually_exclusive_group()
-    plotting_control_group.add_argument('--plot',
-                                        action='store_const',
-                                        const=True,
-                                        help='Plot summed waveforms on screen')
-    plotting_control_group.add_argument('--plot_interactive',
-                                        action='store_const',
-                                        const=True,
-                                        help='Plot interactive peak browser on screen')
-    plotting_control_group.add_argument('--plot_to_dir',
-                                        help='Save summed waveform plots in directory')
+
     # Control events to process
     parser.add_argument('--event',
                         type=int,
                         nargs='+',
-                        help="Process particular event(s).")
+                        help="Process particular event number(s).")
     parser.add_argument('--event_numbers_file',
                         type=str,
                         help="Name of file containing newline-separated event number(s) to process.")
@@ -312,11 +412,38 @@ def get_args():
                         type=int,
                         help="Stop after STOP_AFTER events have been processed.")
 
+    # Plotting override
+    plotting_control_group = parser.add_mutually_exclusive_group()
+    plotting_control_group.add_argument('--plot',
+                                        action='store_const',
+                                        const=True,
+                                        help='Plot summed waveforms on screen. '
+                                             'Equivalent to --output_type plot --output SCREEN.')
+    plotting_control_group.add_argument('--plot_interactive',
+                                        action='store_const',
+                                        const=True,
+                                        help='Plot interactive peak browser on screen. '
+                                             'Equivalent to --output_type plot_interactive --output SCREEN.')
+    plotting_control_group.add_argument('--plot_to_dir',
+                                        help='Save summed waveform plots in directory. '
+                                             'Equivalent to --output_type plot --output your_directory.')
+
     # Version number printing
     parser.add_argument('--version',  action='store_true',
                         help="Print current pax version, then exit")
 
     return parser.parse_args()
+
+
+def wraplist(x):
+    """Returns [x] if x is a string or not iterable, returns x otherwise"""
+    if isinstance(x, str):
+        return [x]
+    try:
+        x[0]
+    except TypeError:
+        return [x]
+    return x
 
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@ class TestReprocessing(unittest.TestCase):
     def test_reprocessing(self):
 
         # Process the first event from the XED file.
-        mypax = core.Processor(config_names='XED', config_dict={'pax': {
+        mypax = core.Processor(config_names='XENON100', config_dict={'pax': {
             'events_to_process': [0],
             'output_name': 'output1'}})
         mypax.run()

@@ -8,6 +8,7 @@ transform would modify the event object.
 See format for more information on the event object.
 """
 import logging
+from time import strftime
 
 from pax.datastructure import Event
 
@@ -27,6 +28,7 @@ class BasePlugin(object):
 
         # Please do all config variable fetching in constructor to make changing config easier.
         self.config = config_values
+        self._pre_startup()
         y = self.startup()
         if y is not None:
             raise RuntimeError('Startup of %s returned a %s instead of None.' % (self.name, type(y)))
@@ -39,6 +41,9 @@ class BasePlugin(object):
                 raise RuntimeError('Shutdown of %s returned a %s instead of None.' % (self.name, type(y)))
         else:
             self.log.debug("Deleting %s, shutdown has already occurred" % self.name)
+
+    def _pre_startup(self):
+        pass
 
     def startup(self):
         self.log.debug("%s does not define a startup" % self.__class__.__name__)
@@ -75,8 +80,7 @@ class InputPlugin(BasePlugin):
 
 class ProcessPlugin(BasePlugin):
     """Plugin that can process events"""
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def _pre_startup(self):
         # Give the logger another name, we need self.log for the adapter
         self._log = self.log
 
@@ -107,6 +111,14 @@ class TransformPlugin(ProcessPlugin):
 
 
 class OutputPlugin(ProcessPlugin):
+
+    def _pre_startup(self):
+        # If no output name specified, create a default one from current date and time
+        # We need to do this here, rather than in paxer, otherwise user couldn't specify output_name in config
+        # (paxer would override it)
+        if 'output_name' not in self.config:
+            self.config['output_name'] = strftime('%y%m%d_%H%M%S')
+        super()._pre_startup()
 
     def write_event(self, event):
         """Do magic. Return None.
