@@ -1,4 +1,5 @@
 import numpy as np
+import numba
 from scipy.optimize import brenth
 import sklearn.cluster
 
@@ -453,8 +454,19 @@ class NaturalBreaks(ClusterPlugin):
         These can have a single long hit in all channels, which won't have any short hits near to its center.
         """
         # If the performance of this function becomes a bottleneck, we can replace it with a numba algorithm.
+        hit_indices = np.asarray(hit_indices)
         if split_index >= len(hit_indices) or split_index <= 0:
             raise ValueError("%d is a ridiculous split index for %d hits" % len(hit_indices), split_index)
+        numerator = _sad_two(self.left[hit_indices], self.right[hit_indices], weights=self.area[hit_indices])
+        denominator = _sad_two(self.left[hit_indices[:split_index]],
+                               self.right[hit_indices[:split_index]],
+                               weights=self.area[hit_indices[:split_index]],)
+        denominator += _sad_two(self.left[hit_indices[split_index:]],
+                                self.right[hit_indices[split_index:]],
+                                weights=self.area[hit_indices[split_index:]],)
+        denominator += self.left[hit_indices[split_index]] - self.right[hit_indices[split_index - 1]]
+        result = -1 + 0.5 * numerator / denominator
+
         x = np.concatenate((self.left[hit_indices], self.right[hit_indices]))
         a = np.concatenate((self.area[hit_indices], self.area[hit_indices]))
         xleft = np.concatenate((self.left[hit_indices][:split_index],
@@ -465,11 +477,45 @@ class NaturalBreaks(ClusterPlugin):
                                  self.right[hit_indices][split_index:]))
         aright = np.concatenate((self.area[hit_indices][split_index:],
                                  self.area[hit_indices][split_index:]))
-        return 0.5 * sum_abs_dev(x, weights=a) / (
-            sum_abs_dev(xleft, weights=aleft) + sum_abs_dev(xright, weights=aright) +
-            #
+
+        if (sub_abs_dev(x, weights=a) - numerator) / numerator > 0.001:
+            raise ValueError("Nominator is already wrong: %s != %s" % (sub_abs_dev(x, weights=a), numerator))
+
+        result2 = 0.5 * sub_abs_dev(x, weights=a) / (
+            sub_abs_dev(xleft, weights=aleft) + sub_abs_dev(xright, weights=aright) +
             self.left[hit_indices[split_index]] -
             self.right[hit_indices[split_index - 1]]) - 1
+
+        if (result - result2) / result > 0.001:
+            raise ValueError("%s != %s" % (result, result2))
+
+        return result
+
+
+@numba.jit(nopython=True)
+def _sad_two(x1, x2, weights):
+    """Returns the weighted sum absolute deviation from the weighted mean of x1 and x2 (considered as one array)
+    x1 and x2 must have same length.
+    """
+    # First calculate the weighted mean.
+    # While there is a one-pass algorithm for variance, I haven't found one for sad.. maybe it doesn't exists
+    mean = 0
+    sum_weights = 0
+    for i in range(len(x1)):
+        mean += x1[i] * weights[i]
+        mean += x2[i] * weights[i]
+        sum_weights += 2 * weights[i]
+    mean /= sum_weights
+
+    # Now calculate the weighted sum absolute deviation
+    sad = 0
+    for i in range(len(x1)):
+        sad += abs(x1[i] - mean) * weights[i]
+        sad += abs(x2[i] - mean) * weights[i]
+    # To normalize to the case with all weights 1, we multipy by n / sum_w
+    sad *= 2 * len(x1) / sum_weights
+
+    return sad
 
 
 def indices_of_largest_n(a, n):
@@ -479,7 +525,8 @@ def indices_of_largest_n(a, n):
     return np.argsort(-a)[:min(n, len(a))]
 
 
-def sum_abs_dev(x, weights=None):
+
+def sub_abs_dev(x, weights=None):
     sum_w = np.sum(weights)
     if weights is None:
         return np.sum(np.abs(x - np.mean(x)))
@@ -488,4 +535,4 @@ def sum_abs_dev(x, weights=None):
     else:
         # To normalize to the case with all weights 1, we multipy by len(x) / sum_w
         #
-        return np.sum(weights * np.abs(x - np.mean(x))) * len(x) / sum_w
+        return np.sum(weights * np.abs(x - np.average(x, weights=weights))) * len(x) / sum_w
