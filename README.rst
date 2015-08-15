@@ -122,15 +122,15 @@ If you want to do something nonstandard, you can create your own configuration f
 like `my_file.ini`::
 
    [pax]
-    parent_configuration = 'XENON100'
-    input = 'XED.ReadXED'
-    output = [ 'Plotting.PlotChannelWaveforms3D',
-               #'Plotting.PlotEventSummary',
-        ]
+   parent_configuration = 'XENON100'
+   input = 'XED.ReadXED'
+   output = [ 'Plotting.PlotChannelWaveforms3D',
+              #'Plotting.PlotEventSummary',
+            ]
 
-    [Plotting]
-    log_scale_entire_event = False
-    #output_dir = 'plots'  # Uncomment to write plot to disk
+   [Plotting]
+   log_scale_entire_event = False
+   #output_name = 'plots'  # Uncomment to write plot to disk
 
 
 You can load this file with `paxer` by using the `config_path` option::
