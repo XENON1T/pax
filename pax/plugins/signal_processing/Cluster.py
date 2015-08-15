@@ -465,31 +465,7 @@ class NaturalBreaks(ClusterPlugin):
                                 self.right[hit_indices[split_index:]],
                                 weights=self.area[hit_indices[split_index:]],)
         denominator += self.left[hit_indices[split_index]] - self.right[hit_indices[split_index - 1]]
-        result = -1 + 0.5 * numerator / denominator
-
-        x = np.concatenate((self.left[hit_indices], self.right[hit_indices]))
-        a = np.concatenate((self.area[hit_indices], self.area[hit_indices]))
-        xleft = np.concatenate((self.left[hit_indices][:split_index],
-                                self.right[hit_indices][:split_index]))
-        aleft = np.concatenate((self.area[hit_indices][:split_index],
-                                self.area[hit_indices][:split_index]))
-        xright = np.concatenate((self.left[hit_indices][split_index:],
-                                 self.right[hit_indices][split_index:]))
-        aright = np.concatenate((self.area[hit_indices][split_index:],
-                                 self.area[hit_indices][split_index:]))
-
-        if (sub_abs_dev(x, weights=a) - numerator) / numerator > 0.001:
-            raise ValueError("Nominator is already wrong: %s != %s" % (sub_abs_dev(x, weights=a), numerator))
-
-        result2 = 0.5 * sub_abs_dev(x, weights=a) / (
-            sub_abs_dev(xleft, weights=aleft) + sub_abs_dev(xright, weights=aright) +
-            self.left[hit_indices[split_index]] -
-            self.right[hit_indices[split_index - 1]]) - 1
-
-        if (result - result2) / result > 0.001:
-            raise ValueError("%s != %s" % (result, result2))
-
-        return result
+        return -1 + 0.5 * numerator / denominator
 
 
 @numba.jit(nopython=True)
@@ -523,16 +499,3 @@ def indices_of_largest_n(a, n):
     if len(a) == 0:
         return []
     return np.argsort(-a)[:min(n, len(a))]
-
-
-
-def sub_abs_dev(x, weights=None):
-    sum_w = np.sum(weights)
-    if weights is None:
-        return np.sum(np.abs(x - np.mean(x)))
-    elif sum_w == 0:
-        raise ValueError("Weights sum to zero: can't be normalized")
-    else:
-        # To normalize to the case with all weights 1, we multipy by len(x) / sum_w
-        #
-        return np.sum(weights * np.abs(x - np.average(x, weights=weights))) * len(x) / sum_w
