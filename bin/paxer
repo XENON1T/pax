@@ -251,6 +251,7 @@ def main():
     if args.plot_to_dir:
         override_dict['pax']['output_name'] = args.plot_to_dir
     if args.plot_interactive:
+        override_dict['pax']['output_name'] = 'SCREEN'
         override_dict['pax']['output'] = 'Plotting.PeakViewer'
 
     ##
