@@ -94,7 +94,7 @@ class TestRawData(unittest.TestCase):
             mypax2.shutdown()    # Needed to close the file in time before dir gets removed
 
             # Cleaning up the temporary dir explicitly (otherwise tempfile gives warning):
-            shutil.rmdir(tempdir)
+            shutil.rmtree(tempdir)
 
 if __name__ == '__main__':
     unittest.main()
