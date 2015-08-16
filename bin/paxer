@@ -10,7 +10,10 @@ import argparse
 import os
 import sys
 import copy
-import queue
+try:
+    import queue
+except ImportError:
+    import Queue as queue   #noqa
 import multiprocessing
 
 import pax    # For version
