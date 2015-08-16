@@ -1,6 +1,7 @@
 import numpy as np
 
 from pax import plugin, utils
+import numba
 
 
 class BasicProperties(plugin.TransformPlugin):
@@ -47,22 +48,22 @@ class BasicProperties(plugin.TransformPlugin):
                 pass
 
             # Compute central ranges
-            dt = event.sample_duration
-            leftmost = float('inf')
-            rightmost = float('-inf')
-            area_so_far = 0
-            for hit in sorted(peak.hits, key=lambda hit: abs(hit.center - peak.hit_time_mean)):
-                if hit.left < leftmost:
-                    leftmost = hit.left
-                if hit.right > rightmost:
-                    rightmost = hit.right
-                area_so_far += hit.area
-                if peak.range_50p_area == 0:
-                    if area_so_far >= 0.5 * peak.area:
-                        peak.range_50p_area = (rightmost - leftmost + 1) * dt
-                if area_so_far >= 0.9 * peak.area:
-                    peak.range_90p_area = (rightmost - leftmost + 1) * dt
-                    break
+            # dt = event.sample_duration
+            # leftmost = float('inf')
+            # rightmost = float('-inf')
+            # area_so_far = 0
+            # for hit in sorted(peak.hits, key=lambda hit: abs(hit.center - peak.hit_time_mean)):
+            #     if hit.left < leftmost:
+            #         leftmost = hit.left
+            #     if hit.right > rightmost:
+            #         rightmost = hit.right
+            #     area_so_far += hit.area
+            #     if peak.range_50p_area == 0:
+            #         if area_so_far >= 0.5 * peak.area:
+            #             peak.range_50p_area = (rightmost - leftmost + 1) * dt
+            #     if area_so_far >= 0.9 * peak.area:
+            #         peak.range_90p_area = (rightmost - leftmost + 1) * dt
+            #         break
 
         return event
 
@@ -76,39 +77,70 @@ class SumWaveformProperties(plugin.TransformPlugin):
             raise ValueError('peak_waveform_length must be an even multiple of the sample size')
 
     def transform_event(self, event):
+        dt = event.sample_duration
         field_length = self.wv_field_len
         for peak in event.peaks:
             peak.sum_waveform = np.zeros(field_length, dtype=peak.sum_waveform.dtype)
+            peak.sum_waveform_top = np.zeros(field_length, dtype=peak.sum_waveform.dtype)
 
             # Get the waveform and compute some properties
             w = event.get_sum_waveform(peak.detector).samples[peak.left:peak.right + 1]
-            peak.center_time = (peak.left + np.average(np.arange(len(w)), weights=w)) * event.sample_duration
-            cog_idx = int(round(peak.center_time / event.sample_duration)) - peak.left
+            peak.center_time = (peak.left + np.average(np.arange(len(w)), weights=w)) * dt
+            cog_idx = int(round(peak.center_time / dt)) - peak.left
             max_idx = np.argmax(w)
             peak.index_of_maximum = peak.left + max_idx
             peak.height = w[max_idx]
+            peak.range_50p_area = full_width_at_fraction_of_area(w, center=cog_idx, fraction=0.5) * dt
+            peak.range_90p_area = full_width_at_fraction_of_area(w, center=cog_idx, fraction=0.9) * dt
 
-            self.log.debug("Waveform length %s samples, center at the %sth sample" % (len(w), cog_idx))
-
-            # Chop the peak's waveform to the right length, then store it
-            field_center = int(field_length/2) + 1
-            left_overhang = cog_idx - field_center
-            if left_overhang > 0:
-                # Chop off the left overhang
-                self.log.debug("Left overhang of %d samples" % left_overhang)
-                w = w[left_overhang:]
-                cog_idx = field_center
-            right_overhang = len(w) - field_length + (field_center - cog_idx)
-            if right_overhang > 0:
-                self.log.debug("Right overhang of %d samples" % right_overhang)
-                # Chop off any remaining right overhang
-                w = w[:len(w)-right_overhang]
-
-            start_idx = field_center - cog_idx
-            self.log.debug("Indices in field: %s - %s" % (start_idx, start_idx + len(w)))
-            peak.sum_waveform[start_idx:start_idx + len(w)] = w
+            # Store the waveform; for tpc also store the top waveform
+            put_w_in_center_of_field(w, peak.sum_waveform, cog_idx)
+            if peak.detector == 'tpc':
+                put_w_in_center_of_field(event.get_sum_waveform('tpc_top').samples[peak.left:peak.right + 1],
+                                         peak.sum_waveform_top, cog_idx)
 
         return event
+
+
+@numba.jit
+def full_width_at_fraction_of_area(w, center, fraction):
+    total_area = w.sum()
+    left = center
+    right = center
+    area_seen = w[center]
+    while area_seen < total_area * fraction:
+        if left > 0 and w[left] > w[right]:
+            left -= 1
+            area_seen += w[left]
+        else:
+            right += 1
+            area_seen += w[right]
+    return right - left + 1
+
+
+def put_w_in_center_of_field(w, field, center_index):
+    """Stores (part of) the array w in a fixed length array field, with center_index in field's center.
+    Assumes field has odd length.
+    """
+    # TODO: Needs tests!
+    field_length = len(field)
+    if not field_length % 2:
+        raise ValueError("put_w_in_center_of_field requires an odd field length (so center is clear)")
+    field_center = int(field_length/2) + 1
+
+    left_overhang = center_index - field_center
+    if left_overhang > 0:
+        # Chop off the left overhang
+        w = w[left_overhang:]
+        center_index = field_center
+
+    right_overhang = len(w) - field_length + (field_center - center_index)
+    if right_overhang > 0:
+        # Chop off any remaining right overhang
+        w = w[:len(w)-right_overhang]
+
+    start_idx = field_center - center_index
+    field[start_idx:start_idx + len(w)] = w
 
 
 class HitpatternSpread(plugin.TransformPlugin):

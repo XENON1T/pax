@@ -201,6 +201,9 @@ class Peak(StrictModel):
     #: The peak's center of gravity is always in the center of the array.
     sum_waveform = np.array([], dtype=np.float32)
 
+    #: For tpc peaks, the peak's sum waveform in the top array only. Aligned with the sum waveform.
+    sum_waveform_top = np.array([], dtype=np.float32)
+
     #: Index in the event's sum waveform at which this peak has its maximum.
     index_of_maximum = 0
 
