@@ -8,18 +8,11 @@ class BasicProperties(plugin.TransformPlugin):
     """
 
     def startup(self):
-        self.dt = self.config['sample_duration']
         self.last_top_ch = np.max(np.array(self.config['channels_top']))
 
     def transform_event(self, event):
 
         for peak in event.peaks:
-
-            # For backwards compatibility with plotting code
-            highest_peak_index = np.argmax([s.height for s in peak.hits])
-            peak.index_of_maximum = peak.hits[highest_peak_index].index_of_maximum
-            peak.height = peak.hits[highest_peak_index].height
-
             # Compute the area per pmt and saturation count
             peak.n_saturated_per_channel = np.zeros(event.n_channels, dtype=np.int16)
             for s in peak.hits:
@@ -70,6 +63,50 @@ class BasicProperties(plugin.TransformPlugin):
                 if area_so_far >= 0.9 * peak.area:
                     peak.range_90p_area = (rightmost - leftmost + 1) * dt
                     break
+
+        return event
+
+
+class SumWaveformProperties(plugin.TransformPlugin):
+    """Computes properties based on the hits-only sum waveform"""
+
+    def startup(self):
+        self.wv_field_len = int(self.config['peak_waveform_length'] / self.config['sample_duration']) + 1
+        if not self.wv_field_len % 2:
+            raise ValueError('peak_waveform_length must be an even multiple of the sample size')
+
+    def transform_event(self, event):
+        field_length = self.wv_field_len
+        for peak in event.peaks:
+            peak.sum_waveform = np.zeros(field_length, dtype=peak.sum_waveform.dtype)
+
+            # Get the waveform and compute some properties
+            w = event.get_sum_waveform(peak.detector).samples[peak.left:peak.right + 1]
+            peak.center_time = (peak.left + np.average(np.arange(len(w)), weights=w)) * event.sample_duration
+            cog_idx = int(round(peak.center_time / event.sample_duration)) - peak.left
+            max_idx = np.argmax(w)
+            peak.index_of_maximum = peak.left + max_idx
+            peak.height = w[max_idx]
+
+            self.log.debug("Waveform length %s samples, center at the %sth sample" % (len(w), cog_idx))
+
+            # Chop the peak's waveform to the right length, then store it
+            field_center = int(field_length/2) + 1
+            left_overhang = cog_idx - field_center
+            if left_overhang > 0:
+                # Chop off the left overhang
+                self.log.debug("Left overhang of %d samples" % left_overhang)
+                w = w[left_overhang:]
+                cog_idx = field_center
+            right_overhang = len(w) - field_length + (field_center - cog_idx)
+            if right_overhang > 0:
+                self.log.debug("Right overhang of %d samples" % right_overhang)
+                # Chop off any remaining right overhang
+                w = w[:len(w)-right_overhang]
+
+            start_idx = field_center - cog_idx
+            self.log.debug("Indices in field: %s - %s" % (start_idx, start_idx + len(w)))
+            peak.sum_waveform[start_idx:start_idx + len(w)] = w
 
         return event
 

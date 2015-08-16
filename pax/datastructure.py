@@ -194,14 +194,20 @@ class Peak(StrictModel):
     mean_amplitude_to_noise = 0.0
 
     ##
-    # Deprecated sum-waveform stuff, needed for Xerawdp matching??
+    # Sum-waveform properties
     ##
+
+    #: The peak's sum waveform in pe/bin
+    #: The peak's center of gravity is always in the center of the array.
+    sum_waveform = np.array([], dtype=np.float32)
 
     #: Index in the event's sum waveform at which this peak has its maximum.
     index_of_maximum = 0
 
-    #: Height of highest point in peak (in pe/bin)
-    #: In new pax, is height of highest hit
+    #: Time at which the peak's sum waveform has its center of gravity.
+    center_time = 0.0
+
+    #: Height of sum waveform (in pe/bin)
     height = 0.0
 
 
@@ -220,7 +226,7 @@ class SumWaveform(StrictModel):
     channel_list = np.array([], dtype=np.uint16)
 
     #: Array of samples, units of pe/bin.
-    samples = np.array([], dtype=np.float64)
+    samples = np.array([], dtype=np.float32)
 
     def is_filtered(self):
         if self.name_of_filter != 'none':
