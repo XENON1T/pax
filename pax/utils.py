@@ -12,7 +12,6 @@ import logging
 import time
 import os
 import glob
-from itertools import zip_longest
 
 import numpy as np
 from scipy import interpolate
@@ -255,22 +254,6 @@ def adc_to_pe(config, channel, use_reference_gain=False, use_reference_gain_if_z
     return adc_to_e / pmt_gain
 
 
-def chunk_in_ntuples(iterable, n, fillvalue=None):
-    """ Chunks an iterable into a list of tuples
-    :param iterable: input iterable
-    :param n: length of n tuple
-    :param fillvalue: if iterable is not divisible by chunk_size, pad last tuple with this value
-    :return: list of n-tuples
-    Stolen from http://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks-in-python
-    Modified for python3, and made it return lists
-    """
-    if not n > 0 and int(n) == n:
-        raise ValueError("Chunk size should be a positive integer, not %s" % n)
-    return list(zip_longest(*[iter(iterable)] * n, fillvalue=fillvalue))
-    # Numpy solution -- without filling though
-    # return np.reshape(iterable, (-1,n))
-
-
 def cluster_by_diff(x, diff_threshold, return_indices=False):
     """Returns list of lists of indices of clusters in x,
     making cluster boundaries whenever values are >= threshold apart.
@@ -298,11 +281,6 @@ def cluster_by_diff(x, diff_threshold, return_indices=False):
     #     return np.split(np.arange(len(x)), split_indices)
     # else:
     #     return np.split(x, split_indices)
-
-
-def mad(data, axis=None):
-    """ Return median absolute deviation of numpy array"""
-    return np.mean(np.absolute(data - np.median(data, axis)), axis)
 
 
 def weighted_mean_variance(values, weights):
