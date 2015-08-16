@@ -354,7 +354,7 @@ def get_args():
                         help="File, database or directory to read events from.",)
     parser.add_argument('--output', default=None,
                         help="File, database or directory to write events to. "
-                             "Defaults to name constructed from current date and time (YYMMDD_hhmmss). "
+                             "If omitted, will try to construct one from input name or timestamp. "
                              "For plotting to screen, use SCREEN.")
 
     output_type_options = list(reversed(sorted(output_plugin_aliases.keys())))
