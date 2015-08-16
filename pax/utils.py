@@ -121,7 +121,7 @@ class InterpolatingMap(object):
         """
         return self.get_value(*[getattr(position, q[0]) for q in self.coordinate_system], map_name=map_name)
 
-    def get_value(self, *coordinates, map_name='map'):
+    def get_value(self, map_name, *coordinates):
         """Returns the value of the map at the position given by coordinates"""
         result = self.interpolators[map_name](*coordinates)
         try:
@@ -218,7 +218,7 @@ class Vector2DGridMap(InterpolatingMap):
 
         return get_data
 
-    def get_value(self, *coordinates, map_name='map'):
+    def get_value(self, map_name, *coordinates):
         """Returns the value of the map at the position given by coordinates"""
         return self.interpolators[map_name](*coordinates)
 

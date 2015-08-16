@@ -9,6 +9,9 @@ releases.  Patch releases cannot modify this.
 """
 
 import inspect
+import six
+if six.PY3:
+    long = int
 
 import numpy as np
 
@@ -278,7 +281,7 @@ class Pulse(StrictModel):
          - raw_data (numpy array of samples)
          - right (last index)
         """
-        super().__init__(**kwargs)
+        StrictModel.__init__(self, **kwargs)
 
         if self.channel == INT_NAN:
             raise ValueError("Must specify channel to init Pulse")
@@ -312,14 +315,14 @@ class Event(StrictModel):
     #: UNIX clock. Or rather, it starts from January 1, 1970.  This must be an integer
     #: because floats have rounding that result in imprecise times.  You could
     #: think of this as the time of the earliest sample.
-    start_time = 0
+    start_time = long(0)
 
     #: Integer stop time of the event in nanoseconds
     #
     #: This stop time includes the last recorded sample.  Therefore, it's the right
     #: edge of the last sample.  This is a 64-bit integer for the reasons explained
     #: in 'start_time'.
-    stop_time = 0
+    stop_time = long(0)
 
     #: Time duration of a sample (in pax units, i.e. ns)
     #: For V1724 digitizers (e.g. XENON), this is 10 nanoseconds always.
@@ -363,7 +366,7 @@ class Event(StrictModel):
         # Model's init must be called first, else we can't store attributes
         # This will store all of the kwargs as attrs
         # We don't pass length, it's not an attribute that can be set
-        super().__init__(**{k: v for k, v in kwargs.items() if k != 'length'})
+        StrictModel.__init__(self, **{k: v for k, v in kwargs.items() if k != 'length'})
 
         # Cheat to init stop_time from length and duration
         if 'length' in kwargs and self.sample_duration and not self.stop_time:

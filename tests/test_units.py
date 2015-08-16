@@ -4,6 +4,7 @@ test_pax_configuration
 
 Tests for `pax.configuration` module.
 """
+from __future__ import division
 import unittest
 
 from pax import units

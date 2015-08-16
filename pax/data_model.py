@@ -28,10 +28,10 @@ class Model(object):
     def __init__(self, kwargs_dict=None, **kwargs):
 
         # Initialize the collection fields to empty lists
-        # super() is needed to bypass type checking in StrictModel
+        # object.__setattr__ is needed to bypass type checking in StrictModel
         list_field_info = self.get_list_field_info()
         for field_name in list_field_info:
-            super().__setattr__(field_name, [])
+            object.__setattr__(self, field_name, [])
 
         # Initialize all attributes from kwargs and kwargs_dict
         kwargs.update(kwargs_dict or {})
@@ -151,9 +151,10 @@ class Model(object):
 
 
 casting_allowed_for = {
-    int:    ['int16', 'int32', 'int64', 'Int64', 'Int32'],
-    float:  ['int', 'float32', 'float64', 'int16', 'int32', 'int64', 'Int64', 'Int32'],
-    bool:   ['int16', 'int32', 'int64', 'Int64', 'Int32'],
+    'int':    ['int16', 'int32', 'int64', 'Int64', 'Int32', 'long'],
+    'float':  ['int', 'int16', 'int32', 'int64', 'Int64', 'Int32', 'float32', 'float64', 'long'],
+    'bool':   ['int', 'int16', 'int32', 'int64', 'Int64', 'Int32', 'long'],
+    'long':   ['int', 'int16', 'int32', 'int64', 'Int64', 'Int32'],
 }
 
 
@@ -177,21 +178,22 @@ class StrictModel(Model):
         old_val = getattr(self, key)
         old_type = type(old_val)
         new_type = type(value)
+        old_class_name = old_val.__class__.__name__
+        new_class_name = value.__class__.__name__
 
         # Check for attempted type change
         if old_type != new_type:
 
             # Are we allowed to cast the type?
-            if old_type in casting_allowed_for \
-                    and value.__class__.__name__ in casting_allowed_for[old_type]:
+            if old_class_name in casting_allowed_for and new_class_name in casting_allowed_for[old_class_name]:
                 value = old_type(value)
 
             else:
                 raise TypeError('Attribute %s of class %s should be a %s, not a %s. '
                                 % (key,
                                    self.__class__.__name__,
-                                   old_val.__class__.__name__,
-                                   value.__class__.__name__))
+                                   old_class_name,
+                                   new_class_name))
 
         # Check for attempted dtype change
         if isinstance(old_val, np.ndarray):
@@ -199,4 +201,4 @@ class StrictModel(Model):
                 raise TypeError('Attribute %s of class %s should have numpy dtype %s, not %s' % (
                     key, self.__class__.__name__, old_val.dtype, value.dtype))
 
-        super().__setattr__(key, value)
+        Model.__setattr__(self, key, value)

@@ -79,7 +79,7 @@ class PosRecChiSquareGamma(plugin.TransformPlugin):
             return float('inf')
 
         # Get all LCE map values for the live PMTs at position x,y
-        map_values = self.s2_lce_map.get_value(x, y)[self.is_pmt_in]
+        map_values = self.s2_lce_map.get_value('map', x, y)[self.is_pmt_in]
 
         # Convert to relative LCEs among included PMTs
         map_values = np.clip(map_values, 0, 1)

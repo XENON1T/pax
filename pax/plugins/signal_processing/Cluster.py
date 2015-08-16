@@ -184,7 +184,7 @@ class MeanShift(ClusterPlugin):
     """
 
     def startup(self):
-        super().startup()
+        ClusterPlugin.startup(self)
 
         self.s2_size = self.config['s2_size']
         self.s2_width = self.config['s2_width']
@@ -293,7 +293,7 @@ class GapSize(ClusterPlugin):
     """
 
     def startup(self):
-        super().startup()
+        ClusterPlugin.startup(self)
         # Convert gap threshold to samples (is in time (ns) in config)
         self.large_gap_threshold = self.config['large_gap_threshold'] / self.dt
         self.small_gap_threshold = self.config['small_gap_threshold'] / self.dt
@@ -343,7 +343,7 @@ class NaturalBreaks(ClusterPlugin):
     """
 
     def startup(self):
-        super().startup()
+        ClusterPlugin.startup(self)
         self.max_gap_size_in_cluster = self.config['max_gap_size_in_cluster'] / self.dt
         self.min_gap_size_for_break = self.config['min_gap_size_for_break'] / self.dt
         self.max_n_gaps_to_test = self.config['max_n_gaps_to_test']

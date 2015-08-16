@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+import six
 
 try:
     from setuptools import setup
@@ -11,6 +11,10 @@ readme = open('README.rst').read()
 history = open('HISTORY.rst').read().replace('.. :changelog:', '')
 
 requirements = open('requirements.txt').read().splitlines()
+if six.PY2:
+    print(requirements)
+    del requirements[requirements.index('avro-python3')]
+    requirements.append('avro')
 
 test_requirements = requirements + ['flake8',
                                     'tox',

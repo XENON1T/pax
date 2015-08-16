@@ -2,12 +2,16 @@
 """
 import glob
 import logging
-import importlib
-from io import StringIO
+import six
 import itertools
 import os
 import time
 from configparser import ConfigParser, ExtendedInterpolation
+if six.PY2:
+    import imp
+else:
+    import importlib
+
 
 try:
     import ROOT     # noqa
@@ -208,7 +212,7 @@ class Processor:
         for config_path in config_paths:
             config_files.append(config_path)
         if config_string is not None:
-            config_files.append(StringIO(config_string))
+            config_files.append(six.StringIO(config_string))
         if len(config_files) == 0 and config_dict == {}:
             # Load the fallback configuration
             # Have to use print, logging is not yet setup...
@@ -348,13 +352,19 @@ class Processor:
         name_module, name_class = name.split('.')
 
         # Find and load the module which includes the plugin
-        # The traditional and easy way to do this (with imp) has been deprecated... for some reason...
-        # importlib also recently deprecated its 'loader' API in favor of some new 'spec' API... for some reason...
-        # There is no easy example of this in the python docs, hopefully this will change soon.
-        spec = importlib.machinery.PathFinder.find_spec(name_module, self.plugin_search_paths)
-        if spec is None:
-            raise ValueError('Invalid configuration: plugin %s not found.' % name)
-        plugin_module = spec.loader.load_module()
+        if six.PY2:
+            file, pathname, description = imp.find_module(name_module, self.plugin_search_paths)
+            if file is None:
+                raise ValueError('Invalid configuration: plugin %s not found.' % name)
+            plugin_module = imp.load_module(name_module, file, pathname, description)
+        else:
+            # imp has been deprecated in favor of importlib.
+            # Moreover, the above code gives non-closed file warnings in py3, so although it works,
+            # we really don't want to use it.
+            spec = importlib.machinery.PathFinder.find_spec(name_module, self.plugin_search_paths)
+            if spec is None:
+                raise ValueError('Invalid configuration: plugin %s not found.' % name)
+            plugin_module = spec.loader.load_module()
 
         this_plugin_config = {}
 

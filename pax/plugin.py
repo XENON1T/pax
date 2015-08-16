@@ -118,7 +118,7 @@ class OutputPlugin(ProcessPlugin):
         # (paxer would override it)
         if 'output_name' not in self.config:
             self.config['output_name'] = strftime('%y%m%d_%H%M%S')
-        super()._pre_startup()
+        ProcessPlugin._pre_startup(self)
 
     def write_event(self, event):
         """Do magic. Return None.
