@@ -10,12 +10,32 @@ You should be able to run `pax` running at the shell the following command::
 
   export PATH=/home/tunnell/anaconda3/bin:$PATH
 
-This can be added to your `.bashrc` to be run automatically when you login.  You
-can check that it worked the following command::
+This can be added to your `.bashrc` to be run automatically when you login.
 
-  python -c "import pax; print(pax.__version__)"
+To set up a developer installation of pax in your xecluster home directory, first follow the steps for installing anaconda and the required packages in the main readme (I didn't try to install snappy but used the workaround). Then add the following to your .bashrc::
 
-Which should result in Python3 being used to print the pax version.
+    # use Basho's git in totally insecure mode
+    export PATH=/home/kaminsky/software/bin:$PATH
+    export GIT_SSL_NO_VERIFY=true
+
+Now follow these steps::
+
+    cd ~
+    git clone https://github.com/XENON1T/pax.git
+    wget http://curl.haxx.se/ca/cacert.pem ~/cacert.pem
+    mkdir .pip
+    cp /home/aalbers/.pip/pip.conf ~/.pip
+    pip install avro-python3 flake8 prettytable tqdm pymongo
+    cd pax
+    python setup.py develop
+
+If it complains about any more missing modules, install it using pip install. 
+
+Whichever way you want to use pax, you check that it worked using the following command::
+
+  paxer --version
+
+which should result in Python3 being used to print the pax version.
 
 
 ----------------------------------------
@@ -44,22 +64,6 @@ Setup pax by executing::
 Pax should now work, test it by running::
 
   $ python paxer --plot
-
----------------------------------------
-How do I run `git` at LNGS on xecluster
----------------------------------------
-
-You can get `git` running by doing the following at the command line::
-
-  export PATH=/home/kaminsky/software/bin:$PATH
-
-The machines have old certificates, therefore you cannot run `git` in secure
-mode.  Running the command is a workaround::
-
-  export GIT_SSL_NO_VERIFY=true
-
-These two export commands can be added to your `.bashrc` to be run automatically
-when you login.
 
 
 ---------------------------------------
