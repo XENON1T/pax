@@ -159,8 +159,8 @@ class Peak(StrictModel):
     #: Weighted (by hit area) std of hit times
     hit_time_std = 0.0
 
-    #: Time range of centermost hits containing at least 50% / 90% of area (with center at hit_time_mean)
-    #: (rightmostright - leftmostleft + 1) * sample_duration
+    #: Range of peak (hit-only) sum waveform which includes fraction of area, moving outward from center (index in w).
+    #: the move left / move right decision is made by including higher samples first
     range_50p_area = 0.0
     range_90p_area = 0.0
 

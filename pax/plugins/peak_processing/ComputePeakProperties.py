@@ -1,7 +1,6 @@
 import numpy as np
 
 from pax import plugin, utils
-import numba
 
 
 class BasicProperties(plugin.TransformPlugin):
@@ -35,35 +34,14 @@ class BasicProperties(plugin.TransformPlugin):
             peak.hit_time_std **= 0.5  # Convert variance to std
 
             # Compute mean amplitude / noise
-            if event.event_number == 198:
-                pass
-            hit_areas = [hit.area for hit in peak.hits]
-            for hit in peak.hits:
-                if hit.noise_sigma == 0:
-                    pass
             try:
                 peak.mean_amplitude_to_noise = np.average([hit.height / hit.noise_sigma for hit in peak.hits],
-                                                          weights=hit_areas)
+                                                          weights=[hit.area for hit in peak.hits])
             except ZeroDivisionError:
-                pass
-
-            # Compute central ranges
-            # dt = event.sample_duration
-            # leftmost = float('inf')
-            # rightmost = float('-inf')
-            # area_so_far = 0
-            # for hit in sorted(peak.hits, key=lambda hit: abs(hit.center - peak.hit_time_mean)):
-            #     if hit.left < leftmost:
-            #         leftmost = hit.left
-            #     if hit.right > rightmost:
-            #         rightmost = hit.right
-            #     area_so_far += hit.area
-            #     if peak.range_50p_area == 0:
-            #         if area_so_far >= 0.5 * peak.area:
-            #             peak.range_50p_area = (rightmost - leftmost + 1) * dt
-            #     if area_so_far >= 0.9 * peak.area:
-            #         peak.range_90p_area = (rightmost - leftmost + 1) * dt
-            #         break
+                self.log.warning('One of the hits in %s peak %d-%d has 0 noise sigma... strange!'
+                                 'This should only happen in extremely rare cases, '
+                                 'simulated data or with very strange settings' % (peak.detector,
+                                                                                   peak.left, peak.right))
 
         return event
 
@@ -90,8 +68,8 @@ class SumWaveformProperties(plugin.TransformPlugin):
             max_idx = np.argmax(w)
             peak.index_of_maximum = peak.left + max_idx
             peak.height = w[max_idx]
-            peak.range_50p_area = full_width_at_fraction_of_area(w, center=cog_idx, fraction=0.5) * dt
-            peak.range_90p_area = full_width_at_fraction_of_area(w, center=cog_idx, fraction=0.9) * dt
+            peak.range_50p_area = range_of_fraction_of_area(w, center=cog_idx, fraction=0.5) * dt
+            peak.range_90p_area = range_of_fraction_of_area(w, center=cog_idx, fraction=0.9) * dt
 
             # Store the waveform; for tpc also store the top waveform
             put_w_in_center_of_field(w, peak.sum_waveform, cog_idx)
@@ -102,20 +80,37 @@ class SumWaveformProperties(plugin.TransformPlugin):
         return event
 
 
-@numba.jit
-def full_width_at_fraction_of_area(w, center, fraction):
+def range_of_fraction_of_area(w, center, fraction):
+    """Compute range of peaks that includes fraction of area, moving outward from center (index in w).
+    The move left / move right decision is made by which sample is higher.
+    Returns number of samples included. Fractional part is how much of the last sample would have to be included to get
+    to the exact fraction, assuming the amplitude is constant over that sample.
+    This function is a pretty low-level algorithm, so it could probably be numba'd
+    """
     total_area = w.sum()
-    left = center
-    right = center
-    area_seen = w[center]
+
+    left = center       # Last sample index left of maximum already included
+    right = center      # Last sample index right of maximum already included
+    area_seen = w[center]   # Area already included
+    last_sample_included = center   # Last sample included
     while area_seen < total_area * fraction:
-        if left > 0 and w[left] > w[right]:
+        # If we can advance left, and either we can't advance left or advancing left would gain us more, advance left
+        if left > 0 and right == len(w) - 1 or w[left] > w[right]:
             left -= 1
+            last_sample_included = left
             area_seen += w[left]
         else:
             right += 1
+            last_sample_included = right
             area_seen += w[right]
-    return right - left + 1
+
+    # Now we have slightly more than the fraction.
+    # Estimate how much of the last sample we should exclude to get back to the exact fraction.
+    last_amplitude = w[last_sample_included]
+    excess_area = area_seen - total_area * fraction
+    reduce_fraction = excess_area / last_amplitude
+
+    return right - left + 1 - max(0, min(1, reduce_fraction))
 
 
 def put_w_in_center_of_field(w, field, center_index):
