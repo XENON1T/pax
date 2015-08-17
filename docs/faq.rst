@@ -70,7 +70,7 @@ Yes, in fact several of the developers do this, much to the sadness of the other
 
 1. Start with installing Anaconda for python 3 from their website. If the Anaconda website nags you for an email,
    enter your favourite fictional email address
-2. Install python-snappy from `Christoph Gohlke's page <http://www.lfd.uci.edu/~gohlke/pythonlibs/>`_.
+2. Install python-snappy and h5py from `Christoph Gohlke's page <http://www.lfd.uci.edu/~gohlke/pythonlibs/>`_.
    See installation instructions for the .whl file at the top of the page.
 2. Get pax using Github's nice point-and-click Github For Windows application.
    Ignore the haters who insist on doing everything by command line.
