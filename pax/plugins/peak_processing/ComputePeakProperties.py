@@ -68,6 +68,7 @@ class SumWaveformProperties(plugin.TransformPlugin):
             max_idx = np.argmax(w)
             peak.index_of_maximum = peak.left + max_idx
             peak.height = w[max_idx]
+            peak.range_20p_area = range_of_fraction_of_area(w, center=cog_idx, fraction=0.2) * dt
             peak.range_50p_area = range_of_fraction_of_area(w, center=cog_idx, fraction=0.5) * dt
             peak.range_90p_area = range_of_fraction_of_area(w, center=cog_idx, fraction=0.9) * dt
 
@@ -81,36 +82,61 @@ class SumWaveformProperties(plugin.TransformPlugin):
 
 
 def range_of_fraction_of_area(w, center, fraction):
-    """Compute range of peaks that includes fraction of area, moving outward from center (index in w).
-    The move left / move right decision is made by which sample is higher.
-    Returns number of samples included. Fractional part is how much of the last sample would have to be included to get
-    to the exact fraction, assuming the amplitude is constant over that sample.
+    """Compute range of peaks that includes fraction of area, moving symmetrically outward from center (index in w).
+    Returns number of samples included. Fractional part is determined as follows:
+     - If we can only move in one direction: the fractional part of the sample which takes us over the desired fraction
+     - If we can move in both directions, and one of the samples left or right would be enough to take us over
+       the desired fraction: the needed fraction of that sample.
+     - ... if both samples left and right are needed to take us over the desired fraction: the highest sample is fully
+      included, then the other fractionally.
     This function is a pretty low-level algorithm, so it could probably be numba'd
     """
     total_area = w.sum()
+    area_todo = total_area * fraction   # Area to still include
 
-    left = center       # Last sample index left of maximum already included
-    right = center      # Last sample index right of maximum already included
-    area_seen = w[center]   # Area already included
-    last_sample_included = center   # Last sample included
-    while area_seen < total_area * fraction:
-        # If we can advance left, and either we can't advance left or advancing left would gain us more, advance left
-        if left > 0 and right == len(w) - 1 or w[left] > w[right]:
-            left -= 1
-            last_sample_included = left
-            area_seen += w[left]
-        else:
+    # Edge case where center sample would already take us over area_todo
+    if w[center] > area_todo:
+        return w[center] / area_todo
+
+    left = float(center)       # Last sample index left of maximum already included
+    right = float(center)      # Last sample index right of maximum already included
+    area_todo -= w[center]
+
+    while True:
+        if left == 0:
+            # Move only righward
+            fraction_of_todo = w[right + 1] / area_todo
+            if fraction_of_todo > 1:
+                right += fraction_of_todo
+                break
             right += 1
-            last_sample_included = right
-            area_seen += w[right]
+            area_todo -= w[right]
+        elif right == len(w) - 1:
+            # Move only leftward
+            fraction_of_todo = w[left - 1] / area_todo
+            if fraction_of_todo > 1:
+                left -= fraction_of_todo
+                break
+            left -= 1
+            area_todo -= w[left]
+        else:
+            # Move in both directions
+            fraction_of_todo = (w[right + 1] + w[left - 1]) / area_todo
+            if fraction_of_todo > 1:
+                # This time we go over threshold!
+                # Is the highest sample enough? Then use just a fraction of that.
+                fraction_of_todo = max(w[right + 1], w[left - 1]) / area_todo
+                if fraction_of_todo > 1:
+                    left -= fraction_of_todo      # doesn't matter if we add to left or right, only difference matters
+                    break
+                # We need both samples, so add the highest sample whole + a fraction of the lowest one
+                left -= 1 + min(w[right+1], w[left - 1])/area_todo
+                break
+            right += 1
+            left -= 1
+            area_todo -= w[left] + w[right]
 
-    # Now we have slightly more than the fraction.
-    # Estimate how much of the last sample we should exclude to get back to the exact fraction.
-    last_amplitude = w[last_sample_included]
-    excess_area = area_seen - total_area * fraction
-    reduce_fraction = excess_area / last_amplitude
-
-    return right - left + 1 - max(0, min(1, reduce_fraction))
+    return right - left + 1
 
 
 def put_w_in_center_of_field(w, field, center_index):
