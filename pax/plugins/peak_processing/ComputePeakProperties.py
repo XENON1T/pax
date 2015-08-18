@@ -81,6 +81,7 @@ class SumWaveformProperties(plugin.TransformPlugin):
 
         return event
 
+
 @numba.jit(nopython=True)
 def range_of_fraction_of_area(w, center, fraction):
     """Compute range of peaks that includes fraction of area, moving symmetrically outward from center (index in w).
@@ -105,6 +106,8 @@ def range_of_fraction_of_area(w, center, fraction):
     extra_width = 0.0        # Fractional amount of last sample to add.
 
     while True:
+        if area_todo == 0:
+            break
         if left == 0:
             # Move only righward
             fraction_of_todo = w[right + 1] / area_todo
@@ -129,10 +132,10 @@ def range_of_fraction_of_area(w, center, fraction):
                 # Is the highest sample enough? Then use just a fraction of that.
                 fraction_of_todo = max(w[right + 1], w[left - 1]) / area_todo
                 if fraction_of_todo > 1:
-                    extra_width = 1 / fraction_of_todo      # doesn't matter if we add to left or right, only difference matters
+                    extra_width = 1 / fraction_of_todo
                     break
                 # We need both samples, so add the highest sample whole + a fraction of the lowest one
-                extra_width = 1 + min(w[right+1], w[left - 1])/area_todo
+                extra_width = 1 + min(w[right+1], w[left - 1]) / area_todo
                 break
             right += 1
             left -= 1
