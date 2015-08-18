@@ -126,7 +126,7 @@ class InterpolatingMap(object):
         result = self.interpolators[map_name](*coordinates)
         try:
             return float(result[0])
-        except TypeError:
+        except (TypeError, IndexError):
             return float(result)    # We don't want a 0d numpy array, which the 1d and 2d interpolators seem to give
 
     def init_map(self, map_data, **kwargs):

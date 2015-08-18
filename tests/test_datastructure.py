@@ -81,7 +81,7 @@ class TestDatastructure(unittest.TestCase):
         e = Event.empty_event()
         e.peaks.append(Peak({'area': 2.0,
                              'index_of_maximum': 0,
-                             'type': 'S1',
+                             'type': 's1',
                              'detector':         'tpc', }))
 
         self.assertEqual(len(e.S1s()), 1)
@@ -94,7 +94,7 @@ class TestDatastructure(unittest.TestCase):
         e = Event.empty_event()
         for area in areas:
             e.peaks.append(Peak({'area': area,
-                                 'type': 'S2',
+                                 'type': 's2',
                                  'detector': 'tpc'}))
 
         s2s = e.S2s()

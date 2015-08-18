@@ -28,6 +28,7 @@ setup(
     packages=[  'pax',
                 'pax.config',
                 'pax.plugins',
+                'pax.plugins.interaction_processing',
                 'pax.plugins.io',
                 'pax.plugins.peak_processing',
                 'pax.plugins.posrec',
