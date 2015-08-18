@@ -84,8 +84,9 @@ class SumWaveformProperties(plugin.TransformPlugin):
 
 @numba.jit(nopython=True)
 def range_of_fraction_of_area(w, center, fraction):
-    """Compute range of peaks that includes fraction of area, moving symmetrically outward from center (index in w).
-    Returns number of samples included. Fractional part is determined as follows:
+    """Compute range of peaks that includes fraction of area, moving outward from center (index in w)
+    towards side that has most area remaining. Returns number of samples included.
+    Fractional part is determined as follows:
      - If we can only move in one direction: the fractional part of the sample which takes us over the desired fraction
      - If we can move in both directions, and one of the samples left or right would be enough to take us over
        the desired fraction: the needed fraction of that sample.
@@ -95,6 +96,8 @@ def range_of_fraction_of_area(w, center, fraction):
     """
     total_area = w.sum()
     area_todo = total_area * fraction   # Area to still include
+    area_left = w[:center].sum()        # Unseen area remaining on the left
+    area_right = w[center+1:].sum()     # Unseen area remaining on the right
 
     # Edge case where center sample would already take us over area_todo
     if w[center] > area_todo:
@@ -108,38 +111,25 @@ def range_of_fraction_of_area(w, center, fraction):
     while True:
         if area_todo == 0:
             break
-        if left == 0:
-            # Move only righward
+        # If we cannot move left, or there is more remaining area to the right, move right
+        if left == 0 or area_right > area_left:
+            # Move right
             fraction_of_todo = w[right + 1] / area_todo
             if fraction_of_todo > 1:
                 extra_width = 1 / fraction_of_todo
                 break
             right += 1
             area_todo -= w[right]
-        elif right == len(w) - 1:
-            # Move only leftward
+            area_right -= w[right]
+        else:
+            # Move left
             fraction_of_todo = w[left - 1] / area_todo
             if fraction_of_todo > 1:
                 extra_width = 1 / fraction_of_todo
                 break
             left -= 1
             area_todo -= w[left]
-        else:
-            # Move in both directions
-            fraction_of_todo = (w[right + 1] + w[left - 1]) / area_todo
-            if fraction_of_todo > 1:
-                # This time we go over threshold!
-                # Is the highest sample enough? Then use just a fraction of that.
-                fraction_of_todo = max(w[right + 1], w[left - 1]) / area_todo
-                if fraction_of_todo > 1:
-                    extra_width = 1 / fraction_of_todo
-                    break
-                # We need both samples, so add the highest sample whole + a fraction of the lowest one
-                extra_width = 1 + min(w[right+1], w[left - 1]) / area_todo
-                break
-            right += 1
-            left -= 1
-            area_todo -= w[left] + w[right]
+            area_left -= w[left]
 
     return right - left + 1 + extra_width
 
