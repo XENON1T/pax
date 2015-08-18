@@ -20,7 +20,7 @@ from pax import core, units
     # },
 	# 'Plotting.PlotEventSummary' : {
 		# 'plot_every':	100,
-		# 'output_dir':	'real_data_waveforms'
+		# 'output_name':	'real_data_waveforms'
 	# }
 # }).run()
 
@@ -43,6 +43,6 @@ for simulation_name in ('fake_s1s', 'fake_s2s'):
         },
 		'Plotting.PlotEventSummary' : {
 			'plot_every':	100,
-			'output_dir':	simulation_name + '_waveforms',
+			'output_name':	simulation_name + '_waveforms',
 		}
     }).run()

@@ -165,13 +165,13 @@ class TestPax(unittest.TestCase):
         """
         config = {'pax': {'events_to_process': [0],
                           'output': 'Dummy.DummyOutput'}}
-        mypax = core.Processor(config_names='XED', config_dict=config)
+        mypax = core.Processor(config_names='XENON100', config_dict=config)
         mypax.run()
 
     def test_process_single_xed_event_olddsp(self):
         """ Process the first event from the XED file using Xerawdp matching config
         """
-        mypax = core.Processor(config_names=['XED', 'XerawdpImitation'],
+        mypax = core.Processor(config_names=['XENON100', 'XerawdpImitation'],
                                config_dict={'pax': {
                                    'events_to_process': [0],
                                    'output': 'Dummy.DummyOutput'}})
@@ -196,7 +196,7 @@ class TestPax(unittest.TestCase):
         config = {'pax': {'event_numbers_file': 'temp_eventlist.txt',
                           'plugin_group_names': ['input', 'output'],
                           'output': 'Dummy.DummyOutput'}}
-        mypax = core.Processor(config_names='XED', config_dict=config)
+        mypax = core.Processor(config_names='XENON100', config_dict=config)
         mypax.run()
         self.assertEqual(mypax.get_plugin_by_name('DummyOutput').last_event.event_number, 7)
         os.remove('temp_eventlist.txt')

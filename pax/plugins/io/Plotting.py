@@ -24,8 +24,8 @@ class PlotBase(plugin.OutputPlugin):
     block_view = False
 
     def startup(self):
-        if self.config['output_dir'] is not None:
-            self.output_dir = self.config['output_dir']
+        if self.config['output_name'] != 'SCREEN':
+            self.output_dir = self.config['output_name']
             if not os.path.exists(self.output_dir):
                 os.makedirs(self.output_dir)
         else:
