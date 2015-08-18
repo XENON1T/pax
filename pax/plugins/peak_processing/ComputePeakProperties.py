@@ -1,4 +1,5 @@
 import numpy as np
+import numba
 
 from pax import plugin, utils
 
@@ -80,7 +81,7 @@ class SumWaveformProperties(plugin.TransformPlugin):
 
         return event
 
-
+@numba.jit(nopython=True)
 def range_of_fraction_of_area(w, center, fraction):
     """Compute range of peaks that includes fraction of area, moving symmetrically outward from center (index in w).
     Returns number of samples included. Fractional part is determined as follows:
@@ -98,16 +99,17 @@ def range_of_fraction_of_area(w, center, fraction):
     if w[center] > area_todo:
         return area_todo / w[center]
 
-    left = float(center)       # Last sample index left of maximum already included
-    right = float(center)      # Last sample index right of maximum already included
+    left = int(center)       # Last sample index left of maximum already included
+    right = int(center)      # Last sample index right of maximum already included
     area_todo -= w[center]
+    extra_width = 0.0        # Fractional amount of last sample to add.
 
     while True:
         if left == 0:
             # Move only righward
             fraction_of_todo = w[right + 1] / area_todo
             if fraction_of_todo > 1:
-                right += fraction_of_todo
+                extra_width = 1 / fraction_of_todo
                 break
             right += 1
             area_todo -= w[right]
@@ -115,7 +117,7 @@ def range_of_fraction_of_area(w, center, fraction):
             # Move only leftward
             fraction_of_todo = w[left - 1] / area_todo
             if fraction_of_todo > 1:
-                left -= fraction_of_todo
+                extra_width = 1 / fraction_of_todo
                 break
             left -= 1
             area_todo -= w[left]
@@ -127,16 +129,16 @@ def range_of_fraction_of_area(w, center, fraction):
                 # Is the highest sample enough? Then use just a fraction of that.
                 fraction_of_todo = max(w[right + 1], w[left - 1]) / area_todo
                 if fraction_of_todo > 1:
-                    left -= fraction_of_todo      # doesn't matter if we add to left or right, only difference matters
+                    extra_width = 1 / fraction_of_todo      # doesn't matter if we add to left or right, only difference matters
                     break
                 # We need both samples, so add the highest sample whole + a fraction of the lowest one
-                left -= 1 + min(w[right+1], w[left - 1])/area_todo
+                extra_width = 1 + min(w[right+1], w[left - 1])/area_todo
                 break
             right += 1
             left -= 1
             area_todo -= w[left] + w[right]
 
-    return right - left + 1
+    return right - left + 1 + extra_width
 
 
 def put_w_in_center_of_field(w, field, center_index):
