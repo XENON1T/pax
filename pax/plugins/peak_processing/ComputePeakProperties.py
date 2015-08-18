@@ -96,7 +96,7 @@ def range_of_fraction_of_area(w, center, fraction):
 
     # Edge case where center sample would already take us over area_todo
     if w[center] > area_todo:
-        return w[center] / area_todo
+        return area_todo / w[center]
 
     left = float(center)       # Last sample index left of maximum already included
     right = float(center)      # Last sample index right of maximum already included
