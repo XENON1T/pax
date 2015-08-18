@@ -1,11 +1,3 @@
-"""Hit finding plugin
-
-If you get an error from either of the numba methods in this plugin (exception from native function blahblah)
-Try commenting the @jit decorators, which will run a slow, pure-python version of the methods, allowing you to debug.
-Don't forget to re-enable the @jit -- otherwise it will run quite slow!
-"""
-
-
 import numpy as np
 import numba
 
@@ -17,6 +9,59 @@ from pax import plugin, datastructure, utils
 
 
 class FindHits(plugin.TransformPlugin):
+    """Finds hits in pulses
+    First, the baseline is computed as the mean of the first initial_baseline_samples in the pulse.
+    Next, hits are found based on a high and low threshold:
+     - A hit starts/ends when it passes the low_threshold
+     - A hit has to pass the high_threshold somewhere.
+
+    Thresholds can be set on three different quantities. These are computed per pulse, the highest is used.
+    Here high/positive means 'signal like' (i.e. the PMT voltage becomes more negative)
+
+    1) Height over noise threshold
+           Options: height_over_noise_high_threshold, height_over_noise_low_threshold
+       This threshold operates on the height above baseline / noise level
+       The noise level is deteremined in each pulse as
+         (<(w - baseline)**2>)**0.5
+       with the average running *only* over samples < baseline!
+
+    2) Absolute ADC counts above baseline
+           Options: absolute_adc_counts_high_threshold, absolute_adc_counts_low_threshold
+       If there is measurable noise in the waveform, you don't want the thresholds to fall to 0 and crash pax.
+       This happens for pulses constant on initial_baseline_samples.
+       Please use this as a deep fallback only, unless you know what mess you're getting yourself into!
+
+    3) - Height / minimum
+           Options: height_over_min_high_threshold, height_over_min_LOW_threshold
+       Using this threshold protects you against sudden up & down fluctuations, especially in large pulses
+       However, keep in mind that one large downfluctuation will cause a sensitivity loss throughout an entire pulse;
+       if you have ZLE off, this may be a bad idea...
+       This threshold operates on the (-) height above baseline / height below baseline of the lowest sample in pulse
+
+
+    Edge cases:
+
+    1) After large peaks the zero-length encoding can fail, making a huge pulse with many hits.
+       If more than max_hits_per_pulse hits are found in a pulse, the rest will be ignored.
+       If this threshold is set too low, you risk missing some hits in such events.
+       If set too high, it will degrade performance. Don't set to infinity, we need to allocate memory for this...
+
+    2) Very high hits (near ADC saturation) sometimes have a long tail. To protect against this, we raise the
+       low threshold to a fraction dynamic_low_threshold_coeff of the hit height after a hit has been encountered.
+       This is a temporary change for just the remainder of a pulse.
+       Also, if the hit height * dynamic_low_threshold_coeff is lower than the low threshold, nothing is changed.
+
+    Diagnostic plot options:
+        make_diagnostic_plots can be always, never, tricky cases, no hits, hits only. This controls whether to make
+        diagnostic plots showing individual pulses and the hitfinder's interpretation of them. For details on what
+        constitutes a tricky case, check the source.
+        make_diagnostic_plots_in sets the directory where the diagnostic plots are created.
+
+    Debugging tip:
+    If you get an error from one of the numba methods in this plugin (exception from native function blahblah)
+    Try commenting the @jit decorators, which will run a slow, pure-python version of the methods,
+    allowing you to debug. Don't forget to re-enable the @jit -- otherwise it will run quite slow!
+    """
 
     def startup(self):
         c = self.config
@@ -67,6 +112,12 @@ class FindHits(plugin.TransformPlugin):
             if pmt_gain == 0:
                 continue
 
+            # Check if the DAQ pulse was ADC-saturated (clipped)
+            # This means the raw waveform dropped to 0,
+            # i.e. we went digitizer_reference_baseline above the reference baseline
+            # i.e. we went digitizer_reference_baseline - pulse.baseline above baseline
+            is_saturated = pulse.maximum >= self.config['digitizer_reference_baseline'] - pulse.baseline
+
             # Compute thresholds based on noise level
             high_threshold = max(self.config['height_over_noise_high_threshold'] * pulse.noise_sigma,
                                  self.config['absolute_adc_counts_high_threshold'],
@@ -76,7 +127,9 @@ class FindHits(plugin.TransformPlugin):
                                 - self.config['height_over_min_low_threshold'] * pulse.minimum)
 
             # Call the numba hit finder -- see its docstring for description
-            n_hits_found = find_intervals_above_threshold(w, high_threshold, low_threshold, hits_buffer)
+            n_hits_found = find_intervals_above_threshold(
+                w, high_threshold, low_threshold, hits_buffer,
+                dynamic_low_threshold_coeff=self.config['dynamic_low_threshold_coeff'])
 
             # Only view the part of hits_buffer that contains hits found in this event
             # The rest of hits_buffer contains -1's or stuff from previous pulses
@@ -134,6 +187,13 @@ class FindHits(plugin.TransformPlugin):
                                            height, noise_sigma_pe, high_threshold * adc_to_pe,
                                            area))
 
+                # If the pulse reached the ADC saturation threshold, we should count the saturated samples in each hit
+                # This is rare enough that it doesn't need to be in numba
+                n_saturated = 0
+                if is_saturated:
+                    n_saturated = np.count_nonzero(w[hit[0]:hit[1] + 1] >=
+                                                   self.config['digitizer_reference_baseline'] - pulse.baseline)
+
                 # Store the hit
                 # int's need to be cast to avoid weird numpy types in our datastructure
                 # Type checking in data_model takes care of this, but if someone ever turns off type checking
@@ -149,6 +209,7 @@ class FindHits(plugin.TransformPlugin):
                     'height':              height,
                     'noise_sigma':         noise_sigma_pe,
                     'found_in_pulse':      pulse_i,
+                    'n_saturated':         n_saturated,
                 }))
 
             # Diagnostic plotting
@@ -175,6 +236,9 @@ class FindHits(plugin.TransformPlugin):
                     continue
             elif self.make_diagnostic_plots == 'hits only':
                 if len(hits_found) == 0:
+                    continue
+            elif self.make_diagnostic_plots == 'saturated':
+                if not is_saturated:
                     continue
             else:
                 if self.make_diagnostic_plots != 'always':
@@ -216,14 +280,13 @@ class FindHits(plugin.TransformPlugin):
 
 
 @numba.jit(nopython=True)
-def find_intervals_above_threshold(w, high_threshold, low_threshold, result_buffer):
+def find_intervals_above_threshold(w, high_threshold, low_threshold, result_buffer, dynamic_low_threshold_coeff=0):
     """Fills result_buffer with l, r bounds of intervals in w > low_threshold which exceed high_threshold somewhere
         result_buffer: numpy N*2 array of ints, will be filled by function.
     Returns: number of intervals found
     Will stop search after N intervals are found, with N the length of result_buffer.
     Boundary indices are inclusive, i.e. the right index is the last index which was still above low_threshold
     """
-    # This function just wraps the numba code below, so you can call it with keyword arguments
     in_candidate_interval = False
     current_interval_passed_test = False
     current_interval = 0
@@ -243,6 +306,9 @@ def find_intervals_above_threshold(w, high_threshold, low_threshold, result_buff
 
             if x > high_threshold:
                 current_interval_passed_test = True
+                # Raise lower threshold to a fraction of the hit height
+                # This helps against tails (due to amplifiers?) for REALLY high hits
+                low_threshold = max(low_threshold, dynamic_low_threshold_coeff*x)
 
             if x <= low_threshold or i == last_index_in_w:
 
@@ -274,10 +340,10 @@ def find_intervals_above_threshold(w, high_threshold, low_threshold, result_buff
 
 @numba.jit(nopython=True)
 def compute_hit_properties(w, raw_hits, argmaxes, areas, centers):
-    """Finds the maximum index, area, and center of gravity of hits in w indicated by (l, r) bounds in raw_hits.
-    Will fill up argmaxes and areas with result.
+    """Finds argmax, area and center of gravity of hits in w indicated by (l, r) bounds in raw_hits.
     raw_hits should be a numpy array of (left, right) bounds (inclusive)
-    centers, argmaxes are returned in samples right of hit start -- you probably want to convert this
+    Other arguments are numpy arrays which will be filled with results.
+    centers, argmaxes are returned in samples right of hit start -- you probably want to convert this!
     Returns nothing
     """
     for hit_i in range(len(raw_hits)):

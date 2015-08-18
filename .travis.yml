@@ -5,6 +5,10 @@ language: python
 python:
   - "3.4"
 
+matrix:
+  allow_failures:
+    - os: osx
+
 notifications:
   email:
     - ctunnell@nikhef.nl

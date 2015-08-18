@@ -87,6 +87,13 @@ class Simulator(object):
             # (which is one row per channel)
             self.channel_offset = 1 if self.config['pmt_0_is_fake'] else 0
 
+        # Init s2 per pmt lce map
+        if self.config.get('s2_lce_map', None) is not None:
+            self.s2_lce_map = utils.Vector2DGridMap(filename=utils.data_file_name(self.config['s2_lce_map']),
+                                                    zoom_factor=self.config.get('s2_lce_map_zoom_factor', 1))
+        else:
+            self.s2_lce_map = None
+
     def s2_electrons(self, electrons_generated=None, z=0., t=0.):
         """Return a list of electron arrival times in the ELR region caused by an S2 process.
 
@@ -271,8 +278,8 @@ class Simulator(object):
             self.config['pmt_fall_time'],
         )
 
-    def make_hitpattern(self, photon_times):
-        return SimulatedHitpattern(config=self.config, photon_timings=photon_times)
+    def make_hitpattern(self, photon_times, x=0, y=0, z=0):
+        return SimulatedHitpattern(simulator=self, photon_timings=photon_times, x=x, y=y, z=z)
 
     def to_pax_event(self, hitpattern):
         """Simulate PMT response to a hitpattern of photons
@@ -291,6 +298,10 @@ class Simulator(object):
             sample_duration=self.config['sample_duration'],
         )
 
+        # Ensure the event length is even (else it cannot be written to XED)
+        if event.length() % 2 != 0:
+            event.stop_time += self.config['sample_duration']
+
         log.debug("Now performing hitpattern to waveform conversion for %s photons" % hitpattern.n_photons)
         # TODO: Account for random initial digitizer state  wrt interaction?
         # Where?
@@ -302,6 +313,13 @@ class Simulator(object):
         # Build waveform channel by channel
         for channel, photon_detection_times in hitpattern.arrival_times_per_channel.items():
             photon_detection_times = np.array(photon_detection_times)
+
+            log.debug("Simulating %d photons in channel %d (gain=%s, gain_sigma=%s)" % (
+                len(photon_detection_times), channel,
+                self.config['gains'][channel], self.config['gain_sigmas'][channel]))
+
+            if self.config['pmt_0_is_fake'] and channel == 0:
+                continue
 
             #  Add padding, sort (eh.. or were we already sorted? and is sorting necessary at all??)
             all_pmt_pulse_centers = np.sort(photon_detection_times + self.config['event_padding'])
@@ -366,7 +384,7 @@ class Simulator(object):
                     normalized_pulse /= np.sum(normalized_pulse)
                     current_wave = np.convolve(current_wave, normalized_pulse, mode='same')
 
-                else:
+                elif len(center_index) > 0:
 
                     # Use a Gaussian truncated to positive values for the SPE gain distribution
                     gains = truncated_gauss_rvs(
@@ -408,9 +426,9 @@ class Simulator(object):
                         current_wave[left_index: righter_index] += generated_pulse
 
                 # Did you order some Gaussian current noise with that?
-                if self.config['gaus_noise_sigma']:
+                if self.config['gauss_noise_sigma']:
                     # / dt is for charge -> current conversion, as in pmt_pulse_current
-                    noise_sigma_current = self.config['white_noise_sigma'] * self.config['gains'][channel] / dt,
+                    noise_sigma_current = self.config['gauss_noise_sigma'] * self.config['gains'][channel] / dt,
                     current_wave += np.random.normal(0,
                                                      noise_sigma_current,
                                                      len(current_wave))
@@ -438,7 +456,7 @@ class Simulator(object):
                     # Have to use a listcomp here, unless you know a way to select multiple slices in numpy?
                     #  -- yeah making an index list with np.arange would work, but honestly??
                     real_noise = np.concatenate([
-                        self.noise_data[channel + self.channel_offset][nsn * sample_size:(nsn + 1) * sample_size]
+                        self.noise_data[channel - self.channel_offset][nsn * sample_size:(nsn + 1) * sample_size]
                         for nsn in chosen_noise_sample_numbers
                     ])
                     adc_wave += real_noise[:pulse_length]
@@ -456,23 +474,94 @@ class Simulator(object):
                     left=start_index,
                     raw_data=adc_wave.astype(np.int16)))
 
-        if len(event.pulses) == 0:
-            return None
-
         log.debug("Simulated pax event of %s samples length and %s pulses "
                   "created." % (event.length(), len(event.pulses)))
         return event
 
+    def distribute_s2_photons(self, n_photons, x, y):
+        # How many photons to the top array?
+        n_top = np.random.binomial(n=n_photons, p=self.config['s2_mean_area_fraction_top'])
+
+        # Distribute a fraction of the top photons randomly, if the user asked for it
+        # This enables robustness testing of the position reconstruction
+        p_random = self.config.get('randomize_fraction_of_s2_top_array_photons', 0)
+        if p_random:
+            n_random = np.random.binomial(n=n_photons, p=p_random)
+            hitp = self.distribute_photons_by_lcemap(n_top - n_random, self.s2_lce_map, (x, y))
+            hitp += self.randomize_photons_over_channels(n_random, channels=self.config['channels_top'])
+        else:
+            hitp = self.distribute_photons_by_lcemap(n_top, self.s2_lce_map, (x, y))
+
+        # The bottom photons are distributed randomly
+        hitp += self.randomize_photons_over_channels(n_photons - n_top,
+                                                     channels=self.config['channels_bottom'])
+        return hitp
+
+    def distribute_photons_by_lcemap(self, n_photons, lce_map, coordinate_tuple):
+        # TODO: assumes channels drawn from top, or from all channels (i.e. first index 0!!!)
+        lces = lce_map.get_value(*coordinate_tuple)
+        if np.sum(lces) == 0:
+            raise ValueError("LCEs at position %s are all zero, cannot be normalized!" % coordinate_tuple)
+        return self.randomize_photons_over_channels(n_photons,
+                                                    channels=range(len(lces)),
+                                                    relative_lce_per_channel=lces)
+
+    def randomize_photons_over_channels(self, n_photons, channels=None, relative_lce_per_channel=None):
+        """Distribute photon_timings over channels according to relative_lce_per_channel
+
+        :param n_photons: number of photons to distribute
+        :param channels: list of channel numbers that can receive photons. This will still be filtered
+         to include only channels in self.config['channels_for_photons'].
+        :param relative_lce_per_channel: list of relative lce per channel. Should be >= 0 and sum to 1.
+                                         If omitted, will distribute photons uniformly over channels.
+        :return: array of length sim.config['n_channels'] with photon counts per channel
+        """
+        if n_photons == 0:
+            return np.zeros(self.config['n_channels'])
+
+        # Include only channels that can receive photons
+        if channels is None:
+            channels = np.array(self.config['channels_for_photons'])
+        else:
+            channels = np.array(channels)
+            sel = np.in1d(channels, self.config['channels_for_photons'])
+            channels = channels[sel]
+            if relative_lce_per_channel is not None:
+                relative_lce_per_channel = relative_lce_per_channel[sel]
+
+        # Ensure relative LCEs are valid to one:
+        if relative_lce_per_channel is not None:
+            relative_lce_per_channel = np.clip(relative_lce_per_channel, 0, 1)
+            relative_lce_per_channel /= np.sum(relative_lce_per_channel)
+
+        # Generate a channel index for every photon
+        channel_index_for_p = np.random.choice(channels, size=n_photons, p=relative_lce_per_channel)
+
+        # Count number of photons in each channel
+        # Note the histogram range must include n_channels, even though n_channels-1 is the maximum value
+        # This is because of how numpy handles values on bin edges
+        hitp, _ = np.histogram(channel_index_for_p,
+                               bins=self.config['n_channels'], range=(0, self.config['n_channels']))
+
+        if not len(hitp) == self.config['n_channels']:
+            raise RuntimeError("You found a simulator bug!\n"
+                               "Hitpattern has wrong length "
+                               "(%d, should be %d)" % (len(hitp), len(channels)))
+        if not np.sum(hitp) == n_photons:
+            raise RuntimeError("You found a simulator bug!\n"
+                               "Hitpattern has wrong number of photons "
+                               "(%d, should be %d)" % (np.sum(hitp), n_photons))
+        return hitp
+
+
+##
+# Hitpattern simulation
+##
 
 class SimulatedHitpattern(object):
 
-    def __init__(self, config, photon_timings):
-        self.config = config
-        # TODO: specify x, y, z, let photon distribution depend on it
-
-        if not len(photon_timings):
-            raise ValueError('Need at least 1 photon timing to '
-                             'produce a valid hitpattern')
+    def __init__(self, simulator, photon_timings, x=0, y=0, z=0):
+        self.config = simulator.config
 
         # Correct for PMT TTS
         photon_timings += np.random.normal(
@@ -481,52 +570,33 @@ class SimulatedHitpattern(object):
             len(photon_timings)
         )
 
-        # The number of pmts which can receive a photon
-        ch_for_photons = self.config['channels_for_photons']
-        n_channels = len(ch_for_photons)
-
-        if n_channels == 1:
-            photons_per_channel = [photon_timings]
-
-        else:
-
-            # First shuffle all timings in the array, so channel 1 doesn't always
-            # get the first photon
-            np.random.shuffle(photon_timings)
-
-            # Now generate n_channels integers < n_channels to denote the splitting
-            # points
-            # TODO: think carefully about these +1 and -1's Without the +1 S1sClose
-            # failed
-            split_points = np.sort(np.random.randint(0,
-                                                     len(photon_timings) + 1,
-                                                     n_channels - 1))
-
-            # Split the array according to the split points
-            # numpy correctly inserts empty arrays if a split point occurs twice if split_points is sorted
-            photons_per_channel = np.split(photon_timings,
-                                           split_points)
-
-            # This distributes stuff in some pattern, favouring the center... odd
-            # So: shuffle to randomize the photon distribution
-            np.random.shuffle(photons_per_channel)
-
-        # Check we have not generated any photons or lost any
-        # assert sum(list(map(len, photons_per_channel))) == len(photon_timings)
-
-        # Merge the result in a dictionary, which we return
-        # TODO: zip can probably do this faster!
-        self.arrival_times_per_channel = {ch_for_photons[i]: photons_per_channel[i] for i in range(n_channels)}
-
         # Add the minimum and maximum times, and number of times
         # hitlist_to_waveforms would have to go through weird flattening stuff to determine these
         self.min = min(photon_timings)
         self.max = max(photon_timings)
         self.n_photons = len(photon_timings)
 
+        if not len(photon_timings):
+            raise ValueError('Need at least 1 photon timing to produce a valid hitpattern')
+
+        # Shuffle all timings in the array, so channel 1 doesn't always get the first photon
+        # Don't rely on randomize_photons_over_channels to do this, we'll be splitting top v bottom here
+        # and want that split to be random too.
+        np.random.shuffle(photon_timings)
+
+        if z == - self.config['gate_to_anode_distance'] and simulator.s2_lce_map is not None:
+            # Generated at anode: use S2 LCE data
+            hitp = simulator.distribute_s2_photons(self.n_photons, x, y)
+        else:
+            # S1, or S2 LCE map not present: distribute photons uniformly
+            hitp = simulator.randomize_photons_over_channels(self.n_photons)
+
+        # Split photon times over channels
+        self.arrival_times_per_channel = dict(zip(range(simulator.config['n_channels']),
+                                                  np.split(photon_timings, np.cumsum(hitp))))
+
     def __add__(self, other):
         # Don't reuse __init__, we don't want another TTS correction..
-        # TODO: hm, maybe we shouldn't do TTS correction here?
         # print("add called self=%s, other=%s" % (type(self), type(other)))
         self.min = min(self.min, other.min)
         self.max = max(self.max, other.max)
@@ -553,7 +623,7 @@ class SimulatedHitpattern(object):
 # Photon pulse generation
 ##
 
-# I pulled this out of Simulator: caching using Memoize gave me trouble on methods due to the self argument
+# I pulled this out of the Simulator class: caching using Memoize gave me trouble on methods due to the self argument
 # There's still a method pmt_pulse_current, but it just calls pmt_pulse_current_raw defined below
 
 @Memoize
@@ -586,8 +656,13 @@ def exp_pulse(t, q, tr, tf):
         return q / (tr + tf) * (tr + tf * (1 - math.exp(-t / (c * tf))))
 
 
+##
+# PMT gain sampling
+##
+
 @Memoize
 def _truncated_gauss(my_mean, my_std, left_boundary, right_boundary):
+    """NB: the mean & std are only used to fix the boundaries, this is still a standardized normal otherwise!"""
     return stats.truncnorm(
         (left_boundary - my_mean) / my_std,
         (right_boundary - my_mean) / my_std)

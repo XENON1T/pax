@@ -12,7 +12,7 @@ import re
 
 import numpy as np
 
-base_logger = logging.getLogger('BulkOutput')
+base_logger = logging.getLogger('TableWriter')
 
 try:
     import ROOT   # noqa
@@ -33,7 +33,7 @@ except ImportError:
     base_logger.warning("You don't have h5py -- if you use the hdf5 format, pax will crash!")
 
 
-class BulkOutputFormat(object):
+class TableFormat(object):
     """Base class for bulk output formats
     """
     supports_append = False
@@ -68,7 +68,7 @@ class BulkOutputFormat(object):
         raise NotImplementedError
 
 
-class NumpyDump(BulkOutputFormat):
+class NumpyDump(TableFormat):
     file_extension = 'npz'
     supports_array_fields = True
     supports_read_back = True
@@ -99,7 +99,7 @@ class NumpyDump(BulkOutputFormat):
         return len(self.f[df_name])
 
 
-class HDF5Dump(BulkOutputFormat):
+class HDF5Dump(TableFormat):
     file_extension = 'hdf5'
     supports_array_fields = True
     supports_write_in_chunks = True
@@ -143,7 +143,7 @@ class HDF5Dump(BulkOutputFormat):
         return self.f[df_name].len()
 
 
-class ROOTDump(BulkOutputFormat):
+class ROOTDump(TableFormat):
     """Write data to ROOT file
 
     Convert numpy structered array, every array becomes a TTree.
@@ -178,7 +178,7 @@ class ROOTDump(BulkOutputFormat):
         # by python, avoiding segfaults when garbage collecting
         ROOT.TTree.__init__._creates = False
         # DON'T use the Python3 super trick here, we want this code to run in python2 as well!
-        BulkOutputFormat.__init__(self, *args, **kwargs)
+        TableFormat.__init__(self, *args, **kwargs)
 
     def open(self, name, mode):
         if mode == 'w':
@@ -293,7 +293,7 @@ class ROOTDump(BulkOutputFormat):
 # Pandas data formats
 ##
 
-class PandasFormat(BulkOutputFormat):
+class PandasFormat(TableFormat):
     pandas_format_key = None
     supports_array_fields = False
 

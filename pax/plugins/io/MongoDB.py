@@ -6,10 +6,10 @@ either be triggered or untriggered. In the case of untriggered, an event builder
 must be run on the data and will result in triggered data.  Input and output
 classes are provided for MongoDB access.  More information is in the docstrings.
 """
+import time
+
 import numpy as np
 import numba
-
-import time
 import pymongo
 import snappy
 
@@ -287,7 +287,9 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
 
     def get_events(self):
         self.last_time = 0  # ns
-        ts = time.time()
+
+        # Used to timeout if DAQ crashes and no data will come
+        time_out_counter = time.time()
 
         while not self.data_taking_ended:
             # Grab new run document in case run ended.  This much happen before
@@ -316,8 +318,13 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
             if n == 0:
                 self.log.fatal("Nothing found, continue")
                 time.sleep(1)  # todo: configure
-                break  # todo: remove
+                if time.time() - time_out_counter > 60:  # seconds
+                    raise RuntimeError('Timed out waiting for new data (DAQ crash?)')
+
                 continue
+
+            # Reset timeout counter used for finding crashed DAQ
+            time_out_counter = time.time()
 
             x = [[self._from_mt(doc[START_KEY]),
                   self._from_mt(doc[STOP_KEY])] for doc in times]  # in digitizer units
@@ -353,14 +360,8 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
                             event_number=0)
                 break
 
-            self.total_time_taken += (time.time() - ts) * 1000
-
             for i, this_range in enumerate(self.ranges):
-                # Start pax's timer so we can measure how fast this plugin goes
-                ts = time.time()
                 t0, t1 = [int(t) for t in this_range]
-
-                self.total_time_taken += (time.time() - ts) * 1000
 
                 yield Event(n_channels=self.config['n_channels'],
                             start_time=t0,
@@ -447,6 +448,13 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, IOMongoDB):
 
 class MongoDBWriteTriggered(plugin.OutputPlugin,
                             IOMongoDB):
+    """Write entire processed event to MongoDB
+
+    These events are already triggered.  We first convert event class to a dict,
+    then pymongo converts that to BSON.  We have to convert the numpy arrays to
+    bytes because otherwise we get type errors since pymongo doesn't know about
+    numpy.
+    """
 
     def startup(self):
         IOMongoDB.startup(self)  # Setup with baseclass

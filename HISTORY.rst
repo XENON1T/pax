@@ -4,6 +4,34 @@ History
 -------
 
 ------------------
+3.3.0 (2015-08-03)
+------------------
+
+* Natural break declustering (#187)
+* Improvements to chi2gamma accuracy and speed (#193, #196)
+* Non-continuous events in ZippedBSON format (#192)
+* XED writing (#177)
+* Refactor plugin base and timing code (#190)
+* S2 LCE in waveform simulator (#185)
+* Cleanup plugin folders and names (#202)
+* Minor improvements to logging (#155, #86) and plotting (#98, #144, #200)
+* Documentation improvements
+
+
+------------------
+3.2.0 (2015-07-06)
+------------------
+
+* Multithreading of paxer (see --help)
+* Clustering bug fixed (#186)
+* Contribution section for non-XENON TPCs in examples.
+* Chi2 algorithm now runs by default (and has energy cutoff for speed)
+* Event builder pretrigger merged into pax
+* Units now statically defined
+* Various docs improvements
+
+
+------------------
 3.1.2 (2015-06-07)
 ------------------
 

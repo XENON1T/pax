@@ -20,12 +20,16 @@ class BasicProperties(plugin.TransformPlugin):
             peak.index_of_maximum = peak.hits[highest_peak_index].index_of_maximum
             peak.height = peak.hits[highest_peak_index].height
 
-            # Compute the area per pmt.
+            # Compute the area per pmt and saturation count
+            peak.n_saturated_per_channel = np.zeros(event.n_channels, dtype=np.int16)
             for s in peak.hits:
-                peak.area_per_channel[s.channel] += s.area
+                ch = s.channel
+                peak.area_per_channel[ch] += s.area
+                peak.n_saturated_per_channel[ch] += s.n_saturated
 
-            # Compute the total area
+            # Compute the total area and saturation count
             peak.area = np.sum(peak.area_per_channel)
+            peak.n_saturated = np.sum(peak.n_saturated_per_channel)
 
             # Compute top fraction
             peak.area_fraction_top = np.sum(peak.area_per_channel[:self.last_top_ch + 1]) / peak.area

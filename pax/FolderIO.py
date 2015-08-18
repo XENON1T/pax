@@ -1,7 +1,9 @@
 import glob
+import gzip
 import os
-import time
 import shutil
+import zipfile
+
 from bson import json_util
 
 from pax import utils, plugin
@@ -84,6 +86,7 @@ class InputFromFolder(plugin.InputPlugin):
                                                                 len(self.raw_data_files)))
 
         self.open(self.current_filename)
+        self.event_numbers_in_current_file = self.get_event_numbers_in_current_file()
 
     def shutdown(self):
         self.close()
@@ -92,16 +95,12 @@ class InputFromFolder(plugin.InputPlugin):
         """Iterate through all events in the file / folder"""
         # We must keep track of time ourselves, BasePlugin.timeit is a function decorator,
         # so it won't work well with generators like get_events for an input plugin
-        self.ts = time.time()
         for file_i, file_info in enumerate(self.raw_data_files):
             if self.current_file_number != file_i:
                 self.select_file(file_i)
             for event in self.get_all_events_in_current_file():
-                self.total_time_taken += (time.time() - self.ts) * 1000
                 yield event
-                self.ts = time.time()       # Restart clock
 
-    @plugin.BasePlugin._timeit
     def get_single_event(self, event_number):
         """Get a single event, automatically selecting the right file"""
         if not self.current_first_event <= event_number <= self.current_last_event:
@@ -117,7 +116,14 @@ class InputFromFolder(plugin.InputPlugin):
             else:
                 raise ValueError("None of the loaded files contains event %d!" % event_number)
 
-        return self.get_single_event_in_current_file(event_number - self.current_first_event)
+        if event_number not in self.event_numbers_in_current_file:
+            raise ValueError("Event %d does not exist in the file containing events %d - %d!\n"
+                             "Event numbers which do exist in file: %s" % (event_number,
+                                                                           self.current_first_event,
+                                                                           self.current_last_event,
+                                                                           self.event_numbers_in_current_file))
+
+        return self.get_single_event_in_current_file(event_number)
 
     # If reading in from a folder-of-files format not written by FolderIO,
     # you'll probably have to overwrite this. (e.g. XED does)
@@ -141,32 +147,38 @@ class InputFromFolder(plugin.InputPlugin):
         pass
 
     ##
-    # Override this if you support random access
+    # Override this if you support non-continuous event numbers
     ##
-    def get_single_event_in_current_file(self, event_position):
-        """Uses iteration to emulate random access to events
-        Note -- this takes the event POSITION in the file, not the absolute event number!
-        """
-        for event_i, event in enumerate(self.get_all_events_in_current_file()):
-            if event_i == event_position:
-                return event
-        raise RuntimeError("Current file has no %d th event, and some check didn't pick this up.\n"
-                           "Either the file is very nasty, or the reader is bugged!" % event_position)
+    def get_event_numbers_in_current_file(self):
+        return list(range(self.current_first_event, self.current_last_event + 1))
 
     ##
-    # Override this if you DO NOT support random access, or if random access is slower
+    # Override this if you support random access
+    ##
+    def get_single_event_in_current_file(self, event_number):
+        """Uses iteration to emulate random access to events
+        This does not check if the event actually exist: get_events is supposed to do that.
+        """
+        for event_i, event in enumerate(self.get_all_events_in_current_file()):
+            if event.event_number == event_number:
+                return event
+        raise RuntimeError("Current file has no event %d, and some check didn't pick this up.\n"
+                           "Either the file is very nasty, or the reader is bugged!" % event_number)
+
+    ##
+    # Override this if you DO NOT support random access, or if random access is slower than iteration
     ##
     def get_all_events_in_current_file(self):
         """Uses random access to iterate over all events"""
-        for event_i in range(self.current_first_event, self.current_last_event + 1):
-            yield self.get_single_event_in_current_file(event_i - self.current_first_event)
+        for event_number in self.event_numbers_in_current_file:
+            yield self.get_single_event_in_current_file(event_number)
 
 
 class WriteToFolder(plugin.OutputPlugin):
     """Write to a folder containing several small files, each containing <= a fixed number of events"""
 
     def startup(self):
-        self.events_per_file = self.config['events_per_file']
+        self.events_per_file = self.config.get('events_per_file', 50)
         self.first_event_in_current_file = None
         self.last_event_written = None
 
@@ -178,12 +190,14 @@ class WriteToFolder(plugin.OutputPlugin):
                     if input().lower() not in ('y', 'yes'):
                         print("\nFine, Exiting pax...\n")
                         exit()
+                self.log.info("Overwriting output directory %s" % self.output_dir)
                 shutil.rmtree(self.output_dir)
                 os.mkdir(self.output_dir)
             else:
                 raise ValueError("Output directory %s already exists, can't write your %ss there!" % (
                     self.output_dir, self.file_extension))
         else:
+            self.log.info("Creating output directory %s" % self.output_dir)
             os.mkdir(self.output_dir)
 
         # Write the metadata to JSON
@@ -231,7 +245,10 @@ class WriteToFolder(plugin.OutputPlugin):
                                                        self.file_extension)))
 
     def shutdown(self):
-        self.close_current_file()
+        if self.has_shut_down:
+            self.log.error("Attempt to shutdown %s twice!" % self.__class__.__name__)
+        else:
+            self.close_current_file()
 
     ##
     # Child class should override these
@@ -246,4 +263,54 @@ class WriteToFolder(plugin.OutputPlugin):
         raise NotImplementedError
 
     def close(self):
+        raise NotImplementedError
+
+
+##
+# Zipfile of events
+##
+
+class ReadZipped(InputFromFolder):
+
+    """Read a folder of zipfiles containing [some format]
+    """
+    file_extension = 'zip'
+
+    def open(self, filename):
+        self.current_file = zipfile.ZipFile(filename)
+        self.event_numbers = sorted([int(x)
+                                     for x in self.current_file.namelist()])
+
+    def get_single_event_in_current_file(self, event_number):
+        with self.current_file.open(str(event_number)) as event_file_in_zip:
+            doc = event_file_in_zip.read()
+            doc = gzip.decompress(doc)
+            return self.from_format(doc)
+
+    def close(self):
+        """Close the currently open file"""
+        self.current_file.close()
+
+    def from_format(self, doc):
+        raise NotImplementedError
+
+
+class WriteZipped(WriteToFolder):
+
+    """Write raw data to a folder of zipfiles containing [some format]
+    """
+    file_extension = 'zip'
+
+    def open(self, filename):
+        self.current_file = zipfile.ZipFile(filename, mode='w')
+
+    def write_event_to_current_file(self, event):
+        self.current_file.writestr(str(event.event_number),
+                                   gzip.compress(self.to_format(event),
+                                                 self.config.get('compresslevel', 4)))
+
+    def close(self):
+        self.current_file.close()
+
+    def to_format(self, doc):
         raise NotImplementedError

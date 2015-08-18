@@ -10,10 +10,19 @@ import argparse
 import os
 import sys
 import copy
-import json
 import queue
 import multiprocessing
 
+# Hack to ensure correct matplotlib backend is chosen
+# Without this, pax's plotting does not work when using a system without a graphical display
+# Stolen from http://stackoverflow.com/questions/8257385/automatic-detection-of-display-availability-with-matplotlib
+# Note the version with os.environ does not work on windows
+import matplotlib
+r = os.system('python -c "import matplotlib.pyplot as plt;plt.figure()"')
+if r != 0:
+    matplotlib.use('Agg')
+
+import pax    # For version
 from pax import core, utils
 
 
@@ -139,6 +148,9 @@ class OutputEvents(BaseProcess):
 
 def main():
     args = get_args()
+    if args.version:
+        print(pax.__version__)
+        exit()
 
     # Compute numbers of CPUs that can be used
     max_cpus = multiprocessing.cpu_count()
@@ -147,34 +159,14 @@ def main():
     else:
         args.cpus = int(args.cpus)
 
-    # (if requested) Take config from previous file
-    if args.redo:
-        from pandas import HDFStore
-
-        file_to_redo = core.data_file_name(args.redo)
-        store = HDFStore(file_to_redo)
-
-        if len(store['pax_info']) > 1:
-            print("Warning: This file contains data from several processings. "
-                  "Will use config from last!\n")
-        override_dict = json.loads(store['pax_info'].iloc[-1]['configuration_json'])
-
-        # Add _redone to output name, unless user has specified an output name
-        if not args.output:
-            redo_path, ext = os.path.splitext(args.redo)  # Remove .hdf from path
-            redo_path += '_redone'
-            print("Output path of redone processing not specified: will "
-                  "write to %s\n" % redo_path)
-            args.output = redo_path
-        store.close()
-    else:
-        override_dict = {'pax': {}}
+    override_dict = {'pax': {}}
 
     # Feed certain command line args into pax configuration format
     for argname, configname in (('input',      'input_name'),
                                 ('output',     'output_name'),
                                 ('log',        'logging_level'),
                                 ('stop_after', 'stop_after'),
+                                ('event_numbers_file', 'event_numbers_file'),
                                 ('event',      'events_to_process')):
         value = getattr(args, argname)
         if value is not None:
@@ -183,8 +175,10 @@ def main():
     # Overrides for plotting
     if args.plot_to_dir or args.plot:
         override_dict['pax']['output'] = 'Plotting.PlotEventSummary'
-        if args.plot_to_dir:
-            override_dict['Plotting.PlotEventSummary'] = {'output_dir': args.plot_to_dir}
+    if args.plot_to_dir:
+        override_dict['Plotting.PlotEventSummary'] = {'output_dir': args.plot_to_dir}
+    if args.plot_interactive:
+        override_dict['pax']['output'] = 'Plotting.PeakViewer'
 
     ##
     # Single-core processing
@@ -302,34 +296,36 @@ def get_args():
     parser.add_argument('--config_path',
                         default=[],
                         nargs='+',
-                        help="Path(s) of the configuration file(s) to use."
-                        )
-    # ... or load the configuration from a previous processed data file
-    parser.add_argument('--redo',
-                        default='',
-                        help="Path of the HDF5 data file to redo."
-                        )
+                        help="Path(s) of the configuration file(s) to use.")
     # Plotting override
     plotting_control_group = parser.add_mutually_exclusive_group()
     plotting_control_group.add_argument('--plot',
                                         action='store_const',
                                         const=True,
-                                        help='Plot summed waveforms on screen',
-                                        )
+                                        help='Plot summed waveforms on screen')
+    plotting_control_group.add_argument('--plot_interactive',
+                                        action='store_const',
+                                        const=True,
+                                        help='Plot interactive peak browser on screen')
     plotting_control_group.add_argument('--plot_to_dir',
-                                        help='Save summed waveform plots in '
-                                             'directory',
-                                        )
+                                        help='Save summed waveform plots in directory')
     # Control events to process
     parser.add_argument('--event',
                         type=int,
                         nargs='+',
                         help="Process particular event(s).")
+    parser.add_argument('--event_numbers_file',
+                        type=str,
+                        help="Name of file containing newline-separated event number(s) to process.")
     parser.add_argument('--stop_after',
                         type=int,
                         help="Stop after STOP_AFTER events have been processed.")
-    args = parser.parse_args()
-    return args
+
+    # Version number printing
+    parser.add_argument('--version',  action='store_true',
+                        help="Print current pax version, then exit")
+
+    return parser.parse_args()
 
 
 if __name__ == "__main__":

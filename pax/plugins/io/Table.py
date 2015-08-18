@@ -1,6 +1,5 @@
 import os
 import shutil
-import time
 from bson.json_util import dumps
 
 import numpy as np
@@ -10,7 +9,7 @@ from pax.data_model import Model
 from pax.formats import flat_data_formats
 
 
-class BulkOutput(plugin.OutputPlugin):
+class TableWriter(plugin.OutputPlugin):
 
     """Output data to flat table formats
     Convert our data structure to numpy record arrays, one for each class (Event, Peak, ReconstructedPosition, ...).
@@ -26,7 +25,7 @@ class BulkOutput(plugin.OutputPlugin):
 
     Available configuration options:
 
-     - output_format:      Name of output format to produce. Must be child class of BulkOutputFormat
+     - output_format:      Name of output format to produce. Must be child class of TableFormat
      - output_name:        The name of the output file or folder, WITHOUT file extension.
      - fields_to_ignore:   Fields which will not be stored.
      - overwrite_data:     If True, overwrite if a file/directory with the same name exists
@@ -67,7 +66,7 @@ class BulkOutput(plugin.OutputPlugin):
         self.output_format = of = flat_data_formats[self.config['output_format']](log=self.log)
 
         if self.config['append_data'] and self.config['overwrite_data']:
-            raise ValueError('Invalid configuration for BulkOutput: Cannot both'
+            raise ValueError('Invalid configuration for TableWriter: Cannot both'
                              ' append and overwrite')
 
         # Check if options are supported
@@ -109,6 +108,7 @@ class BulkOutput(plugin.OutputPlugin):
             os.mkdir(outfile)
 
         # Open the output file
+        self.log.info("Opening output file/directory %s" % self.config['output_name'])
         self.output_format.open(self.config['output_name'], mode='w')
 
     def write_event(self, event):
@@ -283,6 +283,7 @@ class BulkOutput(plugin.OutputPlugin):
                                             for i in range(len(field_value))],
                         'index_depth':     len(m_indices),
                     }
+                self.data[field_name]['tuples'].append(tuple(m_indices + field_value.tolist()))
 
             else:
                 m_data.append(field_value)
@@ -315,9 +316,9 @@ class BulkOutput(plugin.OutputPlugin):
             return name, type(x)
 
 
-class ReadFromBulkOutput(plugin.InputPlugin):
+class TableReader(plugin.InputPlugin):
 
-    """Read data from BulkOutput for reprocessing
+    """Read data from TableWriter for reprocessing
 
     'Reprocessing' means: reading in old processed data, then start somewhere in middle of processing chain,
     (e.g. redo classification), and finally write to new file.
@@ -365,7 +366,6 @@ class ReadFromBulkOutput(plugin.InputPlugin):
         of = self.output_format
 
         for event_i in range(self.number_of_events):
-            ts = time.time()    # Start the clock
 
             in_this_event = {}
 
@@ -443,7 +443,6 @@ class ReadFromBulkOutput(plugin.InputPlugin):
 
                     event.peaks.append(peak)
 
-            self.total_time_taken += (time.time() - ts) * 1000
             yield event
 
     def convert_record(self, class_to_load_to, record):

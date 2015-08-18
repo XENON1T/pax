@@ -15,7 +15,7 @@ from pax import core, units
     # 'pax' : {
         # 'input_name'  :     'xe100_120402_2000_000000.xed',
         # 'output_name' :     'xe100_120402_2000_000000',
-        # 'input' :           'XED.XedInput',
+        # 'input' :           'XED.ReadXED',
         # 'output':           ['BulkOutput.BulkOutput','Plotting.PlotEventSummary']
     # },
 	# 'Plotting.PlotEventSummary' : {

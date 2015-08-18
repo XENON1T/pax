@@ -41,7 +41,24 @@ Write Documentation
 
     $ make html
     
+Make sure to have updated Sphinx by::
+    
+    $ pip install -U sphinx
+    
 Feel free to expand the documentation however you find helpful.
+
+Now you can also update the documentation on the site if needed. Go to the folder where pax is cloned and run::
+    
+    $ git clone git@github.com:XENON1T/pax.git paxdocs
+    $ cd paxdocs
+    $ git pull
+    $ git checkout gh-pages
+    
+
+You are now ready to make the docs for the site. Go into the pax directory and run::
+    
+    $ make docs
+       
 
 Submit Feedback
 ~~~~~~~~~~~~~~~
@@ -97,26 +114,24 @@ and AUTHORS.rst (if you are a new contributor)
 Pull Request Guidelines
 -----------------------
 
-Before you submit a pull request, check that it meets these guidelines:
+Before you submit a pull request, check the following:
 
-1. The pull request should include tests.
-2. If the pull request adds functionality, the docs should be updated. Put
-   your new functionality into a function with a docstring, and add the
-   feature to the list in README.rst.
-3. You should follow the PEP8 style guide.  We resolve style arguments using
-   the Google Python style guide.  Whatever you do, don't repeat this
-   http://imgs.xkcd.com/comics/code_quality.png
-   
-Every pull request will be reviewed.  This review will happen with somebody who was not
-the original author of the pull request.  The person doing the reviewing will spend between 
-30 minutes and one hour reviewing the code.  They will check that your new code contributes
-something to the project, will be used, is tested, is clear what it does, and is documented.
-Typically, there will be one round of iteration that should not take more than 1 day of work
-for the person authoring the pull request.  Lastly, the person doing the review will ensure
-that the Travis CI build passes.  Once the reviewer is confident that this pull request
-does not result in untested code that nobody understands or uses, the reviewer does the merge.
+- Have you accidentally modified unrelated files?
+- Please include at least basic documentation of new features (such as docstrings for functions and classes).
+- Please include unit tests (see the `/tests` folder) for new features. This will greatly help speed up the review process, as we can already be sure your code does what it is supposed to do.
+- Please ensure the other tests of pax still pass (try `python setup.py test`).
+- New code should by PEP8-style compliant, although line lengths are allowed to extend up to 120 characters. To check this, use `flake8 --max-line-length 120 pax tests bin`. We resolve style arguments by fights to the death. Whatever you do, don't repeat this http://imgs.xkcd.com/comics/code_quality.png.
 
-For very small changes, you may commit directly to the master breanch if you are already
+Your pull request will be reviewed by somebody who is not you. If you get asked to do a review, we're asking you to do a 30 minutes to 1 hour check:
+
+- Are any unrelated files accidentally modified?
+- Does it actually work? For most PRs there should be a few new unit tests defined, which are run automatically by Travis (which gives the green checkmark). 
+- Do you think this is a change that belongs in pax?
+- Is the documentation (text in the pull request, docstrings and comments in code) sufficient to figure out roughly what's going on?
+ 
+If you are completely satisfied, and the Travis CI build passes, you can merge the pull request immediately; else you can ask for a few improvements or recommend something else.
+
+For very small changes, you may commit directly to the master branch if you are already
 a frequent contributor or maintainer.  If your change is actually not small or you aren't
 a frequent commiter, your commit may be undone.
 

@@ -13,103 +13,127 @@ processing and other data processing on the XENON100/XENON1T raw data.
 .. image:: http://img.shields.io/badge/gitter-XENON1T/pax-blue.svg 
     :target: https://gitter.im/XENON1T/pax
 
-Installation
-=============
 
-Installing requirements
------------------------
+Installation prerequisites
+==========================
 
-We use Python 3.4 and several python modules. To allow people to run `pax` from
-their home directory and to ease people using pax, we recommend they setup the
-scientific python distribution `Anaconda <https://store.continuum.io/cshop/anaconda/>`_.
-This should make it easier to install our code than typical experiments, and if this
-isn't true, please let us know (See `relevant documentation section`_).  To set this
-up, run::
+We will assume you are installing on Mac or Linux here. For installation on Windows, 
+see `this FAQ entry <http://xenon1t.github.io/pax/faq.html#can-i-set-up-pax-on-my-windows-machine>`_. 
 
-  $ wget http://repo.continuum.io/anaconda3/Anaconda3-2.1.0-Linux-x86_64.sh
-  $ bash Anaconda3-2.1.0-Linux-x86_64.sh
-  $ export PATH=~/anaconda3/bin:$PATH  # If installed in default location
-  $ conda update conda
-  $ conda install numpy scipy matplotlib pandas pytables cython h5py numba pip scikit-learn # optional but handy
+Python 3
+^^^^^^^^
+Pax is written in Python 3; we recommend the
+scientific python distribution `Anaconda <https://store.continuum.io/cshop/anaconda/>`_. To set this up in your linux home directory, do::
 
-Alternatively, you can install Python 3.4 from the `python webpage <https://www.python.org/>`_ 
-or your OS's package management system. See the FAQ for more information.
+  wget http://repo.continuum.io/anaconda3/Anaconda3-2.1.0-Linux-x86_64.sh
+  bash Anaconda3-2.1.0-Linux-x86_64.sh
+  export PATH=~/anaconda3/bin:$PATH  # If installed in default location
 
-Though most of our dependencies are solved by using Anaconda, there is one
-dependency that often cannot be installed on olders machines. You must separately 
-install the `snappy compression library <https://code.google.com/p/snappy/>`_,
-which is C++ code that must be compiled and is used for raw data access. If 
-you're using Ubuntu and have super user permissions, you could just install the libsnappy-dev package.  
-However, we recommend you do the following::
+Alternatively, you can install the vanilla Python 3.4 from the `python webpage <https://www.python.org/>`_ 
+or use a pre-installed python. Please note that
 
-  $ wget https://snappy.googlecode.com/files/snappy-1.1.1.tar.gz
-  $ tar xvfz snappy-1.1.1.tar.gz 
-  $ cd snappy-1.1.1
-  $ ./configure --prefix=`conda info --root`
-  $ make install
-  $ cd ~
-  $ CFLAGS=-I`conda info --root`/include LDFLAGS=-L`conda info --root`/lib pip install python-snappy
+- Only one version of pax can be installed per python installation;
+- You need write permission to the python distribution's directory; 
+- `pax` does *not* run under with python 2!
+
+Additional python packages
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+Pax depends on several other python packages. While most python packages will install automatically,
+some contain C++ code which must be compiled. If you have Anaconda you can get appropriate binaries 
+for your platform using the `conda` tool::
+
+  conda update conda
+  conda install numpy scipy matplotlib pandas pytables cython h5py numba pip scikit-learn
+
+
+Snappy
+^^^^^^
+Pax needs the `snappy compression library <https://code.google.com/p/snappy/>`_ to read data from our MongoDB raw data database. Do NOT try to `pip install snappy`, that's a completely different package! If you're using Ubuntu and have super user permissions, you could just install the `libsnappy-dev` package.  However, we recommend, you do the following::
+
+  wget https://snappy.googlecode.com/files/snappy-1.1.1.tar.gz
+  tar xvfz snappy-1.1.1.tar.gz 
+  cd snappy-1.1.1
+  ./configure --prefix=`conda info --root`
+  make install
+  cd ~
+  CFLAGS=-I`conda info --root`/include LDFLAGS=-L`conda info --root`/lib pip install python-snappy
   
 You should now be able to run the following command::
 
-  $ python -m snappy
+  python -m snappy
 
-For installation on Windows, see `the FAQ <http://xenon1t.github.io/pax/faq.html#can-i-set-up-pax-on-my-windows-machine>`_. 
-Also within the FAQs, you can find other useful hints.
+If you are unable to install snappy, pax can work without it (but the MongoDB interface, including the event builder, will not work!). We've cunningly hidden this information in the following footnote: [1]_.
 
-Installing pax
---------------
 
-The code of pax is in a private github repository. You must first have `git`
-installed, which you can test by running at the command line::
+Git and Github
+^^^^^^^^^^^^^^
+
+You must have `git` installed, which you can test by running at the command line::
 
   git
 
-You must have access to the private XENON1T github repository.  You can get this by emailing the `pax` developers.  Once you have access to the GitHub repository and `git` installed, run::
+To get the code of pax, you need access to the private XENON1T github repository.  You can get this by emailing the `pax` developers. 
+
+
+Installing pax
+==============
+There are two ways to install pax. Either method will automatically try to install any python packages pax depends on -- although we hope you installed the most important ones already (see above). If a module does not install, try using `conda` or `pip` to install missing dependencies. 
+
+Option 1: user installation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In this option the pax code will be hidden away somewhere deep in python's directory structure so you won't accidentally look at it and learn our dangerous secrets. Also, you will only be able to update pax after we make a new release (about once a month). If this appeals to you, run::
 
     pip install git+https://github.com/XENON1T/pax.git
+    
+To update to a newer version, add ` --upgrade`` to the command above.
 
-This should automatically install any python modules pax depends on. 
 
-Now you should be able to run the command 'paxer'.
+Option 2: developer installation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+In this option you'll know where the code is, so you can look at it, play with it, and if you change anything you don't need to reinstall for your changes to take effect... However, be aware you are using the very latest ('nightly') version of pax, which may contain more bugs (but often contains less bugs). 
 
-If you want to modify the code (i.e., have the source code), please see the
-`relevant documentation section`_.
+First `cd` to the folder you want pax to be installed. Then run::
+
+    git clone https://github.com/XENON1T/pax.git
+    cd pax
+    python setup.py develop
+
+To update to the latest pax, go to the directory with pax and run `git pull`. 
+
+If you think you've made a useful change, you can contribute it! But please check the
+`relevant documentation section`_ first.
 
 .. _relevant documentation section: CONTRIBUTING.rst
 
-
-First steps
-===========
-
+Pax Tutorial
+============
 This section assumes that pax is installed, either from the instructions above
 or via `the FAQ on running the code at LNGS <http://xenon1t.github.io/pax/faq.html#how-do-i-run-pax-at-lngs-on-xecluster>`_.
 
-You can run the program by, for example, running::
-
-  paxer --input /archive/data/xenon100/run_14/xe100_150213_1411/xe100_150213_1411_000000.xed --event 0 --plot
-
-For other options and a list of command line arguments, please run::
+Now you should be able to run the command::
 
   paxer --help
+    
+from anywhere, which will give you a list of other command line options. If you have a graphical display, try `paxer --plot` and `paxer --plot_interactive`. You can select some data with the `--input` option::
+
+  paxer --input /archive/data/xenon100/run_14/xe100_150213_1411/xe100_150213_1411_000000.xed --event 0 --plot
 
 If you want to do something nonstandard, you can create your own configuration file
 like `my_file.ini`::
 
    [pax]
-    parent_configuration = 'XENON100'
-    input = 'XED.XedInput'
-    output = [ 'Plotting.PlotChannelWaveforms3D',
-               #'Plotting.PlotEventSummary',
-        ]
+   parent_configuration = 'XENON100'
+   input = 'XED.ReadXED'
+   output = [ 'Plotting.PlotChannelWaveforms3D',
+              #'Plotting.PlotEventSummary',
+            ]
 
-    [Plotting]
-    log_scale_entire_event = False
-    #output_dir = 'plots'  # Uncomment to write plot to disk
+   [Plotting]
+   log_scale_entire_event = False
+   #output_name = 'plots'  # Uncomment to write plot to disk
 
 
-
-You can load this file with `paxer` by doing the following::
+You can load this file with `paxer` by using the `config_path` option::
 
   paxer --config_path my_file.ini --input /archive/data/xenon100/run_14/xe100_150213_1411/xe100_150213_1411_000000.xed --event 0
 
@@ -117,37 +141,7 @@ You can uncomment the `output_dir` line to write the plots to a file.  Also, try
 playing with what is in the list of outputs.  For example, you can reactivate
 the `PlotEventSummary` that was produced in the first command from above.
 
-At this point, you can look through other configuration files and explore what
-plugins are in `pax` for doing more sophisticated things.
+There are many, many configuration options you can change. 
+You can look through other configuration files such as `_base.ini` and `XENON100.ini` to get an idea of what you can do. Also, you can try to explore what plugins are included in pax. You can ask us questions on gitter (click button above) or email. Oh, and did we mention the the documentation at http://xenon1t.github.io/pax/?
 
-Features
-========
-
-Here is a list of some of the nice features you can play with:
-
-* Digital signal processing
-
- * Sum waveform for top, bottom, veto
- * Filtering with raised cosine filter
- * Peak finding of S1 and S2
-
-* I/O
-
- * ROOT
- * MongoDB (used online for DAQ)
- * Raw data from XENON100 and XENON1T (XED and Avro)
- * Plots
-
-* Position reconstruction of events
-
- * Charge-weighted sum (x, y) reconstruction
- * (x, y) Reconstruction using chi-square-gamma minimization
- * Neural-net reconstruction
-
-
-* Interactive display
-
- * Interactive waveform with peaks annotated
- * PMT top layer hit pattern
- * Display is web browser-based. Allows navigation (next event, switch plot)
-   within browser
+.. [1] *Sneaky snappy workaround*: follow the instructions for 'developer installation', but just before `python setup.py develop`, edit `requirements.txt` in the pax folder and put a comment (`#`) sign in front of the `python-snappy>=0.5` line. Save the file and run `python setup.py develop`. Now you can use pax even if you couldn't install snappy. Har-har. If you use anything that involves the MongoDB interface, pax will crash; don't say we didn't warn you.
