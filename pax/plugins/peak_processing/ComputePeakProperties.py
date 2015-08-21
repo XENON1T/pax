@@ -62,15 +62,19 @@ class SumWaveformProperties(plugin.TransformPlugin):
             peak.sum_waveform = np.zeros(field_length, dtype=peak.sum_waveform.dtype)
             peak.sum_waveform_top = np.zeros(field_length, dtype=peak.sum_waveform.dtype)
 
-            # Get the waveform and compute some properties
+            # Get the waveform (in pe/bin) and compute basic sum-waveform derived properties
             w = event.get_sum_waveform(peak.detector).samples[peak.left:peak.right + 1]
+            # Center of gravity in the hits-only sum waveform. Identical to peak.hit_time_mean... one of them should go.
             peak.center_time = (peak.left + np.average(np.arange(len(w)), weights=w)) * dt
+            # Index in peak waveform nearest to center of gravity (for sum-waveform alignment)
             cog_idx = int(round(peak.center_time / dt)) - peak.left
+            # Index of the peak's maximum
             max_idx = np.argmax(w)
             peak.index_of_maximum = peak.left + max_idx
+            # Amplitude at the maximum
             peak.height = w[max_idx]
 
-            # Compute area fractions for
+            # Compute fraction of area in te central 20%, 50% and 90%
             fractions_desired = np.array([0.1, 0.25, 0.4, 0.6, 0.75, 0.9])
             index_of_area_fraction = np.ones(len(fractions_desired)) * float('nan')
             integrate_until_fraction(w, fractions_desired, index_of_area_fraction)
