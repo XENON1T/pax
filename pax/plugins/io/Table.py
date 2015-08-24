@@ -117,6 +117,12 @@ class TableWriter(plugin.OutputPlugin):
         Store all the event data internally, write to disk when appropriate.
         This function follows the plugin API.
         """
+        # Hack to convert s1, s2 in interaction objects to numbers
+        for i in range(len(event.interactions)):
+            for q in ('s1', 's2'):
+                peak = getattr(event.interactions[i], q)
+                object.__setattr__(peak, 's1', event.peaks.index(peak))
+
         self._model_to_tuples(event,
                               index_fields=[('Event', event.event_number), ])
         self.events_ready_for_conversion += 1
@@ -235,8 +241,7 @@ class TableWriter(plugin.OutputPlugin):
                                       index_fields + [(type(child_model).__name__,
                                                        new_index)])
 
-        # Grab all data into data_dict -- and more importantly, handle
-        # subcollections
+        # Handle the ordinary (non-subcollection) fields
         for field_name, field_value in m.get_fields_data():
 
             if field_name in self.config['fields_to_ignore'] or isinstance(field_value, list):
@@ -348,7 +353,7 @@ class TableReader(plugin.InputPlugin):
 
         of.open(name=self.config['input_name'], mode='r')
 
-        self.dnames = ['Event', 'Peak']
+        self.dnames = ['Event', 'Peak', 'Interaction']
         if self.read_hits:
             self.dnames.append('Hit')
         if self.read_recposes:
@@ -413,6 +418,7 @@ class TableReader(plugin.InputPlugin):
             assert len(in_this_event['Event']) == 1
             e_record = in_this_event['Event'][0]
             peaks = in_this_event['Peak']
+            peak_numbers = peaks['Peak']        # Needed to build interaction objects
 
             event = self.convert_record(datastructure.Event, e_record)
 
@@ -443,9 +449,17 @@ class TableReader(plugin.InputPlugin):
 
                     event.peaks.append(peak)
 
+            # Convert the interaction objects
+            interactions = in_this_event['Interaction']
+            for intr_i, intr_record in enumerate(interactions):
+                intr = self.convert_record(datastructure.Interaction, intr_record, ignore_type_checks=True)
+                # Hack to build s1 and s2 attributes from peak numbers
+                object.__setattr__(intr, 's1', event.peaks[peak_numbers.index(intr.s1)])
+                object.__setattr__(intr, 's2', event.peaks[peak_numbers.index(intr.s2)])
+
             yield event
 
-    def convert_record(self, class_to_load_to, record):
+    def convert_record(self, class_to_load_to, record, ignore_type_checks=False):
         # We defined a nice custom init for event... ahem... now we have to do
         # cumbersome stuff...
         if class_to_load_to == datastructure.Event:
@@ -460,7 +474,10 @@ class TableReader(plugin.InputPlugin):
             # This happens for n_peaks etc. and attributes that have been
             # removed
             if hasattr(result, k):
-                setattr(result, k, v)
+                if ignore_type_checks:
+                    object.__setattr__(result, k, v)
+                else:
+                    setattr(result, k, v)
         return result
 
     def _numpy_record_to_dict(self, record):
