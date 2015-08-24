@@ -31,7 +31,7 @@ setup(
                 'pax.plugins.io',
                 'pax.plugins.signal_processing',
                 'pax.plugins.peak_processing',
-                'pax.plugins.posrec'
+                'pax.plugins.posrec',
                 'pax.plugins.interaction_processing',
                 ],
     package_dir={'pax': 'pax'},
