@@ -88,8 +88,7 @@ class TableWriter(plugin.OutputPlugin):
             self.config['write_in_chunks'] = False
 
         if self.config['append_data'] and not of.supports_append:
-            self.log.warning('Output format %s does not support append: setting'
-                             ' to False.')
+            self.log.warning('Output format %s does not support append: setting to False.')
             self.config['append_data'] = False
 
         # Append extension to outfile, if this format has one
@@ -100,8 +99,7 @@ class TableWriter(plugin.OutputPlugin):
         outfile = self.config['output_name']
         if os.path.exists(outfile):
             if self.config['append_data'] and of.supports_append:
-                self.log.info('Output file/dir %s already exists: '
-                              'appending.' % outfile)
+                self.log.info('Output file/dir %s already exists: appending.' % outfile)
             elif self.config['overwrite_data']:
                 self.log.info('Output file/dir %s already exists, and you '
                               'wanted to overwrite, so deleting it!' % outfile)
@@ -133,7 +131,7 @@ class TableWriter(plugin.OutputPlugin):
         for i in range(len(event.interactions)):
             for q in ('s1', 's2'):
                 peak = getattr(event.interactions[i], q)
-                object.__setattr__(peak, 's1', event.peaks.index(peak))
+                object.__setattr__(event.interactions[i], q, event.peaks.index(peak))
 
         self._model_to_tuples(event,
                               index_fields=[('Event', event.event_number), ])
@@ -203,7 +201,6 @@ class TableWriter(plugin.OutputPlugin):
         :param m: instance to convert
         :param index_fields: list of (index_field_name, value) tuples denoting multi-index trail
         """
-
         # List to contain data from this model, will be made into tuple later
         m_name = m.__class__.__name__
         m_indices = [x[1] for x in index_fields]
@@ -261,6 +258,7 @@ class TableWriter(plugin.OutputPlugin):
 
             elif isinstance(field_value, Model):
                 # Individual child model: store the child number instead
+                # Note: only works if collection is in the same model!
                 child_class_name = field_value.__class__.__name__
 
                 if first_time_seen:
@@ -430,7 +428,7 @@ class TableReader(plugin.InputPlugin):
             assert len(in_this_event['Event']) == 1
             e_record = in_this_event['Event'][0]
             peaks = in_this_event['Peak']
-            peak_numbers = peaks['Peak']        # Needed to build interaction objects
+            peak_numbers = peaks['Peak'].tolist()      # Needed to build interaction objects
 
             event = self.convert_record(datastructure.Event, e_record)
 
@@ -466,8 +464,9 @@ class TableReader(plugin.InputPlugin):
             for intr_i, intr_record in enumerate(interactions):
                 intr = self.convert_record(datastructure.Interaction, intr_record, ignore_type_checks=True)
                 # Hack to build s1 and s2 attributes from peak numbers
-                object.__setattr__(intr, 's1', event.peaks[peak_numbers.index(intr.s1)])
-                object.__setattr__(intr, 's2', event.peaks[peak_numbers.index(intr.s2)])
+                for q in ('s1', 's2'):
+                    peak = event.peaks[peak_numbers.index(getattr(intr, q))]
+                    object.__setattr__(intr, q, peak)
 
             yield event
 
