@@ -16,6 +16,15 @@ except ImportError:
     import Queue as queue   #noqa
 import multiprocessing
 
+# Hack to ensure correct matplotlib backend is chosen
+# Without this, pax's plotting does not work when using a system without a graphical display
+# Stolen from http://stackoverflow.com/questions/8257385/automatic-detection-of-display-availability-with-matplotlib
+# Note the version with os.environ does not work on windows
+import matplotlib
+r = os.system('python -c "import matplotlib.pyplot as plt;plt.figure()"')
+if r != 0:
+    matplotlib.use('Agg')
+
 import pax    # For version
 from pax import core, utils, formats
 
@@ -226,26 +235,28 @@ def main():
             override_dict['pax'][configname] = value
 
     # Process input type options
-    override_dict['pax']['input'] = []
-    for pa in wraplist(args.input_type):
-        bla = input_plugin_aliases[pa]
-        if isinstance(bla, tuple):
-            # We have a plugin name, extra options tuple
-            plugin_name, override_dict[plugin_name] = bla
-        else:
-            plugin_name = bla
-        override_dict['pax']['input'].append(plugin_name)
+    if args.input_type is not None:
+        override_dict['pax']['input'] = []
+        for pa in wraplist(args.input_type):
+            bla = input_plugin_aliases[pa]
+            if isinstance(bla, tuple):
+                # We have a plugin name, extra options tuple
+                plugin_name, override_dict[plugin_name] = bla
+            else:
+                plugin_name = bla
+            override_dict['pax']['input'].append(plugin_name)
 
     # Process output type options. Code is almost the same... sorry!
-    override_dict['pax']['output'] = []
-    for pa in wraplist(args.output_type):
-        bla = output_plugin_aliases[pa]
-        if isinstance(bla, tuple):
-            # We have a plugin name, extra options tuple
-            plugin_name, override_dict[plugin_name] = bla
-        else:
-            plugin_name = bla
-        override_dict['pax']['output'].append(plugin_name)
+    if args.output_type is not None:
+        override_dict['pax']['output'] = []
+        for pa in wraplist(args.output_type):
+            bla = output_plugin_aliases[pa]
+            if isinstance(bla, tuple):
+                # We have a plugin name, extra options tuple
+                plugin_name, override_dict[plugin_name] = bla
+            else:
+                plugin_name = bla
+            override_dict['pax']['output'].append(plugin_name)
 
     # Overrides for plotting
     if args.plot_to_dir or args.plot:
@@ -357,22 +368,22 @@ def get_args():
                         help="File, database or directory to read events from.",)
     parser.add_argument('--output', default=None,
                         help="File, database or directory to write events to. "
-                             "Defaults to name constructed from current date and time (YYMMDD_hhmmss). "
+                             "If omitted, will try to construct one from input name or timestamp. "
                              "For plotting to screen, use SCREEN.")
 
     output_type_options = list(reversed(sorted(output_plugin_aliases.keys())))
-    parser.add_argument('--output_type', default='hdf5',
+    parser.add_argument('--output_type',
                         nargs='+', choices=output_type_options,
-                        help='Output format/plugin(s) to use: default is hdf5. '
+                        help='Output format/plugin(s) to use. '
                              'Should be a space-separated list; allowed values are: ' +
                              ', '.join(output_type_options) + '.\n' +
                              'Use with --config reduce_raw_data if you want to write raw data!',
                         metavar='OUTPUT_TYPE',
                         )
     input_type_options = list(reversed(sorted(input_plugin_aliases.keys())))
-    parser.add_argument('--input_type', default='xed',
+    parser.add_argument('--input_type',
                         choices=input_type_options,
-                        help='Input format/plugin to use: default is xed. '
+                        help='Input format/plugin to use. '
                              'Allowed values are: ' +
                              ', '.join(input_type_options) + '.\n' +
                              'Use with --config Reprocess if you want to read processed data!',

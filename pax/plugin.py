@@ -8,8 +8,10 @@ transform would modify the event object.
 See format for more information on the event object.
 """
 import logging
+import os
 from time import strftime
 
+import pax    # for version
 from pax.datastructure import Event
 
 
@@ -113,11 +115,19 @@ class TransformPlugin(ProcessPlugin):
 class OutputPlugin(ProcessPlugin):
 
     def _pre_startup(self):
-        # If no output name specified, create a default one from current date and time
+        # If no output name specified, create a default one.
         # We need to do this here, rather than in paxer, otherwise user couldn't specify output_name in config
         # (paxer would override it)
         if 'output_name' not in self.config:
-            self.config['output_name'] = strftime('%y%m%d_%H%M%S')
+            # Is there an input plugin? If so, try to use the input plugin's input name + _paxVERSION
+            # We can't just change extensions: some inputs/outputs have no extension (e.g. directories, database names)
+            ip = self.processor.input_plugin
+            if ip is not None and 'input_name' in ip.config:
+                self.config['output_name'] = os.path.splitext(os.path.basename(ip.config['input_name']))[0]
+                self.config['output_name'] += '_pax' + pax.__version__
+            else:
+                # Deep fallback: timestamp-based name.
+                self.config['output_name'] = 'output_pax%s_%s' % (pax.__version__, strftime('%y%m%d_%H%M%S'))
         ProcessPlugin._pre_startup(self)
 
     def write_event(self, event):

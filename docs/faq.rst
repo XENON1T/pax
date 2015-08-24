@@ -10,12 +10,32 @@ You should be able to run `pax` running at the shell the following command::
 
   export PATH=/home/tunnell/anaconda3/bin:$PATH
 
-This can be added to your `.bashrc` to be run automatically when you login.  You
-can check that it worked the following command::
+This can be added to your `.bashrc` to be run automatically when you login.
 
-  python -c "import pax; print(pax.__version__)"
+To set up a developer installation of pax in your xecluster home directory, first follow the steps for installing anaconda and the required packages in the main readme (I didn't try to install snappy but used the workaround). Then add the following to your .bashrc::
 
-Which should result in Python3 being used to print the pax version.
+    # use Basho's git in totally insecure mode
+    export PATH=/home/kaminsky/software/bin:$PATH
+    export GIT_SSL_NO_VERIFY=true
+
+Now follow these steps::
+
+    cd ~
+    git clone https://github.com/XENON1T/pax.git
+    wget http://curl.haxx.se/ca/cacert.pem ~/cacert.pem
+    mkdir .pip
+    cp /home/aalbers/.pip/pip.conf ~/.pip
+    pip install avro-python3 flake8 prettytable tqdm pymongo
+    cd pax
+    python setup.py develop
+
+If it complains about any more missing modules, install it using pip install. 
+
+Whichever way you want to use pax, you check that it worked using the following command::
+
+  paxer --version
+
+which should result in Python3 being used to print the pax version.
 
 
 ----------------------------------------
@@ -45,22 +65,6 @@ Pax should now work, test it by running::
 
   $ python paxer --plot
 
----------------------------------------
-How do I run `git` at LNGS on xecluster
----------------------------------------
-
-You can get `git` running by doing the following at the command line::
-
-  export PATH=/home/kaminsky/software/bin:$PATH
-
-The machines have old certificates, therefore you cannot run `git` in secure
-mode.  Running the command is a workaround::
-
-  export GIT_SSL_NO_VERIFY=true
-
-These two export commands can be added to your `.bashrc` to be run automatically
-when you login.
-
 
 ---------------------------------------
 Can I set up pax on my windows machine?
@@ -70,7 +74,7 @@ Yes, in fact several of the developers do this, much to the sadness of the other
 
 1. Start with installing Anaconda for python 3 from their website. If the Anaconda website nags you for an email,
    enter your favourite fictional email address
-2. Install python-snappy from `Christoph Gohlke's page <http://www.lfd.uci.edu/~gohlke/pythonlibs/>`_.
+2. Install python-snappy and h5py from `Christoph Gohlke's page <http://www.lfd.uci.edu/~gohlke/pythonlibs/>`_.
    See installation instructions for the .whl file at the top of the page.
 2. Get pax using Github's nice point-and-click Github For Windows application.
    Ignore the haters who insist on doing everything by command line.
@@ -142,12 +146,13 @@ If the dataset you want to reduce is not in the default input format (currently 
 How do I reduce the file size of my processed data?
 ------------------------------------------
 
-For processed data, the default configuration is to store events, peaks and hits. Since there are usually many hits per event, they will take a lot of disk space. If you need to reduce the size size abd you do not need the hit information, check out the line found in `_base.ini` :
+By default we store a lot of low-level information in the processed output files. If you need smaller files, first try to make 'light' files using the reprocess configuration:
 
-  fields_to_ignore = ['all_hits','sum_waveforms','channel_waveforms']
+    paxer --config Reprocess --input your_large_file.hdf5
 
-It may look like the hits are already ignored (`'all_hits'`) but there is another property called `'hits'` which is a peak property instead of an event property. Add both to `fields_to_ignore` and you're fine.
-This is also the place to be if you want to reduce your file size in a different way. If you do not need some properties, just add them here and they will be ignored.
+This will remove fields like the per-peak sum-waveform and hitpattern from the file, reducing the filesize significantly. You can remove more or less fields by playing with the fields_to_ignore option (see Reprocess.ini). Whatever you do with this field, put either `all_hits` or `hits` on it: `'hits'`  is a peak property which stores all the hits in a peak, `all_hits` is an event property which stores all hits. You don't want both, and in fact you will get an error if you try.
+
+If the files are still too big for you, try using a flattener (see XeAnalysisScripts, or write your own) to save only the main S1/S2 information. Or just select only events you need. Or just buy more disk space.
 
 
 --------------------------------------------------------------
