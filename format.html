@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Event format &mdash; Processor for Analyzing XENON1T 3.2.0 documentation</title>
+    <title>Event format &mdash; Processor for Analyzing XENON1T 3.3.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '3.2.0',
+        VERSION:     '3.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 3.2.0 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 3.3.0 documentation" href="index.html" />
     <link rel="next" title="Plugins" href="plugin.html" />
     <link rel="prev" title="Frequently Asked Questions" href="faq.html" />
    
@@ -31,25 +31,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="plugin.html" title="Plugins"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="faq.html" title="Frequently Asked Questions"
-             accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Processor for Analyzing XENON1T 3.2.0 documentation</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -120,6 +102,18 @@ unless you pass reverse=False, then it is ascending.</p>
 <dt id="pax.datastructure.Event.event_number">
 <code class="descname">event_number</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Event.event_number" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.datastructure.Event.get_peaks_by_type">
+<code class="descname">get_peaks_by_type</code><span class="sig-paren">(</span><em>desired_type='all'</em>, <em>detector='tpc'</em>, <em>sort_key='area'</em>, <em>reverse=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Event.get_peaks_by_type"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.get_peaks_by_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Helper function for retrieving only certain types of peaks
+Returns a list of <a class="reference internal" href="pax.html#pax.datastructure.Peak" title="pax.datastructure.Peak"><code class="xref py py-class docutils literal"><span class="pre">pax.datastructure.Peak</span></code></a> objects</p>
+<blockquote>
+<div>whose type is desired_type, and
+who are in the detector specified by the &#8216;detector&#8217; argument (unless detector=&#8217;all&#8217;)</div></blockquote>
+<p>The returned list is sorted DESCENDING (i.e. reversed!) by the key sort_key (default area)
+unless you pass reverse=False, then it is ascending (normal sort order).</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="pax.datastructure.Event.get_sum_waveform">
@@ -329,6 +323,18 @@ In new pax, is height of highest hit</p>
 </dd></dl>
 
 <dl class="attribute">
+<dt id="pax.datastructure.Peak.n_saturated">
+<code class="descname">n_saturated</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Peak.n_saturated" title="Permalink to this definition">¶</a></dt>
+<dd><p>Total number of samples with ADC saturation threshold in all channels in this peak</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.n_saturated_per_channel">
+<code class="descname">n_saturated_per_channel</code><em class="property"> = array([], dtype=int16)</em><a class="headerlink" href="#pax.datastructure.Peak.n_saturated_per_channel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of samples with ADC saturation in this peak, per channel</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="pax.datastructure.Peak.noise_channels">
 <code class="descname">noise_channels</code><a class="headerlink" href="#pax.datastructure.Peak.noise_channels" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
@@ -426,9 +432,11 @@ In new pax, is height of highest hit</p>
 <dl class="class">
 <dt id="pax.datastructure.Hit">
 <em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">Hit</code><span class="sig-paren">(</span><em>kwargs_dict=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Hit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Hit" title="Permalink to this definition">¶</a></dt>
-<dd><p>Peaks found in individual channels</p>
+<dd><p>A hit results from, within individual channel, fluctation above baseline.</p>
 <p>These are be clustered into ordinary peaks later. This is commonly
-called a &#8216;hit&#8217; in particle physics detectors.</p>
+called a &#8216;hit&#8217; in particle physics detectors.  Very generally, a hit is
+made every time that the data recorded for one channel flucates above
+baseline.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Hit.area">
 <code class="descname">area</code><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Hit.area" title="Permalink to this definition">¶</a></dt>
@@ -481,6 +489,12 @@ called a &#8216;hit&#8217; in particle physics detectors.</p>
 <dt id="pax.datastructure.Hit.length">
 <code class="descname">length</code><a class="headerlink" href="#pax.datastructure.Hit.length" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Hit.n_saturated">
+<code class="descname">n_saturated</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Hit.n_saturated" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of samples with ADC saturation in this hit</p>
+</dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Hit.noise_sigma">
@@ -548,7 +562,8 @@ Note: in Pulse the same number is stored in ADC-counts</p>
 <dt id="pax.datastructure.Pulse">
 <em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">Pulse</code><span class="sig-paren">(</span><em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Pulse"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Pulse" title="Permalink to this definition">¶</a></dt>
 <dd><p>A DAQ pulse</p>
-<p>A DAQ pulse can also be thought of as a pulse in a PMT.</p>
+<p>A DAQ pulse can also be thought of as a pulse in a PMT.  Remember that this is
+inverted.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Pulse.baseline">
 <code class="descname">baseline</code><em class="property"> = nan</em><a class="headerlink" href="#pax.datastructure.Pulse.baseline" title="Permalink to this definition">¶</a></dt>
@@ -629,13 +644,15 @@ starts at zero and is an integer because it&#8217;s an index.</p>
 </ul>
 </li>
 </ul>
-
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="faq.html"
-                        title="previous chapter">Frequently Asked Questions</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="plugin.html"
-                        title="next chapter">Plugins</a></p>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="faq.html" title="previous chapter">Frequently Asked Questions</a></li>
+      <li>Next: <a href="plugin.html" title="next chapter">Plugins</a></li>
+  </ul></li>
+</ul>
+</div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -665,11 +682,11 @@ starts at zero and is an integer because it&#8217;s an index.</p>
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
       <a href="_sources/format.txt"
-          rel="nofollow">Page source</a></li>
+          rel="nofollow">Page source</a>
     </div>
 
     

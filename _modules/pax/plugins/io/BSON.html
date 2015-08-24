@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.io.BSON &mdash; Processor for Analyzing XENON1T 3.2.0 documentation</title>
+    <title>pax.plugins.io.BSON &mdash; Processor for Analyzing XENON1T 3.3.0 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '3.2.0',
+        VERSION:     '3.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,27 +23,14 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 3.2.0 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 3.3.0 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../../../../genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="../../../../py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../../index.html">Processor for Analyzing XENON1T 3.2.0 documentation</a> &raquo;</li>
-          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -55,18 +42,17 @@
 <span class="sd">JSON and BSON-based data output</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">json</span>
-<span class="kn">import</span> <span class="nn">zipfile</span>
-<span class="kn">import</span> <span class="nn">gzip</span>
 
 <span class="kn">import</span> <span class="nn">bson</span>
 
 <span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">datastructure</span>
-<span class="kn">from</span> <span class="nn">pax.FolderIO</span> <span class="kn">import</span> <span class="n">InputFromFolder</span><span class="p">,</span> <span class="n">WriteToFolder</span>
+<span class="kn">from</span> <span class="nn">pax.FolderIO</span> <span class="kn">import</span> <span class="n">InputFromFolder</span><span class="p">,</span> <span class="n">WriteToFolder</span><span class="p">,</span> <span class="n">ReadZipped</span><span class="p">,</span> <span class="n">WriteZipped</span>
 
 
 <span class="c">##</span>
 <span class="c"># JSON</span>
 <span class="c">##</span>
+
 
 <div class="viewcode-block" id="ReadJSON"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BSON.ReadJSON">[docs]</a><span class="k">class</span> <span class="nc">ReadJSON</span><span class="p">(</span><span class="n">InputFromFolder</span><span class="p">):</span>
 
@@ -106,7 +92,26 @@
 <span class="c"># BSON</span>
 <span class="c">##</span>
 </div></div>
-<div class="viewcode-block" id="ReadBSON"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BSON.ReadBSON">[docs]</a><span class="k">class</span> <span class="nc">ReadBSON</span><span class="p">(</span><span class="n">InputFromFolder</span><span class="p">):</span>
+<div class="viewcode-block" id="BSONIO"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BSON.BSONIO">[docs]</a><span class="k">class</span> <span class="nc">BSONIO</span><span class="p">():</span>
+
+<div class="viewcode-block" id="BSONIO.from_format"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BSON.BSONIO.from_format">[docs]</a>    <span class="k">def</span> <span class="nf">from_format</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">datastructure</span><span class="o">.</span><span class="n">Event</span><span class="o">.</span><span class="n">from_bson</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="BSONIO.to_format"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BSON.BSONIO.to_format">[docs]</a>    <span class="k">def</span> <span class="nf">to_format</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">event</span><span class="o">.</span><span class="n">to_bson</span><span class="p">(</span><span class="n">fields_to_ignore</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;fields_to_ignore&#39;</span><span class="p">])</span>
+
+</div></div>
+<div class="viewcode-block" id="ReadZippedBSON"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BSON.ReadZippedBSON">[docs]</a><span class="k">class</span> <span class="nc">ReadZippedBSON</span><span class="p">(</span><span class="n">BSONIO</span><span class="p">,</span> <span class="n">ReadZipped</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Read a folder of zipfiles containing gzipped BSON files&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="WriteZippedBSON"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BSON.WriteZippedBSON">[docs]</a><span class="k">class</span> <span class="nc">WriteZippedBSON</span><span class="p">(</span><span class="n">BSONIO</span><span class="p">,</span> <span class="n">WriteZipped</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Write raw data to a folder of zipfiles containing gzipped BSONs&quot;&quot;&quot;</span>
+    <span class="k">pass</span>
+
+</div>
+<div class="viewcode-block" id="ReadBSON"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BSON.ReadBSON">[docs]</a><span class="k">class</span> <span class="nc">ReadBSON</span><span class="p">(</span><span class="n">InputFromFolder</span><span class="p">,</span> <span class="n">BSONIO</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;Read raw BSON data from a concatenated-BSON file or a folder of such files</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -124,7 +129,7 @@
             <span class="k">yield</span> <span class="n">datastructure</span><span class="o">.</span><span class="n">Event</span><span class="p">(</span><span class="o">**</span><span class="n">doc</span><span class="p">)</span>
 
 </div></div>
-<div class="viewcode-block" id="WriteBSON"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BSON.WriteBSON">[docs]</a><span class="k">class</span> <span class="nc">WriteBSON</span><span class="p">(</span><span class="n">WriteToFolder</span><span class="p">):</span>
+<div class="viewcode-block" id="WriteBSON"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BSON.WriteBSON">[docs]</a><span class="k">class</span> <span class="nc">WriteBSON</span><span class="p">(</span><span class="n">WriteToFolder</span><span class="p">,</span> <span class="n">BSONIO</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;Write raw data to a folder of concatenated-BSON files</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -134,56 +139,9 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">current_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;wb&#39;</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="WriteBSON.write_event_to_current_file"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BSON.WriteBSON.write_event_to_current_file">[docs]</a>    <span class="k">def</span> <span class="nf">write_event_to_current_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">to_bson</span><span class="p">(</span><span class="n">fields_to_ignore</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;fields_to_ignore&#39;</span><span class="p">]))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">current_file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_format</span><span class="p">(</span><span class="n">event</span><span class="p">))</span>
 </div>
 <div class="viewcode-block" id="WriteBSON.close"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BSON.WriteBSON.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-
-
-<span class="c">##</span>
-<span class="c"># Zipped BSON</span>
-<span class="c">##</span>
-</div></div>
-<div class="viewcode-block" id="ReadZippedBSON"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BSON.ReadZippedBSON">[docs]</a><span class="k">class</span> <span class="nc">ReadZippedBSON</span><span class="p">(</span><span class="n">InputFromFolder</span><span class="p">):</span>
-
-    <span class="sd">&quot;&quot;&quot;Read a folder of zipfiles containing gzipped BSON files</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">file_extension</span> <span class="o">=</span> <span class="s">&#39;zip&#39;</span>
-
-<div class="viewcode-block" id="ReadZippedBSON.open"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BSON.ReadZippedBSON.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_file</span> <span class="o">=</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">event_numbers</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-                                     <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_file</span><span class="o">.</span><span class="n">namelist</span><span class="p">()])</span>
-</div>
-<div class="viewcode-block" id="ReadZippedBSON.get_event_numbers_in_current_file"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BSON.ReadZippedBSON.get_event_numbers_in_current_file">[docs]</a>    <span class="k">def</span> <span class="nf">get_event_numbers_in_current_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_numbers</span>
-</div>
-<div class="viewcode-block" id="ReadZippedBSON.get_single_event_in_current_file"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BSON.ReadZippedBSON.get_single_event_in_current_file">[docs]</a>    <span class="k">def</span> <span class="nf">get_single_event_in_current_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_number</span><span class="p">):</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_file</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">event_number</span><span class="p">))</span> <span class="k">as</span> <span class="n">event_file_in_zip</span><span class="p">:</span>
-            <span class="n">doc</span> <span class="o">=</span> <span class="n">event_file_in_zip</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
-            <span class="n">doc</span> <span class="o">=</span> <span class="n">gzip</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
-            <span class="k">return</span> <span class="n">datastructure</span><span class="o">.</span><span class="n">Event</span><span class="o">.</span><span class="n">from_bson</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
-</div>
-<div class="viewcode-block" id="ReadZippedBSON.close"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BSON.ReadZippedBSON.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Close the currently open file&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-
-</div></div>
-<div class="viewcode-block" id="WriteZippedBSON"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BSON.WriteZippedBSON">[docs]</a><span class="k">class</span> <span class="nc">WriteZippedBSON</span><span class="p">(</span><span class="n">WriteToFolder</span><span class="p">):</span>
-
-    <span class="sd">&quot;&quot;&quot;Write raw data to a folder of zipfiles containing gzipped BSONs</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">file_extension</span> <span class="o">=</span> <span class="s">&#39;zip&#39;</span>
-
-<div class="viewcode-block" id="WriteZippedBSON.open"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BSON.WriteZippedBSON.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_file</span> <span class="o">=</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
-</div>
-<div class="viewcode-block" id="WriteZippedBSON.write_event_to_current_file"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BSON.WriteZippedBSON.write_event_to_current_file">[docs]</a>    <span class="k">def</span> <span class="nf">write_event_to_current_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_file</span><span class="o">.</span><span class="n">writestr</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">event_number</span><span class="p">),</span>
-                                   <span class="n">gzip</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">to_bson</span><span class="p">(</span><span class="n">fields_to_ignore</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;fields_to_ignore&#39;</span><span class="p">]),</span>
-                                                 <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;compresslevel&#39;</span><span class="p">]))</span>
-</div>
-<div class="viewcode-block" id="WriteZippedBSON.close"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.BSON.WriteZippedBSON.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">current_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div></div>
 </pre></div>
 
@@ -191,7 +149,15 @@
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../../search.html" method="get">
@@ -214,7 +180,7 @@
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>
 

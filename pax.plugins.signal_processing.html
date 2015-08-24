@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.signal_processing package &mdash; Processor for Analyzing XENON1T 3.2.0 documentation</title>
+    <title>pax.plugins.signal_processing package &mdash; Processor for Analyzing XENON1T 3.3.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '3.2.0',
+        VERSION:     '3.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,25 +23,13 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 3.2.0 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 3.3.0 documentation" href="index.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Processor for Analyzing XENON1T 3.2.0 documentation</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -57,7 +45,7 @@
 <span id="pax-plugins-signal-processing-checkpulses-module"></span><h2>pax.plugins.signal_processing.CheckPulses module<a class="headerlink" href="#module-pax.plugins.signal_processing.CheckPulses" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="pax.plugins.signal_processing.CheckPulses.CheckBounds">
-<em class="property">class </em><code class="descclassname">pax.plugins.signal_processing.CheckPulses.</code><code class="descname">CheckBounds</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/signal_processing/CheckPulses.html#CheckBounds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.CheckPulses.CheckBounds" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pax.plugins.signal_processing.CheckPulses.</code><code class="descname">CheckBounds</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/signal_processing/CheckPulses.html#CheckBounds"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.CheckPulses.CheckBounds" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></code></a></p>
 <p>Check if pulses extend beyond event bounds
 If so, truncate them or raise exception, depending on config</p>
@@ -75,7 +63,7 @@ If so, truncate them or raise exception, depending on config</p>
 
 <dl class="class">
 <dt id="pax.plugins.signal_processing.CheckPulses.ConcatenateAdjacentPulses">
-<em class="property">class </em><code class="descclassname">pax.plugins.signal_processing.CheckPulses.</code><code class="descname">ConcatenateAdjacentPulses</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/signal_processing/CheckPulses.html#ConcatenateAdjacentPulses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.CheckPulses.ConcatenateAdjacentPulses" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pax.plugins.signal_processing.CheckPulses.</code><code class="descname">ConcatenateAdjacentPulses</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/signal_processing/CheckPulses.html#ConcatenateAdjacentPulses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.CheckPulses.ConcatenateAdjacentPulses" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></code></a></p>
 <p>Concatenates directly adjacent pulses in the same channel
 This ensures baselines / noise levels won&#8217;t get recalculated in the middle
@@ -90,7 +78,7 @@ Assumes pulses are already sorted by channel, then left. Use SortPulses if this 
 
 <dl class="class">
 <dt id="pax.plugins.signal_processing.CheckPulses.SortPulses">
-<em class="property">class </em><code class="descclassname">pax.plugins.signal_processing.CheckPulses.</code><code class="descname">SortPulses</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/signal_processing/CheckPulses.html#SortPulses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.CheckPulses.SortPulses" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pax.plugins.signal_processing.CheckPulses.</code><code class="descname">SortPulses</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/signal_processing/CheckPulses.html#SortPulses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.CheckPulses.SortPulses" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></code></a></p>
 <p>Sorts pulses by channel, then left</p>
 <dl class="method">
@@ -105,7 +93,7 @@ Assumes pulses are already sorted by channel, then left. Use SortPulses if this 
 <span id="pax-plugins-signal-processing-cluster-module"></span><h2>pax.plugins.signal_processing.Cluster module<a class="headerlink" href="#module-pax.plugins.signal_processing.Cluster" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="pax.plugins.signal_processing.Cluster.ClusterPlugin">
-<em class="property">class </em><code class="descclassname">pax.plugins.signal_processing.Cluster.</code><code class="descname">ClusterPlugin</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/signal_processing/Cluster.html#ClusterPlugin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.Cluster.ClusterPlugin" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pax.plugins.signal_processing.Cluster.</code><code class="descname">ClusterPlugin</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/signal_processing/Cluster.html#ClusterPlugin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.Cluster.ClusterPlugin" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></code></a></p>
 <p>Base plugin for clustering</p>
 <p>Individual channel peaks into groups, and labels them as noise / lone_pulse / unknown
@@ -129,7 +117,7 @@ Assumes pulses are already sorted by channel, then left. Use SortPulses if this 
 
 <dl class="class">
 <dt id="pax.plugins.signal_processing.Cluster.GapSize">
-<em class="property">class </em><code class="descclassname">pax.plugins.signal_processing.Cluster.</code><code class="descname">GapSize</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/signal_processing/Cluster.html#GapSize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.Cluster.GapSize" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pax.plugins.signal_processing.Cluster.</code><code class="descname">GapSize</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/signal_processing/Cluster.html#GapSize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.Cluster.GapSize" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.plugins.signal_processing.Cluster.ClusterPlugin" title="pax.plugins.signal_processing.Cluster.ClusterPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugins.signal_processing.Cluster.ClusterPlugin</span></code></a></p>
 <p>Clusters hits based on gaps = times not covered by any hits.
 Any gap longer than max_gap_size starts a new cluster.
@@ -148,7 +136,7 @@ Difference with HitDifference: this takes interval nature of hits into account</
 
 <dl class="class">
 <dt id="pax.plugins.signal_processing.Cluster.HitDifference">
-<em class="property">class </em><code class="descclassname">pax.plugins.signal_processing.Cluster.</code><code class="descname">HitDifference</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/signal_processing/Cluster.html#HitDifference"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.Cluster.HitDifference" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pax.plugins.signal_processing.Cluster.</code><code class="descname">HitDifference</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/signal_processing/Cluster.html#HitDifference"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.Cluster.HitDifference" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.plugins.signal_processing.Cluster.ClusterPlugin" title="pax.plugins.signal_processing.Cluster.ClusterPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugins.signal_processing.Cluster.ClusterPlugin</span></code></a></p>
 <p>Clusters hits based on times between their maxima
 If any hit maximum is separated by more than max_difference from the next,
@@ -162,7 +150,7 @@ it starts a new cluster.</p>
 
 <dl class="class">
 <dt id="pax.plugins.signal_processing.Cluster.MeanShift">
-<em class="property">class </em><code class="descclassname">pax.plugins.signal_processing.Cluster.</code><code class="descname">MeanShift</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/signal_processing/Cluster.html#MeanShift"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.Cluster.MeanShift" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pax.plugins.signal_processing.Cluster.</code><code class="descname">MeanShift</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/signal_processing/Cluster.html#MeanShift"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.Cluster.MeanShift" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.plugins.signal_processing.Cluster.ClusterPlugin" title="pax.plugins.signal_processing.Cluster.ClusterPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugins.signal_processing.Cluster.ClusterPlugin</span></code></a></p>
 <p>Clusters hits using mean-shift algorithm</p>
 <p><a class="reference external" href="http://en.wikipedia.org/wiki/Mean_shift">http://en.wikipedia.org/wiki/Mean_shift</a></p>
@@ -190,7 +178,7 @@ it starts a new cluster.</p>
 
 <dl class="class">
 <dt id="pax.plugins.signal_processing.Cluster.NaturalBreaks">
-<em class="property">class </em><code class="descclassname">pax.plugins.signal_processing.Cluster.</code><code class="descname">NaturalBreaks</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/signal_processing/Cluster.html#NaturalBreaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.Cluster.NaturalBreaks" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pax.plugins.signal_processing.Cluster.</code><code class="descname">NaturalBreaks</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/signal_processing/Cluster.html#NaturalBreaks"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.Cluster.NaturalBreaks" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.plugins.signal_processing.Cluster.ClusterPlugin" title="pax.plugins.signal_processing.Cluster.ClusterPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugins.signal_processing.Cluster.ClusterPlugin</span></code></a></p>
 <p>Split hits by a variation on the &#8216;natural breaks&#8217; algorithm.
 The clustering proceeds in two steps:</p>
@@ -253,18 +241,12 @@ These can have a single long hit in all channels, which won&#8217;t have any sho
 <dd><p>Return indices of n largest elements in a</p>
 </dd></dl>
 
-<dl class="function">
-<dt id="pax.plugins.signal_processing.Cluster.sum_abs_dev">
-<code class="descclassname">pax.plugins.signal_processing.Cluster.</code><code class="descname">sum_abs_dev</code><span class="sig-paren">(</span><em>x</em>, <em>weights=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/signal_processing/Cluster.html#sum_abs_dev"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.Cluster.sum_abs_dev" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
 </div>
 <div class="section" id="module-pax.plugins.signal_processing.HitFinder">
 <span id="pax-plugins-signal-processing-hitfinder-module"></span><h2>pax.plugins.signal_processing.HitFinder module<a class="headerlink" href="#module-pax.plugins.signal_processing.HitFinder" title="Permalink to this headline">¶</a></h2>
-<p>Hit finding plugin</p>
 <dl class="class">
 <dt id="pax.plugins.signal_processing.HitFinder.FindHits">
-<em class="property">class </em><code class="descclassname">pax.plugins.signal_processing.HitFinder.</code><code class="descname">FindHits</code><span class="sig-paren">(</span><em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/signal_processing/HitFinder.html#FindHits"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.HitFinder.FindHits" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pax.plugins.signal_processing.HitFinder.</code><code class="descname">FindHits</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/signal_processing/HitFinder.html#FindHits"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.HitFinder.FindHits" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></code></a></p>
 <p>Finds hits in pulses
 First, the baseline is computed as the mean of the first initial_baseline_samples in the pulse.
@@ -350,10 +332,10 @@ allowing you to debug. Don&#8217;t forget to re-enable the &#64;jit &#8211; othe
 <dl class="attribute">
 <dt id="pax.plugins.signal_processing.HitFinder.compute_hit_properties">
 <code class="descclassname">pax.plugins.signal_processing.HitFinder.</code><code class="descname">compute_hit_properties</code><a class="reference internal" href="_modules/pax/plugins/signal_processing/HitFinder.html#compute_hit_properties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.signal_processing.HitFinder.compute_hit_properties" title="Permalink to this definition">¶</a></dt>
-<dd><p>Finds the maximum index, area, and center of gravity of hits in w indicated by (l, r) bounds in raw_hits.
-Will fill up argmaxes and areas with result.
+<dd><p>Finds argmax, area and center of gravity of hits in w indicated by (l, r) bounds in raw_hits.
 raw_hits should be a numpy array of (left, right) bounds (inclusive)
-centers, argmaxes are returned in samples right of hit start &#8211; you probably want to convert this
+Other arguments are numpy arrays which will be filled with results.
+centers, argmaxes are returned in samples right of hit start &#8211; you probably want to convert this!
 Returns nothing</p>
 </dd></dl>
 
@@ -405,7 +387,13 @@ Boundary indices are inclusive, i.e. the right index is the last index which was
 </ul>
 </li>
 </ul>
-
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -435,11 +423,11 @@ Boundary indices are inclusive, i.e. the right index is the last index which was
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
       <a href="_sources/pax.plugins.signal_processing.txt"
-          rel="nofollow">Page source</a></li>
+          rel="nofollow">Page source</a>
     </div>
 
     

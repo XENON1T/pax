@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Installation &mdash; Processor for Analyzing XENON1T 3.2.0 documentation</title>
+    <title>Installation prerequisites &mdash; Processor for Analyzing XENON1T 3.3.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '3.2.0',
+        VERSION:     '3.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 3.2.0 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 3.3.0 documentation" href="index.html" />
     <link rel="next" title="Frequently Asked Questions" href="faq.html" />
     <link rel="prev" title="Welcome to processor for Analyzing XENON1T’s documentation!" href="index.html" />
    
@@ -31,25 +31,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="faq.html" title="Frequently Asked Questions"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="index.html" title="Welcome to processor for Analyzing XENON1T’s documentation!"
-             accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Processor for Analyzing XENON1T 3.2.0 documentation</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -66,31 +48,40 @@ processing and other data processing on the XENON100/XENON1T raw data.</p>
 <a class="reference external image-reference" href="https://magnum.travis-ci.com/XENON1T/pax"><img alt="https://magnum.travis-ci.com/XENON1T/pax.svg?token=8i3psWNJAskpVjC6qe3w&amp;branch=master" src="https://magnum.travis-ci.com/XENON1T/pax.svg?token=8i3psWNJAskpVjC6qe3w&amp;branch=master" /></a>
 <a class="reference external image-reference" href="https://coveralls.io/r/XENON1T/pax?branch=master"><img alt="https://coveralls.io/repos/XENON1T/pax/badge.svg?branch=master" src="https://coveralls.io/repos/XENON1T/pax/badge.svg?branch=master" /></a>
 <a class="reference external image-reference" href="https://gitter.im/XENON1T/pax"><img src="http://img.shields.io/badge/gitter-XENON1T/pax-blue.svg" /></a>
-<div class="section" id="installation">
-<h1>Installation<a class="headerlink" href="#installation" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="installing-requirements">
-<h2>Installing requirements<a class="headerlink" href="#installing-requirements" title="Permalink to this headline">¶</a></h2>
-<p>We use Python 3.4 and several python modules. To allow people to run <cite>pax</cite> from
-their home directory and to ease people using pax, we recommend they setup the
-scientific python distribution <a class="reference external" href="https://store.continuum.io/cshop/anaconda/">Anaconda</a>.
-This should make it easier to install our code than typical experiments, and if this
-isn&#8217;t true, please let us know (See <a class="reference external" href="CONTRIBUTING.rst">relevant documentation section</a>).  To set this
-up, run:</p>
+<div class="section" id="installation-prerequisites">
+<h1>Installation prerequisites<a class="headerlink" href="#installation-prerequisites" title="Permalink to this headline">¶</a></h1>
+<p>We will assume you are installing on Mac or Linux here. For installation on Windows,
+see <a class="reference external" href="http://xenon1t.github.io/pax/faq.html#can-i-set-up-pax-on-my-windows-machine">this FAQ entry</a>.</p>
+<div class="section" id="python-3">
+<h2>Python 3<a class="headerlink" href="#python-3" title="Permalink to this headline">¶</a></h2>
+<p>Pax is written in Python 3; we recommend the
+scientific python distribution <a class="reference external" href="https://store.continuum.io/cshop/anaconda/">Anaconda</a>. To set this up in your linux home directory, do:</p>
 <div class="highlight-python"><div class="highlight"><pre>wget http://repo.continuum.io/anaconda3/Anaconda3-2.1.0-Linux-x86_64.sh
 bash Anaconda3-2.1.0-Linux-x86_64.sh
 export PATH=~/anaconda3/bin:$PATH  # If installed in default location
-conda update conda
-conda install numpy scipy matplotlib pandas pytables cython h5py numba pip scikit-learn # optional but handy
 </pre></div>
 </div>
-<p>Alternatively, you can install Python 3.4 from the <a class="reference external" href="https://www.python.org/">python webpage</a>
-or your OS&#8217;s package management system. See the FAQ for more information.</p>
-<p>Though most of our dependencies are solved by using Anaconda, there is one
-dependency that often cannot be installed on older machines. You must separately
-install the <a class="reference external" href="https://code.google.com/p/snappy/">snappy compression library</a>,
-which is C++ code that must be compiled and is used for raw data access. If
-you&#8217;re using Ubuntu and have super user permissions, you could just install the libsnappy-dev package.
-However, we recommend you do the following:</p>
+<p>Alternatively, you can install the vanilla Python 3.4 from the <a class="reference external" href="https://www.python.org/">python webpage</a>
+or use a pre-installed python. Please note that</p>
+<ul class="simple">
+<li>Only one version of pax can be installed per python installation;</li>
+<li>You need write permission to the python distribution&#8217;s directory;</li>
+<li><cite>pax</cite> does <em>not</em> run under with python 2!</li>
+</ul>
+</div>
+<div class="section" id="additional-python-packages">
+<h2>Additional python packages<a class="headerlink" href="#additional-python-packages" title="Permalink to this headline">¶</a></h2>
+<p>Pax depends on several other python packages. While most python packages will install automatically,
+some contain C++ code which must be compiled. If you have Anaconda you can get appropriate binaries
+for your platform using the <cite>conda</cite> tool:</p>
+<div class="highlight-python"><div class="highlight"><pre>conda update conda
+conda install numpy scipy matplotlib pandas pytables cython h5py numba pip scikit-learn
+</pre></div>
+</div>
+</div>
+<div class="section" id="snappy">
+<h2>Snappy<a class="headerlink" href="#snappy" title="Permalink to this headline">¶</a></h2>
+<p>Pax needs the <a class="reference external" href="https://code.google.com/p/snappy/">snappy compression library</a> to read data from our MongoDB raw data database. Do NOT try to <cite>pip install snappy</cite>, that&#8217;s a completely different package! If you&#8217;re using Ubuntu and have super user permissions, you could just install the <cite>libsnappy-dev</cite> package.  However, we recommend, you do the following:</p>
 <div class="highlight-python"><div class="highlight"><pre>wget https://snappy.googlecode.com/files/snappy-1.1.1.tar.gz
 tar xvfz snappy-1.1.1.tar.gz
 cd snappy-1.1.1
@@ -104,50 +95,66 @@ CFLAGS=-I`conda info --root`/include LDFLAGS=-L`conda info --root`/lib pip insta
 <div class="highlight-python"><div class="highlight"><pre>python -m snappy
 </pre></div>
 </div>
-<p>For installation on Windows, see <a class="reference external" href="http://xenon1t.github.io/pax/faq.html#can-i-set-up-pax-on-my-windows-machine">the FAQ</a>.
-Also within the FAQs, you can find other useful hints.</p>
+<p>If you are unable to install snappy, pax can work without it (but the MongoDB interface, including the event builder, will not work!). We&#8217;ve cunningly hidden this information in the following footnote: <a class="footnote-reference" href="#id2" id="id1">[1]</a>.</p>
 </div>
-<div class="section" id="installing-pax">
-<h2>Installing pax<a class="headerlink" href="#installing-pax" title="Permalink to this headline">¶</a></h2>
-<p>The code of pax is in a private github repository. You must first have <cite>git</cite>
-installed, which you can test by running at the command line:</p>
+<div class="section" id="git-and-github">
+<h2>Git and Github<a class="headerlink" href="#git-and-github" title="Permalink to this headline">¶</a></h2>
+<p>You must have <cite>git</cite> installed, which you can test by running at the command line:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">git</span>
 </pre></div>
 </div>
-<p>You must have access to the private XENON1T github repository.  You can get this by emailing the <cite>pax</cite> developers.  Once you have access to the GitHub repository and <cite>git</cite> installed, run:</p>
+<p>To get the code of pax, you need access to the private XENON1T github repository.  You can get this by emailing the <cite>pax</cite> developers.</p>
+</div>
+</div>
+<div class="section" id="installing-pax">
+<h1>Installing pax<a class="headerlink" href="#installing-pax" title="Permalink to this headline">¶</a></h1>
+<p>There are two ways to install pax. Either method will automatically try to install any python packages pax depends on &#8211; although we hope you installed the most important ones already (see above). If a module does not install, try using <cite>conda</cite> or <cite>pip</cite> to install missing dependencies.</p>
+<div class="section" id="option-1-user-installation">
+<h2>Option 1: user installation<a class="headerlink" href="#option-1-user-installation" title="Permalink to this headline">¶</a></h2>
+<p>In this option the pax code will be hidden away somewhere deep in python&#8217;s directory structure so you won&#8217;t accidentally look at it and learn our dangerous secrets. Also, you will only be able to update pax after we make a new release (about once a month). If this appeals to you, run:</p>
 <div class="highlight-python"><div class="highlight"><pre>pip install git+https://github.com/XENON1T/pax.git
 </pre></div>
 </div>
-<p>This should automatically install any python modules pax depends on. If it does not, try using <cite>conda</cite> or <cite>pip</cite> to install missing dependencies.</p>
-<p>Now you should be able to run the command &#8216;paxer &#8211;help&#8217;.</p>
-<p>If you want to modify the code (i.e., have the source code), please see the
-<a class="reference external" href="CONTRIBUTING.rst">relevant documentation section</a>.</p>
+<p>To update to a newer version, add ` &#8211;upgrade`` to the command above.</p>
 </div>
-</div>
-<div class="section" id="tutorial">
-<h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
-<p>This section assumes that pax is installed, either from the instructions above
-or via <a class="reference external" href="http://xenon1t.github.io/pax/faq.html#how-do-i-run-pax-at-lngs-on-xecluster">the FAQ on running the code at LNGS</a>.</p>
-<p>You can run the program by, for example, running:</p>
-<div class="highlight-python"><div class="highlight"><pre>paxer --input /archive/data/xenon100/run_14/xe100_150213_1411/xe100_150213_1411_000000.xed --event 0 --plot
+<div class="section" id="option-2-developer-installation">
+<h2>Option 2: developer installation<a class="headerlink" href="#option-2-developer-installation" title="Permalink to this headline">¶</a></h2>
+<p>In this option you&#8217;ll know where the code is, so you can look at it, play with it, and if you change anything you don&#8217;t need to reinstall for your changes to take effect... However, be aware you are using the very latest (&#8216;nightly&#8217;) version of pax, which may contain more bugs (but often contains less bugs).</p>
+<p>First <cite>cd</cite> to the folder you want pax to be installed. Then run:</p>
+<div class="highlight-python"><div class="highlight"><pre>git clone https://github.com/XENON1T/pax.git
+cd pax
+python setup.py develop
 </pre></div>
 </div>
-<p>For other options and a list of command line arguments, please run:</p>
+<p>To update to the latest pax, go to the directory with pax and run <cite>git pull</cite>.</p>
+<p>If you think you&#8217;ve made a useful change, you can contribute it! But please check the
+<a class="reference external" href="CONTRIBUTING.rst">relevant documentation section</a> first.</p>
+</div>
+</div>
+<div class="section" id="pax-tutorial">
+<h1>Pax Tutorial<a class="headerlink" href="#pax-tutorial" title="Permalink to this headline">¶</a></h1>
+<p>This section assumes that pax is installed, either from the instructions above
+or via <a class="reference external" href="http://xenon1t.github.io/pax/faq.html#how-do-i-run-pax-at-lngs-on-xecluster">the FAQ on running the code at LNGS</a>.</p>
+<p>Now you should be able to run the command:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">paxer</span> <span class="o">--</span><span class="n">help</span>
+</pre></div>
+</div>
+<p>from anywhere, which will give you a list of other command line options. If you have a graphical display, try <cite>paxer &#8211;plot</cite> and <cite>paxer &#8211;plot_interactive</cite>. You can select some data with the <cite>&#8211;input</cite> option:</p>
+<div class="highlight-python"><div class="highlight"><pre>paxer --input /archive/data/xenon100/run_14/xe100_150213_1411/xe100_150213_1411_000000.xed --event 0 --plot
 </pre></div>
 </div>
 <p>If you want to do something nonstandard, you can create your own configuration file
 like <cite>my_file.ini</cite>:</p>
-<div class="highlight-python"><div class="highlight"><pre>[pax]
- parent_configuration = &#39;XENON100&#39;
- input = &#39;XED.XedInput&#39;
- output = [ &#39;Plotting.PlotChannelWaveforms3D&#39;,
-            #&#39;Plotting.PlotEventSummary&#39;,
-     ]
+<div class="highlight-python"><div class="highlight"><pre><span class="p">[</span><span class="n">pax</span><span class="p">]</span>
+<span class="n">parent_configuration</span> <span class="o">=</span> <span class="s">&#39;XENON100&#39;</span>
+<span class="nb">input</span> <span class="o">=</span> <span class="s">&#39;XED.ReadXED&#39;</span>
+<span class="n">output</span> <span class="o">=</span> <span class="p">[</span> <span class="s">&#39;Plotting.PlotChannelWaveforms3D&#39;</span><span class="p">,</span>
+           <span class="c">#&#39;Plotting.PlotEventSummary&#39;,</span>
+         <span class="p">]</span>
 
- [Plotting]
- log_scale_entire_event = False
- #output_dir = &#39;plots&#39;  # Uncomment to write plot to disk
+<span class="p">[</span><span class="n">Plotting</span><span class="p">]</span>
+<span class="n">log_scale_entire_event</span> <span class="o">=</span> <span class="bp">False</span>
+<span class="c">#output_name = &#39;plots&#39;  # Uncomment to write plot to disk</span>
 </pre></div>
 </div>
 <p>You can load this file with <cite>paxer</cite> by using the <cite>config_path</cite> option:</p>
@@ -157,8 +164,14 @@ like <cite>my_file.ini</cite>:</p>
 <p>You can uncomment the <cite>output_dir</cite> line to write the plots to a file.  Also, try
 playing with what is in the list of outputs.  For example, you can reactivate
 the <cite>PlotEventSummary</cite> that was produced in the first command from above.</p>
-<p>At this point, you can look through other configuration files and explore what
-plugins are in <cite>pax</cite> for doing more sophisticated things. <cite>_base.ini</cite> and <cite>XENON100.ini</cite> are a good place to start.</p>
+<p>There are many, many configuration options you can change.
+You can look through other configuration files such as <cite>_base.ini</cite> and <cite>XENON100.ini</cite> to get an idea of what you can do. Also, you can try to explore what plugins are included in pax. You can ask us questions on gitter (click button above) or email. Oh, and did we mention the the documentation at <a class="reference external" href="http://xenon1t.github.io/pax/">http://xenon1t.github.io/pax/</a>?</p>
+<table class="docutils footnote" frame="void" id="id2" rules="none">
+<colgroup><col class="label" /><col /></colgroup>
+<tbody valign="top">
+<tr><td class="label"><a class="fn-backref" href="#id1">[1]</a></td><td><em>Sneaky snappy workaround</em>: follow the instructions for &#8216;developer installation&#8217;, but just before <cite>python setup.py develop</cite>, edit <cite>requirements.txt</cite> in the pax folder and put a comment (<cite>#</cite>) sign in front of the <cite>python-snappy&gt;=0.5</cite> line. Save the file and run <cite>python setup.py develop</cite>. Now you can use pax even if you couldn&#8217;t install snappy. Har-har. If you use anything that involves the MongoDB interface, pax will crash; don&#8217;t say we didn&#8217;t warn you.</td></tr>
+</tbody>
+</table>
 </div>
 
 
@@ -169,20 +182,29 @@ plugins are in <cite>pax</cite> for doing more sophisticated things. <cite>_base
         <div class="sphinxsidebarwrapper">
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Installation</a><ul>
-<li><a class="reference internal" href="#installing-requirements">Installing requirements</a></li>
-<li><a class="reference internal" href="#installing-pax">Installing pax</a></li>
+<li><a class="reference internal" href="#">Installation prerequisites</a><ul>
+<li><a class="reference internal" href="#python-3">Python 3</a></li>
+<li><a class="reference internal" href="#additional-python-packages">Additional python packages</a></li>
+<li><a class="reference internal" href="#snappy">Snappy</a></li>
+<li><a class="reference internal" href="#git-and-github">Git and Github</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#tutorial">Tutorial</a></li>
+<li><a class="reference internal" href="#installing-pax">Installing pax</a><ul>
+<li><a class="reference internal" href="#option-1-user-installation">Option 1: user installation</a></li>
+<li><a class="reference internal" href="#option-2-developer-installation">Option 2: developer installation</a></li>
 </ul>
-
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="index.html"
-                        title="previous chapter">Welcome to processor for Analyzing XENON1T&#8217;s documentation!</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="faq.html"
-                        title="next chapter">Frequently Asked Questions</a></p>
+</li>
+<li><a class="reference internal" href="#pax-tutorial">Pax Tutorial</a></li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">Welcome to processor for Analyzing XENON1T&#8217;s documentation!</a></li>
+      <li>Next: <a href="faq.html" title="next chapter">Frequently Asked Questions</a></li>
+  </ul></li>
+</ul>
+</div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -212,11 +234,11 @@ plugins are in <cite>pax</cite> for doing more sophisticated things. <cite>_base
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
       <a href="_sources/readme.txt"
-          rel="nofollow">Page source</a></li>
+          rel="nofollow">Page source</a>
     </div>
 
     

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Frequently Asked Questions &mdash; Processor for Analyzing XENON1T 3.2.0 documentation</title>
+    <title>Frequently Asked Questions &mdash; Processor for Analyzing XENON1T 3.3.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '3.2.0',
+        VERSION:     '3.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,33 +23,15 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 3.2.0 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 3.3.0 documentation" href="index.html" />
     <link rel="next" title="Event format" href="format.html" />
-    <link rel="prev" title="Installation" href="readme.html" />
+    <link rel="prev" title="Installation prerequisites" href="readme.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="right" >
-          <a href="format.html" title="Event format"
-             accesskey="N">next</a> |</li>
-        <li class="right" >
-          <a href="readme.html" title="Installation"
-             accesskey="P">previous</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Processor for Analyzing XENON1T 3.2.0 documentation</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -64,12 +46,30 @@
 <div class="highlight-python"><div class="highlight"><pre>export PATH=/home/tunnell/anaconda3/bin:$PATH
 </pre></div>
 </div>
-<p>This can be added to your <cite>.bashrc</cite> to be run automatically when you login.  You
-can check that it worked the following command:</p>
-<div class="highlight-python"><div class="highlight"><pre>python -c &quot;import pax; print(pax.__version__)&quot;
+<p>This can be added to your <cite>.bashrc</cite> to be run automatically when you login.</p>
+<p>To set up a developer installation of pax in your xecluster home directory, first follow the steps for installing anaconda and the required packages in the main readme (I didn&#8217;t try to install snappy but used the workaround). Then add the following to your .bashrc:</p>
+<div class="highlight-python"><div class="highlight"><pre># use Basho&#39;s git in totally insecure mode
+export PATH=/home/kaminsky/software/bin:$PATH
+export GIT_SSL_NO_VERIFY=true
 </pre></div>
 </div>
-<p>Which should result in Python3 being used to print the pax version.</p>
+<p>Now follow these steps:</p>
+<div class="highlight-python"><div class="highlight"><pre>cd ~
+git clone https://github.com/XENON1T/pax.git
+wget http://curl.haxx.se/ca/cacert.pem ~/cacert.pem
+mkdir .pip
+cp /home/aalbers/.pip/pip.conf ~/.pip
+pip install avro-python3 flake8 prettytable tqdm pymongo
+cd pax
+python setup.py develop
+</pre></div>
+</div>
+<p>If it complains about any more missing modules, install it using pip install.</p>
+<p>Whichever way you want to use pax, you check that it worked using the following command:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">paxer</span> <span class="o">--</span><span class="n">version</span>
+</pre></div>
+</div>
+<p>which should result in Python3 being used to print the pax version.</p>
 </div>
 <div class="section" id="how-do-i-run-pax-at-nikhef">
 <h2>How do I run <cite>pax</cite> at Nikhef?<a class="headerlink" href="#how-do-i-run-pax-at-nikhef" title="Permalink to this headline">¶</a></h2>
@@ -97,27 +97,13 @@ from github by executing:</p>
 </pre></div>
 </div>
 </div>
-<div class="section" id="how-do-i-run-git-at-lngs-on-xecluster">
-<h2>How do I run <cite>git</cite> at LNGS on xecluster<a class="headerlink" href="#how-do-i-run-git-at-lngs-on-xecluster" title="Permalink to this headline">¶</a></h2>
-<p>You can get <cite>git</cite> running by doing the following at the command line:</p>
-<div class="highlight-python"><div class="highlight"><pre>export PATH=/home/kaminsky/software/bin:$PATH
-</pre></div>
-</div>
-<p>The machines have old certificates, therefore you cannot run <cite>git</cite> in secure
-mode.  Running the command is a workaround:</p>
-<div class="highlight-python"><div class="highlight"><pre>export GIT_SSL_NO_VERIFY=true
-</pre></div>
-</div>
-<p>These two export commands can be added to your <cite>.bashrc</cite> to be run automatically
-when you login.</p>
-</div>
 <div class="section" id="can-i-set-up-pax-on-my-windows-machine">
 <h2>Can I set up pax on my windows machine?<a class="headerlink" href="#can-i-set-up-pax-on-my-windows-machine" title="Permalink to this headline">¶</a></h2>
 <p>Yes, in fact several of the developers do this, much to the sadness of the other developers...</p>
 <ol class="arabic simple">
 <li>Start with installing Anaconda for python 3 from their website. If the Anaconda website nags you for an email,
 enter your favourite fictional email address</li>
-<li>Install python-snappy from <a class="reference external" href="http://www.lfd.uci.edu/~gohlke/pythonlibs/">Christoph Gohlke&#8217;s page</a>.
+<li>Install python-snappy and h5py from <a class="reference external" href="http://www.lfd.uci.edu/~gohlke/pythonlibs/">Christoph Gohlke&#8217;s page</a>.
 See installation instructions for the .whl file at the top of the page.</li>
 </ol>
 <ol class="arabic simple" start="2">
@@ -130,7 +116,7 @@ If that fails, try <cite>pip install important_module</cite>
 If that fails, try <cite>easy_install important_module</cite>
 If that fails, look for important_module on <a class="reference external" href="http://www.lfd.uci.edu/~gohlke/pythonlibs/">Christoph Gohlke&#8217;s page</a>
 If that fails, reboot, sacrifice a goat, then try again.</li>
-<li>Go to bin and run <code class="docutils literal"><span class="pre">python</span> <span class="pre">paxer</span></code>. If it shows a waveform plot, you are done.
+<li>Go to bin and run <code class="docutils literal"><span class="pre">python</span> <span class="pre">paxer</span> <span class="pre">--plot</span></code>. If it shows a waveform plot, you are done.
 If it complains about a missing module, I guess you shouldn&#8217;t have ignored those warnings in step 3,
 install the missing module using easy_install, or Gohlke&#8217;s page mentioned above.</li>
 </ol>
@@ -180,6 +166,28 @@ source travis/install-ROOT.sh
 </pre></div>
 </div>
 </div>
+<div class="section" id="how-do-i-reduce-the-file-size-of-my-processed-data">
+<h2>How do I reduce the file size of my processed data?<a class="headerlink" href="#how-do-i-reduce-the-file-size-of-my-processed-data" title="Permalink to this headline">¶</a></h2>
+<p>By default we store a lot of low-level information in the processed output files. If you need smaller files, first try to make &#8216;light&#8217; files using the reprocess configuration:</p>
+<blockquote>
+<div>paxer &#8211;config Reprocess &#8211;input your_large_file.hdf5</div></blockquote>
+<p>This will remove fields like the per-peak sum-waveform and hitpattern from the file, reducing the filesize significantly. You can remove more or less fields by playing with the fields_to_ignore option (see Reprocess.ini). Whatever you do with this field, put either <cite>all_hits</cite> or <cite>hits</cite> on it: <cite>&#8216;hits&#8217;</cite>  is a peak property which stores all the hits in a peak, <cite>all_hits</cite> is an event property which stores all hits. You don&#8217;t want both, and in fact you will get an error if you try.</p>
+<p>If the files are still too big for you, try using a flattener (see XeAnalysisScripts, or write your own) to save only the main S1/S2 information. Or just select only events you need. Or just buy more disk space.</p>
+</div>
+<div class="section" id="how-do-i-use-pax-to-generate-files-to-be-processed-by-xerawdp">
+<h2>How do I use pax to generate files to be processed by Xerawdp?<a class="headerlink" href="#how-do-i-use-pax-to-generate-files-to-be-processed-by-xerawdp" title="Permalink to this headline">¶</a></h2>
+<p>Pax has an XED output plugin which you can use just like other output plugins. For example, to make an XED file containing simulated events, do <cite>paxer &#8211;config XENON100 Simulation to_XED</cite>.</p>
+<p>The hard part is getting Xerawdp to read the XED file you produced:</p>
+<ul class="simple">
+<li>Make some folder on xecluster to contain everything.</li>
+<li>Make a subfolder <cite>raw</cite>, containing another subfolder <cite>xe100_150726_1253</cite> (I will keep using this dataset name, but you can of course put any date and time you want).</li>
+<li>In the <cite>xe100_150726_1253</cite> folder, put the XED file generated by pax. Rename it to <cite>xe100_150726_1253.xed</cite>.</li>
+<li>In the original folder, place the file <cite>xed_test.xml</cite> from pax&#8217;s <cite>examples</cite>. Edit it to replace any occurrence of <cite>/home/aalbers/xed_xdp_test</cite> with the absolute path to your folder.</li>
+<li>Ssh to <cite>xecluster03</cite>, then run <cite>xerawdp -w xed_test.xml xe100_150726_1253</cite>. The ROOT file will appear at <cite>./processed/xe100_150726_1253/v0.4.5/xe100_150726_1253.root</cite>.</li>
+<li>If you&#8217;d like to output the waveform of event 0 to .C instead, use <cite>xerawdp -p -o xed_test.xml xe100_150726_1253 0</cite>. The .C will appear in the current directory and can be opened by ROOT.</li>
+</ul>
+<p>At the moment our hacked XML only works for one XED file (which can contain an arbitrary number of events though), and the instructions aren&#8217;t very convenient. You&#8217;re welcome to improve the situation!</p>
+</div>
 </div>
 
 
@@ -193,21 +201,24 @@ source travis/install-ROOT.sh
 <li><a class="reference internal" href="#">Frequently Asked Questions</a><ul>
 <li><a class="reference internal" href="#how-do-i-run-pax-at-lngs-on-xecluster">How do I run <cite>pax</cite> at LNGS on xecluster?</a></li>
 <li><a class="reference internal" href="#how-do-i-run-pax-at-nikhef">How do I run <cite>pax</cite> at Nikhef?</a></li>
-<li><a class="reference internal" href="#how-do-i-run-git-at-lngs-on-xecluster">How do I run <cite>git</cite> at LNGS on xecluster</a></li>
 <li><a class="reference internal" href="#can-i-set-up-pax-on-my-windows-machine">Can I set up pax on my windows machine?</a></li>
 <li><a class="reference internal" href="#how-do-i-get-root-working">How do I get ROOT working</a></li>
 <li><a class="reference internal" href="#snappy-on-osx">Snappy on OSX</a></li>
 <li><a class="reference internal" href="#how-do-i-use-pax-to-reduce-raw-data-files">How do I use pax to reduce raw data files?</a></li>
+<li><a class="reference internal" href="#how-do-i-reduce-the-file-size-of-my-processed-data">How do I reduce the file size of my processed data?</a></li>
+<li><a class="reference internal" href="#how-do-i-use-pax-to-generate-files-to-be-processed-by-xerawdp">How do I use pax to generate files to be processed by Xerawdp?</a></li>
 </ul>
 </li>
 </ul>
-
-  <h4>Previous topic</h4>
-  <p class="topless"><a href="readme.html"
-                        title="previous chapter">Installation</a></p>
-  <h4>Next topic</h4>
-  <p class="topless"><a href="format.html"
-                        title="next chapter">Event format</a></p>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="readme.html" title="previous chapter">Installation prerequisites</a></li>
+      <li>Next: <a href="format.html" title="next chapter">Event format</a></li>
+  </ul></li>
+</ul>
+</div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -237,11 +248,11 @@ source travis/install-ROOT.sh
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
       <a href="_sources/faq.txt"
-          rel="nofollow">Page source</a></li>
+          rel="nofollow">Page source</a>
     </div>
 
     

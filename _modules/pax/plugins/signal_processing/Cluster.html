@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.signal_processing.Cluster &mdash; Processor for Analyzing XENON1T 3.2.0 documentation</title>
+    <title>pax.plugins.signal_processing.Cluster &mdash; Processor for Analyzing XENON1T 3.3.0 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '3.2.0',
+        VERSION:     '3.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,27 +23,14 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 3.2.0 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 3.3.0 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../../../../genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="../../../../py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../../../index.html">Processor for Analyzing XENON1T 3.2.0 documentation</a> &raquo;</li>
-          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -52,6 +39,7 @@
             
   <h1>Source code for pax.plugins.signal_processing.Cluster</h1><div class="highlight"><pre>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numba</span>
 <span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="kn">import</span> <span class="n">brenth</span>
 <span class="kn">import</span> <span class="nn">sklearn.cluster</span>
 
@@ -506,49 +494,66 @@
 <span class="sd">        These can have a single long hit in all channels, which won&#39;t have any short hits near to its center.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c"># If the performance of this function becomes a bottleneck, we can replace it with a numba algorithm.</span>
+        <span class="n">hit_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">hit_indices</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">split_index</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">hit_indices</span><span class="p">)</span> <span class="ow">or</span> <span class="n">split_index</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%d</span><span class="s"> is a ridiculous split index for </span><span class="si">%d</span><span class="s"> hits&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">hit_indices</span><span class="p">),</span> <span class="n">split_index</span><span class="p">)</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">[</span><span class="n">hit_indices</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span><span class="p">[</span><span class="n">hit_indices</span><span class="p">]))</span>
-        <span class="n">a</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">area</span><span class="p">[</span><span class="n">hit_indices</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">area</span><span class="p">[</span><span class="n">hit_indices</span><span class="p">]))</span>
-        <span class="n">xleft</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">[</span><span class="n">hit_indices</span><span class="p">][:</span><span class="n">split_index</span><span class="p">],</span>
-                                <span class="bp">self</span><span class="o">.</span><span class="n">right</span><span class="p">[</span><span class="n">hit_indices</span><span class="p">][:</span><span class="n">split_index</span><span class="p">]))</span>
-        <span class="n">aleft</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">area</span><span class="p">[</span><span class="n">hit_indices</span><span class="p">][:</span><span class="n">split_index</span><span class="p">],</span>
-                                <span class="bp">self</span><span class="o">.</span><span class="n">area</span><span class="p">[</span><span class="n">hit_indices</span><span class="p">][:</span><span class="n">split_index</span><span class="p">]))</span>
-        <span class="n">xright</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">[</span><span class="n">hit_indices</span><span class="p">][</span><span class="n">split_index</span><span class="p">:],</span>
-                                 <span class="bp">self</span><span class="o">.</span><span class="n">right</span><span class="p">[</span><span class="n">hit_indices</span><span class="p">][</span><span class="n">split_index</span><span class="p">:]))</span>
-        <span class="n">aright</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">area</span><span class="p">[</span><span class="n">hit_indices</span><span class="p">][</span><span class="n">split_index</span><span class="p">:],</span>
-                                 <span class="bp">self</span><span class="o">.</span><span class="n">area</span><span class="p">[</span><span class="n">hit_indices</span><span class="p">][</span><span class="n">split_index</span><span class="p">:]))</span>
-        <span class="k">return</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">sum_abs_dev</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">a</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span>
-            <span class="n">sum_abs_dev</span><span class="p">(</span><span class="n">xleft</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">aleft</span><span class="p">)</span> <span class="o">+</span> <span class="n">sum_abs_dev</span><span class="p">(</span><span class="n">xright</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">aright</span><span class="p">)</span> <span class="o">+</span>
-            <span class="c">#</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">[</span><span class="n">hit_indices</span><span class="p">[</span><span class="n">split_index</span><span class="p">]]</span> <span class="o">-</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">right</span><span class="p">[</span><span class="n">hit_indices</span><span class="p">[</span><span class="n">split_index</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]])</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">numerator</span> <span class="o">=</span> <span class="n">_sad_two</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">[</span><span class="n">hit_indices</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span><span class="p">[</span><span class="n">hit_indices</span><span class="p">],</span> <span class="n">weights</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">area</span><span class="p">[</span><span class="n">hit_indices</span><span class="p">])</span>
+        <span class="n">denominator</span> <span class="o">=</span> <span class="n">_sad_two</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">[</span><span class="n">hit_indices</span><span class="p">[:</span><span class="n">split_index</span><span class="p">]],</span>
+                               <span class="bp">self</span><span class="o">.</span><span class="n">right</span><span class="p">[</span><span class="n">hit_indices</span><span class="p">[:</span><span class="n">split_index</span><span class="p">]],</span>
+                               <span class="n">weights</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">area</span><span class="p">[</span><span class="n">hit_indices</span><span class="p">[:</span><span class="n">split_index</span><span class="p">]],)</span>
+        <span class="n">denominator</span> <span class="o">+=</span> <span class="n">_sad_two</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">[</span><span class="n">hit_indices</span><span class="p">[</span><span class="n">split_index</span><span class="p">:]],</span>
+                                <span class="bp">self</span><span class="o">.</span><span class="n">right</span><span class="p">[</span><span class="n">hit_indices</span><span class="p">[</span><span class="n">split_index</span><span class="p">:]],</span>
+                                <span class="n">weights</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">area</span><span class="p">[</span><span class="n">hit_indices</span><span class="p">[</span><span class="n">split_index</span><span class="p">:]],)</span>
+        <span class="n">denominator</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">left</span><span class="p">[</span><span class="n">hit_indices</span><span class="p">[</span><span class="n">split_index</span><span class="p">]]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span><span class="p">[</span><span class="n">hit_indices</span><span class="p">[</span><span class="n">split_index</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]]</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">numerator</span> <span class="o">/</span> <span class="n">denominator</span>
 
 </div></div>
+<span class="nd">@numba.jit</span><span class="p">(</span><span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">_sad_two</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">weights</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Returns the weighted sum absolute deviation from the weighted mean of x1 and x2 (considered as one array)</span>
+<span class="sd">    x1 and x2 must have same length.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c"># First calculate the weighted mean.</span>
+    <span class="c"># While there is a one-pass algorithm for variance, I haven&#39;t found one for sad.. maybe it doesn&#39;t exists</span>
+    <span class="n">mean</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">sum_weights</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x1</span><span class="p">)):</span>
+        <span class="n">mean</span> <span class="o">+=</span> <span class="n">x1</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">mean</span> <span class="o">+=</span> <span class="n">x2</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">sum_weights</span> <span class="o">+=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="n">mean</span> <span class="o">/=</span> <span class="n">sum_weights</span>
+
+    <span class="c"># Now calculate the weighted sum absolute deviation</span>
+    <span class="n">sad</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x1</span><span class="p">)):</span>
+        <span class="n">sad</span> <span class="o">+=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">x1</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">mean</span><span class="p">)</span> <span class="o">*</span> <span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">sad</span> <span class="o">+=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">x2</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">mean</span><span class="p">)</span> <span class="o">*</span> <span class="n">weights</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="c"># To normalize to the case with all weights 1, we multipy by n / sum_w</span>
+    <span class="n">sad</span> <span class="o">*=</span> <span class="mi">2</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span> <span class="o">/</span> <span class="n">sum_weights</span>
+
+    <span class="k">return</span> <span class="n">sad</span>
+
+
 <div class="viewcode-block" id="indices_of_largest_n"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Cluster.indices_of_largest_n">[docs]</a><span class="k">def</span> <span class="nf">indices_of_largest_n</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">n</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Return indices of n largest elements in a&quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">[]</span>
-    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="o">-</span><span class="n">a</span><span class="p">)[:</span><span class="nb">min</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">))]</span>
-
-</div>
-<div class="viewcode-block" id="sum_abs_dev"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.Cluster.sum_abs_dev">[docs]</a><span class="k">def</span> <span class="nf">sum_abs_dev</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-    <span class="n">sum_w</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">x</span><span class="p">)))</span>
-    <span class="k">elif</span> <span class="n">sum_w</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Weights sum to zero: can&#39;t be normalized&quot;</span><span class="p">)</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="c"># To normalize to the case with all weights 1, we multipy by len(x) / sum_w</span>
-        <span class="c">#</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weights</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">x</span><span class="p">)))</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">/</span> <span class="n">sum_w</span></div>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="o">-</span><span class="n">a</span><span class="p">)[:</span><span class="nb">min</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">a</span><span class="p">))]</span></div>
 </pre></div>
 
           </div>
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../../../index.html">Documentation overview</a><ul>
+  <li><a href="../../../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../../search.html" method="get">
@@ -571,7 +576,7 @@
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>
 

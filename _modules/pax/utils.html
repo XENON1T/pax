@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.utils &mdash; Processor for Analyzing XENON1T 3.2.0 documentation</title>
+    <title>pax.utils &mdash; Processor for Analyzing XENON1T 3.3.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '3.2.0',
+        VERSION:     '3.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,27 +23,14 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 3.2.0 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 3.3.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../../genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="../../py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">Processor for Analyzing XENON1T 3.2.0 documentation</a> &raquo;</li>
-          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -65,7 +52,6 @@
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">glob</span>
-<span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">zip_longest</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">from</span> <span class="nn">scipy</span> <span class="kn">import</span> <span class="n">interpolate</span>
@@ -264,8 +250,10 @@
         <span class="k">def</span> <span class="nf">get_data</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
                 <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">map_data</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="c"># Remember we&#39;re returning an array now... if you don&#39;t copy, you&#39;l get a view...</span>
+            <span class="c"># .. then the map will get modified while pax is running... then you will cry...</span>
             <span class="k">return</span> <span class="n">get_data</span><span class="o">.</span><span class="n">map_data</span><span class="p">[</span><span class="nb">int</span><span class="p">((</span><span class="n">x</span> <span class="o">-</span> <span class="n">x_min</span><span class="p">)</span><span class="o">/</span><span class="n">x_spacing</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">),</span>
-                                     <span class="nb">int</span><span class="p">((</span><span class="n">y</span> <span class="o">-</span> <span class="n">y_min</span><span class="p">)</span><span class="o">/</span><span class="n">y_spacing</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)]</span>
+                                     <span class="nb">int</span><span class="p">((</span><span class="n">y</span> <span class="o">-</span> <span class="n">y_min</span><span class="p">)</span><span class="o">/</span><span class="n">y_spacing</span> <span class="o">+</span> <span class="mf">0.5</span><span class="p">)]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="n">get_data</span><span class="o">.</span><span class="n">map_data</span> <span class="o">=</span> <span class="n">map_data</span>
 
         <span class="k">return</span> <span class="n">get_data</span>
@@ -306,22 +294,6 @@
     <span class="k">return</span> <span class="n">adc_to_e</span> <span class="o">/</span> <span class="n">pmt_gain</span>
 
 </div>
-<div class="viewcode-block" id="chunk_in_ntuples"><a class="viewcode-back" href="../../pax.html#pax.data_model.chunk_in_ntuples">[docs]</a><span class="k">def</span> <span class="nf">chunk_in_ntuples</span><span class="p">(</span><span class="n">iterable</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">fillvalue</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; Chunks an iterable into a list of tuples</span>
-<span class="sd">    :param iterable: input iterable</span>
-<span class="sd">    :param n: length of n tuple</span>
-<span class="sd">    :param fillvalue: if iterable is not divisible by chunk_size, pad last tuple with this value</span>
-<span class="sd">    :return: list of n-tuples</span>
-<span class="sd">    Stolen from http://stackoverflow.com/questions/312443/how-do-you-split-a-list-into-evenly-sized-chunks-in-python</span>
-<span class="sd">    Modified for python3, and made it return lists</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">n</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">int</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">==</span> <span class="n">n</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Chunk size should be a positive integer, not </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">n</span><span class="p">)</span>
-    <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">zip_longest</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="nb">iter</span><span class="p">(</span><span class="n">iterable</span><span class="p">)]</span> <span class="o">*</span> <span class="n">n</span><span class="p">,</span> <span class="n">fillvalue</span><span class="o">=</span><span class="n">fillvalue</span><span class="p">))</span>
-    <span class="c"># Numpy solution -- without filling though</span>
-    <span class="c"># return np.reshape(iterable, (-1,n))</span>
-
-</div>
 <div class="viewcode-block" id="cluster_by_diff"><a class="viewcode-back" href="../../pax.html#pax.data_model.cluster_by_diff">[docs]</a><span class="k">def</span> <span class="nf">cluster_by_diff</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">diff_threshold</span><span class="p">,</span> <span class="n">return_indices</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Returns list of lists of indices of clusters in x,</span>
 <span class="sd">    making cluster boundaries whenever values are &gt;= threshold apart.</span>
@@ -349,11 +321,6 @@
     <span class="c">#     return np.split(np.arange(len(x)), split_indices)</span>
     <span class="c"># else:</span>
     <span class="c">#     return np.split(x, split_indices)</span>
-
-</div>
-<div class="viewcode-block" id="mad"><a class="viewcode-back" href="../../pax.html#pax.data_model.mad">[docs]</a><span class="k">def</span> <span class="nf">mad</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot; Return median absolute deviation of numpy array&quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">absolute</span><span class="p">(</span><span class="n">data</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">axis</span><span class="p">)),</span> <span class="n">axis</span><span class="p">)</span>
 
 </div>
 <div class="viewcode-block" id="weighted_mean_variance"><a class="viewcode-back" href="../../pax.html#pax.data_model.weighted_mean_variance">[docs]</a><span class="k">def</span> <span class="nf">weighted_mean_variance</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">weights</span><span class="p">):</span>
@@ -403,7 +370,15 @@
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
@@ -426,7 +401,7 @@
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>
 

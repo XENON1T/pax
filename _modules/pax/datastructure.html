@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.datastructure &mdash; Processor for Analyzing XENON1T 3.2.0 documentation</title>
+    <title>pax.datastructure &mdash; Processor for Analyzing XENON1T 3.3.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '3.2.0',
+        VERSION:     '3.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,27 +23,14 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 3.2.0 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 3.3.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../../genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="../../py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">Processor for Analyzing XENON1T 3.2.0 documentation</a> &raquo;</li>
-          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -110,10 +97,12 @@
 
 </div>
 <div class="viewcode-block" id="Hit"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Hit">[docs]</a><span class="k">class</span> <span class="nc">Hit</span><span class="p">(</span><span class="n">StrictModel</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Peaks found in individual channels</span>
+    <span class="sd">&quot;&quot;&quot;A hit results from, within individual channel, fluctation above baseline.</span>
 
 <span class="sd">    These are be clustered into ordinary peaks later. This is commonly</span>
-<span class="sd">    called a &#39;hit&#39; in particle physics detectors.</span>
+<span class="sd">    called a &#39;hit&#39; in particle physics detectors.  Very generally, a hit is</span>
+<span class="sd">    made every time that the data recorded for one channel flucates above</span>
+<span class="sd">    baseline.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c">#: Channel in which this peak was found</span>
     <span class="n">channel</span> <span class="o">=</span> <span class="mi">0</span>
@@ -145,6 +134,9 @@
 
     <span class="c">#: Set to True if rejected by suspicious channel algorithm</span>
     <span class="n">is_rejected</span> <span class="o">=</span> <span class="bp">False</span>
+
+    <span class="c">#: Number of samples with ADC saturation in this hit</span>
+    <span class="n">n_saturated</span> <span class="o">=</span> <span class="mi">0</span>
 
 </div>
 <div class="viewcode-block" id="Peak"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak">[docs]</a><span class="k">class</span> <span class="nc">Peak</span><span class="p">(</span><span class="n">StrictModel</span><span class="p">):</span>
@@ -179,6 +171,12 @@
 
     <span class="c">#: Does a PMT see &#39;something significant&#39;? (thresholds configurable)</span>
     <span class="n">does_channel_contribute</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+
+    <span class="c">#: Number of samples with ADC saturation in this peak, per channel</span>
+    <span class="n">n_saturated_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+
+    <span class="c">#: Total number of samples with ADC saturation threshold in all channels in this peak</span>
+    <span class="n">n_saturated</span> <span class="o">=</span> <span class="mi">0</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">contributing_channels</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -274,7 +272,8 @@
 <div class="viewcode-block" id="Pulse"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Pulse">[docs]</a><span class="k">class</span> <span class="nc">Pulse</span><span class="p">(</span><span class="n">StrictModel</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;A DAQ pulse</span>
 
-<span class="sd">    A DAQ pulse can also be thought of as a pulse in a PMT.</span>
+<span class="sd">    A DAQ pulse can also be thought of as a pulse in a PMT.  Remember that this is</span>
+<span class="sd">    inverted.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="c">#: Start time of this pulse: samples</span>
@@ -463,7 +462,7 @@
 <span class="sd">        The returned list is sorted DESCENDING (i.e. reversed!) by the key sort_key (default area)</span>
 <span class="sd">        unless you pass reverse=False, then it is ascending.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_peaks_by_type</span><span class="p">(</span><span class="s">&#39;s1&#39;</span><span class="p">,</span> <span class="n">sort_key</span><span class="p">,</span> <span class="n">reverse</span><span class="p">,</span> <span class="n">detector</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_peaks_by_type</span><span class="p">(</span><span class="s">&#39;s1&#39;</span><span class="p">,</span> <span class="n">sort_key</span><span class="o">=</span><span class="n">sort_key</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="n">reverse</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="n">detector</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="Event.S2s"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.S2s">[docs]</a>    <span class="k">def</span> <span class="nf">S2s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="s">&#39;tpc&#39;</span><span class="p">,</span> <span class="n">sort_key</span><span class="o">=</span><span class="s">&#39;area&#39;</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>  <span class="c"># noqa</span>
         <span class="sd">&quot;&quot;&quot;List of S2 (ionization) signals in this event</span>
@@ -474,9 +473,9 @@
 <span class="sd">        The returned list is sorted DESCENDING (i.e. reversed!) by the key sort_key (default area)</span>
 <span class="sd">        unless you pass reverse=False, then it is ascending.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_peaks_by_type</span><span class="p">(</span><span class="s">&#39;s2&#39;</span><span class="p">,</span> <span class="n">sort_key</span><span class="p">,</span> <span class="n">reverse</span><span class="p">,</span> <span class="n">detector</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_peaks_by_type</span><span class="p">(</span><span class="n">desired_type</span><span class="o">=</span><span class="s">&#39;s2&#39;</span><span class="p">,</span> <span class="n">sort_key</span><span class="o">=</span><span class="n">sort_key</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="n">reverse</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="n">detector</span><span class="p">)</span>
 </div>
-    <span class="k">def</span> <span class="nf">_get_peaks_by_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">desired_type</span><span class="p">,</span> <span class="n">sort_key</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="s">&#39;tpc&#39;</span><span class="p">):</span>
+<div class="viewcode-block" id="Event.get_peaks_by_type"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.get_peaks_by_type">[docs]</a>    <span class="k">def</span> <span class="nf">get_peaks_by_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">desired_type</span><span class="o">=</span><span class="s">&#39;all&#39;</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="s">&#39;tpc&#39;</span><span class="p">,</span> <span class="n">sort_key</span><span class="o">=</span><span class="s">&#39;area&#39;</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Helper function for retrieving only certain types of peaks</span>
 <span class="sd">        Returns a list of :class:`pax.datastructure.Peak` objects</span>
 <span class="sd">          whose type is desired_type, and</span>
@@ -487,10 +486,10 @@
         <span class="c"># Extract only peaks of a certain type</span>
         <span class="n">peaks</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">peaks</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">detector</span> <span class="ow">is</span> <span class="ow">not</span> <span class="s">&#39;all&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">detector</span> <span class="o">!=</span> <span class="s">&#39;all&#39;</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">detector</span> <span class="o">!=</span> <span class="n">detector</span><span class="p">:</span>
                     <span class="k">continue</span>
-            <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="n">desired_type</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">desired_type</span> <span class="o">!=</span> <span class="s">&#39;all&#39;</span> <span class="ow">and</span> <span class="n">peak</span><span class="o">.</span><span class="n">type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="n">desired_type</span><span class="p">:</span>
                 <span class="k">continue</span>
             <span class="n">peaks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">peak</span><span class="p">)</span>
 
@@ -501,7 +500,7 @@
 
         <span class="k">return</span> <span class="n">peaks</span>
 
-</div>
+</div></div>
 <span class="k">def</span> <span class="nf">_explain</span><span class="p">(</span><span class="n">class_name</span><span class="p">):</span>
     <span class="n">x</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getmembers</span><span class="p">(</span><span class="n">class_name</span><span class="p">,</span>
                            <span class="n">predicate</span><span class="o">=</span><span class="n">inspect</span><span class="o">.</span><span class="n">isdatadescriptor</span><span class="p">)</span>
@@ -521,7 +520,15 @@
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
@@ -544,7 +551,7 @@
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>
 

@@ -1,5 +1,7 @@
-Waveform simulator docs – very early draft
-==========================================
+Waveform simulator docs
+=======================
+
+See also the following note on the wiki: `https://xecluster.lngs.infn.it/dokuwiki/doku.php?id=xenon:xenon1t:fax`
 
 ------------
 What it does
