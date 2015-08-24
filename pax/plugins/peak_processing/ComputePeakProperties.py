@@ -124,17 +124,17 @@ def put_w_in_center_of_field(w, field, center_index):
     """Stores (part of) the array w in a fixed length array field, with center_index in field's center.
     Assumes field has odd length.
     """
-    # TODO: Needs tests!
     field_length = len(field)
     if not field_length % 2:
         raise ValueError("put_w_in_center_of_field requires an odd field length (so center is clear)")
-    field_center = int(field_length/2) + 1
+    field_center = int(field_length/2)      # Index of center of field
 
     left_overhang = center_index - field_center
     if left_overhang > 0:
         # Chop off the left overhang
         w = w[left_overhang:]
-        center_index = field_center
+        center_index -= left_overhang
+        assert center_index == field_center
 
     right_overhang = len(w) - field_length + (field_center - center_index)
     if right_overhang > 0:
