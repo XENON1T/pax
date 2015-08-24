@@ -146,12 +146,13 @@ If the dataset you want to reduce is not in the default input format (currently 
 How do I reduce the file size of my processed data?
 ------------------------------------------
 
-For processed data, the default configuration is to store events, peaks and hits. Since there are usually many hits per event, they will take a lot of disk space. If you need to reduce the size size abd you do not need the hit information, check out the line found in `_base.ini` :
+By default we store a lot of low-level information in the processed output files. If you need smaller files, first try to make 'light' files using the reprocess configuration:
 
-  fields_to_ignore = ['all_hits','sum_waveforms','channel_waveforms']
+    paxer --config Reprocess --input your_large_file.hdf5
 
-It may look like the hits are already ignored (`'all_hits'`) but there is another property called `'hits'` which is a peak property instead of an event property. Add both to `fields_to_ignore` and you're fine.
-This is also the place to be if you want to reduce your file size in a different way. If you do not need some properties, just add them here and they will be ignored.
+This will remove fields like the per-peak sum-waveform and hitpattern from the file, reducing the filesize significantly. You can remove more or less fields by playing with the fields_to_ignore option (see Reprocess.ini). Whatever you do with this field, put either `all_hits` or `hits` on it: `'hits'`  is a peak property which stores all the hits in a peak, `all_hits` is an event property which stores all hits. You don't want both, and in fact you will get an error if you try.
+
+If the files are still too big for you, try using a flattener (see XeAnalysisScripts, or write your own) to save only the main S1/S2 information. Or just select only events you need. Or just buy more disk space.
 
 
 --------------------------------------------------------------

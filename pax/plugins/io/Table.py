@@ -38,6 +38,21 @@ class TableWriter(plugin.OutputPlugin):
     """
 
     def startup(self):
+        # Check if user forgot to specify some fields in fields_to_ignore
+        if 'hits' not in self.config['fields_to_ignore'] and 'all_hits' not in self.config['fields_to_ignore']:
+            raise ValueError("You must ignore either (peak.)hits or (event.)all_hits to avoid duplicating"
+                             "the hit info in the tabular output.")
+        if 'sum_waveforms' not in self.config['fields_to_ignore']:
+            self.log.warning("You did not ignore the (event.)sum_waveforms field. This means you're trying to dump the"
+                             "entire event sum waveform to the tabular output. "
+                             "I'll try, but if it fails, you have been warned...")
+        if 'raw_data' not in self.config['fields_to_ignore']:
+            self.log.warning("You did not ignore the (pulse.)raw_data field. This means you're trying to dump the"
+                             "entire raw data for every pulse to the tabular output!!! "
+                             "I'll try, but if it fails, you have been warned...")
+
+        metadata_dump = dumps(self.processor.get_metadata())
+
         # Dictionary to contain the data
         # Every class in the datastructure is a key; values are dicts:
         # {
@@ -45,9 +60,6 @@ class TableWriter(plugin.OutputPlugin):
         #   records :       numpy record arrays,
         #   dtype   :       dtype of numpy record (includes field names),
         # }
-
-        metadata_dump = dumps(self.processor.get_metadata())
-
         self.data = {
             # Write pax configuration and version to pax_info dataframe
             # Will be a table with one row
