@@ -70,7 +70,7 @@ class BasicInteractionProperties(plugin.TransformPlugin):
             ia.s2_area_correction *= np.exp(ia.drift_time / self.config['electron_lifetime_liquid'])
 
             # Determine z position from drift time
-            ia.z = ia.drift_time / self.config['drift_velocity_liquid']
+            ia.z = self.config['drift_velocity_liquid'] * ia.drift_time
 
             # S1 and S2 corrections
             ia.s1_area_correction *= self.s1_correction_map.get_value_at(ia)
