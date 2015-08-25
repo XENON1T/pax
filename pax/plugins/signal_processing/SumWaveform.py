@@ -19,11 +19,20 @@ class SumWaveform(plugin.TransformPlugin):
         for postfix in ('', '_raw'):
             for detector, chs in self.config['channels_in_detector'].items():
                 event.sum_waveforms.append(datastructure.SumWaveform(
-                    samples=np.zeros(event.length()),
+                    samples=np.zeros(event.length(), dtype=np.float32),
                     name=detector + postfix,
                     channel_list=np.array(list(chs), dtype=np.uint16),
                     detector=detector
                 ))
+
+        # Add top and bottom tpc sum waveforms
+        for q in ('top', 'bottom'):
+            event.sum_waveforms.append(datastructure.SumWaveform(
+                samples=np.zeros(event.length(), dtype=np.float32),
+                name='tpc_%s' % q,
+                channel_list=np.array(self.config['channels_%s' % q], dtype=np.uint16),
+                detector='tpc'
+            ))
 
         # Build the raw sum waveform
         for pulse in event.pulses:
@@ -39,7 +48,7 @@ class SumWaveform(plugin.TransformPlugin):
             else:
                 baseline_to_subtract = self.config['digitizer_reference_baseline'] - pulse.baseline
 
-            w = baseline_to_subtract - pulse.raw_data.astype(np.float64)
+            w = baseline_to_subtract - pulse.raw_data.astype(np.float32)
 
             adc_to_pe = utils.adc_to_pe(self.config, pulse.channel)
 
@@ -61,11 +70,21 @@ class SumWaveform(plugin.TransformPlugin):
             left_in_pulse = hit.left - pulse.left
             right_in_pulse = hit.right - pulse.left
             w = (self.config['digitizer_reference_baseline'] - pulse.baseline) - \
-                pulse.raw_data[left_in_pulse:right_in_pulse+1].astype(np.float64)
+                pulse.raw_data[left_in_pulse:right_in_pulse+1].astype(np.float32)
 
             adc_to_pe = utils.adc_to_pe(self.config, hit.channel)
 
-            sum_w = event.get_sum_waveform(detector).samples
-            sum_w[hit.left:hit.right+1] += w * adc_to_pe
+            if detector == 'tpc':
+                if channel in self.config['channels_top']:
+                    sum_w = event.get_sum_waveform('tpc_top')
+                else:
+                    sum_w = event.get_sum_waveform('tpc_bottom')
+            else:
+                sum_w = event.get_sum_waveform(detector)
+            sum_w.samples[hit.left:hit.right+1] += w * adc_to_pe
+
+        # Sum the tpc top and bottom tpc waveforms
+        event.get_sum_waveform('tpc').samples = event.get_sum_waveform('tpc_top').samples + \
+            event.get_sum_waveform('tpc_bottom').samples
 
         return event

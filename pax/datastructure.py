@@ -160,8 +160,9 @@ class Peak(StrictModel):
     #: Weighted (by hit area) std of hit times
     hit_time_std = 0.0
 
-    #: Time range of centermost hits containing at least 50% / 90% of area (with center at hit_time_mean)
-    #: (rightmostright - leftmostleft + 1) * sample_duration
+    #: Central ange of peak (hit-only) sum waveform which includes fraction of area.
+    #: e.g. range_50p_area = distance (in time) between point of 25% area and 75% area (interpolated between samples)
+    range_20p_area = 0.0
     range_50p_area = 0.0
     range_90p_area = 0.0
 
@@ -202,14 +203,23 @@ class Peak(StrictModel):
     mean_amplitude_to_noise = 0.0
 
     ##
-    # Deprecated sum-waveform stuff, needed for Xerawdp matching??
+    # Sum-waveform properties
     ##
+
+    #: The peak's sum waveform in pe/bin
+    #: The peak's center of gravity is always in the center of the array.
+    sum_waveform = np.array([], dtype=np.float32)
+
+    #: For tpc peaks, the peak's sum waveform in the top array only. Aligned with the sum waveform.
+    sum_waveform_top = np.array([], dtype=np.float32)
 
     #: Index in the event's sum waveform at which this peak has its maximum.
     index_of_maximum = 0
 
-    #: Height of highest point in peak (in pe/bin)
-    #: In new pax, is height of highest hit
+    #: Time at which the peak's sum waveform has its center of gravity.
+    center_time = 0.0
+
+    #: Height of sum waveform (in pe/bin)
     height = 0.0
 
 
@@ -228,7 +238,7 @@ class SumWaveform(StrictModel):
     channel_list = np.array([], dtype=np.uint16)
 
     #: Array of samples, units of pe/bin.
-    samples = np.array([], dtype=np.float64)
+    samples = np.array([], dtype=np.float32)
 
     def is_filtered(self):
         if self.name_of_filter != 'none':
