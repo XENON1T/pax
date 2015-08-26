@@ -76,7 +76,7 @@ class BuildWaveforms(plugin.TransformPlugin):
         # Initialize empty waveforms
         for group, members in self.channel_groups.items():
             event.sum_waveforms.append(datastructure.SumWaveform(
-                samples=np.zeros(event.length()),
+                samples=np.zeros(event.length(), dtype=np.float32),
                 name=group,
                 channel_list=np.array(list(members), dtype=np.uint16),
                 detector=group if group in self.external_detectors else 'tpc'
@@ -1213,7 +1213,7 @@ class Filtering(plugin.TransformPlugin):
 
             event.sum_waveforms.append(datastructure.SumWaveform(
                 name=f['name'],
-                samples=output,
+                samples=output.astype(np.float32),
                 channel_list=input_w.channel_list,
                 detector=input_w.detector,
             ))
