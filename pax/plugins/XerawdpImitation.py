@@ -1,5 +1,5 @@
 """
-XerawdpImitation - XerawdpImitation Is Not Xerawdp
+ABANDON ALL HOPE YE WHO ENTER HERE
 This code imitates the peakfinding of Xerawdp (the Xenon100 processor)
 Its only purpose is to show we understand Xerawdp enough to be able to reproduce it,
 it is not meant to replace Xerawdp, nor to be used unmodified by Xenon1T or any experiment.
@@ -234,6 +234,10 @@ class BuildWaveforms(plugin.TransformPlugin):
 class FindPeaks(plugin.TransformPlugin):
 
     """NB: Does NOT do veto peakfinding!!!"""
+    def startup(self):
+        # Disable the dynamic thresholds -- useful for testing per-peak peakfinding efficiency
+        # Remember to also disable peak pruning
+        self.disable_dynamic_thresholds = self.config.get('disable_dynamic_thresholds', False)
 
     def transform_event(self, event):
 
@@ -314,29 +318,30 @@ class FindPeaks(plugin.TransformPlugin):
 
             # Determine when we should stop looking for this type of peaks
             stop_looking_after = float('inf')
-            if peak_type == 'small_s2':
-                # For small s2s, we stop looking after a sufficiently large s2 (height in large_s2 waveform) is seen
-                # Don't have to test these peaks are actually s2s, those are the only peaks in here
-                stop_looking_after = min(
-                    [stop_looking_after] +
-                    [p.left for p in event.peaks if p.height > settings['stop_after_s2_height']]
-                )
-            if peak_type == 's1':
-                if event.peaks:
-                    # We stop looking for s1s after the s2 with the largest area
-                    # undocumented!
-                    stop_looking_after = [event.peaks[0].left]
+            if not self.disable_dynamic_thresholds:
+                if peak_type == 'small_s2':
+                    # For small s2s, we stop looking after a sufficiently large s2 (height in large_s2 waveform) is seen
+                    # Don't have to test these peaks are actually s2s, those are the only peaks in here
+                    stop_looking_after = min(
+                        [stop_looking_after] +
+                        [p.left for p in event.peaks if p.height > settings['stop_after_s2_height']]
+                    )
+                if peak_type == 's1':
+                    if event.peaks:
+                        # We stop looking for s1s after the s2 with the largest area
+                        # undocumented!
+                        stop_looking_after = [event.peaks[0].left]
 
-                    # Also stop looking after s2s with large enough amplitude.
-                    # Xerawdp redetermines the amplitude here, using the s1
-                    # peakfinding waveform!
-                    for p in event.peaks:
-                        wf = event.get_sum_waveform('uS1')
-                        height = wf.samples[p.index_of_maximum]
-                        if height > settings['stop_after_s2_height']:
-                            stop_looking_after.append(p.left)
+                        # Also stop looking after s2s with large enough amplitude.
+                        # Xerawdp redetermines the amplitude here, using the s1
+                        # peakfinding waveform!
+                        for p in event.peaks:
+                            wf = event.get_sum_waveform('uS1')
+                            height = wf.samples[p.index_of_maximum]
+                            if height > settings['stop_after_s2_height']:
+                                stop_looking_after.append(p.left)
 
-                    stop_looking_after = min(stop_looking_after)
+                        stop_looking_after = min(stop_looking_after)
 
             self.log.debug("Starting %s search, stop looking after %s" % (peak_type, stop_looking_after))
 
@@ -470,7 +475,7 @@ class FindPeaks(plugin.TransformPlugin):
 
                     # For large s2, update the dynamic threshold
                     # TODO: don't modify settings, so they don't have to be reloaded all the time!
-                    if peak_type == 'large_s2':
+                    if peak_type == 'large_s2'and not self.disable_dynamic_thresholds:
                         potential_new_threshold = 0.001 * self.highest_s2_height_ever
                         if potential_new_threshold > settings['threshold']:
                             self.log.debug("Dynamic threshold raised from %s to %s" % (
