@@ -463,6 +463,12 @@ class Simulator(object):
                         self.noise_data[channel - self.channel_offset][nsn * sample_size:(nsn + 1) * sample_size]
                         for nsn in chosen_noise_sample_numbers
                     ])
+                    # Adjust the noise amplitude if needed, then add it to the ADC wave
+                    noise_amplitude = self.config.get('adjust_noise_amplitude', {}).get(str(channel), 1)
+                    if noise_amplitude != 1:
+                        # Determine a rough baseline for the noise, then adjust towards it
+                        baseline = np.mean(real_noise[:min(len(real_noise), 50)])
+                        real_noise = baseline + noise_amplitude * (real_noise - baseline)
                     adc_wave += real_noise[:pulse_length]
 
                 else:
