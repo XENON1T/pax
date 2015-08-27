@@ -312,6 +312,10 @@ class Simulator(object):
 
         # Build waveform channel by channel
         for channel, photon_detection_times in hitpattern.arrival_times_per_channel.items():
+            # If the channel is dead, we don't do anything.
+            if self.config['gains'][channel] == 0:
+                continue
+
             photon_detection_times = np.array(photon_detection_times)
 
             log.debug("Simulating %d photons in channel %d (gain=%s, gain_sigma=%s)" % (
