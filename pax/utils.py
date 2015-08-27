@@ -254,6 +254,36 @@ def adc_to_pe(config, channel, use_reference_gain=False, use_reference_gain_if_z
     return adc_to_e / pmt_gain
 
 
+def get_detector_by_channel(config):
+    """Return a channel -> detector lookup dictionary from a configuration"""
+    detector_by_channel = {}
+    for name, chs in config['channels_in_detector'].items():
+        for ch in chs:
+            detector_by_channel[ch] = name
+    return detector_by_channel
+
+
+def gaps_between_hits(hits):
+    """Return array of gaps between hits: a hit's 'gap' is the # of samples before that hit free of other hits.
+    The gap of the first hit is 0 by definition.
+    Hits should already be sorted by left boundary; we'll check this and throw an error if not.
+    Float numpy array is returned for convenience.
+    """
+    gaps = np.zeros(len(hits), dtype=np.int16)
+    if len(hits) == 0:
+        return gaps
+    # Keep a running right boundary
+    boundary = hits[0].right
+    last_left = hits[0].left
+    for i, hit in enumerate(hits[1:]):
+        gaps[i + 1] = max(0, hit.left - boundary - 1)
+        boundary = max(hit.right, boundary)
+        if hit.left < last_left:
+            raise ValueError("Hits should be sorted by left boundary!")
+        last_left = hit.left
+    return gaps
+
+
 def cluster_by_diff(x, diff_threshold, return_indices=False):
     """Returns list of lists of indices of clusters in x,
     making cluster boundaries whenever values are >= threshold apart.

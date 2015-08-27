@@ -236,10 +236,13 @@ class TableWriter(plugin.OutputPlugin):
             child_start = self.get_index_of(child_class_name)
             n_children = len(field_value)
             if first_time_seen:
-                # Add data types for n_x and x_start field names. Will have int type.
-                self.data[m_name]['dtype'].append(self._numpy_field_dtype('n_%s' % field_name, 0))
+                # Add data types for n_x (unless already present, e.g. peak.n_hits) and x_start field names.
+                # Will have int type.
+                if not hasattr(m, 'n_%s' % field_name):
+                    self.data[m_name]['dtype'].append(self._numpy_field_dtype('n_%s' % field_name, 0))
                 self.data[m_name]['dtype'].append(self._numpy_field_dtype('%s_start' % field_name, 0))
-            m_data.append(n_children)
+            if not hasattr(m, 'n_%s' % field_name):
+                m_data.append(n_children)
             m_data.append(child_start)
 
             # We'll ship model collections off to their own tuples (later record arrays)

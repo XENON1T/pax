@@ -1,50 +1,7 @@
 import numpy as np
 import numba
 
-from pax import plugin, utils
-
-
-class BasicProperties(plugin.TransformPlugin):
-    """Computes basic peak properies such as area and hit time spread ("width")
-    """
-
-    def startup(self):
-        self.last_top_ch = np.max(np.array(self.config['channels_top']))
-
-    def transform_event(self, event):
-
-        for peak in event.peaks:
-            # Compute the area per pmt and saturation count
-            peak.n_saturated_per_channel = np.zeros(event.n_channels, dtype=np.int16)
-            for s in peak.hits:
-                ch = s.channel
-                peak.area_per_channel[ch] += s.area
-                peak.n_saturated_per_channel[ch] += s.n_saturated
-
-            # Compute the total area and saturation count
-            peak.area = np.sum(peak.area_per_channel)
-            peak.n_saturated = np.sum(peak.n_saturated_per_channel)
-
-            # Compute top fraction
-            peak.area_fraction_top = np.sum(peak.area_per_channel[:self.last_top_ch + 1]) / peak.area
-
-            # Compute timing quantities
-            times = [s.center for s in peak.hits]
-            peak.hit_time_mean, peak.hit_time_std = utils.weighted_mean_variance(times,
-                                                                                 [s.area for s in peak.hits])
-            peak.hit_time_std **= 0.5  # Convert variance to std
-
-            # Compute mean amplitude / noise
-            try:
-                peak.mean_amplitude_to_noise = np.average([hit.height / hit.noise_sigma for hit in peak.hits],
-                                                          weights=[hit.area for hit in peak.hits])
-            except ZeroDivisionError:
-                self.log.warning('One of the hits in %s peak %d-%d has 0 noise sigma... strange!'
-                                 'This should only happen in extremely rare cases, '
-                                 'simulated data or with very strange settings' % (peak.detector,
-                                                                                   peak.left, peak.right))
-
-        return event
+from pax import plugin
 
 
 class SumWaveformProperties(plugin.TransformPlugin):
@@ -143,46 +100,3 @@ def put_w_in_center_of_field(w, field, center_index):
 
     start_idx = field_center - center_index
     field[start_idx:start_idx + len(w)] = w
-
-
-class HitpatternSpread(plugin.TransformPlugin):
-    """Computes the weighted root mean square deviation of the top and bottom hitpattern for each peak
-    """
-
-    def startup(self):
-
-        # Grab PMT numbers and x, y locations in each array
-        self.pmts = {}
-        self.locations = {}
-        for array in ('top', 'bottom'):
-            self.pmts[array] = self.config['channels_%s' % array]
-            self.locations[array] = {}
-            for dim in ('x', 'y'):
-                self.locations[array][dim] = np.array([self.config['pmt_locations'][ch][dim]
-                                                       for ch in self.pmts[array]])
-
-    def transform_event(self, event):
-
-        for peak in event.peaks:
-
-            # No point in computing this for veto peaks
-            if peak.detector != 'tpc':
-                continue
-
-            for array in ('top', 'bottom'):
-
-                hitpattern = peak.area_per_channel[self.pmts[array]]
-
-                if np.all(hitpattern == 0.0):
-                    # Empty hitpatterns will give error in np.average
-                    continue
-
-                weighted_var = 0
-                for dim in ('x', 'y'):
-                    _, wv = utils.weighted_mean_variance(self.locations[array][dim],
-                                                         weights=hitpattern)
-                    weighted_var += wv
-
-                setattr(peak, '%s_hitpattern_spread' % array, np.sqrt(weighted_var))
-
-        return event
