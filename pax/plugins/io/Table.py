@@ -460,13 +460,14 @@ class TableReader(plugin.InputPlugin):
                     event.peaks.append(peak)
 
             # Convert the interaction objects
-            interactions = in_this_event['Interaction']
-            for intr_i, intr_record in enumerate(interactions):
-                intr = self.convert_record(datastructure.Interaction, intr_record, ignore_type_checks=True)
-                # Hack to build s1 and s2 attributes from peak numbers
-                for q in ('s1', 's2'):
-                    peak = event.peaks[peak_numbers.index(getattr(intr, q))]
-                    object.__setattr__(intr, q, peak)
+            if self.config.get('read_hits_only', False):
+                interactions = in_this_event['Interaction']
+                for intr_i, intr_record in enumerate(interactions):
+                    intr = self.convert_record(datastructure.Interaction, intr_record, ignore_type_checks=True)
+                    # Hack to build s1 and s2 attributes from peak numbers
+                    for q in ('s1', 's2'):
+                        peak = event.peaks[peak_numbers.index(getattr(intr, q))]
+                        object.__setattr__(intr, q, peak)
 
             yield event
 
