@@ -1,5 +1,4 @@
-"""
-JSON and BSON-based data output
+"""JSON and BSON-based data output to files
 """
 import json
 
