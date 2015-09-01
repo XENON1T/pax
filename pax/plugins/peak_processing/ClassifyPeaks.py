@@ -1,4 +1,4 @@
-from pax import plugin
+from pax import plugin, units
 
 
 class AdHocClassification(plugin.TransformPlugin):
@@ -13,9 +13,9 @@ class AdHocClassification(plugin.TransformPlugin):
             if peak.type != 'unknown':
                 continue
 
-            if width < 125:
+            if width < 150 * units.ns:
                 peak.type = 's1'
-            elif width > 200:
+            elif width > 200 * units.ns:
                 if peak.area > 5:
                     peak.type = 's2'
                 else:
