@@ -202,7 +202,7 @@ class BuildWaveforms(plugin.TransformPlugin):
                 nominally_corrected_pulse *= self.conversion_factor / self.config['nominal_gain']
                 corrected_pulse = nominally_corrected_pulse
                 if self.config['gains'][channel] == 0:
-                    corrected_pulse = float('inf')
+                    corrected_pulse = 0
                 else:
                     corrected_pulse *= self.config['nominal_gain'] / self.config['gains'][channel]
             else:
