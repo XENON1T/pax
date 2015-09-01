@@ -281,6 +281,9 @@ class ReadZipped(InputFromFolder):
         self.event_numbers = sorted([int(x)
                                      for x in self.current_file.namelist()])
 
+    def get_event_numbers_in_current_file(self):
+        return self.event_numbers
+
     def get_single_event_in_current_file(self, event_number):
         with self.current_file.open(str(event_number)) as event_file_in_zip:
             doc = event_file_in_zip.read()

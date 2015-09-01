@@ -358,6 +358,7 @@ class TableReader(plugin.InputPlugin):
         self.chunk_size = self.config['chunk_size']
         self.read_hits = self.config['read_hits']
         self.read_recposes = self.config['read_recposes']
+        self.read_interactions = self.config['read_interactions']
 
         self.output_format = of = flat_data_formats[self.config['format']](log=self.log)
         if not of.supports_read_back:
@@ -366,11 +367,13 @@ class TableReader(plugin.InputPlugin):
 
         of.open(name=self.config['input_name'], mode='r')
 
-        self.dnames = ['Event', 'Peak', 'Interaction']
+        self.dnames = ['Event', 'Peak']
         if self.read_hits:
             self.dnames.append('Hit')
         if self.read_recposes:
             self.dnames.append('ReconstructedPosition')
+        if self.read_interactions:
+            self.dnames.append('Interaction')
 
         # Dict of numpy record arrays just read from disk, waiting to be sorted
         self.cache = {}
@@ -462,14 +465,15 @@ class TableReader(plugin.InputPlugin):
 
                     event.peaks.append(peak)
 
-            # Convert the interaction objects
-            interactions = in_this_event['Interaction']
-            for intr_i, intr_record in enumerate(interactions):
-                intr = self.convert_record(datastructure.Interaction, intr_record, ignore_type_checks=True)
-                # Hack to build s1 and s2 attributes from peak numbers
-                for q in ('s1', 's2'):
-                    peak = event.peaks[peak_numbers.index(getattr(intr, q))]
-                    object.__setattr__(intr, q, peak)
+                if self.read_interactions:
+                    interactions = in_this_event['Interaction']
+                    for intr_i, intr_record in enumerate(interactions):
+                        intr = self.convert_record(datastructure.Interaction, intr_record, ignore_type_checks=True)
+                        # Hack to build s1 and s2 attributes from peak numbers
+                        for q in ('s1', 's2'):
+                            peak = event.peaks[peak_numbers.index(getattr(intr, q))]
+                            object.__setattr__(intr, q, peak)
+                        event.interactions.append(intr)
 
             yield event
 
