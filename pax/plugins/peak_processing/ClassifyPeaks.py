@@ -7,26 +7,18 @@ class AdHocClassification(plugin.TransformPlugin):
 
         for peak in event.peaks:
 
-            width = peak.hit_time_std
+            width = peak.range_90p_area
 
             # Work only on unknown peaks - not noise and lone_hit
             if peak.type != 'unknown':
                 continue
 
-            if peak.area > 30:
-
-                if width < 120:
-                    peak.type = 's1'
-                elif width > 200:
+            if width < 125:
+                peak.type = 's1'
+            elif width > 200:
+                if peak.area > 5:
                     peak.type = 's2'
-
-            else:
-                # For smaller peaks, hit_time_std is a bit less.
-                # Also have to worry about single electrons.
-
-                if width < 80:
-                    peak.type = 's1'
-                elif width > 140 and peak.area > 8:
-                    peak.type = 's2'
+                else:
+                    peak.type = 'coincidence'
 
         return event
