@@ -8,7 +8,7 @@ class AdHocClassification(plugin.TransformPlugin):
         for peak in event.peaks:
 
             # Don't work on noise and lone_hit
-            if peak.type in ('unknown', 'lone_hit'):
+            if peak.type in ('noise', 'lone_hit'):
                 continue
 
             if peak.range_90p_area < 150 * units.ns:

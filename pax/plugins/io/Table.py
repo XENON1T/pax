@@ -371,9 +371,18 @@ class TableReader(plugin.InputPlugin):
         if self.read_hits:
             self.dnames.append('Hit')
         if self.read_recposes:
-            self.dnames.append('ReconstructedPosition')
+            if 'ReconstructedPosition' not in of.data_types_present:
+                self.log.warning("You asked to read ReconstructedPosition, "
+                                 "but this file has no ReconstructedPositions!")
+                self.read_recposes = False
+            else:
+                self.dnames.append('ReconstructedPosition')
         if self.read_interactions:
-            self.dnames.append('Interaction')
+            if 'Interaction' not in of.data_types_present:
+                self.log.warning("You asked to read interactions, but this file has no interactions!")
+                self.read_interactions = False
+            else:
+                self.dnames.append('Interaction')
 
         # Dict of numpy record arrays just read from disk, waiting to be sorted
         self.cache = {}
