@@ -213,7 +213,7 @@ class TableWriter(plugin.OutputPlugin):
                 'tuples':               [],
                 'records':              None,
                 # Initialize dtype with the index fields
-                'dtype':                [(x[0], np.int) for x in index_fields],
+                'dtype':                [(x[0], np.int64) for x in index_fields],
                 'index_depth':          len(m_indices),
                 # Dictionary of collection field's {field_names: collection
                 # class name}
