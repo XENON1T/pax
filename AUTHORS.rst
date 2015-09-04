@@ -14,6 +14,6 @@ Contributors
 * Axel Buß <a_buss09@uni-muenster.de>
 * Sander Breur <sanderb@nikhef.nl>
 * Daniel Coderre <daniel.coderre@lhep.unibe.ch>
-* Bart Pelssers <bartp@nikhef.nl>
+* Bart Pelssers <bart.pelssers@fysik.su.se>
 * Alper Topçuoğlu <alper.topcuoglu@student.uva.nl>
 
