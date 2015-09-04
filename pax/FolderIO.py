@@ -89,7 +89,9 @@ class InputFromFolder(plugin.InputPlugin):
         self.event_numbers_in_current_file = self.get_event_numbers_in_current_file()
 
     def shutdown(self):
-        self.close()
+        # hasattr check is needed to prevent extra error if pax crashes before the plugin runs
+        if hasattr(self, 'current_file'):
+            self.close()
 
     def get_events(self):
         """Iterate through all events in the file / folder"""
