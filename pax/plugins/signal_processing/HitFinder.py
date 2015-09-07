@@ -127,7 +127,7 @@ class FindHits(plugin.TransformPlugin):
                                 - self.config['height_over_min_low_threshold'] * pulse.minimum)
 
             # Call the numba hit finder -- see its docstring for description
-            n_hits_found = find_intervals_above_threshold(
+            n_hits_found = pulse.n_hits_found = find_intervals_above_threshold(
                 w, high_threshold, low_threshold, hits_buffer,
                 dynamic_low_threshold_coeff=self.config['dynamic_low_threshold_coeff'])
 

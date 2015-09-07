@@ -45,6 +45,17 @@ class SumWaveformProperties(plugin.TransformPlugin):
         return event
 
 
+class CountCoincidentNoisePulses(plugin.TransformPlugin):
+
+    def transform_event(self, event):
+        noise_pulses = [p for p in event.pulses if p.n_hits_found == 0]
+        for peak in event.peaks:
+            for nop in noise_pulses:
+                if nop.left <= peak.right and nop.right >= peak.left:
+                    peak.n_noise_pulses += 1
+        return event
+
+
 def compute_area_deciles(w):
     """Return (index of mid area, array of the 0th ... 10 th area decile ranges in samples) of w
     e.g. range_area_decile[5] = range of 50% area = distance (in samples)

@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 from numpy import testing as np_testing
 
-from pax.plugins.peak_processing.SumWaveformProperties import integrate_until_fraction, \
+from pax.plugins.peak_processing.LowLevelProperties import integrate_until_fraction, \
     put_w_in_center_of_field, compute_area_deciles
 
 

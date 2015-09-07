@@ -206,6 +206,10 @@ class Peak(StrictModel):
     #: Weighted (by area) mean hit amplitude / noise level in that hit's channel
     mean_amplitude_to_noise = 0.0
 
+    #: Number of pulses without hits overlapping (at least partially) with this peak.
+    #: Includes channels from other detectors (since veto and tpc cables could influence each other)
+    n_noise_pulses = 0
+
     ##
     # Sum-waveform properties
     ##
@@ -337,6 +341,9 @@ class Pulse(StrictModel):
 
     #: Noise sigma for this pulse (in ADC counts - but float!)
     noise_sigma = float('nan')
+
+    #: Number of hits found in this pulse
+    n_hits_found = 0
 
     @property
     def length(self):
