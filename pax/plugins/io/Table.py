@@ -181,10 +181,12 @@ class TableWriter(plugin.OutputPlugin):
             self.data[d]['records'] = None
 
     def shutdown(self):
-        if self.events_ready_for_conversion:
-            self._convert_to_records()
-        self._write_to_disk()
-        self.output_format.close()
+        # hasattr check is needed to prevent extra error if pax crashes before the plugin runs
+        if hasattr(self, 'output_format'):
+            if self.events_ready_for_conversion:
+                self._convert_to_records()
+            self._write_to_disk()
+            self.output_format.close()
 
     def get_index_of(self, mname):
         # Returns index +1 of last last entry in self.data[mname]. Returns -1
@@ -213,7 +215,7 @@ class TableWriter(plugin.OutputPlugin):
                 'tuples':               [],
                 'records':              None,
                 # Initialize dtype with the index fields
-                'dtype':                [(x[0], np.int) for x in index_fields],
+                'dtype':                [(x[0], np.int64) for x in index_fields],
                 'index_depth':          len(m_indices),
                 # Dictionary of collection field's {field_names: collection
                 # class name}

@@ -53,7 +53,7 @@ class WaveformSimulator(plugin.InputPlugin):
     def shutdown(self):
         self.log.debug("Write the truth peaks to %s" % self.config['truth_file_name'])
         output = pandas.DataFrame(self.all_truth_peaks)
-        output.to_csv(self.config['truth_file_name'])
+        output.to_csv(self.config['truth_file_name'], index_label='fax_truth_peak_id')
 
     def store_true_peak(self, peak_type, t, x, y, z, photon_times, electron_times=()):
         """ Saves the truth information about a peak (s1 or s2)
