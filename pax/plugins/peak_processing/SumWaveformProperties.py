@@ -31,13 +31,10 @@ class SumWaveformProperties(plugin.TransformPlugin):
             # Amplitude at the maximum
             peak.height = w[max_idx]
 
-            # Compute fraction of area in te central 20%, 50% and 90%
-            fractions_desired = np.array([0.1, 0.25, 0.4, 0.6, 0.75, 0.9])
-            index_of_area_fraction = np.ones(len(fractions_desired)) * float('nan')
-            integrate_until_fraction(w, fractions_desired, index_of_area_fraction)
-            peak.range_20p_area = (index_of_area_fraction[3] - index_of_area_fraction[2]) * dt
-            peak.range_50p_area = (index_of_area_fraction[4] - index_of_area_fraction[1]) * dt
-            peak.range_90p_area = (index_of_area_fraction[5] - index_of_area_fraction[0]) * dt
+            # Compute fraction of area in central deciles
+            peak.area_midpoint, peak.range_area_decile = compute_area_deciles(w)
+            peak.range_area_decile *= dt
+            peak.area_midpoint += peak.left * dt
 
             # Store the waveform; for tpc also store the top waveform
             put_w_in_center_of_field(w, peak.sum_waveform, cog_idx)
@@ -48,11 +45,24 @@ class SumWaveformProperties(plugin.TransformPlugin):
         return event
 
 
+def compute_area_deciles(w):
+    """Return (index of mid area, array of the 0th ... 10 th area decile ranges in samples) of w
+    e.g. range_area_decile[5] = range of 50% area = distance (in samples)
+    between point of 25% area and 75% area (with boundary samples added fractionally).
+    First element (0) of array is always zero, last element (10) is the length of w in samples.
+    """
+    fractions_desired = np.linspace(0, 1, 21)
+    index_of_area_fraction = np.ones(len(fractions_desired)) * float('nan')
+    integrate_until_fraction(w, fractions_desired, index_of_area_fraction)
+    return index_of_area_fraction[10], (index_of_area_fraction[10:] - index_of_area_fraction[10::-1]),
+
+
 @numba.jit(nopython=True)
 def integrate_until_fraction(w, fractions_desired, results):
     """For array of fractions_desired, integrate w until fraction of area is reached, place sample index in results
     Will add last sample needed fractionally.
     eg. if you want 25% and a sample takes you from 20% to 30%, 0.5 will be added.
+    Assumes fractions_desired is sorted and all in [0, 1]!
     """
     area_tot = w.sum()
     fraction_seen = 0
@@ -74,7 +84,11 @@ def integrate_until_fraction(w, fractions_desired, results):
             needed_fraction = fractions_desired[current_fraction_index]
         # Add this sample's area to the area seen, advance to the next sample
         fraction_seen += fraction_this_sample
-    raise RuntimeError("Fraction not reached in sample? What the ...?")
+    if needed_fraction == 1:
+        results[current_fraction_index] = len(w) - 1
+    else:
+        # Sorry, can't add the last fraction to the error message: numba doesn't allow it
+        raise RuntimeError("Fraction not reached in waveform? What the ...?")
 
 
 def put_w_in_center_of_field(w, field, center_index):

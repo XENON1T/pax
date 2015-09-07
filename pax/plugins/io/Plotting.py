@@ -22,6 +22,7 @@ from pax import plugin, units, utils, datastructure
 
 class PlotBase(plugin.OutputPlugin):
     block_view = False
+    hates_tight_layout = False
 
     def startup(self):
         if self.config['output_name'] != 'SCREEN':
@@ -74,6 +75,8 @@ class PlotBase(plugin.OutputPlugin):
     def finalize_plot(self, event_number=0):
         """Finalize plotting, send to screen/file, then closes plot properly (avoids runtimewarning / memory leak).
         """
+        if not self.hates_tight_layout:
+            plt.tight_layout()
         if self.output_dir:
             if self.config['plot_format'] == 'pdf':
                 plt.savefig(self.output_dir + '/%06d.pdf' % event_number, format='pdf')
@@ -369,8 +372,6 @@ class PlotChannelWaveforms3D(PlotBase):
         ax.set_zlabel(zlabel)
         ax.set_zlim3d(0, global_max_amplitude)
 
-        plt.tight_layout()
-
 
 class PlotChannelWaveforms2D(PlotBase):
 
@@ -527,14 +528,13 @@ class PlotEventSummary(PlotBase):
         q = PlotChannelWaveforms2D(self.config, self.processor)
         q.plot_event(event)
 
-        plt.tight_layout()
-
         # Make some room for the title
         plt.subplots_adjust(top=1 - 0.12 * 4 / self.size_multiplier)
 
 
 class PeakViewer(PlotBase):
     block_view = True
+    hates_tight_layout = True
     max_characters = 70
 
     def substartup(self):
@@ -710,9 +710,9 @@ class PeakViewer(PlotBase):
             peak.area, len(peak.hits), len(peak.contributing_channels))
         peak_text += 'Fraction in top: %0.2f\n' % peak.area_fraction_top
         peak_text += 'Peak widths: hit time std = %dns,\n' \
-                     ' 50%% area hits range = %dns, 90%% area hits range = %dns\n' % (peak.hit_time_std,
-                                                                                      peak.range_50p_area,
-                                                                                      peak.range_90p_area)
+                     ' 50%% area range = %dns, 90%% area range = %dns\n' % (peak.hit_time_std,
+                                                                                      peak.range_area_decile[5],
+                                                                                      peak.range_area_decile[9])
         self.peak_text.set_text(self.wrap_multiline(peak_text, self.max_characters))
 
         plt.draw()

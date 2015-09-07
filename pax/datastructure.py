@@ -170,11 +170,14 @@ class Peak(StrictModel):
     #: Weighted (by hit area) std of hit times
     hit_time_std = 0.0
 
-    #: Central ange of peak (hit-only) sum waveform which includes fraction of area.
-    #: e.g. range_50p_area = distance (in time) between point of 25% area and 75% area (interpolated between samples)
-    range_20p_area = 0.0
-    range_50p_area = 0.0
-    range_90p_area = 0.0
+    #: Central range of peak (hit-only) sum waveform which includes a given decile (0-10) of area.
+    #: e.g. range_area_decile[5] = range of 50% area = distance (in time) between point
+    #: of 25% area and 75% area (with boundary samples added fractionally).
+    #: First element (0) is always zero, last element (10) is the full range of the peak.
+    range_area_decile = np.zeros(11, dtype=np.float)
+
+    #: Time at which the peak reaches 50% of its area (with the central sample considered fractionally)
+    area_midpoint = 0.0
 
     ##
     # Spatial pattern information
