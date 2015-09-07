@@ -101,7 +101,7 @@ class NaturalBreaksDeclustering(plugin.TransformPlugin):
     def split_goodness(self, hit_indices, split_index):
         """Return "goodness of split" for splitting everything >= split_index into right cluster, < into left.
         "goodness of split" = 0.5 * sad(all_hits) / (sad(left cluster) + sad(right cluster) + gap between clusters) - 1
-          where sad = weighted (by area) sum of absolute deviation from *range midpoint*,
+          where sad = weighted (by area) sum of absolute deviation from mean,
           calculated on all *endpoints* of hits in the cluster
           The gap between clusters is added in the denominator as a penalty term against splitting very small signals.
           The reason we use sum absolute deviation instead of the root of the sum square deviation is that the latter
@@ -115,17 +115,14 @@ class NaturalBreaksDeclustering(plugin.TransformPlugin):
         hit_indices = np.asarray(hit_indices)
         if split_index >= len(hit_indices) or split_index <= 0:
             raise ValueError("%d is a ridiculous split index for %d hits" % len(hit_indices), split_index)
-        sad_all = _sad_two(self.left[hit_indices], self.right[hit_indices], weights=self.area[hit_indices])
-        sad_left = _sad_two(self.left[hit_indices[:split_index]],
-                            self.right[hit_indices[:split_index]],
-                            weights=self.area[hit_indices[:split_index]],)
-        sad_right = _sad_two(self.left[hit_indices[split_index:]],
-                             self.right[hit_indices[split_index:]],
-                             weights=self.area[hit_indices[split_index:]],)
-        numerator = sad_all
-        denominator = sad_left + sad_right
+        numerator = _sad_two(self.left[hit_indices], self.right[hit_indices], weights=self.area[hit_indices])
+        denominator = _sad_two(self.left[hit_indices[:split_index]],
+                               self.right[hit_indices[:split_index]],
+                               weights=self.area[hit_indices[:split_index]],)
+        denominator += _sad_two(self.left[hit_indices[split_index:]],
+                                self.right[hit_indices[split_index:]],
+                                weights=self.area[hit_indices[split_index:]],)
         denominator += self.left[hit_indices[split_index]] - self.right[hit_indices[split_index - 1]]
-        self.log.debug("sad left: %0.2f, sad right: %0.2f, sad all: %0.2f" % (sad_left, sad_right, sad_all))
         return -1 + 0.5 * numerator / denominator
 
 
@@ -134,18 +131,21 @@ def _sad_two(x1, x2, weights):
     """Returns the weighted sum absolute deviation from the weighted mean of x1 and x2 (considered as one array)
     x1 and x2 must have same length.
     """
-    # First calculate the range center
-    left = min(np.min(x1), np.min(x2))
-    right = max(np.max(x2), np.max(x1))
-    mean = left + 0.5 * (right - left)
+    # First calculate the weighted mean.
+    # While there is a one-pass algorithm for variance, I haven't found one for sad.. maybe it doesn't exists
+    mean = 0
+    sum_weights = 0
+    for i in range(len(x1)):
+        mean += x1[i] * weights[i]
+        mean += x2[i] * weights[i]
+        sum_weights += 2 * weights[i]
+    mean /= sum_weights
 
     # Now calculate the weighted sum absolute deviation
     sad = 0
-    sum_weights = 0
     for i in range(len(x1)):
         sad += abs(x1[i] - mean) * weights[i]
         sad += abs(x2[i] - mean) * weights[i]
-        sum_weights += weights[i]
     # To normalize to the case with all weights 1, we multipy by n / sum_w
     sad *= 2 * len(x1) / sum_weights
 
