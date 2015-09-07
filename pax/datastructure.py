@@ -134,6 +134,9 @@ class Peak(StrictModel):
     #: Total channels which contribute to the peak
     n_contributing_channels = 0
 
+    #: Total channels in the top array contributing to the peak
+    n_contributing_channels_top = 0
+
     #: Total number of hits in the peak
     n_hits = 0
 
@@ -274,6 +277,7 @@ class Peak(StrictModel):
         # Compute timing quantities
         self.hit_time_mean, self.hit_time_std = utils.weighted_mean_variance(hit_times, hit_areas)
         self.hit_time_std **= 0.5  # Convert variance to std
+        self.n_contributing_channels_top = np.sum((self.area_per_channel[:last_top_ch + 1] > 0))
 
         if self.n_contributing_channels == 0:
             raise RuntimeError("Every peak should have at least one contributing channel... what's going on?")
