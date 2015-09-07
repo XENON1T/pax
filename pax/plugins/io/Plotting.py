@@ -528,7 +528,8 @@ class PlotEventSummary(PlotBase):
         q = PlotChannelWaveforms2D(self.config, self.processor)
         q.plot_event(event)
 
-        # Make some room for the title
+        # Make some room for the title: need to call tight_layout first...
+        plt.tight_layout()
         plt.subplots_adjust(top=1 - 0.12 * 4 / self.size_multiplier)
 
 
@@ -711,8 +712,8 @@ class PeakViewer(PlotBase):
         peak_text += 'Fraction in top: %0.2f\n' % peak.area_fraction_top
         peak_text += 'Peak widths: hit time std = %dns,\n' \
                      ' 50%% area range = %dns, 90%% area range = %dns\n' % (peak.hit_time_std,
-                                                                                      peak.range_area_decile[5],
-                                                                                      peak.range_area_decile[9])
+                                                                            peak.range_area_decile[5],
+                                                                            peak.range_area_decile[9])
         self.peak_text.set_text(self.wrap_multiline(peak_text, self.max_characters))
 
         plt.draw()
