@@ -76,7 +76,7 @@ class PosRecChiSquareGamma(plugin.PosRecPlugin):
         map_values /= map_values.sum()
 
         # Compute the chi2gamma for each PMT, add up contributions from living PMTs
-        term_numerator = (self.photons + np.clip(self.photons, 1, float('inf')) - self.area_photons * map_values) ** 2
+        term_numerator = (self.photons + np.clip(self.photons, 0, 1) - self.area_photons * map_values) ** 2
         term_denominator = self.photons ** 2 * self.pmt_errors + self.area_photons * map_values + 1.0
         function_values = term_numerator / term_denominator
 
