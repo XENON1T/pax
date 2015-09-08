@@ -1,5 +1,5 @@
 import numpy as np
-from pax import plugin, utils
+from pax import plugin
 
 
 class HitpatternSpread(plugin.TransformPlugin):
@@ -13,10 +13,10 @@ class HitpatternSpread(plugin.TransformPlugin):
         self.locations = {}
         for array in ('top', 'bottom'):
             self.pmts[array] = self.config['channels_%s' % array]
-            self.locations[array] = {}
-            for dim in ('x', 'y'):
-                self.locations[array][dim] = np.array([self.config['pmt_locations'][ch][dim]
-                                                       for ch in self.pmts[array]])
+            self.locations[array] = np.zeros((len(self.pmts[array]), 2))
+            for i, ch in enumerate(self.pmts[array]):
+                for dim in ('x', 'y'):
+                    self.locations[array][i][{'x': 0, 'y': 1}[dim]] = self.config['pmt_locations'][ch][dim]
 
     def transform_event(self, event):
 
@@ -30,16 +30,17 @@ class HitpatternSpread(plugin.TransformPlugin):
 
                 hitpattern = peak.area_per_channel[self.pmts[array]]
 
-                if np.all(hitpattern == 0.0):
+                if np.all(hitpattern == 0):
                     # Empty hitpatterns will give error in np.average
                     continue
 
-                weighted_var = 0
-                for dim in ('x', 'y'):
-                    _, wv = utils.weighted_mean_variance(self.locations[array][dim],
-                                                         weights=hitpattern)
-                    weighted_var += wv
+                # Compute the weighted mean position
+                weighted_mean_position = np.average(self.locations[array], weights=hitpattern, axis=0)
 
-                setattr(peak, '%s_hitpattern_spread' % array, np.sqrt(weighted_var))
+                # Compute weighted average euclidean distance from mean position
+                avg_distance = np.sqrt(np.average(np.sum((self.locations[array] - weighted_mean_position) ** 2, axis=1),
+                                                  weights=hitpattern))
+
+                setattr(peak, '%s_hitpattern_spread' % array, avg_distance)
 
         return event

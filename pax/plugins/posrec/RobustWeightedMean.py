@@ -34,6 +34,10 @@ class PosRecRobustWeightedMean(plugin.PosRecPlugin):
             pmt_locs = self.pmt_locations[pmts]
             hitpattern = area_per_channel[pmts]
 
+            # Rare case where somehow no pmts are contributing??
+            if np.sum(hitpattern) == 0:
+                break
+
             # Compute the weighted mean position (2-vector)
             weighted_mean_position = np.average(pmt_locs, weights=hitpattern, axis=0)
 

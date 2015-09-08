@@ -196,11 +196,11 @@ class Peak(StrictModel):
                 return rp
         return None
 
-    #: Weighted root mean square deviation of top hitpattern (cm)
-    top_hitpattern_spread = 0.0
+    #: Weighted-average distance of top array hits from weighted mean center on top array (cm)
+    top_hitpattern_spread = float('nan')
 
-    #: Weighted root mean square deviation of bottom hitpattern (cm)
-    bottom_hitpattern_spread = 0.0
+    #: Weighted-average distance of bottom array hits from weighted mean center on bottom array (cm)
+    bottom_hitpattern_spread = float('nan')
 
     ##
     # Signal / noise info

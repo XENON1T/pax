@@ -715,12 +715,14 @@ class PeakViewer(PlotBase):
                      ' 50%% area range = %dns, 90%% area range = %dns\n' % (peak.hit_time_std,
                                                                             peak.range_area_decile[5],
                                                                             peak.range_area_decile[9])
-        peak_text += 'Chi2Gamma: %0.1f, /area_top: %0.1f, /channels_top: %0.1f' % (
+        peak_text += 'Chi2Gamma: %0.1f, /area_top: %0.1f, /channels_top: %0.1f\n' % (
             pos.goodness_of_fit,
             pos.goodness_of_fit / (peak.area_fraction_top * peak.area
                                    if peak.area_fraction_top != 0 else float('nan')),
             pos.goodness_of_fit / (peak.n_contributing_channels_top
                                    if peak.n_contributing_channels_top != 0 else float('nan')))
+        peak_text += 'Top spread: %0.1fcm, Bottom spread: %0.1fcm' % (peak.top_hitpattern_spread,
+                                                                      peak.bottom_hitpattern_spread)
         self.peak_text.set_text(self.wrap_multiline(peak_text, self.max_characters))
 
         plt.draw()
