@@ -41,4 +41,4 @@ class TestComputeComputePeakProperties(unittest.TestCase):
         self.assertAlmostEqual(p.top_hitpattern_spread, 166.84 * units.mm)
 
         # If no hits, hitpattern spread should be nan
-        self.assertEqual(p.bottom_hitpattern_spread, float('nan'))
+        self.assertTrue(np.isnan(p.bottom_hitpattern_spread))
