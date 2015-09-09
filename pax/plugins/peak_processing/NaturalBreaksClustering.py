@@ -4,7 +4,7 @@ import numba
 from pax import plugin, datastructure, utils
 
 
-class NaturalBreaksDeclustering(plugin.TransformPlugin):
+class NaturalBreaksClustering(plugin.TransformPlugin):
     """Split peaks by a variation on the 'natural breaks' algorithm.
     Any gaps (distances between hits) in peaks larger than min_gap_size_for_break are tested by computing a
     'goodness of split' for splitting the cluster at that point.
