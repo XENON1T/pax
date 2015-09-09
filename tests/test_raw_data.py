@@ -34,6 +34,11 @@ plugins_to_test = [
         'read_plugin':  'Pickle.ReadZippedPickles',
         'write_plugin': 'Pickle.WriteZippedPickles',
     },
+    {
+        'name':         'LTSBSON',
+        'read_plugin':  'BSON.LTSReadBSON',
+        'write_plugin': 'BSON.LTSWriteBSON',
+    }
 ]
 
 
