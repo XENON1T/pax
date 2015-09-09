@@ -29,6 +29,9 @@ class PosRecRobustWeightedMean(plugin.PosRecPlugin):
         if len(pmts) == 1:
             return self.pmt_locations[pmts[0]]
 
+        # Set fallback position: base class knows this means we gave up
+        weighted_mean_position = None
+
         while True:
             # Get locations and hitpattern of remaining PMTs
             pmt_locs = self.pmt_locations[pmts]
