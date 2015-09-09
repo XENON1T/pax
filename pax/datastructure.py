@@ -128,7 +128,7 @@ class Peak(StrictModel):
     #: Fraction of area in the top array
     area_fraction_top = 0.0
 
-    #: Number of hits in the peak, per channel
+    #: Number of hits in the peak, per channel (that is, it's an array with index = channel number)
     hits_per_channel = np.array([], dtype=np.int16)
 
     #: Total channels which contribute to the peak
