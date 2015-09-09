@@ -26,11 +26,16 @@ class RejectNoiseHits(plugin.TransformPlugin):
 
         peaks_to_delete = []
         for peak_i, peak in enumerate(event.peaks):
+
+            # Area per channel must be computed here... unfortunate code duplication with basicProperti
+            peak.area_per_channel = np.zeros(self.config['n_channels'], dtype='float64')
+            for hit in peak.hits:
+                peak.area_per_channel[hit.channel] += hit.area
+
             suspicious_channels_in_peak = np.intersect1d(peak.contributing_channels, suspicious_channels)
             if len(suspicious_channels_in_peak) == 0:
                 continue
-            self.log.debug("Peak %d-%d has suspicious channels %s" % (peak.left, peak.right,
-                                                                      suspicious_channels_in_peak))
+            self.log.debug("Peak %d has suspicious channels %s" % (peak_i, suspicious_channels_in_peak))
 
             # Which channels should we reject in this peak?
             # First compute the 'witness area' for this peak: area not in suspicious channels
@@ -57,13 +62,9 @@ class RejectNoiseHits(plugin.TransformPlugin):
             # Has the peak become empty? Then mark it for deletion.
             # We can't delete it now since we're iterating over event.peaks
             if len(peak.hits) == 0:
-                self.log.debug('Peak %d-%d consists completely of rejected hits and will be deleted!' % (peak.left,
-                                                                                                         peak.right))
+                self.log.debug('Peak %d consists completely of rejected hits and will be deleted!' % peak_i)
                 peaks_to_delete.append(peak_i)
                 continue
-
-            # Recompute basic peak properties
-            peak.compute_properties_from_hits(self.config)
 
         # Delete any peaks which have gone empty
         event.peaks = [p for i, p in enumerate(event.peaks) if i not in peaks_to_delete]

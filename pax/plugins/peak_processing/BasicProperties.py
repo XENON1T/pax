@@ -1,7 +1,65 @@
 import numpy as np
 import numba
 
-from pax import plugin
+from pax import plugin, utils
+
+
+class BasicProperties(plugin.TransformPlugin):
+    """Computes basic properties of each peak, based on the hits.
+    Also labels peak as 'lone_hit' if only one channel contributes
+    We always assume the hits are sorted from left to right. [really? where?]
+    """
+
+    def transform_event(self, event):
+        last_top_ch = np.max(np.array(self.config['channels_top']))
+
+        for peak in event.peaks:
+
+            peak.area_per_channel = np.zeros(self.config['n_channels'], dtype='float64')
+            peak.hits_per_channel = np.zeros(self.config['n_channels'], dtype=np.int16)
+            peak.n_saturated_per_channel = np.zeros(self.config['n_channels'], dtype=np.int16)
+            if len(peak.hits) == 0:
+                raise ValueError("Can't compute properties of an empty peak!")
+
+            # Compute basic properties of peak, needed later in the plugin
+            # For speed it would be better to compute as much as possible later..
+            peak.left = peak.hits[0].left
+            peak.right = peak.hits[0].right
+            hit_areas = []
+            hit_times = []
+            for hit in peak.hits:
+                peak.area_per_channel[hit.channel] += hit.area
+                peak.left = min(peak.left, hit.left)
+                peak.right = max(peak.right, hit.right)
+                peak.hits_per_channel[hit.channel] += 1
+                peak.n_saturated_per_channel[hit.channel] += hit.n_saturated
+                # Add the hit height / noise sigma to mean amplitude to noise
+                # We weigh by hit area, so multipy by it now, and will divide by peak.area later
+                peak.mean_amplitude_to_noise += hit.area * hit.height / hit.noise_sigma
+                hit_areas.append(hit.area)
+                hit_times.append(hit.center)
+
+            peak.area = np.sum(peak.area_per_channel)
+            peak.n_saturated_samples = np.sum(peak.n_saturated_per_channel)
+            peak.n_saturated_channels = len(np.where(peak.n_saturated_per_channel)[0])
+            peak.n_contributing_channels = len(peak.contributing_channels)
+            peak.mean_amplitude_to_noise /= peak.area
+
+            # Compute top fraction
+            peak.area_fraction_top = np.sum(peak.area_per_channel[:last_top_ch + 1]) / peak.area
+            peak.hits_fraction_top = np.sum(peak.hits_per_channel[:last_top_ch + 1]) / peak.area
+
+            # Compute timing quantities
+            peak.hit_time_mean, peak.hit_time_std = utils.weighted_mean_variance(hit_times, hit_areas)
+            peak.hit_time_std **= 0.5  # Convert variance to std
+            peak.n_contributing_channels_top = np.sum((peak.area_per_channel[:last_top_ch + 1] > 0))
+
+            if peak.n_contributing_channels == 0:
+                raise RuntimeError("Every peak should have at least one contributing channel... what's going on?")
+            elif peak.n_contributing_channels == 1:
+                peak.type = 'lone_hit'
+
+        return event
 
 
 class SumWaveformProperties(plugin.TransformPlugin):

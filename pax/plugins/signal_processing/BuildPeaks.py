@@ -31,7 +31,6 @@ class GapSizeClustering(plugin.TransformPlugin):
             for i in range(len(cluster_indices) - 1):
                 peak = datastructure.Peak(detector=detector,
                                           hits=hits[cluster_indices[i]:cluster_indices[i + 1]])
-                peak.compute_properties_from_hits(self.config)
                 self.log.debug("New peak is born: %d-%d" % (peak.left, peak.right))
                 event.peaks.append(peak)
 

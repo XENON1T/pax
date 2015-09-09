@@ -13,7 +13,7 @@ import inspect
 import numpy as np
 
 import math
-from pax import units, utils
+from pax import units
 
 # DO NOT use Model instead of StrictModel:
 # It improves performance, but kills serialization (numpy int types will appear in class etc)
@@ -179,6 +179,18 @@ class Peak(StrictModel):
     #: First element (0) is always zero, last element (10) is the full range of the peak.
     range_area_decile = np.zeros(11, dtype=np.float)
 
+    @property
+    def range_50p_area(self):
+        return self.range_area_decile[5]
+
+    @property
+    def range_90p_area(self):
+        return self.range_area_decile[9]
+
+    @property
+    def full_range(self):
+        return self.range_area_decile[10]
+
     #: Time at which the peak reaches 50% of its area (with the central sample considered fractionally)
     area_midpoint = 0.0
 
@@ -232,57 +244,6 @@ class Peak(StrictModel):
 
     #: Height of sum waveform (in pe/bin)
     height = 0.0
-
-    def compute_properties_from_hits(self, config):
-        """Set basic peak properties from the peak's hits.
-        Can't be in a plugin because the hit content of the peaks changes during clustering / noise rejection,
-        but these algorithms need access to these properties... so you want to do this several times.
-        We always assume the hits are sorted from left to right.
-        """
-        last_top_ch = np.max(np.array(config['channels_top']))
-        self.area_per_channel = np.zeros(config['n_channels'], dtype='float64')
-        self.hits_per_channel = np.zeros(config['n_channels'], dtype=np.int16)
-        self.n_saturated_per_channel = np.zeros(config['n_channels'], dtype=np.int16)
-        if len(self.hits) == 0:
-            raise ValueError("Can't compute properties of an empty peak!")
-
-        # Compute basic properties of peak, needed later in the plugin
-        # For speed it would be better to compute as much as possible later..
-        self.left = self.hits[0].left
-        self.right = self.hits[0].right
-        hit_areas = []
-        hit_times = []
-        for hit in self.hits:
-            self.area_per_channel[hit.channel] += hit.area
-            self.left = min(self.left, hit.left)
-            self.right = max(self.right, hit.right)
-            self.hits_per_channel[hit.channel] += 1
-            self.n_saturated_per_channel[hit.channel] += hit.n_saturated
-            # Add the hit height / noise sigma to mean amplitude to noise
-            # We weigh by hit area, so multipy by it now, and will divide by self.area later
-            self.mean_amplitude_to_noise += hit.area * hit.height / hit.noise_sigma
-            hit_areas.append(hit.area)
-            hit_times.append(hit.center)
-
-        self.area = np.sum(self.area_per_channel)
-        self.n_saturated_samples = np.sum(self.n_saturated_per_channel)
-        self.n_saturated_channels = len(np.where(self.n_saturated_per_channel)[0])
-        self.n_contributing_channels = len(self.contributing_channels)
-        self.mean_amplitude_to_noise /= self.area
-
-        # Compute top fraction
-        self.area_fraction_top = np.sum(self.area_per_channel[:last_top_ch + 1]) / self.area
-        self.hits_fraction_top = np.sum(self.hits_per_channel[:last_top_ch + 1]) / self.area
-
-        # Compute timing quantities
-        self.hit_time_mean, self.hit_time_std = utils.weighted_mean_variance(hit_times, hit_areas)
-        self.hit_time_std **= 0.5  # Convert variance to std
-        self.n_contributing_channels_top = np.sum((self.area_per_channel[:last_top_ch + 1] > 0))
-
-        if self.n_contributing_channels == 0:
-            raise RuntimeError("Every peak should have at least one contributing channel... what's going on?")
-        elif self.n_contributing_channels == 1:
-            self.type = 'lone_hit'
 
 
 class SumWaveform(StrictModel):

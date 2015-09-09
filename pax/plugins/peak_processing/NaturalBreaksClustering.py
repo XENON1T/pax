@@ -48,7 +48,6 @@ class NaturalBreaksClustering(plugin.TransformPlugin):
                 event.peaks.append(datastructure.Peak(detector=peak.detector))
                 for hit_i in hit_indices:
                     event.peaks[-1].hits.append(hits[hit_i])
-                event.peaks[-1].compute_properties_from_hits(self.config)
 
         # Remove the peaks marked for deletion
         event.peaks = [p for i, p in enumerate(event.peaks) if i not in peaks_to_delete]
