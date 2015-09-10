@@ -1,6 +1,7 @@
 """JSON and BSON-based data output to files
 """
 import json
+import lzma
 
 import bson
 
@@ -61,11 +62,13 @@ class BSONIO():
 
 
 class ReadZippedBSON(BSONIO, ReadZipped):
+
     """Read a folder of zipfiles containing gzipped BSON files"""
     pass
 
 
 class WriteZippedBSON(BSONIO, WriteZipped):
+
     """Write raw data to a folder of zipfiles containing gzipped BSONs"""
     pass
 
@@ -96,6 +99,58 @@ class WriteBSON(WriteToFolder, BSONIO):
 
     def open(self, filename):
         self.current_file = open(filename, mode='wb')
+
+    def write_event_to_current_file(self, event):
+        self.current_file.write(self.to_format(event))
+
+    def close(self):
+        self.current_file.close()
+
+
+class LTSReadBSON(InputFromFolder, BSONIO):
+
+    """Long term storage BSON reading
+
+    Read raw BSON data from a concatenated-BSON file or a folder of such files
+    """
+    file_extension = 'xz'
+
+    def open(self, filename):
+        self.current_file = lzma.open(filename,
+                                      "r")
+        self.reader = bson.decode_file_iter(self.current_file)
+
+    def close(self):
+        self.current_file.close()
+
+    def get_all_events_in_current_file(self):
+        for doc in self.reader:
+            yield datastructure.Event(**doc)
+
+
+class LTSWriteBSON(WriteToFolder, BSONIO):
+
+    """Long term storage BSON writing
+
+    Write raw data to a folder of concatenated-BSON files.  LZMA and a delta
+    compressor are used to shrink the data size down.  A delta compressor just
+    stores the bits differences between adjacent waveform samples, which
+    compresses well.  This format is intended to be CPU intensive to the benefit
+    of disk storage.  Therefore, spare CPU cycles can be used to reduce data.
+    """
+    file_extension = 'xz'
+
+    def open(self, filename):
+        my_filters = [
+            {"id": lzma.FILTER_DELTA,
+             "dist": self.config['dist']},
+            {"id": lzma.FILTER_LZMA2,
+             "preset": self.config['preset'] | lzma.PRESET_EXTREME},
+        ]
+        self.current_file = lzma.open(filename,
+                                      "w",
+                                      check=lzma.CHECK_SHA256,
+                                      filters=my_filters)
 
     def write_event_to_current_file(self, event):
         self.current_file.write(self.to_format(event))
