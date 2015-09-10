@@ -267,7 +267,6 @@ def gaps_between_hits(hits):
     """Return array of gaps between hits: a hit's 'gap' is the # of samples before that hit free of other hits.
     The gap of the first hit is 0 by definition.
     Hits should already be sorted by left boundary; we'll check this and throw an error if not.
-    Float numpy array is returned for convenience.
     """
     gaps = np.zeros(len(hits), dtype=np.int16)
     if len(hits) == 0:

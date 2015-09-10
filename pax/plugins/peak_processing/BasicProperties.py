@@ -40,6 +40,7 @@ class BasicProperties(plugin.TransformPlugin):
                 hit_times.append(hit.center)
 
             peak.area = np.sum(peak.area_per_channel)
+            peak.n_hits = np.sum(peak.hits_per_channel)
             peak.n_saturated_samples = np.sum(peak.n_saturated_per_channel)
             peak.n_saturated_channels = len(np.where(peak.n_saturated_per_channel)[0])
             peak.n_contributing_channels = len(peak.contributing_channels)

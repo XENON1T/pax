@@ -245,6 +245,23 @@ class Peak(StrictModel):
     #: Height of sum waveform (in pe/bin)
     height = 0.0
 
+    ##
+    # Clustering record
+    ##
+
+    #: Best goodness of split observed inside the peak
+    interior_split_goodness = float('nan')
+
+    #: Area fraction of the smallest of the two halves considered in the best split inside the peak
+    #: (i.e. the one corresponding to interior_split_goodness)
+    interior_split_fraction = float('nan')
+
+    #: Goodness of split of last split that was used to construct this peak (if split did occur).
+    birthing_split_goodness = float('nan')
+
+    #: Area of this peak / area of parent peak it was split from (if split did occur)
+    birthing_split_fraction = float('nan')
+
 
 class SumWaveform(StrictModel):
     """Class used to store sum (filtered or not) waveform information.

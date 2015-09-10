@@ -24,105 +24,103 @@ class NaturalBreaksClustering(plugin.TransformPlugin):
         self.min_split_goodness = eval(self.config['min_split_goodness'])
 
     def transform_event(self, event):
-        peaks_to_delete = []
-        for peak_i, peak in enumerate(event.peaks):
-            hits = peak.hits
-            # Store basic quantities as attributes for access in several methods
-            # Hits are already sorted by left
-            self.left = np.array([h.left for h in hits])
-            self.right = np.array([h.right for h in hits])
-            self.area = np.array([h.area for h in hits])
-            self.gaps = utils.gaps_between_hits(hits)
-
-            clusters = self.decluster(np.arange(len(hits)))
-
-            if len(clusters) == 1:
-                continue
-
-            # Mark the current peak for deletion
-            # We can't delete it now since we are iterating over peaks
-            peaks_to_delete.append(peak_i)
-
-            # Add new peaks for the newly found clusters
-            for hit_indices in clusters:
-                event.peaks.append(datastructure.Peak(detector=peak.detector))
-                for hit_i in hit_indices:
-                    event.peaks[-1].hits.append(hits[hit_i])
-
-        # Remove the peaks marked for deletion
-        event.peaks = [p for i, p in enumerate(event.peaks) if i not in peaks_to_delete]
-
+        new_peaks = []
+        for peak in event.peaks:
+            new_peaks += self.cluster(peak)
+        event.peaks = new_peaks
         return event
 
-    def decluster(self, hit_indices):
-        """Decluster hits by variant on natural breaks algorithm. Return list of lists of hit_indices."""
+    def cluster(self, peak):
+        """Cluster hits in peak by variant on the natural breaks algorithm.
+        Returns list of new peaks constructed from the peak (if no change, will be list with one element).
+        Will set interior_split_goodness and birthing_split_goodness attributes
+        """
+        hits = peak.hits
+        n_hits = len(hits)
+
         # Handle trivial cases
-        if len(hit_indices) == 0:
+        if n_hits == 0:
             raise RuntimeError("Empty list passed to decluster!")
-        elif len(hit_indices) == 1:
-            return [hit_indices]
+        elif n_hits == 1:
+            # Lone hit: can't cluster any more!
+            return [peak]
 
-        self.log.debug("Got %d hits (%d-%d) to decluster" % (len(hit_indices),
-                                                             self.left[hit_indices[0]],
-                                                             self.right[hit_indices[-1]]))
-
-        # Which gaps should we test?
-        # The first gap in this cluster is not a meaningful quantity
-        # (it's the distance to the last hit from the previous cluster)
-        gaps = self.gaps[hit_indices[1:]]
+        left = np.zeros(len(hits))
+        right = np.zeros(len(hits))
+        area = np.zeros(len(hits))
+        for i, h in enumerate(hits):
+            left[i] = h.left
+            area[i] = h.area
+            right[i] = h.right
+        area_tot = np.sum(area)
+        gaps = utils.gaps_between_hits(hits)[1:]            # Remember first "gap" is zero: throw it away
+        self.log.debug("Got %d hits (%d-%d) to decluster" % (len(hits), left[0], right[-1]))
 
         # Get indices of the self.max_n_gaps_to_test largest gaps
+        split_threshold = self.min_split_goodness(n_hits)
+        max_split_goodness = float('-inf')
+        max_split_goodness_i = 0
         for gap_i in indices_of_largest_n(gaps, self.max_n_gaps_to_test):
             if gaps[gap_i] < self.min_gap_size_for_break:
                 break
 
-            # Index of hit index in hit_indices to split hits on :-)
+            # Index of hit to split on = index first hit that will go to right cluster
             split_i = gap_i + 1
 
-            # Compute the natural break quantity for this break
-            split_goodness = self.split_goodness(hit_indices, split_i)
+            # Compute the naturalness of this break
+            split_goodness = compute_split_goodness(split_i, left, right, area)
 
-            # Should we split? If so, call decluster recursively
-            n = len(hit_indices)
-            if split_goodness > self.min_split_goodness(n):
-                self.log.debug("SPLITTING at %d  (%s > %s)" % (split_i,
-                                                               split_goodness,
-                                                               self.min_split_goodness(n)))
-                return self.decluster(hit_indices[:split_i]) + self.decluster(hit_indices[split_i:])
+            # Should we split? If so, recurse.
+            if split_goodness > self.min_split_goodness(n_hits):
+                self.log.debug("SPLITTING at %d  (%s > %s)" % (split_i, split_goodness, split_threshold))
+                peak_l = datastructure.Peak(hits=hits[:split_i],
+                                            detector=peak.detector,
+                                            birthing_split_goodness=split_goodness,
+                                            birthing_split_fraction=np.sum(area[:split_i]) / area_tot)
+                peak_r = datastructure.Peak(hits=hits[split_i:],
+                                            detector=peak.detector,
+                                            birthing_split_goodness=split_goodness,
+                                            birthing_split_fraction=np.sum(area[split_i:]) / area_tot)
+                return self.cluster(peak_l) + self.cluster(peak_r)
             else:
                 self.log.debug("Proposed split at %d not good enough (%s < %s)" % (split_i,
                                                                                    split_goodness,
-                                                                                   self.min_split_goodness(n)))
+                                                                                   self.min_split_goodness(n_hits)))
+            if split_goodness >= max_split_goodness:
+                max_split_goodness = split_goodness
+                max_split_goodness_i = split_i
 
-        # If we get here, no declustering needed
-        return [hit_indices]
+        # If we get here, no clustering was needed
+        peak.interior_split_goodness = max_split_goodness
+        if max_split_goodness_i != 0:
+            peak.interior_split_fraction = min(np.sum(area[:max_split_goodness_i]),
+                                               np.sum(area[max_split_goodness_i:])) / area_tot
+        return [peak]
 
-    def split_goodness(self, hit_indices, split_index):
-        """Return "goodness of split" for splitting everything >= split_index into right cluster, < into left.
-        "goodness of split" = 0.5 * sad(all_hits) / (sad(left cluster) + sad(right cluster) + gap between clusters) - 1
-          where sad = weighted (by area) sum of absolute deviation from mean,
-          calculated on all *endpoints* of hits in the cluster
-          The gap between clusters is added in the denominator as a penalty term against splitting very small signals.
-          The reason we use sum absolute deviation instead of the root of the sum square deviation is that the latter
-           is more sensitive to outliers. Clustering should NOT trim tails of peaks.
-        This usually takes a value around [-1, 1], but can go much higher if the split is good.
 
-        The reason we use endpoints, rather than hit centers, is compatibility with high-energy signals.
-        These can have a single long hit in all channels, which won't have any short hits near to its center.
-        """
-        # If the performance of this function becomes a bottleneck, we can replace it with a numba algorithm.
-        hit_indices = np.asarray(hit_indices)
-        if split_index >= len(hit_indices) or split_index <= 0:
-            raise ValueError("%d is a ridiculous split index for %d hits" % len(hit_indices), split_index)
-        numerator = _sad_two(self.left[hit_indices], self.right[hit_indices], weights=self.area[hit_indices])
-        denominator = _sad_two(self.left[hit_indices[:split_index]],
-                               self.right[hit_indices[:split_index]],
-                               weights=self.area[hit_indices[:split_index]],)
-        denominator += _sad_two(self.left[hit_indices[split_index:]],
-                                self.right[hit_indices[split_index:]],
-                                weights=self.area[hit_indices[split_index:]],)
-        denominator += self.left[hit_indices[split_index]] - self.right[hit_indices[split_index - 1]]
-        return -1 + 0.5 * numerator / denominator
+@numba.jit(nopython=True)
+def compute_split_goodness(split_index, left, right, area):
+    """Return "goodness of split" for splitting hits >= split_index into right cluster, < into left.
+       left, right: left, right indices of hits
+       area: area of hits
+    "goodness of split" = 0.5 * sad(all_hits) / (sad(left cluster) + sad(right cluster) + gap between clusters) - 1
+      where sad = weighted (by area) sum of absolute deviation from mean,
+      calculated on all *endpoints* of hits in the cluster
+      The gap between clusters is added in the denominator as a penalty term against splitting very small signals.
+      The reason we use sum absolute deviation instead of the root of the sum square deviation is that the latter
+       is more sensitive to outliers. Clustering should NOT trim tails of peaks.
+    This usually takes a value around [-1, 1], but can go much higher if the split is good.
+
+    The reason we use endpoints, rather than hit centers, is compatibility with high-energy signals.
+    These can have a single long hit in all channels, which won't have any short hits near to its center.
+    """
+    if split_index >= len(left) or split_index <= 0:
+        raise ValueError("Ridiculous split index received!")
+    numerator = _sad_two(left, right, weights=area)
+    denominator = _sad_two(left[:split_index], right[:split_index], weights=area[:split_index])
+    denominator += _sad_two(left[split_index:], right[split_index:], weights=area[split_index:])
+    denominator += left[split_index] - right[split_index - 1]
+    return -1 + 0.5 * numerator / denominator
 
 
 @numba.jit(nopython=True)

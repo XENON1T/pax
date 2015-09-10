@@ -27,11 +27,9 @@ class GapSizeClustering(plugin.TransformPlugin):
             hits.sort(key=lambda x: x.left)
             gaps = utils.gaps_between_hits(hits)
             cluster_indices = [0] + np.where(gaps > self.gap_threshold)[0].tolist() + [len(hits)]
-            self.log.debug("Cluster indices found: %s" % cluster_indices)
             for i in range(len(cluster_indices) - 1):
                 peak = datastructure.Peak(detector=detector,
                                           hits=hits[cluster_indices[i]:cluster_indices[i + 1]])
-                self.log.debug("New peak is born: %d-%d" % (peak.left, peak.right))
                 event.peaks.append(peak)
 
         return event
