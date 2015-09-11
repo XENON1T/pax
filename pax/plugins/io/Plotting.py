@@ -617,12 +617,12 @@ class PeakViewer(PlotBase):
         if event.event_number in self.starting_peak_per_event:
             # The user specified the left boundary of the desired starting peak
             desired_left = self.starting_peak_per_event[event.event_number]
-            for i, p in enumerate(self.peaks):
-                if p.left == desired_left:
-                    self.peak_i = i
-                    break
-            else:
-                raise ValueError('There is no (tpc, non-lone-hit) peak starting at index %d!' % desired_left)
+            self.peak_i = np.argmin([np.abs(p.left - desired_left) for p in self.peaks])
+            if self.peaks[self.peak_i].left != desired_left:
+                self.log.warning('There is no (tpc, non-lone-hit) peak starting at index %d! '
+                                 'Taking closest peak (%d-%d) instead.' % (desired_left,
+                                                                           self.peaks[self.peak_i].left,
+                                                                           self.peaks[self.peak_i].right))
             self.log.debug("Selected user-defined peak %d" % self.peak_i)
         else:
             # Usual case: just pick the largest peak (regarless of its type)
