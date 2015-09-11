@@ -268,7 +268,7 @@ def gaps_between_hits(hits):
     The gap of the first hit is 0 by definition.
     Hits should already be sorted by left boundary; we'll check this and throw an error if not.
     """
-    gaps = np.zeros(len(hits), dtype=np.int16)
+    gaps = np.zeros(len(hits), dtype=np.int32)
     if len(hits) == 0:
         return gaps
     # Keep a running right boundary
