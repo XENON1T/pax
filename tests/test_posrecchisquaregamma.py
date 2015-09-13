@@ -17,6 +17,10 @@ class TestPosRecChiSquareGamma(unittest.TestCase):
 
         self.e = Event.empty_event()
 
+    def tearDown(self):
+        delattr(self, 'pax')
+        delattr(self, 'plugin')
+
     def example_event(self, channels_with_something):
         channels = np.array(channels_with_something, dtype='float64')
         e = Event.empty_event()

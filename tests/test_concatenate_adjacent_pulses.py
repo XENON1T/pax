@@ -14,6 +14,10 @@ class TestCheckPulses(unittest.TestCase):
                                           'test':               'CheckPulses.ConcatenateAdjacentPulses'}})
         self.plugin = self.pax.get_plugin_by_name('ConcatenateAdjacentPulses')
 
+    def tearDown(self):
+        delattr(self, 'pax')
+        delattr(self, 'plugin')
+
     def test_concatenation(self):
         for pulse_bounds, concatenated_pulse_bounds in (
             ([[0, 1], [4, 5]],                   [[0, 1], [4, 5]]),

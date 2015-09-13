@@ -23,6 +23,10 @@ class TestZLE(unittest.TestCase):
                                       }})
         self.plugin = self.pax.get_plugin_by_name('SoftwareZLE')
 
+    def tearDown(self):
+        delattr(self, 'pax')
+        delattr(self, 'plugin')
+
     def test_zle(self):
         for w, pulse_bounds_should_be in (
             ([60, 60],                                         [[0, 1]]),

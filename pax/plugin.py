@@ -35,15 +35,6 @@ class BasePlugin(object):
         if y is not None:
             raise RuntimeError('Startup of %s returned a %s instead of None.' % (self.name, type(y)))
 
-    def __del__(self):
-        if not self.has_shut_down:
-            self.log.debug("Deleting %s, shutdown has NOT occurred yet!" % self.name)
-            y = self.shutdown()
-            if y is not None:
-                raise RuntimeError('Shutdown of %s returned a %s instead of None.' % (self.name, type(y)))
-        else:
-            self.log.debug("Deleting %s, shutdown has already occurred" % self.name)
-
     def _pre_startup(self):
         pass
 

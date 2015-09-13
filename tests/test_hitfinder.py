@@ -44,6 +44,8 @@ class TestHitFinder(unittest.TestCase):
             self.assertEqual(pulse_min, e.pulses[0].minimum)
             self.assertEqual(pulse_max, e.pulses[0].maximum)
 
+        delattr(self, 'pax')
+
     def test_intervals_above_threshold(self):
         # Test of the "hitfinder part" of the hitfinder
         for q, a in (

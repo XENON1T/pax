@@ -19,6 +19,10 @@ class TestCheckPulses(unittest.TestCase):
         self.plugin = self.pax.get_plugin_by_name('CheckBounds')
         self.baseline = self.pax.config['DEFAULT']['digitizer_reference_baseline']
 
+    def tearDown(self):
+        delattr(self, 'pax')
+        delattr(self, 'plugin')
+
     def make_single_pulse_event(self, **kwargs):
         event = datastructure.Event(
             n_channels=10,

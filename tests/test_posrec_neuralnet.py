@@ -13,6 +13,10 @@ class TestPosRecNeuralNet(unittest.TestCase):
             'test':               'NeuralNet.PosRecNeuralNet'}})
         self.plugin = self.pax.get_plugin_by_name('PosRecNeuralNet')
 
+    def tearDown(self):
+        delattr(self, 'pax')
+        delattr(self, 'plugin')
+
     @staticmethod
     def example_event(channels_with_something):
         bla = np.zeros(243)
