@@ -3,11 +3,12 @@
 language: python
 
 python:
-  - "3.4"
+  - 2.7
+  - 3.4
 
-matrix:
-  allow_failures:
-    - os: osx
+# matrix:
+#   allow_failures:
+#     - os: osx
 
 notifications:
   email:
@@ -26,10 +27,9 @@ services:
 env:
   - ROOT=5.34.25
   - ROOT=6.03.04
-  
 
 os:
-  - osx
+  #- osx
   - linux
 
 install:
@@ -39,8 +39,10 @@ install:
   - gcc --version
 
   # Conda
-  - if [ "${TRAVIS_OS_NAME}" == "linux" ]; then wget -nv http://repo.continuum.io/miniconda/Miniconda3-3.9.1-Linux-x86_64.sh -O miniconda.sh; fi
-  - if [ "${TRAVIS_OS_NAME}" == "osx" ]; then wget -nv http://repo.continuum.io/miniconda/Miniconda3-3.9.1-MacOSX-x86_64.sh -O miniconda.sh; fi
+  - if [ $TRAVIS_PYTHON_VERSION == 2.7 ]; then wget -nv http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh; fi
+  - if [ $TRAVIS_PYTHON_VERSION == 3.4 ]; then wget -nv http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh; fi
+  #- if [ "${TRAVIS_OS_NAME}" == "linux" ]; then wget -nv http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh; fi
+  #- if [ "${TRAVIS_OS_NAME}" == "osx" ]; then wget -nv http://repo.continuum.io/miniconda/Miniconda3-3.9.1-MacOSX-x86_64.sh -O miniconda.sh; fi
   
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
@@ -64,8 +66,8 @@ install:
   - if [ "${ROOT}" == "5.34.25" ]; then cp /home/travis/build/XENON1T/pax/travis/modified_ROOT_v${ROOT}.py /home/travis/build/XENON1T/pax/root/lib/ROOT.py; fi
 
   # Does pyROOT still work?
-  - root -l -q
-  - python -c "import ROOT; ROOT.TBrowser()"
+  #- root -l -q
+  #- python -c "import ROOT; ROOT.TBrowser()"
 
   # Install pax
   - python setup.py install
