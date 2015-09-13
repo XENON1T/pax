@@ -17,6 +17,7 @@ requirements = open('requirements.txt').read().splitlines()
 if six.PY2:
     del requirements[requirements.index('avro-python3')]
     requirements.append('avro')
+    requirements.append('configparser')
 
 # For some reason h5py is often not seen by pip if it was installed by conda...
 # so check for h5py presence manually, and remove it from requirements if already found.
