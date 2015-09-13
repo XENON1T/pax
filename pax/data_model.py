@@ -4,7 +4,7 @@ Extends python object to do a few tricks
 """
 import json
 import bson
-
+import six
 import numpy as np
 
 from pax.utils import Memoize
@@ -131,7 +131,7 @@ class Model(object):
                 if convert_numpy_arrays_to == 'list':
                     result[k] = v.tolist()
                 elif convert_numpy_arrays_to == 'bytes':
-                    result[k] = v.tostring()
+                    result[k] = bson.Binary(v.tostring())
                 else:
                     raise ValueError('convert_numpy_arrays_to must be "list" or "bytes"')
             else:
@@ -152,7 +152,13 @@ class Model(object):
 
     @classmethod
     def from_bson(cls, x):
-        return cls(**bson.BSON.decode(x))
+        if six.PY2:
+            # Hack for python 2: may work in py3 too, but it's definitely not the standard way!
+            reader = bson.decode_file_iter(six.BytesIO(x))
+            event_dict = next(reader)
+        else:
+            event_dict = bson.BSON.decode(x)
+        return cls(**event_dict)
 
 
 casting_allowed_for = {
@@ -160,6 +166,7 @@ casting_allowed_for = {
     'float':  ['int', 'int16', 'int32', 'int64', 'Int64', 'Int32', 'float32', 'float64', 'long'],
     'bool':   ['int', 'int16', 'int32', 'int64', 'Int64', 'Int32', 'long'],
     'long':   ['int', 'int16', 'int32', 'int64', 'Int64', 'Int32'],
+    'str':    ['unicode']
 }
 
 
