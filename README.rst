@@ -25,7 +25,7 @@ Python 3
 Pax is written in Python 3; we recommend the
 scientific python distribution `Anaconda <https://store.continuum.io/cshop/anaconda/>`_. To set this up in your linux home directory, do::
 
-  wget http://repo.continuum.io/anaconda3/Anaconda3-2.1.0-Linux-x86_64.sh
+  wget http://repo.continuum.io/archive/Anaconda3-2.1.0-Linux-x86_64.sh
   bash Anaconda3-2.1.0-Linux-x86_64.sh
   export PATH=~/anaconda3/bin:$PATH  # If installed in default location
 

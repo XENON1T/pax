@@ -1,4 +1,4 @@
-from pax import plugin
+from pax import plugin, units
 
 
 class AdHocClassification(plugin.TransformPlugin):
@@ -7,26 +7,17 @@ class AdHocClassification(plugin.TransformPlugin):
 
         for peak in event.peaks:
 
-            width = peak.hit_time_std
-
-            # Work only on unknown peaks - not noise and lone_hit
-            if peak.type != 'unknown':
+            # Don't work on noise and lone_hit
+            if peak.type in ('noise', 'lone_hit'):
                 continue
 
-            if peak.area > 30:
+            if peak.range_90p_area < 150 * units.ns:
+                peak.type = 's1'
 
-                if width < 120:
-                    peak.type = 's1'
-                elif width > 200:
+            elif peak.range_90p_area > 200 * units.ns:
+                if peak.area > 5:
                     peak.type = 's2'
-
-            else:
-                # For smaller peaks, hit_time_std is a bit less.
-                # Also have to worry about single electrons.
-
-                if width < 80:
-                    peak.type = 's1'
-                elif width > 140 and peak.area > 8:
-                    peak.type = 's2'
+                else:
+                    peak.type = 'coincidence'
 
         return event

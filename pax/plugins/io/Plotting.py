@@ -537,6 +537,12 @@ class PeakViewer(PlotBase):
     block_view = True
     max_characters = 70
 
+    def substartup(self):
+        # Dictionary mapping event number to left boundary index of desired starting peak
+        self.starting_peak_per_event = self.config.get('starting_peak_per_event', {})
+        # Convert keys = event numbers to integers -- necessary since JSON only allows string dictionary keys...
+        self.starting_peak_per_event = {int(k): v for k, v in self.starting_peak_per_event.items()}
+
     def plot_event(self, event):
         self.event = event
         self.fig = plt.figure(figsize=(15, 12))
@@ -600,14 +606,27 @@ class PeakViewer(PlotBase):
         self.peak_text = self.fig.text(x, start_y + 3 * row_y + y_sep_middle, '', verticalalignment='top')
 
         ##
-        # Get the TPC peaks and select the largest one
+        # Get the TPC peaks and select one
         ##
+        # Did the user specify a peak number? If so, get it
+        self.peak_i = self.starting_peak_per_event.get(event.event_number, None)
         self.peaks = event.get_peaks_by_type(detector='tpc', sort_key='left', reverse=False)
         self.peaks = [p for p in self.peaks if p.type != 'lone_hit']
-        if len(self.peaks) < 1:
-            return
-        self.peak_i = np.argmax([p.area for p in self.peaks])
-        self.log.debug("Largest peak is %d from 0-%d" % (self.peak_i, len(self.peaks)-1))
+
+        if event.event_number in self.starting_peak_per_event:
+            # The user specified the left boundary of the desired starting peak
+            desired_left = self.starting_peak_per_event[event.event_number]
+            for i, p in enumerate(self.peaks):
+                if p.left == desired_left:
+                    self.peak_i = i
+                    break
+            else:
+                raise ValueError('There is no (tpc, non-lone-hit) peak starting at index %d!' % desired_left)
+            self.log.debug("Selected user-defined peak %d" % self.peak_i)
+        else:
+            # Usual case: just pick the largest peak (regarless of its type)
+            self.peak_i = np.argmax([p.area for p in self.peaks])
+            self.log.debug("Largest peak is %d (peak list runs from 0-%d)" % (self.peak_i, len(self.peaks)-1))
 
         ##
         # Peak hitpatterns

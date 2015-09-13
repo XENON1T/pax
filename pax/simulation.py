@@ -313,6 +313,10 @@ class Simulator(object):
 
         # Build waveform channel by channel
         for channel, photon_detection_times in hitpattern.arrival_times_per_channel.items():
+            # If the channel is dead, we don't do anything.
+            if self.config['gains'][channel] == 0:
+                continue
+
             photon_detection_times = np.array(photon_detection_times)
 
             log.debug("Simulating %d photons in channel %d (gain=%s, gain_sigma=%s)" % (
@@ -460,6 +464,12 @@ class Simulator(object):
                         self.noise_data[channel - self.channel_offset][nsn * sample_size:(nsn + 1) * sample_size]
                         for nsn in chosen_noise_sample_numbers
                     ])
+                    # Adjust the noise amplitude if needed, then add it to the ADC wave
+                    noise_amplitude = self.config.get('adjust_noise_amplitude', {}).get(str(channel), 1)
+                    if noise_amplitude != 1:
+                        # Determine a rough baseline for the noise, then adjust towards it
+                        baseline = np.mean(real_noise[:min(len(real_noise), 50)])
+                        real_noise = baseline + noise_amplitude * (real_noise - baseline)
                     adc_wave += real_noise[:pulse_length]
 
                 else:

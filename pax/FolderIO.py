@@ -89,7 +89,9 @@ class InputFromFolder(plugin.InputPlugin):
         self.event_numbers_in_current_file = self.get_event_numbers_in_current_file()
 
     def shutdown(self):
-        self.close()
+        # hasattr check is needed to prevent extra error if pax crashes before the plugin runs
+        if hasattr(self, 'current_file'):
+            self.close()
 
     def get_events(self):
         """Iterate through all events in the file / folder"""
@@ -280,6 +282,9 @@ class ReadZipped(InputFromFolder):
         self.current_file = zipfile.ZipFile(filename)
         self.event_numbers = sorted([int(x)
                                      for x in self.current_file.namelist()])
+
+    def get_event_numbers_in_current_file(self):
+        return self.event_numbers
 
     def get_single_event_in_current_file(self, event_number):
         with self.current_file.open(str(event_number)) as event_file_in_zip:

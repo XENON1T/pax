@@ -5,6 +5,7 @@ from bson.json_util import dumps
 import numpy as np
 
 from pax import plugin, exceptions, datastructure
+from pax.data_model import Model
 from pax.formats import flat_data_formats
 
 
@@ -87,8 +88,7 @@ class TableWriter(plugin.OutputPlugin):
             self.config['write_in_chunks'] = False
 
         if self.config['append_data'] and not of.supports_append:
-            self.log.warning('Output format %s does not support append: setting'
-                             ' to False.')
+            self.log.warning('Output format %s does not support append: setting to False.')
             self.config['append_data'] = False
 
         # Append extension to outfile, if this format has one
@@ -99,8 +99,7 @@ class TableWriter(plugin.OutputPlugin):
         outfile = self.config['output_name']
         if os.path.exists(outfile):
             if self.config['append_data'] and of.supports_append:
-                self.log.info('Output file/dir %s already exists: '
-                              'appending.' % outfile)
+                self.log.info('Output file/dir %s already exists: appending.' % outfile)
             elif self.config['overwrite_data']:
                 self.log.info('Output file/dir %s already exists, and you '
                               'wanted to overwrite, so deleting it!' % outfile)
@@ -128,6 +127,12 @@ class TableWriter(plugin.OutputPlugin):
         Store all the event data internally, write to disk when appropriate.
         This function follows the plugin API.
         """
+        # Hack to convert s1, s2 in interaction objects to numbers
+        for i in range(len(event.interactions)):
+            for q in ('s1', 's2'):
+                peak = getattr(event.interactions[i], q)
+                object.__setattr__(event.interactions[i], q, event.peaks.index(peak))
+
         self._model_to_tuples(event,
                               index_fields=[('Event', event.event_number), ])
         self.events_ready_for_conversion += 1
@@ -176,10 +181,12 @@ class TableWriter(plugin.OutputPlugin):
             self.data[d]['records'] = None
 
     def shutdown(self):
-        if self.events_ready_for_conversion:
-            self._convert_to_records()
-        self._write_to_disk()
-        self.output_format.close()
+        # hasattr check is needed to prevent extra error if pax crashes before the plugin runs
+        if hasattr(self, 'output_format'):
+            if self.events_ready_for_conversion:
+                self._convert_to_records()
+            self._write_to_disk()
+            self.output_format.close()
 
     def get_index_of(self, mname):
         # Returns index +1 of last last entry in self.data[mname]. Returns -1
@@ -196,7 +203,6 @@ class TableWriter(plugin.OutputPlugin):
         :param m: instance to convert
         :param index_fields: list of (index_field_name, value) tuples denoting multi-index trail
         """
-
         # List to contain data from this model, will be made into tuple later
         m_name = m.__class__.__name__
         m_indices = [x[1] for x in index_fields]
@@ -209,7 +215,7 @@ class TableWriter(plugin.OutputPlugin):
                 'tuples':               [],
                 'records':              None,
                 # Initialize dtype with the index fields
-                'dtype':                [(x[0], np.int) for x in index_fields],
+                'dtype':                [(x[0], np.int64) for x in index_fields],
                 'index_depth':          len(m_indices),
                 # Dictionary of collection field's {field_names: collection
                 # class name}
@@ -218,37 +224,61 @@ class TableWriter(plugin.OutputPlugin):
             }
             first_time_seen = True
 
-        # Grab all data into data_dict -- and more importantly, handle
-        # subcollections
-        for field_name, field_value in m.get_fields_data():
-
+        # Handle the subcollection fields first
+        collection_field_name = {}    # Maps child types to collection field names
+        for field_name, field_type in self.data[m_name]['subcollection_fields'].items():
             if field_name in self.config['fields_to_ignore']:
                 continue
 
-            if isinstance(field_value, list):
+            field_value = getattr(m, field_name)
+            child_class_name = field_type.__name__
+            collection_field_name[child_class_name] = field_name
 
-                assert field_name in self.data[m_name]['subcollection_fields']
-                child_class_name = self.data[m_name]['subcollection_fields'][field_name].__name__
+            # Store the absolute start index & number of children
+            child_start = self.get_index_of(child_class_name)
+            n_children = len(field_value)
+            if first_time_seen:
+                # Add data types for n_x and x_start field names. Will have int type.
+                self.data[m_name]['dtype'].append(self._numpy_field_dtype('n_%s' % field_name, 0))
+                self.data[m_name]['dtype'].append(self._numpy_field_dtype('%s_start' % field_name, 0))
+            m_data.append(n_children)
+            m_data.append(child_start)
 
-                # Store the absolute start index & number of children
-                child_start = self.get_index_of(child_class_name)
-                n_children = len(field_value)
+            # We'll ship model collections off to their own tuples (later record arrays)
+            # Convert each child_model to a dataframe, with a new index
+            # appended to the index trail
+            for new_index, child_model in enumerate(field_value):
+                self._model_to_tuples(child_model,
+                                      index_fields + [(type(child_model).__name__,
+                                                       new_index)])
+
+        # Handle the ordinary (non-subcollection) fields
+        for field_name, field_value in m.get_fields_data():
+
+            if field_name in self.config['fields_to_ignore'] or isinstance(field_value, list):
+                continue
+
+            elif isinstance(field_value, Model):
+                # Individual child model: store the child number instead
+                # Note: only works if collection is in the same model!
+                child_class_name = field_value.__class__.__name__
+
                 if first_time_seen:
-                    # Store this field's data type
-                    self.data[m_name]['dtype'].append(
-                        self._numpy_field_dtype('n_%s' % field_name, 0))    # 0 to ensure integer type
-                    self.data[m_name]['dtype'].append(
-                        self._numpy_field_dtype('%s_start' % field_name, 0))
-                m_data.append(n_children)
-                m_data.append(child_start)
+                    self.data[m_name]['dtype'].append(self._numpy_field_dtype(field_name, 0))
 
-                # We'll ship model collections off to their own tuples (later record arrays)
-                # Convert each child_model to a dataframe, with a new index
-                # appended to the index trail
-                for new_index, child_model in enumerate(field_value):
-                    self._model_to_tuples(child_model,
-                                          index_fields + [(type(child_model).__name__,
-                                                           new_index)])
+                # We know the number the next child should get. What number is this one?
+                for child_i_from_back, child in enumerate(reversed(getattr(m,
+                                                                           collection_field_name[child_class_name]))):
+                    # Note the is instead of ==, we really want the same child, not just one that looks the same
+                    if child is field_value:
+                        break
+                else:
+                    # Assume fake child, fallthrough in datastructure (e.g. event without S1)
+                    m_data.append(datastructure.INT_NAN)
+                    continue
+
+                child_i = self.get_index_of(child_class_name) - 1 - child_i_from_back
+                m_data.append(child_i)
 
             elif isinstance(field_value, np.ndarray) and not self.output_format.supports_array_fields:
                 # Hack for formats without array field support: NumpyArrayFields must get their own dataframe
@@ -327,6 +357,7 @@ class TableReader(plugin.InputPlugin):
         self.chunk_size = self.config['chunk_size']
         self.read_hits = self.config['read_hits']
         self.read_recposes = self.config['read_recposes']
+        self.read_interactions = self.config['read_interactions']
 
         self.output_format = of = flat_data_formats[self.config['format']](log=self.log)
         if not of.supports_read_back:
@@ -339,7 +370,18 @@ class TableReader(plugin.InputPlugin):
         if self.read_hits:
             self.dnames.append('Hit')
         if self.read_recposes:
-            self.dnames.append('ReconstructedPosition')
+            if 'ReconstructedPosition' not in of.data_types_present:
+                self.log.warning("You asked to read ReconstructedPosition, "
+                                 "but this file has no ReconstructedPositions!")
+                self.read_recposes = False
+            else:
+                self.dnames.append('ReconstructedPosition')
+        if self.read_interactions:
+            if 'Interaction' not in of.data_types_present:
+                self.log.warning("You asked to read interactions, but this file has no interactions!")
+                self.read_interactions = False
+            else:
+                self.dnames.append('Interaction')
 
         # Dict of numpy record arrays just read from disk, waiting to be sorted
         self.cache = {}
@@ -400,6 +442,7 @@ class TableReader(plugin.InputPlugin):
             assert len(in_this_event['Event']) == 1
             e_record = in_this_event['Event'][0]
             peaks = in_this_event['Peak']
+            peak_numbers = peaks['Peak'].tolist()      # Needed to build interaction objects
 
             event = self.convert_record(datastructure.Event, e_record)
 
@@ -430,9 +473,19 @@ class TableReader(plugin.InputPlugin):
 
                     event.peaks.append(peak)
 
+                if self.read_interactions:
+                    interactions = in_this_event['Interaction']
+                    for intr_i, intr_record in enumerate(interactions):
+                        intr = self.convert_record(datastructure.Interaction, intr_record, ignore_type_checks=True)
+                        # Hack to build s1 and s2 attributes from peak numbers
+                        for q in ('s1', 's2'):
+                            peak = event.peaks[peak_numbers.index(getattr(intr, q))]
+                            object.__setattr__(intr, q, peak)
+                        event.interactions.append(intr)
+
             yield event
 
-    def convert_record(self, class_to_load_to, record):
+    def convert_record(self, class_to_load_to, record, ignore_type_checks=False):
         # We defined a nice custom init for event... ahem... now we have to do
         # cumbersome stuff...
         if class_to_load_to == datastructure.Event:
@@ -447,7 +500,10 @@ class TableReader(plugin.InputPlugin):
             # This happens for n_peaks etc. and attributes that have been
             # removed
             if hasattr(result, k):
-                setattr(result, k, v)
+                if ignore_type_checks:
+                    object.__setattr__(result, k, v)
+                else:
+                    setattr(result, k, v)
         return result
 
     def _numpy_record_to_dict(self, record):

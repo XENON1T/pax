@@ -63,22 +63,44 @@ def get_named_configuration_options():
 # Interpolating map class
 ##
 
+class InterpolateAndExtrapolate(object):
+    """Linearly interpolate, but use nearest-neighbour when out of range
+    Initialize and call just like scipy.interpolate.LinearNDInterpolator
+    """
+
+    def __init__(self, points, values):
+        self.interpolator = interpolate.LinearNDInterpolator(points, values)
+        self.extrapolator = interpolate.NearestNDInterpolator(points, values)
+
+    def __call__(self, *args):
+        result = self.interpolator(*args)
+        if np.isnan(result):
+            result = self.extrapolator(*args)
+        return result
+
+
 class InterpolatingMap(object):
 
     """
-    Builds a scalar function of space using interpolation from sampling points on a regular grid.
+    Builds a scalar function of space using interpolation from sampling points.
 
-    All interpolation is done linearly.
+    All interpolation is done linearly by default.
     Cartesian coordinates are supported, cylindrical coordinates (z, r, phi) may also work...
 
-    The map must be specified as a json translating to a dictionary with keys
+    The map must be specified as a json translating to a dictionary like this:
         'coordinate_system' :   [['x', x_min, x_max, n_x], ['y',...
         'your_map_name' :       [[valuex1y1, valuex1y2, ..], [valuex2y1, valuex2y2, ..], ...
         'another_map_name' :    idem
         'name':                 'Nice file with maps',
         'description':          'Say what the maps are, who you are, your favorite food, etc',
         'timestamp':            unix epoch seconds timestamp
-    with the straightforward generalization to 1d and 3d.
+    with the straightforward generalization to 1d and 3d. Extrapolation attempts will raise an error.
+    The default map name is 'map', I'd recommend you use that.
+
+    For irregularly spaced points, use:
+        'coordinate_system' :   [[x1, y2], [x2, y2], [x3, y3], [x4, y4], ...],
+        'irregular':            True,
+    with the rest the same. Constant extrapolation via nearest neighbour is used outside the convex hull.
 
     For a 0d placeholder map, the map value must be a single number, and the coordinate system must be [].
 
@@ -86,7 +108,7 @@ class InterpolatingMap(object):
 
     See also examples/generate_mock_correction_map.py
     """
-    data_field_names = ['timestamp', 'description', 'coordinate_system', 'name']
+    data_field_names = ['timestamp', 'description', 'coordinate_system', 'name', 'irregular']
 
     def __init__(self, filename, **kwargs):
         self.log = logging.getLogger('InterpolatingMap')
@@ -119,44 +141,52 @@ class InterpolatingMap(object):
         """Returns the value of the map map_name at a ReconstructedPosition
          position - pax.datastructure.ReconstructedPosition instance
         """
-        return self.get_value(*[getattr(position, q[0]) for q in self.coordinate_system], map_name=map_name)
+        if self.data.get('irregular', False):
+            position_names = ['x', 'y', 'z']
+            return self.get_value(*[getattr(position, q) for q in position_names[:self.dimensions]], map_name=map_name)
+        else:
+            # This code also supports r/phi coordinates... though it probably makes no sense on a regular grid..
+            return self.get_value(*[getattr(position, q[0]) for q in self.coordinate_system], map_name=map_name)
 
     def get_value(self, map_name, *coordinates):
         """Returns the value of the map at the position given by coordinates"""
         result = self.interpolators[map_name](*coordinates)
         try:
             return float(result[0])
-        except TypeError:
+        except (TypeError, IndexError):
             return float(result)    # We don't want a 0d numpy array, which the 1d and 2d interpolators seem to give
 
     def init_map(self, map_data, **kwargs):
-        # 1 D interpolation
         cs = self.coordinate_system
-        if self.dimensions == 1:
-            # TODO: intper1d is very inefficient for regular grids!!
-            return interpolate.interp1d(x=np.linspace(*(cs[0][1])),
-                                        y=map_data)
-
-        # 2D interpolation
-        elif self.dimensions == 2:
-            return interpolate.RectBivariateSpline(x=np.linspace(*(cs[0][1])),
-                                                   y=np.linspace(*(cs[1][1])),
-                                                   z=np.array(map_data).T,
-                                                   s=0)
-
-        # 3D interpolation
-        elif self.dimensions == 3:
-            # TODO: LinearNDInterpolator is very inefficient for regular grids!!
-            # LinearNDInterpolator wants points as [(x1,y1,z1), (x2, y2, z2), ...]
-            all_x, all_y, all_z = np.meshgrid(np.linspace(*(cs[0][1])),
-                                              np.linspace(*(cs[1][1])),
-                                              np.linspace(*(cs[2][1])))
-            points = np.array([np.ravel(all_x), np.ravel(all_y), np.ravel(all_z)]).T
-            values = np.ravel(map_data)
-            return interpolate.LinearNDInterpolator(points, values)
+        if self.data.get('irregular'):
+            # Coordinate system is a list/array of points ((x1, y1), (x2, y2), ...)
+            return InterpolateAndExtrapolate(points=np.array(cs), values=np.array(map_data))
 
         else:
-            raise RuntimeError("Can't use a %s-dimensional correction map!" % self.dimensions)
+            # Coordinate system is a regular grid: ((xstart, xend, n_x), (ystart, yend, n_y), ...)
+            if self.dimensions == 1:
+                # TODO: intper1d is very inefficient for regular grids!!
+                return interpolate.interp1d(x=np.linspace(*(cs[0][1])),
+                                            y=map_data)
+
+            elif self.dimensions == 2:
+                return interpolate.interp2d(x=np.linspace(*(cs[0][1])),
+                                            y=np.linspace(*(cs[1][1])),
+                                            z=np.array(map_data).T)
+
+            # 3D interpolation
+            elif self.dimensions == 3:
+                # TODO: LinearNDInterpolator is very inefficient for regular grids!!
+                # LinearNDInterpolator wants points as [(x1,y1,z1), (x2, y2, z2), ...]
+                all_x, all_y, all_z = np.meshgrid(np.linspace(*(cs[0][1])),
+                                                  np.linspace(*(cs[1][1])),
+                                                  np.linspace(*(cs[2][1])))
+                points = np.array([np.ravel(all_x), np.ravel(all_y), np.ravel(all_z)]).T
+                values = np.ravel(map_data)
+                return interpolate.LinearNDInterpolator(points, values)
+
+            else:
+                raise RuntimeError("Can't use a %s-dimensional correction map!" % self.dimensions)
 
     def plot(self, map_name='map', to_file=None):
         """Make a quick plot of the map map_name, for diagnostic purposes only"""
