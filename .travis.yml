@@ -71,6 +71,10 @@ install:
 
   # Install pax
   - python setup.py install
+  
+  # Run a simple test file, to see if the tests load
+  # If there is an import failure, you don't get to know which import is failing otherwise
+  - python tests/test_maxpmt.py
 
 # command to run tests, e.g. python setup.py test
 script:
