@@ -1,6 +1,7 @@
 import unittest
 import tempfile
 import shutil
+import six
 
 from pax import core
 
@@ -44,6 +45,10 @@ class TestRawData(unittest.TestCase):
         """Tests a pair of raw data read&write plugins by writing 2 events from XED, then reading them back
         """
         for plugin_info in plugins_to_test:
+
+            # Disable the avro test on py2
+            if six.PY2 and plugin_info['name'] == 'Avro':
+                continue
 
             # If this test errors in a strange way, the directory may not get deleted.
             # So make it somewhere the os knows to delete it sometime
