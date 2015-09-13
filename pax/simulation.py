@@ -510,7 +510,7 @@ class Simulator(object):
 
     def distribute_photons_by_lcemap(self, n_photons, lce_map, coordinate_tuple):
         # TODO: assumes channels drawn from top, or from all channels (i.e. first index 0!!!)
-        lces = lce_map.get_value('map', *coordinate_tuple)
+        lces = lce_map.get_value(*coordinate_tuple)
         if np.sum(lces) == 0:
             raise ValueError("LCEs at position %s are all zero, cannot be normalized!" % coordinate_tuple)
         return self.randomize_photons_over_channels(n_photons,
