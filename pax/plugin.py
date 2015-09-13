@@ -17,19 +17,15 @@ from pax.datastructure import Event, ReconstructedPosition
 
 
 class BasePlugin(object):
+    # Processor.run() will ensure this gets set after it has shut down the plugin
+    # If you ever shut down a plugin yourself, you need to set it too!!
+    has_shut_down = False
 
     def __init__(self, config_values, processor):
         self.name = self.__class__.__name__
         self.processor = processor
         self.log = logging.getLogger(self.name)
         self.total_time_taken = 0   # Total time in msec spent in this plugin
-
-        # run() will ensure this gets set after it has shut down the plugin
-        # If you ever shut down a plugin yourself, you need to set it too!!
-        # TODO: this is clunky...
-        self.has_shut_down = False
-
-        # Please do all config variable fetching in constructor to make changing config easier.
         self.config = config_values
         self._pre_startup()
         y = self.startup()

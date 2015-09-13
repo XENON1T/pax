@@ -312,17 +312,6 @@ def cluster_by_diff(x, diff_threshold, return_indices=False):
     #     return np.split(x, split_indices)
 
 
-def weighted_mean_variance(values, weights):
-    """
-    Return the weighted mean, and the weighted sum square deviation from the weighted mean.
-    values, weights -- Numpy ndarrays with the same shape.
-    Stolen from http://stackoverflow.com/questions/2413522/weighted-standard-deviation-in-numpy
-    """
-    weighted_mean = np.average(values, weights=weights)
-    weighted_variance = np.average((values-weighted_mean)**2, weights=weights)  # Fast and numerically precise
-    return weighted_mean, weighted_variance
-
-
 # Caching decorator
 # Stolen from http://avinashv.net/2008/04/python-decorators-syntactic-sugar/
 class Memoize:

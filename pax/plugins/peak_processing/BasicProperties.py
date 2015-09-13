@@ -1,7 +1,7 @@
 import numpy as np
 import numba
 
-from pax import plugin, utils
+from pax import plugin
 
 
 class BasicProperties(plugin.TransformPlugin):
@@ -51,7 +51,7 @@ class BasicProperties(plugin.TransformPlugin):
             peak.hits_fraction_top = np.sum(peak.hits_per_channel[:last_top_ch + 1]) / peak.area
 
             # Compute timing quantities
-            peak.hit_time_mean, peak.hit_time_std = utils.weighted_mean_variance(hit_times, hit_areas)
+            peak.hit_time_mean, peak.hit_time_std = weighted_mean_variance(hit_times, hit_areas)
             peak.hit_time_std **= 0.5  # Convert variance to std
             peak.n_contributing_channels_top = np.sum((peak.area_per_channel[:last_top_ch + 1] > 0))
 
@@ -184,3 +184,14 @@ def put_w_in_center_of_field(w, field, center_index):
 
     start_idx = field_center - center_index
     field[start_idx:start_idx + len(w)] = w
+
+
+def weighted_mean_variance(values, weights):
+    """
+    Return the weighted mean, and the weighted sum square deviation from the weighted mean.
+    values, weights -- Numpy ndarrays with the same shape.
+    Stolen from http://stackoverflow.com/questions/2413522/weighted-standard-deviation-in-numpy
+    """
+    weighted_mean = np.average(values, weights=weights)
+    weighted_variance = np.average((values-weighted_mean)**2, weights=weights)  # Fast and numerically precise
+    return weighted_mean, weighted_variance

@@ -4,7 +4,14 @@ from pax import plugin, utils
 
 
 class RejectNoiseHits(plugin.TransformPlugin):
-    """Remove hits in channels with many lone hits from peaks"""
+    """Remove hits in channels with many lone hits from peaks without many other hits.
+    Works with a penalty point system (see #126):
+    * The more lone hits you see in a channel, the more points a channel gets.
+    * Channels with more than a (fairly low) number of penalty points are called suspicious.
+      For these, we'll test every peak as follows:
+      * A peak scores points for every pe in non-suspicious channels.
+      * Hits in channels with more penalty points than the peak's score are removed from the peak.
+    """
 
     def startup(self):
         self.detector_by_channel = utils.get_detector_by_channel(self.config)

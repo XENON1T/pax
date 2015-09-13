@@ -7,19 +7,10 @@ NOTE: This class is stable within major releases.  Do not change any variable
 names of functionality between major releases.  You may add variables in minor
 releases.  Patch releases cannot modify this.
 """
-
-import inspect
-
 import numpy as np
 
-import math
 from pax import units
-
-# DO NOT use Model instead of StrictModel:
-# It improves performance, but kills serialization (numpy int types will appear in class etc)
-# TODO: For Hit class, we may want Model for performance?
-#       Look where the numpy int types get in, force them to python ints.
-from pax.data_model import StrictModel, ListField
+from pax.data_model import StrictModel, ListField, Model
 
 
 INT_NAN = -99999    # Do not change without talking to me. -Tunnell 12/3/2015 ... and me. -Jelle 05/08/2015
@@ -49,15 +40,17 @@ class ReconstructedPosition(StrictModel):
     # cylindrical coordinates
     @property
     def r(self):
-        return math.sqrt(self.x ** 2 + self.y ** 2)
+        return np.sqrt(self.x ** 2 + self.y ** 2)
 
     #: phi position, i.e. angle wrt the x=0 axis in the xy plane (radians)
     @property
     def phi(self):
-        return math.atan2(self.y, self.x)
+        return np.arctan2(self.y, self.x)
 
 
-class Hit(StrictModel):
+# Hit class uses model: no type checking, better performance
+# Using StrictModel instead causes 50% longer runtime of hitfinder
+class Hit(Model):
     """A hit results from, within individual channel, fluctation above baseline.
 
     These are be clustered into ordinary peaks later. This is commonly
@@ -387,12 +380,12 @@ class Interaction(StrictModel):
     #: r position (cm)
     @property
     def r(self):
-        return math.sqrt(self.x ** 2 + self.y ** 2)
+        return np.sqrt(self.x ** 2 + self.y ** 2)
 
     #: phi position, i.e. angle wrt the x=0 axis in the xy plane (radians)
     @property
     def phi(self):
-        return math.atan2(self.y, self.x)
+        return np.arctan2(self.y, self.x)
 
     def set_position(self, recpos):
         """Sets the x, y position of the interaction
@@ -619,18 +612,3 @@ class Event(StrictModel):
                        reverse=reverse)
 
         return peaks
-
-
-def _explain(class_name):
-    x = inspect.getmembers(class_name,
-                           predicate=inspect.isdatadescriptor)
-
-    for a, b in x:
-        if a.startswith('_'):
-            continue
-        print(a, b.__doc__)
-
-
-if __name__ == '__main__':
-    _explain(Peak)
-    _explain(Event)
