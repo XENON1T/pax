@@ -85,6 +85,7 @@ class FindHits(plugin.TransformPlugin):
         argmaxes = -1 * np.ones(self.max_hits_per_pulse, dtype=np.int64)
         areas = -1 * np.ones(self.max_hits_per_pulse, dtype=np.float64)
         centers = -1 * np.ones(self.max_hits_per_pulse, dtype=np.float64)
+        deviations = -1 * np.ones(self.max_hits_per_pulse, dtype=np.float64)
 
         dt = self.config['sample_duration']
 
@@ -156,7 +157,7 @@ class FindHits(plugin.TransformPlugin):
 
             # Compute area, max, and center of each hit in numba
             # Results stored in argmaxes, areas, centers; declared outside loop, see above
-            compute_hit_properties(w, hits_found, argmaxes, areas, centers)
+            compute_hit_properties(w, hits_found, argmaxes, areas, centers, deviations)
 
             # Store the found hits in the datastructure
             # Convert area, noise_sigma and height from adc counts -> pe
@@ -210,6 +211,7 @@ class FindHits(plugin.TransformPlugin):
                     'noise_sigma':         noise_sigma_pe,
                     'found_in_pulse':      pulse_i,
                     'n_saturated':         n_saturated,
+                    'sum_absolute_deviation': deviations[i] * dt
                 }))
 
             # Diagnostic plotting
@@ -339,27 +341,36 @@ def find_intervals_above_threshold(w, high_threshold, low_threshold, result_buff
 
 
 @numba.jit(nopython=True)
-def compute_hit_properties(w, raw_hits, argmaxes, areas, centers):
-    """Finds argmax, area and center of gravity of hits in w indicated by (l, r) bounds in raw_hits.
-    raw_hits should be a numpy array of (left, right) bounds (inclusive)
-    Other arguments are numpy arrays which will be filled with results.
-    centers, argmaxes are returned in samples right of hit start -- you probably want to convert this!
-    Returns nothing
+def compute_hit_properties(w, raw_hits, argmaxes, areas, centers, deviations):
+    """Find properties of hits in w indicated by (l, r) bounds in raw_hits.
+        raw_hits should be a numpy array of (left, right) bounds (inclusive)
+    Other arguments are numpy arrays which will be filled with results:
+        argmax, area, center of gravity and sum absolute deviation from center
+    centers, argmaxes, deviations are returned in samples (from start) -- you probably want to convert this!
+    Returns nothing.
     """
     for hit_i in range(len(raw_hits)):
-        current_max = -999.9
-        current_argmax = -1
-        current_area = 0.0
-        current_center = 0.0
-        for i, x in enumerate(w[raw_hits[hit_i, 0]:raw_hits[hit_i, 1]+1]):
-            if x > current_max:
-                current_max = x
-                current_argmax = i
-            current_area += x
-            current_center += i * x
-        argmaxes[hit_i] = current_argmax
-        areas[hit_i] = current_area
-        centers[hit_i] = current_center / current_area
+        amplitude = -999.9
+        argmax = -1
+        area = 0.0
+        center = 0.0
+        deviation = 0.0
+        left = raw_hits[hit_i, 0]
+        right = raw_hits[hit_i, 1]
+        for i, x in enumerate(w[left:right + 1]):
+            if x > amplitude:
+                amplitude = x
+                argmax = i
+            area += x
+            center += x * i
+        center /= area
+        for i, x in enumerate(w[left:right + 1]):
+            deviation += x * abs(i - center)
+        deviation /= area
+        argmaxes[hit_i] = argmax
+        areas[hit_i] = area
+        centers[hit_i] = center
+        deviations[hit_i] = deviation
 
 
 @numba.jit(nopython=True)

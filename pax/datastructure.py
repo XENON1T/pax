@@ -67,6 +67,9 @@ class Hit(Model):
     #: Time (since start of event in ns) of hit's center of gravity
     center = 0.0
 
+    #: Weighted sum of absolute deviation (in ns) of hit waveform from hit center
+    sum_absolute_deviation = 0.0
+
     left = 0                 #: Index of left bound (inclusive) of peak.
     right = 0                #: Index of right bound (INCLUSIVE!!) of peak
 
