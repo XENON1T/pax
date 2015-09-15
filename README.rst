@@ -26,7 +26,7 @@ Pax is written in Python 3; we recommend the
 scientific python distribution `Anaconda <https://store.continuum.io/cshop/anaconda/>`_. To set this up in your linux home directory, do::
 
   wget http://repo.continuum.io/archive/Anaconda3-2.1.0-Linux-x86_64.sh
-  bash Anaconda3-2.1.0-Linux-x86_64.sh
+  bash Anaconda3-2.1.0-Linux-x86_64.sh  # Say 'yes' to appending to .bashrc
   export PATH=~/anaconda3/bin:$PATH  # If installed in default location
 
 You need to point anaconda to the physics-specific packages of e.g. ROOT.  You can do this by putting the following in `~/.condarc`::
@@ -45,7 +45,12 @@ for your platform using the `conda` tool::
 
   conda update conda
   conda create -n pax numpy scipy matplotlib pandas cython h5py numba pip snappy python-snappy
+  
+Whenever you want to use `pax`, you have to run the following command to set it up::
+  
   source activate pax
+  
+You can put this in your `.bashrc` if you want it to be setup when you login.
 
 Git and Github
 ^^^^^^^^^^^^^^
