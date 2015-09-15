@@ -45,19 +45,18 @@ class NaturalBreaksClustering(plugin.TransformPlugin):
             # Lone hit: can't cluster any more!
             return [peak]
 
-        left = np.zeros(len(hits))
-        right = np.zeros(len(hits))
+        center = np.zeros(len(hits))
+        deviation = np.zeros(len(hits))
         area = np.zeros(len(hits))
         for i, h in enumerate(hits):
-            left[i] = h.left
+            center[i] = h.center
+            deviation[i] = h.sum_absolute_deviation
             area[i] = h.area
-            right[i] = h.right
         area_tot = np.sum(area)
         gaps = utils.gaps_between_hits(hits)[1:]            # Remember first "gap" is zero: throw it away
-        self.log.debug("Got %d hits (%d-%d) to decluster" % (len(hits), left[0], right[-1]))
 
         # Get indices of the self.max_n_gaps_to_test largest gaps
-        split_threshold = self.min_split_goodness(n_hits)
+        split_threshold = self.min_split_goodness(area_tot)
         max_split_goodness = float('-inf')
         max_split_goodness_i = 0
         for gap_i in indices_of_largest_n(gaps, self.max_n_gaps_to_test):
@@ -68,7 +67,7 @@ class NaturalBreaksClustering(plugin.TransformPlugin):
             split_i = gap_i + 1
 
             # Compute the naturalness of this break
-            split_goodness = compute_split_goodness(split_i, left, right, area)
+            split_goodness = compute_split_goodness(split_i, center, deviation, area)
 
             # Should we split? If so, recurse.
             if split_goodness > self.min_split_goodness(n_hits):
@@ -99,7 +98,7 @@ class NaturalBreaksClustering(plugin.TransformPlugin):
 
 
 @numba.jit(nopython=True)
-def compute_split_goodness(split_index, left, right, area):
+def compute_split_goodness(split_index, center, deviation, area):
     """Return "goodness of split" for splitting hits >= split_index into right cluster, < into left.
        left, right: left, right indices of hits
        area: area of hits
@@ -114,13 +113,33 @@ def compute_split_goodness(split_index, left, right, area):
     The reason we use endpoints, rather than hit centers, is compatibility with high-energy signals.
     These can have a single long hit in all channels, which won't have any short hits near to its center.
     """
-    if split_index >= len(left) or split_index <= 0:
+    if split_index > len(center) - 1 or split_index <= 0:
         raise ValueError("Ridiculous split index received!")
-    numerator = _sad_two(left, right, weights=area)
-    denominator = _sad_two(left[:split_index], right[:split_index], weights=area[:split_index])
-    denominator += _sad_two(left[split_index:], right[split_index:], weights=area[split_index:])
-    denominator += left[split_index] - right[split_index - 1]
+    numerator = _sad_fallback(center, weights=area, fallback=deviation)
+    denominator = _sad_fallback(center[:split_index], weights=area[:split_index], fallback=deviation[:split_index])
+    denominator += _sad_fallback(center[split_index:], weights=area[split_index:], fallback=deviation[split_index:])
+    denominator += center[split_index] - center[split_index - 1]
     return -1 + 0.5 * numerator / denominator
+
+
+@numba.jit(nopython=True)
+def _sad_fallback(x, weights, fallback):
+    # While there is a one-pass algorithm for variance, I haven't found one for sad.. maybe it doesn't exists
+    # First calculate the weighted mean.
+    mean = 0
+    sum_weights = 0
+    for i in range(len(x)):
+        mean += x[i] * weights[i]
+        sum_weights += weights[i]
+    mean /= sum_weights
+
+    # Now calculate the sum abs dev, ensuring each x contributes at least fallback
+    sad = 0
+    for i in range(len(x)):
+        sad += max(fallback[i], abs(x[i] - mean)) * weights[i]
+    # To normalize to the case with all weights 1, we multipy by n / sum_w
+    sad *= len(x) / sum_weights
+    return sad
 
 
 @numba.jit(nopython=True)
