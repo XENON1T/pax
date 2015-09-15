@@ -29,12 +29,13 @@ scientific python distribution `Anaconda <https://store.continuum.io/cshop/anaco
   bash Anaconda3-2.1.0-Linux-x86_64.sh
   export PATH=~/anaconda3/bin:$PATH  # If installed in default location
 
-Alternatively, you can install the vanilla Python 3.4 from the `python webpage <https://www.python.org/>`_ 
-or use a pre-installed python. Please note that
+You need to point anaconda to the physics-specific packages of e.g. ROOT.  You can do this by putting the following in `~/.condarc`::
 
-- Only one version of pax can be installed per python installation;
-- You need write permission to the python distribution's directory; 
-- `pax` does *not* run under with python 2!
+  channels:
+    - http://conda.binstar.org/NLeSC
+    - defaults
+
+Alternatively, you can install Python 3.4 yourself (highly not recommended since ROOT probably won't work).  Note that you need write permission to the python distribution's directory and that Python 2 does not currently work.  
 
 Additional python packages
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -43,27 +44,8 @@ some contain C++ code which must be compiled. If you have Anaconda you can get a
 for your platform using the `conda` tool::
 
   conda update conda
-  conda install numpy scipy matplotlib pandas pytables cython h5py numba pip scikit-learn
-
-
-Snappy
-^^^^^^
-Pax needs the `snappy compression library <https://code.google.com/p/snappy/>`_ to read data from our MongoDB raw data database. Do NOT try to `pip install snappy`, that's a completely different package! If you're using Ubuntu and have super user permissions, you could just install the `libsnappy-dev` package.  However, we recommend, you do the following::
-
-  wget https://snappy.googlecode.com/files/snappy-1.1.1.tar.gz
-  tar xvfz snappy-1.1.1.tar.gz 
-  cd snappy-1.1.1
-  ./configure --prefix=`conda info --root`
-  make install
-  cd ~
-  CFLAGS=-I`conda info --root`/include LDFLAGS=-L`conda info --root`/lib pip install python-snappy
-  
-You should now be able to run the following command::
-
-  python -m snappy
-
-If you are unable to install snappy, pax can work without it (but the MongoDB interface, including the event builder, will not work!). We've cunningly hidden this information in the following footnote: [1]_.
-
+  conda create -n pax numpy scipy matplotlib pandas cython h5py numba pip snappy python-snappy
+  source activate pax
 
 Git and Github
 ^^^^^^^^^^^^^^
