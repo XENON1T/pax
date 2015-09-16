@@ -54,6 +54,7 @@ class NaturalBreaksClustering(plugin.TransformPlugin):
             area[i] = h.area
         area_tot = np.sum(area)
         gaps = utils.gaps_between_hits(hits)[1:]            # Remember first "gap" is zero: throw it away
+        self.log.debug("Clustering hits %d-%d" % (center[0], center[-1]))
 
         # Get indices of the self.max_n_gaps_to_test largest gaps
         split_threshold = self.min_split_goodness(area_tot)
@@ -82,9 +83,9 @@ class NaturalBreaksClustering(plugin.TransformPlugin):
                                             birthing_split_fraction=np.sum(area[split_i:]) / area_tot)
                 return self.cluster(peak_l) + self.cluster(peak_r)
             else:
-                self.log.debug("Proposed split at %d not good enough (%s < %s)" % (split_i,
-                                                                                   split_goodness,
-                                                                                   self.min_split_goodness(n_hits)))
+                self.log.debug("Proposed split at %d not good enough (%0.3f < %0.3f)" % (split_i,
+                                                                                        split_goodness,
+                                                                                        self.min_split_goodness(n_hits)))
             if split_goodness >= max_split_goodness:
                 max_split_goodness = split_goodness
                 max_split_goodness_i = split_i
