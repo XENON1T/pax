@@ -62,6 +62,8 @@ class NaturalBreaksClustering(plugin.TransformPlugin):
         max_split_goodness_i = 0
         for gap_i in indices_of_largest_n(gaps, self.max_n_gaps_to_test):
             if gaps[gap_i] < self.min_gap_size_for_break:
+                self.log.debug('Breaking because gap size %d smaller than %d' % (gaps[gap_i],
+                                                                                 self.min_gap_size_for_break))
                 break
 
             # Index of hit to split on = index first hit that will go to right cluster
@@ -71,7 +73,7 @@ class NaturalBreaksClustering(plugin.TransformPlugin):
             split_goodness = compute_split_goodness(split_i, center, deviation, area)
 
             # Should we split? If so, recurse.
-            if split_goodness > self.min_split_goodness(n_hits):
+            if split_goodness > self.min_split_goodness(area_tot):
                 self.log.debug("SPLITTING at %d  (%s > %s)" % (split_i, split_goodness, split_threshold))
                 peak_l = datastructure.Peak(hits=hits[:split_i],
                                             detector=peak.detector,
@@ -83,9 +85,8 @@ class NaturalBreaksClustering(plugin.TransformPlugin):
                                             birthing_split_fraction=np.sum(area[split_i:]) / area_tot)
                 return self.cluster(peak_l) + self.cluster(peak_r)
             else:
-                self.log.debug("Proposed split at %d not good enough (%0.3f < %0.3f)" % (split_i,
-                                                                                        split_goodness,
-                                                                                        self.min_split_goodness(n_hits)))
+                self.log.debug("Proposed split at %d not good enough (%0.3f < %0.3f)" % (
+                    split_i, split_goodness, self.min_split_goodness(area_tot)))
             if split_goodness >= max_split_goodness:
                 max_split_goodness = split_goodness
                 max_split_goodness_i = split_i
@@ -116,11 +117,10 @@ def compute_split_goodness(split_index, center, deviation, area):
     """
     if split_index > len(center) - 1 or split_index <= 0:
         raise ValueError("Ridiculous split index received!")
-    numerator = _sad_fallback(center, weights=area, fallback=deviation)
-    denominator = _sad_fallback(center[:split_index], weights=area[:split_index], fallback=deviation[:split_index])
-    denominator += _sad_fallback(center[split_index:], weights=area[split_index:], fallback=deviation[split_index:])
-    denominator += center[split_index] - center[split_index - 1]
-    return -1 + 0.5 * numerator / denominator
+    numerator = _sad_fallback(center[:split_index], weights=area[:split_index], fallback=deviation[:split_index])
+    numerator += _sad_fallback(center[split_index:], weights=area[split_index:], fallback=deviation[split_index:])
+    denominator = _sad_fallback(center, weights=area, fallback=deviation)
+    return 1 - numerator / denominator
 
 
 @numba.jit(nopython=True)
