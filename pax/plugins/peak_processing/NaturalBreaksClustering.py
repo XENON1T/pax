@@ -104,42 +104,34 @@ def compute_split_goodness(split_index, center, deviation, area):
     """Return "goodness of split" for splitting hits >= split_index into right cluster, < into left.
        left, right: left, right indices of hits
        area: area of hits
-    "goodness of split" = 0.5 * sad(all_hits) / (sad(left cluster) + sad(right cluster) + gap between clusters) - 1
-      where sad = weighted (by area) sum of absolute deviation from mean,
-      calculated on all *endpoints* of hits in the cluster
-      The gap between clusters is added in the denominator as a penalty term against splitting very small signals.
-      The reason we use sum absolute deviation instead of the root of the sum square deviation is that the latter
-       is more sensitive to outliers. Clustering should NOT trim tails of peaks.
-    This usually takes a value around [-1, 1], but can go much higher if the split is good.
-
-    The reason we use endpoints, rather than hit centers, is compatibility with high-energy signals.
-    These can have a single long hit in all channels, which won't have any short hits near to its center.
+    "goodness of split" = 1 - (sad(left cluster) + sad(right cluster) / sad(all_hits)
+      where sad = weighted (by area) sum of absolute deviation from mean.
+    For more information, see this note:
+    https://xecluster.lngs.infn.it/dokuwiki/doku.php?id=xenon:xenon1t:processor:natural_breaks_clustering
     """
     if split_index > len(center) - 1 or split_index <= 0:
         raise ValueError("Ridiculous split index received!")
-    numerator = _sad_fallback(center[:split_index], weights=area[:split_index], fallback=deviation[:split_index])
-    numerator += _sad_fallback(center[split_index:], weights=area[split_index:], fallback=deviation[split_index:])
-    denominator = _sad_fallback(center, weights=area, fallback=deviation)
+    numerator = _sad_fallback(center[:split_index], areas=area[:split_index], fallback=deviation[:split_index])
+    numerator += _sad_fallback(center[split_index:], areas=area[split_index:], fallback=deviation[split_index:])
+    denominator = _sad_fallback(center, areas=area, fallback=deviation)
     return 1 - numerator / denominator
 
 
 @numba.jit(nopython=True)
-def _sad_fallback(x, weights, fallback):
+def _sad_fallback(x, areas, fallback):
     # While there is a one-pass algorithm for variance, I haven't found one for sad.. maybe it doesn't exists
     # First calculate the weighted mean.
     mean = 0
     sum_weights = 0
     for i in range(len(x)):
-        mean += x[i] * weights[i]
-        sum_weights += weights[i]
+        mean += x[i] * areas[i]
+        sum_weights += areas[i]
     mean /= sum_weights
 
     # Now calculate the sum abs dev, ensuring each x contributes at least fallback
     sad = 0
     for i in range(len(x)):
-        sad += max(fallback[i], abs(x[i] - mean)) * weights[i]
-    # To normalize to the case with all weights 1, we multipy by n / sum_w
-    sad *= len(x) / sum_weights
+        sad += max(fallback[i], abs(x[i] - mean)) * areas[i]
     return sad
 
 
