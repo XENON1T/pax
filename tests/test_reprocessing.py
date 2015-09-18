@@ -17,7 +17,7 @@ class TestReprocessing(unittest.TestCase):
         mypax.run()
 
         # Reprocess
-        mypax = core.Processor(config_names='Reprocess', config_dict={'pax': {
+        mypax = core.Processor(config_names='reclassify', config_dict={'pax': {
             'input_name':  'output1.hdf5',
             'output_name': 'output2'}})
         mypax.run()
@@ -27,7 +27,7 @@ class TestReprocessing(unittest.TestCase):
         store2 = h5py.File('output2.hdf5')
 
         # Verify both have same number of peaks etc
-        # NOT channelPeak, it's not read by default (for speed)
+        # NOT Hit, it's not read by default (for speed)
         for dname in ('Event', 'Peak', 'ReconstructedPosition'):
             self.assertEqual(store1[dname].len(), store2[dname].len())
 

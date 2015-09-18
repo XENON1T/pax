@@ -880,7 +880,7 @@ class ComputePeakProperties(plugin.TransformPlugin):
                 (and saved in the peak data object, but not used (I think/hope so?))
             The coincidence computed  after gain correction is stored in the root file
             For now we'll compute only the one before gain correction, so we can implement the sorting
-            TODO: implement the other one too!
+
             """
             if peak.type == 's1':
                 contributing_pmts = []
@@ -892,15 +892,14 @@ class ComputePeakProperties(plugin.TransformPlugin):
                         continue
                     if area > self.config['coincidence_threshold'] * (2 * 10 ** 6 / self.config['gains'][channel]):
                         contributing_pmts.append(channel)
-                peak.does_channel_contribute = np.array(
+                does_channel_contribute = np.array(
                     [ch in contributing_pmts for ch in range(self.config['n_channels'])],
                     dtype=np.bool)
             else:
                 # Hack to ensure S2s won't get pruned:
-                peak.does_channel_contribute = np.ones(self.config['n_channels'], dtype=np.bool)
+                does_channel_contribute = np.ones(self.config['n_channels'], dtype=np.bool)
 
-            peak.n_contributing_channels = len(peak.contributing_channels)
-            peak.does_channel_have_noise = np.zeros(self.config['n_channels'], dtype=np.bool)
+            peak.n_contributing_channels = np.sum(does_channel_contribute)
 
         # Prune excess S1s
         event.peaks = sort_and_prune_by(

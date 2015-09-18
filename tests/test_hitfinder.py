@@ -91,18 +91,22 @@ class TestHitFinder(unittest.TestCase):
         argmaxes = -1 * np.ones(100, dtype=np.int64)
         areas = -1 * np.ones(100, dtype=np.float64)
         centers = -1 * np.ones(100, dtype=np.float64)
+        deviations = -1 * np.ones(100, dtype=np.float64)
         for raw_hits in (
             [[0, 0], [4, 4], [14, 14]],
             [[0, 1], [13, 14]],
             [[0, 14]]
         ):
             raw_hits = np.array(raw_hits)
-            HitFinder.compute_hit_properties(w, raw_hits, argmaxes, areas, centers)
+            HitFinder.compute_hit_properties(w, raw_hits, argmaxes, areas, centers, deviations)
             for i, (l, r) in enumerate(raw_hits):
                 hitw = w[l:r + 1]
                 self.assertEqual(areas[i], np.sum(hitw))
                 self.assertEqual(argmaxes[i], np.argmax(hitw))
-                self.assertEqual(centers[i], np.average(np.arange(len(hitw)), weights=hitw))
+                self.assertEqual(centers[i], np.average(np.arange(len(hitw)),
+                                                        weights=hitw))
+                self.assertEqual(deviations[i], np.average(np.abs(np.arange(len(hitw)) - centers[i]),
+                                                           weights=hitw))
 
 
 if __name__ == '__main__':

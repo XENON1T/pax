@@ -18,7 +18,7 @@ class TestPosRecWeightedSum(unittest.TestCase):
     def setUp(self):  # noqa
         self.pax = core.Processor(config_names='XENON100', just_testing=True, config_dict={'pax': {
             'plugin_group_names': ['test'],
-            'test':               'PosSimple.PosRecWeightedSum'}})
+            'test':               'WeightedSum.PosRecWeightedSum'}})
         self.posrec_plugin = self.pax.get_plugin_by_name('PosRecWeightedSum')
 
         self.e = Event.empty_event()

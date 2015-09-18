@@ -7,19 +7,10 @@ NOTE: This class is stable within major releases.  Do not change any variable
 names of functionality between major releases.  You may add variables in minor
 releases.  Patch releases cannot modify this.
 """
-
-import inspect
-
 import numpy as np
 
-import math
 from pax import units
-
-# DO NOT use Model instead of StrictModel:
-# It improves performance, but kills serialization (numpy int types will appear in class etc)
-# TODO: For Hit class, we may want Model for performance?
-#       Look where the numpy int types get in, force them to python ints.
-from pax.data_model import StrictModel, ListField
+from pax.data_model import StrictModel, ListField, Model
 
 
 INT_NAN = -99999    # Do not change without talking to me. -Tunnell 12/3/2015 ... and me. -Jelle 05/08/2015
@@ -49,15 +40,17 @@ class ReconstructedPosition(StrictModel):
     # cylindrical coordinates
     @property
     def r(self):
-        return math.sqrt(self.x ** 2 + self.y ** 2)
+        return np.sqrt(self.x ** 2 + self.y ** 2)
 
     #: phi position, i.e. angle wrt the x=0 axis in the xy plane (radians)
     @property
     def phi(self):
-        return math.atan2(self.y, self.x)
+        return np.arctan2(self.y, self.x)
 
 
-class Hit(StrictModel):
+# Hit class uses model: no type checking, better performance
+# Using StrictModel instead causes 50% longer runtime of hitfinder
+class Hit(Model):
     """A hit results from, within individual channel, fluctation above baseline.
 
     These are be clustered into ordinary peaks later. This is commonly
@@ -73,6 +66,9 @@ class Hit(StrictModel):
 
     #: Time (since start of event in ns) of hit's center of gravity
     center = 0.0
+
+    #: Weighted sum of absolute deviation (in ns) of hit waveform from hit center
+    sum_absolute_deviation = 0.0
 
     left = 0                 #: Index of left bound (inclusive) of peak.
     right = 0                #: Index of right bound (INCLUSIVE!!) of peak
@@ -105,20 +101,14 @@ class Peak(StrictModel):
 
     A peak will be, e.g., S1 or S2.
     """
+    #: Type of peak (e.g., 's1', 's2', ...)
+    type = 'unknown'
+
+    #: Detector in which the peak was found, e.g. tpc or veto
+    detector = 'none'
 
     ##
-    # Basics
-    ##
-
-    type = 'unknown'        #: Type of peak (e.g., 's1', 's2', ...)
-    detector = 'none'       #: e.g. tpc or veto
-
-    #: Area of the pulse in photoelectrons. Includes only contributing pmts in the right detector.
-    #: For XDP matching rightmost sample is not included in area integral.
-    area = 0.0
-
-    ##
-    #  Low-level data
+    #  Hit, area, and saturation data
     ##
 
     #: Peaks in individual channels that make up this peak
@@ -127,25 +117,44 @@ class Peak(StrictModel):
     #: Array of areas in each PMT.
     area_per_channel = np.array([], dtype='float64')
 
-    #: Does a channel have no hits, but digitizer shows data?
-    does_channel_have_noise = np.array([], dtype=np.bool)
+    #: Area of the pulse in photoelectrons. Includes only contributing pmts in the right detector.
+    #: For XDP matching rightmost sample is not included in area integral.
+    area = 0.0
 
-    #: Does a PMT see 'something significant'? (thresholds configurable)
-    does_channel_contribute = np.array([], dtype=np.bool)
+    #: Fraction of area in the top array
+    area_fraction_top = 0.0
+
+    #: Number of hits in the peak, per channel (that is, it's an array with index = channel number)
+    hits_per_channel = np.array([], dtype=np.int16)
+
+    #: Total channels which contribute to the peak
+    n_contributing_channels = 0
+
+    #: Total channels in the top array contributing to the peak
+    n_contributing_channels_top = 0
+
+    #: Total number of hits in the peak
+    n_hits = 0
+
+    #: Fraction of hits in the top array
+    hits_fraction_top = 0.0
 
     #: Number of samples with ADC saturation in this peak, per channel
     n_saturated_per_channel = np.array([], dtype=np.int16)
 
     #: Total number of samples with ADC saturation threshold in all channels in this peak
-    n_saturated = 0
+    n_saturated_samples = 0
+
+    #: Total number of channels in the peakwhich have at least one saturated hit
+    n_saturated_channels = 0
+
+    @property
+    def does_channel_contribute(self):
+        return self.area_per_channel > 0
 
     @property
     def contributing_channels(self):
         return np.where(self.does_channel_contribute)[0]
-
-    @property
-    def noise_channels(self):
-        return np.where(self.does_channel_have_noise)[0]
 
     ##
     # Time distribution information
@@ -160,11 +169,26 @@ class Peak(StrictModel):
     #: Weighted (by hit area) std of hit times
     hit_time_std = 0.0
 
-    #: Central ange of peak (hit-only) sum waveform which includes fraction of area.
-    #: e.g. range_50p_area = distance (in time) between point of 25% area and 75% area (interpolated between samples)
-    range_20p_area = 0.0
-    range_50p_area = 0.0
-    range_90p_area = 0.0
+    #: Central range of peak (hit-only) sum waveform which includes a given decile (0-10) of area.
+    #: e.g. range_area_decile[5] = range of 50% area = distance (in time) between point
+    #: of 25% area and 75% area (with boundary samples added fractionally).
+    #: First element (0) is always zero, last element (10) is the full range of the peak.
+    range_area_decile = np.zeros(11, dtype=np.float)
+
+    @property
+    def range_50p_area(self):
+        return self.range_area_decile[5]
+
+    @property
+    def range_90p_area(self):
+        return self.range_area_decile[9]
+
+    @property
+    def full_range(self):
+        return self.range_area_decile[10]
+
+    #: Time at which the peak reaches 50% of its area (with the central sample considered fractionally)
+    area_midpoint = 0.0
 
     ##
     # Spatial pattern information
@@ -180,27 +204,22 @@ class Peak(StrictModel):
                 return rp
         return None
 
-    #: Weighted root mean square deviation of top hitpattern (cm)
-    top_hitpattern_spread = 0.0
+    #: Weighted-average distance of top array hits from weighted mean center on top array (cm)
+    top_hitpattern_spread = float('nan')
 
-    #: Weighted root mean square deviation of bottom hitpattern (cm)
-    bottom_hitpattern_spread = 0.0
-
-    #: Fraction of area in the top array
-    area_fraction_top = 0.0
+    #: Weighted-average distance of bottom array hits from weighted mean center on bottom array (cm)
+    bottom_hitpattern_spread = float('nan')
 
     ##
     # Signal / noise info
     ##
 
-    #: Number of PMTS which see something significant (depends on settings) ~~ "coincidence level"
-    n_contributing_channels = 0
-
-    #: Number of channels that show no hits, but digitizer shows data
-    n_noise_channels = 0
-
     #: Weighted (by area) mean hit amplitude / noise level in that hit's channel
     mean_amplitude_to_noise = 0.0
+
+    #: Number of pulses without hits overlapping (at least partially) with this peak.
+    #: Includes channels from other detectors (since veto and tpc cables could influence each other)
+    n_noise_pulses = 0
 
     ##
     # Sum-waveform properties
@@ -221,6 +240,23 @@ class Peak(StrictModel):
 
     #: Height of sum waveform (in pe/bin)
     height = 0.0
+
+    ##
+    # Clustering record
+    ##
+
+    #: Best goodness of split observed inside the peak
+    interior_split_goodness = float('nan')
+
+    #: Area fraction of the smallest of the two halves considered in the best split inside the peak
+    #: (i.e. the one corresponding to interior_split_goodness)
+    interior_split_fraction = float('nan')
+
+    #: Goodness of split of last split that was used to construct this peak (if split did occur).
+    birthing_split_goodness = float('nan')
+
+    #: Area of this peak / area of parent peak it was split from (if split did occur)
+    birthing_split_fraction = float('nan')
 
 
 class SumWaveform(StrictModel):
@@ -284,6 +320,9 @@ class Pulse(StrictModel):
     #: Noise sigma for this pulse (in ADC counts - but float!)
     noise_sigma = float('nan')
 
+    #: Number of hits found in this pulse
+    n_hits_found = 0
+
     @property
     def length(self):
         return self.right - self.left + 1
@@ -344,12 +383,12 @@ class Interaction(StrictModel):
     #: r position (cm)
     @property
     def r(self):
-        return math.sqrt(self.x ** 2 + self.y ** 2)
+        return np.sqrt(self.x ** 2 + self.y ** 2)
 
     #: phi position, i.e. angle wrt the x=0 axis in the xy plane (radians)
     @property
     def phi(self):
-        return math.atan2(self.y, self.x)
+        return np.arctan2(self.y, self.x)
 
     def set_position(self, recpos):
         """Sets the x, y position of the interaction
@@ -563,7 +602,7 @@ class Event(StrictModel):
         # Extract only peaks of a certain type
         peaks = []
         for peak in self.peaks:
-            if peak.detector != 'all':
+            if detector != 'all':
                 if peak.detector != detector:
                     continue
             if desired_type != 'all' and peak.type.lower() != desired_type:
@@ -576,18 +615,3 @@ class Event(StrictModel):
                        reverse=reverse)
 
         return peaks
-
-
-def _explain(class_name):
-    x = inspect.getmembers(class_name,
-                           predicate=inspect.isdatadescriptor)
-
-    for a, b in x:
-        if a.startswith('_'):
-            continue
-        print(a, b.__doc__)
-
-
-if __name__ == '__main__':
-    _explain(Peak)
-    _explain(Event)

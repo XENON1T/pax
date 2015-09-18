@@ -11,7 +11,7 @@ class TestPosRecChiSquareGamma(unittest.TestCase):
         self.pax = core.Processor(config_names='XENON100',
                                   just_testing=True,
                                   config_dict={'pax': {'plugin_group_names': ['test'],
-                                                       'test': 'PosRecChiSquareGamma.PosRecChiSquareGamma',
+                                                       'test': 'ChiSquareGamma.PosRecChiSquareGamma',
                                                        'logging_level': 'debug'}})
         self.plugin = self.pax.get_plugin_by_name('PosRecChiSquareGamma')
 

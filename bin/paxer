@@ -290,7 +290,7 @@ def main():
                            config_paths=args.config_path,
                            config_dict=copy.deepcopy(override_dict))
 
-        override_dict['pax']['plugin_group_names'] = ['dsp', 'transform']
+        override_dict['pax']['plugin_group_names'] = ['dsp', 'compute_properties', 'pre_analysis']
 
         # Keep track of processing state that threads can see
         input_done = multiprocessing.Event()
