@@ -11,24 +11,21 @@ import logging
 import os
 from time import strftime
 
+import numpy as np
 import pax    # for version
-from pax.datastructure import Event
+from pax.datastructure import Event, ReconstructedPosition
 
 
 class BasePlugin(object):
+    # Processor.run() will ensure this gets set after it has shut down the plugin
+    # If you ever shut down a plugin yourself, you need to set it too!!
+    has_shut_down = False
 
     def __init__(self, config_values, processor):
         self.name = self.__class__.__name__
         self.processor = processor
         self.log = logging.getLogger(self.name)
         self.total_time_taken = 0   # Total time in msec spent in this plugin
-
-        # run() will ensure this gets set after it has shut down the plugin
-        # If you ever shut down a plugin yourself, you need to set it too!!
-        # TODO: this is clunky...
-        self.has_shut_down = False
-
-        # Please do all config variable fetching in constructor to make changing config easier.
         self.config = config_values
         self._pre_startup()
         y = self.startup()
@@ -131,6 +128,60 @@ class OutputPlugin(ProcessPlugin):
         if result is not None:
             raise RuntimeError("%s returned a %s instead of None" % (self.name, type(event)))
         return event
+
+
+class PosRecPlugin(TransformPlugin):
+    """Base plugin for position reconstruction
+    Ensures all posrec plugins:
+     - use the ReconstructedPosition.algorithm field in the same way (set to self.name)
+     - act on the same set of peaks (all tpc peaks except lone-hits)
+     - have the same behaviour when giving up (add a position with x = y = nan)
+     - don't get passed peaks without top pmts active (we add the nan-position automatically)
+     - have self.pmts and self.pmt_locations available in the same way
+    """
+
+    def _pre_startup(self):
+        # List of integers of which PMTs to use, this algorithm uses the top pmt array to reconstruct
+        self.pmts = np.array(self.config['channels_top'])
+
+        # (x,y) Locations of these PMTs, stored as np.array([(x,y), (x,y), ...])
+        self.pmt_locations = np.zeros((len(self.pmts), 2))
+        for ch in self.pmts:
+            for dim in ('x', 'y'):
+                self.pmt_locations[ch][{'x': 0, 'y': 1}[dim]] = self.config['pmt_locations'][ch][dim]
+
+        TransformPlugin._pre_startup(self)
+
+    def transform_event(self, event):
+        for peak in event.get_peaks_by_type(detector='tpc'):
+            # Do not act on lone hits
+            if peak.type == 'lone_hit':
+                continue
+
+            # If there are no contributing top PMTs, don't even try:
+            area_top = np.sum(peak.area_per_channel[self.pmts])
+            if area_top == 0:
+                pos_dict = None
+            else:
+                pos_dict = self.reconstruct_position(peak)
+
+            # Parse the plugin's result
+            if pos_dict is None:
+                # The plugin gave up
+                pos_dict = {}
+            if isinstance(pos_dict, (list, tuple, np.ndarray)):
+                # The plugin returned (x, y)
+                pos_dict = dict(zip(('x', 'y'), pos_dict))
+
+            # Add the algorithm field, then append the position to the peak
+            pos_dict.update(dict(algorithm=self.name))
+            peak.reconstructed_positions.append(ReconstructedPosition(**pos_dict))
+
+        return event
+
+    def reconstruct_position(self, peak):
+        """Return a position {'x': ..., 'y': ...) or (x, y) for the peak or None (if you can't)."""
+        raise NotImplementedError
 
 
 class EventLoggingAdapter(logging.LoggerAdapter):

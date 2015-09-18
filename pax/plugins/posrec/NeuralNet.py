@@ -1,11 +1,9 @@
 """Neural network position reconstruction"""
 import numpy as np
-
 from pax import plugin
-from pax.datastructure import ReconstructedPosition
 
 
-class PosRecNeuralNet(plugin.TransformPlugin):
+class PosRecNeuralNet(plugin.PosRecPlugin):
 
     """Reconstruct S2 x,y positions from top pmt hit pattern using a single hidden layer feed-foward neural net
 
@@ -17,9 +15,9 @@ class PosRecNeuralNet(plugin.TransformPlugin):
         """ Initialize the neural net.
         """
         if self.config['pmt_0_is_fake']:
-            self.input_channels = np.array(self.config['channels_top'][1:])
+            self.input_channels = self.pmts[1:]
         else:
-            self.input_channels = np.array(self.config['channels_top'])
+            self.input_channels = self.pmts
         self.nn_output_unit = self.config['nn_output_unit']
 
         self.nn = NeuralNet(n_inputs=len(self.input_channels),
@@ -28,24 +26,13 @@ class PosRecNeuralNet(plugin.TransformPlugin):
                             weights=self.config['weights'],
                             biases=self.config['biases'])
 
-    def transform_event(self, event):
-        """Reconstruct the position of S2s in an event.
-        """
-        for peak in event.S2s():
+    def reconstruct_position(self, peak):
+        input_areas = peak.area_per_channel[self.input_channels]
 
-            input_areas = peak.area_per_channel[self.input_channels]
-
-            # Run the neural net
-            # Input is fraction of top area (see Xerawdp, PositionReconstruction.cpp, line 246)
-            # Convert from neural net's units to pax units
-            nn_output = self.nn.run(input_areas/np.sum(input_areas)) * self.nn_output_unit
-
-            peak.reconstructed_positions.append(ReconstructedPosition({
-                'x': nn_output[0],
-                'y': nn_output[1],
-                'algorithm': self.name}))
-
-        return event
+        # Run the neural net
+        # Input is fraction of top area (see Xerawdp, PositionReconstruction.cpp, line 246)
+        # Convert from neural net's units to pax units
+        return self.nn.run(input_areas/np.sum(input_areas)) * self.nn_output_unit
 
 
 class NeuralNet():
