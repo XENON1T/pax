@@ -613,6 +613,9 @@ class PeakViewer(PlotBase):
         self.peak_i = self.starting_peak_per_event.get(event.event_number, None)
         self.peaks = event.get_peaks_by_type(detector='tpc', sort_key='left', reverse=False)
         self.peaks = [p for p in self.peaks if p.type != 'lone_hit']
+        if len(self.peaks) == 0:
+            self.log.debug("No peaks in this event, will be a boring peakviewer plot...")
+            return event
 
         if event.event_number in self.starting_peak_per_event:
             # The user specified the left boundary of the desired starting peak
