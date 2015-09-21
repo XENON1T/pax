@@ -25,7 +25,13 @@ class Model(object):
       - dump as dictionary and JSON
     """
 
-    def __init__(self, kwargs_dict=None, **kwargs):
+    def __init__(self, kwargs_dict=None, quick_init=False, **kwargs):
+
+        # If quick=True, use shortcut. Use for simple classes only; will bypass type checking!
+        if quick_init:
+            self.__dict__.update(kwargs_dict)
+            self.__dict__.update(kwargs)
+            return
 
         # Initialize the collection fields to empty lists
         # super() is needed to bypass type checking in StrictModel

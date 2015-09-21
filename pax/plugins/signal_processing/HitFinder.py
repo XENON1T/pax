@@ -197,9 +197,9 @@ class FindHits(plugin.TransformPlugin):
 
                 # Store the hit
                 # int's need to be cast to avoid weird numpy types in our datastructure
-                # Type checking in data_model takes care of this, but if someone ever turns off type checking
-                # (e.g. because they want a x2 speed boost in loading data) I don't want them to get
-                # strange BSON encoding errors (bson.errors.InvalidDocument: Cannot encode object: 4332)
+                # leaving them in would lead to strange BSON encoding errors
+                # (bson.errors.InvalidDocument: Cannot encode object: 4332)
+                # Type checking in data_model could takes care of this, but it's too slow
                 event.all_hits.append(datastructure.Hit({
                     'channel':             channel,
                     'left':                int(left),
@@ -212,7 +212,7 @@ class FindHits(plugin.TransformPlugin):
                     'found_in_pulse':      pulse_i,
                     'n_saturated':         n_saturated,
                     'sum_absolute_deviation': deviations[i] * dt
-                }))
+                }, quick_init=True))
 
             # Diagnostic plotting
             # Difficult to move to separate plugin:
