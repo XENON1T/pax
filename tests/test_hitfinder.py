@@ -46,7 +46,7 @@ class TestHitFinder(unittest.TestCase):
 
     def test_intervals_above_threshold(self):
         # Test of the "hitfinder part" of the hitfinder
-        for q, a in (
+        for test_waveform, a in (
             ([0, 1, 2, 0, 4, -1, 60, 700, -4], [[1, 2], [4, 4], [6, 7]]),
             ([1, 1, 2, 0, 4, -1, 60, 700, -4], [[0, 2], [4, 4], [6, 7]]),
             ([1, 0, 2, 3, 4, -1, 60, 700, -4], [[0, 0], [2, 4], [6, 7]]),
@@ -54,7 +54,7 @@ class TestHitFinder(unittest.TestCase):
             ([0, 0, 2, 3, 4, -1, 60, 700, 800], [[2, 4], [6, 8]]),
         ):
             result_buffer = -1 * np.ones((100, 2), dtype=np.int64)
-            hits_found = HitFinder.find_intervals_above_threshold(np.array(q),
+            hits_found = HitFinder.find_intervals_above_threshold(np.array(test_waveform, dtype=np.float64),
                                                                   high_threshold=0,
                                                                   low_threshold=0,
                                                                   result_buffer=result_buffer)
@@ -76,7 +76,7 @@ class TestHitFinder(unittest.TestCase):
             [15, 98, 55,  8, 77, 26, 82, 67, 57],
             [42],
         ):
-            w = np.array(w, dtype=np.int16)
+            w = np.array(w, dtype=np.float64)
             baseline, noise, min_w, max_w = HitFinder.compute_pulse_properties(w, initial_baseline_samples=10)
             bl_should_be = np.mean(w[:min(len(w), 10)])
             self.assertEqual(baseline, bl_should_be)
@@ -87,7 +87,7 @@ class TestHitFinder(unittest.TestCase):
 
     def test_hit_properties(self):
         # Test of the hit property computation: argmax, area, center
-        w = np.array([47, 67, 51, 84, 81, 25, 67, 23, 62, 20,  5, 21, 97, 88, 74],)
+        w = np.array([47, 67, 51, 84, 81, 25, 67, 23, 62, 20,  5, 21, 97, 88, 74], dtype=np.float64)
         argmaxes = -1 * np.ones(100, dtype=np.int64)
         areas = -1 * np.ones(100, dtype=np.float64)
         centers = -1 * np.ones(100, dtype=np.float64)
@@ -97,7 +97,7 @@ class TestHitFinder(unittest.TestCase):
             [[0, 1], [13, 14]],
             [[0, 14]]
         ):
-            raw_hits = np.array(raw_hits)
+            raw_hits = np.array(raw_hits, dtype=np.int64)
             HitFinder.compute_hit_properties(w, raw_hits, argmaxes, areas, centers, deviations)
             for i, (l, r) in enumerate(raw_hits):
                 hitw = w[l:r + 1]

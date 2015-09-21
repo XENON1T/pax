@@ -128,7 +128,7 @@ def compute_area_deciles(w):
 
 
 @numba.jit(numba.void(numba.float32[:], numba.float64[:], numba.float64[:]),
-           nopython=True, cache=True)
+           nopython=True)
 def integrate_until_fraction(w, fractions_desired, results):
     """For array of fractions_desired, integrate w until fraction of area is reached, place sample index in results
     Will add last sample needed fractionally.
@@ -156,7 +156,7 @@ def integrate_until_fraction(w, fractions_desired, results):
         # Add this sample's area to the area seen, advance to the next sample
         fraction_seen += fraction_this_sample
     if needed_fraction == 1:
-        results[current_fraction_index] = len(w) - 1
+        results[current_fraction_index] = len(w)
     else:
         # Sorry, can't add the last fraction to the error message: numba doesn't allow it
         raise RuntimeError("Fraction not reached in waveform? What the ...?")
