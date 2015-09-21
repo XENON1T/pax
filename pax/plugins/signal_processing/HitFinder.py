@@ -281,7 +281,8 @@ class FindHits(plugin.TransformPlugin):
         return event
 
 
-@numba.jit(nopython=True)
+@numba.jit(numba.int32(numba.float64[:], numba.float64, numba.float64, numba.int64[:, :], numba.float64),
+           nopython=True, cache=True)
 def find_intervals_above_threshold(w, high_threshold, low_threshold, result_buffer, dynamic_low_threshold_coeff=0):
     """Fills result_buffer with l, r bounds of intervals in w > low_threshold which exceed high_threshold somewhere
         result_buffer: numpy N*2 array of ints, will be filled by function.
@@ -340,7 +341,9 @@ def find_intervals_above_threshold(w, high_threshold, low_threshold, result_buff
     return current_interval
 
 
-@numba.jit(nopython=True)
+@numba.jit(numba.void(numba.float64[:], numba.int64[:, :],
+                      numba.int64[:], numba.float64[:], numba.float64[:], numba.float64[:]),
+           nopython=True, cache=True)
 def compute_hit_properties(w, raw_hits, argmaxes, areas, centers, deviations):
     """Find properties of hits in w indicated by (l, r) bounds in raw_hits.
         raw_hits should be a numpy array of (left, right) bounds (inclusive)
@@ -373,7 +376,8 @@ def compute_hit_properties(w, raw_hits, argmaxes, areas, centers, deviations):
         deviations[hit_i] = deviation
 
 
-@numba.jit(nopython=True)
+@numba.jit(numba.typeof((1.0, 1.0, 1.0, 1.0))(numba.float64[:], numba.int64),
+           nopython=True, cache=True)
 def compute_pulse_properties(w, initial_baseline_samples):
     """Compute basic pulse properties quickly
     :param w: Raw pulse waveform in ADC counts

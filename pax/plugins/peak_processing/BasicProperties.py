@@ -127,7 +127,8 @@ def compute_area_deciles(w):
     return index_of_area_fraction[10], (index_of_area_fraction[10:] - index_of_area_fraction[10::-1]),
 
 
-@numba.jit(nopython=True)
+@numba.jit(numba.void(numba.float32[:], numba.float64[:], numba.float64[:]),
+           nopython=True, cache=True)
 def integrate_until_fraction(w, fractions_desired, results):
     """For array of fractions_desired, integrate w until fraction of area is reached, place sample index in results
     Will add last sample needed fractionally.
@@ -150,7 +151,7 @@ def integrate_until_fraction(w, fractions_desired, results):
             # Advance to the next fraction
             current_fraction_index += 1
             if current_fraction_index > len(fractions_desired) - 1:
-                return results
+                return
             needed_fraction = fractions_desired[current_fraction_index]
         # Add this sample's area to the area seen, advance to the next sample
         fraction_seen += fraction_this_sample

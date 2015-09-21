@@ -99,25 +99,8 @@ class NaturalBreaksClustering(plugin.TransformPlugin):
         return [peak]
 
 
-@numba.jit(nopython=True)
-def compute_split_goodness(split_index, center, deviation, area):
-    """Return "goodness of split" for splitting hits >= split_index into right cluster, < into left.
-       left, right: left, right indices of hits
-       area: area of hits
-    "goodness of split" = 1 - (sad(left cluster) + sad(right cluster) / sad(all_hits)
-      where sad = weighted (by area) sum of absolute deviation from mean.
-    For more information, see this note:
-    https://xecluster.lngs.infn.it/dokuwiki/doku.php?id=xenon:xenon1t:processor:natural_breaks_clustering
-    """
-    if split_index > len(center) - 1 or split_index <= 0:
-        raise ValueError("Ridiculous split index received!")
-    numerator = _sad_fallback(center[:split_index], areas=area[:split_index], fallback=deviation[:split_index])
-    numerator += _sad_fallback(center[split_index:], areas=area[split_index:], fallback=deviation[split_index:])
-    denominator = _sad_fallback(center, areas=area, fallback=deviation)
-    return 1 - numerator / denominator
-
-
-@numba.jit(nopython=True)
+@numba.jit(numba.float64(numba.float64[:], numba.float64[:], numba.float64[:]),
+           nopython=True, cache=True)
 def _sad_fallback(x, areas, fallback):
     # While there is a one-pass algorithm for variance, I haven't found one for sad.. maybe it doesn't exists
     # First calculate the weighted mean.
@@ -135,30 +118,23 @@ def _sad_fallback(x, areas, fallback):
     return sad
 
 
-@numba.jit(nopython=True)
-def _sad_two(x1, x2, weights):
-    """Returns the weighted sum absolute deviation from the weighted mean of x1 and x2 (considered as one array)
-    x1 and x2 must have same length.
+@numba.jit(numba.float64(numba.int64, numba.float64[:], numba.float64[:], numba.float64[:]),
+           nopython=False, cache=True)
+def compute_split_goodness(split_index, center, deviation, area):
+    """Return "goodness of split" for splitting hits >= split_index into right cluster, < into left.
+       left, right: left, right indices of hits
+       area: area of hits
+    "goodness of split" = 1 - (sad(left cluster) + sad(right cluster) / sad(all_hits)
+      where sad = weighted (by area) sum of absolute deviation from mean.
+    For more information, see this note:
+    https://xecluster.lngs.infn.it/dokuwiki/doku.php?id=xenon:xenon1t:processor:natural_breaks_clustering
     """
-    # First calculate the weighted mean.
-    # While there is a one-pass algorithm for variance, I haven't found one for sad.. maybe it doesn't exists
-    mean = 0
-    sum_weights = 0
-    for i in range(len(x1)):
-        mean += x1[i] * weights[i]
-        mean += x2[i] * weights[i]
-        sum_weights += 2 * weights[i]
-    mean /= sum_weights
-
-    # Now calculate the weighted sum absolute deviation
-    sad = 0
-    for i in range(len(x1)):
-        sad += abs(x1[i] - mean) * weights[i]
-        sad += abs(x2[i] - mean) * weights[i]
-    # To normalize to the case with all weights 1, we multipy by n / sum_w
-    sad *= 2 * len(x1) / sum_weights
-
-    return sad
+    if split_index > len(center) - 1 or split_index <= 0:
+        raise ValueError("Ridiculous split index received!")
+    numerator = _sad_fallback(center[:split_index], areas=area[:split_index], fallback=deviation[:split_index])
+    numerator += _sad_fallback(center[split_index:], areas=area[split_index:], fallback=deviation[split_index:])
+    denominator = _sad_fallback(center, areas=area, fallback=deviation)
+    return 1 - numerator / denominator
 
 
 def indices_of_largest_n(a, n):
