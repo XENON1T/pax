@@ -82,6 +82,10 @@ class Simulator(object):
         log.debug('Simulating %s samples before and %s samples after PMT pulse centers.' % (
             self.config['samples_before_pulse_center'], self.config['samples_after_pulse_center']))
 
+        # Load QEs, replace float('nan') with mean of others
+        qes = np.array(self.config['quantum_efficiencies'])
+        qes[np.isnan(qes)] = np.nanmean(qes)
+
         # Load real noise data from file, if requested
         if self.config['real_noise_file']:
             self.noise_data = np.load(utils.data_file_name(self.config['real_noise_file']))['arr_0']
@@ -93,8 +97,7 @@ class Simulator(object):
         if self.config.get('s2_patterns_file', None) is not None:
             self.s2_patterns = PatternFitter(utils.data_file_name(self.config['s2_patterns_file']),
                                              zoom_factor=self.config.get('s2_patterns_zoom_factor', 1),
-                                             adjust_to_qe=self.config['quantum_efficiencies'][
-                                                 self.config['channels_top']])
+                                             adjust_to_qe=qes[self.config['channels_top']])
         else:
             self.s2_patterns = None
 
