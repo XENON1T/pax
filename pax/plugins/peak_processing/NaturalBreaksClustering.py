@@ -2,6 +2,7 @@ import numpy as np
 import numba
 
 from pax import plugin, datastructure, utils
+from scipy.interpolate import InterpolatedUnivariateSpline
 
 
 class NaturalBreaksClustering(plugin.TransformPlugin):
@@ -21,7 +22,7 @@ class NaturalBreaksClustering(plugin.TransformPlugin):
         self.dt = self.config['sample_duration']
         self.min_gap_size_for_break = self.config['min_gap_size_for_break'] / self.dt
         self.max_n_gaps_to_test = self.config['max_n_gaps_to_test']
-        self.min_split_goodness = eval(self.config['min_split_goodness'])
+        self.min_split_goodness = InterpolatedUnivariateSpline(*self.config['split_goodness_threshold'])
 
     def transform_event(self, event):
         new_peaks = []
@@ -57,7 +58,7 @@ class NaturalBreaksClustering(plugin.TransformPlugin):
         self.log.debug("Clustering hits %d-%d" % (center[0], center[-1]))
 
         # Get indices of the self.max_n_gaps_to_test largest gaps
-        split_threshold = self.min_split_goodness(area_tot)
+        split_threshold = self.min_split_goodness(np.log10(area_tot))
         max_split_goodness = float('-inf')
         max_split_goodness_i = 0
         for gap_i in indices_of_largest_n(gaps, self.max_n_gaps_to_test):
@@ -73,7 +74,7 @@ class NaturalBreaksClustering(plugin.TransformPlugin):
             split_goodness = compute_split_goodness(split_i, center, deviation, area)
 
             # Should we split? If so, recurse.
-            if split_goodness > self.min_split_goodness(area_tot):
+            if split_goodness > split_threshold:
                 self.log.debug("SPLITTING at %d  (%s > %s)" % (split_i, split_goodness, split_threshold))
                 peak_l = datastructure.Peak(hits=hits[:split_i],
                                             detector=peak.detector,
@@ -86,7 +87,7 @@ class NaturalBreaksClustering(plugin.TransformPlugin):
                 return self.cluster(peak_l) + self.cluster(peak_r)
             else:
                 self.log.debug("Proposed split at %d not good enough (%0.3f < %0.3f)" % (
-                    split_i, split_goodness, self.min_split_goodness(area_tot)))
+                    split_i, split_goodness, split_threshold))
             if split_goodness >= max_split_goodness:
                 max_split_goodness = split_goodness
                 max_split_goodness_i = split_i
