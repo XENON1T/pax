@@ -298,7 +298,7 @@ class TableWriter(plugin.OutputPlugin):
                         'records':         None,
                         # Initialize dtype with the index fields + every column
                         # in array becomes a field.... :-(
-                        'dtype':           [(x[0], np.int) for x in index_fields] +
+                        'dtype':           [(x[0], np.int64) for x in index_fields] +
                                            [(str(i), field_value.dtype)
                                             for i in range(len(field_value))],
                         'index_depth':     len(m_indices),
