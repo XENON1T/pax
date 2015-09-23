@@ -42,7 +42,8 @@ class PosRecChiSquareGamma(plugin.PosRecPlugin):
 
         # Load gains
         self.gains = np.array(self.config['gains'])[self.pmts]
-        self.gain_sigmas = np.array(self.config['gain_sigmas'])[self.pmts] / np.where(self.gains != 0, self.gains, float('nan'))
+        self.gain_sigmas = np.array(self.config['gain_sigmas'])[self.pmts] \
+                                / np.where(self.gains != 0, self.gains, float('nan'))
 
         # Load QE
         self.qes = np.array(self.config['quantum_efficiencies'], dtype=float)[self.pmts]
