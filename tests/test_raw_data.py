@@ -1,5 +1,7 @@
 import unittest
 import tempfile
+import shutil
+import six
 
 from pax import core
 
@@ -44,9 +46,13 @@ class TestRawData(unittest.TestCase):
         """
         for plugin_info in plugins_to_test:
 
+            # Disable the avro test on py2
+            if six.PY2 and plugin_info['name'] == 'Avro':
+                continue
+
             # If this test errors in a strange way, the directory may not get deleted.
             # So make it somewhere the os knows to delete it sometime
-            tempdir = tempfile.TemporaryDirectory()
+            tempdir = tempfile.mkdtemp()
 
             # This print statement is necessary to help user figure out which plugin failed, if any does fail.
             print("\n\nNow testing %s\n" % plugin_info['name'])
@@ -55,22 +61,17 @@ class TestRawData(unittest.TestCase):
                               'plugin_group_names': ['input', 'output'],
                               'input': 'XED.ReadXED',
                               'output': plugin_info['write_plugin']},
-                      plugin_info['write_plugin']: {'output_name': tempdir.name,
+                      plugin_info['write_plugin']: {'output_name': tempdir,
                                                     'overwrite_output': True}}
 
             mypax = core.Processor(config_names='XENON100', config_dict=config)
 
-            # Wrap this in a try-except, to ensure the read plugin shutdown is run BEFORE the tempdir shutdown
-            try:
-                mypax.run()
-            except Exception as e:
-                mypax.shutdown()
-                raise e
+            mypax.run()
 
             config = {'pax': {'events_to_process': [0, 1],
                               'plugin_group_names': ['input'],
                               'input': plugin_info['read_plugin']},
-                      plugin_info['read_plugin']: {'input_name': tempdir.name}}
+                      plugin_info['read_plugin']: {'input_name': tempdir}}
 
             mypax2 = core.Processor(config_names='XENON100', config_dict=config)
             self.read_plugin = mypax2.input_plugin
@@ -98,7 +99,7 @@ class TestRawData(unittest.TestCase):
             mypax2.shutdown()    # Needed to close the file in time before dir gets removed
 
             # Cleaning up the temporary dir explicitly (otherwise tempfile gives warning):
-            tempdir.cleanup()
+            shutil.rmtree(tempdir)
 
 if __name__ == '__main__':
     unittest.main()

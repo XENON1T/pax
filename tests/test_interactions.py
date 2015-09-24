@@ -19,6 +19,10 @@ class TestBuildInteractions(unittest.TestCase):
                                           'xy_posrec_preference': ['a', 'b']}})
         self.plugin = self.pax.get_plugin_by_name('BuildInteractions')
 
+    def tearDown(self):
+        delattr(self, 'pax')
+        delattr(self, 'plugin')
+
     def test_interaction_building(self):
         e = datastructure.Event.empty_event()
         recposes = [datastructure.ReconstructedPosition(x=0, y=0, algorithm='c'),

@@ -2,12 +2,11 @@
 
 language: python
 
-python:
-  - "3.4"
+sudo: false
 
-matrix:
-  allow_failures:
-    - os: osx
+python:
+  - 2.7
+  - 3.4
 
 notifications:
   email:
@@ -26,21 +25,42 @@ services:
 env:
   - ROOT=5.34.25
   - ROOT=6.03.04
-  
+
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    packages:
+    - build-essential
+    - git
+    - dpkg-dev
+    - make
+    - binutils
+    - libx11-dev
+    - libxpm-dev
+    - libxft-dev
+    - libxext-dev
+    - gcc-multilib
+    - libsnappy1
+    - libsnappy-dev
+    - python-software-properties
+    - gcc-4.8
+    - g++-4.8
 
 os:
-  - osx
+  #- osx
   - linux
 
 install:
   - deactivate
-  - echo ${TRAVIS_OS_NAME}
-  - source travis/${TRAVIS_OS_NAME}_setup.sh
   - gcc --version
 
   # Conda
-  - if [ "${TRAVIS_OS_NAME}" == "linux" ]; then wget -nv http://repo.continuum.io/miniconda/Miniconda3-3.9.1-Linux-x86_64.sh -O miniconda.sh; fi
-  - if [ "${TRAVIS_OS_NAME}" == "osx" ]; then wget -nv http://repo.continuum.io/miniconda/Miniconda3-3.9.1-MacOSX-x86_64.sh -O miniconda.sh; fi
+  - if [ "${TRAVIS_OS_NAME}" == "osx" ]; then brew install wget; fi
+  - if [ $TRAVIS_PYTHON_VERSION == 2.7 ]; then wget -nv http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh; fi
+  - if [ $TRAVIS_PYTHON_VERSION == 3.4 ]; then wget -nv http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh; fi
+  #- if [ "${TRAVIS_OS_NAME}" == "linux" ]; then wget -nv http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh; fi
+  #- if [ "${TRAVIS_OS_NAME}" == "osx" ]; then wget -nv http://repo.continuum.io/miniconda/Miniconda3-3.9.1-MacOSX-x86_64.sh -O miniconda.sh; fi
   
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
@@ -64,11 +84,15 @@ install:
   - if [ "${ROOT}" == "5.34.25" ]; then cp /home/travis/build/XENON1T/pax/travis/modified_ROOT_v${ROOT}.py /home/travis/build/XENON1T/pax/root/lib/ROOT.py; fi
 
   # Does pyROOT still work?
-  - root -l -q
-  - python -c "import ROOT; ROOT.TBrowser()"
+  #- root -l -q
+  #- python -c "import ROOT; ROOT.TBrowser()"
 
   # Install pax
   - python setup.py install
+  
+  # Run a simple test file, to see if the tests load
+  # If there is an import failure, you don't get to know which import is failing otherwise
+  - python tests/test_maxpmt.py
 
 # command to run tests, e.g. python setup.py test
 script:

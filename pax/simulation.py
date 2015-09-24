@@ -3,6 +3,7 @@ Waveform simulator ("FaX") - physics backend
 The only I/O stuff here is pax event creation, everything else is in the WaveformSimulator plugins
 """
 
+from __future__ import division
 import logging
 import math
 import time

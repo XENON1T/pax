@@ -15,7 +15,7 @@ If an XED file has non-continuous event numbers, searching for individual events
 The write plugin always writes zle0 XED files with bzip2 data compression.
 """
 
-
+from __future__ import division
 import bz2
 import io
 import time
@@ -136,7 +136,7 @@ class ReadXED(InputFromFolder):
             sample_duration=int(self.config['sample_duration']),
             length=event_layer_metadata['samples_in_event']
         )
-        event.dataset_name = self.file_metadata['dataset_name'].decode("utf-8")
+        event.dataset_name = str(self.file_metadata['dataset_name'].decode("utf-8"))
         event.event_number = int(event_layer_metadata['event_number'])
 
         if event_layer_metadata['type'] == b'raw0':
@@ -165,7 +165,7 @@ class ReadXED(InputFromFolder):
             # Lots of possibilities for errors here: 4-byte groupings, 1-byte groupings, little-endian...
             # Checked (for 14 events); agrees with channels from
             # LibXDIO->Moxie->MongoDB->MongoDBInput plugin
-            mask_bytes = 4 * math.ceil(event_layer_metadata['channels'] / 32)
+            mask_bytes = 4 * int(math.ceil(event_layer_metadata['channels'] / 32))
             mask_bits = np.unpackbits(np.fromfile(self.current_xedfile,
                                                   dtype='uint8',
                                                   count=mask_bytes))

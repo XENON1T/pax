@@ -1,5 +1,5 @@
 import glob
-import gzip
+import zlib
 import os
 import shutil
 import zipfile
@@ -288,9 +288,9 @@ class ReadZipped(InputFromFolder):
 
     def get_single_event_in_current_file(self, event_number):
         with self.current_file.open(str(event_number)) as event_file_in_zip:
-            doc = event_file_in_zip.read()
-            doc = gzip.decompress(doc)
-            return self.from_format(doc)
+            data = event_file_in_zip.read()
+            data = zlib.decompress(data)
+            return self.from_format(data)
 
     def close(self):
         """Close the currently open file"""
@@ -303,16 +303,19 @@ class ReadZipped(InputFromFolder):
 class WriteZipped(WriteToFolder):
 
     """Write raw data to a folder of zipfiles containing [some format]
+    We use zlib, not zip's deflate, for compression.
     """
     file_extension = 'zip'
 
     def open(self, filename):
         self.current_file = zipfile.ZipFile(filename, mode='w')
+        self.compresslevel = self.config.get('compresslevel', 4)
 
     def write_event_to_current_file(self, event):
-        self.current_file.writestr(str(event.event_number),
-                                   gzip.compress(self.to_format(event),
-                                                 self.config.get('compresslevel', 4)))
+        # Convert the event to the desired format (e.g. bson)
+        data = self.to_format(event)
+        data = zlib.compress(data, self.compresslevel)
+        self.current_file.writestr(str(event.event_number), data)
 
     def close(self):
         self.current_file.close()

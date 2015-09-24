@@ -27,6 +27,11 @@ class TestPosRecWeightedSum(unittest.TestCase):
                                   'right': 9,
                                   'type':  's2'}))
 
+    def tearDown(self):
+        delattr(self, 'pax')
+        delattr(self, 'posrec_plugin')
+        delattr(self, 'e')
+
     def test_something(self):
         self.assertIsInstance(self.posrec_plugin, plugin.TransformPlugin)
         self.assertEqual(self.posrec_plugin.__class__.__name__, 'PosRecWeightedSum')

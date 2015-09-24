@@ -148,8 +148,12 @@ class InterpolatingMap(object):
             # This code also supports r/phi coordinates... though it probably makes no sense on a regular grid..
             return self.get_value(*[getattr(position, q[0]) for q in self.coordinate_system], map_name=map_name)
 
-    def get_value(self, *coordinates, map_name='map'):
-        """Returns the value of the map at the position given by coordinates"""
+    def get_value(self, *coordinates, **kwargs):
+        """Returns the value of the map at the position given by coordinates
+        Keyword arguments:
+          - map_name: Name of the map to use. By default: 'map'.
+        """
+        map_name = kwargs.get('map_name', 'map')
         result = self.interpolators[map_name](*coordinates)
         try:
             return float(result[0])
@@ -248,8 +252,12 @@ class Vector2DGridMap(InterpolatingMap):
 
         return get_data
 
-    def get_value(self, *coordinates, map_name='map'):
-        """Returns the value of the map at the position given by coordinates"""
+    def get_value(self, *coordinates, **kwargs):
+        """Returns the value of the map at the position given by coordinates
+        Keyword arguments:
+          - map_name: Name of the map to use. By default: 'map'.
+        """
+        map_name = kwargs.get('map_name', 'map')
         return self.interpolators[map_name](*coordinates)
 
     @staticmethod

@@ -520,5 +520,8 @@ class TableReader(plugin.InputPlugin):
                 continue
             if isinstance(v, np.bytes_):
                 v = v.decode("utf-8")
+            # For py2 compatibility:
+            if v.__class__.__name__ == 'unicode':
+                v = str(v)
             result[k] = v
         return result

@@ -5,6 +5,8 @@ have a 'consistent' unit system.  There are almost no cases that you should
 change this without talking with a maintainer.
 """
 
+from __future__ import division
+
 # From physics.nist.gov, January 2015
 electron_charge_SI = 1.602176565 * 10 ** (-19)
 boltzmannConstant_SI = 1.3806488 * 10 ** (-23)

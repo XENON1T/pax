@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
+import six
+import os
 
 try:
     from setuptools import setup
@@ -11,6 +12,27 @@ readme = open('README.rst').read()
 history = open('HISTORY.rst').read().replace('.. :changelog:', '')
 
 requirements = open('requirements.txt').read().splitlines()
+
+# The avro package has a different name in python2:
+if six.PY2:
+    del requirements[requirements.index('avro-python3')]
+    requirements.append('avro')
+    requirements.append('configparser')
+
+# For some reason h5py is often not seen by pip if it was installed by conda...
+# so check for h5py presence manually, and remove it from requirements if already found.
+try:
+    import h5py
+except ImportError:
+    pass
+else:
+    del requirements[requirements.index('h5py')]
+
+# Snappy cannot be installed automatically on windows
+if os.name == 'nt':
+    print("You're on windows: we can't install snappy manually. "
+          "See http://xenon1t.github.io/pax/faq.html#can-i-set-up-pax-on-my-windows-machine")
+    del requirements[requirements.index('python-snappy>=0.5')]
 
 test_requirements = requirements + ['flake8',
                                     'tox',
