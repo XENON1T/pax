@@ -1,3 +1,4 @@
+from __future__ import division
 import unittest
 import numpy as np
 from numpy import testing as np_testing
@@ -11,7 +12,7 @@ class TestPeakProperties(unittest.TestCase):
     def test_integrate_until_fraction(self):
         # Test a simple ones-only waveform, for which no interpolation will be needed
         w = np.ones(100, dtype=np.float32)
-        fractions_desired = np.array([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]) / 100
+        fractions_desired = np.array([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100], dtype=np.float64) / 100
         result = np.zeros(len(fractions_desired))
         integrate_until_fraction(w, fractions_desired, result)
         np_testing.assert_almost_equal(result, fractions_desired * 100, decimal=4)
