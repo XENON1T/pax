@@ -206,6 +206,16 @@ class Peak(StrictModel):
                 return rp
         return None
 
+    def get_position_from_preferred_algorithm(self, algorithm_list, get_from=None):
+        """Return reconstructed position by the first algorithm in list,
+        unless it doesn't exist or is a nan position, then moves on to further algorithms."""
+        for algo in algorithm_list:
+            rp = self.get_reconstructed_position_from_algorithm(algo)
+            if rp is not None and rp.x is not float('nan'):
+                return rp
+        else:
+            raise ValueError("Could not find any position from the chosen algorithms: %s" % algorithm_list)
+
     #: Weighted-average distance of top array hits from weighted mean center on top array (cm)
     top_hitpattern_spread = float('nan')
 
