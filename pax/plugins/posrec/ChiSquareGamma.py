@@ -40,13 +40,15 @@ class PosRecChiSquareGamma(plugin.PosRecPlugin):
         # Load LCE maps
         self.s2_lce_map = self.processor.simulator.s2_lce_map
 
-        # Load gains (gains from config file, gain error 0.5 pe for all pmts for now)
+        # Load gains
         self.gains = np.array(self.config['gains'])[self.pmts]
-        self.gain_errors = np.ones(len(self.pmts)) * 0.5  # TODO: remove placeholder
+        self.gain_sigmas = np.array(self.config['gain_sigmas'])[self.pmts] \
+            / np.where(self.gains != 0, self.gains, float('nan'))
 
-        # Load QE (for now use arbitrary values)
-        self.qes = np.ones(len(self.pmts)) * 0.3  # TODO: remove placeholder
-        self.qe_errors = np.ones(len(self.pmts)) * 0.009  # TODO: remove placeholder
+        # Load QE
+        self.qes = np.array(self.config['quantum_efficiencies'], dtype=float)[self.pmts]
+        self.qes[0] = float('nan')  # PMT 0 is fake
+        self.qe_std = np.nanstd(self.qes)
 
         # Number of pmts (minus dead pmts)
         self.is_pmt_alive = self.gains > 0
@@ -109,8 +111,8 @@ class PosRecChiSquareGamma(plugin.PosRecPlugin):
         self.area_photons = self.photons.sum()
 
         # Error term per PMT in chi2 function
-        self.pmt_errors = (self.qe_errors[self.is_pmt_in] / self.qes[self.is_pmt_in]) ** 4
-        self.pmt_errors += (self.gain_errors[self.is_pmt_in] / self.gains[self.is_pmt_in]) ** 2
+        self.pmt_errors = (self.qe_std / self.qes[self.is_pmt_in]) ** 4
+        self.pmt_errors += (self.gain_sigmas[self.is_pmt_in] / self.gains[self.is_pmt_in]) ** 2
 
         # Calculate which pmt has maximum signal
         pmts_in = np.array(self.pmts)[self.is_pmt_in]
