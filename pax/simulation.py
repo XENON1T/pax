@@ -12,6 +12,7 @@ import numpy as np
 from scipy import stats
 
 from pax import units, utils, datastructure
+from pax.PatternFitter import PatternFitter
 from pax.utils import Memoize
 
 
@@ -89,11 +90,11 @@ class Simulator(object):
             self.channel_offset = 1 if self.config['pmt_0_is_fake'] else 0
 
         # Init s2 per pmt lce map
-        if self.config.get('s2_lce_map', None) is not None:
-            self.s2_lce_map = utils.Vector2DGridMap(filename=utils.data_file_name(self.config['s2_lce_map']),
-                                                    zoom_factor=self.config.get('s2_lce_map_zoom_factor', 1))
+        if self.config.get('s2_patterns_file', None) is not None:
+            self.s2_patterns = PatternFitter(utils.data_file_name(self.config['s2_patterns_file']),
+                                             zoom_factor=self.config.get('s2_patterns_zoom_factor', 1))
         else:
-            self.s2_lce_map = None
+            self.s2_patterns = None
 
     def s2_electrons(self, electrons_generated=None, z=0., t=0.):
         """Return a list of electron arrival times in the ELR region caused by an S2 process.
@@ -498,21 +499,21 @@ class Simulator(object):
         p_random = self.config.get('randomize_fraction_of_s2_top_array_photons', 0)
         if p_random:
             n_random = np.random.binomial(n=n_photons, p=p_random)
-            hitp = self.distribute_photons_by_lcemap(n_top - n_random, self.s2_lce_map, (x, y))
+            hitp = self.distribute_photons_by_pattern(n_top - n_random, self.s2_patterns, (x, y))
             hitp += self.randomize_photons_over_channels(n_random, channels=self.config['channels_top'])
         else:
-            hitp = self.distribute_photons_by_lcemap(n_top, self.s2_lce_map, (x, y))
+            hitp = self.distribute_photons_by_pattern(n_top, self.s2_patterns, (x, y))
 
         # The bottom photons are distributed randomly
         hitp += self.randomize_photons_over_channels(n_photons - n_top,
                                                      channels=self.config['channels_bottom'])
         return hitp
 
-    def distribute_photons_by_lcemap(self, n_photons, lce_map, coordinate_tuple):
+    def distribute_photons_by_pattern(self, n_photons, pattern_fitter, coordinate_tuple):
         # TODO: assumes channels drawn from top, or from all channels (i.e. first index 0!!!)
-        lces = lce_map.get_value(*coordinate_tuple)
+        lces = pattern_fitter.expected_pattern(coordinate_tuple)
         if np.sum(lces) == 0:
-            raise ValueError("LCEs at position %s are all zero, cannot be normalized!" % coordinate_tuple)
+            raise ValueError("LCEs at position %s are all zero, cannot be normalized!" % (coordinate_tuple,))
         return self.randomize_photons_over_channels(n_photons,
                                                     channels=range(len(lces)),
                                                     relative_lce_per_channel=lces)
@@ -595,7 +596,7 @@ class SimulatedHitpattern(object):
         # and want that split to be random too.
         np.random.shuffle(photon_timings)
 
-        if z == - self.config['gate_to_anode_distance'] and simulator.s2_lce_map is not None:
+        if z == - self.config['gate_to_anode_distance'] and simulator.s2_patterns is not None:
             # Generated at anode: use S2 LCE data
             hitp = simulator.distribute_s2_photons(self.n_photons, x, y)
         else:

@@ -5,3 +5,7 @@ class PulseBeyondEventError(Exception):
 
 class OutputFileAlreadyExistsError(Exception):
     pass
+
+
+class CoordinateOutOfRangeException(Exception):
+    pass

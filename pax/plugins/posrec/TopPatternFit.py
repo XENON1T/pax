@@ -1,6 +1,5 @@
 import numpy as np
-import pax.plugins.PatternFitter as PatternFitter
-from pax import plugin
+from pax import plugin, exceptions
 
 
 class PosRecTopPatternFit(plugin.PosRecPlugin):
@@ -28,8 +27,8 @@ class PosRecTopPatternFit(plugin.PosRecPlugin):
         # Number of pmts (minus dead pmts)
         self.is_pmt_alive = self.gains > 0
 
-        # Load the pattern fitter
-        self.pf = PatternFitter.PatternFitter('s2_xy_lce_map_XENON100_Xerawdp0.4.5.json.gz')
+        # Load the S2 hitpattern fitter
+        self.pf = self.processor.simulator.s2_patterns
 
     def reconstruct_position(self, peak):
         """Reconstruct position by optimizing hitpattern goodness of fit to per-PMT LCE map.
@@ -63,7 +62,7 @@ class PosRecTopPatternFit(plugin.PosRecPlugin):
                                                                point_selection=is_pmt_in,
                                                                square_syst_errors=square_syst_errors,
                                                                statistic=self.statistic)
-            except PatternFitter.CoordinateOutOfRangeException:
+            except exceptions.CoordinateOutOfRangeException:
                 # Oops, that position is impossible. Leave goodness of fit as nan
                 pass
             if np.isnan(position.goodness_of_fit):
@@ -72,7 +71,7 @@ class PosRecTopPatternFit(plugin.PosRecPlugin):
             position.ndf = ndf
 
         ##
-        # PART 2 - find an even better position
+        # Part 2 - find an even better position...
         ##
         if self.skip_reconstruction:
             return None
@@ -106,7 +105,7 @@ class PosRecTopPatternFit(plugin.PosRecPlugin):
             try:
                 (x, y), gof = self.pf.minimize_gof_powell(start_coordinates=(seed_pos.x, seed_pos.y),
                                                           **common_options)
-            except PatternFitter.CoordinateOutOfRangeException:
+            except exceptions.CoordinateOutOfRangeException:
                 # The central position was out of range of the map! Happens occasionally if you don't use seed=best.
                 return None
         else:
