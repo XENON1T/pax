@@ -18,7 +18,7 @@ CoordinateData = namedtuple('CoordinateData', ('minimum', 'maximum', 'n_bin_edge
 
 class PatternFitter(object):
 
-    def __init__(self, filename, zoom_factor=1):
+    def __init__(self, filename, zoom_factor=1, adjust_to_qe=None):
         """Initialize a pattern map file from filename.
         Format of the file is very similar to InterpolatingMap; a (gzip compressed) json containing:
             'coordinate_system' :   [['x', x_min, x_max, n_x], ['y',...
@@ -26,6 +26,11 @@ class PatternFitter(object):
             'name':                 'Nice file with maps',
             'description':          'Say what the maps are, who you are, your favorite food, etc',
             'timestamp':            unix epoch seconds timestamp
+        zoom_factor is factor by which the spatial dimensions of the map will be upsampled
+
+        adjust_to_qe is a list of same length as the number of pmts in the map;
+            we'll adjust the patterns to account for these QEs, upweighing PMTs with higher QEs
+            Obviously this should be None if map already includes QE effects (e.g. if it is data-derived)!
         """
         bla = gzip.open(utils.data_file_name(filename)).read()
         data = json.loads(bla.decode())
@@ -36,6 +41,11 @@ class PatternFitter(object):
         # Zoom the spatial map using linear interpolation, if desired
         if zoom_factor != 1:
             self.data = image_zoom(self.data, zoom=[zoom_factor] * self.dimensions + [1], order=1)
+
+        # Adjust the expected patterns to the PMT's quantum efficiencies, if desired
+        # No need to re-normalize: will be done in each gof computation anyway
+        if adjust_to_qe is not None:
+            self.data *= adjust_to_qe[[np.newaxis] * self.dimensions + [slice(None)]]
 
         # Store bin starts and distances for quick access, assuming uniform bin sizes
         self.coordinate_data = []
