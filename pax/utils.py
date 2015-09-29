@@ -16,6 +16,7 @@ import glob
 import numpy as np
 from scipy import interpolate
 from scipy.ndimage.interpolation import zoom as image_zoom
+from scipy.spatial import KDTree
 import matplotlib.pyplot as plt
 
 from pax import units
@@ -62,21 +63,25 @@ def get_named_configuration_options():
 ##
 # Interpolating map class
 ##
-
 class InterpolateAndExtrapolate(object):
-    """Linearly interpolate, but use nearest-neighbour when out of range
-    Initialize and call just like scipy.interpolate.LinearNDInterpolator
+    """Linearly interpolate- or extrapolation between nearest N points
+    Needed to roll our own because scipy's linear Nd interpolator refuses to extrapolate
     """
 
-    def __init__(self, points, values):
-        self.interpolator = interpolate.LinearNDInterpolator(points, values)
-        self.extrapolator = interpolate.NearestNDInterpolator(points, values)
+    def __init__(self, points, values, neighbours_to_use=None):
+        """By default, interpolates between the 2 * dimensions of space nearest neighbours,
+        weighing distance linearly
+        """
+        self.kdtree = KDTree(points)
+        self.values = values
+        if neighbours_to_use is None:
+            neighbours_to_use = points.shape[1] * 2
+        self.neighbours_to_use = neighbours_to_use
 
     def __call__(self, *args):
-        result = self.interpolator(*args)
-        if np.isnan(result):
-            result = self.extrapolator(*args)
-        return result
+        # Call with one point at a time only!!!
+        distances, indices = self.kdtree.query(args, self.neighbours_to_use)
+        return np.average(self.values[indices], weights=distances)
 
 
 class InterpolatingMap(object):
