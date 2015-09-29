@@ -52,6 +52,7 @@ Whenever you want to use `pax`, you have to run the following command to set it 
   
 You can put this in your `.bashrc` if you want it to be setup when you login. For the rest of the installation and to run pax, be sure to be inside this environment. There should be (pax) at the beginning of your command line.
 Now, run
+
   sudo apt-get install build-essential
 
 
@@ -97,10 +98,14 @@ If you think you've made a useful change, you can contribute it! But please chec
 
 To check if your installation is working
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-Execute:
+Execute::
+
     paxer --version
+
 or
+
     paxer --input ~/pax/pax/data/xe100_120402_2000_000000.xed --stop_after 1 --plot
+
 You should see a nice plot of a XENON100 event.
 
 
