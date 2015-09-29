@@ -57,8 +57,8 @@ class TestPosRecTopPatternFit(unittest.TestCase):
         # position agrees within one cm for test
         x_truth = 3.1625
         y_truth = -10.0172
-        self.assertAlmostEqual(rp.x, x_truth, delta=1)
-        self.assertAlmostEqual(rp.y, y_truth, delta=1)
+        self.assertAlmostEqual(rp.x, x_truth, delta=0.3)
+        self.assertAlmostEqual(rp.y, y_truth, delta=0.3)
 
 if __name__ == '__main__':
     unittest.main()
