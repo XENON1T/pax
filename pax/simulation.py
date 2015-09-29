@@ -89,12 +89,21 @@ class Simulator(object):
             # (which is one row per channel)
             self.channel_offset = 1 if self.config['pmt_0_is_fake'] else 0
 
-        # Init s2 per pmt lce map
-        if self.config.get('s2_patterns_file', None) is not None:
+        # Init s2 pattern maps
+        log.debug("Initializing s2 patterns...")
+        if 's2_patterns_file' in self.config:
             self.s2_patterns = PatternFitter(utils.data_file_name(self.config['s2_patterns_file']),
                                              zoom_factor=self.config.get('s2_patterns_zoom_factor', 1))
         else:
             self.s2_patterns = None
+
+        # Init s1 pattern maps
+        log.debug("Initializing s1 patterns...")
+        if 's1_patterns_file' in self.config:
+            self.s1_patterns = PatternFitter(utils.data_file_name(self.config['s1_patterns_file']),
+                                             zoom_factor=self.config.get('s1_patterns_zoom_factor', 1))
+        else:
+            self.s1_patterns = None
 
     def s2_electrons(self, electrons_generated=None, z=0., t=0.):
         """Return a list of electron arrival times in the ELR region caused by an S2 process.
@@ -491,6 +500,9 @@ class Simulator(object):
         return event
 
     def distribute_s2_photons(self, n_photons, x, y):
+        if not self.s2_patterns:
+            return self.randomize_photons_over_channels(n_photons, self.config['channels_top'])
+
         # How many photons to the top array?
         n_top = np.random.binomial(n=n_photons, p=self.config['s2_mean_area_fraction_top'])
 
@@ -508,6 +520,15 @@ class Simulator(object):
         hitp += self.randomize_photons_over_channels(n_photons - n_top,
                                                      channels=self.config['channels_bottom'])
         return hitp
+
+    def distribute_s1_photons(self, n_photons, x, y, z):
+        if not self.s1_patterns:
+            return self.randomize_photons_over_channels(n_photons, self.config['channels_in_detector']['tpc'])
+        # The z-dimension of the S1 pattern map is in drift time
+        # TODO: compensate for S2 width & drift velocity increase after gate (both ~us effects though, not important)
+        drift_time = z / self.config['drift_velocity_liquid']
+        return self.distribute_photons_by_pattern(n_photons, self.s1_patterns, (x, y, drift_time))
+
 
     def distribute_photons_by_pattern(self, n_photons, pattern_fitter, coordinate_tuple):
         # TODO: assumes channels drawn from top, or from all channels (i.e. first index 0!!!)
@@ -596,12 +617,11 @@ class SimulatedHitpattern(object):
         # and want that split to be random too.
         np.random.shuffle(photon_timings)
 
-        if z == - self.config['gate_to_anode_distance'] and simulator.s2_patterns is not None:
+        if z == - self.config['gate_to_anode_distance']:
             # Generated at anode: use S2 LCE data
             hitp = simulator.distribute_s2_photons(self.n_photons, x, y)
         else:
-            # S1, or S2 LCE map not present: distribute photons uniformly
-            hitp = simulator.randomize_photons_over_channels(self.n_photons)
+            hitp = simulator.distribute_s1_photons(self.n_photons, x, y, z)
 
         # Split photon times over channels
         self.arrival_times_per_channel = dict(zip(range(simulator.config['n_channels']),

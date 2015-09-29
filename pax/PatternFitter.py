@@ -26,6 +26,9 @@ class PatternFitter(object):
             'name':                 'Nice file with maps',
             'description':          'Say what the maps are, who you are, your favorite food, etc',
             'timestamp':            unix epoch seconds timestamp
+        Note x_min, x_max are bin *edges*, not bin centers.
+        Likewise n_x is the number of x bin *edges*, so 1 larger than the number of bins in x.
+        Sorry about that.
         """
         bla = gzip.open(utils.data_file_name(filename)).read()
         data = json.loads(bla.decode())
@@ -46,7 +49,7 @@ class PatternFitter(object):
                                                        n_bin_edges=n_bin_edges,
                                                        bin_spacing=(stop - start)/(n_bin_edges - 1)))
 
-        # TODO: Technically we should zero the bins outside the tpc radius again:
+        # TODO: Technically we should zero the bins outside the tpc bounds again:
         # some LCE may have leaked into this region due to upsampling... but doesn't matter:
         # if it causes a bias, it will push some events who are already far outside the fiducial volume
         # even further out.
@@ -86,7 +89,7 @@ class PatternFitter(object):
         for dimension_i, x in enumerate(center_coordinates):
             cd = self.coordinate_data[dimension_i]
             if not cd.minimum <= x <= cd.maximum:
-                raise CoordinateOutOfRangeException
+                raise CoordinateOutOfRangeException("%s is not in allowed range %s-%s" % (x, cd.minimum, cd.maximum))
             start = self._get_bin_index(max(x - grid_size / 2,
                                             self.coordinate_data[dimension_i].minimum),
                                         dimension_i)
@@ -123,7 +126,7 @@ class PatternFitter(object):
         """
         cd = self.coordinate_data[dimension_i]
         if not cd.minimum <= value <= cd.maximum:
-            raise CoordinateOutOfRangeException
+            raise CoordinateOutOfRangeException("%s is not in allowed range %s-%s" % (value, cd.minimum, cd.maximum))
         return int((value - cd.minimum) / cd.bin_spacing)
 
     def _get_bin_center(self, bin_i, dimension_i):
