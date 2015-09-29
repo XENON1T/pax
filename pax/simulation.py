@@ -103,6 +103,7 @@ class Simulator(object):
             self.s2_patterns = None
 
         # Init s1 pattern maps
+        # NB: do NOT adjust patterns for QE, map is data derived, so no need.
         log.debug("Initializing s1 patterns...")
         if 's1_patterns_file' in self.config:
             self.s1_patterns = PatternFitter(utils.data_file_name(self.config['s1_patterns_file']),
@@ -533,7 +534,6 @@ class Simulator(object):
         # TODO: compensate for S2 width & drift velocity increase after gate (both ~us effects though, not important)
         drift_time = z / self.config['drift_velocity_liquid']
         return self.distribute_photons_by_pattern(n_photons, self.s1_patterns, (x, y, drift_time))
-
 
     def distribute_photons_by_pattern(self, n_photons, pattern_fitter, coordinate_tuple):
         # TODO: assumes channels drawn from top, or from all channels (i.e. first index 0!!!)
