@@ -45,12 +45,12 @@ class PosRecTopPatternFit(plugin.PosRecPlugin):
         # Number of degrees of freedom, n_channels - model degrees of freedom (x,y) - 1
         ndf = np.count_nonzero(is_pmt_in) - 2 - 1
 
-        # Photons observed per pmt (qe-corrected)
-        areas_observed = peak.area_per_channel[self.pmts] / self.qes
+        # Pe observed per pmt. Don't QE correct: pattern map has been adjusted for QE already
+        areas_observed = peak.area_per_channel[self.pmts]
 
         # Error term per PMT in chi2 function
-        # TODO: Why is QE squared an extra time??
-        square_syst_errors = areas_observed**2 * ((self.qe_errors / self.qes) ** 2 + self.gain_errors / self.gains)
+        # TODO: YUan squares the QE error term another time... why?
+        square_syst_errors = areas_observed**2 * (self.qe_errors / self.qes + self.gain_errors / self.gains)**2
 
         ##
         # Part 1: compute goodness of fit for positions from other algorithms

@@ -93,7 +93,9 @@ class Simulator(object):
         log.debug("Initializing s2 patterns...")
         if 's2_patterns_file' in self.config:
             self.s2_patterns = PatternFitter(utils.data_file_name(self.config['s2_patterns_file']),
-                                             zoom_factor=self.config.get('s2_patterns_zoom_factor', 1))
+                                             zoom_factor=self.config.get('s2_patterns_zoom_factor', 1),
+                                             adjust_to_qe=self.config['quantum_efficiencies'][
+                                                 self.config['channels_top']])
         else:
             self.s2_patterns = None
 
