@@ -70,7 +70,7 @@ class InterpolateAndExtrapolate(object):
 
     def __init__(self, points, values, neighbours_to_use=None):
         """By default, interpolates between the 2 * dimensions of space nearest neighbours,
-        weighing distance linearly
+        weighting factors = 1 / distance to neighbour
         """
         self.kdtree = KDTree(points)
         self.values = values
@@ -81,7 +81,7 @@ class InterpolateAndExtrapolate(object):
     def __call__(self, *args):
         # Call with one point at a time only!!!
         distances, indices = self.kdtree.query(args, self.neighbours_to_use)
-        return np.average(self.values[indices], weights=distances)
+        return np.average(self.values[indices], weights=1/np.clip(distances, 1e-6, float('inf')))
 
 
 class InterpolatingMap(object):
