@@ -44,13 +44,17 @@ some contain C++ code which must be compiled. If you have Anaconda you can get a
 for your platform using the `conda` tool::
 
   conda update conda
-  conda create -n pax numpy scipy matplotlib pandas cython h5py numba pip snappy python-snappy
+  conda create -n pax numpy scipy matplotlib pandas cython h5py numba pip snappy python-snappy pytables
   
 Whenever you want to use `pax`, you have to run the following command to set it up::
   
   source activate pax
   
-You can put this in your `.bashrc` if you want it to be setup when you login.
+You can put this in your `.bashrc` if you want it to be setup when you login. For the rest of the installation and to run pax, be sure to be inside this environment. There should be (pax) at the beginning of your command line.
+Now, run
+
+  sudo apt-get install build-essential
+
 
 Git and Github
 ^^^^^^^^^^^^^^
@@ -91,6 +95,19 @@ If you think you've made a useful change, you can contribute it! But please chec
 `relevant documentation section`_ first.
 
 .. _relevant documentation section: CONTRIBUTING.rst
+
+To check if your installation is working
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Execute::
+
+    paxer --version
+
+or
+
+    paxer --input ~/pax/pax/data/xe100_120402_2000_000000.xed --stop_after 1 --plot
+
+You should see a nice plot of a XENON100 event.
+
 
 Pax Tutorial
 ============
