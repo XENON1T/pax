@@ -172,7 +172,7 @@ class PlotBase(plugin.OutputPlugin):
                                                       "angleA=0,"
                                                       "angleB=-90")
                 ax.hlines(y, (peak.left - 1) * self.samples_to_us, peak.right * self.samples_to_us)
-                ax.annotate('%s:%s' % (peak.type, int(peak.area)),
+                ax.annotate('%s:%0.1f' % (peak.type, peak.area),
                             xy=(x, y),
                             xytext=(x, ytext),
                             arrowprops=arrowprops,
