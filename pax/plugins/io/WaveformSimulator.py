@@ -247,8 +247,8 @@ class WaveformSimulatorFromNEST(WaveformSimulator):
         self.log.warning('This plugin is completely untested and will probably crash!')
         filename = self.config['input_name']
         import ROOT
-        f = ROOT.TFile(utils.data_file_name(filename))
-        self.t = f.Get("t1")  # For Xerawdp use T1, for MC t1
+        self.f = ROOT.TFile(utils.data_file_name(filename))
+        self.t = self.f.Get("t1")  # For Xerawdp use T1, for MC t1
         WaveformSimulator.startup(self)
         self.number_of_events = self.t.GetEntries() * self.config['event_repetitions']
 
