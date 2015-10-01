@@ -57,6 +57,9 @@ class BasicInteractionProperties(plugin.TransformPlugin):
         self.s2_correction_map = utils.InterpolatingMap(utils.data_file_name(self.config['s2_correction_map']))
         self.s1_patterns = self.processor.simulator.s1_patterns
         self.s2_patterns = self.processor.simulator.s2_patterns
+        self.zombie_pmts_s1 = np.array(self.config.get('zombie_pmts_s1', []))
+        self.zombie_pmts_s2 = np.array(self.config.get('zombie_pmts_s2', []))
+        self.tpc_channels = self.config['channels_in_detector']['tpc']
 
     def transform_event(self, event):
 
@@ -67,35 +70,54 @@ class BasicInteractionProperties(plugin.TransformPlugin):
             # Determine z position from drift time
             ia.z = self.config['drift_velocity_liquid'] * ia.drift_time
 
-            # S1 and S2 corrections
+            # Basic S1 and S2 corrections
+            # TODO: replace correction map by light yield maps in simulator, then divide by their value here
+            # TODO: replace S1(x, y, dt) by S1(x, y, z) map. This way one map can be used for many field configurations,
+            # once the user updates the drift_velocity_liquid in the configuration.
             ia.s1_area_correction *= self.s1_correction_map.get_value_at(ia)
             ia.s2_area_correction *= self.s2_correction_map.get_value_at(ia)
 
-            # Correct for S1 saturation
-            # Correction = 1/ total expected LCE of unsaturated PMTs
-            if self.s1_patterns is not None:
-                s1_expected_lces = self.s1_patterns.expected_pattern((ia.x, ia.y, ia.drift_time))
-                s1_expected_lces /= s1_expected_lces.sum()
-                ia.s1_area_correction /= s1_expected_lces[True ^ ia.s1.is_channel_saturated[
-                    self.config['channels_in_detector']['tpc']]].sum()
-
-            # Correct for S2 saturation in the top array
-            # If the bottom also saturates, you have a problem
             if self.s2_patterns is not None:
-                s2_expected_lces = self.s2_patterns.expected_pattern((ia.x, ia.y))
-                s2_expected_lces /= s2_expected_lces.sum()
-                top_lce_seen = s2_expected_lces[True ^ ia.s2.is_channel_saturated[
-                    self.config['channels_top']]].sum()
-                ia.s2_area_correction *= ia.s2.area_fraction_top / top_lce_seen + 1 - ia.s2.area_fraction_top
+                # Correct for S2 saturation
+                # As we don't have an (x, y) dependent LCE map for the bottom PMTs for S2s,
+                # we can only compute the correction on the top area.
+                ia.s2_area_correction *= self.area_correction(
+                    peak=ia.s2,
+                    channels_for_correction=self.config['channels_top'],
+                    expected_pattern=self.s2_patterns.expected_pattern((ia.x, ia.y)),
+                    confused_channels=np.union1d(ia.s2.saturated_channels, self.zombie_pmts_s1))
 
-            # Compute the S1 pattern likelihood, if the simulator has an expected pattern data file
-            # TODO: Add systematic error terms (not very important, usually statistical error dominates)
             if self.s1_patterns is not None:
-                tpc_channels = self.config['channels_in_detector']['tpc']
+                # Correct for S1 saturation
+                ia.s1_area_correction *= self.area_correction(
+                    peak=ia.s1,
+                    channels_for_correction=self.tpc_channels,
+                    expected_pattern=self.s1_patterns.expected_pattern((ia.x, ia.y, ia.drift_time)),
+                    confused_channels=np.union1d(ia.s1.saturated_channels, self.zombie_pmts_s2))
+
+                # Compute the S1 pattern fit statistic
+                # TODO: Add systematic error terms (not very important, usually statistical error dominates
                 ia.s1_pattern_fit = self.s1_patterns.compute_gof(
                     (ia.x, ia.y, ia.drift_time),
-                    ia.s1.area_per_channel[tpc_channels],
-                    point_selection=(True ^ ia.s1.is_channel_saturated[tpc_channels]),
+                    ia.s1.area_per_channel[self.tpc_channels],
+                    point_selection=(True ^ ia.s1.is_channel_saturated[self.tpc_channels]),
                 )
 
         return event
+
+    def area_correction(self, peak, channels_for_correction, expected_pattern, confused_channels):
+        """Return multiplicative area correction obtained by replacing area in confused_channels by
+        expected area based on expected_pattern in channels_for_correction.
+        expected_pattern does not have to be normalized: we'll do that for you.
+        We'll also ensure any confused_channels not in channels_for_correction are ignored.
+        """
+        confused_channels = np.intersect1d(confused_channels, channels_for_correction).astype(np.int)
+        if expected_pattern.sum() == 0:
+            self.log.warning("Expected area fractions for peak %d-%d are zero: cannot correct area!" % (
+                peak.left, peak.right))
+            return 1
+        expected_pattern /= expected_pattern.sum()
+        area_to_subtract = peak.area_per_channel[confused_channels].sum()
+        area_in_good_channels = peak.area_per_channel[channels_for_correction].sum() - area_to_subtract
+        area_to_add = expected_pattern[confused_channels].sum() * area_in_good_channels
+        return (peak.area + area_to_add - area_to_subtract) / peak.area
