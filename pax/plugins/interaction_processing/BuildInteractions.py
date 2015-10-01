@@ -56,6 +56,7 @@ class BasicInteractionProperties(plugin.TransformPlugin):
         self.s1_correction_map = utils.InterpolatingMap(utils.data_file_name(self.config['s1_correction_map']))
         self.s2_correction_map = utils.InterpolatingMap(utils.data_file_name(self.config['s2_correction_map']))
         self.s1_patterns = self.processor.simulator.s1_patterns
+        self.s2_patterns = self.processor.simulator.s2_patterns
 
     def transform_event(self, event):
 
@@ -69,6 +70,20 @@ class BasicInteractionProperties(plugin.TransformPlugin):
             # S1 and S2 corrections
             ia.s1_area_correction *= self.s1_correction_map.get_value_at(ia)
             ia.s2_area_correction *= self.s2_correction_map.get_value_at(ia)
+
+            # Correct for S1 and S2 saturation
+            # Correction = 1/ total expected LCE of unsaturated PMTs
+            if self.s1_patterns is not None:
+                s1_expected_lces = self.s1_patterns.expected_pattern((ia.x, ia.y, ia.drift_time))
+                s1_expected_lces /= s1_expected_lces.sum()
+                ia.s1_area_correction /= s1_expected_lces[True ^ ia.s1.is_channel_saturated[
+                    self.config['channels_in_detector']['tpc']]].sum()
+
+            if self.s2_patterns is not None:
+                s2_expected_lces = self.s2_patterns.expected_pattern((ia.x, ia.y))
+                s2_expected_lces /= s2_expected_lces.sum()
+                ia.s2_area_correction /= s2_expected_lces[True ^ ia.s2.is_channel_saturated[
+                    self.config['channels_top']]].sum()
 
             # Compute the S1 pattern likelihood, if the simulator has an expected pattern data file
             # TODO: Add systematic error terms (not very important, usually statistical error dominates)
