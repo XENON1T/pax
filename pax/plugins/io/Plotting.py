@@ -477,6 +477,7 @@ class PlotChannelWaveforms2D(PlotBase):
 
 
 class PlotEventSummary(PlotBase):
+    hates_tight_layout = True
 
     def plot_event(self, event):
         """
