@@ -18,7 +18,7 @@ class PosRecTopPatternFit(plugin.PosRecPlugin):
 
         # Load gains (gains from config file, gain error 0.5 pe for all pmts for now)
         self.gains = np.array(self.config['gains'])[self.pmts]
-        self.gain_errors = np.ones(len(self.pmts)) * 0.5  # TODO: remove placeholder
+        self.gain_errors = np.array(self.config['gain_sigmas'])[self.pmts]
 
         # Load QE (for now use arbitrary values)
         self.qes = np.ones(len(self.pmts)) * 0.3  # TODO: remove placeholder
@@ -49,7 +49,7 @@ class PosRecTopPatternFit(plugin.PosRecPlugin):
         areas_observed = peak.area_per_channel[self.pmts]
 
         # Error term per PMT in chi2 function
-        # TODO: YUan squares the QE error term another time... why?
+        # TODO: Yuan squares the QE error term yet another time in Xerawdp... why?
         square_syst_errors = areas_observed**2 * (self.qe_errors / self.qes + self.gain_errors / self.gains)**2
 
         ##
