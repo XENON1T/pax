@@ -1,8 +1,11 @@
 import unittest
 import numpy as np
 
-from pax import core, datastructure
-import pax.plugins.signal_processing.HitFinder as HitFinder
+from pax import core, datastructure, utils
+import os
+import sys
+sys.path.append(os.path.join(utils.PAX_DIR, 'plugins', 'signal_processing'))
+import HitFinder
 
 
 class TestHitFinder(unittest.TestCase):

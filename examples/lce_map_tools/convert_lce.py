@@ -31,10 +31,13 @@ Assumptions made:
     -   When the map has no data for a point, photons will never be detected from there.
         (the map's datapoints were not on a regular grid, some datapoints around the edges
         were missing)       
+    -   Any bin further than 16cm out from center is zeroed.
 """
 
-def convert_lce_map(filename, outname, n_channels=98):
-    """Convert the Xerawdp simulated S2 lce per pmt map to a pax map"""
+def convert_lce_map(filename, outname, n_channels=98, tpc_radius=15.5):
+    """Convert the Xerawdp simulated S2 lce per pmt map to a pax map
+    Please allow some fudge factor in tpc radius; bin edge vs bin center stuff..
+    """
     
     # Slurp the file
     print("Slurping old map")
@@ -81,10 +84,12 @@ def convert_lce_map(filename, outname, n_channels=98):
         assert len(linedata) == n_channels + 3
         if len(linedata) <= 1:
             continue
-        
+
         # Compute the x and y indexes
-        x_index = int((linedata[0] - x_min)/d_x)
-        y_index = int((linedata[1] - y_min)/d_y)
+        x = linedata[0]
+        y = linedata[1]
+        x_index = int((x - x_min)/d_x)
+        y_index = int((y - y_min)/d_y)
         overall_lce = linedata[2]
         
         # Several datapoints are missing (near the edges??), so the line_index is not useful.
@@ -95,7 +100,9 @@ def convert_lce_map(filename, outname, n_channels=98):
             assert abs(1-sum(linedata[3:])) < 0.001
         lcemap[y_index, x_index, 0] = 0     # PMT 0 is fake...
         for pmt_i, fraction_of_light_received in enumerate(linedata[3:]):
-            if overall_lce == 0:
+            # Ensure no light comes from invalid regions.
+            # Remember x and y are in mm, tpc_radius is in cm...
+            if overall_lce == 0 or (x * to_cm)**2 + (y * to_cm)**2 > tpc_radius**2:
                 result = 0
             else:
                 result = fraction_of_light_received #* overall_lce
@@ -124,4 +131,4 @@ def convert_lce_map(filename, outname, n_channels=98):
 
 
 
-convert_lce_map("xy-lce-map2.5mm.dat", "s2_xy_lce_map_XENON100_Xerawdp0.4.5.json.gz")
+convert_lce_map("xy-lce-map2.5mm.dat", "s2_xy_patterns_map_XENON100_Xerawdp0.4.5.json.gz")

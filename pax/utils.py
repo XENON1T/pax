@@ -14,10 +14,7 @@ import os
 import glob
 
 import numpy as np
-from scipy import interpolate
-from scipy.ndimage.interpolation import zoom as image_zoom
 from scipy.spatial import KDTree
-import matplotlib.pyplot as plt
 
 from pax import units
 
@@ -86,28 +83,22 @@ class InterpolateAndExtrapolate(object):
 
 class InterpolatingMap(object):
 
-    """
-    Builds a scalar function of space using interpolation from sampling points.
-
-    All interpolation is done linearly by default.
-    Cartesian coordinates are supported, cylindrical coordinates (z, r, phi) may also work...
+    """Construct s a scalar function using linear interpolation, weighted by euclidean distance.
 
     The map must be specified as a json translating to a dictionary like this:
-        'coordinate_system' :   [['x', x_min, x_max, n_x], ['y',...
-        'your_map_name' :       [[valuex1y1, valuex1y2, ..], [valuex2y1, valuex2y2, ..], ...
-        'another_map_name' :    idem
+        'coordinate_system' :   [[x1, y2], [x2, y2], [x3, y3], [x4, y4], ...],
+        'map' :                 [[valuex1y1, valuex1y2, ..], [valuex2y1, valuex2y2, ..], ...
+        'another_map' :         idem
         'name':                 'Nice file with maps',
         'description':          'Say what the maps are, who you are, your favorite food, etc',
         'timestamp':            unix epoch seconds timestamp
-    with the straightforward generalization to 1d and 3d. Extrapolation attempts will raise an error.
-    The default map name is 'map', I'd recommend you use that.
+        'use_points':           number of points to use for linear interpolation (with euclidean distance weights)
+    with the straightforward generalization to 1d and 3d. The default map name is 'map', I'd recommend you use that.
 
-    For irregularly spaced points, use:
-        'coordinate_system' :   [[x1, y2], [x2, y2], [x3, y3], [x4, y4], ...],
-        'irregular':            True,
-    with the rest the same. Constant extrapolation via nearest neighbour is used outside the convex hull.
-
-    For a 0d placeholder map, the map value must be a single number, and the coordinate system must be [].
+    For a 0d placeholder map, use
+        'points': [],
+        'map': 42,
+        etc
 
     The json can be gzip compressed: if so, it must have a .gz extension.
 
@@ -138,7 +129,7 @@ class InterpolatingMap(object):
                 # 0 D -- placeholder maps which take no arguments and always return a single value
                 itp_fun = lambda: map_data
             else:
-                itp_fun = self.init_map(map_data, **kwargs)
+                itp_fun = InterpolateAndExtrapolate(points=np.array(cs), values=np.array(map_data))
 
             self.interpolators[map_name] = itp_fun
 
@@ -146,12 +137,8 @@ class InterpolatingMap(object):
         """Returns the value of the map map_name at a ReconstructedPosition
          position - pax.datastructure.ReconstructedPosition instance
         """
-        if self.data.get('irregular', False):
-            position_names = ['x', 'y', 'z']
-            return self.get_value(*[getattr(position, q) for q in position_names[:self.dimensions]], map_name=map_name)
-        else:
-            # This code also supports r/phi coordinates... though it probably makes no sense on a regular grid..
-            return self.get_value(*[getattr(position, q[0]) for q in self.coordinate_system], map_name=map_name)
+        position_names = ['x', 'y', 'z']
+        return self.get_value(*[getattr(position, q) for q in position_names[:self.dimensions]], map_name=map_name)
 
     def get_value(self, *coordinates, **kwargs):
         """Returns the value of the map at the position given by coordinates
@@ -164,111 +151,6 @@ class InterpolatingMap(object):
             return float(result[0])
         except (TypeError, IndexError):
             return float(result)    # We don't want a 0d numpy array, which the 1d and 2d interpolators seem to give
-
-    def init_map(self, map_data, **kwargs):
-        cs = self.coordinate_system
-        if self.data.get('irregular'):
-            # Coordinate system is a list/array of points ((x1, y1), (x2, y2), ...)
-            return InterpolateAndExtrapolate(points=np.array(cs), values=np.array(map_data))
-
-        else:
-            # Coordinate system is a regular grid: ((xstart, xend, n_x), (ystart, yend, n_y), ...)
-            if self.dimensions == 1:
-                # TODO: intper1d is very inefficient for regular grids!!
-                return interpolate.interp1d(x=np.linspace(*(cs[0][1])),
-                                            y=map_data)
-
-            elif self.dimensions == 2:
-                return interpolate.interp2d(x=np.linspace(*(cs[0][1])),
-                                            y=np.linspace(*(cs[1][1])),
-                                            z=np.array(map_data).T)
-
-            # 3D interpolation
-            elif self.dimensions == 3:
-                # TODO: LinearNDInterpolator is very inefficient for regular grids!!
-                # LinearNDInterpolator wants points as [(x1,y1,z1), (x2, y2, z2), ...]
-                all_x, all_y, all_z = np.meshgrid(np.linspace(*(cs[0][1])),
-                                                  np.linspace(*(cs[1][1])),
-                                                  np.linspace(*(cs[2][1])))
-                points = np.array([np.ravel(all_x), np.ravel(all_y), np.ravel(all_z)]).T
-                values = np.ravel(map_data)
-                return interpolate.LinearNDInterpolator(points, values)
-
-            else:
-                raise RuntimeError("Can't use a %s-dimensional correction map!" % self.dimensions)
-
-    def plot(self, map_name='map', to_file=None):
-        """Make a quick plot of the map map_name, for diagnostic purposes only"""
-        cs = self.coordinate_system
-
-        if self.dimensions == 2:
-            x = np.linspace(*cs[0][1])
-            y = np.linspace(*cs[1][1])
-            plt.pcolor(x, y, np.array(self.data[map_name]))
-            plt.xlabel("%s (cm)" % cs[0][0])
-            plt.ylabel("%s (cm)" % cs[1][0])
-            plt.axis([x.min(), x.max(), y.min(), y.max()])
-            plt.colorbar()
-            # Plot the TPC radius for reference
-            # TODO: this hardcodes a XENON100 geometry value!
-            # But I don't have the config here...
-            # if cs[0][0] == 'x' and cs[1][0] == 'y':
-
-        else:
-            raise NotImplementedError("Still have to implement plotting for %s-dimensional maps" % self.dimensions)
-
-        plt.title(map_name)
-        if to_file is not None:
-            plt.savefig(to_file)
-        else:
-            plt.show()
-        plt.close()
-
-
-class Vector2DGridMap(InterpolatingMap):
-
-    def init_map(self, map_data, zoom_factor=1, **kwargs):
-        x_min, x_max, n_x = self.coordinate_system[0][1]
-        y_min, y_max, n_y = self.coordinate_system[0][1]
-
-        if zoom_factor != 1:
-            if len(map_data.shape) == 2:
-                map_data = self.upsample_map(map_data, zoom_factor)
-                n_x, n_y = map_data.shape
-            else:
-                n_maps = map_data.shape[2]
-                new_map_data = np.zeros((zoom_factor * n_x, zoom_factor * n_y, n_maps))
-                for map_i in range(n_maps):
-                    new_map_data[:, :, map_i] = self.upsample_map(map_data[:, :, map_i], zoom_factor)
-                map_data = new_map_data
-                n_x, n_y, _ = map_data.shape
-
-        x_spacing = (x_max-x_min)/(n_x-1)
-        y_spacing = (y_max-y_min)/(n_y-1)
-
-        def get_data(x, y):
-            if np.isnan(x) or np.isnan(y):
-                return float('nan') * np.ones_like(map_data[0, 0])
-            # Remember we're returning an array now... if you don't copy, you'l get a view...
-            # .. then the map will get modified while pax is running... then you will cry...
-            return get_data.map_data[int((x - x_min)/x_spacing + 0.5),
-                                     int((y - y_min)/y_spacing + 0.5)].copy()
-        get_data.map_data = map_data
-
-        return get_data
-
-    def get_value(self, *coordinates, **kwargs):
-        """Returns the value of the map at the position given by coordinates
-        Keyword arguments:
-          - map_name: Name of the map to use. By default: 'map'.
-        """
-        map_name = kwargs.get('map_name', 'map')
-        return self.interpolators[map_name](*coordinates)
-
-    @staticmethod
-    def upsample_map(map_data, zoom_factor):
-        # Upsample the map using bilinear (order=1) spline interpolation
-        return image_zoom(map_data, zoom_factor, order=1)
 
 
 ##

@@ -39,16 +39,7 @@ class BuildInteractions(plugin.TransformPlugin):
                 ia.s1 = s1
                 ia.s2 = s2
                 ia.drift_time = dt
-
-                # Set the x,y position
-                for algo in self.config['xy_posrec_preference']:
-                    rp = ia.s2.get_reconstructed_position_from_algorithm(algo)
-                    if rp is not None:
-                        ia.set_position(rp)
-                        break
-                else:
-                    raise RuntimeError("No reconstructed xy position from an algorithm "
-                                       "that appears in xy_posrec_preference was found!")
+                ia.set_position(ia.s2.get_position_from_preferred_algorithm(self.config['xy_posrec_preference']))
 
                 # Append to event
                 event.interactions.append(ia)

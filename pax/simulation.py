@@ -12,6 +12,7 @@ import numpy as np
 from scipy import stats
 
 from pax import units, utils, datastructure
+from pax.PatternFitter import PatternFitter
 from pax.utils import Memoize
 
 
@@ -21,79 +22,85 @@ log = logging.getLogger('SimulationCore')
 class Simulator(object):
 
     def __init__(self, config_to_init):
-        self.config = config_to_init
+        c = self.config = config_to_init
 
         # Should we repeat events?
-        if 'event_repetitions' not in self.config:
-            self.config['event_repetitions'] = 1
+        if 'event_repetitions' not in c:
+            c['event_repetitions'] = 1
 
         # Primary excimer fraction from Nest Version 098
         # See G4S1Light.cc line 298
-        density = self.config['liquid_density'] / (units.g / units.cm ** 3)
+        density = c['liquid_density'] / (units.g / units.cm ** 3)
         excfrac = 0.4 - 0.11131 * density - 0.0026651 * density ** 2    # primary / secondary excimers
         excfrac = 1 / (1 + excfrac)                                     # primary / all excimers
         # primary / all excimers that produce a photon:
-        excfrac /= 1 - (1 - excfrac) * (1 - self.config['s1_ER_recombination_fraction'])
-        self.config['s1_ER_primary_excimer_fraction'] = excfrac
+        excfrac /= 1 - (1 - excfrac) * (1 - c['s1_ER_recombination_fraction'])
+        c['s1_ER_primary_excimer_fraction'] = excfrac
         log.debug('Inferred s1_ER_primary_excimer_fraction %s' % excfrac)
 
         # Recombination time from NEST 2014
         # 3.5 seems fishy, they fit an exponential to data, but in the code they use a non-exponential distribution...
-        efield = (self.config['drift_field'] / (units.V / units.cm))
-        self.config['s1_ER_recombination_time'] = 3.5 / 0.18 * (1 / 20 + 0.41) * math.exp(-0.009 * efield)
-        log.debug('Inferred s1_ER_recombination_time %s ns' % self.config['s1_ER_recombination_time'])
+        efield = (c['drift_field'] / (units.V / units.cm))
+        c['s1_ER_recombination_time'] = 3.5 / 0.18 * (1 / 20 + 0.41) * math.exp(-0.009 * efield)
+        log.debug('Inferred s1_ER_recombination_time %s ns' % c['s1_ER_recombination_time'])
 
         # Calculate particle number density in the gas (ideal gas law)
-        number_density_gas = self.config['pressure'] / (units.boltzmannConstant * self.config['temperature'])
+        number_density_gas = c['pressure'] / (units.boltzmannConstant * c['temperature'])
 
         # electric field in the gas
         # Formula from xenon:xenon100:analysis:jacob:s2gain_v2
-        e_in_gas = self.config['lxe_dielectric_constant'] * self.config['anode_voltage'] / (
-            self.config['lxe_dielectric_constant'] * self.config['elr_gas_gap_length'] +
-            (self.config['gate_to_anode_distance'] - self.config['elr_gas_gap_length'])
+        e_in_gas = c['lxe_dielectric_constant'] * c['anode_voltage'] / (
+            c['lxe_dielectric_constant'] * c['elr_gas_gap_length'] +
+            (c['gate_to_anode_distance'] - c['elr_gas_gap_length'])
         )
 
         # Reduced electric field in the gas
-        self.config['reduced_e_in_gas'] = e_in_gas / number_density_gas
+        c['reduced_e_in_gas'] = e_in_gas / number_density_gas
         log.debug("Inferred a reduced electric field of %s Td in the gas" % (
-            self.config['reduced_e_in_gas'] / units.Td))
+            c['reduced_e_in_gas'] / units.Td))
 
         # Which channels stand to receive any photons?
         # TODO: In XENON100, channel 0 will receive photons unless magically_avoid_dead_pmts=True
         # To prevent this, subtract 0 from channel_for_photons. But don't do that for XENON1T!!
-        channels_for_photons = self.config['channels_in_detector']['tpc']
-        if self.config.get('magically_avoid_dead_pmts', False):
-            channels_for_photons = [ch for ch in channels_for_photons if self.config['gains'][ch] > 0]
-        if self.config.get('magically_avoid_s1_excluded_pmts', False) and \
-           'channels_excluded_for_s1' in self.config:
+        channels_for_photons = c['channels_in_detector']['tpc']
+        if c.get('magically_avoid_dead_pmts', False):
+            channels_for_photons = [ch for ch in channels_for_photons if c['gains'][ch] > 0]
+        if c.get('magically_avoid_s1_excluded_pmts', False) and \
+           'channels_excluded_for_s1' in c:
             channels_for_photons = [ch for ch in channels_for_photons
-                                    if ch not in self.config['channels_excluded_for_s1']]
-        self.config['channels_for_photons'] = channels_for_photons
+                                    if ch not in c['channels_excluded_for_s1']]
+        c['channels_for_photons'] = channels_for_photons
 
         # Determine sensible length of a pmt pulse to simulate
-        dt = self.config['sample_duration']
-        self.config['samples_before_pulse_center'] = math.ceil(
-            self.config['pulse_width_cutoff'] * self.config['pmt_rise_time'] / dt
+        dt = c['sample_duration']
+        c['samples_before_pulse_center'] = math.ceil(
+            c['pulse_width_cutoff'] * c['pmt_rise_time'] / dt
         )
-        self.config['samples_after_pulse_center'] = math.ceil(
-            self.config['pulse_width_cutoff'] * self.config['pmt_fall_time'] / dt
+        c['samples_after_pulse_center'] = math.ceil(
+            c['pulse_width_cutoff'] * c['pmt_fall_time'] / dt
         )
         log.debug('Simulating %s samples before and %s samples after PMT pulse centers.' % (
-            self.config['samples_before_pulse_center'], self.config['samples_after_pulse_center']))
+            c['samples_before_pulse_center'], c['samples_after_pulse_center']))
 
         # Load real noise data from file, if requested
-        if self.config['real_noise_file']:
-            self.noise_data = np.load(utils.data_file_name(self.config['real_noise_file']))['arr_0']
+        if c['real_noise_file']:
+            self.noise_data = np.load(utils.data_file_name(c['real_noise_file']))['arr_0']
             # The silly XENON100 PMT offset again: it's relevant for indexing the array of noise data
             # (which is one row per channel)
-            self.channel_offset = 1 if self.config['pmt_0_is_fake'] else 0
+            self.channel_offset = 1 if c['pmt_0_is_fake'] else 0
 
         # Init s2 per pmt lce map
-        if self.config.get('s2_lce_map', None) is not None:
-            self.s2_lce_map = utils.Vector2DGridMap(filename=utils.data_file_name(self.config['s2_lce_map']),
-                                                    zoom_factor=self.config.get('s2_lce_map_zoom_factor', 1))
+        if c.get('s2_patterns_file', None) is not None:
+            qes = np.array(c['quantum_efficiencies'])
+            topchs = np.array(c['channels_top'])
+            self.s2_patterns = PatternFitter(
+                filename=utils.data_file_name(c['s2_patterns_file']),
+                zoom_factor=c.get('s2_patterns_zoom_factor', 1),
+                adjust_to_qe=qes[topchs],
+                default_errors=c['relative_qe_error'] + c['relative_gain_error'],
+            )
         else:
-            self.s2_lce_map = None
+            self.s2_patterns = None
 
     def s2_electrons(self, electrons_generated=None, z=0., t=0.):
         """Return a list of electron arrival times in the ELR region caused by an S2 process.
@@ -498,21 +505,21 @@ class Simulator(object):
         p_random = self.config.get('randomize_fraction_of_s2_top_array_photons', 0)
         if p_random:
             n_random = np.random.binomial(n=n_photons, p=p_random)
-            hitp = self.distribute_photons_by_lcemap(n_top - n_random, self.s2_lce_map, (x, y))
+            hitp = self.distribute_photons_by_pattern(n_top - n_random, self.s2_patterns, (x, y))
             hitp += self.randomize_photons_over_channels(n_random, channels=self.config['channels_top'])
         else:
-            hitp = self.distribute_photons_by_lcemap(n_top, self.s2_lce_map, (x, y))
+            hitp = self.distribute_photons_by_pattern(n_top, self.s2_patterns, (x, y))
 
         # The bottom photons are distributed randomly
         hitp += self.randomize_photons_over_channels(n_photons - n_top,
                                                      channels=self.config['channels_bottom'])
         return hitp
 
-    def distribute_photons_by_lcemap(self, n_photons, lce_map, coordinate_tuple):
+    def distribute_photons_by_pattern(self, n_photons, pattern_fitter, coordinate_tuple):
         # TODO: assumes channels drawn from top, or from all channels (i.e. first index 0!!!)
-        lces = lce_map.get_value(*coordinate_tuple)
+        lces = pattern_fitter.expected_pattern(coordinate_tuple)
         if np.sum(lces) == 0:
-            raise ValueError("LCEs at position %s are all zero, cannot be normalized!" % coordinate_tuple)
+            raise ValueError("LCEs at position %s are all zero, cannot be normalized!" % (coordinate_tuple,))
         return self.randomize_photons_over_channels(n_photons,
                                                     channels=range(len(lces)),
                                                     relative_lce_per_channel=lces)
@@ -595,7 +602,7 @@ class SimulatedHitpattern(object):
         # and want that split to be random too.
         np.random.shuffle(photon_timings)
 
-        if z == - self.config['gate_to_anode_distance'] and simulator.s2_lce_map is not None:
+        if z == - self.config['gate_to_anode_distance'] and simulator.s2_patterns is not None:
             # Generated at anode: use S2 LCE data
             hitp = simulator.distribute_s2_photons(self.n_photons, x, y)
         else:
