@@ -83,7 +83,7 @@ class BasicInteractionProperties(plugin.TransformPlugin):
                 # we can only compute the correction on the top area.
                 ia.s2_area_correction *= self.area_correction(
                     peak=ia.s2,
-                    channels_for_correction=self.config['channels_top'],
+                    channels_in_pattern=self.config['channels_top'],
                     expected_pattern=self.s2_patterns.expected_pattern((ia.x, ia.y)),
                     confused_channels=np.union1d(ia.s2.saturated_channels, self.zombie_pmts_s1))
 
@@ -91,7 +91,7 @@ class BasicInteractionProperties(plugin.TransformPlugin):
                 # Correct for S1 saturation
                 ia.s1_area_correction *= self.area_correction(
                     peak=ia.s1,
-                    channels_for_correction=self.tpc_channels,
+                    channels_in_pattern=self.tpc_channels,
                     expected_pattern=self.s1_patterns.expected_pattern((ia.x, ia.y, ia.drift_time)),
                     confused_channels=np.union1d(ia.s1.saturated_channels, self.zombie_pmts_s2))
 
@@ -100,24 +100,32 @@ class BasicInteractionProperties(plugin.TransformPlugin):
                 ia.s1_pattern_fit = self.s1_patterns.compute_gof(
                     (ia.x, ia.y, ia.drift_time),
                     ia.s1.area_per_channel[self.tpc_channels],
-                    point_selection=(True ^ ia.s1.is_channel_saturated[self.tpc_channels]),
+                    pmt_selection=(True ^ ia.s1.is_channel_saturated[self.tpc_channels]),
                 )
 
         return event
 
-    def area_correction(self, peak, channels_for_correction, expected_pattern, confused_channels):
+    def area_correction(self, peak, channels_in_pattern, expected_pattern, confused_channels):
         """Return multiplicative area correction obtained by replacing area in confused_channels by
-        expected area based on expected_pattern in channels_for_correction.
+        expected area based on expected_pattern in channels_in_pattern.
         expected_pattern does not have to be normalized: we'll do that for you.
-        We'll also ensure any confused_channels not in channels_for_correction are ignored.
+        We'll also ensure any confused_channels not in channels_in_pattern are ignored.
         """
-        confused_channels = np.intersect1d(confused_channels, channels_for_correction).astype(np.int)
+        confused_channels = np.intersect1d(confused_channels, channels_in_pattern).astype(np.int)
         if expected_pattern.sum() == 0:
-            self.log.warning("Expected area fractions for peak %d-%d are zero: cannot correct area!" % (
-                peak.left, peak.right))
+            self.log.warning("Expected area fractions for peak %d-%d are zero -- "
+                             "cannot compute saturation & zombie correction!" % (peak.left, peak.right))
             return 1
         expected_pattern /= expected_pattern.sum()
-        area_to_subtract = peak.area_per_channel[confused_channels].sum()
-        area_in_good_channels = peak.area_per_channel[channels_for_correction].sum() - area_to_subtract
-        area_to_add = expected_pattern[confused_channels].sum() * area_in_good_channels
-        return (peak.area + area_to_add - area_to_subtract) / peak.area
+
+        area_seen_in_pattern = peak.area_per_channel[channels_in_pattern].sum()
+        area_in_good_channels = area_seen_in_pattern - peak.area_per_channel[confused_channels].sum()
+        fraction_of_pattern_in_good_channels = 1 - expected_pattern[confused_channels].sum()
+
+        # Area in channels not in channels_in_pattern is left alone
+        new_area = peak.area - area_seen_in_pattern
+
+        # Estimate the area in channels_in_pattern by excluding the confused channels
+        new_area += area_in_good_channels / fraction_of_pattern_in_good_channels
+
+        return new_area / peak.area

@@ -92,13 +92,10 @@ class Simulator(object):
         # Init s2 per pmt lce map
         qes = np.array(c['quantum_efficiencies'])
         if c.get('s2_patterns_file', None) is not None:
-            self.s2_patterns = PatternFitter(
-                filename=utils.data_file_name(c['s2_patterns_file']),
-                zoom_factor=c.get('s2_patterns_zoom_factor', 1),
-                adjust_to_qe=qes[c['channels_top']],
-                default_errors=c['relative_qe_error'] + c['relative_gain_error'],
-            )
-
+            self.s2_patterns = PatternFitter(filename=utils.data_file_name(c['s2_patterns_file']),
+                                             zoom_factor=c.get('s2_patterns_zoom_factor', 1),
+                                             adjust_to_qe=qes[c['channels_top']],
+                                             default_errors=c['relative_qe_error'] + c['relative_gain_error'])
         else:
             self.s2_patterns = None
 
@@ -106,11 +103,9 @@ class Simulator(object):
         # NB: do NOT adjust patterns for QE, map is data derived, so no need.
         log.debug("Initializing s1 patterns...")
         if 's1_patterns_file' in self.config:
-            self.s2_patterns = PatternFitter(
-                filename=utils.data_file_name(c['s1_patterns_file']),
-                zoom_factor=c.get('s1_patterns_zoom_factor', 1),
-                default_errors=c['relative_qe_error'] + c['relative_gain_error'],
-            )
+            self.s1_patterns = PatternFitter(filename=utils.data_file_name(c['s1_patterns_file']),
+                                             zoom_factor=c.get('s1_patterns_zoom_factor', 1),
+                                             default_errors=c['relative_qe_error'] + c['relative_gain_error'])
         else:
             self.s1_patterns = None
 
