@@ -3,12 +3,13 @@
 History
 -------
 
-----------------
-Upcoming release
-----------------
+------------------
+4.0.0 (2015-10-02)
+------------------
+
 * Add/remove several peak properties (#223, #214, #203), such as the peak's hits-only sum waveform.
 * Clustering changes: separate plugins, better goodness of split, faster (#223, #213)
-* Python 2 support (#217)
+* Python 2.7 support (#217)
 * Paxer options to switch input and output type (#212)
 * Position reconstruction before classification (#223)
 * Irregular correction map support, XENON100 S1(x,y,z) correction (#219)
