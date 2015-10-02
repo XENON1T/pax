@@ -101,6 +101,7 @@ class BasicInteractionProperties(plugin.TransformPlugin):
                     (ia.x, ia.y, ia.drift_time),
                     ia.s1.area_per_channel[self.tpc_channels],
                     pmt_selection=(True ^ ia.s1.is_channel_saturated[self.tpc_channels]),
+                    statistic=self.config['s1_pattern_statistic']
                 )
 
         return event
