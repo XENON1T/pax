@@ -30,7 +30,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">  
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Processor for Analyzing XENON1T 3.3.0 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -51,38 +64,26 @@
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">strftime</span>
 
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">pax</span>    <span class="c"># for version</span>
-<span class="kn">from</span> <span class="nn">pax.datastructure</span> <span class="kn">import</span> <span class="n">Event</span>
+<span class="kn">from</span> <span class="nn">pax.datastructure</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">ReconstructedPosition</span>
 
 
 <div class="viewcode-block" id="BasePlugin"><a class="viewcode-back" href="../../pax.html#pax.plugin.BasePlugin">[docs]</a><span class="k">class</span> <span class="nc">BasePlugin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="c"># Processor.run() will ensure this gets set after it has shut down the plugin</span>
+    <span class="c"># If you ever shut down a plugin yourself, you need to set it too!!</span>
+    <span class="n">has_shut_down</span> <span class="o">=</span> <span class="bp">False</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_values</span><span class="p">,</span> <span class="n">processor</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">processor</span> <span class="o">=</span> <span class="n">processor</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">total_time_taken</span> <span class="o">=</span> <span class="mi">0</span>   <span class="c"># Total time in msec spent in this plugin</span>
-
-        <span class="c"># run() will ensure this gets set after it has shut down the plugin</span>
-        <span class="c"># If you ever shut down a plugin yourself, you need to set it too!!</span>
-        <span class="c"># TODO: this is clunky...</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">has_shut_down</span> <span class="o">=</span> <span class="bp">False</span>
-
-        <span class="c"># Please do all config variable fetching in constructor to make changing config easier.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config_values</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_pre_startup</span><span class="p">()</span>
         <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">startup</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">y</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&#39;Startup of </span><span class="si">%s</span><span class="s"> returned a </span><span class="si">%s</span><span class="s"> instead of None.&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">y</span><span class="p">)))</span>
-
-    <span class="k">def</span> <span class="nf">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_shut_down</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Deleting </span><span class="si">%s</span><span class="s">, shutdown has NOT occurred yet!&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-            <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
-            <span class="k">if</span> <span class="n">y</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&#39;Shutdown of </span><span class="si">%s</span><span class="s"> returned a </span><span class="si">%s</span><span class="s"> instead of None.&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">y</span><span class="p">)))</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Deleting </span><span class="si">%s</span><span class="s">, shutdown has already occurred&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_pre_startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">pass</span>
@@ -168,7 +169,7 @@
             <span class="k">else</span><span class="p">:</span>
                 <span class="c"># Deep fallback: timestamp-based name.</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;output_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;output_pax</span><span class="si">%s</span><span class="s">_</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pax</span><span class="o">.</span><span class="n">__version__</span><span class="p">,</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&#39;%y%m</span><span class="si">%d</span><span class="s">_%H%M%S&#39;</span><span class="p">))</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_pre_startup</span><span class="p">()</span>
+        <span class="n">ProcessPlugin</span><span class="o">.</span><span class="n">_pre_startup</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
 <div class="viewcode-block" id="OutputPlugin.write_event"><a class="viewcode-back" href="../../pax.html#pax.plugin.OutputPlugin.write_event">[docs]</a>    <span class="k">def</span> <span class="nf">write_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Do magic. Return None.</span>
@@ -182,6 +183,60 @@
         <span class="k">return</span> <span class="n">event</span>
 
 </div>
+<div class="viewcode-block" id="PosRecPlugin"><a class="viewcode-back" href="../../pax.html#pax.plugin.PosRecPlugin">[docs]</a><span class="k">class</span> <span class="nc">PosRecPlugin</span><span class="p">(</span><span class="n">TransformPlugin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Base plugin for position reconstruction</span>
+<span class="sd">    Ensures all posrec plugins:</span>
+<span class="sd">     - use the ReconstructedPosition.algorithm field in the same way (set to self.name)</span>
+<span class="sd">     - act on the same set of peaks (all tpc peaks except lone-hits)</span>
+<span class="sd">     - have the same behaviour when giving up (add a position with x = y = nan)</span>
+<span class="sd">     - don&#39;t get passed peaks without top pmts active (we add the nan-position automatically)</span>
+<span class="sd">     - have self.pmts and self.pmt_locations available in the same way</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">_pre_startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="c"># List of integers of which PMTs to use, this algorithm uses the top pmt array to reconstruct</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pmts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_top&#39;</span><span class="p">])</span>
+
+        <span class="c"># (x,y) Locations of these PMTs, stored as np.array([(x,y), (x,y), ...])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pmt_locations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pmts</span><span class="p">),</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmts</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">,</span> <span class="s">&#39;y&#39;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pmt_locations</span><span class="p">[</span><span class="n">ch</span><span class="p">][{</span><span class="s">&#39;x&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&#39;y&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}[</span><span class="n">dim</span><span class="p">]]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pmt_locations&#39;</span><span class="p">][</span><span class="n">ch</span><span class="p">][</span><span class="n">dim</span><span class="p">]</span>
+
+        <span class="n">TransformPlugin</span><span class="o">.</span><span class="n">_pre_startup</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+
+<div class="viewcode-block" id="PosRecPlugin.transform_event"><a class="viewcode-back" href="../../pax.html#pax.plugin.PosRecPlugin.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">get_peaks_by_type</span><span class="p">(</span><span class="n">detector</span><span class="o">=</span><span class="s">&#39;tpc&#39;</span><span class="p">):</span>
+            <span class="c"># Do not act on lone hits</span>
+            <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s">&#39;lone_hit&#39;</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="c"># If there are no contributing top PMTs, don&#39;t even try:</span>
+            <span class="n">area_top</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">area_per_channel</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">pmts</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">area_top</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">pos_dict</span> <span class="o">=</span> <span class="bp">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">pos_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reconstruct_position</span><span class="p">(</span><span class="n">peak</span><span class="p">)</span>
+
+            <span class="c"># Parse the plugin&#39;s result</span>
+            <span class="k">if</span> <span class="n">pos_dict</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="c"># The plugin gave up</span>
+                <span class="n">pos_dict</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pos_dict</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)):</span>
+                <span class="c"># The plugin returned (x, y)</span>
+                <span class="n">pos_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">((</span><span class="s">&#39;x&#39;</span><span class="p">,</span> <span class="s">&#39;y&#39;</span><span class="p">),</span> <span class="n">pos_dict</span><span class="p">))</span>
+
+            <span class="c"># Add the algorithm field, then append the position to the peak</span>
+            <span class="n">pos_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">reconstructed_positions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ReconstructedPosition</span><span class="p">(</span><span class="o">**</span><span class="n">pos_dict</span><span class="p">))</span>
+
+        <span class="k">return</span> <span class="n">event</span>
+</div>
+<div class="viewcode-block" id="PosRecPlugin.reconstruct_position"><a class="viewcode-back" href="../../pax.html#pax.plugin.PosRecPlugin.reconstruct_position">[docs]</a>    <span class="k">def</span> <span class="nf">reconstruct_position</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return a position {&#39;x&#39;: ..., &#39;y&#39;: ...) or (x, y) for the peak or None (if you can&#39;t).&quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+</div></div>
 <div class="viewcode-block" id="EventLoggingAdapter"><a class="viewcode-back" href="../../pax.html#pax.plugin.EventLoggingAdapter">[docs]</a><span class="k">class</span> <span class="nc">EventLoggingAdapter</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">LoggerAdapter</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Prepends event number to log messages</span>
 <span class="sd">    Adapted from https://docs.python.org/3.4/howto/logging-cookbook.html#context-info</span>
@@ -194,15 +249,7 @@
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper"><div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../../index.html">Documentation overview</a><ul>
-  <li><a href="../index.html">Module code</a><ul>
-  </ul></li>
-  </ul></li>
-</ul>
-</div>
+        <div class="sphinxsidebarwrapper">
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
@@ -225,7 +272,7 @@
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
       
     </div>
 

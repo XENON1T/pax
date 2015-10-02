@@ -30,7 +30,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">  
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">Processor for Analyzing XENON1T 3.3.0 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -40,12 +53,10 @@
   <h1>Source code for pax.plugins.posrec.NeuralNet</h1><div class="highlight"><pre>
 <span class="sd">&quot;&quot;&quot;Neural network position reconstruction&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-
 <span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span>
-<span class="kn">from</span> <span class="nn">pax.datastructure</span> <span class="kn">import</span> <span class="n">ReconstructedPosition</span>
 
 
-<div class="viewcode-block" id="PosRecNeuralNet"><a class="viewcode-back" href="../../../../pax.plugins.posrec.html#pax.plugins.posrec.NeuralNet.PosRecNeuralNet">[docs]</a><span class="k">class</span> <span class="nc">PosRecNeuralNet</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
+<div class="viewcode-block" id="PosRecNeuralNet"><a class="viewcode-back" href="../../../../pax.plugins.posrec.html#pax.plugins.posrec.NeuralNet.PosRecNeuralNet">[docs]</a><span class="k">class</span> <span class="nc">PosRecNeuralNet</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">PosRecPlugin</span><span class="p">):</span>
 
     <span class="sd">&quot;&quot;&quot;Reconstruct S2 x,y positions from top pmt hit pattern using a single hidden layer feed-foward neural net</span>
 
@@ -57,9 +68,9 @@
         <span class="sd">&quot;&quot;&quot; Initialize the neural net.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pmt_0_is_fake&#39;</span><span class="p">]:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">input_channels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_top&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">:])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">input_channels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmts</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">input_channels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_top&#39;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">input_channels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmts</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nn_output_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;nn_output_unit&#39;</span><span class="p">]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">nn</span> <span class="o">=</span> <span class="n">NeuralNet</span><span class="p">(</span><span class="n">n_inputs</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_channels</span><span class="p">),</span>
@@ -68,24 +79,13 @@
                             <span class="n">weights</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">],</span>
                             <span class="n">biases</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;biases&#39;</span><span class="p">])</span>
 </div>
-<div class="viewcode-block" id="PosRecNeuralNet.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.posrec.html#pax.plugins.posrec.NeuralNet.PosRecNeuralNet.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Reconstruct the position of S2s in an event.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">S2s</span><span class="p">():</span>
+<div class="viewcode-block" id="PosRecNeuralNet.reconstruct_position"><a class="viewcode-back" href="../../../../pax.plugins.posrec.html#pax.plugins.posrec.NeuralNet.PosRecNeuralNet.reconstruct_position">[docs]</a>    <span class="k">def</span> <span class="nf">reconstruct_position</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">):</span>
+        <span class="n">input_areas</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">area_per_channel</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">input_channels</span><span class="p">]</span>
 
-            <span class="n">input_areas</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">area_per_channel</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">input_channels</span><span class="p">]</span>
-
-            <span class="c"># Run the neural net</span>
-            <span class="c"># Input is fraction of top area (see Xerawdp, PositionReconstruction.cpp, line 246)</span>
-            <span class="c"># Convert from neural net&#39;s units to pax units</span>
-            <span class="n">nn_output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">input_areas</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">input_areas</span><span class="p">))</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">nn_output_unit</span>
-
-            <span class="n">peak</span><span class="o">.</span><span class="n">reconstructed_positions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ReconstructedPosition</span><span class="p">({</span>
-                <span class="s">&#39;x&#39;</span><span class="p">:</span> <span class="n">nn_output</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-                <span class="s">&#39;y&#39;</span><span class="p">:</span> <span class="n">nn_output</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
-                <span class="s">&#39;algorithm&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">}))</span>
-
-        <span class="k">return</span> <span class="n">event</span>
+        <span class="c"># Run the neural net</span>
+        <span class="c"># Input is fraction of top area (see Xerawdp, PositionReconstruction.cpp, line 246)</span>
+        <span class="c"># Convert from neural net&#39;s units to pax units</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">input_areas</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">input_areas</span><span class="p">))</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">nn_output_unit</span>
 
 </div></div>
 <div class="viewcode-block" id="NeuralNet"><a class="viewcode-back" href="../../../../pax.plugins.posrec.html#pax.plugins.posrec.NeuralNet.NeuralNet">[docs]</a><span class="k">class</span> <span class="nc">NeuralNet</span><span class="p">():</span>
@@ -137,15 +137,7 @@
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper"><div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../../../../index.html">Documentation overview</a><ul>
-  <li><a href="../../../index.html">Module code</a><ul>
-  </ul></li>
-  </ul></li>
-</ul>
-</div>
+        <div class="sphinxsidebarwrapper">
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../../../search.html" method="get">
@@ -168,7 +160,7 @@
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
       
     </div>
 

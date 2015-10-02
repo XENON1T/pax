@@ -1,0 +1,122 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pax.plugins.peak_processing.ClassifyPeaks &mdash; Processor for Analyzing XENON1T 3.3.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '3.3.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <link rel="top" title="Processor for Analyzing XENON1T 3.3.0 documentation" href="../../../../index.html" />
+    <link rel="up" title="Module code" href="../../../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">Processor for Analyzing XENON1T 3.3.0 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pax.plugins.peak_processing.ClassifyPeaks</h1><div class="highlight"><pre>
+<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">units</span>
+
+
+<div class="viewcode-block" id="AdHocClassification"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.ClassifyPeaks.AdHocClassification">[docs]</a><span class="k">class</span> <span class="nc">AdHocClassification</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
+
+<div class="viewcode-block" id="AdHocClassification.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.ClassifyPeaks.AdHocClassification.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+
+        <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">:</span>
+            <span class="c"># Don&#39;t work on noise and lone_hit</span>
+            <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&#39;noise&#39;</span><span class="p">,</span> <span class="s">&#39;lone_hit&#39;</span><span class="p">):</span>
+                <span class="k">continue</span>
+
+            <span class="n">width</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">range_area_decile</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">area</span> <span class="o">&gt;</span> <span class="mi">50</span><span class="p">:</span>
+                <span class="c"># We don&#39;t have to worry about single electrons anymore</span>
+                <span class="k">if</span> <span class="n">width</span> <span class="o">&lt;</span> <span class="mi">100</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">ns</span><span class="p">:</span>
+                    <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s">&#39;s1&#39;</span>
+                <span class="k">elif</span> <span class="n">width</span> <span class="o">&gt;</span> <span class="mi">250</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">ns</span><span class="p">:</span>
+                    <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s">&#39;s2&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c"># Worry about SE-S1 identification.</span>
+                <span class="k">if</span> <span class="n">width</span> <span class="o">&lt;</span> <span class="mi">75</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">ns</span><span class="p">:</span>
+                    <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s">&#39;s1&#39;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">area</span> <span class="o">&lt;</span> <span class="mi">5</span><span class="p">:</span>
+                        <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s">&#39;coincidence&#39;</span>
+                    <span class="k">elif</span> <span class="n">width</span> <span class="o">&gt;</span> <span class="mi">100</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">ns</span><span class="p">:</span>
+                        <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">=</span> <span class="s">&#39;s2&#39;</span>
+
+        <span class="k">return</span> <span class="n">event</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2014, Christopher Tunnell.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

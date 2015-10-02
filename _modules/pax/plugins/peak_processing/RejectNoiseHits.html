@@ -1,0 +1,170 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pax.plugins.peak_processing.RejectNoiseHits &mdash; Processor for Analyzing XENON1T 3.3.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../../../',
+        VERSION:     '3.3.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../../../_static/doctools.js"></script>
+    <link rel="top" title="Processor for Analyzing XENON1T 3.3.0 documentation" href="../../../../index.html" />
+    <link rel="up" title="Module code" href="../../../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../../../index.html">Processor for Analyzing XENON1T 3.3.0 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../../../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pax.plugins.peak_processing.RejectNoiseHits</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">utils</span>
+
+
+<div class="viewcode-block" id="RejectNoiseHits"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.RejectNoiseHits.RejectNoiseHits">[docs]</a><span class="k">class</span> <span class="nc">RejectNoiseHits</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Remove hits in channels with many lone hits from peaks without many other hits.</span>
+<span class="sd">    Works with a penalty point system (see #126):</span>
+<span class="sd">    * The more lone hits you see in a channel, the more points a channel gets.</span>
+<span class="sd">    * Channels with more than a (fairly low) number of penalty points are called suspicious.</span>
+<span class="sd">      For these, we&#39;ll test every peak as follows:</span>
+<span class="sd">      * A peak scores points for every pe in non-suspicious channels.</span>
+<span class="sd">      * Hits in channels with more penalty points than the peak&#39;s score are removed from the peak.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="RejectNoiseHits.startup"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.RejectNoiseHits.RejectNoiseHits.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">detector_by_channel</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">get_detector_by_channel</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="RejectNoiseHits.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.RejectNoiseHits.RejectNoiseHits.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="c"># Penalty for each noise pulse</span>
+        <span class="n">penalty_per_ch</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">noise_pulses_in</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;penalty_per_noise_pulse&#39;</span><span class="p">]</span>
+
+        <span class="c"># Penalty for each lone hit</span>
+        <span class="n">lone_hits</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">get_peaks_by_type</span><span class="p">(</span><span class="n">desired_type</span><span class="o">=</span><span class="s">&#39;lone_hit&#39;</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="s">&#39;all&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;This event has </span><span class="si">%d</span><span class="s"> lone hits&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">lone_hits</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">lone_hit_peak</span> <span class="ow">in</span> <span class="n">lone_hits</span><span class="p">:</span>
+            <span class="n">penalty_per_ch</span><span class="p">[</span><span class="n">lone_hit_peak</span><span class="o">.</span><span class="n">hits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">channel</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;penalty_per_lone_hit&#39;</span><span class="p">]</span>
+
+        <span class="c"># Which channels are suspicious?</span>
+        <span class="n">suspicious_channels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">penalty_per_ch</span> <span class="o">&gt;=</span>
+                                       <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;penalty_geq_this_is_suspicious&#39;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">event</span><span class="o">.</span><span class="n">is_channel_suspicious</span><span class="p">[</span><span class="n">suspicious_channels</span><span class="p">]</span> <span class="o">=</span> <span class="bp">True</span>
+
+        <span class="n">peaks_to_delete</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">peak_i</span><span class="p">,</span> <span class="n">peak</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">):</span>
+
+            <span class="c"># Area per channel must be computed here... unfortunate code duplication with basicProperti</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">area_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;n_channels&#39;</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s">&#39;float64&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">hit</span> <span class="ow">in</span> <span class="n">peak</span><span class="o">.</span><span class="n">hits</span><span class="p">:</span>
+                <span class="n">peak</span><span class="o">.</span><span class="n">area_per_channel</span><span class="p">[</span><span class="n">hit</span><span class="o">.</span><span class="n">channel</span><span class="p">]</span> <span class="o">+=</span> <span class="n">hit</span><span class="o">.</span><span class="n">area</span>
+
+            <span class="n">suspicious_channels_in_peak</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">intersect1d</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">contributing_channels</span><span class="p">,</span> <span class="n">suspicious_channels</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">suspicious_channels_in_peak</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Peak </span><span class="si">%d</span><span class="s"> has suspicious channels </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">peak_i</span><span class="p">,</span> <span class="n">suspicious_channels_in_peak</span><span class="p">))</span>
+
+            <span class="c"># Which channels should we reject in this peak?</span>
+            <span class="c"># First compute the &#39;witness area&#39; for this peak: area not in suspicious channels</span>
+            <span class="c"># We reject channels whose penalty is larger than the witness area</span>
+            <span class="n">witness_area</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">area_per_channel</span><span class="p">[</span><span class="bp">True</span> <span class="o">^</span> <span class="n">event</span><span class="o">.</span><span class="n">is_channel_suspicious</span><span class="p">])</span>
+            <span class="n">channels_to_reject</span> <span class="o">=</span> <span class="p">[</span><span class="n">ch</span> <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">suspicious_channels_in_peak</span> <span class="k">if</span> <span class="n">penalty_per_ch</span><span class="p">[</span><span class="n">ch</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">witness_area</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Witness area </span><span class="si">%s</span><span class="s">, penalties: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">witness_area</span><span class="p">,</span>
+                                                               <span class="p">[</span><span class="n">penalty_per_ch</span><span class="p">[</span><span class="n">ch</span><span class="p">]</span>
+                                                                <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">suspicious_channels_in_peak</span><span class="p">]))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Channels to reject: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">channels_to_reject</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">channels_to_reject</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="c"># Keep only hits not in the channels_to_reject</span>
+            <span class="n">new_hits</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">h</span> <span class="ow">in</span> <span class="n">peak</span><span class="o">.</span><span class="n">hits</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">h</span><span class="o">.</span><span class="n">channel</span> <span class="ow">in</span> <span class="n">channels_to_reject</span><span class="p">:</span>
+                    <span class="n">h</span><span class="o">.</span><span class="n">is_rejected</span> <span class="o">=</span> <span class="bp">True</span>
+                    <span class="n">event</span><span class="o">.</span><span class="n">n_hits_rejected</span><span class="p">[</span><span class="n">h</span><span class="o">.</span><span class="n">channel</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">new_hits</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">hits</span> <span class="o">=</span> <span class="n">new_hits</span>
+
+            <span class="c"># Has the peak become empty? Then mark it for deletion.</span>
+            <span class="c"># We can&#39;t delete it now since we&#39;re iterating over event.peaks</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">hits</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Peak </span><span class="si">%d</span><span class="s"> consists completely of rejected hits and will be deleted!&#39;</span> <span class="o">%</span> <span class="n">peak_i</span><span class="p">)</span>
+                <span class="n">peaks_to_delete</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">peak_i</span><span class="p">)</span>
+                <span class="k">continue</span>
+
+        <span class="c"># Delete any peaks which have gone empty</span>
+        <span class="n">event</span><span class="o">.</span><span class="n">peaks</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">peaks</span><span class="p">)</span> <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">peaks_to_delete</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">event</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2014, Christopher Tunnell.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

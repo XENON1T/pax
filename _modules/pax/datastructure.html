@@ -30,7 +30,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">  
+  <body role="document">
+    <div class="related" role="navigation" aria-label="related navigation">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Processor for Analyzing XENON1T 3.3.0 documentation</a> &raquo;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
 
     <div class="document">
       <div class="documentwrapper">
@@ -47,22 +60,15 @@
 <span class="sd">names of functionality between major releases.  You may add variables in minor</span>
 <span class="sd">releases.  Patch releases cannot modify this.</span>
 <span class="sd">&quot;&quot;&quot;</span>
-
-<span class="kn">import</span> <span class="nn">inspect</span>
-
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">six</span>
+<span class="k">if</span> <span class="n">six</span><span class="o">.</span><span class="n">PY3</span><span class="p">:</span>
+    <span class="nb">long</span> <span class="o">=</span> <span class="nb">int</span>
 
-<span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">units</span>
+<span class="kn">from</span> <span class="nn">pax.data_model</span> <span class="kn">import</span> <span class="n">StrictModel</span><span class="p">,</span> <span class="n">ListField</span><span class="p">,</span> <span class="n">Model</span>
 
-<span class="c"># DO NOT use Model instead of StrictModel:</span>
-<span class="c"># It improves performance, but kills serialization (numpy int types will apear in class etc)</span>
-<span class="c"># TODO: For Hit class, we may want Model for performance?</span>
-<span class="c">#       Look where the numpy int types get in, force them to python ints.</span>
-<span class="kn">from</span> <span class="nn">pax.data_model</span> <span class="kn">import</span> <span class="n">StrictModel</span><span class="p">,</span> <span class="n">ListField</span>
-
-
-<span class="n">INT_NAN</span> <span class="o">=</span> <span class="o">-</span><span class="mi">99999</span>  <span class="c"># Do not change without talking to me. -Tunnell 12/3/2015</span>
+<span class="n">INT_NAN</span> <span class="o">=</span> <span class="o">-</span><span class="mi">99999</span>    <span class="c"># Do not change without talking to me. -Tunnell 12/3/2015 ... and me. -Jelle 05/08/2015</span>
 
 
 <div class="viewcode-block" id="ReconstructedPosition"><a class="viewcode-back" href="../../pax.html#pax.datastructure.ReconstructedPosition">[docs]</a><span class="k">class</span> <span class="nc">ReconstructedPosition</span><span class="p">(</span><span class="n">StrictModel</span><span class="p">):</span>
@@ -70,13 +76,13 @@
 
 <span class="sd">    Each reconstruction algorithm creates one of these.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">x</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c">#: x position (cm)</span>
-    <span class="n">y</span> <span class="o">=</span> <span class="mf">0.0</span>  <span class="c">#: y position (cm)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>  <span class="c">#: x position (cm)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>  <span class="c">#: y position (cm)</span>
 
     <span class="c">#: goodness-of-fit parameter generated with PosRecChiSquareGamma</span>
-    <span class="n">goodness_of_fit</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">goodness_of_fit</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
     <span class="c"># : number of degrees of freedom calculated with PosRecChiSquareGamma</span>
-    <span class="n">ndf</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">ndf</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
 
     <span class="c">#: Name of algorithm used for computation</span>
     <span class="n">algorithm</span> <span class="o">=</span> <span class="s">&#39;none&#39;</span>
@@ -89,14 +95,17 @@
     <span class="c"># cylindrical coordinates</span>
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">r</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
 
+    <span class="c">#: phi position, i.e. angle wrt the x=0 axis in the xy plane (radians)</span>
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">phi</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">math</span><span class="o">.</span><span class="n">atan2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
 
-</div>
-<div class="viewcode-block" id="Hit"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Hit">[docs]</a><span class="k">class</span> <span class="nc">Hit</span><span class="p">(</span><span class="n">StrictModel</span><span class="p">):</span>
+
+<span class="c"># Hit class uses model: no type checking, better performance</span>
+<span class="c"># Using StrictModel instead causes 50% longer runtime of hitfinder</span></div>
+<div class="viewcode-block" id="Hit"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Hit">[docs]</a><span class="k">class</span> <span class="nc">Hit</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;A hit results from, within individual channel, fluctation above baseline.</span>
 
 <span class="sd">    These are be clustered into ordinary peaks later. This is commonly</span>
@@ -112,6 +121,9 @@
 
     <span class="c">#: Time (since start of event in ns) of hit&#39;s center of gravity</span>
     <span class="n">center</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="c">#: Weighted sum of absolute deviation (in ns) of hit waveform from hit center</span>
+    <span class="n">sum_absolute_deviation</span> <span class="o">=</span> <span class="mf">0.0</span>
 
     <span class="n">left</span> <span class="o">=</span> <span class="mi">0</span>                 <span class="c">#: Index of left bound (inclusive) of peak.</span>
     <span class="n">right</span> <span class="o">=</span> <span class="mi">0</span>                <span class="c">#: Index of right bound (INCLUSIVE!!) of peak</span>
@@ -144,20 +156,14 @@
 
 <span class="sd">    A peak will be, e.g., S1 or S2.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c">#: Type of peak (e.g., &#39;s1&#39;, &#39;s2&#39;, ...)</span>
+    <span class="nb">type</span> <span class="o">=</span> <span class="s">&#39;unknown&#39;</span>
+
+    <span class="c">#: Detector in which the peak was found, e.g. tpc or veto</span>
+    <span class="n">detector</span> <span class="o">=</span> <span class="s">&#39;none&#39;</span>
 
     <span class="c">##</span>
-    <span class="c"># Basics</span>
-    <span class="c">##</span>
-
-    <span class="nb">type</span> <span class="o">=</span> <span class="s">&#39;unknown&#39;</span>        <span class="c">#: Type of peak (e.g., &#39;s1&#39;, &#39;s2&#39;, ...)</span>
-    <span class="n">detector</span> <span class="o">=</span> <span class="s">&#39;none&#39;</span>       <span class="c">#: e.g. tpc or veto</span>
-
-    <span class="c">#: Area of the pulse in photoelectrons. Includes only contributing pmts in the right detector.</span>
-    <span class="c">#: For XDP matching rightmost sample is not included in area integral.</span>
-    <span class="n">area</span> <span class="o">=</span> <span class="mf">0.0</span>
-
-    <span class="c">##</span>
-    <span class="c">#  Low-level data</span>
+    <span class="c">#  Hit, area, and saturation data</span>
     <span class="c">##</span>
 
     <span class="c">#: Peaks in individual channels that make up this peak</span>
@@ -166,25 +172,44 @@
     <span class="c">#: Array of areas in each PMT.</span>
     <span class="n">area_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="s">&#39;float64&#39;</span><span class="p">)</span>
 
-    <span class="c">#: Does a channel have no hits, but digitizer shows data?</span>
-    <span class="n">does_channel_have_noise</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+    <span class="c">#: Area of the pulse in photoelectrons. Includes only contributing pmts in the right detector.</span>
+    <span class="c">#: For XDP matching rightmost sample is not included in area integral.</span>
+    <span class="n">area</span> <span class="o">=</span> <span class="mf">0.0</span>
 
-    <span class="c">#: Does a PMT see &#39;something significant&#39;? (thresholds configurable)</span>
-    <span class="n">does_channel_contribute</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+    <span class="c">#: Fraction of area in the top array</span>
+    <span class="n">area_fraction_top</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="c">#: Number of hits in the peak, per channel (that is, it&#39;s an array with index = channel number)</span>
+    <span class="n">hits_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+
+    <span class="c">#: Total channels which contribute to the peak</span>
+    <span class="n">n_contributing_channels</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c">#: Total channels in the top array contributing to the peak</span>
+    <span class="n">n_contributing_channels_top</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c">#: Total number of hits in the peak</span>
+    <span class="n">n_hits</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c">#: Fraction of hits in the top array</span>
+    <span class="n">hits_fraction_top</span> <span class="o">=</span> <span class="mf">0.0</span>
 
     <span class="c">#: Number of samples with ADC saturation in this peak, per channel</span>
     <span class="n">n_saturated_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
 
     <span class="c">#: Total number of samples with ADC saturation threshold in all channels in this peak</span>
-    <span class="n">n_saturated</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">n_saturated_samples</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c">#: Total number of channels in the peakwhich have at least one saturated hit</span>
+    <span class="n">n_saturated_channels</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">does_channel_contribute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">area_per_channel</span> <span class="o">&gt;</span> <span class="mi">0</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">contributing_channels</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">does_channel_contribute</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-
-    <span class="nd">@property</span>
-    <span class="k">def</span> <span class="nf">noise_channels</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">does_channel_have_noise</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="c">##</span>
     <span class="c"># Time distribution information</span>
@@ -199,10 +224,26 @@
     <span class="c">#: Weighted (by hit area) std of hit times</span>
     <span class="n">hit_time_std</span> <span class="o">=</span> <span class="mf">0.0</span>
 
-    <span class="c">#: Time range of centermost hits containing at least 50% / 90% of area (with center at hit_time_mean)</span>
-    <span class="c">#: (rightmostright - leftmostleft + 1) * sample_duration</span>
-    <span class="n">range_50p_area</span> <span class="o">=</span> <span class="mf">0.0</span>
-    <span class="n">range_90p_area</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="c">#: Central range of peak (hit-only) sum waveform which includes a given decile (0-10) of area.</span>
+    <span class="c">#: e.g. range_area_decile[5] = range of 50% area = distance (in time) between point</span>
+    <span class="c">#: of 25% area and 75% area (with boundary samples added fractionally).</span>
+    <span class="c">#: First element (0) is always zero, last element (10) is the full range of the peak.</span>
+    <span class="n">range_area_decile</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">range_50p_area</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">range_area_decile</span><span class="p">[</span><span class="mi">5</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">range_90p_area</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">range_area_decile</span><span class="p">[</span><span class="mi">9</span><span class="p">]</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">full_range</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">range_area_decile</span><span class="p">[</span><span class="mi">10</span><span class="p">]</span>
+
+    <span class="c">#: Time at which the peak reaches 50% of its area (with the central sample considered fractionally)</span>
+    <span class="n">area_midpoint</span> <span class="o">=</span> <span class="mf">0.0</span>
 
     <span class="c">##</span>
     <span class="c"># Spatial pattern information</span>
@@ -211,38 +252,76 @@
     <span class="c">#: List of reconstructed positions (instances of :class:`pax.datastructure.ReconstructedPosition`)</span>
     <span class="n">reconstructed_positions</span> <span class="o">=</span> <span class="n">ListField</span><span class="p">(</span><span class="n">ReconstructedPosition</span><span class="p">)</span>
 
-    <span class="c">#: Weighted root mean square deviation of top hitpattern (cm)</span>
-    <span class="n">top_hitpattern_spread</span> <span class="o">=</span> <span class="mf">0.0</span>
+<div class="viewcode-block" id="Peak.get_reconstructed_position_from_algorithm"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.get_reconstructed_position_from_algorithm">[docs]</a>    <span class="k">def</span> <span class="nf">get_reconstructed_position_from_algorithm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">algorithm</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return reconstructed position found by algorithm, or None if the peak doesn&#39;t have one&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">rp</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">reconstructed_positions</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">rp</span><span class="o">.</span><span class="n">algorithm</span> <span class="o">==</span> <span class="n">algorithm</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">rp</span>
+        <span class="k">return</span> <span class="bp">None</span>
+</div>
+<div class="viewcode-block" id="Peak.get_position_from_preferred_algorithm"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.get_position_from_preferred_algorithm">[docs]</a>    <span class="k">def</span> <span class="nf">get_position_from_preferred_algorithm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">algorithm_list</span><span class="p">,</span> <span class="n">get_from</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return reconstructed position by the first algorithm in list,</span>
+<span class="sd">        unless it doesn&#39;t exist or is a nan position, then moves on to further algorithms.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">algo</span> <span class="ow">in</span> <span class="n">algorithm_list</span><span class="p">:</span>
+            <span class="n">rp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_reconstructed_position_from_algorithm</span><span class="p">(</span><span class="n">algo</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">rp</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">rp</span><span class="o">.</span><span class="n">x</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">):</span>
+                <span class="k">return</span> <span class="n">rp</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Could not find any position from the chosen algorithms: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">algorithm_list</span><span class="p">)</span>
 
-    <span class="c">#: Weighted root mean square deviation of bottom hitpattern (cm)</span>
-    <span class="n">bottom_hitpattern_spread</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="c">#: Weighted-average distance of top array hits from weighted mean center on top array (cm)</span></div>
+    <span class="n">top_hitpattern_spread</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
 
-    <span class="c">#: Fraction of area in the top array</span>
-    <span class="n">area_fraction_top</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="c">#: Weighted-average distance of bottom array hits from weighted mean center on bottom array (cm)</span>
+    <span class="n">bottom_hitpattern_spread</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
 
     <span class="c">##</span>
     <span class="c"># Signal / noise info</span>
     <span class="c">##</span>
 
-    <span class="c">#: Number of PMTS which see something significant (depends on settings) ~~ &quot;coincidence level&quot;</span>
-    <span class="n">n_contributing_channels</span> <span class="o">=</span> <span class="mi">0</span>
-
-    <span class="c">#: Number of channels that show no hits, but digitizer shows data</span>
-    <span class="n">n_noise_channels</span> <span class="o">=</span> <span class="mi">0</span>
-
     <span class="c">#: Weighted (by area) mean hit amplitude / noise level in that hit&#39;s channel</span>
     <span class="n">mean_amplitude_to_noise</span> <span class="o">=</span> <span class="mf">0.0</span>
 
+    <span class="c">#: Number of pulses without hits overlapping (at least partially) with this peak.</span>
+    <span class="c">#: Includes channels from other detectors (since veto and tpc cables could influence each other)</span>
+    <span class="n">n_noise_pulses</span> <span class="o">=</span> <span class="mi">0</span>
+
     <span class="c">##</span>
-    <span class="c"># Deprecated sum-waveform stuff, needed for Xerawdp matching??</span>
+    <span class="c"># Sum-waveform properties</span>
     <span class="c">##</span>
+
+    <span class="c">#: The peak&#39;s sum waveform in pe/bin</span>
+    <span class="c">#: The peak&#39;s center of gravity is always in the center of the array.</span>
+    <span class="n">sum_waveform</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+    <span class="c">#: For tpc peaks, the peak&#39;s sum waveform in the top array only. Aligned with the sum waveform.</span>
+    <span class="n">sum_waveform_top</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
 
     <span class="c">#: Index in the event&#39;s sum waveform at which this peak has its maximum.</span>
     <span class="n">index_of_maximum</span> <span class="o">=</span> <span class="mi">0</span>
 
-    <span class="c">#: Height of highest point in peak (in pe/bin)</span>
-    <span class="c">#: In new pax, is height of highest hit</span>
+    <span class="c">#: Time at which the peak&#39;s sum waveform has its center of gravity.</span>
+    <span class="n">center_time</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="c">#: Height of sum waveform (in pe/bin)</span>
     <span class="n">height</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="c">##</span>
+    <span class="c"># Clustering record</span>
+    <span class="c">##</span>
+
+    <span class="c">#: Best goodness of split observed inside the peak</span>
+    <span class="n">interior_split_goodness</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
+
+    <span class="c">#: Area fraction of the smallest of the two halves considered in the best split inside the peak</span>
+    <span class="c">#: (i.e. the one corresponding to interior_split_goodness)</span>
+    <span class="n">interior_split_fraction</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
+
+    <span class="c">#: Goodness of split of last split that was used to construct this peak (if split did occur).</span>
+    <span class="n">birthing_split_goodness</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
+
+    <span class="c">#: Area of this peak / area of parent peak it was split from (if split did occur)</span>
+    <span class="n">birthing_split_fraction</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
 
 </div>
 <div class="viewcode-block" id="SumWaveform"><a class="viewcode-back" href="../../pax.html#pax.datastructure.SumWaveform">[docs]</a><span class="k">class</span> <span class="nc">SumWaveform</span><span class="p">(</span><span class="n">StrictModel</span><span class="p">):</span>
@@ -260,7 +339,7 @@
     <span class="n">channel_list</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint16</span><span class="p">)</span>
 
     <span class="c">#: Array of samples, units of pe/bin.</span>
-    <span class="n">samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
 
 <div class="viewcode-block" id="SumWaveform.is_filtered"><a class="viewcode-back" href="../../pax.html#pax.datastructure.SumWaveform.is_filtered">[docs]</a>    <span class="k">def</span> <span class="nf">is_filtered</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">name_of_filter</span> <span class="o">!=</span> <span class="s">&#39;none&#39;</span><span class="p">:</span>
@@ -306,6 +385,9 @@
     <span class="c">#: Noise sigma for this pulse (in ADC counts - but float!)</span>
     <span class="n">noise_sigma</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
 
+    <span class="c">#: Number of hits found in this pulse</span>
+    <span class="n">n_hits_found</span> <span class="o">=</span> <span class="mi">0</span>
+
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">left</span> <span class="o">+</span> <span class="mi">1</span>
@@ -318,7 +400,7 @@
 <span class="sd">         - raw_data (numpy array of samples)</span>
 <span class="sd">         - right (last index)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">StrictModel</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">channel</span> <span class="o">==</span> <span class="n">INT_NAN</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Must specify channel to init Pulse&quot;</span><span class="p">)</span>
@@ -329,6 +411,100 @@
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_data</span><span class="p">):</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Must have right or raw_data to init Pulse&#39;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">right</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">left</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">raw_data</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+
+</div>
+<div class="viewcode-block" id="Interaction"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Interaction">[docs]</a><span class="k">class</span> <span class="nc">Interaction</span><span class="p">(</span><span class="n">StrictModel</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;An interaction in the TPC, reconstructed from a pair of S1 and S2 peaks.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c">#: The S1 peak of the interaction</span>
+    <span class="n">s1</span> <span class="o">=</span> <span class="n">Peak</span><span class="p">()</span>
+
+    <span class="c">#: The S2 peak of the interaction</span>
+    <span class="n">s2</span> <span class="o">=</span> <span class="n">Peak</span><span class="p">()</span>
+
+    <span class="c">##</span>
+    <span class="c"># Position information</span>
+    <span class="c">##</span>
+
+    <span class="c">#: The reconstructed position of the interaction</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>  <span class="c">#: x position (cm)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>  <span class="c">#: y position (cm)</span>
+
+    <span class="c">#: goodness-of-fit parameter of s2 hitpattern to x,y position reconstructed by PosRecChiSquareGamma</span>
+    <span class="n">xy_posrec_goodness_of_fit</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
+
+    <span class="c">#: number of degrees of freedom calculated with PosRecChiSquareGamma</span>
+    <span class="n">xy_posrec_ndf</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
+
+    <span class="c">#: Algorithm used for xy position reconstructed</span>
+    <span class="n">xy_posrec_algorithm</span> <span class="o">=</span> <span class="s">&#39;none&#39;</span>
+
+    <span class="c">#: drift time (ns) between S1 and S2</span>
+    <span class="n">drift_time</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
+
+    <span class="c">#: z position (cm), calculated from drift time</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
+
+    <span class="c">#: r position (cm)</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">r</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+
+    <span class="c">#: phi position, i.e. angle wrt the x=0 axis in the xy plane (radians)</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">phi</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
+
+<div class="viewcode-block" id="Interaction.set_position"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Interaction.set_position">[docs]</a>    <span class="k">def</span> <span class="nf">set_position</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">recpos</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Sets the x, y position of the interaction</span>
+<span class="sd">        based on a :class:`pax.datastructure.ReconstructedPosition` object&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="n">recpos</span><span class="o">.</span><span class="n">x</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">=</span> <span class="n">recpos</span><span class="o">.</span><span class="n">y</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xy_posrec_algorithm</span> <span class="o">=</span> <span class="n">recpos</span><span class="o">.</span><span class="n">algorithm</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xy_posrec_ndf</span> <span class="o">=</span> <span class="n">recpos</span><span class="o">.</span><span class="n">ndf</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">xy_posrec_goodness_of_fit</span> <span class="o">=</span> <span class="n">recpos</span><span class="o">.</span><span class="n">goodness_of_fit</span>
+
+    <span class="c">##</span>
+    <span class="c"># Interaction properties</span>
+    <span class="c">##</span>
+
+    <span class="c">#: Multiplicative correction to s1 area based on position (due to LCE variations)</span></div>
+    <span class="n">s1_area_correction</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">corrected_s1_area</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">s1</span><span class="o">.</span><span class="n">area</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">s1_area_correction</span>
+
+    <span class="c">#: Multiplicative correction to s2 area based on position (due to electron lifetime and LCE variations)</span>
+    <span class="n">s2_area_correction</span> <span class="o">=</span> <span class="mf">1.0</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">corrected_s2_area</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">s2</span><span class="o">.</span><span class="n">area</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">s2_area_correction</span>
+
+    <span class="c">#: log10(corrected S2 area / corrected S1 area). Used for recoil type discrimination.</span>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">log_cs2_cs1</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">corrected_s2_area</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">corrected_s1_area</span><span class="p">)</span>
+
+    <span class="c"># #: Estimated interaction energy in keV (ee? nr?)</span>
+    <span class="c"># energy = float(&#39;nan&#39;)</span>
+    <span class="c">#</span>
+    <span class="c"># #: Estimated error on interaction energy in keV (ee? nr?)</span>
+    <span class="c"># energy_error = float(&#39;nan&#39;)</span>
+
+    <span class="c">##</span>
+    <span class="c"># Likelihoods</span>
+    <span class="c">##</span>
+
+    <span class="c">#: Likelihood of s2 width based on z position</span>
+    <span class="n">s2_width_likelihood</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
+
+    <span class="c">#: Likelihood of s1 asymmetry based on z position</span>
+    <span class="n">s1_asymmetry_likelihood</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
+
+    <span class="c">#: Likelihood of s1 hitpattern spread based on z position</span>
+    <span class="n">s1_hitpattern_spread_likelihood</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
 
 </div>
 <div class="viewcode-block" id="Event"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event">[docs]</a><span class="k">class</span> <span class="nc">Event</span><span class="p">(</span><span class="n">StrictModel</span><span class="p">):</span>
@@ -352,14 +528,14 @@
     <span class="c">#: UNIX clock. Or rather, it starts from January 1, 1970.  This must be an integer</span>
     <span class="c">#: because floats have rounding that result in imprecise times.  You could</span>
     <span class="c">#: think of this as the time of the earliest sample.</span>
-    <span class="n">start_time</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">start_time</span> <span class="o">=</span> <span class="nb">long</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
     <span class="c">#: Integer stop time of the event in nanoseconds</span>
     <span class="c">#</span>
     <span class="c">#: This stop time includes the last recorded sample.  Therefore, it&#39;s the right</span>
     <span class="c">#: edge of the last sample.  This is a 64-bit integer for the reasons explained</span>
     <span class="c">#: in &#39;start_time&#39;.</span>
-    <span class="n">stop_time</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">stop_time</span> <span class="o">=</span> <span class="nb">long</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
     <span class="c">#: Time duration of a sample (in pax units, i.e. ns)</span>
     <span class="c">#: For V1724 digitizers (e.g. XENON), this is 10 nanoseconds always.</span>
@@ -368,20 +544,19 @@
     <span class="c">#: DO NOT set to 10 ns as default, otherwise no way to check if it was given to constructor!</span>
     <span class="n">sample_duration</span> <span class="o">=</span> <span class="mi">0</span>
 
-    <span class="c">#: List of peaks</span>
-    <span class="c">#:</span>
-    <span class="c">#: Returns a list of :class:`pax.datastructure.Peak` classes.</span>
+    <span class="c">#: A list of :class:`pax.datastructure.Interaction` objects.</span>
+    <span class="n">interactions</span> <span class="o">=</span> <span class="n">ListField</span><span class="p">(</span><span class="n">Interaction</span><span class="p">)</span>
+
+    <span class="c">#: A list of :class:`pax.datastructure.Peak` objects.</span>
     <span class="n">peaks</span> <span class="o">=</span> <span class="n">ListField</span><span class="p">(</span><span class="n">Peak</span><span class="p">)</span>
 
     <span class="c">#: Temporary list of hits -- will be shipped off to peaks later</span>
     <span class="n">all_hits</span> <span class="o">=</span> <span class="n">ListField</span><span class="p">(</span><span class="n">Hit</span><span class="p">)</span>
 
-    <span class="c">#: Returns a list of sum waveforms</span>
-    <span class="c">#:</span>
-    <span class="c">#: Returns an :class:`pax.datastructure.SumWaveform` class.</span>
+    <span class="c">#: A list :class:`pax.datastructure.SumWaveform` objects.</span>
     <span class="n">sum_waveforms</span> <span class="o">=</span> <span class="n">ListField</span><span class="p">(</span><span class="n">SumWaveform</span><span class="p">)</span>
 
-    <span class="c">#: A python list of all pulses in the event (containing instances of the Pulse class)</span>
+    <span class="c">#: A list of all pulses in the event (containing instances of the Pulse class)</span>
     <span class="c">#: An pulse holds a stream of samples in one channel, as provided by the digitizer.</span>
     <span class="n">pulses</span> <span class="o">=</span> <span class="n">ListField</span><span class="p">(</span><span class="n">Pulse</span><span class="p">)</span>
 
@@ -403,7 +578,7 @@
         <span class="c"># Model&#39;s init must be called first, else we can&#39;t store attributes</span>
         <span class="c"># This will store all of the kwargs as attrs</span>
         <span class="c"># We don&#39;t pass length, it&#39;s not an attribute that can be set</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s">&#39;length&#39;</span><span class="p">})</span>
+        <span class="n">StrictModel</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s">&#39;length&#39;</span><span class="p">})</span>
 
         <span class="c"># Cheat to init stop_time from length and duration</span>
         <span class="k">if</span> <span class="s">&#39;length&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_duration</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop_time</span><span class="p">:</span>
@@ -453,7 +628,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">duration</span><span class="p">()</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample_duration</span><span class="p">)</span>
 </div>
-<div class="viewcode-block" id="Event.S1s"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.S1s">[docs]</a>    <span class="k">def</span> <span class="nf">S1s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="s">&#39;tpc&#39;</span><span class="p">,</span> <span class="n">sort_key</span><span class="o">=</span><span class="s">&#39;area&#39;</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>  <span class="c"># noqa</span>
+<div class="viewcode-block" id="Event.s1s"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.s1s">[docs]</a>    <span class="k">def</span> <span class="nf">s1s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="s">&#39;tpc&#39;</span><span class="p">,</span> <span class="n">sort_key</span><span class="o">=</span><span class="s">&#39;area&#39;</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>  <span class="c"># noqa</span>
         <span class="sd">&quot;&quot;&quot;List of S1 (scintillation) signals in this event</span>
 
 <span class="sd">        Returns a list of :class:`pax.datastructure.Peak` objects</span>
@@ -464,7 +639,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_peaks_by_type</span><span class="p">(</span><span class="s">&#39;s1&#39;</span><span class="p">,</span> <span class="n">sort_key</span><span class="o">=</span><span class="n">sort_key</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="n">reverse</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="n">detector</span><span class="p">)</span>
 </div>
-<div class="viewcode-block" id="Event.S2s"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.S2s">[docs]</a>    <span class="k">def</span> <span class="nf">S2s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="s">&#39;tpc&#39;</span><span class="p">,</span> <span class="n">sort_key</span><span class="o">=</span><span class="s">&#39;area&#39;</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>  <span class="c"># noqa</span>
+<div class="viewcode-block" id="Event.S1s"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.S1s">[docs]</a>    <span class="k">def</span> <span class="nf">S1s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">s1s</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Event.s2s"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.s2s">[docs]</a>    <span class="k">def</span> <span class="nf">s2s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="s">&#39;tpc&#39;</span><span class="p">,</span> <span class="n">sort_key</span><span class="o">=</span><span class="s">&#39;area&#39;</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>  <span class="c"># noqa</span>
         <span class="sd">&quot;&quot;&quot;List of S2 (ionization) signals in this event</span>
 
 <span class="sd">        Returns a list of :class:`pax.datastructure.Peak` objects</span>
@@ -475,6 +653,33 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_peaks_by_type</span><span class="p">(</span><span class="n">desired_type</span><span class="o">=</span><span class="s">&#39;s2&#39;</span><span class="p">,</span> <span class="n">sort_key</span><span class="o">=</span><span class="n">sort_key</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="n">reverse</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="n">detector</span><span class="p">)</span>
 </div>
+<div class="viewcode-block" id="Event.S2s"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.S2s">[docs]</a>    <span class="k">def</span> <span class="nf">S2s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">s2s</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</div>
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">main_s1</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the S1 of the primary interaction, or if that does not exist, the largest S1 in the tpc.</span>
+<span class="sd">        Returns None if neither exist&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interactions</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">interactions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">s1</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">s1s</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">None</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">main_s2</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the S2 of the primary interaction, or if that does not exist, the largest S2 in the tpc.</span>
+<span class="sd">        Returns None if neither exist&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interactions</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">interactions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">s2</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">s2s</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">except</span> <span class="ne">IndexError</span><span class="p">:</span>
+                <span class="k">return</span> <span class="bp">None</span>
+
 <div class="viewcode-block" id="Event.get_peaks_by_type"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.get_peaks_by_type">[docs]</a>    <span class="k">def</span> <span class="nf">get_peaks_by_type</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">desired_type</span><span class="o">=</span><span class="s">&#39;all&#39;</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="s">&#39;tpc&#39;</span><span class="p">,</span> <span class="n">sort_key</span><span class="o">=</span><span class="s">&#39;area&#39;</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Helper function for retrieving only certain types of peaks</span>
 <span class="sd">        Returns a list of :class:`pax.datastructure.Peak` objects</span>
@@ -486,7 +691,7 @@
         <span class="c"># Extract only peaks of a certain type</span>
         <span class="n">peaks</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">peaks</span><span class="p">:</span>
-            <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">detector</span> <span class="o">!=</span> <span class="s">&#39;all&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">detector</span> <span class="o">!=</span> <span class="s">&#39;all&#39;</span><span class="p">:</span>
                 <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">detector</span> <span class="o">!=</span> <span class="n">detector</span><span class="p">:</span>
                     <span class="k">continue</span>
             <span class="k">if</span> <span class="n">desired_type</span> <span class="o">!=</span> <span class="s">&#39;all&#39;</span> <span class="ow">and</span> <span class="n">peak</span><span class="o">.</span><span class="n">type</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">!=</span> <span class="n">desired_type</span><span class="p">:</span>
@@ -498,37 +703,14 @@
                        <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">sort_key</span><span class="p">),</span>
                        <span class="n">reverse</span><span class="o">=</span><span class="n">reverse</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">peaks</span>
-
-</div></div>
-<span class="k">def</span> <span class="nf">_explain</span><span class="p">(</span><span class="n">class_name</span><span class="p">):</span>
-    <span class="n">x</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getmembers</span><span class="p">(</span><span class="n">class_name</span><span class="p">,</span>
-                           <span class="n">predicate</span><span class="o">=</span><span class="n">inspect</span><span class="o">.</span><span class="n">isdatadescriptor</span><span class="p">)</span>
-
-    <span class="k">for</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">x</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">a</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;_&#39;</span><span class="p">):</span>
-            <span class="k">continue</span>
-        <span class="k">print</span><span class="p">(</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">__doc__</span><span class="p">)</span>
-
-
-<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s">&#39;__main__&#39;</span><span class="p">:</span>
-    <span class="n">_explain</span><span class="p">(</span><span class="n">Peak</span><span class="p">)</span>
-    <span class="n">_explain</span><span class="p">(</span><span class="n">Event</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">peaks</span></div></div>
 </pre></div>
 
           </div>
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper"><div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="../../index.html">Documentation overview</a><ul>
-  <li><a href="../index.html">Module code</a><ul>
-  </ul></li>
-  </ul></li>
-</ul>
-</div>
+        <div class="sphinxsidebarwrapper">
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
@@ -551,7 +733,7 @@
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
       
     </div>
 
