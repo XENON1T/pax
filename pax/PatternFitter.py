@@ -70,7 +70,10 @@ class PatternFitter(object):
         self.default_square_syst_errors = np.zeros(self.n_points)
 
     def expected_pattern(self, coordinates):
-        """Returns expected pattern at coordinates -- NOT YET NORMALIZED!!!"""
+        """Returns expected pattern at coordinates -- NOT YET NORMALIZED!!!
+        The reason we don't normalize yet is because we want to give the user a chance to do div/zero handling.
+        Well, I guess we could have used exceptions...
+        """
         bes = self.get_bin_indices(coordinates)
         bes += [slice(None)]
         return self.data[bes].copy()

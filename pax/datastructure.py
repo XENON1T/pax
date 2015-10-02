@@ -148,6 +148,10 @@ class Peak(StrictModel):
     def is_channel_saturated(self):
         return self.n_saturated_per_channel > 0
 
+    @property
+    def saturated_channels(self):
+        return np.where(self.n_saturated_per_channel > 0)[0]
+
     #: Total number of samples with ADC saturation threshold in all channels in this peak
     n_saturated_samples = 0
 
