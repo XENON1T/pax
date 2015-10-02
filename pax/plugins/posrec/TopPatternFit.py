@@ -12,27 +12,14 @@ class PosRecTopPatternFit(plugin.PosRecPlugin):
         self.skip_reconstruction = self.config['skip_reconstruction']
         self.seed_algorithms = self.config['seed_algorithms']
         self.statistic = self.config['statistic']
-
-        # Set minimum area for a peak to be reconstructed -- performance option, probably no longer needed
-        self.area_threshold = self.config['area_threshold']
-
-        # Load gains (gains from config file, gain error 0.5 pe for all pmts for now)
-        self.gains = np.array(self.config['gains'])[self.pmts]
-        self.gain_errors = np.ones(len(self.pmts)) * 0.5  # TODO: remove placeholder
-
-        # Load QE (for now use arbitrary values)
-        self.qes = np.ones(len(self.pmts)) * 0.3  # TODO: remove placeholder
-        self.qe_errors = np.ones(len(self.pmts)) * 0.009  # TODO: remove placeholder
-
-        # Number of pmts (minus dead pmts)
-        self.is_pmt_alive = self.gains > 0
+        self.is_pmt_alive = np.array(self.config['gains']) > 0
 
         # Load the S2 hitpattern fitter
         self.pf = self.processor.simulator.s2_patterns
 
     def reconstruct_position(self, peak):
         """Reconstruct position by optimizing hitpattern goodness of fit to per-PMT LCE map.
-        Secondly, append a chi_square_gamma value and ndf to existing ReconstructedPosition objects.
+        Secondly, append a goodness_of_fit value and ndf to existing ReconstructedPosition objects.
         """
         # Which PMTs should we include?
         is_pmt_in = self.is_pmt_alive.copy()
@@ -48,10 +35,6 @@ class PosRecTopPatternFit(plugin.PosRecPlugin):
         # Pe observed per pmt. Don't QE correct: pattern map has been adjusted for QE already
         areas_observed = peak.area_per_channel[self.pmts]
 
-        # Error term per PMT in chi2 function
-        # TODO: YUan squares the QE error term another time... why?
-        square_syst_errors = areas_observed**2 * (self.qe_errors / self.qes + self.gain_errors / self.gains)**2
-
         ##
         # Part 1: compute goodness of fit for positions from other algorithms
         ##
@@ -59,26 +42,23 @@ class PosRecTopPatternFit(plugin.PosRecPlugin):
             try:
                 position.goodness_of_fit = self.pf.compute_gof(coordinates=[position.x, position.y],
                                                                areas_observed=areas_observed,
-                                                               point_selection=is_pmt_in,
-                                                               square_syst_errors=square_syst_errors,
+                                                               pmt_selection=is_pmt_in,
                                                                statistic=self.statistic)
+                position.ndf = ndf
             except exceptions.CoordinateOutOfRangeException:
                 # Oops, that position is impossible. Leave goodness of fit as nan
-                pass
-            if np.isnan(position.goodness_of_fit):
                 self.log.debug("impossible position x=%s, y=%s: r=%s)" % (position.x, position.y,
                                                                           np.sqrt(position.x**2 + position.y**2)))
-            position.ndf = ndf
 
         ##
         # Part 2 - find an even better position...
         ##
         if self.skip_reconstruction:
             return None
-        if peak.area < self.area_threshold:
-            return None
 
         # Use the seed position with the most optimal (lowest, confusingly) goodness of fit as a seed
+        if not peak.reconstructed_positions:
+            raise ValueError("TopPatternFit needs at least one seed position: please run at least MaxPMT...")
         try:
             if self.seed_algorithms == 'best':
                 seed_pos = peak.reconstructed_positions[np.nanargmin([p.goodness_of_fit
@@ -98,8 +78,7 @@ class PosRecTopPatternFit(plugin.PosRecPlugin):
                                                                                           seed_pos.goodness_of_fit))
 
         common_options = dict(areas_observed=areas_observed,
-                              point_selection=is_pmt_in,
-                              square_syst_errors=square_syst_errors,
+                              pmt_selection=is_pmt_in,
                               statistic=self.statistic)
         if self.config['minimimizer'] == 'powell':
             try:

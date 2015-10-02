@@ -18,7 +18,7 @@ CoordinateData = namedtuple('CoordinateData', ('minimum', 'maximum', 'n_bin_edge
 
 class PatternFitter(object):
 
-    def __init__(self, filename, zoom_factor=1, adjust_to_qe=None):
+    def __init__(self, filename, zoom_factor=1, adjust_to_qe=None, default_errors=None):
         """Initialize a pattern map file from filename.
         Format of the file is very similar to InterpolatingMap; a (gzip compressed) json containing:
             'coordinate_system' :   [['x', x_min, x_max, n_x], ['y',...
@@ -32,9 +32,14 @@ class PatternFitter(object):
 
         zoom_factor is factor by which the spatial dimensions of the map will be upsampled
 
-        adjust_to_qe is a list of same length as the number of pmts in the map;
+        adjust_to_qe: array of same length as the number of pmts in the map;
             we'll adjust the patterns to account for these QEs, upweighing PMTs with higher QEs
             Obviously this should be None if map already includes QE effects (e.g. if it is data-derived)!
+
+        default_errors: array of the same length as the number of pmts in the map;
+            This is the default factor which will be applied to obtain the squared systematic errors in the goodness
+            of fit statistic, as follows:
+                squared_systematic_errors = (areas_observed * default_errors)**2
         """
         bla = gzip.open(utils.data_file_name(filename)).read()
         data = json.loads(bla.decode())
@@ -49,7 +54,7 @@ class PatternFitter(object):
         # Adjust the expected patterns to the PMT's quantum efficiencies, if desired
         # No need to re-normalize: will be done in each gof computation anyway
         if adjust_to_qe is not None:
-            self.data *= adjust_to_qe[[np.newaxis] * self.dimensions + [slice(None)]]
+            self.data *= adjust_to_qe[[np.newaxis] * self.dimensions]
 
         # Store bin starts and distances for quick access, assuming uniform bin sizes
         self.coordinate_data = []
@@ -66,8 +71,10 @@ class PatternFitter(object):
         # even further out.
 
         self.n_points = self.data.shape[-1]
-        self.default_point_selection = np.ones(self.n_points, dtype=np.bool)
-        self.default_square_syst_errors = np.zeros(self.n_points)
+        self.default_pmt_selection = np.ones(self.n_points, dtype=np.bool)
+        if default_errors is None:
+            default_errors = 0
+        self.default_errors = default_errors
 
     def expected_pattern(self, coordinates):
         """Returns expected pattern at coordinates -- NOT YET NORMALIZED!!!
@@ -79,20 +86,20 @@ class PatternFitter(object):
         return self.data[bes].copy()
 
     def compute_gof(self, coordinates, areas_observed,
-                    point_selection=None, square_syst_errors=None, statistic='chi2gamma'):
+                    pmt_selection=None, square_syst_errors=None, statistic='chi2gamma'):
         """Compute goodness of fit at a single coordinate point
         :param areas_observed: arraylike of length n_points containing observed area at each point
         :param coordinates: arraylike of n_dimensions, coordinates to test
-        :param point_selection: boolean array of length n_points, if False point will be excluded from statistic
+        :param pmt_selection: boolean array of length n_points, if False point will be excluded from statistic
         :param square_syst_errors: float array of length n_points, systematic error to use for each point
         :param statistic: 'chi2' or 'chi2gamma': goodness of fit statistic to use
         :return: value of goodness of fit statistic, or float('inf') if coordinates outside of range
         """
         return self._compute_gof_base(self.get_bin_indices(coordinates), areas_observed,
-                                      point_selection, square_syst_errors, statistic)
+                                      pmt_selection, square_syst_errors, statistic)
 
     def compute_gof_grid(self, center_coordinates, grid_size, areas_observed,
-                         point_selection=None, square_syst_errors=None, statistic='chi2gamma', plot=False):
+                         pmt_selection=None, square_syst_errors=None, statistic='chi2gamma', plot=False):
         """Compute goodness of fit on a grid of points of length grid_size in each coordinate,
         centered at center_coordinates. All other parameters like compute_gof.
         Returns gof_grid, (bin number of lowest grid point in dimension 1, ...)
@@ -113,7 +120,7 @@ class PatternFitter(object):
                                        dimension_i)
             bin_selection.append(slice(start, stop + 1))        # Don't forget python's silly indexing here...
 
-        gofs = self._compute_gof_base(bin_selection, areas_observed, point_selection, square_syst_errors, statistic)
+        gofs = self._compute_gof_base(bin_selection, areas_observed, pmt_selection, square_syst_errors, statistic)
 
         if plot:
             # Make the linspaces of coordinates along each dimension
@@ -147,20 +154,20 @@ class PatternFitter(object):
         cd = self.coordinate_data[dimension_i]
         return cd.minimum + cd.bin_spacing * (bin_i + 0.5)
 
-    def _compute_gof_base(self, bin_selection, areas_observed, point_selection, square_syst_errors, statistic):
+    def _compute_gof_base(self, bin_selection, areas_observed, pmt_selection, square_syst_errors, statistic):
         """Compute goodness of fit statistic: see compute_gof
         bin_selection will be used to slice the spatial histogram.
         :return: gof with shape determined by bin_selection.
         """
-        if point_selection is None:
-            point_selection = self.default_point_selection
+        if pmt_selection is None:
+            pmt_selection = self.default_pmt_selection
         if square_syst_errors is None:
-            square_syst_errors = self.default_square_syst_errors
-        square_syst_errors = square_syst_errors[point_selection]
+            square_syst_errors = (self.default_errors * areas_observed) ** 2
+        square_syst_errors = square_syst_errors[pmt_selection]
 
-        areas_observed = areas_observed.copy()[point_selection]
+        areas_observed = areas_observed.copy()[pmt_selection]
         total_observed = areas_observed.sum()
-        fractions_expected = self.data[bin_selection + [point_selection]].copy()
+        fractions_expected = self.data[bin_selection + [pmt_selection]].copy()
         fractions_expected /= fractions_expected.sum(axis=-1)[..., np.newaxis]
         areas_expected = total_observed * fractions_expected
 
@@ -177,14 +184,14 @@ class PatternFitter(object):
         return np.sum(result, axis=-1)
 
     def minimize_gof_grid(self, center_coordinates, grid_size, areas_observed,
-                          point_selection=None, square_syst_errors=None, statistic='chi2gamma', plot=False):
+                          pmt_selection=None, square_syst_errors=None, statistic='chi2gamma', plot=False):
         """Return (spatial position which minimizes goodness of fit parameter, gof at that position)
         minimum is found by minimizing over a grid centered at center_coordinates
         and extending by grid_size in all dimensions
         All other parameters like compute_gof
         """
         gofs, lowest_bins = self.compute_gof_grid(center_coordinates, grid_size, areas_observed,
-                                                  point_selection, square_syst_errors, statistic, plot)
+                                                  pmt_selection, square_syst_errors, statistic, plot)
         min_index = np.unravel_index(np.nanargmin(gofs), gofs.shape)
         # Convert bin index back to position
         result = []
@@ -198,7 +205,7 @@ class PatternFitter(object):
         return result, gofs[min_index]
 
     def minimize_gof_powell(self, start_coordinates, areas_observed,
-                            point_selection=None, square_syst_errors=None, statistic='chi2gamma'):
+                            pmt_selection=None, square_syst_errors=None, statistic='chi2gamma'):
         direc = None
         if self.dimensions == 2:
             # Hack to match old chi2gamma results
@@ -221,7 +228,7 @@ class PatternFitter(object):
         #    warnflag 2, maximum iterations exceeded
         rv = fmin_powell(safe_compute_gof,
                          start_coordinates, direc=direc,
-                         args=(areas_observed, point_selection, square_syst_errors, statistic),
+                         args=(areas_observed, pmt_selection, square_syst_errors, statistic),
                          xtol=0.0001, ftol=0.0001,
                          maxiter=10, maxfun=None,
                          full_output=1, disp=0, retall=0)
