@@ -593,6 +593,30 @@ class Event(StrictModel):
     def S2s(self, *args, **kwargs):
         return self.s2s(*args, **kwargs)
 
+    @property
+    def main_s1(self):
+        """Return the S1 of the primary interaction, or if that does not exist, the largest S1 in the tpc.
+        Returns None if neither exist"""
+        if self.interactions:
+            return self.interactions[0].s1
+        else:
+            try:
+                return self.s1s()[0]
+            except IndexError:
+                return None
+
+    @property
+    def main_s2(self):
+        """Return the S2 of the primary interaction, or if that does not exist, the largest S2 in the tpc.
+        Returns None if neither exist"""
+        if self.interactions:
+            return self.interactions[0].s2
+        else:
+            try:
+                return self.s2s()[0]
+            except IndexError:
+                return None
+
     def get_peaks_by_type(self, desired_type='all', detector='tpc', sort_key='area', reverse=True):
         """Helper function for retrieving only certain types of peaks
         Returns a list of :class:`pax.datastructure.Peak` objects
