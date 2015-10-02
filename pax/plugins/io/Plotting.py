@@ -166,19 +166,19 @@ class PlotBase(plugin.OutputPlugin):
                     # else:
                 else:
                     ytext = max(y, y + (max_y - y) * (0.05 + 0.2 * random.random()))
-                    arrowprops = dict(arrowstyle="fancy",
-                                      fc="0.6", ec="none",
+                    arrowprops = dict(arrowstyle="simple",
+                                      fc='black', ec="none", alpha=0.3,
                                       connectionstyle="angle3,"
                                                       "angleA=0,"
                                                       "angleB=-90")
-                ax.hlines(y, (peak.left - 1) * self.samples_to_us, peak.right * self.samples_to_us)
                 ax.annotate('%s:%0.1f' % (peak.type, peak.area),
                             xy=(x, y),
                             xytext=(x, ytext),
+                            fontsize=8,
                             arrowprops=arrowprops,
                             color=textcolor)
 
-        ax.set_ylim(y_min, y_max)
+        ax.set_ylim(y_min, y_max * 1.1)
 
         if show_legend:
             legend = ax.legend(loc='upper left', prop={'size': 10})
@@ -234,44 +234,36 @@ class PlotBase(plugin.OutputPlugin):
         return q
 
 
-class PlotSumWaveformLargestS2(PlotBase):
+class PlotSumWaveformMainS2(PlotBase):
 
     def plot_event(self, event, show_legend=False):
-        if not event.S2s():
+        peak = event.main_s2
+        if peak is None:
             self.log.debug("Can't plot the largest S2: there aren't any S2s in this event.")
             plt.title('No S2 in event')
             return
 
-        largest_s2 = sorted(event.S2s(), key=lambda x: x.area,
-                            reverse=True)[0]
-
-        pad = 200 if largest_s2.height > 100 else 50
-
-        self.plot_waveform(event, left=largest_s2.left, right=largest_s2.right,
-                           pad=pad, show_legend=show_legend, log_y_axis=self.config['log_scale_s2'])
-
-        time = largest_s2.index_of_maximum * self.samples_to_us
-
-        plt.title("S2 at %.1f us" % time)
+        self.plot_waveform(event, left=peak.left, right=peak.right,
+                           pad=200 if peak.height > 100 else 50,
+                           show_legend=show_legend,
+                           log_y_axis=self.config['log_scale_s2'])
+        plt.title("S2 at %.1f us" % (peak.index_of_maximum * self.samples_to_us))
 
 
-class PlotSumWaveformLargestS1(PlotBase):
+class PlotSumWaveformMainS1(PlotBase):
 
     def plot_event(self, event, show_legend=False):
-        if not event.S1s():
+        peak = event.main_s1
+        if peak is None:
             self.log.debug("Can't plot the largest S1: there aren't any S1s in this event.")
             plt.title('No S1 in event')
             return
 
-        largest_s1 = sorted(event.S1s(), key=lambda x: x.area,
-                            reverse=True)[0]
-
-        self.plot_waveform(event, left=largest_s1.left, right=largest_s1.right,
-                           pad=10, show_legend=show_legend, log_y_axis=self.config['log_scale_s1'])
-
-        time = largest_s1.index_of_maximum * self.samples_to_us
-
-        plt.title("S1 at %.1f us" % time)
+        self.plot_waveform(event, left=peak.left, right=peak.right,
+                           pad=10,
+                           show_legend=show_legend,
+                           log_y_axis=self.config['log_scale_s1'])
+        plt.title("S1 at %.1f us" % (peak.index_of_maximum * self.samples_to_us))
 
 
 class PlotSumWaveformEntireEvent(PlotBase):
@@ -504,12 +496,12 @@ class PlotEventSummary(PlotBase):
 
             self.log.debug("Plotting largest S1...")
             plt.subplot2grid((rows, cols), (0, 0))
-            q = PlotSumWaveformLargestS1(self.config, self.processor)
+            q = PlotSumWaveformMainS1(self.config, self.processor)
             q.plot_event(event, show_legend=False)
 
             self.log.debug("Plotting largest S2...")
             plt.subplot2grid((rows, cols), (0, 1))
-            q = PlotSumWaveformLargestS2(self.config, self.processor)
+            q = PlotSumWaveformMainS2(self.config, self.processor)
             q.plot_event(event, show_legend=False)
 
             self.log.debug("Plotting hitpatterns...")
@@ -666,13 +658,13 @@ class PeakViewer(PlotBase):
         button_height = 0.03
         buttons_x_space = 0.04
         self.make_button([x, y, button_width, button_height],
-                         'Prev peak', self.prev_peak)
+                         'Prev peak', self.draw_prev_peak)
         self.make_button([x + button_width, y, button_width, button_height],
-                         'Next peak', self.next_peak)
+                         'Next peak', self.draw_next_peak)
         self.make_button([x + 2 * button_width + buttons_x_space, y, button_width, button_height],
-                         'Main S1', self.main_s1)
+                         'Main S1', self.draw_main_s1)
         self.make_button([x + 3 * button_width + buttons_x_space, y, button_width, button_height],
-                         'Main S2', self.main_s2)
+                         'Main S2', self.draw_main_s2)
 
         self.draw_peak()
         # Draw the color bar for the top or bottom hitpattern plot (they share them)
@@ -735,26 +727,28 @@ class PeakViewer(PlotBase):
     def wrap_multiline(text, max_characters):
         return "\n".join(["\n".join(textwrap.wrap(q, max_characters)) for q in text.splitlines()])
 
-    def next_peak(self):
+    def draw_next_peak(self):
         self.peak_i += 1
         self.draw_peak()
 
-    def prev_peak(self):
+    def draw_prev_peak(self):
         self.peak_i -= 1
         self.draw_peak()
 
-    def main_s1(self):
-        if len(self.event.S1s()) < 1:
+    def draw_main_s1(self):
+        peak = self.event.main_s1
+        if peak is None:
             self.log.info("This event has no S1s.")
             return
-        self.peak_i = np.argmax([p.area if p.type == 's1' else 0 for p in self.peaks])
+        self.peak_i = self.peaks.index(peak)
         self.draw_peak()
 
-    def main_s2(self):
-        if len(self.event.S2s()) < 1:
+    def draw_main_s2(self):
+        peak = self.event.main_s2
+        if peak is None:
             self.log.info("This event has no S2s.")
             return
-        self.peak_i = np.argmax([p.area if p.type == 's2' else 0 for p in self.peaks])
+        self.peak_i = self.peaks.index(peak)
         self.draw_peak()
 
     def make_button(self, rect, label, on_click):
