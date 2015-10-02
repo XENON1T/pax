@@ -1,0 +1,54 @@
+pax.plugins.peak_processing package
+===================================
+
+Submodules
+----------
+
+pax.plugins.peak_processing.BasicProperties module
+--------------------------------------------------
+
+.. automodule:: pax.plugins.peak_processing.BasicProperties
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.plugins.peak_processing.ClassifyPeaks module
+------------------------------------------------
+
+.. automodule:: pax.plugins.peak_processing.ClassifyPeaks
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.plugins.peak_processing.HitpatternSpread module
+---------------------------------------------------
+
+.. automodule:: pax.plugins.peak_processing.HitpatternSpread
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.plugins.peak_processing.NaturalBreaksClustering module
+----------------------------------------------------------
+
+.. automodule:: pax.plugins.peak_processing.NaturalBreaksClustering
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.plugins.peak_processing.RejectNoiseHits module
+--------------------------------------------------
+
+.. automodule:: pax.plugins.peak_processing.RejectNoiseHits
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: pax.plugins.peak_processing
+    :members:
+    :undoc-members:
+    :show-inheritance:

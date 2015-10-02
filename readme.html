@@ -56,18 +56,18 @@ see <a class="reference external" href="http://xenon1t.github.io/pax/faq.html#ca
 <h2>Python 3<a class="headerlink" href="#python-3" title="Permalink to this headline">¶</a></h2>
 <p>Pax is written in Python 3; we recommend the
 scientific python distribution <a class="reference external" href="https://store.continuum.io/cshop/anaconda/">Anaconda</a>. To set this up in your linux home directory, do:</p>
-<div class="highlight-python"><div class="highlight"><pre>wget http://repo.continuum.io/anaconda3/Anaconda3-2.1.0-Linux-x86_64.sh
-bash Anaconda3-2.1.0-Linux-x86_64.sh
+<div class="highlight-python"><div class="highlight"><pre>wget http://repo.continuum.io/archive/Anaconda3-2.1.0-Linux-x86_64.sh
+bash Anaconda3-2.1.0-Linux-x86_64.sh  # Say &#39;yes&#39; to appending to .bashrc
 export PATH=~/anaconda3/bin:$PATH  # If installed in default location
 </pre></div>
 </div>
-<p>Alternatively, you can install the vanilla Python 3.4 from the <a class="reference external" href="https://www.python.org/">python webpage</a>
-or use a pre-installed python. Please note that</p>
-<ul class="simple">
-<li>Only one version of pax can be installed per python installation;</li>
-<li>You need write permission to the python distribution&#8217;s directory;</li>
-<li><cite>pax</cite> does <em>not</em> run under with python 2!</li>
-</ul>
+<p>You need to point anaconda to the physics-specific packages of e.g. ROOT.  You can do this by putting the following in <cite>~/.condarc</cite>:</p>
+<div class="highlight-python"><div class="highlight"><pre>channels:
+  - http://conda.binstar.org/NLeSC
+  - defaults
+</pre></div>
+</div>
+<p>Alternatively, you can install Python 3.4 yourself (highly not recommended since ROOT probably won&#8217;t work).  Note that you need write permission to the python distribution&#8217;s directory and that Python 2 does not currently work.</p>
 </div>
 <div class="section" id="additional-python-packages">
 <h2>Additional python packages<a class="headerlink" href="#additional-python-packages" title="Permalink to this headline">¶</a></h2>
@@ -75,27 +75,17 @@ or use a pre-installed python. Please note that</p>
 some contain C++ code which must be compiled. If you have Anaconda you can get appropriate binaries
 for your platform using the <cite>conda</cite> tool:</p>
 <div class="highlight-python"><div class="highlight"><pre>conda update conda
-conda install numpy scipy matplotlib pandas pytables cython h5py numba pip scikit-learn
+conda create -n pax numpy scipy matplotlib pandas cython h5py numba pip snappy python-snappy pytables
 </pre></div>
 </div>
-</div>
-<div class="section" id="snappy">
-<h2>Snappy<a class="headerlink" href="#snappy" title="Permalink to this headline">¶</a></h2>
-<p>Pax needs the <a class="reference external" href="https://code.google.com/p/snappy/">snappy compression library</a> to read data from our MongoDB raw data database. Do NOT try to <cite>pip install snappy</cite>, that&#8217;s a completely different package! If you&#8217;re using Ubuntu and have super user permissions, you could just install the <cite>libsnappy-dev</cite> package.  However, we recommend, you do the following:</p>
-<div class="highlight-python"><div class="highlight"><pre>wget https://snappy.googlecode.com/files/snappy-1.1.1.tar.gz
-tar xvfz snappy-1.1.1.tar.gz
-cd snappy-1.1.1
-./configure --prefix=`conda info --root`
-make install
-cd ~
-CFLAGS=-I`conda info --root`/include LDFLAGS=-L`conda info --root`/lib pip install python-snappy
+<p>Whenever you want to use <cite>pax</cite>, you have to run the following command to set it up:</p>
+<div class="highlight-python"><div class="highlight"><pre>source activate pax
 </pre></div>
 </div>
-<p>You should now be able to run the following command:</p>
-<div class="highlight-python"><div class="highlight"><pre>python -m snappy
-</pre></div>
-</div>
-<p>If you are unable to install snappy, pax can work without it (but the MongoDB interface, including the event builder, will not work!). We&#8217;ve cunningly hidden this information in the following footnote: <a class="footnote-reference" href="#id2" id="id1">[1]</a>.</p>
+<p>You can put this in your <cite>.bashrc</cite> if you want it to be setup when you login. For the rest of the installation and to run pax, be sure to be inside this environment. There should be (pax) at the beginning of your command line.
+Now, run</p>
+<blockquote>
+<div>sudo apt-get install build-essential</div></blockquote>
 </div>
 <div class="section" id="git-and-github">
 <h2>Git and Github<a class="headerlink" href="#git-and-github" title="Permalink to this headline">¶</a></h2>
@@ -129,6 +119,17 @@ python setup.py develop
 <p>To update to the latest pax, go to the directory with pax and run <cite>git pull</cite>.</p>
 <p>If you think you&#8217;ve made a useful change, you can contribute it! But please check the
 <a class="reference external" href="CONTRIBUTING.rst">relevant documentation section</a> first.</p>
+</div>
+<div class="section" id="to-check-if-your-installation-is-working">
+<h2>To check if your installation is working<a class="headerlink" href="#to-check-if-your-installation-is-working" title="Permalink to this headline">¶</a></h2>
+<p>Execute:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">paxer</span> <span class="o">--</span><span class="n">version</span>
+</pre></div>
+</div>
+<p>or</p>
+<blockquote>
+<div>paxer &#8211;input ~/pax/pax/data/xe100_120402_2000_000000.xed &#8211;stop_after 1 &#8211;plot</div></blockquote>
+<p>You should see a nice plot of a XENON100 event.</p>
 </div>
 </div>
 <div class="section" id="pax-tutorial">
@@ -166,10 +167,10 @@ playing with what is in the list of outputs.  For example, you can reactivate
 the <cite>PlotEventSummary</cite> that was produced in the first command from above.</p>
 <p>There are many, many configuration options you can change.
 You can look through other configuration files such as <cite>_base.ini</cite> and <cite>XENON100.ini</cite> to get an idea of what you can do. Also, you can try to explore what plugins are included in pax. You can ask us questions on gitter (click button above) or email. Oh, and did we mention the the documentation at <a class="reference external" href="http://xenon1t.github.io/pax/">http://xenon1t.github.io/pax/</a>?</p>
-<table class="docutils footnote" frame="void" id="id2" rules="none">
+<table class="docutils footnote" frame="void" id="id1" rules="none">
 <colgroup><col class="label" /><col /></colgroup>
 <tbody valign="top">
-<tr><td class="label"><a class="fn-backref" href="#id1">[1]</a></td><td><em>Sneaky snappy workaround</em>: follow the instructions for &#8216;developer installation&#8217;, but just before <cite>python setup.py develop</cite>, edit <cite>requirements.txt</cite> in the pax folder and put a comment (<cite>#</cite>) sign in front of the <cite>python-snappy&gt;=0.5</cite> line. Save the file and run <cite>python setup.py develop</cite>. Now you can use pax even if you couldn&#8217;t install snappy. Har-har. If you use anything that involves the MongoDB interface, pax will crash; don&#8217;t say we didn&#8217;t warn you.</td></tr>
+<tr><td class="label">[1]</td><td><em>Sneaky snappy workaround</em>: follow the instructions for &#8216;developer installation&#8217;, but just before <cite>python setup.py develop</cite>, edit <cite>requirements.txt</cite> in the pax folder and put a comment (<cite>#</cite>) sign in front of the <cite>python-snappy&gt;=0.5</cite> line. Save the file and run <cite>python setup.py develop</cite>. Now you can use pax even if you couldn&#8217;t install snappy. Har-har. If you use anything that involves the MongoDB interface, pax will crash; don&#8217;t say we didn&#8217;t warn you.</td></tr>
 </tbody>
 </table>
 </div>
@@ -185,13 +186,13 @@ You can look through other configuration files such as <cite>_base.ini</cite> an
 <li><a class="reference internal" href="#">Installation prerequisites</a><ul>
 <li><a class="reference internal" href="#python-3">Python 3</a></li>
 <li><a class="reference internal" href="#additional-python-packages">Additional python packages</a></li>
-<li><a class="reference internal" href="#snappy">Snappy</a></li>
 <li><a class="reference internal" href="#git-and-github">Git and Github</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#installing-pax">Installing pax</a><ul>
 <li><a class="reference internal" href="#option-1-user-installation">Option 1: user installation</a></li>
 <li><a class="reference internal" href="#option-2-developer-installation">Option 2: developer installation</a></li>
+<li><a class="reference internal" href="#to-check-if-your-installation-is-working">To check if your installation is working</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#pax-tutorial">Pax Tutorial</a></li>

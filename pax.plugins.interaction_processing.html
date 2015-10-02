@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Event format &mdash; Processor for Analyzing XENON1T 3.3.0 documentation</title>
+    <title>pax.plugins.interaction_processing package &mdash; Processor for Analyzing XENON1T 3.3.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -24,8 +24,6 @@
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
     <link rel="top" title="Processor for Analyzing XENON1T 3.3.0 documentation" href="index.html" />
-    <link rel="next" title="Plugins" href="plugin.html" />
-    <link rel="prev" title="Frequently Asked Questions" href="faq.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -38,27 +36,16 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="event-format">
-<h1>Event format<a class="headerlink" href="#event-format" title="Permalink to this headline">¶</a></h1>
-<p>In this document, we explain what lies within the <cite>pax</cite> event class and how to use it.  This even class is central to how <cite>pax</cite> works but also in how you analyze the resulting data.  All communication within <cite>pax</cite> is done by passing around this event class, therefore it contains all the information you should need.  We also serialize this event class to various outputs that contain all of the information below.</p>
-<p>Please be aware that the event class is a tree, where e.g. there is a list of peak objects associated with the event.  Lastly, this document is automatically updated every release, so please feel free to expand upon the documentation in the source code (see pax/datastructure.py).</p>
-<div class="section" id="event">
-<h2>Event<a class="headerlink" href="#event" title="Permalink to this headline">¶</a></h2>
+  <div class="section" id="pax-plugins-interaction-processing-package">
+<h1>pax.plugins.interaction_processing package<a class="headerlink" href="#pax-plugins-interaction-processing-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="peak">
-<h2>Peak<a class="headerlink" href="#peak" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="pax-plugins-interaction-processing-buildinteractions-module">
+<h2>pax.plugins.interaction_processing.BuildInteractions module<a class="headerlink" href="#pax-plugins-interaction-processing-buildinteractions-module" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="reconstructedposition">
-<h2>ReconstructedPosition<a class="headerlink" href="#reconstructedposition" title="Permalink to this headline">¶</a></h2>
-</div>
-<div class="section" id="hit">
-<h2>Hit<a class="headerlink" href="#hit" title="Permalink to this headline">¶</a></h2>
-</div>
-<div class="section" id="waveforms">
-<h2>Waveforms<a class="headerlink" href="#waveforms" title="Permalink to this headline">¶</a></h2>
-</div>
-<div class="section" id="pulse">
-<h2>Pulse<a class="headerlink" href="#pulse" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-pax.plugins.interaction_processing">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pax.plugins.interaction_processing" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 
@@ -70,13 +57,10 @@
         <div class="sphinxsidebarwrapper">
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Event format</a><ul>
-<li><a class="reference internal" href="#event">Event</a></li>
-<li><a class="reference internal" href="#peak">Peak</a></li>
-<li><a class="reference internal" href="#reconstructedposition">ReconstructedPosition</a></li>
-<li><a class="reference internal" href="#hit">Hit</a></li>
-<li><a class="reference internal" href="#waveforms">Waveforms</a></li>
-<li><a class="reference internal" href="#pulse">Pulse</a></li>
+<li><a class="reference internal" href="#">pax.plugins.interaction_processing package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#pax-plugins-interaction-processing-buildinteractions-module">pax.plugins.interaction_processing.BuildInteractions module</a></li>
+<li><a class="reference internal" href="#module-pax.plugins.interaction_processing">Module contents</a></li>
 </ul>
 </li>
 </ul>
@@ -84,15 +68,13 @@
 <h3>Related Topics</h3>
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="faq.html" title="previous chapter">Frequently Asked Questions</a></li>
-      <li>Next: <a href="plugin.html" title="next chapter">Plugins</a></li>
   </ul></li>
 </ul>
 </div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="_sources/format.txt"
+      <li><a href="_sources/pax.plugins.interaction_processing.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
@@ -121,7 +103,7 @@
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
-      <a href="_sources/format.txt"
+      <a href="_sources/pax.plugins.interaction_processing.txt"
           rel="nofollow">Page source</a>
     </div>
 

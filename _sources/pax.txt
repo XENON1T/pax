@@ -19,6 +19,14 @@ pax.FolderIO module
     :undoc-members:
     :show-inheritance:
 
+pax.PatternFitter module
+------------------------
+
+.. automodule:: pax.PatternFitter
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pax.core module
 ---------------
 

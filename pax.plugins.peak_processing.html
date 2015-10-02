@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.signal_processing package &mdash; Processor for Analyzing XENON1T 3.3.0 documentation</title>
+    <title>pax.plugins.peak_processing package &mdash; Processor for Analyzing XENON1T 3.3.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -36,22 +36,28 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="pax-plugins-signal-processing-package">
-<h1>pax.plugins.signal_processing package<a class="headerlink" href="#pax-plugins-signal-processing-package" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="pax-plugins-peak-processing-package">
+<h1>pax.plugins.peak_processing package<a class="headerlink" href="#pax-plugins-peak-processing-package" title="Permalink to this headline">¶</a></h1>
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="pax-plugins-signal-processing-checkpulses-module">
-<h2>pax.plugins.signal_processing.CheckPulses module<a class="headerlink" href="#pax-plugins-signal-processing-checkpulses-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="pax-plugins-peak-processing-basicproperties-module">
+<h2>pax.plugins.peak_processing.BasicProperties module<a class="headerlink" href="#pax-plugins-peak-processing-basicproperties-module" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="pax-plugins-signal-processing-cluster-module">
-<h2>pax.plugins.signal_processing.Cluster module<a class="headerlink" href="#pax-plugins-signal-processing-cluster-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="pax-plugins-peak-processing-classifypeaks-module">
+<h2>pax.plugins.peak_processing.ClassifyPeaks module<a class="headerlink" href="#pax-plugins-peak-processing-classifypeaks-module" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="pax-plugins-signal-processing-hitfinder-module">
-<h2>pax.plugins.signal_processing.HitFinder module<a class="headerlink" href="#pax-plugins-signal-processing-hitfinder-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="pax-plugins-peak-processing-hitpatternspread-module">
+<h2>pax.plugins.peak_processing.HitpatternSpread module<a class="headerlink" href="#pax-plugins-peak-processing-hitpatternspread-module" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-pax.plugins.signal_processing">
-<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pax.plugins.signal_processing" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="pax-plugins-peak-processing-naturalbreaksclustering-module">
+<h2>pax.plugins.peak_processing.NaturalBreaksClustering module<a class="headerlink" href="#pax-plugins-peak-processing-naturalbreaksclustering-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="pax-plugins-peak-processing-rejectnoisehits-module">
+<h2>pax.plugins.peak_processing.RejectNoiseHits module<a class="headerlink" href="#pax-plugins-peak-processing-rejectnoisehits-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-pax.plugins.peak_processing">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-pax.plugins.peak_processing" title="Permalink to this headline">¶</a></h2>
 </div>
 </div>
 
@@ -63,12 +69,14 @@
         <div class="sphinxsidebarwrapper">
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">pax.plugins.signal_processing package</a><ul>
+<li><a class="reference internal" href="#">pax.plugins.peak_processing package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#pax-plugins-signal-processing-checkpulses-module">pax.plugins.signal_processing.CheckPulses module</a></li>
-<li><a class="reference internal" href="#pax-plugins-signal-processing-cluster-module">pax.plugins.signal_processing.Cluster module</a></li>
-<li><a class="reference internal" href="#pax-plugins-signal-processing-hitfinder-module">pax.plugins.signal_processing.HitFinder module</a></li>
-<li><a class="reference internal" href="#module-pax.plugins.signal_processing">Module contents</a></li>
+<li><a class="reference internal" href="#pax-plugins-peak-processing-basicproperties-module">pax.plugins.peak_processing.BasicProperties module</a></li>
+<li><a class="reference internal" href="#pax-plugins-peak-processing-classifypeaks-module">pax.plugins.peak_processing.ClassifyPeaks module</a></li>
+<li><a class="reference internal" href="#pax-plugins-peak-processing-hitpatternspread-module">pax.plugins.peak_processing.HitpatternSpread module</a></li>
+<li><a class="reference internal" href="#pax-plugins-peak-processing-naturalbreaksclustering-module">pax.plugins.peak_processing.NaturalBreaksClustering module</a></li>
+<li><a class="reference internal" href="#pax-plugins-peak-processing-rejectnoisehits-module">pax.plugins.peak_processing.RejectNoiseHits module</a></li>
+<li><a class="reference internal" href="#module-pax.plugins.peak_processing">Module contents</a></li>
 </ul>
 </li>
 </ul>
@@ -82,7 +90,7 @@
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
-      <li><a href="_sources/pax.plugins.signal_processing.txt"
+      <li><a href="_sources/pax.plugins.peak_processing.txt"
             rel="nofollow">Show Source</a></li>
     </ul>
    </div>
@@ -111,7 +119,7 @@
       &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
-      <a href="_sources/pax.plugins.signal_processing.txt"
+      <a href="_sources/pax.plugins.peak_processing.txt"
           rel="nofollow">Page source</a>
     </div>
 

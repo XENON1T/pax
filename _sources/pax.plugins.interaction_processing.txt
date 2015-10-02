@@ -1,0 +1,22 @@
+pax.plugins.interaction_processing package
+==========================================
+
+Submodules
+----------
+
+pax.plugins.interaction_processing.BuildInteractions module
+-----------------------------------------------------------
+
+.. automodule:: pax.plugins.interaction_processing.BuildInteractions
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: pax.plugins.interaction_processing
+    :members:
+    :undoc-members:
+    :show-inheritance:
