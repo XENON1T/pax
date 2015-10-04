@@ -30,7 +30,7 @@ class BuildInteractions(plugin.TransformPlugin):
         for s1 in s1s:
             for s2 in s2s:
 
-                # Compute drift time, continue if s2 before s1
+                # Compute drift time, add only interactions with s1 before s2
                 dt = s2.hit_time_mean - s1.hit_time_mean
                 if dt < 0:
                     continue
@@ -64,13 +64,13 @@ class BasicInteractionProperties(plugin.TransformPlugin):
     def transform_event(self, event):
 
         for ia in event.interactions:
-            # Electron lifetime correction
+            # Electron lifetime correction to S2 area
             ia.s2_area_correction *= np.exp(ia.drift_time / self.config['electron_lifetime_liquid'])
 
             # Determine z position from drift time
             ia.z = self.config['drift_velocity_liquid'] * ia.drift_time
 
-            # Basic S1 and S2 corrections
+            # S1(x, y, z) and S2(x, y) corrections for varying light yield
             # TODO: replace correction map by light yield maps in simulator, then divide by their value here
             # TODO: replace S1(x, y, dt) by S1(x, y, z) map. This way one map can be used for many field configurations,
             # once the user updates the drift_velocity_liquid in the configuration.
@@ -85,24 +85,24 @@ class BasicInteractionProperties(plugin.TransformPlugin):
                     peak=ia.s2,
                     channels_in_pattern=self.config['channels_top'],
                     expected_pattern=self.s2_patterns.expected_pattern((ia.x, ia.y)),
-                    confused_channels=np.union1d(ia.s2.saturated_channels, self.zombie_pmts_s1))
+                    confused_channels=np.union1d(ia.s2.saturated_channels, self.zombie_pmts_s2))
 
             if self.s1_patterns is not None:
+                confused_s1_channels = np.union1d(ia.s1.saturated_channels, self.zombie_pmts_s1)
+
                 # Correct for S1 saturation
                 ia.s1_area_correction *= self.area_correction(
                     peak=ia.s1,
                     channels_in_pattern=self.tpc_channels,
                     expected_pattern=self.s1_patterns.expected_pattern((ia.x, ia.y, ia.drift_time)),
-                    confused_channels=np.union1d(ia.s1.saturated_channels, self.zombie_pmts_s2))
+                    confused_channels=confused_s1_channels)
 
                 # Compute the S1 pattern fit statistic
-                # TODO: Add systematic error terms (not very important, usually statistical error dominates
                 ia.s1_pattern_fit = self.s1_patterns.compute_gof(
                     (ia.x, ia.y, ia.drift_time),
                     ia.s1.area_per_channel[self.tpc_channels],
-                    pmt_selection=(True ^ ia.s1.is_channel_saturated[self.tpc_channels]),
-                    statistic=self.config['s1_pattern_statistic']
-                )
+                    pmt_selection=np.setdiff1d(self.tpc_channels, confused_s1_channels),
+                    statistic=self.config['s1_pattern_statistic'])
 
         return event
 
