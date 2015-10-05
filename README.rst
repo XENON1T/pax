@@ -44,7 +44,7 @@ some contain C++ code which must be compiled. If you have Anaconda you can get a
 for your platform using the `conda` tool::
 
   conda update conda
-  conda create -n pax numpy scipy matplotlib pandas cython h5py numba pip snappy python-snappy pytables
+  conda create -n pax numpy scipy matplotlib pandas cython h5py numba pip python-snappy pytables scikit-learn
   
 Whenever you want to use `pax`, you have to run the following command to set it up::
   
