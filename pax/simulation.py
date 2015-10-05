@@ -160,7 +160,7 @@ class Simulator(object):
         if n_photons == 0:
             return np.array([])
 
-        if recoil_type == 'ER':
+        if recoil_type.lower() == 'er':
 
             # How many of these are primary excimers? Others arise through recombination.
             n_primaries = np.random.binomial(n=n_photons, p=self.config['s1_ER_primary_excimer_fraction'])
@@ -188,7 +188,7 @@ class Simulator(object):
 
             timings = np.concatenate((primary_timings, secondary_timings))
 
-        elif recoil_type == 'NR':
+        elif recoil_type.lower() == 'nr':
 
             # Neglible recombination time, same singlet/triplet ratio for primary & secondary excimers
             # Hence, we don't care about primary & secondary excimers at all:
@@ -199,8 +199,19 @@ class Simulator(object):
                 singlet_ratio=self.config['s1_NR_singlet_fraction']
             )
 
+        elif recoil_type.lower() == 'alpha':
+
+            # again neglible recombination time, same singlet/triplet ratio for primary & secondary excimers
+            # Hence, we don't care about primary & secondary excimers at all:
+            timings = self.singlet_triplet_delays(
+                np.zeros(n_photons),
+                t1=self.config['alpha_singlet_lifetime_liquid'],
+                t3=self.config['alpha_triplet_lifetime_liquid'],
+                singlet_ratio=self.config['s1_ER_alpha_singlet_fraction']
+            )
+
         else:
-            raise ValueError('Recoil type must be ER or NR, not %s' % type)
+            raise ValueError('Recoil type must be ER, NR or alpha, not %s' % type)
 
         return timings + t * np.ones(len(timings))
 
