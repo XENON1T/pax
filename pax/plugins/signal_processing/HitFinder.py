@@ -163,6 +163,9 @@ class FindHits(plugin.TransformPlugin):
             # Convert area, noise_sigma and height from adc counts -> pe
             adc_to_pe = utils.adc_to_pe(self.config, channel)
             noise_sigma_pe = pulse.noise_sigma * adc_to_pe
+            p_area = np.sum(areas) * adc_to_pe
+            p_n_saturated = 0
+
             for i, hit in enumerate(hits_found):
 
                 # Do sanity checks
@@ -194,6 +197,7 @@ class FindHits(plugin.TransformPlugin):
                 if is_saturated:
                     n_saturated = np.count_nonzero(w[hit[0]:hit[1] + 1] >=
                                                    self.config['digitizer_reference_baseline'] - pulse.baseline)
+                p_n_saturated += n_saturated
 
                 # Store the hit
                 # int's need to be cast to avoid weird numpy types in our datastructure
@@ -268,6 +272,19 @@ class FindHits(plugin.TransformPlugin):
 
             # Make sure the y-scales match
             ax2.set_ylim(ax1.get_ylim()[0] * adc_to_pe, ax1.get_ylim()[1] * adc_to_pe)
+
+            # Add text with values
+            if self.config['diagnostic_plot_info'] == 'yes':
+                # these are matplotlib.patch.Patch properties
+                props = dict(boxstyle='round', facecolor='wheat', alpha=0.5)
+                textstr = ("Pulse information:" + '\n'
+                           + "Area: " + '{0:.5g}'.format(p_area) + " pe" + '\n'
+                           + 'Height (adc): ' + '{0:.4g}'.format(pulse.maximum) + '\n'
+                           + 'Height (pe): ' + '{0:.5g}'.format(pulse.maximum*adc_to_pe) + '\n'
+                           + 'PMT gain: ' + '{0:.3g}'.format(pmt_gain) + '\n'
+                           + 'Samples over ADC : ' + '{0:.3g}'.format(p_n_saturated) )
+                ax2.text(0.65,0.65, textstr, transform=ax2.transAxes, fontsize=14,
+                verticalalignment='top', bbox= props)
 
             # Finish the plot, save, close
             leg = ax1.legend()
