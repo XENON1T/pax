@@ -163,7 +163,7 @@ class Processor:
             # events are added manually
             self.input_plugin = None
             if not just_testing:
-                self.log.warning("No input plugin specified: how are you"
+                self.log.warning("No input plugin specified: how are you "
                                  "planning to get any events?")
 
         # Load the action plugins

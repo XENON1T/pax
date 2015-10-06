@@ -80,7 +80,7 @@ class PosRecTopPatternFit(plugin.PosRecPlugin):
         common_options = dict(areas_observed=areas_observed,
                               pmt_selection=is_pmt_in,
                               statistic=self.statistic)
-        if self.config['minimimizer'] == 'powell':
+        if self.config['minimizer'] == 'powell':
             try:
                 (x, y), gof = self.pf.minimize_gof_powell(start_coordinates=(seed_pos.x, seed_pos.y),
                                                           **common_options)
