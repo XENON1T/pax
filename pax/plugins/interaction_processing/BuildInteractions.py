@@ -1,7 +1,7 @@
 
 import numpy as np
 
-from pax import plugin, utils
+from pax import plugin, utils, exceptions
 from pax.datastructure import Interaction
 
 
@@ -91,18 +91,24 @@ class BasicInteractionProperties(plugin.TransformPlugin):
                 confused_s1_channels = np.union1d(ia.s1.saturated_channels, self.zombie_pmts_s1)
 
                 # Correct for S1 saturation
-                ia.s1_area_correction *= self.area_correction(
-                    peak=ia.s1,
-                    channels_in_pattern=self.tpc_channels,
-                    expected_pattern=self.s1_patterns.expected_pattern((ia.x, ia.y, ia.drift_time)),
-                    confused_channels=confused_s1_channels)
+                try:
+                    ia.s1_area_correction *= self.area_correction(
+                        peak=ia.s1,
+                        channels_in_pattern=self.tpc_channels,
+                        expected_pattern=self.s1_patterns.expected_pattern((ia.x, ia.y, ia.drift_time)),
+                        confused_channels=confused_s1_channels)
 
-                # Compute the S1 pattern fit statistic
-                ia.s1_pattern_fit = self.s1_patterns.compute_gof(
-                    (ia.x, ia.y, ia.drift_time),
-                    ia.s1.area_per_channel[self.tpc_channels],
-                    pmt_selection=np.setdiff1d(self.tpc_channels, confused_s1_channels),
-                    statistic=self.config['s1_pattern_statistic'])
+                    # Compute the S1 pattern fit statistic
+                    ia.s1_pattern_fit = self.s1_patterns.compute_gof(
+                        (ia.x, ia.y, ia.drift_time),
+                        ia.s1.area_per_channel[self.tpc_channels],
+                        pmt_selection=np.setdiff1d(self.tpc_channels, confused_s1_channels),
+                        statistic=self.config['s1_pattern_statistic'])
+
+                except exceptions.CoordinateOutOfRangeException:
+                    # This happens for interactions reconstructed outside of the TPC
+                    # Do not add any saturation correction, leave pattern fit statistic float('nan')
+                    pass
 
         return event
 
