@@ -55,7 +55,7 @@ class PatternFitter(object):
         # Store bin starts and distances for quick access, assuming uniform bin sizes
         self.coordinate_data = []
         for name, (start, stop, n_bin_edges) in data['coordinate_system']:
-            n_bin_edges *= zoom_factor
+            n_bin_edges = (n_bin_edges - 1) * zoom_factor + 1
             self.coordinate_data.append(CoordinateData(minimum=start,
                                                        maximum=stop,
                                                        n_bin_edges=n_bin_edges,
@@ -125,7 +125,7 @@ class PatternFitter(object):
                 dimstop = self._get_bin_center(bin_selection[dimension_i].stop - 1, dimension_i) + 0.5 * cd.bin_spacing
                 q.append(np.linspace(dimstart, dimstop, gofs.shape[dimension_i] + 1))
             q.append(gofs.T / np.nanmin(gofs))
-            plt.pcolormesh(*q, vmin=1, vmax=4)
+            plt.pcolormesh(*q, vmin=1, vmax=4, alpha=0.9)
             plt.colorbar(label='Goodness of fit / minimum')
 
         return gofs, lowest_bins
