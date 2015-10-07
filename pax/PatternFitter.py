@@ -77,13 +77,17 @@ class PatternFitter(object):
         self.default_errors = default_errors
 
     def expected_pattern(self, coordinates):
-        """Returns expected pattern at coordinates -- NOT YET NORMALIZED!!!
-        The reason we don't normalize yet is because we want to give the user a chance to do div/zero handling.
-        Well, I guess we could have used exceptions...
+        """Returns expected, normalized pattern at coordinates
+        'Pattern' means: expected fraction of light seen in each PMT, among PMTs included in the map.
+        Keep in mind you'll have to re-normalize if there are any dead / saturated PMTs...
         """
-        bes = self.get_bin_indices(coordinates)
-        bes += [slice(None)]
-        return self.data[bes].copy()
+        # Copy is to ensure the map is not modified accidentally... happened once, never again.
+        pattern = self.data[self.get_bin_indices(coordinates) + [slice(None)]].copy()
+        sum_pattern = pattern.sum()
+        if sum_pattern == 0:
+            raise CoordinateOutOfRangeException("Expected light pattern at coordinates %s "
+                                                "consists of only zeros!" % coordinates)
+        return pattern / sum_pattern
 
     def compute_gof(self, coordinates, areas_observed,
                     pmt_selection=None, square_syst_errors=None, statistic='chi2gamma'):

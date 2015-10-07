@@ -546,9 +546,9 @@ class Simulator(object):
 
     def distribute_photons_by_pattern(self, n_photons, pattern_fitter, coordinate_tuple):
         # TODO: assumes channels drawn from top, or from all channels (i.e. first index 0!!!)
+        # Note a CoordinateOutOfRange exception can be raised if points outside the TPC radius are asked
+        # We don't catch it here: users shouldn't ask for simulations of impossible things :-)
         lces = pattern_fitter.expected_pattern(coordinate_tuple)
-        if np.sum(lces) == 0:
-            raise ValueError("LCEs at position %s are all zero, cannot be normalized!" % (coordinate_tuple,))
         return self.randomize_photons_over_channels(n_photons,
                                                     channels=range(len(lces)),
                                                     relative_lce_per_channel=lces)
@@ -559,8 +559,9 @@ class Simulator(object):
         :param n_photons: number of photons to distribute
         :param channels: list of channel numbers that can receive photons. This will still be filtered
          to include only channels in self.config['channels_for_photons'].
-        :param relative_lce_per_channel: list of relative lce per channel. Should be >= 0 and sum to 1.
+        :param relative_lce_per_channel: list of relative lce per channel. Should all be >= 0.
                                          If omitted, will distribute photons uniformly over channels.
+                                         Does not have to be normalized to sum to 1.
         :return: array of length sim.config['n_channels'] with photon counts per channel
         """
         if n_photons == 0:
@@ -576,7 +577,7 @@ class Simulator(object):
             if relative_lce_per_channel is not None:
                 relative_lce_per_channel = relative_lce_per_channel[sel]
 
-        # Ensure relative LCEs are valid to one:
+        # Ensure relative LCEs are valid, and sum to one (among the remaining channels):
         if relative_lce_per_channel is not None:
             relative_lce_per_channel = np.clip(relative_lce_per_channel, 0, 1)
             relative_lce_per_channel /= np.sum(relative_lce_per_channel)

@@ -118,11 +118,13 @@ class BasicInteractionProperties(plugin.TransformPlugin):
         expected_pattern does not have to be normalized: we'll do that for you.
         We'll also ensure any confused_channels not in channels_in_pattern are ignored.
         """
-        confused_channels = np.intersect1d(confused_channels, channels_in_pattern).astype(np.int)
-        if expected_pattern.sum() == 0:
+        try:
+            confused_channels = np.intersect1d(confused_channels, channels_in_pattern).astype(np.int)
+        except exceptions.CoordinateOutOfRangeException:
             self.log.warning("Expected area fractions for peak %d-%d are zero -- "
                              "cannot compute saturation & zombie correction!" % (peak.left, peak.right))
             return 1
+        # Actually this is overkill now, normalization is performed in PatternFitter
         expected_pattern /= expected_pattern.sum()
 
         area_seen_in_pattern = peak.area_per_channel[channels_in_pattern].sum()
