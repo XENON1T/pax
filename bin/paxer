@@ -57,7 +57,8 @@ output_plugin_aliases.update([
 
     # Formats that don't have a plugin to read data back
     ('raw_dump',     'RawWaveformDump.DumpSumWaveformToBinary'),
-    ('mongo',        'Mongo.MongoDBWriteTriggered')
+    ('mongo',        'Mongo.MongoDBWriteTriggered'),
+    ('root',         'ROOT.ROOTClass')
 ])
 
 input_plugin_aliases = OrderedDict([
