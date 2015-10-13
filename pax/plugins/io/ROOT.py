@@ -1,4 +1,5 @@
 import os
+from copy import copy
 import re
 import numpy as np
 import ROOT
@@ -82,7 +83,7 @@ class WriteROOTClass(plugin.OutputPlugin):
 
     def set_values(self, python_object, root_object):
         """Set attribute values of the root object based on data_model instance python object"""
-        fields_to_ignore = self.config['fields_to_ignore']
+        fields_to_ignore = copy(self.config['fields_to_ignore'])
 
         # Handle collections first (so references will work afterwards)
         # TODO: add sort method to make sure event.peaks is done before peak.interactions
