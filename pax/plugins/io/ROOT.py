@@ -71,11 +71,11 @@ class WriteROOTClass(plugin.OutputPlugin):
 
             # Build dictionaries for the custom vector types
             for vtype in self._custom_types:
-                print("Generating dictionary stuff for %s" % vtype)
+                self.log.debug("Generating dictionary for %s" % vtype)
                 ROOT.gInterpreter.GenerateDictionary("vector<%s*>" % vtype, "pax_event_class.cpp")
-            print("Event class loaded, creating event")
+            self.log.debug("Event class loaded, creating event")
             self.root_event = ROOT.Event()
-            print("Making branch")
+            self.log.debug("Making branch")
             self.event_tree.Branch('events', 'Event', self.root_event, self.config['buffer_size'], 0)
 
         self.set_values(event, self.root_event)
