@@ -59,7 +59,10 @@ class WriteROOTClass(plugin.OutputPlugin):
 
         if not self.event_tree:
             # Construct the event tree
+            # Branchref() is needed to enable convenient readout of TRef and TRefArray
+            # TODO: somehow it works with or without it??
             self.event_tree = ROOT.TTree('T1', 'Tree with %s events from pax' % self.config['tpc_name'])
+            self.event_tree.BranchRef()
 
             # Write the event class C++ definition
             # Do this here, since it requires an instance (for length of arrays)
@@ -70,19 +73,22 @@ class WriteROOTClass(plugin.OutputPlugin):
             ROOT.gROOT.ProcessLine('.L pax_event_class.cpp+')
 
             # Build dictionaries for the custom vector types
-            for vtype in self._custom_types:
+            for vtype in self._custom_types + ['TRef']:
                 self.log.debug("Generating dictionary for %s" % vtype)
                 ROOT.gInterpreter.GenerateDictionary("vector<%s*>" % vtype, "pax_event_class.cpp")
             self.log.debug("Event class loaded, creating event")
             self.root_event = ROOT.Event()
-            self.log.debug("Making branch")
-            self.event_tree.Branch('events', 'Event', self.root_event, self.config['buffer_size'], 0)
+            # TODO: setting the splitlevel to 0 or 99 seems to have no effect??
+            self.event_tree.Branch('events', 'Event', self.root_event, self.config['buffer_size'], 99)
 
+        # Last collection of each data model type seen
+        self.last_collection = {}
         self.set_values(event, self.root_event)
         self.event_tree.Fill()
 
     def set_values(self, python_object, root_object):
         """Set attribute values of the root object based on data_model instance python object"""
+        obj_name = python_object.__class__.__name__
         fields_to_ignore = copy(self.config['fields_to_ignore'])
 
         # Handle collections first (so references will work afterwards)
@@ -93,15 +99,17 @@ class WriteROOTClass(plugin.OutputPlugin):
         for field_name in list_field_names:
             if field_name in fields_to_ignore:
                 continue
-            element_model_name = list_field_info[field_name].__name__
+            element_name = list_field_info[field_name].__name__
+            list_of_elements = getattr(python_object, field_name)
 
             # Recursively initialize collection elements
             root_vector = getattr(root_object, field_name)
             root_vector.clear()
-            for element_python_object in getattr(python_object, field_name):
-                element_root_object = getattr(ROOT, element_model_name)()
+            for element_python_object in list_of_elements:
+                element_root_object = getattr(ROOT, element_name)()
                 self.set_values(element_python_object, element_root_object)
                 root_vector.push_back(element_root_object)
+            self.last_collection[element_name] = (list_of_elements, root_vector)
 
             fields_to_ignore.append(field_name)
 
@@ -110,14 +118,38 @@ class WriteROOTClass(plugin.OutputPlugin):
                 continue
 
             # References (e.g. interaction.s1)
-            # TODO: check if this actually works.
             if isinstance(field_value, data_model.Model):
-                element_root_object = getattr(ROOT, field_value.__class__.__name__)()
-                getattr(root_object, field_name).SetObject(element_root_object)
+                tref = getattr(root_object, field_name)
+                tref.__assign__(self._get_root_obj(field_value))
 
             # Everything else (float, int, bool, string, numpy array)
             else:
                 setattr(root_object, field_name, field_value)
+
+        # Add values to user-defined fields
+        for field_name, field_type, field_code in self.config['extra_fields'].get(obj_name, []):
+            field = getattr(root_object, field_name)
+            exec(field_code, dict(root_object=root_object,
+                                  python_object=python_object,
+                                  field=field,
+                                  self=self))
+
+    def _get_root_obj(self, py_object):
+        """Return root object corresponding to py_object
+        from last collection of models of corresponding type seen in event"""
+        element_name = py_object.__class__.__name__
+        py_list, root_vector = self.last_collection[element_name]
+        # Look up element in py_list, set TRef to corresponding entry in root_vector
+        # Normal python assignment just changes what the python name points to and won't work.
+        # TRef apparently has an __assign__ method we need to use.
+        # This isn't a python magic method, as far as I can tell... so why name it with __'s????
+        return root_vector[py_list.index(py_object)]
+
+    def _make_tref(self, py_object):
+        """Makes a new TRef object pointing to self._get_root_obj(py_object)"""
+        tref = ROOT.TRef()
+        tref.__assign__(self._get_root_obj(py_object))
+        return tref
 
     def write_to_disk(self):
         self.event_tree.Write()
@@ -142,8 +174,7 @@ class WriteROOTClass(plugin.OutputPlugin):
                         'int64':    'long int',
                         'bool':     'bool',
                         'bool_':    'bool',
-                        'long':     'long long',
-                        }
+                        'long':     'long long'}
 
         list_field_info = model.get_list_field_info()
         class_attributes = ''
@@ -185,6 +216,13 @@ class WriteROOTClass(plugin.OutputPlugin):
             else:
                 class_attributes += '\t%s  %s;\n' % (type_mapping[type(field_value).__name__],
                                                      field_name)
+
+        # Add any user-defined extra fields
+        for field_name, field_type, field_code in self.config['extra_fields'].get(model_name, []):
+            # Hack for fields where you need a * before name
+            if not field_type.endswith('*'):
+                field_type += ' '
+            class_attributes += '\t%s%s;\n' % (field_type, field_name)
 
         return class_template.format(class_name=model_name,
                                      data_attributes=class_attributes,
