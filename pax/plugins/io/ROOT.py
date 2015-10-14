@@ -13,7 +13,6 @@ overall_header = """
 #include "TRefArray.h"
 #include "TRef.h"
 
-
 #include <vector>
 #include <string>
 #include <iostream>
@@ -37,7 +36,7 @@ class WriteROOTClass(plugin.OutputPlugin):
         # TODO: dataset_name requires long string fields, Peak.type and Peak.detector would rather have short ones
         # Maybe the latter two should become enums?
         self.config.setdefault('string_field_length', 32)
-        self.config.setdefault('buffer_size', 50)
+        self.config.setdefault('buffer_size', 16000)
         self.config.setdefault('fields_to_ignore', ('all_hits', 'raw_data', 'sum_waveforms',
                                                     'hits', 'pulses'))
         self._custom_types = []
@@ -58,6 +57,9 @@ class WriteROOTClass(plugin.OutputPlugin):
     def write_event(self, event):
 
         if not self.event_tree:
+            if self.config['exclude_compilation_from_timer']:
+                self.processor.timer.punch()
+
             # Construct the event tree
             # Branchref() is needed to enable convenient readout of TRef and TRefArray
             # TODO: somehow it works with or without it??
@@ -80,6 +82,9 @@ class WriteROOTClass(plugin.OutputPlugin):
             self.root_event = ROOT.Event()
             # TODO: setting the splitlevel to 0 or 99 seems to have no effect??
             self.event_tree.Branch('events', 'Event', self.root_event, self.config['buffer_size'], 99)
+
+            if self.config['exclude_compilation_from_timer']:
+                self.processor.timer.punch()
 
         # Last collection of each data model type seen
         self.last_collection = {}
