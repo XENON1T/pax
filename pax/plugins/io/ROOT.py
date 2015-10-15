@@ -13,6 +13,7 @@ overall_header = """
 #include "TObject.h"
 #include "TRefArray.h"
 #include "TRef.h"
+#include "TString.h"
 
 #include <vector>
 #include <string>
@@ -36,7 +37,6 @@ class WriteROOTClass(plugin.OutputPlugin):
     def startup(self):
         # TODO: dataset_name requires long string fields, Peak.type and Peak.detector would rather have short ones
         # Maybe the latter two should become enums?
-        self.config.setdefault('string_field_length', 32)
         self.config.setdefault('buffer_size', 16000)
         self.config.setdefault('fields_to_ignore', ('all_hits', 'raw_data', 'sum_waveforms',
                                                     'hits', 'pulses'))
@@ -78,7 +78,7 @@ class WriteROOTClass(plugin.OutputPlugin):
             # Build dictionaries for the custom vector types
             for vtype in self._custom_types + ['TRef']:
                 self.log.debug("Generating dictionary for %s" % vtype)
-                ROOT.gInterpreter.GenerateDictionary("vector<%s*>" % vtype, "pax_event_class.cpp")
+                ROOT.gInterpreter.GenerateDictionary("vector<%s>" % vtype, "pax_event_class.cpp")
             self.log.debug("Event class loaded, creating event")
             self.root_event = ROOT.Event()
             # TODO: setting the splitlevel to 0 or 99 seems to have no effect??
@@ -171,21 +171,22 @@ class WriteROOTClass(plugin.OutputPlugin):
         model_name = model.__class__.__name__
         self.log.debug('Building ROOT class for %s' % model_name)
 
-        type_mapping = {'float':    'float',
-                        'float64':  'double',
-                        'float32':  'float',
-                        'int':      'int',
-                        'int16':    'short int',
-                        'int32':    'int',
-                        'int64':    'long int',
-                        'bool':     'bool',
-                        'bool_':    'bool',
-                        'long':     'long long'}
+        type_mapping = {'float':    'Float_t',
+                        'float64':  'Double_t',
+                        'float32':  'Float_t',
+                        'int':      'Int_t',
+                        'int16':    'Short_t',
+                        'int32':    'Int_t',
+                        'int64':    'Long64_t',
+                        'bool':     'Bool_t',
+                        'bool_':    'Bool_t',
+                        'long':     'Long64_t',
+                        'str':      'TString'}
 
         list_field_info = model.get_list_field_info()
         class_attributes = ''
         child_classes_code = ''
-        for field_name, field_value in model.get_fields_data():
+        for field_name, field_value in sorted(model.get_fields_data()):
             if field_name in self.config['fields_to_ignore']:
                 continue
 
@@ -202,7 +203,7 @@ class WriteROOTClass(plugin.OutputPlugin):
                         source = field_value[0]
                     child_classes_code += '\n' + self._build_model_class(source)
                 # TODO: do we need to add "//->" ??
-                class_attributes += '\tvector <%s*>  %s;\n' % (element_model_name, field_name)
+                class_attributes += '\tvector <%s>  %s;\n' % (element_model_name, field_name)
 
             # References (e.g. interaction.s1)
             elif isinstance(field_value, data_model.Model):
@@ -213,10 +214,6 @@ class WriteROOTClass(plugin.OutputPlugin):
                 class_attributes += '\t%s  %s[%d];\n' % (type_mapping[field_value.dtype.type.__name__],
                                                          field_name,
                                                          len(field_value))
-
-            # Strings (configurable minimum length)
-            elif isinstance(field_value, str):
-                class_attributes += '\tchar  %s[%d];\n' % (field_name, self.config['string_field_length'])
 
             # Everything else (int, float, bool)
             else:
