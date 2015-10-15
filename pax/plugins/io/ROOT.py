@@ -11,8 +11,6 @@ overall_header = """
 #include "TFile.h"
 #include "TTree.h"
 #include "TObject.h"
-#include "TRefArray.h"
-#include "TRef.h"
 #include "TString.h"
 
 #include <vector>
@@ -76,7 +74,7 @@ class WriteROOTClass(plugin.OutputPlugin):
             ROOT.gROOT.ProcessLine('.L pax_event_class.cpp+')
 
             # Build dictionaries for the custom vector types
-            for vtype in self._custom_types + ['TRef']:
+            for vtype in self._custom_types:
                 self.log.debug("Generating dictionary for %s" % vtype)
                 ROOT.gInterpreter.GenerateDictionary("vector<%s>" % vtype, "pax_event_class.cpp")
             self.log.debug("Event class loaded, creating event")
@@ -115,7 +113,7 @@ class WriteROOTClass(plugin.OutputPlugin):
                 element_root_object = getattr(ROOT, element_name)()
                 self.set_values(element_python_object, element_root_object)
                 root_vector.push_back(element_root_object)
-            self.last_collection[element_name] = (list_of_elements, root_vector)
+            self.last_collection[element_name] = list_of_elements
 
             fields_to_ignore.append(field_name)
 
@@ -123,10 +121,9 @@ class WriteROOTClass(plugin.OutputPlugin):
             if field_name in fields_to_ignore:
                 continue
 
-            # References (e.g. interaction.s1)
+            # References (e.g. interaction.s1) -> replace by index
             if isinstance(field_value, data_model.Model):
-                tref = getattr(root_object, field_name)
-                tref.__assign__(self._get_root_obj(field_value))
+                setattr(root_object, field_name, self._get_index(field_value))
 
             # Everything else (float, int, bool, string, numpy array)
             else:
@@ -140,22 +137,9 @@ class WriteROOTClass(plugin.OutputPlugin):
                                   field=field,
                                   self=self))
 
-    def _get_root_obj(self, py_object):
-        """Return root object corresponding to py_object
-        from last collection of models of corresponding type seen in event"""
-        element_name = py_object.__class__.__name__
-        py_list, root_vector = self.last_collection[element_name]
-        # Look up element in py_list, set TRef to corresponding entry in root_vector
-        # Normal python assignment just changes what the python name points to and won't work.
-        # TRef apparently has an __assign__ method we need to use.
-        # This isn't a python magic method, as far as I can tell... so why name it with __'s????
-        return root_vector[py_list.index(py_object)]
-
-    def _make_tref(self, py_object):
-        """Makes a new TRef object pointing to self._get_root_obj(py_object)"""
-        tref = ROOT.TRef()
-        tref.__assign__(self._get_root_obj(py_object))
-        return tref
+    def _get_index(self, py_object):
+        """Return index of py_object in last collection of models of corresponding type seen in event"""
+        return self.last_collection[py_object.__class__.__name__].index(py_object)
 
     def write_to_disk(self):
         self.event_tree.Write()
@@ -205,9 +189,9 @@ class WriteROOTClass(plugin.OutputPlugin):
                 # TODO: do we need to add "//->" ??
                 class_attributes += '\tvector <%s>  %s;\n' % (element_model_name, field_name)
 
-            # References (e.g. interaction.s1)
+            # References (e.g. interaction.s1) will be replaced by indices into corrresponding collection
             elif isinstance(field_value, data_model.Model):
-                class_attributes += '\tTRef %s;\n' % field_name
+                class_attributes += '\tInt_t %s;\n' % field_name
 
             # Numpy array (assumed fixed-length, 1-d)
             elif isinstance(field_value, np.ndarray):
