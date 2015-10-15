@@ -4,6 +4,7 @@ import re
 import numpy as np
 import ROOT
 
+import pax      # For version number
 from pax import plugin, data_model
 
 overall_header = """
@@ -25,7 +26,7 @@ class {class_name} : public TObject {{
 
 public:
 {data_attributes}
-    ClassDef({class_name}, 1);
+    ClassDef({class_name}, {class_version});
 }};
 """
 
@@ -231,4 +232,5 @@ class WriteROOTClass(plugin.OutputPlugin):
 
         return class_template.format(class_name=model_name,
                                      data_attributes=class_attributes,
-                                     child_classes_code=child_classes_code)
+                                     child_classes_code=child_classes_code,
+                                     class_version=pax.__version__.replace('.', ''))
