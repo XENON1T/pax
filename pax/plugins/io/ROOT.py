@@ -12,10 +12,7 @@ overall_header = """
 #include "TTree.h"
 #include "TObject.h"
 #include "TString.h"
-
 #include <vector>
-#include <string>
-#include <iostream>
 """
 
 class_template = """
@@ -132,10 +129,7 @@ class WriteROOTClass(plugin.OutputPlugin):
         # Add values to user-defined fields
         for field_name, field_type, field_code in self.config['extra_fields'].get(obj_name, []):
             field = getattr(root_object, field_name)
-            exec(field_code, dict(root_object=root_object,
-                                  python_object=python_object,
-                                  field=field,
-                                  self=self))
+            exec(field_code, dict(root_object=root_object, python_object=python_object, field=field, self=self))
 
     def _get_index(self, py_object):
         """Return index of py_object in last collection of models of corresponding type seen in event"""
@@ -186,18 +180,16 @@ class WriteROOTClass(plugin.OutputPlugin):
                     else:
                         source = field_value[0]
                     child_classes_code += '\n' + self._build_model_class(source)
-                # TODO: do we need to add "//->" ??
                 class_attributes += '\tvector <%s>  %s;\n' % (element_model_name, field_name)
 
-            # References (e.g. interaction.s1) will be replaced by indices into corrresponding collection
+            # "References" (e.g. interaction.s1) will be replaced by indices into corresponding collection
             elif isinstance(field_value, data_model.Model):
                 class_attributes += '\tInt_t %s;\n' % field_name
 
             # Numpy array (assumed fixed-length, 1-d)
             elif isinstance(field_value, np.ndarray):
                 class_attributes += '\t%s  %s[%d];\n' % (type_mapping[field_value.dtype.type.__name__],
-                                                         field_name,
-                                                         len(field_value))
+                                                         field_name, len(field_value))
 
             # Everything else (int, float, bool)
             else:
@@ -206,10 +198,7 @@ class WriteROOTClass(plugin.OutputPlugin):
 
         # Add any user-defined extra fields
         for field_name, field_type, field_code in self.config['extra_fields'].get(model_name, []):
-            # Hack for fields where you need a * before name
-            if not field_type.endswith('*'):
-                field_type += ' '
-            class_attributes += '\t%s%s;\n' % (field_type, field_name)
+            class_attributes += '\t%s %s;\n' % (field_type, field_name)
 
         return class_template.format(class_name=model_name,
                                      data_attributes=class_attributes,
