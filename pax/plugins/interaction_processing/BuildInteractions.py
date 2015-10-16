@@ -1,7 +1,6 @@
-
 import numpy as np
 
-from pax import plugin, utils
+from pax import plugin, utils, dsputils
 from pax.datastructure import Interaction
 
 
@@ -51,8 +50,8 @@ class BasicInteractionProperties(plugin.TransformPlugin):
     """"""
 
     def startup(self):
-        self.s1_correction_map = utils.InterpolatingMap(utils.data_file_name(self.config['s1_correction_map']))
-        self.s2_correction_map = utils.InterpolatingMap(utils.data_file_name(self.config['s2_correction_map']))
+        self.s1_correction_map = dsputils.InterpolatingMap(utils.data_file_name(self.config['s1_correction_map']))
+        self.s2_correction_map = dsputils.InterpolatingMap(utils.data_file_name(self.config['s2_correction_map']))
 
     def transform_event(self, event):
 

@@ -25,14 +25,7 @@ class Model(object):
       - dump as dictionary and JSON
     """
 
-    def __init__(self, kwargs_dict=None, quick_init=False, **kwargs):
-
-        # If quick=True, use shortcut. Use for simple classes only; will bypass type checking!
-        if quick_init:
-            self.__dict__.update(kwargs_dict)
-            self.__dict__.update(kwargs)
-            return
-
+    def __init__(self, kwargs_dict=None, **kwargs):
         # Initialize the collection fields to empty lists
         # object.__setattr__ is needed to bypass type checking in StrictModel
         list_field_info = self.get_list_field_info()
@@ -102,8 +95,16 @@ class Model(object):
         # TODO: increase performance by pre-sorting keys?
         # self.__dict__.items() does not return default values set in class declaration
         # Hence we need something more complicated
-        class_dict = self.__class__.__dict__
-        self_dict = self.__dict__
+
+        if type(self) == type:
+            # Called as a class method
+            class_dict = self.__dict__
+            self_dict = {}
+        else:
+            # Called as instance method
+            class_dict = self.__class__.__dict__
+            self_dict = self.__dict__
+
         for field_name in sorted(class_dict.keys()):
             if field_name in self_dict:
                 # The instance has a value for this field: return it
@@ -148,6 +149,18 @@ class Model(object):
         return json.dumps(self.to_dict(convert_numpy_arrays_to='list',
                                        fields_to_ignore=fields_to_ignore))
 
+    @classmethod
+    def get_dtype(cls):
+        type_mapping = {'int':    np.int64,
+                        'float':  np.float64,
+                        'bool':   np.bool_}
+        dtype = []
+        for field_name, default_value in cls.get_fields_data(cls):
+            value_type = default_value.__class__.__name__
+            if value_type in type_mapping:
+                dtype.append((field_name, type_mapping[value_type]))
+        return np.dtype(dtype)
+
     def to_bson(self, fields_to_ignore=None):
         return bson.BSON.encode(self.to_dict(convert_numpy_arrays_to='bytes',
                                              fields_to_ignore=fields_to_ignore))
@@ -178,7 +191,7 @@ casting_allowed_for = {
 
 class ListField(object):
     def __init__(self, element_type):
-        if not type(element_type) == type:
+        if not issubclass(element_type, Model):
             raise ValueError("Model collections must specify a type")
         self.element_type = element_type
 

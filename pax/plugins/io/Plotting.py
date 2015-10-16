@@ -17,7 +17,7 @@ import numpy as np
 # Please do not remove, although it appears to be unused, 3d plotting won't work without it
 from mpl_toolkits.mplot3d import Axes3D     # noqa
 
-from pax import plugin, units, utils, datastructure
+from pax import plugin, units, datastructure, dsputils
 
 
 class PlotBase(plugin.OutputPlugin):
@@ -325,7 +325,7 @@ class PlotChannelWaveforms3D(PlotBase):
                 continue
 
             w = self.config['digitizer_reference_baseline'] + pulse.baseline - pulse.raw_data.astype(np.float64)
-            w *= utils.adc_to_pe(self.config, pulse.channel, use_reference_gain=True)
+            w *= dsputils.adc_to_pe(self.config, pulse.channel, use_reference_gain=True)
             if self.config['log_scale']:
                 # This will still give nan's if waveform drops below 1 pe_nominal / bin...
                 # TODO: So... will it crash? or just fall outside range?
@@ -413,16 +413,18 @@ class PlotChannelWaveforms2D(PlotBase):
         # Plot the channel peaks as dots
         self.log.debug('Plotting channel peaks...')
 
+        # TODO: vectorize
         result = []
         for hit in hits:
-            color_factor = min(hit.height / hit.noise_sigma, 15)/15
+            color_factor = min(hit['height'] / hit['noise_sigma'], 15)/15
             result.append([
-                (0.5 + hit.center / dt) * time_scale,                  # X
-                hit.channel,                                           # Y
+                (0.5 + hit['center'] / dt) * time_scale,                  # X
+                hit['channel'],                                           # Y
                 color_factor,                                          # Color (in [0,1] -> [Blue, Red])
-                10 * min(10, hit.area),                                # Size
-                (1 if hit.is_rejected else 0),                         # Is rejected? If not, will make green
+                10 * min(10, hit['area']),                                # Size
+                (1 if hit['is_rejected'] else 0),                         # Is rejected? If so, will make green
             ])
+        print(hits['is_rejected'].sum())
         if len(result) != 0:
             rgba_colors = np.zeros((len(result), 4))
             result = np.array(result).T

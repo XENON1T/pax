@@ -1,17 +1,13 @@
 import numpy as np
+import numba
 
-from pax import plugin, datastructure, utils
+from pax import plugin, datastructure, recarray_tools, dsputils
 
 
 class SumWaveform(plugin.TransformPlugin):
 
     def startup(self):
-        # Build the channel -> detector lookup dict
-        # Only used for summing waveforms
-        self.detector_by_channel = {}
-        for name, chs in self.config['channels_in_detector'].items():
-            for ch in chs:
-                self.detector_by_channel[ch] = name
+        self.detector_by_channel = dsputils.get_detector_by_channel(self.config)
 
     def transform_event(self, event):
         # Initialize empty waveforms for each detector
@@ -25,6 +21,11 @@ class SumWaveform(plugin.TransformPlugin):
                     detector=detector
                 ))
 
+        # Make dictionary mapping pulse -> non-rejected hits found in pulse
+        # Assumes hits are still sorted by pulse
+        hits_per_pulse = recarray_tools.dict_group_by(event.all_hits[True ^ event.all_hits['is_rejected']],
+                                                      'found_in_pulse')
+
         # Add top and bottom tpc sum waveforms
         for q in ('top', 'bottom'):
             event.sum_waveforms.append(datastructure.SumWaveform(
@@ -34,57 +35,61 @@ class SumWaveform(plugin.TransformPlugin):
                 detector='tpc'
             ))
 
-        # Build the raw sum waveform
-        for pulse in event.pulses:
+        for pulse_i, pulse in enumerate(event.pulses):
             channel = pulse.channel
-            detector = self.detector_by_channel[channel]
+
+            # Do some initialization only when we switch channel
+            # The 'current_channel' variable can't be pulled outside the loop, that would hurt performance
+            # (trust me, try it and time it)
+            if pulse_i == 0 or channel != current_channel:      # noqa
+                current_channel = channel                       # noqa
+                detector = self.detector_by_channel[channel]
+                adc_to_pe = dsputils.adc_to_pe(self.config, pulse.channel)
+                gain = self.config['gains'][channel]
+
+                if detector == 'tpc':
+                    if channel in self.config['channels_top']:
+                        sum_w = event.get_sum_waveform('tpc_top')
+                    else:
+                        sum_w = event.get_sum_waveform('tpc_bottom')
+                else:
+                    sum_w = event.get_sum_waveform(detector)
 
             # Don't consider dead channels
-            if self.config['gains'][channel] == 0:
+            if gain == 0:
                 continue
 
-            if self.config['subtract_reference_baseline_only_for_raw_waveform']:
-                baseline_to_subtract = self.config['digitizer_reference_baseline']
-            else:
-                baseline_to_subtract = self.config['digitizer_reference_baseline'] - pulse.baseline
+            baseline_to_subtract = self.config['digitizer_reference_baseline'] - pulse.baseline
 
             w = baseline_to_subtract - pulse.raw_data.astype(np.float32)
-
-            adc_to_pe = utils.adc_to_pe(self.config, pulse.channel)
+            w *= adc_to_pe
 
             sum_w_raw = event.get_sum_waveform(detector+'_raw').samples
-            sum_w_raw[pulse.left:pulse.right+1] += w * adc_to_pe
+            sum_w_raw[pulse.left:pulse.right+1] += w
 
-        # Build the hits-only sum waveform
-        for hit in event.all_hits:
-            channel = hit.channel
-            detector = self.detector_by_channel[channel]
-
-            # Don't include rejected hits - this is known only after clustering
-            if hit.is_rejected:
+            hits = hits_per_pulse.get(pulse_i, None)
+            if hits is None:
                 continue
 
-            pulse = event.pulses[hit.found_in_pulse]
-
-            # Retrieve the waveform, subtract baseline, invert
-            left_in_pulse = hit.left - pulse.left
-            right_in_pulse = hit.right - pulse.left
-            w = (self.config['digitizer_reference_baseline'] - pulse.baseline) - \
-                pulse.raw_data[left_in_pulse:right_in_pulse+1].astype(np.float32)
-
-            adc_to_pe = utils.adc_to_pe(self.config, hit.channel)
-
-            if detector == 'tpc':
-                if channel in self.config['channels_top']:
-                    sum_w = event.get_sum_waveform('tpc_top')
-                else:
-                    sum_w = event.get_sum_waveform('tpc_bottom')
-            else:
-                sum_w = event.get_sum_waveform(detector)
-            sum_w.samples[hit.left:hit.right+1] += w * adc_to_pe
+            w_hits_only = w.copy()
+            zero_waveform_outside_hits(w_hits_only,
+                                       hits['left'] - pulse.left,
+                                       hits['right'] - pulse.left)
+            sum_w.samples[pulse.left:pulse.right+1] += w_hits_only
 
         # Sum the tpc top and bottom tpc waveforms
         event.get_sum_waveform('tpc').samples = event.get_sum_waveform('tpc_top').samples + \
             event.get_sum_waveform('tpc_bottom').samples
 
         return event
+
+
+@numba.jit(numba.void(numba.float32[:], numba.int64[:], numba.int64[:]))
+def zero_waveform_outside_hits(w, left, right,):
+    """Assumes hits don't overlap, and are sorted from left to right"""
+    if len(left) == 0:
+        return
+    w[:left[0]] = 0
+    for i in range(1, len(left)):
+        w[right[i-1]+1:left[i]] = 0
+    w[right[-1]+1:] = 0

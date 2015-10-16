@@ -13,7 +13,7 @@ if six.PY3:
     long = int
 
 from pax import units
-from pax.data_model import StrictModel, ListField, Model
+from pax.data_model import StrictModel, ListField
 
 INT_NAN = -99999    # Do not change without talking to me. -Tunnell 12/3/2015 ... and me. -Jelle 05/08/2015
 
@@ -50,15 +50,16 @@ class ReconstructedPosition(StrictModel):
         return np.arctan2(self.y, self.x)
 
 
-# Hit class uses model: no type checking, better performance
-# Using StrictModel instead causes 50% longer runtime of hitfinder
-class Hit(Model):
+class Hit(StrictModel):
     """A hit results from, within individual channel, fluctation above baseline.
 
     These are be clustered into ordinary peaks later. This is commonly
     called a 'hit' in particle physics detectors.  Very generally, a hit is
     made every time that the data recorded for one channel flucates above
     baseline.
+
+    The Hit class is never actually used to build python objects.
+    Instead we build a numpy dtype from this declaration, and use it in arrays of hits
     """
     #: Channel in which this peak was found
     channel = 0
@@ -114,7 +115,7 @@ class Peak(StrictModel):
     ##
 
     #: Peaks in individual channels that make up this peak
-    hits = ListField(Hit)
+    hits = np.array([], dtype=Hit.get_dtype())
 
     #: Array of areas in each PMT.
     area_per_channel = np.array([], dtype='float64')
@@ -497,8 +498,8 @@ class Event(StrictModel):
     #: A list of :class:`pax.datastructure.Peak` objects.
     peaks = ListField(Peak)
 
-    #: Temporary list of hits -- will be shipped off to peaks later
-    all_hits = ListField(Hit)
+    #: Temporary array of hits -- will be shipped off to peaks later
+    all_hits = np.array([], dtype=Hit.get_dtype())
 
     #: A list :class:`pax.datastructure.SumWaveform` objects.
     sum_waveforms = ListField(SumWaveform)
