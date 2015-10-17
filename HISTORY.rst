@@ -8,7 +8,7 @@ History
 ------------------
 
 * Memory leak fixed
-* Small corrections to position reconstruction
+* Small corrections to position reconstruction (#244)
 
 ------------------
 4.0.0 (2015-10-02)
