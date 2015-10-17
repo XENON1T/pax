@@ -205,15 +205,15 @@ class StrictModel(Model):
     def __setattr__(self, key, value):
 
         # Get the old attr.
-        # #Will raise AttributeError if doesn't exists, which is what we want
+        # Will raise AttributeError if doesn't exists, which is what we want
         old_val = getattr(self, key)
         old_type = type(old_val)
         new_type = type(value)
-        old_class_name = old_val.__class__.__name__
-        new_class_name = value.__class__.__name__
 
         # Check for attempted type change
         if old_type != new_type:
+            old_class_name = old_val.__class__.__name__
+            new_class_name = value.__class__.__name__
 
             # Are we allowed to cast the type?
             if old_class_name in casting_allowed_for and new_class_name in casting_allowed_for[old_class_name]:
@@ -227,7 +227,7 @@ class StrictModel(Model):
                                    new_class_name))
 
         # Check for attempted dtype change
-        if isinstance(old_val, np.ndarray):
+        if old_type == np.ndarray:
             if old_val.dtype != value.dtype:
                 raise TypeError('Attribute %s of class %s should have numpy dtype %s, not %s' % (
                     key, self.__class__.__name__, old_val.dtype, value.dtype))
