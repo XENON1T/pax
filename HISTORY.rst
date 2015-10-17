@@ -3,6 +3,12 @@
 History
 -------
 
+------------------
+4.0.0 (2015-10-17)
+------------------
+
+* Memory leak fixed
+* Small corrections to position reconstruction
 
 ------------------
 4.0.0 (2015-10-02)
