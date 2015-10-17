@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax package &mdash; Processor for Analyzing XENON1T 3.3.0 documentation</title>
+    <title>pax package &mdash; Processor for Analyzing XENON1T 4.0.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '3.3.0',
+        VERSION:     '4.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,25 +23,13 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 3.3.0 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.0.0 documentation" href="index.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Processor for Analyzing XENON1T 3.3.0 documentation</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -326,7 +314,7 @@ We use zlib, not zip&#8217;s deflate, for compression.</p>
 <span id="pax-patternfitter-module"></span><h2>pax.PatternFitter module<a class="headerlink" href="#module-pax.PatternFitter" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
 <dt id="pax.PatternFitter.CoordinateData">
-<em class="property">class </em><code class="descclassname">pax.PatternFitter.</code><code class="descname">CoordinateData</code><span class="sig-paren">(</span><em>minimum</em>, <em>maximum</em>, <em>n_bin_edges</em>, <em>bin_spacing</em><span class="sig-paren">)</span><a class="headerlink" href="#pax.PatternFitter.CoordinateData" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pax.PatternFitter.</code><code class="descname">CoordinateData</code><span class="sig-paren">(</span><em>minimum</em>, <em>maximum</em>, <em>n_bins</em>, <em>bin_spacing</em><span class="sig-paren">)</span><a class="headerlink" href="#pax.PatternFitter.CoordinateData" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">tuple</span></code></p>
 <dl class="attribute">
 <dt id="pax.PatternFitter.CoordinateData.bin_spacing">
@@ -347,8 +335,8 @@ We use zlib, not zip&#8217;s deflate, for compression.</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pax.PatternFitter.CoordinateData.n_bin_edges">
-<code class="descname">n_bin_edges</code><a class="headerlink" href="#pax.PatternFitter.CoordinateData.n_bin_edges" title="Permalink to this definition">¶</a></dt>
+<dt id="pax.PatternFitter.CoordinateData.n_bins">
+<code class="descname">n_bins</code><a class="headerlink" href="#pax.PatternFitter.CoordinateData.n_bins" title="Permalink to this definition">¶</a></dt>
 <dd><p>Alias for field number 2</p>
 </dd></dl>
 
@@ -1763,7 +1751,7 @@ This is</p>
 
 <dl class="attribute">
 <dt id="pax.formats.ROOTDump.numpy_type">
-<code class="descname">numpy_type</code><em class="property"> = {'I': &lt;class 'numpy.int32'&gt;, 'C': dtype('O'), 'O': &lt;class 'bool'&gt;, 'D': &lt;class 'numpy.float64'&gt;, 'L': &lt;class 'numpy.int64'&gt;, 'F': &lt;class 'numpy.float32'&gt;}</em><a class="headerlink" href="#pax.formats.ROOTDump.numpy_type" title="Permalink to this definition">¶</a></dt>
+<code class="descname">numpy_type</code><em class="property"> = {'C': dtype('O'), 'L': &lt;class 'numpy.int64'&gt;, 'D': &lt;class 'numpy.float64'&gt;, 'O': &lt;class 'bool'&gt;, 'F': &lt;class 'numpy.float32'&gt;, 'I': &lt;class 'numpy.int32'&gt;}</em><a class="headerlink" href="#pax.formats.ROOTDump.numpy_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -1778,7 +1766,7 @@ This is</p>
 
 <dl class="attribute">
 <dt id="pax.formats.ROOTDump.root_type">
-<code class="descname">root_type</code><em class="property"> = {'int32': '/I', 'int64': '/L', 'bool': '/O', 'float64': '/D', 'float32': '/F', 'S': '/C'}</em><a class="headerlink" href="#pax.formats.ROOTDump.root_type" title="Permalink to this definition">¶</a></dt>
+<code class="descname">root_type</code><em class="property"> = {'float64': '/D', 'int64': '/L', 'bool': '/O', 'int32': '/I', 'S': '/C', 'float32': '/F'}</em><a class="headerlink" href="#pax.formats.ROOTDump.root_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -2292,7 +2280,13 @@ Hits should already be sorted by left boundary; we&#8217;ll check this and throw
 </ul>
 </li>
 </ul>
-
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -2322,11 +2316,11 @@ Hits should already be sorted by left boundary; we&#8217;ll check this and throw
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
       <a href="_sources/pax.txt"
-          rel="nofollow">Page source</a></li>
+          rel="nofollow">Page source</a>
     </div>
 
     

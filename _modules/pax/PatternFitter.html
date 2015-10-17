@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.PatternFitter &mdash; Processor for Analyzing XENON1T 3.3.0 documentation</title>
+    <title>pax.PatternFitter &mdash; Processor for Analyzing XENON1T 4.0.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '3.3.0',
+        VERSION:     '4.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,27 +23,14 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 3.3.0 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.0.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="../../genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="../../py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="../../index.html">Processor for Analyzing XENON1T 3.3.0 documentation</a> &raquo;</li>
-          <li class="nav-item nav-item-1"><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -66,7 +53,7 @@
 
 <span class="c"># Named tuple for coordinate data storage</span>
 <span class="c"># Maybe works faster than dictionary... can always remove later</span>
-<span class="n">CoordinateData</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;CoordinateData&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s">&#39;minimum&#39;</span><span class="p">,</span> <span class="s">&#39;maximum&#39;</span><span class="p">,</span> <span class="s">&#39;n_bin_edges&#39;</span><span class="p">,</span> <span class="s">&#39;bin_spacing&#39;</span><span class="p">))</span>
+<span class="n">CoordinateData</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s">&#39;CoordinateData&#39;</span><span class="p">,</span> <span class="p">(</span><span class="s">&#39;minimum&#39;</span><span class="p">,</span> <span class="s">&#39;maximum&#39;</span><span class="p">,</span> <span class="s">&#39;n_bins&#39;</span><span class="p">,</span> <span class="s">&#39;bin_spacing&#39;</span><span class="p">))</span>
 
 
 <div class="viewcode-block" id="PatternFitter"><a class="viewcode-back" href="../../pax.html#pax.PatternFitter.PatternFitter">[docs]</a><span class="k">class</span> <span class="nc">PatternFitter</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -79,7 +66,8 @@
 <span class="sd">            &#39;name&#39;:                 &#39;Nice file with maps&#39;,</span>
 <span class="sd">            &#39;description&#39;:          &#39;Say what the maps are, who you are, your favorite food, etc&#39;,</span>
 <span class="sd">            &#39;timestamp&#39;:            unix epoch seconds timestamp</span>
-<span class="sd">        zoom_factor is factor by which the spatial dimensions of the map will be upsampled</span>
+<span class="sd">        where n_x is the number of grid points along x = x-bins on the map (NOT the number of bin edges!)</span>
+<span class="sd">        zoom_factor is factor by which the spatial dimensions of the map will be upsampled.</span>
 
 <span class="sd">        adjust_to_qe: array of same length as the number of pmts in the map;</span>
 <span class="sd">            we&#39;ll adjust the patterns to account for these QEs, upweighing PMTs with higher QEs</span>
@@ -107,12 +95,12 @@
 
         <span class="c"># Store bin starts and distances for quick access, assuming uniform bin sizes</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">coordinate_data</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">n_bin_edges</span><span class="p">)</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;coordinate_system&#39;</span><span class="p">]:</span>
-            <span class="n">n_bin_edges</span> <span class="o">*=</span> <span class="n">zoom_factor</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">n_bins</span><span class="p">)</span> <span class="ow">in</span> <span class="n">data</span><span class="p">[</span><span class="s">&#39;coordinate_system&#39;</span><span class="p">]:</span>
+            <span class="n">n_bins</span> <span class="o">*=</span> <span class="n">zoom_factor</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">coordinate_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">CoordinateData</span><span class="p">(</span><span class="n">minimum</span><span class="o">=</span><span class="n">start</span><span class="p">,</span>
                                                        <span class="n">maximum</span><span class="o">=</span><span class="n">stop</span><span class="p">,</span>
-                                                       <span class="n">n_bin_edges</span><span class="o">=</span><span class="n">n_bin_edges</span><span class="p">,</span>
-                                                       <span class="n">bin_spacing</span><span class="o">=</span><span class="p">(</span><span class="n">stop</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">n_bin_edges</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)))</span>
+                                                       <span class="n">n_bins</span><span class="o">=</span><span class="n">n_bins</span><span class="p">,</span>
+                                                       <span class="n">bin_spacing</span><span class="o">=</span><span class="p">(</span><span class="n">stop</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span><span class="o">/</span><span class="n">n_bins</span><span class="p">))</span>
 
         <span class="c"># TODO: Technically we should zero the bins outside the tpc radius again:</span>
         <span class="c"># some LCE may have leaked into this region due to upsampling... but doesn&#39;t matter:</span>
@@ -178,7 +166,7 @@
                 <span class="n">dimstop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_bin_center</span><span class="p">(</span><span class="n">bin_selection</span><span class="p">[</span><span class="n">dimension_i</span><span class="p">]</span><span class="o">.</span><span class="n">stop</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dimension_i</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">cd</span><span class="o">.</span><span class="n">bin_spacing</span>
                 <span class="n">q</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">dimstart</span><span class="p">,</span> <span class="n">dimstop</span><span class="p">,</span> <span class="n">gofs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">dimension_i</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
             <span class="n">q</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">gofs</span><span class="o">.</span><span class="n">T</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">gofs</span><span class="p">))</span>
-            <span class="n">plt</span><span class="o">.</span><span class="n">pcolormesh</span><span class="p">(</span><span class="o">*</span><span class="n">q</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">pcolormesh</span><span class="p">(</span><span class="o">*</span><span class="n">q</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.9</span><span class="p">)</span>
             <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s">&#39;Goodness of fit / minimum&#39;</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">gofs</span><span class="p">,</span> <span class="n">lowest_bins</span>
@@ -289,7 +277,15 @@
         </div>
       </div>
       <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
 <div id="searchbox" style="display: none" role="search">
   <h3>Quick search</h3>
     <form class="search" action="../../search.html" method="get">
@@ -312,7 +308,7 @@
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>
 

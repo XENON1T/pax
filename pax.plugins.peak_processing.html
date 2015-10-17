@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.peak_processing package &mdash; Processor for Analyzing XENON1T 3.3.0 documentation</title>
+    <title>pax.plugins.peak_processing package &mdash; Processor for Analyzing XENON1T 4.0.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '3.3.0',
+        VERSION:     '4.0.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,25 +23,13 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 3.3.0 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.0.0 documentation" href="index.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
-  <body role="document">
-    <div class="related" role="navigation" aria-label="related navigation">
-      <h3>Navigation</h3>
-      <ul>
-        <li class="right" style="margin-right: 10px">
-          <a href="genindex.html" title="General Index"
-             accesskey="I">index</a></li>
-        <li class="right" >
-          <a href="py-modindex.html" title="Python Module Index"
-             >modules</a> |</li>
-        <li class="nav-item nav-item-0"><a href="index.html">Processor for Analyzing XENON1T 3.3.0 documentation</a> &raquo;</li> 
-      </ul>
-    </div>  
+  <body role="document">  
 
     <div class="document">
       <div class="documentwrapper">
@@ -106,9 +94,9 @@ between point of 25% area and 75% area (with boundary samples added fractionally
 First element (0) of array is always zero, last element (10) is the length of w in samples.</p>
 </dd></dl>
 
-<dl class="attribute">
+<dl class="function">
 <dt id="pax.plugins.peak_processing.BasicProperties.integrate_until_fraction">
-<code class="descclassname">pax.plugins.peak_processing.BasicProperties.</code><code class="descname">integrate_until_fraction</code><a class="reference internal" href="_modules/pax/plugins/peak_processing/BasicProperties.html#integrate_until_fraction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.BasicProperties.integrate_until_fraction" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">pax.plugins.peak_processing.BasicProperties.</code><code class="descname">integrate_until_fraction</code><span class="sig-paren">(</span><em>w</em>, <em>fractions_desired</em>, <em>results</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/BasicProperties.html#integrate_until_fraction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.BasicProperties.integrate_until_fraction" title="Permalink to this definition">¶</a></dt>
 <dd><p>For array of fractions_desired, integrate w until fraction of area is reached, place sample index in results
 Will add last sample needed fractionally.
 eg. if you want 25% and a sample takes you from 20% to 30%, 0.5 will be added.
@@ -219,7 +207,13 @@ Works with a penalty point system (see #126):
 </ul>
 </li>
 </ul>
-
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+  </ul></li>
+</ul>
+</div>
   <div role="note" aria-label="source link">
     <h3>This Page</h3>
     <ul class="this-page-menu">
@@ -249,11 +243,11 @@ Works with a penalty point system (see #126):
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
       |
       <a href="_sources/pax.plugins.peak_processing.txt"
-          rel="nofollow">Page source</a></li>
+          rel="nofollow">Page source</a>
     </div>
 
     
