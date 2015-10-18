@@ -88,6 +88,10 @@ class Model(object):
     def __str__(self):
         return str(self.__dict__)
 
+    @classmethod
+    def _get_fields_data_dummy_instance(cls):
+        return cls().get_fields_data()
+
     def get_fields_data(self):
         """Iterator over (key, value) tuples of all user-specified fields
         Returns keys in lexical order
@@ -96,14 +100,8 @@ class Model(object):
         # self.__dict__.items() does not return default values set in class declaration
         # Hence we need something more complicated
 
-        if type(self) == type:
-            # Called as a class method
-            class_dict = self.__dict__
-            self_dict = {}
-        else:
-            # Called as instance method
-            class_dict = self.__class__.__dict__
-            self_dict = self.__dict__
+        class_dict = self.__class__.__dict__
+        self_dict = self.__dict__
 
         for field_name in sorted(class_dict.keys()):
             if field_name in self_dict:
@@ -155,7 +153,7 @@ class Model(object):
                         'float':  np.float64,
                         'bool':   np.bool_}
         dtype = []
-        for field_name, default_value in cls.get_fields_data(cls):
+        for field_name, default_value in cls._get_fields_data_dummy_instance():
             value_type = default_value.__class__.__name__
             if value_type in type_mapping:
                 dtype.append((field_name, type_mapping[value_type]))
