@@ -88,10 +88,6 @@ class Model(object):
     def __str__(self):
         return str(self.__dict__)
 
-    @classmethod
-    def _get_fields_data_dummy_instance(cls):
-        return cls().get_fields_data()
-
     def get_fields_data(self):
         """Iterator over (key, value) tuples of all user-specified fields
         Returns keys in lexical order
@@ -149,11 +145,16 @@ class Model(object):
 
     @classmethod
     def get_dtype(cls):
+        """Get a dtype for a numpy structured array equivalent to the class
+        Works only for flat classes (no list fields) containing int, float, and bool
+        """
         type_mapping = {'int':    np.int64,
                         'float':  np.float64,
+                        'long':   np.float64,
                         'bool':   np.bool_}
         dtype = []
-        for field_name, default_value in cls._get_fields_data_dummy_instance():
+        # Get field types from a dummy instance of the class
+        for field_name, default_value in cls().get_fields_data():
             value_type = default_value.__class__.__name__
             if value_type in type_mapping:
                 dtype.append((field_name, type_mapping[value_type]))
