@@ -1,7 +1,7 @@
 import numpy as np
 # import numba
 
-from pax import plugin, dsputils, units
+from pax import plugin, dsputils
 
 
 class BasicProperties(plugin.TransformPlugin):
