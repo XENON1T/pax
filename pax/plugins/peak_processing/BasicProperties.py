@@ -79,9 +79,6 @@ class SumWaveformProperties(plugin.TransformPlugin):
             # We may remove one from the data structure, but it's a useful sanity check
             # (particularly since some hits got removed in the noise rejection)
             peak.center_time = (peak.left + np.average(np.arange(len(w)), weights=w)) * dt
-            if abs(peak.center_time - peak.hit_time_mean) > 1 * units.ns:
-                raise RuntimeError("Peak center time (%s) can't be different from hit time mean (%s)!" % (
-                    peak.center_time, peak.hit_time_mean))
 
             # Index in peak waveform nearest to center of gravity (for sum-waveform alignment)
             cog_idx = int(round(peak.center_time / dt)) - peak.left
