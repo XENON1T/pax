@@ -13,7 +13,7 @@ from pax.exceptions import CoordinateOutOfRangeException
 
 # Named tuple for coordinate data storage
 # Maybe works faster than dictionary... can always remove later
-CoordinateData = namedtuple('CoordinateData', ('minimum', 'maximum', 'n_bin_edges', 'bin_spacing'))
+CoordinateData = namedtuple('CoordinateData', ('minimum', 'maximum', 'n_bins', 'bin_spacing'))
 
 
 class PatternFitter(object):
@@ -26,7 +26,8 @@ class PatternFitter(object):
             'name':                 'Nice file with maps',
             'description':          'Say what the maps are, who you are, your favorite food, etc',
             'timestamp':            unix epoch seconds timestamp
-        zoom_factor is factor by which the spatial dimensions of the map will be upsampled
+        where n_x is the number of grid points along x = x-bins on the map (NOT the number of bin edges!)
+        zoom_factor is factor by which the spatial dimensions of the map will be upsampled.
 
         adjust_to_qe: array of same length as the number of pmts in the map;
             we'll adjust the patterns to account for these QEs, upweighing PMTs with higher QEs
@@ -54,12 +55,12 @@ class PatternFitter(object):
 
         # Store bin starts and distances for quick access, assuming uniform bin sizes
         self.coordinate_data = []
-        for name, (start, stop, n_bin_edges) in data['coordinate_system']:
-            n_bin_edges = (n_bin_edges - 1) * zoom_factor + 1
+        for name, (start, stop, n_bins) in data['coordinate_system']:
+            n_bins *= zoom_factor
             self.coordinate_data.append(CoordinateData(minimum=start,
                                                        maximum=stop,
-                                                       n_bin_edges=n_bin_edges,
-                                                       bin_spacing=(stop - start)/(n_bin_edges - 1)))
+                                                       n_bins=n_bins,
+                                                       bin_spacing=(stop - start)/n_bins))
 
         # TODO: Technically we should zero the bins outside the tpc radius again:
         # some LCE may have leaked into this region due to upsampling... but doesn't matter:

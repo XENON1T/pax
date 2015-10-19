@@ -1,3 +1,7 @@
+"""Tools for working with numpy structured arrays
+Extends existing functionality in numpy.lib.recfunctions
+"""
+
 import numpy as np
 from numpy.lib import recfunctions
 from collections import OrderedDict
@@ -9,7 +13,7 @@ def append_fields(base, names, data, dtypes=None, fill_value=-1,
                   usemask=False,   # Different from recfunctions default
                   asrecarray=False):
     """Append fields to numpy structured array
-    Does nothing if array already has fields with the same name.
+    If fields already exists in data, will overwrite
     """
     if isinstance(names, (tuple, list)):
         # Add multiple fields at once

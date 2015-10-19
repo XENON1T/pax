@@ -424,7 +424,6 @@ class PlotChannelWaveforms2D(PlotBase):
                 10 * min(10, hit['area']),                                # Size
                 (1 if hit['is_rejected'] else 0),                         # Is rejected? If so, will make green
             ])
-        print(hits['is_rejected'].sum())
         if len(result) != 0:
             rgba_colors = np.zeros((len(result), 4))
             result = np.array(result).T

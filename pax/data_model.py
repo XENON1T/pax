@@ -96,14 +96,8 @@ class Model(object):
         # self.__dict__.items() does not return default values set in class declaration
         # Hence we need something more complicated
 
-        if type(self) == type:
-            # Called as a class method
-            class_dict = self.__dict__
-            self_dict = {}
-        else:
-            # Called as instance method
-            class_dict = self.__class__.__dict__
-            self_dict = self.__dict__
+        class_dict = self.__class__.__dict__
+        self_dict = self.__dict__
 
         for field_name in sorted(class_dict.keys()):
             if field_name in self_dict:
@@ -151,11 +145,16 @@ class Model(object):
 
     @classmethod
     def get_dtype(cls):
+        """Get a dtype for a numpy structured array equivalent to the class
+        Works only for flat classes (no list fields) containing int, float, and bool
+        """
         type_mapping = {'int':    np.int64,
                         'float':  np.float64,
+                        'long':   np.float64,
                         'bool':   np.bool_}
         dtype = []
-        for field_name, default_value in cls.get_fields_data(cls):
+        # Get field types from a dummy instance of the class
+        for field_name, default_value in cls().get_fields_data():
             value_type = default_value.__class__.__name__
             if value_type in type_mapping:
                 dtype.append((field_name, type_mapping[value_type]))

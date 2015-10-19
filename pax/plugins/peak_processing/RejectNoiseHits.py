@@ -36,9 +36,6 @@ class RejectNoiseHits(plugin.TransformPlugin):
         rejected_hits = []
         for peak_i, peak in enumerate(event.peaks):
 
-            # Area per channel must be computed here... unfortunate code duplication with basicProperties
-            peak.area_per_channel = dsputils.count_hits_per_channel(peak, self.config, weights=peak.hits['area'])
-
             suspicious_channels_in_peak = np.intersect1d(peak.contributing_channels, suspicious_channels)
             if len(suspicious_channels_in_peak) == 0:
                 continue
@@ -59,7 +56,7 @@ class RejectNoiseHits(plugin.TransformPlugin):
             for hit_i in np.where(cut)[0]:
                 rejected_hits.append(peak.hits[hit_i])
                 event.n_hits_rejected[peak.hits[hit_i]['channel']] += 1
-            peak.hits = peak.hits[True ^ cut]
+            peak.hits = peak.hits[True ^ cut]       # True ^ inverts the boolean array, so this selects good hits
 
             # Has the peak become empty? Then mark it for deletion.
             # We can't delete it now since we're iterating over event.peaks

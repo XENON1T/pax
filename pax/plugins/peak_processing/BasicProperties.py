@@ -1,5 +1,5 @@
 import numpy as np
-import numba
+# import numba
 
 from pax import plugin, dsputils, units
 
@@ -79,9 +79,6 @@ class SumWaveformProperties(plugin.TransformPlugin):
             # We may remove one from the data structure, but it's a useful sanity check
             # (particularly since some hits got removed in the noise rejection)
             peak.center_time = (peak.left + np.average(np.arange(len(w)), weights=w)) * dt
-            if abs(peak.center_time - peak.hit_time_mean) > 1 * units.ns:
-                raise RuntimeError("Peak center time (%s) can't be different from hit time mean (%s)!" % (
-                    peak.center_time, peak.hit_time_mean))
 
             # Index in peak waveform nearest to center of gravity (for sum-waveform alignment)
             cog_idx = int(round(peak.center_time / dt)) - peak.left
@@ -132,8 +129,9 @@ def compute_area_deciles(w):
     return index_of_area_fraction[10], (index_of_area_fraction[10:] - index_of_area_fraction[10::-1]),
 
 
-@numba.jit(numba.void(numba.float32[:], numba.float64[:], numba.float64[:]),
-           nopython=True)
+# @numba.jit(numba.void(numba.float32[:], numba.float64[:], numba.float64[:]),
+#            nopython=True, cache=True)
+# For some reason numba doesn't clean up its memory properly for this function... leave it in python for now
 def integrate_until_fraction(w, fractions_desired, results):
     """For array of fractions_desired, integrate w until fraction of area is reached, place sample index in results
     Will add last sample needed fractionally.
