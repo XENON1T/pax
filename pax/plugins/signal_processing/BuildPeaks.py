@@ -7,7 +7,6 @@ from pax import dsputils
 class GapSizeClustering(plugin.TransformPlugin):
     """Cluster individual hits into rough groups = Peaks separated by at least max_gap_size_in_cluster
     Also labels peak as 'lone_hit' if only one channel contributes
-    We always assume the hits are sorted from left to right. [really? where?]
     """
 
     def startup(self):
@@ -31,8 +30,13 @@ class GapSizeClustering(plugin.TransformPlugin):
                 hits_in_this_peak = hits[cluster_indices[i]:cluster_indices[i + 1]]
                 peak = datastructure.Peak(detector=detector,
                                           hits=hits_in_this_peak)
-                if len(np.unique(hits_in_this_peak['channel'])) == 1:
+
+                # Area per channel must be computed here so RejectNoiseHits can use it
+                # unfortunate code duplication with basicProperties!
+                peak.area_per_channel = dsputils.count_hits_per_channel(peak, self.config, weights=hits['area'])
+                if np.sum(peak.area_per_channel > 0) == 1:
                     peak.type = 'lone_hit'
+
                 event.peaks.append(peak)
 
         return event

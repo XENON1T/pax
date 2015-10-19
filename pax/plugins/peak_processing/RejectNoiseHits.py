@@ -36,9 +36,6 @@ class RejectNoiseHits(plugin.TransformPlugin):
         rejected_hits = []
         for peak_i, peak in enumerate(event.peaks):
 
-            # Area per channel must be computed here... unfortunate code duplication with basicProperties
-            peak.area_per_channel = dsputils.count_hits_per_channel(peak, self.config, weights=peak.hits['area'])
-
             suspicious_channels_in_peak = np.intersect1d(peak.contributing_channels, suspicious_channels)
             if len(suspicious_channels_in_peak) == 0:
                 continue
