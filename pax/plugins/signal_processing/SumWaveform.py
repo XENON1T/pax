@@ -72,9 +72,7 @@ class SumWaveform(plugin.TransformPlugin):
                 continue
 
             w_hits_only = w.copy()
-            zero_waveform_outside_hits(w_hits_only,
-                                       hits['left'] - pulse.left,
-                                       hits['right'] - pulse.left)
+            zero_waveform_outside_hits(w_hits_only, hits['left'], hits['right'], pulse.left)
             sum_w.samples[pulse.left:pulse.right+1] += w_hits_only
 
         # Sum the tpc top and bottom tpc waveforms
@@ -84,12 +82,12 @@ class SumWaveform(plugin.TransformPlugin):
         return event
 
 
-@numba.jit(numba.void(numba.float32[:], numba.int64[:], numba.int64[:]), nopython=True, cache=True)
-def zero_waveform_outside_hits(w, left, right,):
+@numba.jit(numba.void(numba.float32[:], numba.int64[:], numba.int64[:], numba.int64), nopython=True, cache=True)
+def zero_waveform_outside_hits(w, left, right, pulse_left):
     """Assumes hits don't overlap, and are sorted from left to right"""
     if len(left) == 0:
         return
-    w[:left[0]] = 0
+    w[:left[0]-pulse_left] = 0
     for i in range(1, len(left)):
-        w[right[i-1]+1:left[i]] = 0
-    w[right[-1]+1:] = 0
+        w[right[i-1]+1-pulse_left:left[i]-pulse_left] = 0
+    w[right[-1]+1-pulse_left:] = 0

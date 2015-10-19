@@ -150,7 +150,7 @@ class Model(object):
         """
         type_mapping = {'int':    np.int64,
                         'float':  np.float64,
-                        'long':   np.float64,
+                        'long':   np.int64,
                         'bool':   np.bool_}
         dtype = []
         # Get field types from a dummy instance of the class
