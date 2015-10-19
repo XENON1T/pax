@@ -30,6 +30,15 @@ class GapSizeClustering(plugin.TransformPlugin):
             for i in range(len(cluster_indices) - 1):
                 peak = datastructure.Peak(detector=detector,
                                           hits=hits[cluster_indices[i]:cluster_indices[i + 1]])
+
+                # Area per channel must be computed here so RejectNoiseHits can use it
+                # unfortunate code duplication with basicProperties!
+                peak.area_per_channel = np.zeros(self.config['n_channels'], dtype='float64')
+                for hit in peak.hits:
+                    peak.area_per_channel[hit.channel] += hit.area
+                if np.sum(peak.area_per_channel > 0) == 1:
+                    peak.type = 'lone_hit'
+
                 event.peaks.append(peak)
 
         return event
