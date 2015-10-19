@@ -148,7 +148,7 @@ class PosRecPlugin(TransformPlugin):
         self.pmt_locations = np.zeros((len(self.pmts), 2))
         for ch in self.pmts:
             for dim in ('x', 'y'):
-                self.pmt_locations[ch][{'x': 0, 'y': 1}[dim]] = self.config['pmt_locations'][ch][dim]
+                self.pmt_locations[ch-self.pmts[0]][{'x': 0, 'y': 1}[dim]] = self.config['pmt_locations'][ch][dim]
 
         TransformPlugin._pre_startup(self)
 
