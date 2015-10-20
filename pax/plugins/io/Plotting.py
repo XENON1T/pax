@@ -698,7 +698,9 @@ class PeakViewer(PlotBase):
                                     (peak.right + peak_padding) * self.chwvs_2s_time_scale)
 
         # Update peak text
-        pos = peak.get_reconstructed_position_from_algorithm('PosRecTopPatternFit')
+        pos = peak.get_position_from_preferred_algorithm(['PosRecTopPatternFit', 'PosRecNeuralNet',
+                                                          'PosRecRobustWeightedMean', 'PosRecWeightedSum',
+                                                          'PosRecMaxPMT'])
         peak_text = 'Selected peak: %s at %d-%d, mean hit time %0.2fus\n' % (
             peak.type,
             peak.left,

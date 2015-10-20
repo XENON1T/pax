@@ -1,7 +1,7 @@
 
 import numpy as np
 
-from pax import plugin, utils
+from pax import plugin
 from pax.datastructure import Interaction
 
 
@@ -51,8 +51,8 @@ class BasicInteractionProperties(plugin.TransformPlugin):
     """"""
 
     def startup(self):
-        self.s1_correction_map = utils.InterpolatingMap(utils.data_file_name(self.config['s1_correction_map']))
-        self.s2_correction_map = utils.InterpolatingMap(utils.data_file_name(self.config['s2_correction_map']))
+        self.s1_light_yield_map = self.processor.simulator.s1_light_yield_map
+        self.s2_light_yield_map = self.processor.simulator.s2_light_yield_map
 
     def transform_event(self, event):
 
@@ -63,8 +63,8 @@ class BasicInteractionProperties(plugin.TransformPlugin):
             # Determine z position from drift time
             ia.z = self.config['drift_velocity_liquid'] * ia.drift_time
 
-            # S1 and S2 corrections
-            ia.s1_area_correction *= self.s1_correction_map.get_value_at(ia)
-            ia.s2_area_correction *= self.s2_correction_map.get_value_at(ia)
+            # S1 and S2 area correction: divide by relative light yield at the position
+            ia.s1_area_correction /= self.s1_light_yield_map.get_value_at(ia)
+            ia.s2_area_correction /= self.s2_light_yield_map.get_value_at(ia)
 
         return event
