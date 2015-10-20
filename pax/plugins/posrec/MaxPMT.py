@@ -7,4 +7,4 @@ class PosRecMaxPMT(plugin.PosRecPlugin):
     """
     def reconstruct_position(self, peak):
         max_pmt = np.argmax(peak.area_per_channel[self.pmts])
-        return self.pmt_locations[self.pmts[max_pmt]]
+        return self.pmt_locations[max_pmt]

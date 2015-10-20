@@ -34,11 +34,6 @@ class RejectNoiseHits(plugin.TransformPlugin):
         peaks_to_delete = []
         for peak_i, peak in enumerate(event.peaks):
 
-            # Area per channel must be computed here... unfortunate code duplication with basicProperti
-            peak.area_per_channel = np.zeros(self.config['n_channels'], dtype='float64')
-            for hit in peak.hits:
-                peak.area_per_channel[hit.channel] += hit.area
-
             suspicious_channels_in_peak = np.intersect1d(peak.contributing_channels, suspicious_channels)
             if len(suspicious_channels_in_peak) == 0:
                 continue
