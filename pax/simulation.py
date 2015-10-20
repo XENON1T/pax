@@ -539,10 +539,9 @@ class Simulator(object):
     def distribute_s1_photons(self, n_photons, x, y, z):
         if not self.s1_patterns:
             return self.randomize_photons_over_channels(n_photons, self.config['channels_in_detector']['tpc'])
-        # The z-dimension of the S1 pattern map is in drift time
         # TODO: compensate for S2 width & drift velocity increase after gate (both ~us effects though, not important)
         drift_time = z / self.config['drift_velocity_liquid']
-        return self.distribute_photons_by_pattern(n_photons, self.s1_patterns, (x, y, drift_time))
+        return self.distribute_photons_by_pattern(n_photons, self.s1_patterns, (x, y, z))
 
     def distribute_photons_by_pattern(self, n_photons, pattern_fitter, coordinate_tuple):
         # TODO: assumes channels drawn from top, or from all channels (i.e. first index 0!!!)

@@ -72,8 +72,6 @@ class BasicInteractionProperties(plugin.TransformPlugin):
 
             # S1(x, y, z) and S2(x, y) corrections for varying light yield
             # TODO: replace correction map by light yield maps in simulator, then divide by their value here
-            # TODO: replace S1(x, y, dt) by S1(x, y, z) map. This way one map can be used for many field configurations,
-            # once the user updates the drift_velocity_liquid in the configuration.
             ia.s1_area_correction *= self.s1_correction_map.get_value_at(ia)
             ia.s2_area_correction *= self.s2_correction_map.get_value_at(ia)
 
