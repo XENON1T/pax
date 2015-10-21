@@ -1,12 +1,12 @@
 ==========================
-Frequently Asked Questions
+Installation and setup
 ==========================
 
-----------------------------------------
-How do I run `pax` at LNGS on xecluster?
-----------------------------------------
 
-You should be able to run `pax` running at the shell the following command::
+How do I set up `pax` at LNGS on xecluster?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+You can either use a pax someone else has set up, or set up your own. To use Chris' pax, use the following command:
 
   export PATH=/home/tunnell/anaconda3/bin:$PATH
 
@@ -14,7 +14,7 @@ This can be added to your `.bashrc` to be run automatically when you login.
 
 To set up a developer installation of pax in your xecluster home directory, first follow the steps for installing anaconda and the required packages in the main readme (I didn't try to install snappy but used the workaround). Then add the following to your .bashrc::
 
-    # use Basho's git in totally insecure mode
+    # use git in totally insecure mode
     export PATH=/home/kaminsky/software/bin:$PATH
     export GIT_SSL_NO_VERIFY=true
 
@@ -38,37 +38,19 @@ Whichever way you want to use pax, you check that it worked using the following 
 which should result in Python3 being used to print the pax version.
 
 
-----------------------------------------
+
 How do I run `pax` at Nikhef?
-----------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Running pax at Nikhef requires you to add python 3.4 to your path.
-This can be done by running the following command from a shell::
+Similar to above. If you want, you can use the pax Jelle set up by adding::
 
-  $ export PATH="/data/xenon/bartp/anaconda3/bin:$PATH"
+  $ export PATH="/data/xenon/anaconda/bin:/data/xenon/pax:$PATH"
 
 This can be added to your `.bashrc` to be run automatically when you login.
-After setting your environment you need a local copy of pax, clone it
-from github by executing::
-
-  $ git clone https://github.com/XENON1T/pax.git
-  
-After doing::
-
-  $ cd pax/bin
-
-Setup pax by executing::
-
-  $ python setup.py develop
-  
-Pax should now work, test it by running::
-
-  $ python paxer --plot
 
 
----------------------------------------
 Can I set up pax on my windows machine?
----------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Yes, in fact several of the developers do this, much to the sadness of the other developers...
 
@@ -92,32 +74,40 @@ Yes, in fact several of the developers do this, much to the sadness of the other
 Unfortunately, Windows + Python3 + Root is not exactly a winning team; if you use windows you'll be stuck
 with the other 433 output formats we have.
 
--------------------------
-How do I get ROOT working
--------------------------
 
-ROOT is a dependency and you're expected to install it yourself.  That said, we offer the follow two scripts that should install it for you.  Be sure that your GCC compiler version is more than 4.8 because ROOT requires that now.  Most problems people experience with `pax` are related to problems within the ROOT system.  We're working with them to make it better.  In the meantime, try these scripts::
-
+How do I get pyROOT working
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+To use ROOT output from pax, you need to make sure pyROOT works. You have several options
+  * **Use python 2.** In this case, pyROOT should work (for windows only on ROOT 5). Just make sure the `PYTHONPATH` environment variable (which controls where python searches for libraries) is set to the directory containing ROOT.py. 
+  * **Use Daniela's binaries with conda** Daniela has packaged ROOT + pyROOT + rootpy in a conda package. Instructions on how to use it are here: `https://github.com/rootpy/rootpy/issues/642#issuecomment-137389446`
+  * **Use the travis scripts** Before Daniela's package, we made scripts to install ROOT on travis. Be sure that your GCC compiler version is more than 4.8 because ROOT requires that now. The scripts are here::
   
   source travis/linux_setup.sh  # Only run for Ubuntu
   source travis/install-ROOT.sh
-  
-If it fails for your system, feel free to try to fix it and let us know so we can update the script.  You can always look within the shell script to see what we're doing if you run into an issue.
 
-* Just follow the instructions on `the PyROOT page <https://github.com/XENON1T/pax/blob/master/docs/pyroot.rst>`_.
+  * **Use Sander's instructions** Before those scripts, Sander made `these instructions <https://github.com/XENON1T/pax/blob/master/docs/pyroot.rst>`_.
 
--------------
-Snappy on OSX
--------------
+
+How do I install Snappy on OSX?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 After instally `snappy` through MacPorts, please run::
 
   CFLAGS=-I/opt/local/include LDFLAGS=-L/opt/local/lib pip install python-snappy
 
+=======
+Usage
+=======
 
-------------------------------------------
+
+How do I analyze some specific XENON100 events with pax?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Use the Dump_XENON100_events tool available here: `https://github.com/XENON1T/XeAnalysisScripts/tree/master/PaxProcessingHelpers/DumpX100Events`
+
+
 How do I use pax to reduce raw data files?
-------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 First, you need to know the event numbers of the events you want. Use whatever analysis tool you like for this.
 
@@ -142,25 +132,25 @@ If the dataset you want to reduce is not in the default input format (currently 
 
   paxer --config ZippedBSON reduce_raw_data --input your_dataset --output your_reduced_dataset --event_numbers_file your_event_file.txt
 
-------------------------------------------
+
 How do I reduce the file size of my processed data?
-------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-By default we store a lot of low-level information in the processed output files. If you need smaller files, first try to make 'light' files using the reprocess configuration:
+By default we store a lot of low-level information in the processed output files. If you need smaller files, first try to make 'light' files using the reclassify configuration:
 
-    paxer --config Reprocess --input your_large_file.hdf5
+    paxer --config reclassify --input your_large_file.hdf5
 
-This will remove fields like the per-peak sum-waveform and hitpattern from the file, reducing the filesize significantly. You can remove more or less fields by playing with the fields_to_ignore option (see Reprocess.ini). Whatever you do with this field, put either `all_hits` or `hits` on it: `'hits'`  is a peak property which stores all the hits in a peak, `all_hits` is an event property which stores all hits. You don't want both, and in fact you will get an error if you try.
+This will remove fields like the per-peak sum-waveform and hitpattern from the file, reducing the filesize significantly. You can remove more or less fields by playing with the fields_to_ignore option (see light_output.ini). Whatever you do with this field, put either `all_hits` or `hits` on it: `'hits'`  is a peak property which stores all the hits in a peak, `all_hits` is an event property which stores all hits. You don't want both, and in fact you will get an error if you try.
 
 If the files are still too big for you, try using a flattener (see XeAnalysisScripts, or write your own) to save only the main S1/S2 information. Or just select only events you need. Or just buy more disk space.
 
 
---------------------------------------------------------------
-How do I use pax to generate files to be processed by Xerawdp?
---------------------------------------------------------------
+
+How do I use pax to generate XED files for Xerawdp processing?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Pax has an XED output plugin which you can use just like other output plugins. For example, to make an XED file containing simulated events, do `paxer --config XENON100 Simulation to_XED`.
 
-The hard part is getting Xerawdp to read the XED file you produced:
+The hard part is getting Xerawdp to read the XED file you produced. For a single XED file, here is a solution that works (or at least used to):
 
 * Make some folder on xecluster to contain everything.
 * Make a subfolder `raw`, containing another subfolder `xe100_150726_1253` (I will keep using this dataset name, but you can of course put any date and time you want).

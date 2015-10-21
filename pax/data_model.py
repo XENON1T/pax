@@ -120,7 +120,7 @@ class Model(object):
                 # Yes, yield the class-level value
                 yield (field_name, value_in_class)
 
-    def to_dict(self, convert_numpy_arrays_to=None, fields_to_ignore=None):
+    def to_dict(self, convert_numpy_arrays_to=None, fields_to_ignore=None, nan_to_none=False):
         result = {}
         if fields_to_ignore is None:
             fields_to_ignore = tuple()
@@ -129,10 +129,12 @@ class Model(object):
                 continue
             if isinstance(v, Model):
                 result[k] = v.to_dict(convert_numpy_arrays_to=convert_numpy_arrays_to,
-                                      fields_to_ignore=fields_to_ignore)
+                                      fields_to_ignore=fields_to_ignore,
+                                      nan_to_none=nan_to_none)
             elif isinstance(v, list):
                 result[k] = [el.to_dict(convert_numpy_arrays_to=convert_numpy_arrays_to,
-                                        fields_to_ignore=fields_to_ignore) for el in v]
+                                        fields_to_ignore=fields_to_ignore,
+                                        nan_to_none=nan_to_none) for el in v]
             elif isinstance(v, np.ndarray) and convert_numpy_arrays_to is not None:
                 if convert_numpy_arrays_to == 'list':
                     result[k] = v.tolist()
@@ -140,17 +142,24 @@ class Model(object):
                     result[k] = bson.Binary(v.tostring())
                 else:
                     raise ValueError('convert_numpy_arrays_to must be "list" or "bytes"')
+            elif nan_to_none and isinstance(v, float):
+                if not np.isfinite(v):
+                    result[k] = None
+                else:
+                    result[k] = v
             else:
                 result[k] = v
         return result
 
-    def to_json(self, fields_to_ignore=None):
+    def to_json(self, fields_to_ignore=None, nan_to_none=False):
         return json.dumps(self.to_dict(convert_numpy_arrays_to='list',
-                                       fields_to_ignore=fields_to_ignore))
+                                       fields_to_ignore=fields_to_ignore,
+                                       nan_to_none=nan_to_none))
 
-    def to_bson(self, fields_to_ignore=None):
+    def to_bson(self, fields_to_ignore=None, nan_to_none=False):
         return bson.BSON.encode(self.to_dict(convert_numpy_arrays_to='bytes',
-                                             fields_to_ignore=fields_to_ignore))
+                                             fields_to_ignore=fields_to_ignore,
+                                             nan_to_none=nan_to_none))
 
     @classmethod
     def from_json(cls, x):
