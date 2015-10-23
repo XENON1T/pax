@@ -32,7 +32,7 @@ scientific python distribution `Anaconda <https://store.continuum.io/cshop/anaco
 You need to point anaconda to the physics-specific packages of e.g. ROOT.  You can do this by putting the following in `~/.condarc`::
 
   channels:
-    - http://conda.binstar.org/NLeSC
+    - http://conda.anaconda.org/NLeSC
     - defaults
 
 Alternatively, you can install Python 3.4 yourself (highly not recommended since ROOT probably won't work).  Note that you need write permission to the python distribution's directory and that Python 2 does not currently work.  
