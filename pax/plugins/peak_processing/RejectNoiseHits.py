@@ -25,9 +25,9 @@ class RejectNoiseHits(plugin.TransformPlugin):
         lone_hits = event.get_peaks_by_type(desired_type='lone_hit', detector='all')
         self.log.debug("This event has %d lone hits" % len(lone_hits))
         for lone_hit_peak in lone_hits:
-            ch = lone_hit_peak.hits[0]['channel']
-            event.lone_hits_per_channel_before[ch] += 1
-            penalty_per_ch[ch] += self.config['penalty_per_lone_hit']
+            channel = lone_hit_peak.hits[0]['channel']
+            event.lone_hits_per_channel_before[channel] += 1
+            penalty_per_ch[channel] += self.config['penalty_per_lone_hit']
 
         # Which channels are suspicious?
         suspicious_channels = np.where(penalty_per_ch >=

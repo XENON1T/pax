@@ -115,34 +115,6 @@ class Model(object):
                 # Yes, yield the class-level value
                 yield (field_name, value_in_class)
 
-    def to_dict(self, convert_numpy_arrays_to=None, fields_to_ignore=None):
-        result = {}
-        if fields_to_ignore is None:
-            fields_to_ignore = tuple()
-        for k, v in self.get_fields_data():
-            if k in fields_to_ignore:
-                continue
-            if isinstance(v, Model):
-                result[k] = v.to_dict(convert_numpy_arrays_to=convert_numpy_arrays_to,
-                                      fields_to_ignore=fields_to_ignore)
-            elif isinstance(v, list):
-                result[k] = [el.to_dict(convert_numpy_arrays_to=convert_numpy_arrays_to,
-                                        fields_to_ignore=fields_to_ignore) for el in v]
-            elif isinstance(v, np.ndarray) and convert_numpy_arrays_to is not None:
-                if convert_numpy_arrays_to == 'list':
-                    result[k] = v.tolist()
-                elif convert_numpy_arrays_to == 'bytes':
-                    result[k] = bson.Binary(v.tostring())
-                else:
-                    raise ValueError('convert_numpy_arrays_to must be "list" or "bytes"')
-            else:
-                result[k] = v
-        return result
-
-    def to_json(self, fields_to_ignore=None):
-        return json.dumps(self.to_dict(convert_numpy_arrays_to='list',
-                                       fields_to_ignore=fields_to_ignore))
-
     @classmethod
     def get_dtype(cls):
         """Get a dtype for a numpy structured array equivalent to the class
@@ -160,9 +132,46 @@ class Model(object):
                 dtype.append((field_name, type_mapping[value_type]))
         return np.dtype(dtype)
 
-    def to_bson(self, fields_to_ignore=None):
+    def to_dict(self, convert_numpy_arrays_to=None, fields_to_ignore=None, nan_to_none=False):
+        result = {}
+        if fields_to_ignore is None:
+            fields_to_ignore = tuple()
+        for k, v in self.get_fields_data():
+            if k in fields_to_ignore:
+                continue
+            if isinstance(v, Model):
+                result[k] = v.to_dict(convert_numpy_arrays_to=convert_numpy_arrays_to,
+                                      fields_to_ignore=fields_to_ignore,
+                                      nan_to_none=nan_to_none)
+            elif isinstance(v, list):
+                result[k] = [el.to_dict(convert_numpy_arrays_to=convert_numpy_arrays_to,
+                                        fields_to_ignore=fields_to_ignore,
+                                        nan_to_none=nan_to_none) for el in v]
+            elif isinstance(v, np.ndarray) and convert_numpy_arrays_to is not None:
+                if convert_numpy_arrays_to == 'list':
+                    result[k] = v.tolist()
+                elif convert_numpy_arrays_to == 'bytes':
+                    result[k] = bson.Binary(v.tostring())
+                else:
+                    raise ValueError('convert_numpy_arrays_to must be "list" or "bytes"')
+            elif nan_to_none and isinstance(v, float):
+                if not np.isfinite(v):
+                    result[k] = None
+                else:
+                    result[k] = v
+            else:
+                result[k] = v
+        return result
+
+    def to_json(self, fields_to_ignore=None, nan_to_none=False):
+        return json.dumps(self.to_dict(convert_numpy_arrays_to='list',
+                                       fields_to_ignore=fields_to_ignore,
+                                       nan_to_none=nan_to_none))
+
+    def to_bson(self, fields_to_ignore=None, nan_to_none=False):
         return bson.BSON.encode(self.to_dict(convert_numpy_arrays_to='bytes',
-                                             fields_to_ignore=fields_to_ignore))
+                                             fields_to_ignore=fields_to_ignore,
+                                             nan_to_none=nan_to_none))
 
     @classmethod
     def from_json(cls, x):
