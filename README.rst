@@ -51,9 +51,12 @@ Whenever you want to use `pax`, you have to run the following command to set it 
   source activate pax
   
 You can put this in your `.bashrc` if you want it to be setup when you login. For the rest of the installation and to run pax, be sure to be inside this environment. There should be (pax) at the beginning of your command line.
-Now, run
+
+If you're using ubuntu and do not have a compiler installed (including Fortran compilers), then you should run:
 
   sudo apt-get install build-essential
+  
+If this doesn't work, then just proceed ahead if commands such as `gcc` work for you.  
 
 
 Git and Github
