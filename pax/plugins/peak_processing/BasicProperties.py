@@ -20,6 +20,7 @@ class BasicProperties(plugin.TransformPlugin):
                 raise ValueError("Can't compute properties of an empty peak!")
             if len(hits) == 1:
                 peak.type = 'lone_hit'
+                event.lone_hits_per_channel[hits[0]['channel']] += 1
 
             peak.left = hits['left'].min()
             peak.right = hits['right'].max()

@@ -511,6 +511,17 @@ class Event(StrictModel):
     #: Number of noise pulses (pulses without any hits found) per channel
     noise_pulses_in = np.array([], dtype=np.int)
 
+    #: Number of lone hits (peaks with only one channel contributing) per channel
+    #: BEFORE suspicious channel hit rejection.
+    #: This is used to check / calibrate the suspicious channel hit rejection.
+    lone_hits_per_channel_before = np.array([], dtype=np.int)
+
+    #: Number of lone hits (peaks with only one channel contributing) per channel
+    #: AFTER suspicious channel hit rejection.
+    #: Keep in mind a "lone hit" peak can consist of several hits, they just have to be in one channel.
+    #: Hmm, maybe they should be named single channel peaks rather than lone hits?
+    lone_hits_per_channel = np.array([], dtype=np.int)
+
     #: Was channel flagged as suspicious?
     is_channel_suspicious = np.array([], dtype=np.bool)
 
@@ -543,6 +554,8 @@ class Event(StrictModel):
         self.noise_pulses_in = np.zeros(n_channels, dtype=np.int)
         self.n_hits_rejected = np.zeros(n_channels, dtype=np.int)
         self.is_channel_suspicious = np.zeros(n_channels, dtype=np.bool)
+        self.lone_hits_per_channel_before = np.zeros(n_channels, dtype=np.int)
+        self.lone_hits_per_channel = np.zeros(n_channels, dtype=np.int)
 
     @classmethod
     def empty_event(cls):
