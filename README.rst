@@ -32,7 +32,7 @@ scientific python distribution `Anaconda <https://store.continuum.io/cshop/anaco
 You need to point anaconda to the physics-specific packages of e.g. ROOT.  You can do this by putting the following in `~/.condarc`::
 
   channels:
-    - http://conda.binstar.org/NLeSC
+    - http://conda.anaconda.org/NLeSC
     - defaults
 
 Alternatively, you can install Python 3.4 yourself (highly not recommended since ROOT probably won't work).  Note that you need write permission to the python distribution's directory and that Python 2 does not currently work.  
@@ -51,9 +51,12 @@ Whenever you want to use `pax`, you have to run the following command to set it 
   source activate pax
   
 You can put this in your `.bashrc` if you want it to be setup when you login. For the rest of the installation and to run pax, be sure to be inside this environment. There should be (pax) at the beginning of your command line.
-Now, run
+
+If you're using ubuntu and do not have a compiler installed (including Fortran compilers), then you should run:
 
   sudo apt-get install build-essential
+  
+If this doesn't work, then just proceed ahead if commands such as `gcc` work for you.  
 
 
 Git and Github
