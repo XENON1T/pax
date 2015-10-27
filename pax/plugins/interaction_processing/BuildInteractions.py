@@ -60,6 +60,7 @@ class BasicInteractionProperties(plugin.TransformPlugin):
         self.zombie_pmts_s1 = np.array(self.config.get('zombie_pmts_s1', []))
         self.zombie_pmts_s2 = np.array(self.config.get('zombie_pmts_s2', []))
         self.tpc_channels = self.config['channels_in_detector']['tpc']
+        self.do_saturation_correction = self.config.get('active_saturation_and_zombie_correction', False)
 
     def transform_event(self, event):
 
@@ -75,7 +76,7 @@ class BasicInteractionProperties(plugin.TransformPlugin):
             ia.s1_area_correction *= self.s1_correction_map.get_value_at(ia)
             ia.s2_area_correction *= self.s2_correction_map.get_value_at(ia)
 
-            if self.s2_patterns is not None:
+            if self.s2_patterns is not None and self.do_saturation_correction:
                 # Correct for S2 saturation
                 # As we don't have an (x, y) dependent LCE map for the bottom PMTs for S2s,
                 # we can only compute the correction on the top area.
@@ -90,11 +91,12 @@ class BasicInteractionProperties(plugin.TransformPlugin):
 
                 # Correct for S1 saturation
                 try:
-                    ia.s1_area_correction *= self.area_correction(
-                        peak=ia.s1,
-                        channels_in_pattern=self.tpc_channels,
-                        expected_pattern=self.s1_patterns.expected_pattern((ia.x, ia.y, ia.drift_time)),
-                        confused_channels=confused_s1_channels)
+                    if self.do_saturation_correction:
+                        ia.s1_area_correction *= self.area_correction(
+                            peak=ia.s1,
+                            channels_in_pattern=self.tpc_channels,
+                            expected_pattern=self.s1_patterns.expected_pattern((ia.x, ia.y, ia.drift_time)),
+                            confused_channels=confused_s1_channels)
 
                     # Compute the S1 pattern fit statistic
                     ia.s1_pattern_fit = self.s1_patterns.compute_gof(
@@ -122,8 +124,8 @@ class BasicInteractionProperties(plugin.TransformPlugin):
             self.log.warning("Expected area fractions for peak %d-%d are zero -- "
                              "cannot compute saturation & zombie correction!" % (peak.left, peak.right))
             return 1
-        # Actually this is overkill now, normalization is performed in PatternFitter
-        expected_pattern /= expected_pattern.sum()
+        # PatternFitter should have normalized the pattern
+        assert abs(np.sum(expected_pattern) - 1) < 0.01
 
         area_seen_in_pattern = peak.area_per_channel[channels_in_pattern].sum()
         area_in_good_channels = area_seen_in_pattern - peak.area_per_channel[confused_channels].sum()
