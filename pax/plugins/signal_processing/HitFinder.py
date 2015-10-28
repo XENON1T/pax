@@ -2,6 +2,7 @@ import numpy as np
 import numba
 
 # For diagnostic plotting:
+from textwrap import dedent
 import matplotlib.pyplot as plt
 import os
 
@@ -204,9 +205,13 @@ class FindHits(plugin.TransformPlugin):
                 if self.make_diagnostic_plots != 'always':
                     raise ValueError("Invalid make_diagnostic_plots option: %s!" % self.make_diagnostic_plots)
 
-            # Setup the twin-y-axis plot
-            fig, ax1 = plt.subplots(figsize=(10, 7))
+            plt.figure(figsize=(14, 10))
+            data_for_title = (event.event_number, start, stop, channel)
+            plt.title('Event %s, pulse %d-%d, Channel %d' % data_for_title)
+            ax1 = plt.gca()
             ax2 = ax1.twinx()
+            ax1.set_position((.1, .1, .6, .85))
+            ax2.set_position((.1, .1, .6, .85))
             ax1.set_xlabel("Sample number (%s ns)" % event.sample_duration)
             ax1.set_ylabel("ADC counts above baseline")
             ax2.set_ylabel("pe / sample")
@@ -221,19 +226,42 @@ class FindHits(plugin.TransformPlugin):
             # Mark the hit ranges & center of gravity point
             for hit_i, hit in enumerate(hit_bounds_found):
                 ax1.axvspan(hit[0] - 0.5, hit[1] + 0.5, color='red', alpha=0.2)
-                # Remember: array 'centers' is still in samples since start of hit...
-                ax1.axvline([hits['center'][hit_i] + hit[0]], linestyle=':', color='gray')
 
             # Make sure the y-scales match
             ax2.set_ylim(ax1.get_ylim()[0] * adc_to_pe, ax1.get_ylim()[1] * adc_to_pe)
 
+            # Add pulse / hit information
+            if len(hits) != 0:
+                largest_hit = hits[np.argmax(hits['area'])]
+                plt.figtext(0.75, 0.9, dedent("""
+                            Pulse maximum: {pulse.maximum:.5g}
+                            Pulse minimum: {pulse.minimum:.5g}
+                              (both in ADCc above baseline)
+                            Pulse baseline: {pulse.baseline}
+                              (ADCc above reference baseline)
+
+                            Gain in this PMT: {gain:.3g}
+
+                            Largest hit info ({left}-{right}):
+                            Area: {hit_area:.5g} pe
+                            Height: {hit_height:.4g} pe
+                            Saturated samples: {hit_n_saturated}
+                            """.format(pulse=pulse,
+                                       gain=self.config['gains'][pulse.channel],
+                                       left=largest_hit['left']-pulse.left,
+                                       right=largest_hit['right']-pulse.left,
+                                       hit_area=largest_hit['area'],
+                                       hit_height=largest_hit['height'],
+                                       hit_n_saturated=largest_hit['n_saturated'])),
+                            fontsize=14, verticalalignment='top')
+
             # Finish the plot, save, close
             leg = ax1.legend()
             leg.get_frame().set_alpha(0.5)
-            bla = (event.event_number, start, stop, channel)
-            plt.title('Event %s, pulse %d-%d, Channel %d' % bla)
             plt.savefig(os.path.join(self.make_diagnostic_plots_in,
-                                     'event%04d_pulse%05d-%05d_ch%03d.png' % bla))
+                                     'event%04d_pulse%05d-%05d_ch%03d.png' % data_for_title))
+            plt.xlim(0, len(pulse.raw_data))
+            plt.show()
             plt.close()
 
         event.all_hits = np.concatenate(hits_per_pulse)
