@@ -12,6 +12,8 @@ class PosRecTopPatternFit(plugin.PosRecPlugin):
         self.skip_reconstruction = self.config['skip_reconstruction']
         self.seed_algorithms = self.config['seed_algorithms']
         self.statistic = self.config['statistic']
+        self.confidence_levels = self.config['confidence_levels']
+        self.plot_position = self.config['plot_position']
         self.is_pmt_alive = np.array(self.config['gains']) > 0
 
         # Load the S2 hitpattern fitter
@@ -79,7 +81,9 @@ class PosRecTopPatternFit(plugin.PosRecPlugin):
 
         common_options = dict(areas_observed=areas_observed,
                               pmt_selection=is_pmt_in,
-                              statistic=self.statistic)
+                              statistic=self.statistic,
+                              plot=self.plot_position,
+                              cls=self.confidence_levels)
         if self.config['minimizer'] == 'powell':
             try:
                 (x, y), gof = self.pf.minimize_gof_powell(start_coordinates=(seed_pos.x, seed_pos.y),
@@ -88,8 +92,8 @@ class PosRecTopPatternFit(plugin.PosRecPlugin):
                 # The central position was out of range of the map! Happens occasionally if you don't use seed=best.
                 return None
         else:
-            (x, y), gof = self.pf.minimize_gof_grid(center_coordinates=(seed_pos.x, seed_pos.y),
-                                                    grid_size=self.config['grid_size'], **common_options)
+            (x, y), gof, err = self.pf.minimize_gof_grid(center_coordinates=(seed_pos.x, seed_pos.y),
+                                                         grid_size=self.config['grid_size'], **common_options)
 
         if np.isnan(gof):
             return None
@@ -97,4 +101,5 @@ class PosRecTopPatternFit(plugin.PosRecPlugin):
         return {'x': x,
                 'y': y,
                 'goodness_of_fit': gof,
-                'ndf': ndf}
+                'ndf': ndf,
+                'error_matrix': err}
