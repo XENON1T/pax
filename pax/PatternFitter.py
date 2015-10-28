@@ -63,7 +63,7 @@ class PatternFitter(object):
                                                        n_bins=n_bins,
                                                        bin_spacing=(stop - start)/n_bins))
 
-        # TODO: Technically we should zero the bins outside the tpc radius again:
+        # TODO: Technically we should zero the bins outside the tpc bounds again:
         # some LCE may have leaked into this region due to upsampling... but doesn't matter:
         # if it causes a bias, it will push some events who are already far outside the fiducial volume
         # even further out.
@@ -75,10 +75,17 @@ class PatternFitter(object):
         self.default_errors = default_errors
 
     def expected_pattern(self, coordinates):
-        """Returns expected pattern at coordinates"""
-        bes = self.get_bin_indices(coordinates)
-        bes += [slice(None)]
-        return self.data[bes].copy()
+        """Returns expected, normalized pattern at coordinates
+        'Pattern' means: expected fraction of light seen in each PMT, among PMTs included in the map.
+        Keep in mind you'll have to re-normalize if there are any dead / saturated PMTs...
+        """
+        # Copy is to ensure the map is not modified accidentally... happened once, never again.
+        pattern = self.data[self.get_bin_indices(coordinates) + [slice(None)]].copy()
+        sum_pattern = pattern.sum()
+        if sum_pattern == 0:
+            raise CoordinateOutOfRangeException("Expected light pattern at coordinates %s "
+                                                "consists of only zeros!" % coordinates)
+        return pattern / sum_pattern
 
     def compute_gof(self, coordinates, areas_observed,
                     pmt_selection=None, square_syst_errors=None, statistic='chi2gamma'):
@@ -105,7 +112,7 @@ class PatternFitter(object):
         for dimension_i, x in enumerate(center_coordinates):
             cd = self.coordinate_data[dimension_i]
             if not cd.minimum <= x <= cd.maximum:
-                raise CoordinateOutOfRangeException
+                raise CoordinateOutOfRangeException("%s is not in allowed range %s-%s" % (x, cd.minimum, cd.maximum))
             start = self._get_bin_index(max(x - grid_size / 2,
                                             self.coordinate_data[dimension_i].minimum),
                                         dimension_i)
@@ -149,7 +156,7 @@ class PatternFitter(object):
         """
         cd = self.coordinate_data[dimension_i]
         if not cd.minimum <= value <= cd.maximum:
-            raise CoordinateOutOfRangeException
+            raise CoordinateOutOfRangeException("%s is not in allowed range %s-%s" % (value, cd.minimum, cd.maximum))
         return int((value - cd.minimum) / cd.bin_spacing)
 
     def _get_bin(self, bin_i, dimension_i):

@@ -145,6 +145,14 @@ class Peak(StrictModel):
     #: Number of samples with ADC saturation in this peak, per channel
     n_saturated_per_channel = np.array([], dtype=np.int16)
 
+    @property
+    def is_channel_saturated(self):
+        return self.n_saturated_per_channel > 0
+
+    @property
+    def saturated_channels(self):
+        return np.where(self.n_saturated_per_channel > 0)[0]
+
     #: Total number of samples with ADC saturation threshold in all channels in this peak
     n_saturated_samples = 0
 
@@ -445,14 +453,8 @@ class Interaction(StrictModel):
     # Likelihoods
     ##
 
-    #: Likelihood of s2 width based on z position
-    s2_width_likelihood = float('nan')
-
-    #: Likelihood of s1 asymmetry based on z position
-    s1_asymmetry_likelihood = float('nan')
-
-    #: Likelihood of s1 hitpattern spread based on z position
-    s1_hitpattern_spread_likelihood = float('nan')
+    #: Goodness of fit of S1 pattern to interaction's (x, y, drift_time)
+    s1_pattern_fit = float('nan')
 
 
 class Event(StrictModel):
