@@ -1,7 +1,7 @@
-
 import numpy as np
 
 from pax import plugin, utils, exceptions
+from pax.InterpolatingMap import InterpolatingMap
 from pax.datastructure import Interaction
 
 
@@ -53,8 +53,8 @@ class BasicInteractionProperties(plugin.TransformPlugin):
     """
 
     def startup(self):
-        self.s1_correction_map = utils.InterpolatingMap(utils.data_file_name(self.config['s1_correction_map']))
-        self.s2_correction_map = utils.InterpolatingMap(utils.data_file_name(self.config['s2_correction_map']))
+        self.s1_correction_map = InterpolatingMap(utils.data_file_name(self.config['s1_correction_map']))
+        self.s2_correction_map = InterpolatingMap(utils.data_file_name(self.config['s2_correction_map']))
         self.s1_patterns = self.processor.simulator.s1_patterns
         self.s2_patterns = self.processor.simulator.s2_patterns
         self.zombie_pmts_s1 = np.array(self.config.get('zombie_pmts_s1', []))

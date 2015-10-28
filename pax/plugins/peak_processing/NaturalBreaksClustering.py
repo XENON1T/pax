@@ -1,8 +1,9 @@
 import numpy as np
 import numba
-
-from pax import plugin, datastructure, utils
 from scipy.interpolate import InterpolatedUnivariateSpline
+
+from pax import plugin, datastructure
+from pax import dsputils
 
 
 class NaturalBreaksClustering(plugin.TransformPlugin):
@@ -46,16 +47,9 @@ class NaturalBreaksClustering(plugin.TransformPlugin):
             # Lone hit: can't cluster any more!
             return [peak]
 
-        center = np.zeros(len(hits))
-        deviation = np.zeros(len(hits))
-        area = np.zeros(len(hits))
-        for i, h in enumerate(hits):
-            center[i] = h.center
-            deviation[i] = h.sum_absolute_deviation
-            area[i] = h.area
-        area_tot = np.sum(area)
-        gaps = utils.gaps_between_hits(hits)[1:]            # Remember first "gap" is zero: throw it away
-        self.log.debug("Clustering hits %d-%d" % (center[0], center[-1]))
+        area_tot = np.sum(hits['area'])
+        gaps = dsputils.gaps_between_hits(hits)[1:]            # Remember first "gap" is zero: throw it away
+        self.log.debug("Clustering hits %d-%d" % (hits[0]['center'], hits[-1]['center']))
 
         # Get indices of the self.max_n_gaps_to_test largest gaps
         split_threshold = self.min_split_goodness(np.log10(area_tot))
@@ -71,7 +65,8 @@ class NaturalBreaksClustering(plugin.TransformPlugin):
             split_i = gap_i + 1
 
             # Compute the naturalness of this break
-            split_goodness = compute_split_goodness(split_i, center, deviation, area)
+            split_goodness = compute_split_goodness(split_i,
+                                                    hits['center'], hits['sum_absolute_deviation'], hits['area'])
 
             # Should we split? If so, recurse.
             if split_goodness > split_threshold:
@@ -79,11 +74,11 @@ class NaturalBreaksClustering(plugin.TransformPlugin):
                 peak_l = datastructure.Peak(hits=hits[:split_i],
                                             detector=peak.detector,
                                             birthing_split_goodness=split_goodness,
-                                            birthing_split_fraction=np.sum(area[:split_i]) / area_tot)
+                                            birthing_split_fraction=np.sum(hits['area'][:split_i]) / area_tot)
                 peak_r = datastructure.Peak(hits=hits[split_i:],
                                             detector=peak.detector,
                                             birthing_split_goodness=split_goodness,
-                                            birthing_split_fraction=np.sum(area[split_i:]) / area_tot)
+                                            birthing_split_fraction=np.sum(hits['area'][split_i:]) / area_tot)
                 return self.cluster(peak_l) + self.cluster(peak_r)
             else:
                 self.log.debug("Proposed split at %d not good enough (%0.3f < %0.3f)" % (
@@ -95,8 +90,8 @@ class NaturalBreaksClustering(plugin.TransformPlugin):
         # If we get here, no clustering was needed
         peak.interior_split_goodness = max_split_goodness
         if max_split_goodness_i != 0:
-            peak.interior_split_fraction = min(np.sum(area[:max_split_goodness_i]),
-                                               np.sum(area[max_split_goodness_i:])) / area_tot
+            peak.interior_split_fraction = min(np.sum(hits['area'][:max_split_goodness_i]),
+                                               np.sum(hits['area'][max_split_goodness_i:])) / area_tot
         return [peak]
 
 

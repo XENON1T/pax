@@ -9,12 +9,13 @@ import math
 import time
 
 import numpy as np
+
 from scipy import stats
 
 from pax import units, utils, datastructure
 from pax.PatternFitter import PatternFitter
+from pax.dsputils import cluster_by_diff
 from pax.utils import Memoize
-
 
 log = logging.getLogger('SimulationCore')
 
@@ -359,7 +360,7 @@ class Simulator(object):
                 if len(photon_detection_times) == 0:
                     continue
                 # Cluster into pulses for cheap ZLE
-                pmt_pulse_center_clusters = utils.cluster_by_diff(all_pmt_pulse_centers, 2 * self.config['zle_padding'])
+                pmt_pulse_center_clusters = cluster_by_diff(all_pmt_pulse_centers, 2 * self.config['zle_padding'])
             else:
                 # All in one cluster...
                 pmt_pulse_center_clusters = [all_pmt_pulse_centers]
