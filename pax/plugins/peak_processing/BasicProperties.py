@@ -52,7 +52,7 @@ class BasicProperties(plugin.TransformPlugin):
             if peak.n_contributing_channels == 0:
                 raise RuntimeError("Every peak should have at least one contributing channel... what's going on?")
 
-            if len(hits) == 1:
+            if peak.n_contributing_channels == 1:
                 peak.type = 'lone_hit'
                 channel = hits[0]['channel']
                 event.lone_hits_per_channel[channel] += 1
