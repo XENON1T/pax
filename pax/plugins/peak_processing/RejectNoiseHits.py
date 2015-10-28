@@ -15,7 +15,7 @@ class RejectNoiseHits(plugin.TransformPlugin):
     """
 
     def startup(self):
-        self.detector_by_channel = dsputils.get_detector_by_channel(self.config)
+        self.base_penalties = {int(k): v for k, v in self.config.get('base_penalties', {}).items()}
 
     def transform_event(self, event):
         # Penalty for each noise pulse
@@ -28,6 +28,10 @@ class RejectNoiseHits(plugin.TransformPlugin):
             channel = lone_hit_peak.hits[0]['channel']
             event.lone_hits_per_channel_before[channel] += 1
             penalty_per_ch[channel] += self.config['penalty_per_lone_hit']
+
+        # Add base penalties
+        for channel, penalty in self.base_penalties.items():
+            penalty_per_ch[channel] += penalty
 
         # Which channels are suspicious?
         suspicious_channels = np.where(penalty_per_ch >=
