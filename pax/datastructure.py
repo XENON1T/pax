@@ -34,8 +34,8 @@ class ReconstructedPosition(StrictModel):
     #: Name of algorithm used for computation
     algorithm = 'none'
 
-    # : Errors - currently not used
-    # error_matrix = np.array([], dtype=np.float64)
+    # : Errors
+    error_matrix = np.array([], dtype=np.float64)
 
     # For convenience: cylindrical coordinates
     # Must be properties so InterpolatingDetectorMap can transparently use
