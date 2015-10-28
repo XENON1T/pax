@@ -1,7 +1,6 @@
 import numpy as np
 
 from pax import plugin
-from pax import dsputils
 
 
 class RejectNoiseHits(plugin.TransformPlugin):

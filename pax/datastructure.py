@@ -159,6 +159,9 @@ class Peak(StrictModel):
     #: Total number of channels in the peakwhich have at least one saturated hit
     n_saturated_channels = 0
 
+    #: If the peak is a lone hit: the channel the hit is in
+    lone_hit_channel = INT_NAN
+
     @property
     def does_channel_contribute(self):
         return self.area_per_channel > 0
