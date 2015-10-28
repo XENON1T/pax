@@ -43,7 +43,7 @@ class TestHitFinder(unittest.TestCase):
                                                  raw_data=np.array(test_w).astype(np.int16),
                                                  channel=1)])
             e = plugin.transform_event(e)
-            self.assertEqual(hit_bounds, [[hit.left, hit.right] for hit in e.all_hits])
+            self.assertEqual(hit_bounds, [[hit['left'], hit['right']] for hit in e.all_hits])
             self.assertEqual(pulse_min, e.pulses[0].minimum)
             self.assertEqual(pulse_max, e.pulses[0].maximum)
 
@@ -62,7 +62,8 @@ class TestHitFinder(unittest.TestCase):
             hits_found = HitFinder.find_intervals_above_threshold(np.array(test_waveform, dtype=np.float64),
                                                                   high_threshold=0,
                                                                   low_threshold=0,
-                                                                  result_buffer=result_buffer)
+                                                                  result_buffer=result_buffer,
+                                                                  dynamic_low_threshold_coeff=0)
             found = result_buffer[:hits_found]
             self.assertEqual(found.tolist(), a)
 
@@ -93,25 +94,23 @@ class TestHitFinder(unittest.TestCase):
     def test_hit_properties(self):
         # Test of the hit property computation: argmax, area, center
         w = np.array([47, 67, 51, 84, 81, 25, 67, 23, 62, 20,  5, 21, 97, 88, 74], dtype=np.float64)
-        argmaxes = -1 * np.ones(100, dtype=np.int64)
-        areas = -1 * np.ones(100, dtype=np.float64)
-        centers = -1 * np.ones(100, dtype=np.float64)
-        deviations = -1 * np.ones(100, dtype=np.float64)
+        hits = np.zeros(100, dtype=datastructure.Hit.get_dtype())
+
         for raw_hits in (
             [[0, 0], [4, 4], [14, 14]],
             [[0, 1], [13, 14]],
             [[0, 14]]
         ):
             raw_hits = np.array(raw_hits, dtype=np.int64)
-            HitFinder.compute_hit_properties(w, raw_hits, argmaxes, areas, centers, deviations)
+            # adc_to_pe, channel, noise_sigma_pe, dt, start, pulse_i
+            HitFinder.build_hits(w, raw_hits, hits, 1, 1, 1, 1, 0, 0)
             for i, (l, r) in enumerate(raw_hits):
                 hitw = w[l:r + 1]
-                self.assertEqual(areas[i], np.sum(hitw))
-                self.assertEqual(argmaxes[i], np.argmax(hitw))
-                self.assertEqual(centers[i], np.average(np.arange(len(hitw)),
-                                                        weights=hitw))
-                self.assertEqual(deviations[i], np.average(np.abs(np.arange(len(hitw)) - centers[i]),
-                                                           weights=hitw))
+                self.assertAlmostEqual(hits['area'][i], np.sum(hitw))
+                self.assertAlmostEqual(hits['index_of_maximum'][i], np.argmax(hitw) + l)
+                self.assertAlmostEqual(hits['center'][i], l + np.average(np.arange(len(hitw)), weights=hitw))
+                self.assertAlmostEqual(hits['sum_absolute_deviation'][i],
+                                       np.average(np.abs(np.arange(len(hitw)) - (hits['center'][i] - l)), weights=hitw))
 
 
 if __name__ == '__main__':

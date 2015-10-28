@@ -1,43 +1,40 @@
 import numpy as np
 # import numba
 
-from pax import plugin
+from pax import plugin, dsputils
 
 
 class BasicProperties(plugin.TransformPlugin):
     """Computes basic properties of each peak, based on the hits.
-    Also labels peak as 'lone_hit' if only one channel contributes
-    We always assume the hits are sorted from left to right. [really? where?]
+    Also sets lone_hit for peaks that have one hit.
+    Yes, this is done also in BuildPeaks (and has to be done there, as the noise rejection relies on it)
+    but new lone hits may have happened due to the noise rejection & clustering
     """
 
     def transform_event(self, event):
         last_top_ch = np.max(np.array(self.config['channels_top']))
 
         for peak in event.peaks:
-
-            peak.area_per_channel = np.zeros(self.config['n_channels'], dtype='float64')
-            peak.hits_per_channel = np.zeros(self.config['n_channels'], dtype=np.int16)
-            peak.n_saturated_per_channel = np.zeros(self.config['n_channels'], dtype=np.int16)
-            if len(peak.hits) == 0:
+            hits = peak.hits
+            if len(hits) == 0:
                 raise ValueError("Can't compute properties of an empty peak!")
+            if len(hits) == 1:
+                peak.type = 'lone_hit'
+                event.lone_hits_per_channel[hits[0]['channel']] += 1
 
-            # Compute basic properties of peak, needed later in the plugin
-            # For speed it would be better to compute as much as possible later..
-            peak.left = peak.hits[0].left
-            peak.right = peak.hits[0].right
-            hit_areas = []
-            hit_times = []
-            for hit in peak.hits:
-                peak.area_per_channel[hit.channel] += hit.area
-                peak.left = min(peak.left, hit.left)
-                peak.right = max(peak.right, hit.right)
-                peak.hits_per_channel[hit.channel] += 1
-                peak.n_saturated_per_channel[hit.channel] += hit.n_saturated
-                # Add the hit height / noise sigma to mean amplitude to noise
-                # We weigh by hit area, so multipy by it now, and will divide by peak.area later
-                peak.mean_amplitude_to_noise += hit.area * hit.height / hit.noise_sigma
-                hit_areas.append(hit.area)
-                hit_times.append(hit.center)
+            peak.left = hits['left'].min()
+            peak.right = hits['right'].max()
+
+            peak.area_per_channel = dsputils.count_hits_per_channel(peak, self.config, weights=hits['area'])
+            peak.hits_per_channel = dsputils.count_hits_per_channel(peak, self.config).astype(np.int16)
+            n_saturated_tot = hits['n_saturated'].sum()
+            if n_saturated_tot:
+                peak.n_saturated_per_channel = dsputils.count_hits_per_channel(
+                    peak, self.config, weights=hits['n_saturated']).astype(np.int16)
+            else:
+                peak.n_saturated_per_channel = np.zeros(self.config['n_channels'], dtype=np.int16)
+
+            peak.mean_amplitude_to_noise = np.average(hits['height']/hits['noise_sigma'], weights=hits['area'])
 
             peak.area = np.sum(peak.area_per_channel)
             peak.n_hits = np.sum(peak.hits_per_channel)
@@ -51,14 +48,12 @@ class BasicProperties(plugin.TransformPlugin):
             peak.hits_fraction_top = np.sum(peak.hits_per_channel[:last_top_ch + 1]) / peak.area
 
             # Compute timing quantities
-            peak.hit_time_mean, peak.hit_time_std = weighted_mean_variance(hit_times, hit_areas)
+            peak.hit_time_mean, peak.hit_time_std = weighted_mean_variance(hits['center'], hits['area'])
             peak.hit_time_std **= 0.5  # Convert variance to std
             peak.n_contributing_channels_top = np.sum((peak.area_per_channel[:last_top_ch + 1] > 0))
 
             if peak.n_contributing_channels == 0:
                 raise RuntimeError("Every peak should have at least one contributing channel... what's going on?")
-            elif peak.n_contributing_channels == 1:
-                peak.type = 'lone_hit'
 
         return event
 
@@ -80,8 +75,12 @@ class SumWaveformProperties(plugin.TransformPlugin):
 
             # Get the waveform (in pe/bin) and compute basic sum-waveform derived properties
             w = event.get_sum_waveform(peak.detector).samples[peak.left:peak.right + 1]
-            # Center of gravity in the hits-only sum waveform. Identical to peak.hit_time_mean... one of them should go.
+
+            # Center of gravity in the hits-only sum waveform. Identical to peak.hit_time_mean...
+            # We may remove one from the data structure, but it's a useful sanity check
+            # (particularly since some hits got removed in the noise rejection)
             peak.center_time = (peak.left + np.average(np.arange(len(w)), weights=w)) * dt
+
             # Index in peak waveform nearest to center of gravity (for sum-waveform alignment)
             cog_idx = int(round(peak.center_time / dt)) - peak.left
             # Index of the peak's maximum
@@ -96,6 +95,10 @@ class SumWaveformProperties(plugin.TransformPlugin):
             peak.area_midpoint += peak.left * dt
 
             # Store the waveform; for tpc also store the top waveform
+            self.log.debug("Storing sum waveform for peak %d-%d-%d in %s" % (peak.left,
+                                                                             int(round(peak.center_time / dt)),
+                                                                             peak.right,
+                                                                             peak.detector))
             put_w_in_center_of_field(w, peak.sum_waveform, cog_idx)
             if peak.detector == 'tpc':
                 put_w_in_center_of_field(event.get_sum_waveform('tpc_top').samples[peak.left:peak.right + 1],
