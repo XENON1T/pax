@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Installation prerequisites &mdash; Processor for Analyzing XENON1T 4.0.0 documentation</title>
+    <title>Installation prerequisites &mdash; Processor for Analyzing XENON1T 4.0.1 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '4.0.0',
+        VERSION:     '4.0.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,8 +23,8 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.0.0 documentation" href="index.html" />
-    <link rel="next" title="Frequently Asked Questions" href="faq.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.0.1 documentation" href="index.html" />
+    <link rel="next" title="Installation and setup" href="faq.html" />
     <link rel="prev" title="Welcome to processor for Analyzing XENON1T’s documentation!" href="index.html" />
    
   
@@ -63,7 +63,7 @@ export PATH=~/anaconda3/bin:$PATH  # If installed in default location
 </div>
 <p>You need to point anaconda to the physics-specific packages of e.g. ROOT.  You can do this by putting the following in <cite>~/.condarc</cite>:</p>
 <div class="highlight-python"><div class="highlight"><pre>channels:
-  - http://conda.binstar.org/NLeSC
+  - http://conda.anaconda.org/NLeSC
   - defaults
 </pre></div>
 </div>
@@ -82,10 +82,11 @@ conda create -n pax numpy scipy matplotlib pandas cython h5py numba pip python-s
 <div class="highlight-python"><div class="highlight"><pre>source activate pax
 </pre></div>
 </div>
-<p>You can put this in your <cite>.bashrc</cite> if you want it to be setup when you login. For the rest of the installation and to run pax, be sure to be inside this environment. There should be (pax) at the beginning of your command line.
-Now, run</p>
+<p>You can put this in your <cite>.bashrc</cite> if you want it to be setup when you login. For the rest of the installation and to run pax, be sure to be inside this environment. There should be (pax) at the beginning of your command line.</p>
+<p>If you&#8217;re using ubuntu and do not have a compiler installed (including Fortran compilers), then you should run:</p>
 <blockquote>
 <div>sudo apt-get install build-essential</div></blockquote>
+<p>If this doesn&#8217;t work, then just proceed ahead if commands such as <cite>gcc</cite> work for you.</p>
 </div>
 <div class="section" id="git-and-github">
 <h2>Git and Github<a class="headerlink" href="#git-and-github" title="Permalink to this headline">¶</a></h2>
@@ -202,7 +203,7 @@ You can look through other configuration files such as <cite>_base.ini</cite> an
 <ul>
   <li><a href="index.html">Documentation overview</a><ul>
       <li>Previous: <a href="index.html" title="previous chapter">Welcome to processor for Analyzing XENON1T&#8217;s documentation!</a></li>
-      <li>Next: <a href="faq.html" title="next chapter">Frequently Asked Questions</a></li>
+      <li>Next: <a href="faq.html" title="next chapter">Installation and setup</a></li>
   </ul></li>
 </ul>
 </div>

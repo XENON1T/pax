@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.utils &mdash; Processor for Analyzing XENON1T 4.0.0 documentation</title>
+    <title>pax.utils &mdash; Processor for Analyzing XENON1T 4.0.1 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '4.0.0',
+        VERSION:     '4.0.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.0.0 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.0.1 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
@@ -46,17 +46,10 @@
 
 <span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">inspect</span>
-<span class="kn">import</span> <span class="nn">json</span>
-<span class="kn">import</span> <span class="nn">gzip</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">glob</span>
-
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">scipy.spatial</span> <span class="kn">import</span> <span class="n">KDTree</span>
-
-<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">units</span>
 
 <span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;pax_utils&#39;</span><span class="p">)</span>
 
@@ -95,186 +88,6 @@
             <span class="k">continue</span>
         <span class="n">config_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">config_files</span>
-
-
-<span class="c">##</span>
-<span class="c"># Interpolating map class</span>
-<span class="c">##</span></div>
-<div class="viewcode-block" id="InterpolateAndExtrapolate"><a class="viewcode-back" href="../../pax.html#pax.data_model.InterpolateAndExtrapolate">[docs]</a><span class="k">class</span> <span class="nc">InterpolateAndExtrapolate</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Linearly interpolate- or extrapolation between nearest N points</span>
-<span class="sd">    Needed to roll our own because scipy&#39;s linear Nd interpolator refuses to extrapolate</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">points</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">neighbours_to_use</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;By default, interpolates between the 2 * dimensions of space nearest neighbours,</span>
-<span class="sd">        weighting factors = 1 / distance to neighbour</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">kdtree</span> <span class="o">=</span> <span class="n">KDTree</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">values</span> <span class="o">=</span> <span class="n">values</span>
-        <span class="k">if</span> <span class="n">neighbours_to_use</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="n">neighbours_to_use</span> <span class="o">=</span> <span class="n">points</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mi">2</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">neighbours_to_use</span> <span class="o">=</span> <span class="n">neighbours_to_use</span>
-
-    <span class="k">def</span> <span class="nf">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">):</span>
-        <span class="c"># Call with one point at a time only!!!</span>
-        <span class="n">distances</span><span class="p">,</span> <span class="n">indices</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kdtree</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">neighbours_to_use</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">average</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">indices</span><span class="p">],</span> <span class="n">weights</span><span class="o">=</span><span class="mi">1</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">distances</span><span class="p">,</span> <span class="mf">1e-6</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;inf&#39;</span><span class="p">)))</span>
-
-</div>
-<div class="viewcode-block" id="InterpolatingMap"><a class="viewcode-back" href="../../pax.html#pax.data_model.InterpolatingMap">[docs]</a><span class="k">class</span> <span class="nc">InterpolatingMap</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-
-    <span class="sd">&quot;&quot;&quot;Construct s a scalar function using linear interpolation, weighted by euclidean distance.</span>
-
-<span class="sd">    The map must be specified as a json translating to a dictionary like this:</span>
-<span class="sd">        &#39;coordinate_system&#39; :   [[x1, y2], [x2, y2], [x3, y3], [x4, y4], ...],</span>
-<span class="sd">        &#39;map&#39; :                 [[valuex1y1, valuex1y2, ..], [valuex2y1, valuex2y2, ..], ...</span>
-<span class="sd">        &#39;another_map&#39; :         idem</span>
-<span class="sd">        &#39;name&#39;:                 &#39;Nice file with maps&#39;,</span>
-<span class="sd">        &#39;description&#39;:          &#39;Say what the maps are, who you are, your favorite food, etc&#39;,</span>
-<span class="sd">        &#39;timestamp&#39;:            unix epoch seconds timestamp</span>
-<span class="sd">        &#39;use_points&#39;:           number of points to use for linear interpolation (with euclidean distance weights)</span>
-<span class="sd">    with the straightforward generalization to 1d and 3d. The default map name is &#39;map&#39;, I&#39;d recommend you use that.</span>
-
-<span class="sd">    For a 0d placeholder map, use</span>
-<span class="sd">        &#39;points&#39;: [],</span>
-<span class="sd">        &#39;map&#39;: 42,</span>
-<span class="sd">        etc</span>
-
-<span class="sd">    The json can be gzip compressed: if so, it must have a .gz extension.</span>
-
-<span class="sd">    See also examples/generate_mock_correction_map.py</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">data_field_names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;timestamp&#39;</span><span class="p">,</span> <span class="s">&#39;description&#39;</span><span class="p">,</span> <span class="s">&#39;coordinate_system&#39;</span><span class="p">,</span> <span class="s">&#39;name&#39;</span><span class="p">,</span> <span class="s">&#39;irregular&#39;</span><span class="p">]</span>
-
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;InterpolatingMap&#39;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Loading JSON map </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">filename</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="n">filename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;.gz&#39;</span><span class="p">):</span>
-            <span class="n">bla</span> <span class="o">=</span> <span class="n">gzip</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">bla</span><span class="o">.</span><span class="n">decode</span><span class="p">())</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">open</span><span class="p">(</span><span class="n">filename</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">coordinate_system</span> <span class="o">=</span> <span class="n">cs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;coordinate_system&#39;</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">cs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">interpolators</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">map_names</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_field_names</span><span class="p">])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Map name: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">])</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Map description:</span><span class="se">\n</span><span class="s">    &#39;</span> <span class="o">+</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s">r&#39;\n&#39;</span><span class="p">,</span> <span class="s">r&#39;\n    &#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;description&#39;</span><span class="p">]))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Map names found: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">map_names</span><span class="p">)</span>
-
-        <span class="k">for</span> <span class="n">map_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">map_names</span><span class="p">:</span>
-            <span class="n">map_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">map_name</span><span class="p">])</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="c"># 0 D -- placeholder maps which take no arguments and always return a single value</span>
-                <span class="n">itp_fun</span> <span class="o">=</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">map_data</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">itp_fun</span> <span class="o">=</span> <span class="n">InterpolateAndExtrapolate</span><span class="p">(</span><span class="n">points</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cs</span><span class="p">),</span> <span class="n">values</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">map_data</span><span class="p">))</span>
-
-            <span class="bp">self</span><span class="o">.</span><span class="n">interpolators</span><span class="p">[</span><span class="n">map_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">itp_fun</span>
-
-<div class="viewcode-block" id="InterpolatingMap.get_value_at"><a class="viewcode-back" href="../../pax.html#pax.data_model.InterpolatingMap.get_value_at">[docs]</a>    <span class="k">def</span> <span class="nf">get_value_at</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">position</span><span class="p">,</span> <span class="n">map_name</span><span class="o">=</span><span class="s">&#39;map&#39;</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns the value of the map map_name at a ReconstructedPosition</span>
-<span class="sd">         position - pax.datastructure.ReconstructedPosition instance</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">position_names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">,</span> <span class="s">&#39;y&#39;</span><span class="p">,</span> <span class="s">&#39;z&#39;</span><span class="p">]</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_value</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="nb">getattr</span><span class="p">(</span><span class="n">position</span><span class="p">,</span> <span class="n">q</span><span class="p">)</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">position_names</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span><span class="p">]],</span> <span class="n">map_name</span><span class="o">=</span><span class="n">map_name</span><span class="p">)</span>
-</div>
-<div class="viewcode-block" id="InterpolatingMap.get_value"><a class="viewcode-back" href="../../pax.html#pax.data_model.InterpolatingMap.get_value">[docs]</a>    <span class="k">def</span> <span class="nf">get_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">coordinates</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Returns the value of the map at the position given by coordinates</span>
-<span class="sd">        Keyword arguments:</span>
-<span class="sd">          - map_name: Name of the map to use. By default: &#39;map&#39;.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">map_name</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;map_name&#39;</span><span class="p">,</span> <span class="s">&#39;map&#39;</span><span class="p">)</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolators</span><span class="p">[</span><span class="n">map_name</span><span class="p">](</span><span class="o">*</span><span class="n">coordinates</span><span class="p">)</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
-        <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">IndexError</span><span class="p">):</span>
-            <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>    <span class="c"># We don&#39;t want a 0d numpy array, which the 1d and 2d interpolators seem to give</span>
-
-
-<span class="c">##</span>
-<span class="c"># General helper functions</span>
-<span class="c">##</span>
-</div></div>
-<div class="viewcode-block" id="adc_to_pe"><a class="viewcode-back" href="../../pax.html#pax.data_model.adc_to_pe">[docs]</a><span class="k">def</span> <span class="nf">adc_to_pe</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">use_reference_gain</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="n">use_reference_gain_if_zero</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Gives the conversion factor from ADC counts above baseline to pe/bin</span>
-<span class="sd">    Use as: w_in_pe_bin = adc_to_pe(config, channel) * w_in_adc_above_baseline</span>
-<span class="sd">      - config should be a configuration dictionary (self.config in a pax plugin)</span>
-<span class="sd">      - If use_reference_gain is True, will always use config.get(&#39;pmt_reference_gain&#39;, 2e6) rather than the pmt gain</span>
-<span class="sd">      - If use_reference_gain_if_zero=True will do the above only if channel gain is 0.</span>
-<span class="sd">    If neither of these are true, and gain is 0, will return 0.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">c</span> <span class="o">=</span> <span class="n">config</span>
-    <span class="n">adc_to_e</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;sample_duration&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;digitizer_voltage_range&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="p">(</span>
-        <span class="mi">2</span> <span class="o">**</span> <span class="p">(</span><span class="n">c</span><span class="p">[</span><span class="s">&#39;digitizer_bits&#39;</span><span class="p">])</span> <span class="o">*</span>
-        <span class="n">c</span><span class="p">[</span><span class="s">&#39;pmt_circuit_load_resistor&#39;</span><span class="p">]</span> <span class="o">*</span>
-        <span class="n">c</span><span class="p">[</span><span class="s">&#39;external_amplification&#39;</span><span class="p">]</span> <span class="o">*</span>
-        <span class="n">units</span><span class="o">.</span><span class="n">electron_charge</span><span class="p">)</span>
-    <span class="n">pmt_gain</span> <span class="o">=</span> <span class="n">c</span><span class="p">[</span><span class="s">&#39;gains&#39;</span><span class="p">][</span><span class="n">channel</span><span class="p">]</span>
-    <span class="k">if</span> <span class="n">use_reference_gain_if_zero</span> <span class="ow">and</span> <span class="n">pmt_gain</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">use_reference_gain</span><span class="p">:</span>
-        <span class="n">pmt_gain</span> <span class="o">=</span> <span class="n">c</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;pmt_reference_gain&#39;</span><span class="p">,</span> <span class="mf">2e6</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">pmt_gain</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">return</span> <span class="mi">0</span>
-    <span class="k">return</span> <span class="n">adc_to_e</span> <span class="o">/</span> <span class="n">pmt_gain</span>
-
-</div>
-<div class="viewcode-block" id="get_detector_by_channel"><a class="viewcode-back" href="../../pax.html#pax.data_model.get_detector_by_channel">[docs]</a><span class="k">def</span> <span class="nf">get_detector_by_channel</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Return a channel -&gt; detector lookup dictionary from a configuration&quot;&quot;&quot;</span>
-    <span class="n">detector_by_channel</span> <span class="o">=</span> <span class="p">{}</span>
-    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">chs</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_in_detector&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="n">chs</span><span class="p">:</span>
-            <span class="n">detector_by_channel</span><span class="p">[</span><span class="n">ch</span><span class="p">]</span> <span class="o">=</span> <span class="n">name</span>
-    <span class="k">return</span> <span class="n">detector_by_channel</span>
-
-</div>
-<div class="viewcode-block" id="gaps_between_hits"><a class="viewcode-back" href="../../pax.html#pax.data_model.gaps_between_hits">[docs]</a><span class="k">def</span> <span class="nf">gaps_between_hits</span><span class="p">(</span><span class="n">hits</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Return array of gaps between hits: a hit&#39;s &#39;gap&#39; is the # of samples before that hit free of other hits.</span>
-<span class="sd">    The gap of the first hit is 0 by definition.</span>
-<span class="sd">    Hits should already be sorted by left boundary; we&#39;ll check this and throw an error if not.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">gaps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">hits</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">hits</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">gaps</span>
-    <span class="c"># Keep a running right boundary</span>
-    <span class="n">boundary</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">right</span>
-    <span class="n">last_left</span> <span class="o">=</span> <span class="n">hits</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">left</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">hit</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
-        <span class="n">gaps</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">hit</span><span class="o">.</span><span class="n">left</span> <span class="o">-</span> <span class="n">boundary</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="n">boundary</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">hit</span><span class="o">.</span><span class="n">right</span><span class="p">,</span> <span class="n">boundary</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">hit</span><span class="o">.</span><span class="n">left</span> <span class="o">&lt;</span> <span class="n">last_left</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Hits should be sorted by left boundary!&quot;</span><span class="p">)</span>
-        <span class="n">last_left</span> <span class="o">=</span> <span class="n">hit</span><span class="o">.</span><span class="n">left</span>
-    <span class="k">return</span> <span class="n">gaps</span>
-
-</div>
-<div class="viewcode-block" id="cluster_by_diff"><a class="viewcode-back" href="../../pax.html#pax.data_model.cluster_by_diff">[docs]</a><span class="k">def</span> <span class="nf">cluster_by_diff</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">diff_threshold</span><span class="p">,</span> <span class="n">return_indices</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Returns list of lists of indices of clusters in x,</span>
-<span class="sd">    making cluster boundaries whenever values are &gt;= threshold apart.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">x</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">return</span> <span class="p">[]</span>
-    <span class="n">clusters</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">current_cluster</span> <span class="o">=</span> <span class="p">[]</span>
-    <span class="n">previous_t</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">t</span> <span class="o">-</span> <span class="n">previous_t</span> <span class="o">&gt;</span> <span class="n">diff_threshold</span><span class="p">:</span>
-            <span class="n">clusters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_cluster</span><span class="p">)</span>
-            <span class="n">current_cluster</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="n">current_cluster</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span> <span class="k">if</span> <span class="n">return_indices</span> <span class="k">else</span> <span class="n">t</span><span class="p">)</span>
-        <span class="n">previous_t</span> <span class="o">=</span> <span class="n">t</span>
-    <span class="n">clusters</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_cluster</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">clusters</span>
-    <span class="c"># Numpy solution below appears to make processor run slower!</span>
-    <span class="c"># x.sort()</span>
-    <span class="c"># if not isinstance(x, np.ndarray):</span>
-    <span class="c">#     x = np.array(x)</span>
-    <span class="c"># split_indices = np.where(np.diff(x) &gt;= diff_threshold)[0] + 1</span>
-    <span class="c"># if return_indices:</span>
-    <span class="c">#     return np.split(np.arange(len(x)), split_indices)</span>
-    <span class="c"># else:</span>
-    <span class="c">#     return np.split(x, split_indices)</span>
 
 
 <span class="c"># Caching decorator</span>

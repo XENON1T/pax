@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.datastructure &mdash; Processor for Analyzing XENON1T 4.0.0 documentation</title>
+    <title>pax.datastructure &mdash; Processor for Analyzing XENON1T 4.0.1 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '4.0.0',
+        VERSION:     '4.0.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.0.0 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.0.1 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
@@ -53,7 +53,7 @@
     <span class="nb">long</span> <span class="o">=</span> <span class="nb">int</span>
 
 <span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">units</span>
-<span class="kn">from</span> <span class="nn">pax.data_model</span> <span class="kn">import</span> <span class="n">StrictModel</span><span class="p">,</span> <span class="n">ListField</span><span class="p">,</span> <span class="n">Model</span>
+<span class="kn">from</span> <span class="nn">pax.data_model</span> <span class="kn">import</span> <span class="n">StrictModel</span><span class="p">,</span> <span class="n">ListField</span>
 
 <span class="n">INT_NAN</span> <span class="o">=</span> <span class="o">-</span><span class="mi">99999</span>    <span class="c"># Do not change without talking to me. -Tunnell 12/3/2015 ... and me. -Jelle 05/08/2015</span>
 
@@ -89,16 +89,17 @@
     <span class="k">def</span> <span class="nf">phi</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
 
-
-<span class="c"># Hit class uses model: no type checking, better performance</span>
-<span class="c"># Using StrictModel instead causes 50% longer runtime of hitfinder</span></div>
-<div class="viewcode-block" id="Hit"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Hit">[docs]</a><span class="k">class</span> <span class="nc">Hit</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
+</div>
+<div class="viewcode-block" id="Hit"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Hit">[docs]</a><span class="k">class</span> <span class="nc">Hit</span><span class="p">(</span><span class="n">StrictModel</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;A hit results from, within individual channel, fluctation above baseline.</span>
 
 <span class="sd">    These are be clustered into ordinary peaks later. This is commonly</span>
 <span class="sd">    called a &#39;hit&#39; in particle physics detectors.  Very generally, a hit is</span>
 <span class="sd">    made every time that the data recorded for one channel flucates above</span>
 <span class="sd">    baseline.</span>
+
+<span class="sd">    The Hit class is never actually used to build python objects.</span>
+<span class="sd">    Instead we build a numpy dtype from this declaration, and use it in arrays of hits</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c">#: Channel in which this peak was found</span>
     <span class="n">channel</span> <span class="o">=</span> <span class="mi">0</span>
@@ -154,7 +155,7 @@
     <span class="c">##</span>
 
     <span class="c">#: Peaks in individual channels that make up this peak</span>
-    <span class="n">hits</span> <span class="o">=</span> <span class="n">ListField</span><span class="p">(</span><span class="n">Hit</span><span class="p">)</span>
+    <span class="n">hits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">Hit</span><span class="o">.</span><span class="n">get_dtype</span><span class="p">())</span>
 
     <span class="c">#: Array of areas in each PMT.</span>
     <span class="n">area_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="s">&#39;float64&#39;</span><span class="p">)</span>
@@ -184,11 +185,22 @@
     <span class="c">#: Number of samples with ADC saturation in this peak, per channel</span>
     <span class="n">n_saturated_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
 
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">is_channel_saturated</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_saturated_per_channel</span> <span class="o">&gt;</span> <span class="mi">0</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">saturated_channels</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_saturated_per_channel</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
     <span class="c">#: Total number of samples with ADC saturation threshold in all channels in this peak</span>
     <span class="n">n_saturated_samples</span> <span class="o">=</span> <span class="mi">0</span>
 
     <span class="c">#: Total number of channels in the peakwhich have at least one saturated hit</span>
     <span class="n">n_saturated_channels</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c">#: If the peak is a lone hit: the channel the hit is in</span>
+    <span class="n">lone_hit_channel</span> <span class="o">=</span> <span class="n">INT_NAN</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">does_channel_contribute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -484,14 +496,8 @@
     <span class="c"># Likelihoods</span>
     <span class="c">##</span>
 
-    <span class="c">#: Likelihood of s2 width based on z position</span>
-    <span class="n">s2_width_likelihood</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
-
-    <span class="c">#: Likelihood of s1 asymmetry based on z position</span>
-    <span class="n">s1_asymmetry_likelihood</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
-
-    <span class="c">#: Likelihood of s1 hitpattern spread based on z position</span>
-    <span class="n">s1_hitpattern_spread_likelihood</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
+    <span class="c">#: Goodness of fit of S1 pattern to interaction&#39;s (x, y, drift_time)</span>
+    <span class="n">s1_pattern_fit</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
 
 </div>
 <div class="viewcode-block" id="Event"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event">[docs]</a><span class="k">class</span> <span class="nc">Event</span><span class="p">(</span><span class="n">StrictModel</span><span class="p">):</span>
@@ -537,8 +543,8 @@
     <span class="c">#: A list of :class:`pax.datastructure.Peak` objects.</span>
     <span class="n">peaks</span> <span class="o">=</span> <span class="n">ListField</span><span class="p">(</span><span class="n">Peak</span><span class="p">)</span>
 
-    <span class="c">#: Temporary list of hits -- will be shipped off to peaks later</span>
-    <span class="n">all_hits</span> <span class="o">=</span> <span class="n">ListField</span><span class="p">(</span><span class="n">Hit</span><span class="p">)</span>
+    <span class="c">#: Temporary array of hits -- will be shipped off to peaks later</span>
+    <span class="n">all_hits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">Hit</span><span class="o">.</span><span class="n">get_dtype</span><span class="p">())</span>
 
     <span class="c">#: A list :class:`pax.datastructure.SumWaveform` objects.</span>
     <span class="n">sum_waveforms</span> <span class="o">=</span> <span class="n">ListField</span><span class="p">(</span><span class="n">SumWaveform</span><span class="p">)</span>
@@ -549,6 +555,17 @@
 
     <span class="c">#: Number of noise pulses (pulses without any hits found) per channel</span>
     <span class="n">noise_pulses_in</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+
+    <span class="c">#: Number of lone hits (peaks with only one channel contributing) per channel</span>
+    <span class="c">#: BEFORE suspicious channel hit rejection.</span>
+    <span class="c">#: This is used to check / calibrate the suspicious channel hit rejection.</span>
+    <span class="n">lone_hits_per_channel_before</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+
+    <span class="c">#: Number of lone hits (peaks with only one channel contributing) per channel</span>
+    <span class="c">#: AFTER suspicious channel hit rejection.</span>
+    <span class="c">#: Keep in mind a &quot;lone hit&quot; peak can consist of several hits, they just have to be in one channel.</span>
+    <span class="c">#: Hmm, maybe they should be named single channel peaks rather than lone hits?</span>
+    <span class="n">lone_hits_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
 
     <span class="c">#: Was channel flagged as suspicious?</span>
     <span class="n">is_channel_suspicious</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
@@ -582,6 +599,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">noise_pulses_in</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_channels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">n_hits_rejected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_channels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_channel_suspicious</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_channels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lone_hits_per_channel_before</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_channels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lone_hits_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_channels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
 <div class="viewcode-block" id="Event.empty_event"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.empty_event">[docs]</a>    <span class="k">def</span> <span class="nf">empty_event</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax package &mdash; Processor for Analyzing XENON1T 4.0.0 documentation</title>
+    <title>pax package &mdash; Processor for Analyzing XENON1T 4.0.1 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '4.0.0',
+        VERSION:     '4.0.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.0.0 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.0.1 documentation" href="index.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -310,6 +310,67 @@ We use zlib, not zip&#8217;s deflate, for compression.</p>
 </dd></dl>
 
 </div>
+<div class="section" id="module-pax.InterpolatingMap">
+<span id="pax-interpolatingmap-module"></span><h2>pax.InterpolatingMap module<a class="headerlink" href="#module-pax.InterpolatingMap" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pax.InterpolatingMap.InterpolateAndExtrapolate">
+<em class="property">class </em><code class="descclassname">pax.InterpolatingMap.</code><code class="descname">InterpolateAndExtrapolate</code><span class="sig-paren">(</span><em>points</em>, <em>values</em>, <em>neighbours_to_use=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/InterpolatingMap.html#InterpolateAndExtrapolate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.InterpolatingMap.InterpolateAndExtrapolate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Linearly interpolate- or extrapolation between nearest N points
+Needed to roll our own because scipy&#8217;s linear Nd interpolator refuses to extrapolate</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.InterpolatingMap.InterpolatingMap">
+<em class="property">class </em><code class="descclassname">pax.InterpolatingMap.</code><code class="descname">InterpolatingMap</code><span class="sig-paren">(</span><em>filename</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/InterpolatingMap.html#InterpolatingMap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.InterpolatingMap.InterpolatingMap" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>Construct s a scalar function using linear interpolation, weighted by euclidean distance.</p>
+<dl class="docutils">
+<dt>The map must be specified as a json translating to a dictionary like this:</dt>
+<dd>&#8216;coordinate_system&#8217; :   [[x1, y2], [x2, y2], [x3, y3], [x4, y4], ...],
+&#8216;map&#8217; :                 [[valuex1y1, valuex1y2, ..], [valuex2y1, valuex2y2, ..], ...
+&#8216;another_map&#8217; :         idem
+&#8216;name&#8217;:                 &#8216;Nice file with maps&#8217;,
+&#8216;description&#8217;:          &#8216;Say what the maps are, who you are, your favorite food, etc&#8217;,
+&#8216;timestamp&#8217;:            unix epoch seconds timestamp
+&#8216;use_points&#8217;:           number of points to use for linear interpolation (with euclidean distance weights)</dd>
+</dl>
+<p>with the straightforward generalization to 1d and 3d. The default map name is &#8216;map&#8217;, I&#8217;d recommend you use that.</p>
+<dl class="docutils">
+<dt>For a 0d placeholder map, use</dt>
+<dd>&#8216;points&#8217;: [],
+&#8216;map&#8217;: 42,
+etc</dd>
+</dl>
+<p>The json can be gzip compressed: if so, it must have a .gz extension.</p>
+<p>See also examples/generate_mock_correction_map.py</p>
+<dl class="attribute">
+<dt id="pax.InterpolatingMap.InterpolatingMap.data_field_names">
+<code class="descname">data_field_names</code><em class="property"> = ['timestamp', 'description', 'coordinate_system', 'name', 'irregular']</em><a class="headerlink" href="#pax.InterpolatingMap.InterpolatingMap.data_field_names" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.InterpolatingMap.InterpolatingMap.get_value">
+<code class="descname">get_value</code><span class="sig-paren">(</span><em>*coordinates</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/InterpolatingMap.html#InterpolatingMap.get_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.InterpolatingMap.InterpolatingMap.get_value" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the value of the map at the position given by coordinates
+Keyword arguments:</p>
+<blockquote>
+<div><ul class="simple">
+<li>map_name: Name of the map to use. By default: &#8216;map&#8217;.</li>
+</ul>
+</div></blockquote>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.InterpolatingMap.InterpolatingMap.get_value_at">
+<code class="descname">get_value_at</code><span class="sig-paren">(</span><em>position</em>, <em>map_name='map'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/InterpolatingMap.html#InterpolatingMap.get_value_at"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.InterpolatingMap.InterpolatingMap.get_value_at" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the value of the map map_name at a ReconstructedPosition
+position - pax.datastructure.ReconstructedPosition instance</p>
+</dd></dl>
+
+</dd></dl>
+
+</div>
 <div class="section" id="module-pax.PatternFitter">
 <span id="pax-patternfitter-module"></span><h2>pax.PatternFitter module<a class="headerlink" href="#module-pax.PatternFitter" title="Permalink to this headline">¶</a></h2>
 <dl class="class">
@@ -370,7 +431,9 @@ Returns gof_grid, (bin number of lowest grid point in dimension 1, ...)
 <dl class="method">
 <dt id="pax.PatternFitter.PatternFitter.expected_pattern">
 <code class="descname">expected_pattern</code><span class="sig-paren">(</span><em>coordinates</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/PatternFitter.html#PatternFitter.expected_pattern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.PatternFitter.PatternFitter.expected_pattern" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns expected pattern at coordinates</p>
+<dd><p>Returns expected, normalized pattern at coordinates
+&#8216;Pattern&#8217; means: expected fraction of light seen in each PMT, among PMTs included in the map.
+Keep in mind you&#8217;ll have to re-normalize if there are any dead / saturated PMTs...</p>
 </dd></dl>
 
 <dl class="method">
@@ -395,83 +458,8 @@ All other parameters like compute_gof</p>
 </dd></dl>
 
 </div>
-<div class="section" id="module-pax.core">
-<span id="pax-core-module"></span><h2>pax.core module<a class="headerlink" href="#module-pax.core" title="Permalink to this headline">¶</a></h2>
-<p>The backbone of pax - the Processor class</p>
-<dl class="class">
-<dt id="pax.core.Processor">
-<em class="property">class </em><code class="descclassname">pax.core.</code><code class="descname">Processor</code><span class="sig-paren">(</span><em>config_names=()</em>, <em>config_paths=()</em>, <em>config_string=None</em>, <em>config_dict=None</em>, <em>just_testing=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/core.html#Processor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<dl class="attribute">
-<dt id="pax.core.Processor.fallback_configuration">
-<code class="descname">fallback_configuration</code><em class="property"> = 'XENON100'</em><a class="headerlink" href="#pax.core.Processor.fallback_configuration" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.core.Processor.get_metadata">
-<code class="descname">get_metadata</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/core.html#Processor.get_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor.get_metadata" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.core.Processor.get_plugin_by_name">
-<code class="descname">get_plugin_by_name</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/core.html#Processor.get_plugin_by_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor.get_plugin_by_name" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return plugin by class name. Use for testing.</p>
-</dd></dl>
-
-<dl class="staticmethod">
-<dt id="pax.core.Processor.get_plugin_search_paths">
-<em class="property">static </em><code class="descname">get_plugin_search_paths</code><span class="sig-paren">(</span><em>extra_paths=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/core.html#Processor.get_plugin_search_paths"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor.get_plugin_search_paths" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns paths where we should search for plugins
-Search for plugins in  ., ./plugins, utils.PAX_DIR/plugins, any directories in config[&#8216;plugin_paths&#8217;]
-Search in all subdirs of the above, except for __pycache__ dirs</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.core.Processor.instantiate_plugin">
-<code class="descname">instantiate_plugin</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/core.html#Processor.instantiate_plugin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor.instantiate_plugin" title="Permalink to this definition">¶</a></dt>
-<dd><p>Take plugin class name and build class from it</p>
-<p>The python default module locations are also searched... I think.. so don&#8217;t name your module &#8216;glob&#8217;...</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.core.Processor.load_configuration">
-<code class="descname">load_configuration</code><span class="sig-paren">(</span><em>config_names</em>, <em>config_paths</em>, <em>config_string</em>, <em>config_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/core.html#Processor.load_configuration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor.load_configuration" title="Permalink to this definition">¶</a></dt>
-<dd><p>Load a configuration &#8211; see init&#8217;s docstring
-:return: nested dictionary of evaluated configuration values, use as: config[section][key].</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.core.Processor.process_event">
-<code class="descname">process_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/core.html#Processor.process_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor.process_event" title="Permalink to this definition">¶</a></dt>
-<dd><p>Process one event with all action plugins. Returns processed event.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.core.Processor.run">
-<code class="descname">run</code><span class="sig-paren">(</span><em>clean_shutdown=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/core.html#Processor.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor.run" title="Permalink to this definition">¶</a></dt>
-<dd><p>Run the processor over all events, then shuts down the plugins (unless clean_shutdown=False)</p>
-<dl class="docutils">
-<dt>If clean_shutdown=False, will not shutdown plugin classes</dt>
-<dd>(they still shut down if the Processor class is deleted)
-Use only if for some arcane reason you want to run a single instance more than once.
-If you do, you get in trouble if you start a new Processor instance that tries to write to the same files.</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.core.Processor.setup_logging">
-<code class="descname">setup_logging</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/core.html#Processor.setup_logging"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor.setup_logging" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sets up logging. Must have loaded config first.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.core.Processor.shutdown">
-<code class="descname">shutdown</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/core.html#Processor.shutdown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor.shutdown" title="Permalink to this definition">¶</a></dt>
-<dd><p>Call shutdown on all plugins</p>
-</dd></dl>
-
-</dd></dl>
-
+<div class="section" id="pax-core-module">
+<h2>pax.core module<a class="headerlink" href="#pax-core-module" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="pax-data-model-module">
 <h2>pax.data_model module<a class="headerlink" href="#pax-data-model-module" title="Permalink to this headline">¶</a></h2>
@@ -485,7 +473,7 @@ Extends python object to do a few tricks</p>
 
 <dl class="class">
 <dt id="pax.data_model.Model">
-<em class="property">class </em><code class="descclassname">pax.data_model.</code><code class="descname">Model</code><span class="sig-paren">(</span><em>kwargs_dict=None</em>, <em>quick_init=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/data_model.html#Model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.data_model.Model" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pax.data_model.</code><code class="descname">Model</code><span class="sig-paren">(</span><em>kwargs_dict=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/data_model.html#Model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.data_model.Model" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <p>Data modelling base class &#8211; use for subclassing.
 Features:</p>
@@ -523,6 +511,13 @@ NB: This is checked on initialization (even for Model) not for appending (even f
 <em class="property">classmethod </em><code class="descname">from_json</code><span class="sig-paren">(</span><em>x</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/data_model.html#Model.from_json"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.data_model.Model.from_json" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
+<dl class="classmethod">
+<dt id="pax.data_model.Model.get_dtype">
+<em class="property">classmethod </em><code class="descname">get_dtype</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/data_model.html#Model.get_dtype"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.data_model.Model.get_dtype" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get a dtype for a numpy structured array equivalent to the class
+Works only for flat classes (no list fields) containing int, float, and bool</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="pax.data_model.Model.get_fields_data">
 <code class="descname">get_fields_data</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/data_model.html#Model.get_fields_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.data_model.Model.get_fields_data" title="Permalink to this definition">¶</a></dt>
@@ -537,24 +532,24 @@ Returns keys in lexical order</p>
 
 <dl class="method">
 <dt id="pax.data_model.Model.to_bson">
-<code class="descname">to_bson</code><span class="sig-paren">(</span><em>fields_to_ignore=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/data_model.html#Model.to_bson"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.data_model.Model.to_bson" title="Permalink to this definition">¶</a></dt>
+<code class="descname">to_bson</code><span class="sig-paren">(</span><em>fields_to_ignore=None</em>, <em>nan_to_none=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/data_model.html#Model.to_bson"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.data_model.Model.to_bson" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="pax.data_model.Model.to_dict">
-<code class="descname">to_dict</code><span class="sig-paren">(</span><em>convert_numpy_arrays_to=None</em>, <em>fields_to_ignore=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/data_model.html#Model.to_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.data_model.Model.to_dict" title="Permalink to this definition">¶</a></dt>
+<code class="descname">to_dict</code><span class="sig-paren">(</span><em>convert_numpy_arrays_to=None</em>, <em>fields_to_ignore=None</em>, <em>nan_to_none=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/data_model.html#Model.to_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.data_model.Model.to_dict" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
 <dt id="pax.data_model.Model.to_json">
-<code class="descname">to_json</code><span class="sig-paren">(</span><em>fields_to_ignore=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/data_model.html#Model.to_json"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.data_model.Model.to_json" title="Permalink to this definition">¶</a></dt>
+<code class="descname">to_json</code><span class="sig-paren">(</span><em>fields_to_ignore=None</em>, <em>nan_to_none=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/data_model.html#Model.to_json"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.data_model.Model.to_json" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 </dd></dl>
 
 <dl class="class">
 <dt id="pax.data_model.StrictModel">
-<em class="property">class </em><code class="descclassname">pax.data_model.</code><code class="descname">StrictModel</code><span class="sig-paren">(</span><em>kwargs_dict=None</em>, <em>quick_init=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/data_model.html#StrictModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.data_model.StrictModel" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pax.data_model.</code><code class="descname">StrictModel</code><span class="sig-paren">(</span><em>kwargs_dict=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/data_model.html#StrictModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.data_model.StrictModel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.data_model.Model" title="pax.data_model.Model"><code class="xref py py-class docutils literal"><span class="pre">pax.data_model.Model</span></code></a></p>
 <p>Model which enforces additional restrictions:
 - can&#8217;t add new attributes: have to be fixed at class declaration
@@ -588,8 +583,8 @@ releases.  Patch releases cannot modify this.</p>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.all_hits">
-<code class="descname">all_hits</code><em class="property"> = &lt;pax.data_model.ListField object&gt;</em><a class="headerlink" href="#pax.datastructure.Event.all_hits" title="Permalink to this definition">¶</a></dt>
-<dd><p>Temporary list of hits &#8211; will be shipped off to peaks later</p>
+<code class="descname">all_hits</code><em class="property"> = array([],        dtype=[('area', '&lt;f8'), ('center', '&lt;f8'), ('channel', '&lt;i8'), ('found_in_pulse', '&lt;i8'), ('height', '&lt;f8'), ('index_of_maximum', '&lt;i8'), ('is_rejected', '?'), ('left', '&lt;i8'), ('n_saturated', '&lt;i8'), ('noise_sigma', '&lt;f8'), ('right', '&lt;i8'), ('sum_absolute_deviation', '&lt;f8')])</em><a class="headerlink" href="#pax.datastructure.Event.all_hits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Temporary array of hits &#8211; will be shipped off to peaks later</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -656,6 +651,23 @@ Deprecated &#8211; for Xerawdp matching only</p>
 <dt id="pax.datastructure.Event.length">
 <code class="descname">length</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Event.length"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event.length" title="Permalink to this definition">¶</a></dt>
 <dd><p>Number of samples in the event</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Event.lone_hits_per_channel">
+<code class="descname">lone_hits_per_channel</code><em class="property"> = array([], dtype=int64)</em><a class="headerlink" href="#pax.datastructure.Event.lone_hits_per_channel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of lone hits (peaks with only one channel contributing) per channel
+AFTER suspicious channel hit rejection.
+Keep in mind a &#8220;lone hit&#8221; peak can consist of several hits, they just have to be in one channel.
+Hmm, maybe they should be named single channel peaks rather than lone hits?</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Event.lone_hits_per_channel_before">
+<code class="descname">lone_hits_per_channel_before</code><em class="property"> = array([], dtype=int64)</em><a class="headerlink" href="#pax.datastructure.Event.lone_hits_per_channel_before" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of lone hits (peaks with only one channel contributing) per channel
+BEFORE suspicious channel hit rejection.
+This is used to check / calibrate the suspicious channel hit rejection.</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -769,13 +781,15 @@ in &#8216;start_time&#8217;.</p>
 
 <dl class="class">
 <dt id="pax.datastructure.Hit">
-<em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">Hit</code><span class="sig-paren">(</span><em>kwargs_dict=None</em>, <em>quick_init=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Hit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Hit" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.data_model.Model" title="pax.data_model.Model"><code class="xref py py-class docutils literal"><span class="pre">pax.data_model.Model</span></code></a></p>
+<em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">Hit</code><span class="sig-paren">(</span><em>kwargs_dict=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Hit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Hit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.data_model.StrictModel" title="pax.data_model.StrictModel"><code class="xref py py-class docutils literal"><span class="pre">pax.data_model.StrictModel</span></code></a></p>
 <p>A hit results from, within individual channel, fluctation above baseline.</p>
 <p>These are be clustered into ordinary peaks later. This is commonly
 called a &#8216;hit&#8217; in particle physics detectors.  Very generally, a hit is
 made every time that the data recorded for one channel flucates above
 baseline.</p>
+<p>The Hit class is never actually used to build python objects.
+Instead we build a numpy dtype from this declaration, and use it in arrays of hits</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Hit.area">
 <code class="descname">area</code><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.Hit.area" title="Permalink to this definition">¶</a></dt>
@@ -858,7 +872,7 @@ Note: in Pulse the same number is stored in ADC-counts</p>
 
 <dl class="class">
 <dt id="pax.datastructure.Interaction">
-<em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">Interaction</code><span class="sig-paren">(</span><em>kwargs_dict=None</em>, <em>quick_init=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Interaction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Interaction" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">Interaction</code><span class="sig-paren">(</span><em>kwargs_dict=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Interaction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Interaction" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.data_model.StrictModel" title="pax.data_model.StrictModel"><code class="xref py py-class docutils literal"><span class="pre">pax.data_model.StrictModel</span></code></a></p>
 <p>An interaction in the TPC, reconstructed from a pair of S1 and S2 peaks.</p>
 <dl class="attribute">
@@ -905,15 +919,9 @@ Note: in Pulse the same number is stored in ADC-counts</p>
 </dd></dl>
 
 <dl class="attribute">
-<dt id="pax.datastructure.Interaction.s1_asymmetry_likelihood">
-<code class="descname">s1_asymmetry_likelihood</code><em class="property"> = nan</em><a class="headerlink" href="#pax.datastructure.Interaction.s1_asymmetry_likelihood" title="Permalink to this definition">¶</a></dt>
-<dd><p>Likelihood of s1 asymmetry based on z position</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Interaction.s1_hitpattern_spread_likelihood">
-<code class="descname">s1_hitpattern_spread_likelihood</code><em class="property"> = nan</em><a class="headerlink" href="#pax.datastructure.Interaction.s1_hitpattern_spread_likelihood" title="Permalink to this definition">¶</a></dt>
-<dd><p>Likelihood of s1 hitpattern spread based on z position</p>
+<dt id="pax.datastructure.Interaction.s1_pattern_fit">
+<code class="descname">s1_pattern_fit</code><em class="property"> = nan</em><a class="headerlink" href="#pax.datastructure.Interaction.s1_pattern_fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Goodness of fit of S1 pattern to interaction&#8217;s (x, y, drift_time)</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -926,12 +934,6 @@ Note: in Pulse the same number is stored in ADC-counts</p>
 <dt id="pax.datastructure.Interaction.s2_area_correction">
 <code class="descname">s2_area_correction</code><em class="property"> = 1.0</em><a class="headerlink" href="#pax.datastructure.Interaction.s2_area_correction" title="Permalink to this definition">¶</a></dt>
 <dd><p>Multiplicative correction to s2 area based on position (due to electron lifetime and LCE variations)</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.datastructure.Interaction.s2_width_likelihood">
-<code class="descname">s2_width_likelihood</code><em class="property"> = nan</em><a class="headerlink" href="#pax.datastructure.Interaction.s2_width_likelihood" title="Permalink to this definition">¶</a></dt>
-<dd><p>Likelihood of s2 width based on z position</p>
 </dd></dl>
 
 <dl class="method">
@@ -981,7 +983,7 @@ based on a <a class="reference internal" href="#pax.datastructure.ReconstructedP
 
 <dl class="class">
 <dt id="pax.datastructure.Peak">
-<em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">Peak</code><span class="sig-paren">(</span><em>kwargs_dict=None</em>, <em>quick_init=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">Peak</code><span class="sig-paren">(</span><em>kwargs_dict=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Peak"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.data_model.StrictModel" title="pax.data_model.StrictModel"><code class="xref py py-class docutils literal"><span class="pre">pax.data_model.StrictModel</span></code></a></p>
 <p>A peak will be, e.g., S1 or S2.</p>
 <dl class="attribute">
@@ -1087,7 +1089,7 @@ unless it doesn&#8217;t exist or is a nan position, then moves on to further alg
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.hits">
-<code class="descname">hits</code><em class="property"> = &lt;pax.data_model.ListField object&gt;</em><a class="headerlink" href="#pax.datastructure.Peak.hits" title="Permalink to this definition">¶</a></dt>
+<code class="descname">hits</code><em class="property"> = array([],        dtype=[('area', '&lt;f8'), ('center', '&lt;f8'), ('channel', '&lt;i8'), ('found_in_pulse', '&lt;i8'), ('height', '&lt;f8'), ('index_of_maximum', '&lt;i8'), ('is_rejected', '?'), ('left', '&lt;i8'), ('n_saturated', '&lt;i8'), ('noise_sigma', '&lt;f8'), ('right', '&lt;i8'), ('sum_absolute_deviation', '&lt;f8')])</em><a class="headerlink" href="#pax.datastructure.Peak.hits" title="Permalink to this definition">¶</a></dt>
 <dd><p>Peaks in individual channels that make up this peak</p>
 </dd></dl>
 
@@ -1123,9 +1125,20 @@ unless it doesn&#8217;t exist or is a nan position, then moves on to further alg
 </dd></dl>
 
 <dl class="attribute">
+<dt id="pax.datastructure.Peak.is_channel_saturated">
+<code class="descname">is_channel_saturated</code><a class="headerlink" href="#pax.datastructure.Peak.is_channel_saturated" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
 <dt id="pax.datastructure.Peak.left">
 <code class="descname">left</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Peak.left" title="Permalink to this definition">¶</a></dt>
 <dd><p>Index of left bound (inclusive) in event.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.lone_hit_channel">
+<code class="descname">lone_hit_channel</code><em class="property"> = -99999</em><a class="headerlink" href="#pax.datastructure.Peak.lone_hit_channel" title="Permalink to this definition">¶</a></dt>
+<dd><p>If the peak is a lone hit: the channel the hit is in</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -1207,6 +1220,11 @@ First element (0) is always zero, last element (10) is the full range of the pea
 <code class="descname">right</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Peak.right" title="Permalink to this definition">¶</a></dt>
 <dd><p>Index of right bound (INCLUSIVE) in event.</p>
 </dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.saturated_channels">
+<code class="descname">saturated_channels</code><a class="headerlink" href="#pax.datastructure.Peak.saturated_channels" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Peak.sum_waveform">
@@ -1309,7 +1327,7 @@ starts at zero and is an integer because it&#8217;s an index.</p>
 
 <dl class="class">
 <dt id="pax.datastructure.ReconstructedPosition">
-<em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">ReconstructedPosition</code><span class="sig-paren">(</span><em>kwargs_dict=None</em>, <em>quick_init=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#ReconstructedPosition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.ReconstructedPosition" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">ReconstructedPosition</code><span class="sig-paren">(</span><em>kwargs_dict=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#ReconstructedPosition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.ReconstructedPosition" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.data_model.StrictModel" title="pax.data_model.StrictModel"><code class="xref py py-class docutils literal"><span class="pre">pax.data_model.StrictModel</span></code></a></p>
 <p>Reconstructed position</p>
 <p>Each reconstruction algorithm creates one of these.</p>
@@ -1356,7 +1374,7 @@ starts at zero and is an integer because it&#8217;s an index.</p>
 
 <dl class="class">
 <dt id="pax.datastructure.SumWaveform">
-<em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">SumWaveform</code><span class="sig-paren">(</span><em>kwargs_dict=None</em>, <em>quick_init=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#SumWaveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.SumWaveform" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">SumWaveform</code><span class="sig-paren">(</span><em>kwargs_dict=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#SumWaveform"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.SumWaveform" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.data_model.StrictModel" title="pax.data_model.StrictModel"><code class="xref py py-class docutils literal"><span class="pre">pax.data_model.StrictModel</span></code></a></p>
 <p>Class used to store sum (filtered or not) waveform information.</p>
 <dl class="attribute">
@@ -1397,51 +1415,11 @@ starts at zero and is an integer because it&#8217;s an index.</p>
 </dd></dl>
 
 </div>
-<div class="section" id="module-pax.eventbuilder">
-<span id="pax-eventbuilder-module"></span><h2>pax.eventbuilder module<a class="headerlink" href="#module-pax.eventbuilder" title="Permalink to this headline">¶</a></h2>
-<p>Event builder routines</p>
-<p>The event builder is responsible for finding events within the DAQ output
-stream and turning this into events that the end user can process.  The data is
-fetched untriggered, which means that there is no event structure.  Or rather,
-it is just a stream of PMT pulses that need to be assembled into events.  This
-is exactly what this code does.  There are two inputs requires:</p>
-<ul class="simple">
-<li>Location of runs database</li>
-<li>Trigger settings</li>
-</ul>
-<dl class="docutils">
-<dt>This code is meant to run in production, therefore a runs database must be</dt>
-<dd>provided.  This code will use this database to locate what data needs to be
-processed and handle it appropriately.</dd>
-</dl>
-<p>This code is also responsible triggering (i.e., deciding which events to
-record).  At present there are two stages to the triggering: a pretrigger and
-a pax-event trigger.  The pretrigger is a simple sliding window coincidence
-trigger that runs over the data to identify possible signals.  The parameters
-of this are then, clearly, the size of the window and the coincidence
-requirement.  Another parameter is how much data to save around the discovered
-peak, which often is an S2.</p>
-<p>The second level trigger, which we often do not run, processed the event in pax
-and is used to make, e.g., radial cuts.  At present, the code just writes HDF5
-files.</p>
-<p>It is worth mentioning that is an &#8216;expert modes&#8217; with a flag for mega events:
-an event of one second is made that can be used for computing the trigger
-efficiency.</p>
-<p>The entry point to this code is typically via bin/event-builder.</p>
-<dl class="function">
-<dt id="pax.eventbuilder.handle_args">
-<code class="descclassname">pax.eventbuilder.</code><code class="descname">handle_args</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/eventbuilder.html#handle_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.eventbuilder.handle_args" title="Permalink to this definition">¶</a></dt>
-<dd><p>Command line argument processing</p>
-<p>This routine is also responsible for setting up logging.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pax.eventbuilder.run">
-<code class="descclassname">pax.eventbuilder.</code><code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/eventbuilder.html#run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.eventbuilder.run" title="Permalink to this definition">¶</a></dt>
-<dd><p>Start running the event builder</p>
-<p>Find a dataset to process, then process it with settings from command line.</p>
-</dd></dl>
-
+<div class="section" id="pax-dsputils-module">
+<h2>pax.dsputils module<a class="headerlink" href="#pax-dsputils-module" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="pax-eventbuilder-module">
+<h2>pax.eventbuilder module<a class="headerlink" href="#pax-eventbuilder-module" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="module-pax.exceptions">
 <span id="pax-exceptions-module"></span><h2>pax.exceptions module<a class="headerlink" href="#module-pax.exceptions" title="Permalink to this headline">¶</a></h2>
@@ -1751,7 +1729,7 @@ This is</p>
 
 <dl class="attribute">
 <dt id="pax.formats.ROOTDump.numpy_type">
-<code class="descname">numpy_type</code><em class="property"> = {'O': &lt;class 'bool'&gt;, 'C': dtype('O'), 'D': &lt;class 'numpy.float64'&gt;, 'I': &lt;class 'numpy.int32'&gt;, 'F': &lt;class 'numpy.float32'&gt;, 'L': &lt;class 'numpy.int64'&gt;}</em><a class="headerlink" href="#pax.formats.ROOTDump.numpy_type" title="Permalink to this definition">¶</a></dt>
+<code class="descname">numpy_type</code><em class="property"> = {'C': dtype('O'), 'L': &lt;class 'numpy.int64'&gt;, 'F': &lt;class 'numpy.float32'&gt;, 'D': &lt;class 'numpy.float64'&gt;, 'O': &lt;class 'bool'&gt;, 'I': &lt;class 'numpy.int32'&gt;}</em><a class="headerlink" href="#pax.formats.ROOTDump.numpy_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -1766,7 +1744,7 @@ This is</p>
 
 <dl class="attribute">
 <dt id="pax.formats.ROOTDump.root_type">
-<code class="descname">root_type</code><em class="property"> = {'S': '/C', 'float32': '/F', 'int32': '/I', 'int64': '/L', 'bool': '/O', 'float64': '/D'}</em><a class="headerlink" href="#pax.formats.ROOTDump.root_type" title="Permalink to this definition">¶</a></dt>
+<code class="descname">root_type</code><em class="property"> = {'bool': '/O', 'float64': '/D', 'float32': '/F', 'int32': '/I', 'int64': '/L', 'S': '/C'}</em><a class="headerlink" href="#pax.formats.ROOTDump.root_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -1985,123 +1963,69 @@ Ensures all posrec plugins:</p>
 </dd></dl>
 
 </div>
-<div class="section" id="module-pax.simulation">
-<span id="pax-simulation-module"></span><h2>pax.simulation module<a class="headerlink" href="#module-pax.simulation" title="Permalink to this headline">¶</a></h2>
-<p>Waveform simulator (&#8220;FaX&#8221;) - physics backend
-The only I/O stuff here is pax event creation, everything else is in the WaveformSimulator plugins</p>
-<dl class="class">
-<dt id="pax.simulation.SimulatedHitpattern">
-<em class="property">class </em><code class="descclassname">pax.simulation.</code><code class="descname">SimulatedHitpattern</code><span class="sig-paren">(</span><em>simulator</em>, <em>photon_timings</em>, <em>x=0</em>, <em>y=0</em>, <em>z=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#SimulatedHitpattern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.SimulatedHitpattern" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.simulation.Simulator">
-<em class="property">class </em><code class="descclassname">pax.simulation.</code><code class="descname">Simulator</code><span class="sig-paren">(</span><em>config_to_init</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<dl class="method">
-<dt id="pax.simulation.Simulator.distribute_photons_by_pattern">
-<code class="descname">distribute_photons_by_pattern</code><span class="sig-paren">(</span><em>n_photons</em>, <em>pattern_fitter</em>, <em>coordinate_tuple</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.distribute_photons_by_pattern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.distribute_photons_by_pattern" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.simulation.Simulator.distribute_s2_photons">
-<code class="descname">distribute_s2_photons</code><span class="sig-paren">(</span><em>n_photons</em>, <em>x</em>, <em>y</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.distribute_s2_photons"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.distribute_s2_photons" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.simulation.Simulator.get_luminescence_times">
-<code class="descname">get_luminescence_times</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.get_luminescence_times"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.get_luminescence_times" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.simulation.Simulator.make_hitpattern">
-<code class="descname">make_hitpattern</code><span class="sig-paren">(</span><em>photon_times</em>, <em>x=0</em>, <em>y=0</em>, <em>z=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.make_hitpattern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.make_hitpattern" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.simulation.Simulator.pmt_pulse_current">
-<code class="descname">pmt_pulse_current</code><span class="sig-paren">(</span><em>gain</em>, <em>offset=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.pmt_pulse_current"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.pmt_pulse_current" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.simulation.Simulator.randomize_photons_over_channels">
-<code class="descname">randomize_photons_over_channels</code><span class="sig-paren">(</span><em>n_photons</em>, <em>channels=None</em>, <em>relative_lce_per_channel=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.randomize_photons_over_channels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.randomize_photons_over_channels" title="Permalink to this definition">¶</a></dt>
-<dd><p>Distribute photon_timings over channels according to relative_lce_per_channel</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>n_photons</strong> &#8211; number of photons to distribute</li>
-<li><strong>channels</strong> &#8211; list of channel numbers that can receive photons. This will still be filtered
-to include only channels in self.config[&#8216;channels_for_photons&#8217;].</li>
-<li><strong>relative_lce_per_channel</strong> &#8211; list of relative lce per channel. Should be &gt;= 0 and sum to 1.
-If omitted, will distribute photons uniformly over channels.</li>
-</ul>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">array of length sim.config[&#8216;n_channels&#8217;] with photon counts per channel</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.simulation.Simulator.s1_photons">
-<code class="descname">s1_photons</code><span class="sig-paren">(</span><em>n_photons</em>, <em>recoil_type</em>, <em>t=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.s1_photons"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.s1_photons" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a list of photon production times caused by an S1 process.</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.simulation.Simulator.s2_electrons">
-<code class="descname">s2_electrons</code><span class="sig-paren">(</span><em>electrons_generated=None</em>, <em>z=0.0</em>, <em>t=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.s2_electrons"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.s2_electrons" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a list of electron arrival times in the ELR region caused by an S2 process.</p>
-<blockquote>
-<div>electrons             -   total # of drift electrons generated at the interaction site
-t                     -   Time at which the original energy deposition occurred.
-z                     -   Depth below the GATE mesh where the interaction occurs.</div></blockquote>
-<p>As usual, all units in the same system used by pax (if you specify raw values: ns, cm)</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.simulation.Simulator.s2_scintillation">
-<code class="descname">s2_scintillation</code><span class="sig-paren">(</span><em>electron_arrival_times</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.s2_scintillation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.s2_scintillation" title="Permalink to this definition">¶</a></dt>
-<dd><p>Given a list of electron arrival times, returns photon production times</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.simulation.Simulator.singlet_triplet_delays">
-<code class="descname">singlet_triplet_delays</code><span class="sig-paren">(</span><em>times</em>, <em>t1</em>, <em>t3</em>, <em>singlet_ratio</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.singlet_triplet_delays"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.singlet_triplet_delays" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="docutils">
-<dt>Given a list of eximer formation times, returns excimer decay times.</dt>
-<dd><p class="first">t1            - singlet state lifetime
-t3            - triplet state lifetime
-singlet_ratio - fraction of excimers that become singlets</p>
-<blockquote class="last">
-<div>(NOT the ratio of singlets/triplets!)</div></blockquote>
-</dd>
-</dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.simulation.Simulator.to_pax_event">
-<code class="descname">to_pax_event</code><span class="sig-paren">(</span><em>hitpattern</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.to_pax_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.to_pax_event" title="Permalink to this definition">¶</a></dt>
-<dd><p>Simulate PMT response to a hitpattern of photons
-Returns None if you pass a hitlist without any hits
-returns start_time (in units, ie ns), pmt waveform matrix</p>
-</dd></dl>
-
+<div class="section" id="module-pax.recarray_tools">
+<span id="pax-recarray-tools-module"></span><h2>pax.recarray_tools module<a class="headerlink" href="#module-pax.recarray_tools" title="Permalink to this headline">¶</a></h2>
+<p>Tools for working with numpy structured arrays
+Extends existing functionality in numpy.lib.recfunctions</p>
+<dl class="function">
+<dt id="pax.recarray_tools.append_fields">
+<code class="descclassname">pax.recarray_tools.</code><code class="descname">append_fields</code><span class="sig-paren">(</span><em>base</em>, <em>names</em>, <em>data</em>, <em>dtypes=None</em>, <em>fill_value=-1</em>, <em>usemask=False</em>, <em>asrecarray=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/recarray_tools.html#append_fields"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.recarray_tools.append_fields" title="Permalink to this definition">¶</a></dt>
+<dd><p>Append fields to numpy structured array
+If fields already exists in data, will overwrite</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="pax.simulation.truncated_gauss_rvs">
-<code class="descclassname">pax.simulation.</code><code class="descname">truncated_gauss_rvs</code><span class="sig-paren">(</span><em>my_mean</em>, <em>my_std</em>, <em>left_boundary</em>, <em>right_boundary</em>, <em>n_rvs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#truncated_gauss_rvs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.truncated_gauss_rvs" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get Gauss with specified mean and std, truncated to boundaries
-See <a class="reference external" href="http://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.stats.truncnorm.html">http://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.stats.truncnorm.html</a></p>
+<dt id="pax.recarray_tools.dict_group_by">
+<code class="descclassname">pax.recarray_tools.</code><code class="descname">dict_group_by</code><span class="sig-paren">(</span><em>x</em>, <em>group_by_fields='Event'</em>, <em>return_group_indices=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/recarray_tools.html#dict_group_by"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.recarray_tools.dict_group_by" title="Permalink to this definition">¶</a></dt>
+<dd><p>Same as group_by, but returns OrderedDict of value -&gt; group,
+where value is the value (or tuple of values) of group_by_fields in each subgroup</p>
 </dd></dl>
 
+<dl class="function">
+<dt id="pax.recarray_tools.drop_fields">
+<code class="descclassname">pax.recarray_tools.</code><code class="descname">drop_fields</code><span class="sig-paren">(</span><em>arr</em>, <em>*args</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/recarray_tools.html#drop_fields"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.recarray_tools.drop_fields" title="Permalink to this definition">¶</a></dt>
+<dd><p>Drop fields from numpy structured array
+Gives error if fields don&#8217;t exist</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.recarray_tools.drop_fields_if_exist">
+<code class="descclassname">pax.recarray_tools.</code><code class="descname">drop_fields_if_exist</code><span class="sig-paren">(</span><em>arr</em>, <em>fields</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/recarray_tools.html#drop_fields_if_exist"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.recarray_tools.drop_fields_if_exist" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pax.recarray_tools.fields_data">
+<code class="descclassname">pax.recarray_tools.</code><code class="descname">fields_data</code><span class="sig-paren">(</span><em>arr</em>, <em>ignore_fields=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/recarray_tools.html#fields_data"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.recarray_tools.fields_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="pax.recarray_tools.fields_view">
+<code class="descclassname">pax.recarray_tools.</code><code class="descname">fields_view</code><span class="sig-paren">(</span><em>arr</em>, <em>fields</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/recarray_tools.html#fields_view"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.recarray_tools.fields_view" title="Permalink to this definition">¶</a></dt>
+<dd><p>View one or several columns from a numpy record array</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.recarray_tools.filter_on_fields">
+<code class="descclassname">pax.recarray_tools.</code><code class="descname">filter_on_fields</code><span class="sig-paren">(</span><em>to_filter</em>, <em>for_filter</em>, <em>filter_fields</em>, <em>filter_fields_2=None</em>, <em>return_selection=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/recarray_tools.html#filter_on_fields"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.recarray_tools.filter_on_fields" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns entries of to_filter whose combination of the filter_fields values are present in for_filter.
+filter_fields_2: names of filter_fields in for_filter (if different than in to_filter)
+If return_selection, will instead return boolean selection array for to_filter</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.recarray_tools.group_by">
+<code class="descclassname">pax.recarray_tools.</code><code class="descname">group_by</code><span class="sig-paren">(</span><em>x</em>, <em>group_by_fields='Event'</em>, <em>return_group_indices=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/recarray_tools.html#group_by"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.recarray_tools.group_by" title="Permalink to this definition">¶</a></dt>
+<dd><p>Splits x into LIST of arrays, each array with rows that have same group_by_fields values.
+Gotchas:</p>
+<blockquote>
+<div>Assumes x is sorted by group_by_fields (works in either order, reversed or not)
+Does NOT put in empty lists if indices skip a value! (e.g. events without peaks)</div></blockquote>
+<p>If return_indices=True, returns list of arrays with indices of group elements in x instead</p>
+</dd></dl>
+
+</div>
+<div class="section" id="pax-simulation-module">
+<h2>pax.simulation module<a class="headerlink" href="#pax-simulation-module" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="module-pax.units">
 <span id="pax-units-module"></span><h2>pax.units module<a class="headerlink" href="#module-pax.units" title="Permalink to this headline">¶</a></h2>
@@ -2115,64 +2039,6 @@ change this without talking with a maintainer.</p>
 <p>Helper routines needed in pax</p>
 <p>Please only put stuff here that you <em>really</em> can&#8217;t find any other place for!
 e.g. a list clustering routine that isn&#8217;t in some standard, library but several plugins depend on it</p>
-<dl class="class">
-<dt id="pax.utils.InterpolateAndExtrapolate">
-<em class="property">class </em><code class="descclassname">pax.utils.</code><code class="descname">InterpolateAndExtrapolate</code><span class="sig-paren">(</span><em>points</em>, <em>values</em>, <em>neighbours_to_use=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/utils.html#InterpolateAndExtrapolate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.utils.InterpolateAndExtrapolate" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>Linearly interpolate- or extrapolation between nearest N points
-Needed to roll our own because scipy&#8217;s linear Nd interpolator refuses to extrapolate</p>
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.utils.InterpolatingMap">
-<em class="property">class </em><code class="descclassname">pax.utils.</code><code class="descname">InterpolatingMap</code><span class="sig-paren">(</span><em>filename</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/utils.html#InterpolatingMap"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.utils.InterpolatingMap" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-<p>Construct s a scalar function using linear interpolation, weighted by euclidean distance.</p>
-<dl class="docutils">
-<dt>The map must be specified as a json translating to a dictionary like this:</dt>
-<dd>&#8216;coordinate_system&#8217; :   [[x1, y2], [x2, y2], [x3, y3], [x4, y4], ...],
-&#8216;map&#8217; :                 [[valuex1y1, valuex1y2, ..], [valuex2y1, valuex2y2, ..], ...
-&#8216;another_map&#8217; :         idem
-&#8216;name&#8217;:                 &#8216;Nice file with maps&#8217;,
-&#8216;description&#8217;:          &#8216;Say what the maps are, who you are, your favorite food, etc&#8217;,
-&#8216;timestamp&#8217;:            unix epoch seconds timestamp
-&#8216;use_points&#8217;:           number of points to use for linear interpolation (with euclidean distance weights)</dd>
-</dl>
-<p>with the straightforward generalization to 1d and 3d. The default map name is &#8216;map&#8217;, I&#8217;d recommend you use that.</p>
-<dl class="docutils">
-<dt>For a 0d placeholder map, use</dt>
-<dd>&#8216;points&#8217;: [],
-&#8216;map&#8217;: 42,
-etc</dd>
-</dl>
-<p>The json can be gzip compressed: if so, it must have a .gz extension.</p>
-<p>See also examples/generate_mock_correction_map.py</p>
-<dl class="attribute">
-<dt id="pax.utils.InterpolatingMap.data_field_names">
-<code class="descname">data_field_names</code><em class="property"> = ['timestamp', 'description', 'coordinate_system', 'name', 'irregular']</em><a class="headerlink" href="#pax.utils.InterpolatingMap.data_field_names" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.utils.InterpolatingMap.get_value">
-<code class="descname">get_value</code><span class="sig-paren">(</span><em>*coordinates</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/utils.html#InterpolatingMap.get_value"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.utils.InterpolatingMap.get_value" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the value of the map at the position given by coordinates
-Keyword arguments:</p>
-<blockquote>
-<div><ul class="simple">
-<li>map_name: Name of the map to use. By default: &#8216;map&#8217;.</li>
-</ul>
-</div></blockquote>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.utils.InterpolatingMap.get_value_at">
-<code class="descname">get_value_at</code><span class="sig-paren">(</span><em>position</em>, <em>map_name='map'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/utils.html#InterpolatingMap.get_value_at"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.utils.InterpolatingMap.get_value_at" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the value of the map map_name at a ReconstructedPosition
-position - pax.datastructure.ReconstructedPosition instance</p>
-</dd></dl>
-
-</dd></dl>
-
 <dl class="class">
 <dt id="pax.utils.Memoize">
 <em class="property">class </em><code class="descclassname">pax.utils.</code><code class="descname">Memoize</code><span class="sig-paren">(</span><em>function</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/utils.html#Memoize"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.utils.Memoize" title="Permalink to this definition">¶</a></dt>
@@ -2198,45 +2064,9 @@ punch() returns ms since timer creation or last punch</p>
 </dd></dl>
 
 <dl class="function">
-<dt id="pax.utils.adc_to_pe">
-<code class="descclassname">pax.utils.</code><code class="descname">adc_to_pe</code><span class="sig-paren">(</span><em>config</em>, <em>channel</em>, <em>use_reference_gain=False</em>, <em>use_reference_gain_if_zero=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/utils.html#adc_to_pe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.utils.adc_to_pe" title="Permalink to this definition">¶</a></dt>
-<dd><p>Gives the conversion factor from ADC counts above baseline to pe/bin
-Use as: w_in_pe_bin = adc_to_pe(config, channel) * w_in_adc_above_baseline</p>
-<blockquote>
-<div><ul class="simple">
-<li>config should be a configuration dictionary (self.config in a pax plugin)</li>
-<li>If use_reference_gain is True, will always use config.get(&#8216;pmt_reference_gain&#8217;, 2e6) rather than the pmt gain</li>
-<li>If use_reference_gain_if_zero=True will do the above only if channel gain is 0.</li>
-</ul>
-</div></blockquote>
-<p>If neither of these are true, and gain is 0, will return 0.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pax.utils.cluster_by_diff">
-<code class="descclassname">pax.utils.</code><code class="descname">cluster_by_diff</code><span class="sig-paren">(</span><em>x</em>, <em>diff_threshold</em>, <em>return_indices=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/utils.html#cluster_by_diff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.utils.cluster_by_diff" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns list of lists of indices of clusters in x,
-making cluster boundaries whenever values are &gt;= threshold apart.</p>
-</dd></dl>
-
-<dl class="function">
 <dt id="pax.utils.data_file_name">
 <code class="descclassname">pax.utils.</code><code class="descname">data_file_name</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/utils.html#data_file_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.utils.data_file_name" title="Permalink to this definition">¶</a></dt>
 <dd><p>Returns filename if a file exists there, else returns PAX_DIR/data/filename</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pax.utils.gaps_between_hits">
-<code class="descclassname">pax.utils.</code><code class="descname">gaps_between_hits</code><span class="sig-paren">(</span><em>hits</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/utils.html#gaps_between_hits"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.utils.gaps_between_hits" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return array of gaps between hits: a hit&#8217;s &#8216;gap&#8217; is the # of samples before that hit free of other hits.
-The gap of the first hit is 0 by definition.
-Hits should already be sorted by left boundary; we&#8217;ll check this and throw an error if not.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pax.utils.get_detector_by_channel">
-<code class="descclassname">pax.utils.</code><code class="descname">get_detector_by_channel</code><span class="sig-paren">(</span><em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/utils.html#get_detector_by_channel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.utils.get_detector_by_channel" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return a channel -&gt; detector lookup dictionary from a configuration</p>
 </dd></dl>
 
 <dl class="function">
@@ -2265,15 +2095,18 @@ Hits should already be sorted by left boundary; we&#8217;ll check this and throw
 <li><a class="reference internal" href="#subpackages">Subpackages</a></li>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
 <li><a class="reference internal" href="#module-pax.FolderIO">pax.FolderIO module</a></li>
+<li><a class="reference internal" href="#module-pax.InterpolatingMap">pax.InterpolatingMap module</a></li>
 <li><a class="reference internal" href="#module-pax.PatternFitter">pax.PatternFitter module</a></li>
-<li><a class="reference internal" href="#module-pax.core">pax.core module</a></li>
+<li><a class="reference internal" href="#pax-core-module">pax.core module</a></li>
 <li><a class="reference internal" href="#pax-data-model-module">pax.data_model module</a></li>
 <li><a class="reference internal" href="#module-pax.datastructure">pax.datastructure module</a></li>
-<li><a class="reference internal" href="#module-pax.eventbuilder">pax.eventbuilder module</a></li>
+<li><a class="reference internal" href="#pax-dsputils-module">pax.dsputils module</a></li>
+<li><a class="reference internal" href="#pax-eventbuilder-module">pax.eventbuilder module</a></li>
 <li><a class="reference internal" href="#module-pax.exceptions">pax.exceptions module</a></li>
 <li><a class="reference internal" href="#module-pax.formats">pax.formats module</a></li>
 <li><a class="reference internal" href="#module-pax.plugin">pax.plugin module</a></li>
-<li><a class="reference internal" href="#module-pax.simulation">pax.simulation module</a></li>
+<li><a class="reference internal" href="#module-pax.recarray_tools">pax.recarray_tools module</a></li>
+<li><a class="reference internal" href="#pax-simulation-module">pax.simulation module</a></li>
 <li><a class="reference internal" href="#module-pax.units">pax.units module</a></li>
 <li><a class="reference internal" href="#module-pax.utils">pax.utils module</a></li>
 <li><a class="reference internal" href="#module-pax">Module contents</a></li>

@@ -19,6 +19,14 @@ pax.FolderIO module
     :undoc-members:
     :show-inheritance:
 
+pax.InterpolatingMap module
+---------------------------
+
+.. automodule:: pax.InterpolatingMap
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pax.PatternFitter module
 ------------------------
 
@@ -51,6 +59,14 @@ pax.datastructure module
     :undoc-members:
     :show-inheritance:
 
+pax.dsputils module
+-------------------
+
+.. automodule:: pax.dsputils
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pax.eventbuilder module
 -----------------------
 
@@ -79,6 +95,14 @@ pax.plugin module
 -----------------
 
 .. automodule:: pax.plugin
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.recarray_tools module
+-------------------------
+
+.. automodule:: pax.recarray_tools
     :members:
     :undoc-members:
     :show-inheritance:

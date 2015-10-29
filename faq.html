@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Frequently Asked Questions &mdash; Processor for Analyzing XENON1T 4.0.0 documentation</title>
+    <title>Installation and setup &mdash; Processor for Analyzing XENON1T 4.0.1 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '4.0.0',
+        VERSION:     '4.0.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.0.0 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.0.1 documentation" href="index.html" />
     <link rel="next" title="Event format" href="format.html" />
     <link rel="prev" title="Installation prerequisites" href="readme.html" />
    
@@ -38,17 +38,16 @@
         <div class="bodywrapper">
           <div class="body" role="main">
             
-  <div class="section" id="frequently-asked-questions">
-<h1>Frequently Asked Questions<a class="headerlink" href="#frequently-asked-questions" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="how-do-i-run-pax-at-lngs-on-xecluster">
-<h2>How do I run <cite>pax</cite> at LNGS on xecluster?<a class="headerlink" href="#how-do-i-run-pax-at-lngs-on-xecluster" title="Permalink to this headline">¶</a></h2>
-<p>You should be able to run <cite>pax</cite> running at the shell the following command:</p>
-<div class="highlight-python"><div class="highlight"><pre>export PATH=/home/tunnell/anaconda3/bin:$PATH
-</pre></div>
-</div>
+  <div class="section" id="installation-and-setup">
+<h1>Installation and setup<a class="headerlink" href="#installation-and-setup" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="how-do-i-set-up-pax-at-lngs-on-xecluster">
+<h2>How do I set up <cite>pax</cite> at LNGS on xecluster?<a class="headerlink" href="#how-do-i-set-up-pax-at-lngs-on-xecluster" title="Permalink to this headline">¶</a></h2>
+<p>You can either use a pax someone else has set up, or set up your own. To use Chris&#8217; pax, use the following command:</p>
+<blockquote>
+<div>export PATH=/home/tunnell/anaconda3/bin:$PATH</div></blockquote>
 <p>This can be added to your <cite>.bashrc</cite> to be run automatically when you login.</p>
 <p>To set up a developer installation of pax in your xecluster home directory, first follow the steps for installing anaconda and the required packages in the main readme (I didn&#8217;t try to install snappy but used the workaround). Then add the following to your .bashrc:</p>
-<div class="highlight-python"><div class="highlight"><pre># use Basho&#39;s git in totally insecure mode
+<div class="highlight-python"><div class="highlight"><pre># use git in totally insecure mode
 export PATH=/home/kaminsky/software/bin:$PATH
 export GIT_SSL_NO_VERIFY=true
 </pre></div>
@@ -73,29 +72,11 @@ python setup.py develop
 </div>
 <div class="section" id="how-do-i-run-pax-at-nikhef">
 <h2>How do I run <cite>pax</cite> at Nikhef?<a class="headerlink" href="#how-do-i-run-pax-at-nikhef" title="Permalink to this headline">¶</a></h2>
-<p>Running pax at Nikhef requires you to add python 3.4 to your path.
-This can be done by running the following command from a shell:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ export PATH=&quot;/data/xenon/bartp/anaconda3/bin:$PATH&quot;
+<p>Similar to above. If you want, you can use the pax Jelle set up by adding:</p>
+<div class="highlight-python"><div class="highlight"><pre>$ export PATH=&quot;/data/xenon/anaconda/bin:/data/xenon/pax:$PATH&quot;
 </pre></div>
 </div>
-<p>This can be added to your <cite>.bashrc</cite> to be run automatically when you login.
-After setting your environment you need a local copy of pax, clone it
-from github by executing:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ git clone https://github.com/XENON1T/pax.git
-</pre></div>
-</div>
-<p>After doing:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ cd pax/bin
-</pre></div>
-</div>
-<p>Setup pax by executing:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ python setup.py develop
-</pre></div>
-</div>
-<p>Pax should now work, test it by running:</p>
-<div class="highlight-python"><div class="highlight"><pre>$ python paxer --plot
-</pre></div>
-</div>
+<p>This can be added to your <cite>.bashrc</cite> to be run automatically when you login.</p>
 </div>
 <div class="section" id="can-i-set-up-pax-on-my-windows-machine">
 <h2>Can I set up pax on my windows machine?<a class="headerlink" href="#can-i-set-up-pax-on-my-windows-machine" title="Permalink to this headline">¶</a></h2>
@@ -123,24 +104,36 @@ install the missing module using easy_install, or Gohlke&#8217;s page mentioned 
 <p>Unfortunately, Windows + Python3 + Root is not exactly a winning team; if you use windows you&#8217;ll be stuck
 with the other 433 output formats we have.</p>
 </div>
-<div class="section" id="how-do-i-get-root-working">
-<h2>How do I get ROOT working<a class="headerlink" href="#how-do-i-get-root-working" title="Permalink to this headline">¶</a></h2>
-<p>ROOT is a dependency and you&#8217;re expected to install it yourself.  That said, we offer the follow two scripts that should install it for you.  Be sure that your GCC compiler version is more than 4.8 because ROOT requires that now.  Most problems people experience with <cite>pax</cite> are related to problems within the ROOT system.  We&#8217;re working with them to make it better.  In the meantime, try these scripts:</p>
-<div class="highlight-python"><div class="highlight"><pre>source travis/linux_setup.sh  # Only run for Ubuntu
-source travis/install-ROOT.sh
-</pre></div>
-</div>
-<p>If it fails for your system, feel free to try to fix it and let us know so we can update the script.  You can always look within the shell script to see what we&#8217;re doing if you run into an issue.</p>
-<ul class="simple">
-<li>Just follow the instructions on <a class="reference external" href="https://github.com/XENON1T/pax/blob/master/docs/pyroot.rst">the PyROOT page</a>.</li>
+<div class="section" id="how-do-i-get-pyroot-working">
+<h2>How do I get pyROOT working<a class="headerlink" href="#how-do-i-get-pyroot-working" title="Permalink to this headline">¶</a></h2>
+<dl class="docutils">
+<dt>To use ROOT output from pax, you need to make sure pyROOT works. You have several options</dt>
+<dd><ul class="first simple">
+<li><strong>Use python 2.</strong> In this case, pyROOT should work (for windows only on ROOT 5). Just make sure the <cite>PYTHONPATH</cite> environment variable (which controls where python searches for libraries) is set to the directory containing ROOT.py.</li>
+<li><strong>Use Daniela&#8217;s binaries with conda</strong> Daniela has packaged ROOT + pyROOT + rootpy in a conda package. Instructions on how to use it are here: <cite>https://github.com/rootpy/rootpy/issues/642#issuecomment-137389446</cite></li>
+<li><strong>Use the travis scripts</strong> Before Daniela&#8217;s package, we made scripts to install ROOT on travis. Be sure that your GCC compiler version is more than 4.8 because ROOT requires that now. The scripts are here:</li>
 </ul>
+<p>source travis/linux_setup.sh  # Only run for Ubuntu
+source travis/install-ROOT.sh</p>
+<ul class="last simple">
+<li><strong>Use Sander&#8217;s instructions</strong> Before those scripts, Sander made <a class="reference external" href="https://github.com/XENON1T/pax/blob/master/docs/pyroot.rst">these instructions</a>.</li>
+</ul>
+</dd>
+</dl>
 </div>
-<div class="section" id="snappy-on-osx">
-<h2>Snappy on OSX<a class="headerlink" href="#snappy-on-osx" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="how-do-i-install-snappy-on-osx">
+<h2>How do I install Snappy on OSX?<a class="headerlink" href="#how-do-i-install-snappy-on-osx" title="Permalink to this headline">¶</a></h2>
 <p>After instally <cite>snappy</cite> through MacPorts, please run:</p>
 <div class="highlight-python"><div class="highlight"><pre>CFLAGS=-I/opt/local/include LDFLAGS=-L/opt/local/lib pip install python-snappy
 </pre></div>
 </div>
+</div>
+</div>
+<div class="section" id="usage">
+<h1>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="how-do-i-analyze-some-specific-xenon100-events-with-pax">
+<h2>How do I analyze some specific XENON100 events with pax?<a class="headerlink" href="#how-do-i-analyze-some-specific-xenon100-events-with-pax" title="Permalink to this headline">¶</a></h2>
+<p>Use the Dump_XENON100_events tool available here: <cite>https://github.com/XENON1T/XeAnalysisScripts/tree/master/PaxProcessingHelpers/DumpX100Events</cite></p>
 </div>
 <div class="section" id="how-do-i-use-pax-to-reduce-raw-data-files">
 <h2>How do I use pax to reduce raw data files?<a class="headerlink" href="#how-do-i-use-pax-to-reduce-raw-data-files" title="Permalink to this headline">¶</a></h2>
@@ -168,16 +161,16 @@ source travis/install-ROOT.sh
 </div>
 <div class="section" id="how-do-i-reduce-the-file-size-of-my-processed-data">
 <h2>How do I reduce the file size of my processed data?<a class="headerlink" href="#how-do-i-reduce-the-file-size-of-my-processed-data" title="Permalink to this headline">¶</a></h2>
-<p>By default we store a lot of low-level information in the processed output files. If you need smaller files, first try to make &#8216;light&#8217; files using the reprocess configuration:</p>
+<p>By default we store a lot of low-level information in the processed output files. If you need smaller files, first try to make &#8216;light&#8217; files using the reclassify configuration:</p>
 <blockquote>
-<div>paxer &#8211;config Reprocess &#8211;input your_large_file.hdf5</div></blockquote>
-<p>This will remove fields like the per-peak sum-waveform and hitpattern from the file, reducing the filesize significantly. You can remove more or less fields by playing with the fields_to_ignore option (see Reprocess.ini). Whatever you do with this field, put either <cite>all_hits</cite> or <cite>hits</cite> on it: <cite>&#8216;hits&#8217;</cite>  is a peak property which stores all the hits in a peak, <cite>all_hits</cite> is an event property which stores all hits. You don&#8217;t want both, and in fact you will get an error if you try.</p>
+<div>paxer &#8211;config reclassify &#8211;input your_large_file.hdf5</div></blockquote>
+<p>This will remove fields like the per-peak sum-waveform and hitpattern from the file, reducing the filesize significantly. You can remove more or less fields by playing with the fields_to_ignore option (see light_output.ini). Whatever you do with this field, put either <cite>all_hits</cite> or <cite>hits</cite> on it: <cite>&#8216;hits&#8217;</cite>  is a peak property which stores all the hits in a peak, <cite>all_hits</cite> is an event property which stores all hits. You don&#8217;t want both, and in fact you will get an error if you try.</p>
 <p>If the files are still too big for you, try using a flattener (see XeAnalysisScripts, or write your own) to save only the main S1/S2 information. Or just select only events you need. Or just buy more disk space.</p>
 </div>
-<div class="section" id="how-do-i-use-pax-to-generate-files-to-be-processed-by-xerawdp">
-<h2>How do I use pax to generate files to be processed by Xerawdp?<a class="headerlink" href="#how-do-i-use-pax-to-generate-files-to-be-processed-by-xerawdp" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="how-do-i-use-pax-to-generate-xed-files-for-xerawdp-processing">
+<h2>How do I use pax to generate XED files for Xerawdp processing?<a class="headerlink" href="#how-do-i-use-pax-to-generate-xed-files-for-xerawdp-processing" title="Permalink to this headline">¶</a></h2>
 <p>Pax has an XED output plugin which you can use just like other output plugins. For example, to make an XED file containing simulated events, do <cite>paxer &#8211;config XENON100 Simulation to_XED</cite>.</p>
-<p>The hard part is getting Xerawdp to read the XED file you produced:</p>
+<p>The hard part is getting Xerawdp to read the XED file you produced. For a single XED file, here is a solution that works (or at least used to):</p>
 <ul class="simple">
 <li>Make some folder on xecluster to contain everything.</li>
 <li>Make a subfolder <cite>raw</cite>, containing another subfolder <cite>xe100_150726_1253</cite> (I will keep using this dataset name, but you can of course put any date and time you want).</li>
@@ -198,15 +191,19 @@ source travis/install-ROOT.sh
         <div class="sphinxsidebarwrapper">
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Frequently Asked Questions</a><ul>
-<li><a class="reference internal" href="#how-do-i-run-pax-at-lngs-on-xecluster">How do I run <cite>pax</cite> at LNGS on xecluster?</a></li>
+<li><a class="reference internal" href="#">Installation and setup</a><ul>
+<li><a class="reference internal" href="#how-do-i-set-up-pax-at-lngs-on-xecluster">How do I set up <cite>pax</cite> at LNGS on xecluster?</a></li>
 <li><a class="reference internal" href="#how-do-i-run-pax-at-nikhef">How do I run <cite>pax</cite> at Nikhef?</a></li>
 <li><a class="reference internal" href="#can-i-set-up-pax-on-my-windows-machine">Can I set up pax on my windows machine?</a></li>
-<li><a class="reference internal" href="#how-do-i-get-root-working">How do I get ROOT working</a></li>
-<li><a class="reference internal" href="#snappy-on-osx">Snappy on OSX</a></li>
+<li><a class="reference internal" href="#how-do-i-get-pyroot-working">How do I get pyROOT working</a></li>
+<li><a class="reference internal" href="#how-do-i-install-snappy-on-osx">How do I install Snappy on OSX?</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#usage">Usage</a><ul>
+<li><a class="reference internal" href="#how-do-i-analyze-some-specific-xenon100-events-with-pax">How do I analyze some specific XENON100 events with pax?</a></li>
 <li><a class="reference internal" href="#how-do-i-use-pax-to-reduce-raw-data-files">How do I use pax to reduce raw data files?</a></li>
 <li><a class="reference internal" href="#how-do-i-reduce-the-file-size-of-my-processed-data">How do I reduce the file size of my processed data?</a></li>
-<li><a class="reference internal" href="#how-do-i-use-pax-to-generate-files-to-be-processed-by-xerawdp">How do I use pax to generate files to be processed by Xerawdp?</a></li>
+<li><a class="reference internal" href="#how-do-i-use-pax-to-generate-xed-files-for-xerawdp-processing">How do I use pax to generate XED files for Xerawdp processing?</a></li>
 </ul>
 </li>
 </ul>

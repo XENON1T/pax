@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.peak_processing package &mdash; Processor for Analyzing XENON1T 4.0.0 documentation</title>
+    <title>pax.plugins.peak_processing package &mdash; Processor for Analyzing XENON1T 4.0.1 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '4.0.0',
+        VERSION:     '4.0.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.0.0 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.0.1 documentation" href="index.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -41,83 +41,8 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-pax.plugins.peak_processing.BasicProperties">
-<span id="pax-plugins-peak-processing-basicproperties-module"></span><h2>pax.plugins.peak_processing.BasicProperties module<a class="headerlink" href="#module-pax.plugins.peak_processing.BasicProperties" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="pax.plugins.peak_processing.BasicProperties.BasicProperties">
-<em class="property">class </em><code class="descclassname">pax.plugins.peak_processing.BasicProperties.</code><code class="descname">BasicProperties</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/BasicProperties.html#BasicProperties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.BasicProperties.BasicProperties" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></code></a></p>
-<p>Computes basic properties of each peak, based on the hits.
-Also labels peak as &#8216;lone_hit&#8217; if only one channel contributes
-We always assume the hits are sorted from left to right. [really? where?]</p>
-<dl class="method">
-<dt id="pax.plugins.peak_processing.BasicProperties.BasicProperties.transform_event">
-<code class="descname">transform_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/BasicProperties.html#BasicProperties.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.BasicProperties.BasicProperties.transform_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.peak_processing.BasicProperties.CountCoincidentNoisePulses">
-<em class="property">class </em><code class="descclassname">pax.plugins.peak_processing.BasicProperties.</code><code class="descname">CountCoincidentNoisePulses</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/BasicProperties.html#CountCoincidentNoisePulses"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.BasicProperties.CountCoincidentNoisePulses" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></code></a></p>
-<dl class="method">
-<dt id="pax.plugins.peak_processing.BasicProperties.CountCoincidentNoisePulses.transform_event">
-<code class="descname">transform_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/BasicProperties.html#CountCoincidentNoisePulses.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.BasicProperties.CountCoincidentNoisePulses.transform_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.peak_processing.BasicProperties.SumWaveformProperties">
-<em class="property">class </em><code class="descclassname">pax.plugins.peak_processing.BasicProperties.</code><code class="descname">SumWaveformProperties</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/BasicProperties.html#SumWaveformProperties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.BasicProperties.SumWaveformProperties" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></code></a></p>
-<p>Computes properties based on the hits-only sum waveform</p>
-<dl class="method">
-<dt id="pax.plugins.peak_processing.BasicProperties.SumWaveformProperties.startup">
-<code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/BasicProperties.html#SumWaveformProperties.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.BasicProperties.SumWaveformProperties.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.peak_processing.BasicProperties.SumWaveformProperties.transform_event">
-<code class="descname">transform_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/BasicProperties.html#SumWaveformProperties.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.BasicProperties.SumWaveformProperties.transform_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="function">
-<dt id="pax.plugins.peak_processing.BasicProperties.compute_area_deciles">
-<code class="descclassname">pax.plugins.peak_processing.BasicProperties.</code><code class="descname">compute_area_deciles</code><span class="sig-paren">(</span><em>w</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/BasicProperties.html#compute_area_deciles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.BasicProperties.compute_area_deciles" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return (index of mid area, array of the 0th ... 10 th area decile ranges in samples) of w
-e.g. range_area_decile[5] = range of 50% area = distance (in samples)
-between point of 25% area and 75% area (with boundary samples added fractionally).
-First element (0) of array is always zero, last element (10) is the length of w in samples.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pax.plugins.peak_processing.BasicProperties.integrate_until_fraction">
-<code class="descclassname">pax.plugins.peak_processing.BasicProperties.</code><code class="descname">integrate_until_fraction</code><span class="sig-paren">(</span><em>w</em>, <em>fractions_desired</em>, <em>results</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/BasicProperties.html#integrate_until_fraction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.BasicProperties.integrate_until_fraction" title="Permalink to this definition">¶</a></dt>
-<dd><p>For array of fractions_desired, integrate w until fraction of area is reached, place sample index in results
-Will add last sample needed fractionally.
-eg. if you want 25% and a sample takes you from 20% to 30%, 0.5 will be added.
-Assumes fractions_desired is sorted and all in [0, 1]!</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pax.plugins.peak_processing.BasicProperties.put_w_in_center_of_field">
-<code class="descclassname">pax.plugins.peak_processing.BasicProperties.</code><code class="descname">put_w_in_center_of_field</code><span class="sig-paren">(</span><em>w</em>, <em>field</em>, <em>center_index</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/BasicProperties.html#put_w_in_center_of_field"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.BasicProperties.put_w_in_center_of_field" title="Permalink to this definition">¶</a></dt>
-<dd><p>Stores (part of) the array w in a fixed length array field, with center_index in field&#8217;s center.
-Assumes field has odd length.</p>
-</dd></dl>
-
-<dl class="function">
-<dt id="pax.plugins.peak_processing.BasicProperties.weighted_mean_variance">
-<code class="descclassname">pax.plugins.peak_processing.BasicProperties.</code><code class="descname">weighted_mean_variance</code><span class="sig-paren">(</span><em>values</em>, <em>weights</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/BasicProperties.html#weighted_mean_variance"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.BasicProperties.weighted_mean_variance" title="Permalink to this definition">¶</a></dt>
-<dd><p>Return the weighted mean, and the weighted sum square deviation from the weighted mean.
-values, weights &#8211; Numpy ndarrays with the same shape.
-Stolen from <a class="reference external" href="http://stackoverflow.com/questions/2413522/weighted-standard-deviation-in-numpy">http://stackoverflow.com/questions/2413522/weighted-standard-deviation-in-numpy</a></p>
-</dd></dl>
-
+<div class="section" id="pax-plugins-peak-processing-basicproperties-module">
+<h2>pax.plugins.peak_processing.BasicProperties module<a class="headerlink" href="#pax-plugins-peak-processing-basicproperties-module" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="module-pax.plugins.peak_processing.ClassifyPeaks">
 <span id="pax-plugins-peak-processing-classifypeaks-module"></span><h2>pax.plugins.peak_processing.ClassifyPeaks module<a class="headerlink" href="#module-pax.plugins.peak_processing.ClassifyPeaks" title="Permalink to this headline">¶</a></h2>
@@ -198,7 +123,7 @@ Works with a penalty point system (see #126):
   <ul>
 <li><a class="reference internal" href="#">pax.plugins.peak_processing package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#module-pax.plugins.peak_processing.BasicProperties">pax.plugins.peak_processing.BasicProperties module</a></li>
+<li><a class="reference internal" href="#pax-plugins-peak-processing-basicproperties-module">pax.plugins.peak_processing.BasicProperties module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.peak_processing.ClassifyPeaks">pax.plugins.peak_processing.ClassifyPeaks module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.peak_processing.HitpatternSpread">pax.plugins.peak_processing.HitpatternSpread module</a></li>
 <li><a class="reference internal" href="#pax-plugins-peak-processing-naturalbreaksclustering-module">pax.plugins.peak_processing.NaturalBreaksClustering module</a></li>

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.interaction_processing package &mdash; Processor for Analyzing XENON1T 4.0.0 documentation</title>
+    <title>pax.plugins.interaction_processing package &mdash; Processor for Analyzing XENON1T 4.0.1 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '4.0.0',
+        VERSION:     '4.0.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.0.0 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.0.1 documentation" href="index.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -47,6 +47,17 @@
 <dt id="pax.plugins.interaction_processing.BuildInteractions.BasicInteractionProperties">
 <em class="property">class </em><code class="descclassname">pax.plugins.interaction_processing.BuildInteractions.</code><code class="descname">BasicInteractionProperties</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/interaction_processing/BuildInteractions.html#BasicInteractionProperties"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.interaction_processing.BuildInteractions.BasicInteractionProperties" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></code></a></p>
+<p>Compute basic properties of each interaction
+S1 and S2 x, y, z corrections, S1 hitpattern fit</p>
+<dl class="method">
+<dt id="pax.plugins.interaction_processing.BuildInteractions.BasicInteractionProperties.area_correction">
+<code class="descname">area_correction</code><span class="sig-paren">(</span><em>peak</em>, <em>channels_in_pattern</em>, <em>expected_pattern</em>, <em>confused_channels</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/interaction_processing/BuildInteractions.html#BasicInteractionProperties.area_correction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.interaction_processing.BuildInteractions.BasicInteractionProperties.area_correction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return multiplicative area correction obtained by replacing area in confused_channels by
+expected area based on expected_pattern in channels_in_pattern.
+expected_pattern does not have to be normalized: we&#8217;ll do that for you.
+We&#8217;ll also ensure any confused_channels not in channels_in_pattern are ignored.</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="pax.plugins.interaction_processing.BuildInteractions.BasicInteractionProperties.startup">
 <code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/interaction_processing/BuildInteractions.html#BasicInteractionProperties.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.interaction_processing.BuildInteractions.BasicInteractionProperties.startup" title="Permalink to this definition">¶</a></dt>
