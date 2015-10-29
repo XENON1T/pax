@@ -4,6 +4,15 @@ History
 -------
 
 ------------------
+4.1.0 (2015-10-29)
+------------------
+
+* Hit finding speed up (#245)
+* Modifications for working with other TPCs (#247)
+* Assorted bug fixes
+* Documentation fixes
+
+------------------
 4.0.0 (2015-10-17)
 ------------------
 
