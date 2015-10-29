@@ -59,7 +59,7 @@ class WriteROOTClass(plugin.OutputPlugin):
             # Construct the event tree
             # Branchref() is needed to enable convenient readout of TRef and TRefArray
             # TODO: somehow it works with or without it??
-            self.event_tree = ROOT.TTree('T1', 'Tree with %s events from pax' % self.config['tpc_name'])
+            self.event_tree = ROOT.TTree('tree', 'Tree with %s events from pax' % self.config['tpc_name'])
             self.event_tree.BranchRef()
 
             # Write the event class C++ definition
