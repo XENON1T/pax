@@ -29,7 +29,7 @@ def gaps_between_hits(hits):
 
 
 def count_hits_per_channel(peak, config, weights=None):
-    return np.bincount(peak.hits['channel'], minlength=config['n_channels'], weights=weights)
+    return np.bincount(peak.hits['channel'].astype(np.int16), minlength=config['n_channels'], weights=weights)
 
 
 def adc_to_pe(config, channel, use_reference_gain=False, use_reference_gain_if_zero=False):

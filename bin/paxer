@@ -42,6 +42,8 @@ output_plugin_aliases = OrderedDict([
 output_plugin_aliases.update([(fc, ('Table.TableWriter', {'output_format': fc}))
                               for fc in formats.flat_data_formats.keys()])
 output_plugin_aliases.update([
+    ('root',         'ROOT.WriteROOTClass'),
+
     # Zipped formats -- allow arbitrary event numbering
     ('zpickle', 'Pickle.WriteZippedPickles'),
     ('zbson', 'BSON.WriteZippedBSON'),
@@ -58,7 +60,6 @@ output_plugin_aliases.update([
     # Formats that don't have a plugin to read data back
     ('raw_dump',     'RawWaveformDump.DumpSumWaveformToBinary'),
     ('mongo',        'Mongo.MongoDBWriteTriggered'),
-    ('root',         'ROOT.WriteROOTClass')
 ])
 
 input_plugin_aliases = OrderedDict([
@@ -79,6 +80,9 @@ input_plugin_aliases.update([(fc, ('Table.TableReader', {'format': fc}))
 input_plugin_aliases.update([
     # Simulator input formats shouldn't be here: if you load simulated events you want a different config as well,
     # so you still want to use the Simulator ini file.
+
+    # ROOT
+    ('root',     'ROOT.ReadROOTClass'),
 
     # Mongo
     ('mongo_untriggered', 'MongoDBReadUntriggered'),

@@ -1,11 +1,10 @@
 import os
-from copy import copy
 import re
 import numpy as np
 import ROOT
 
 import pax      # For version number
-from pax import plugin, data_model
+from pax import plugin, data_model, datastructure
 
 overall_header = """
 #include "TFile.h"
@@ -27,6 +26,33 @@ public:
 """
 
 
+def load_event_class(filename):
+    """Read a C++ root class definition, generating dictionaries for vectors of classes"""
+    # Find the classes defined in the file
+    classnames = []
+    with open(filename, 'r') as classfile:
+        for line in classfile.readlines():
+            m = re.match(r'class (\w*) ', line)
+            if m:
+                classnames.append(m.group(1))
+
+    # Load the file in ROOT
+    ROOT.gROOT.ProcessLine('.L %s+' % filename)
+
+    # Build the required dictionaries for the vectors of classes
+    for name in classnames:
+        ROOT.gInterpreter.GenerateDictionary("vector<%s>" % name, filename)
+
+
+def cleanup():
+    """Clean any C++ junk (AutoDict, pax_event_class) in the current directory
+    TODO: obviously this is a temp hack, all the stuff should go into some subdir, which we can then delete
+    """
+    for f in os.listdir('.'):
+        if re.search(r'pax_event_class', f) or re.search(r'AutoDict', f):
+            os.remove(os.path.join('.', f))
+
+
 class WriteROOTClass(plugin.OutputPlugin):
 
     def startup(self):
@@ -38,17 +64,9 @@ class WriteROOTClass(plugin.OutputPlugin):
         self._custom_types = []
 
         # TODO: add overwrite check
-        self.cleanup()
+        cleanup()
         self.f = ROOT.TFile(self.config['output_name'] + '.root', "RECREATE")
         self.event_tree = None
-
-    def cleanup(self):
-        """Clean any C++ crap (AutoDict, pax_event_class) in the current directory
-        TODO: obviously this is a temp hack, all the stuff should go into some subdir, which we can then delete
-        """
-        for f in os.listdir('.'):
-            if re.search(r'pax_event_class', f) or re.search(r'AutoDict', f):
-                os.remove(os.path.join('.', f))
 
     def write_event(self, event):
 
@@ -59,7 +77,8 @@ class WriteROOTClass(plugin.OutputPlugin):
             # Construct the event tree
             # Branchref() is needed to enable convenient readout of TRef and TRefArray
             # TODO: somehow it works with or without it??
-            self.event_tree = ROOT.TTree('tree', 'Tree with %s events from pax' % self.config['tpc_name'])
+            self.event_tree = ROOT.TTree(self.config['tree_name'],
+                                         'Tree with %s events from pax' % self.config['tpc_name'])
             self.event_tree.BranchRef()
 
             # Write the event class C++ definition
@@ -68,12 +87,7 @@ class WriteROOTClass(plugin.OutputPlugin):
             with open('pax_event_class.cpp', mode='w') as outfile:
                 outfile.write(overall_header)
                 outfile.write(self._build_model_class(event))
-            ROOT.gROOT.ProcessLine('.L pax_event_class.cpp+')
-
-            # Build dictionaries for the custom vector types
-            for vtype in self._custom_types:
-                self.log.debug("Generating dictionary for %s" % vtype)
-                ROOT.gInterpreter.GenerateDictionary("vector<%s>" % vtype, "pax_event_class.cpp")
+            load_event_class('pax_event_class.cpp')
             self.log.debug("Event class loaded, creating event")
             self.root_event = ROOT.Event()
             # TODO: setting the splitlevel to 0 or 99 seems to have no effect??
@@ -84,46 +98,36 @@ class WriteROOTClass(plugin.OutputPlugin):
 
         # Last collection of each data model type seen
         self.last_collection = {}
-        self.set_values(event, self.root_event)
+        self.set_root_object_attrs(event, self.root_event)
         self.event_tree.Fill()
 
-    def set_values(self, python_object, root_object):
-        """Set attribute values of the root object based on data_model instance python object"""
+    def set_root_object_attrs(self, python_object, root_object):
+        """Set attribute values of the root object based on data_model instance python object
+        Returns nothing: modifies root_objetc in place
+        """
         obj_name = python_object.__class__.__name__
-        fields_to_ignore = copy(self.config['fields_to_ignore'])
-
-        # Handle collections first (so references will work afterwards)
-        # TODO: add sort method to make sure event.peaks is done before peak.interactions
-        # sorting with reverse=True is just a dirty hack ;-)
+        fields_to_ignore = self.config['fields_to_ignore']
         list_field_info = python_object.get_list_field_info()
-        list_field_names = sorted(list(list_field_info.keys()), reverse=True)
-        for field_name in list_field_names:
-            if field_name in fields_to_ignore:
-                continue
-            element_name = list_field_info[field_name].__name__
-            list_of_elements = getattr(python_object, field_name)
-
-            # Recursively initialize collection elements
-            root_vector = getattr(root_object, field_name)
-            root_vector.clear()
-            for element_python_object in list_of_elements:
-                element_root_object = getattr(ROOT, element_name)()
-                self.set_values(element_python_object, element_root_object)
-                root_vector.push_back(element_root_object)
-            self.last_collection[element_name] = list_of_elements
-
-            fields_to_ignore.append(field_name)
 
         for field_name, field_value in python_object.get_fields_data():
             if field_name in fields_to_ignore:
                 continue
 
-            # References (e.g. interaction.s1) -> replace by index
-            if isinstance(field_value, data_model.Model):
-                setattr(root_object, field_name, self._get_index(field_value))
+            elif isinstance(field_value, list):
+                # Collection field -- recursively initialize collection elements
+                element_name = list_field_info[field_name].__name__
+                list_of_elements = getattr(python_object, field_name)
 
-            # Everything else (float, int, bool, string, numpy array)
+                root_vector = getattr(root_object, field_name)
+                root_vector.clear()
+                for element_python_object in list_of_elements:
+                    element_root_object = getattr(ROOT, element_name)()
+                    self.set_root_object_attrs(element_python_object, element_root_object)
+                    root_vector.push_back(element_root_object)
+                self.last_collection[element_name] = list_of_elements
+
             else:
+                # Everything else apparently just works magically:
                 setattr(root_object, field_name, field_value)
 
         # Add values to user-defined fields
@@ -141,7 +145,6 @@ class WriteROOTClass(plugin.OutputPlugin):
     def shutdown(self):
         self.write_to_disk()
         self.f.Close()
-        # self.cleanup()
 
     def _build_model_class(self, model):
         """Return ROOT C++ class definition corresponding to instance of data_model.Model
@@ -204,3 +207,67 @@ class WriteROOTClass(plugin.OutputPlugin):
                                      data_attributes=class_attributes,
                                      child_classes_code=child_classes_code,
                                      class_version=pax.__version__.replace('.', ''))
+
+
+class ReadROOTClass(plugin.InputPlugin):
+
+    def startup(self):
+        # Make sure to store the file as an attribute, else it will go out of scope -> garbage collected -> you die
+        if not os.path.exists('./pax_event_class.cpp'):
+            raise ValueError("You must provide pax_event_class.cpp in the current directory to read the ROOT format.\n"
+                             "Looking for a nice project? Please fix this!")
+        load_event_class('pax_event_class.cpp')
+        if not os.path.exists(self.config['input_name']):
+            raise ValueError("Input file %s does not exist" % self.config['input_name'])
+        self.f = ROOT.TFile(self.config['input_name'])
+        self.t = self.f.Get(self.config['tree_name'])
+        self.number_of_events = self.t.GetEntries()
+        # TODO: read in event numbers, so we can select events!
+
+    def get_events(self):
+        for event_i in range(self.number_of_events):
+            self.t.GetEntry(event_i)
+            root_event = self.t.events
+            event = datastructure.Event(n_channels=root_event.n_channels,
+                                        start_time=root_event.start_time,
+                                        sample_duration=root_event.sample_duration,
+                                        stop_time=root_event.stop_time)
+            self.set_python_object_attrs(root_event, event)
+            yield event
+
+    def set_python_object_attrs(self, root_object, py_object):
+        """Sets attribute values of py_object to corresponding values in ROOT_object
+        Returns nothing (modifies py_object in place)
+        """
+        for field_name, default_value in py_object.get_fields_data():
+
+            try:
+                root_value = getattr(root_object, field_name)
+            except AttributeError:
+                # Value not present in root object (e.g. event.all_hits)
+                self.log.debug("%s not in root object?" % field_name)
+                continue
+
+            if isinstance(default_value, list):
+                child_class_name = py_object.get_list_field_info()[field_name].__name__
+                result = []
+                for child_i in range(len(root_value)):
+                    child_py_object = getattr(datastructure, child_class_name)()
+                    self.set_python_object_attrs(root_value[child_i], child_py_object)
+                    result.append(child_py_object)
+
+            elif isinstance(default_value, np.ndarray):
+                try:
+                    if not len(root_value):
+                        # Empty! no point to assign the value. Errors for structured array.
+                        continue
+                except TypeError:
+                    self.log.warning("Strange error in numpy array field %s, type from ROOT object is %s, "
+                                     "which is not iterable!" % (field_name, type(root_value)))
+                    continue
+                result = np.array(root_value, dtype=default_value.dtype)
+
+            else:
+                result = root_value
+
+            setattr(py_object, field_name, result)
