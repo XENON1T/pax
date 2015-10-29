@@ -364,10 +364,10 @@ class Interaction(StrictModel):
     """An interaction in the TPC, reconstructed from a pair of S1 and S2 peaks.
     """
     #: The S1 peak of the interaction
-    s1 = Peak()
+    s1 = INT_NAN
 
     #: The S2 peak of the interaction
-    s2 = Peak()
+    s2 = INT_NAN
 
     ##
     # Position information
