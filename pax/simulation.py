@@ -9,12 +9,13 @@ import math
 import time
 
 import numpy as np
+
 from scipy import stats
 
 from pax import units, utils, datastructure
 from pax.PatternFitter import PatternFitter
+from pax.dsputils import cluster_by_diff
 from pax.utils import Memoize
-
 
 log = logging.getLogger('SimulationCore')
 
@@ -90,17 +91,24 @@ class Simulator(object):
             self.channel_offset = 1 if c['pmt_0_is_fake'] else 0
 
         # Init s2 per pmt lce map
+        qes = np.array(c['quantum_efficiencies'])
         if c.get('s2_patterns_file', None) is not None:
-            qes = np.array(c['quantum_efficiencies'])
-            topchs = np.array(c['channels_top'])
-            self.s2_patterns = PatternFitter(
-                filename=utils.data_file_name(c['s2_patterns_file']),
-                zoom_factor=c.get('s2_patterns_zoom_factor', 1),
-                adjust_to_qe=qes[topchs],
-                default_errors=c['relative_qe_error'] + c['relative_gain_error'],
-            )
+            self.s2_patterns = PatternFitter(filename=utils.data_file_name(c['s2_patterns_file']),
+                                             zoom_factor=c.get('s2_patterns_zoom_factor', 1),
+                                             adjust_to_qe=qes[c['channels_top']],
+                                             default_errors=c['relative_qe_error'] + c['relative_gain_error'])
         else:
             self.s2_patterns = None
+
+        # Init s1 pattern maps
+        # NB: do NOT adjust patterns for QE, map is data derived, so no need.
+        log.debug("Initializing s1 patterns...")
+        if 's1_patterns_file' in self.config:
+            self.s1_patterns = PatternFitter(filename=utils.data_file_name(c['s1_patterns_file']),
+                                             zoom_factor=c.get('s1_patterns_zoom_factor', 1),
+                                             default_errors=c['relative_qe_error'] + c['relative_gain_error'])
+        else:
+            self.s1_patterns = None
 
     def s2_electrons(self, electrons_generated=None, z=0., t=0.):
         """Return a list of electron arrival times in the ELR region caused by an S2 process.
@@ -153,7 +161,7 @@ class Simulator(object):
         if n_photons == 0:
             return np.array([])
 
-        if recoil_type == 'ER':
+        if recoil_type.lower() == 'er':
 
             # How many of these are primary excimers? Others arise through recombination.
             n_primaries = np.random.binomial(n=n_photons, p=self.config['s1_ER_primary_excimer_fraction'])
@@ -181,7 +189,7 @@ class Simulator(object):
 
             timings = np.concatenate((primary_timings, secondary_timings))
 
-        elif recoil_type == 'NR':
+        elif recoil_type.lower() == 'nr':
 
             # Neglible recombination time, same singlet/triplet ratio for primary & secondary excimers
             # Hence, we don't care about primary & secondary excimers at all:
@@ -192,8 +200,19 @@ class Simulator(object):
                 singlet_ratio=self.config['s1_NR_singlet_fraction']
             )
 
+        elif recoil_type.lower() == 'alpha':
+
+            # again neglible recombination time, same singlet/triplet ratio for primary & secondary excimers
+            # Hence, we don't care about primary & secondary excimers at all:
+            timings = self.singlet_triplet_delays(
+                np.zeros(n_photons),
+                t1=self.config['alpha_singlet_lifetime_liquid'],
+                t3=self.config['alpha_triplet_lifetime_liquid'],
+                singlet_ratio=self.config['s1_ER_alpha_singlet_fraction']
+            )
+
         else:
-            raise ValueError('Recoil type must be ER or NR, not %s' % type)
+            raise ValueError('Recoil type must be ER, NR or alpha, not %s' % type)
 
         return timings + t * np.ones(len(timings))
 
@@ -341,7 +360,7 @@ class Simulator(object):
                 if len(photon_detection_times) == 0:
                     continue
                 # Cluster into pulses for cheap ZLE
-                pmt_pulse_center_clusters = utils.cluster_by_diff(all_pmt_pulse_centers, 2 * self.config['zle_padding'])
+                pmt_pulse_center_clusters = cluster_by_diff(all_pmt_pulse_centers, 2 * self.config['zle_padding'])
             else:
                 # All in one cluster...
                 pmt_pulse_center_clusters = [all_pmt_pulse_centers]
@@ -497,6 +516,9 @@ class Simulator(object):
         return event
 
     def distribute_s2_photons(self, n_photons, x, y):
+        if not self.s2_patterns:
+            return self.randomize_photons_over_channels(n_photons, self.config['channels_top'])
+
         # How many photons to the top array?
         n_top = np.random.binomial(n=n_photons, p=self.config['s2_mean_area_fraction_top'])
 
@@ -515,11 +537,17 @@ class Simulator(object):
                                                      channels=self.config['channels_bottom'])
         return hitp
 
+    def distribute_s1_photons(self, n_photons, x, y, z):
+        if not self.s1_patterns:
+            return self.randomize_photons_over_channels(n_photons, self.config['channels_in_detector']['tpc'])
+        # TODO: compensate for S2 width & drift velocity increase after gate (both ~us effects though, not important)
+        return self.distribute_photons_by_pattern(n_photons, self.s1_patterns, (x, y, z))
+
     def distribute_photons_by_pattern(self, n_photons, pattern_fitter, coordinate_tuple):
         # TODO: assumes channels drawn from top, or from all channels (i.e. first index 0!!!)
+        # Note a CoordinateOutOfRange exception can be raised if points outside the TPC radius are asked
+        # We don't catch it here: users shouldn't ask for simulations of impossible things :-)
         lces = pattern_fitter.expected_pattern(coordinate_tuple)
-        if np.sum(lces) == 0:
-            raise ValueError("LCEs at position %s are all zero, cannot be normalized!" % (coordinate_tuple,))
         return self.randomize_photons_over_channels(n_photons,
                                                     channels=range(len(lces)),
                                                     relative_lce_per_channel=lces)
@@ -530,8 +558,9 @@ class Simulator(object):
         :param n_photons: number of photons to distribute
         :param channels: list of channel numbers that can receive photons. This will still be filtered
          to include only channels in self.config['channels_for_photons'].
-        :param relative_lce_per_channel: list of relative lce per channel. Should be >= 0 and sum to 1.
+        :param relative_lce_per_channel: list of relative lce per channel. Should all be >= 0.
                                          If omitted, will distribute photons uniformly over channels.
+                                         Does not have to be normalized to sum to 1.
         :return: array of length sim.config['n_channels'] with photon counts per channel
         """
         if n_photons == 0:
@@ -547,7 +576,7 @@ class Simulator(object):
             if relative_lce_per_channel is not None:
                 relative_lce_per_channel = relative_lce_per_channel[sel]
 
-        # Ensure relative LCEs are valid to one:
+        # Ensure relative LCEs are valid, and sum to one (among the remaining channels):
         if relative_lce_per_channel is not None:
             relative_lce_per_channel = np.clip(relative_lce_per_channel, 0, 1)
             relative_lce_per_channel /= np.sum(relative_lce_per_channel)
@@ -602,12 +631,11 @@ class SimulatedHitpattern(object):
         # and want that split to be random too.
         np.random.shuffle(photon_timings)
 
-        if z == - self.config['gate_to_anode_distance'] and simulator.s2_patterns is not None:
+        if z == - self.config['gate_to_anode_distance']:
             # Generated at anode: use S2 LCE data
             hitp = simulator.distribute_s2_photons(self.n_photons, x, y)
         else:
-            # S1, or S2 LCE map not present: distribute photons uniformly
-            hitp = simulator.randomize_photons_over_channels(self.n_photons)
+            hitp = simulator.distribute_s1_photons(self.n_photons, x, y, z)
 
         # Split photon times over channels
         self.arrival_times_per_channel = dict(zip(range(simulator.config['n_channels']),

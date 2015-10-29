@@ -244,6 +244,20 @@ class TableWriter(plugin.OutputPlugin):
                                           index_fields + [(type(child_model).__name__,
                                                            new_index)])
 
+            elif isinstance(field_value, np.ndarray) and field_value.dtype.names is not None:
+                # Hey this is already a structure array :-) Treat like a collection field (except don't recurse)
+                if field_name not in self.data:
+                    self.data[field_name] = {
+                        'tuples':          [],
+                        'records':         None,
+                        # Initialize dtype with the index fields + every column
+                        # in array becomes a field.... :-(
+                        'dtype':           [(x[0], np.int64) for x in index_fields] +
+                                           [(fn, field_value[fn].dtype) for fn in field_value.dtype.names],
+                        'index_depth':     len(m_indices),
+                    }
+                self.data[field_name]['tuples'].append(tuple(m_indices + list(field_value.tolist()[0])))
+
             elif isinstance(field_value, np.ndarray) and not self.output_format.supports_array_fields:
                 # Hack for formats without array field support: NumpyArrayFields must get their own dataframe
                 #  -- assumes field names are unique!
