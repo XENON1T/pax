@@ -7,13 +7,14 @@ History
 4.1.0 (2015-10-29)
 ------------------
 
-* Hit finding speed up (#245)
+* Signal processing speedup (#245)
+* S1 3d pattern simulation & goodness of fit computation (#237)
 * Modifications for working with other TPCs (#247)
-* Assorted bug fixes
-* Documentation fixes
+* Improvements to / fixes for noisy channel hit rejection
+* Assorted bug fixes (#241, #244) and documentation fixes
 
 ------------------
-4.0.0 (2015-10-17)
+4.0.1 (2015-10-17)
 ------------------
 
 * Memory leak fixed
@@ -29,6 +30,7 @@ History
 * Python 2 support (#217)
 * Paxer options to switch input and output type (#212)
 * Position reconstruction before classification (#223)
+* Fast PatternFitter for position reconstruction (#233)
 * Irregular correction map support, XENON100 S1(x,y,z) correction (#219)
 * S1 vs S2 classification fix (#221)
 * Several bugfixes and documentation improvements (e.g. #230)
