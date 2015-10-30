@@ -42,7 +42,7 @@ output_plugin_aliases = OrderedDict([
 output_plugin_aliases.update([(fc, ('Table.TableWriter', {'output_format': fc}))
                               for fc in formats.flat_data_formats.keys()])
 output_plugin_aliases.update([
-    ('root',         'ROOT.WriteROOTClass'),
+    ('root',         'ROOTClass.WriteROOTClass'),
 
     # Zipped formats -- allow arbitrary event numbering
     ('zpickle', 'Pickle.WriteZippedPickles'),
@@ -52,10 +52,6 @@ output_plugin_aliases.update([
     ('bson',  'BSON.WriteBSON'),
     ('json',  'BSON.WriteJSON'),
     ('xed',   'XED.WriteXED'),
-
-    # Old raw formats (deprecated / problematic)
-    ('_raw_pickles', 'Pickle.WriteToPickleFile'),
-    ('_avro',        'Avro.WriteAvro'),
 
     # Formats that don't have a plugin to read data back
     ('raw_dump',     'RawWaveformDump.DumpSumWaveformToBinary'),
@@ -73,7 +69,6 @@ input_plugin_aliases = OrderedDict([
     # Nonzipped formats
     ('bson',    'BSON.ReadBSON'),
     ('json',    'BSON.ReadJSON'),
-    ('avro',    'Avro.ReadAvro'),
 ])
 input_plugin_aliases.update([(fc, ('Table.TableReader', {'format': fc}))
                              for fc in formats.flat_data_formats.keys()])
@@ -82,14 +77,11 @@ input_plugin_aliases.update([
     # so you still want to use the Simulator ini file.
 
     # ROOT
-    ('root',     'ROOT.ReadROOTClass'),
+    ('root',     'ROOTClass.ReadROOTClass'),
 
     # Mongo
     ('mongo_untriggered', 'MongoDBReadUntriggered'),
     ('mongo_untriggered', 'MongoDBReadUntriggered'),
-
-    # Deprecated formats. Note some plugins have deprecated write code but not read code.
-    ('_raw_pickles',  'Pickle.DirWithPickleFiles'),
 ])
 
 

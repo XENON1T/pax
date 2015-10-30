@@ -4,7 +4,7 @@ import numpy as np
 import ROOT
 
 import pax      # For version number
-from pax import plugin, data_model, datastructure
+from pax import plugin, datastructure
 
 overall_header = """
 #include "TFile.h"
@@ -184,10 +184,6 @@ class WriteROOTClass(plugin.OutputPlugin):
                         source = field_value[0]
                     child_classes_code += '\n' + self._build_model_class(source)
                 class_attributes += '\tvector <%s>  %s;\n' % (element_model_name, field_name)
-
-            # "References" (e.g. interaction.s1) will be replaced by indices into corresponding collection
-            elif isinstance(field_value, data_model.Model):
-                class_attributes += '\tInt_t %s;\n' % field_name
 
             # Numpy array (assumed fixed-length, 1-d)
             elif isinstance(field_value, np.ndarray):

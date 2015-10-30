@@ -46,24 +46,24 @@ class TestBuildInteractions(unittest.TestCase):
         self.assertIsInstance(e.interactions[0], datastructure.Interaction)
 
         # First interaction: (largest S2, largest s1)
-        self.assertEqual(e.interactions[0].s1.area, 100 * 9)
-        self.assertEqual(e.interactions[0].s2.area, 101 * 9)
+        self.assertEqual(e.peaks[e.interactions[0].s1].area, 100 * 9)
+        self.assertEqual(e.peaks[e.interactions[0].s2].area, 101 * 9)
 
         # Largest S1 can't be paired with any further S2s -- no more after it.
         # Second and third interactions are with second largest S1
-        self.assertEqual(e.interactions[1].s1.area, 100 * 8)
-        self.assertEqual(e.interactions[1].s2.area, 101 * 9)
+        self.assertEqual(e.peaks[e.interactions[1].s1].area, 100 * 8)
+        self.assertEqual(e.peaks[e.interactions[1].s2].area, 101 * 9)
 
-        self.assertEqual(e.interactions[2].s1.area, 100 * 8)
-        self.assertEqual(e.interactions[2].s2.area, 101 * 8)
+        self.assertEqual(e.peaks[e.interactions[2].s1].area, 100 * 8)
+        self.assertEqual(e.peaks[e.interactions[2].s2].area, 101 * 8)
 
         # Similarly, fourth and fifth interaction are with third largest S1
         # No sixth interaction: further S2s below pairing threshold, and 3 largest S1s have now been used
-        self.assertEqual(e.interactions[3].s1.area, 100 * 7)
-        self.assertEqual(e.interactions[3].s2.area, 101 * 9)
+        self.assertEqual(e.peaks[e.interactions[3].s1].area, 100 * 7)
+        self.assertEqual(e.peaks[e.interactions[3].s2].area, 101 * 9)
 
-        self.assertEqual(e.interactions[4].s1.area, 100 * 7)
-        self.assertEqual(e.interactions[4].s2.area, 101 * 8)
+        self.assertEqual(e.peaks[e.interactions[4].s1].area, 100 * 7)
+        self.assertEqual(e.peaks[e.interactions[4].s2].area, 101 * 8)
 
         self.assertEqual(len(e.interactions), 5)
 
