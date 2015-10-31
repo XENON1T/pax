@@ -23,7 +23,7 @@ class NaturalBreaksClustering(plugin.TransformPlugin):
         self.dt = self.config['sample_duration']
         self.min_gap_size_for_break = self.config['min_gap_size_for_break'] / self.dt
         self.max_n_gaps_to_test = self.config['max_n_gaps_to_test']
-        self.min_split_goodness = InterpolatedUnivariateSpline(*self.config['split_goodness_threshold'])
+        self.min_split_goodness = InterpolatedUnivariateSpline(*self.config['split_goodness_threshold'], k=1)
 
     def transform_event(self, event):
         new_peaks = []
@@ -51,15 +51,13 @@ class NaturalBreaksClustering(plugin.TransformPlugin):
         gaps = dsputils.gaps_between_hits(hits)[1:]            # Remember first "gap" is zero: throw it away
         self.log.debug("Clustering hits %d-%d" % (hits[0]['center'], hits[-1]['center']))
 
-        # Get indices of the self.max_n_gaps_to_test largest gaps
-        split_threshold = self.min_split_goodness(np.log10(area_tot))
-        max_split_goodness = float('-inf')
-        max_split_goodness_i = 0
+        # Look for good split points
+        # TODO: could vectorize this, if speed becomes an issue
+        gos_observed = []
+        split_indices = []
         for gap_i in indices_of_largest_n(gaps, self.max_n_gaps_to_test):
             if gaps[gap_i] < self.min_gap_size_for_break:
-                self.log.debug('Breaking because gap size %d smaller than %d' % (gaps[gap_i],
-                                                                                 self.min_gap_size_for_break))
-                break
+                continue
 
             # Index of hit to split on = index first hit that will go to right cluster
             split_i = gap_i + 1
@@ -67,6 +65,16 @@ class NaturalBreaksClustering(plugin.TransformPlugin):
             # Compute the naturalness of this break
             split_goodness = compute_split_goodness(split_i,
                                                     hits['center'], hits['sum_absolute_deviation'], hits['area'])
+
+            split_indices.append(split_i)
+            gos_observed.append(split_goodness)
+
+        # Find the split point with the largest goodness of split
+        if len(gos_observed):
+            max_split_ii = np.argmax(gos_observed)
+            split_i = split_indices[max_split_ii]
+            split_goodness = gos_observed[max_split_ii]
+            split_threshold = self.min_split_goodness(np.log10(area_tot))
 
             # Should we split? If so, recurse.
             if split_goodness > split_threshold:
@@ -83,15 +91,12 @@ class NaturalBreaksClustering(plugin.TransformPlugin):
             else:
                 self.log.debug("Proposed split at %d not good enough (%0.3f < %0.3f)" % (
                     split_i, split_goodness, split_threshold))
-            if split_goodness >= max_split_goodness:
-                max_split_goodness = split_goodness
-                max_split_goodness_i = split_i
 
-        # If we get here, no clustering was needed
-        peak.interior_split_goodness = max_split_goodness
-        if max_split_goodness_i != 0:
-            peak.interior_split_fraction = min(np.sum(hits['area'][:max_split_goodness_i]),
-                                               np.sum(hits['area'][max_split_goodness_i:])) / area_tot
+            # If we get here, no clustering was needed
+            peak.interior_split_goodness = split_goodness
+            peak.interior_split_fraction = min(np.sum(hits['area'][:max_split_ii]),
+                                               np.sum(hits['area'][max_split_ii:])) / area_tot
+
         return [peak]
 
 
