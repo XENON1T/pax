@@ -50,6 +50,10 @@ addons:
 os:
   - osx
   - linux
+  
+matrix:
+  allow_failures:
+    - os: osx
 
 install:
   - deactivate
