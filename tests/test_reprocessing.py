@@ -2,6 +2,7 @@ import unittest
 import os
 
 import h5py
+import six
 
 from pax import core
 
@@ -28,6 +29,10 @@ class TestReprocessing(unittest.TestCase):
     def test_reprocessing(self):
 
         for plugin_info in plugins_to_test:
+            # Skip the ROOT test until we have Python 2 in Travis
+            if plugin_info['extension'] == 'root' and six.PY2:
+                continue
+
             print("\n\nNow testing %s\n" % plugin_info['name'])
 
             # Process the first event from the XED file to the format to test
