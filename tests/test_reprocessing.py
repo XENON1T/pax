@@ -1,6 +1,6 @@
 import unittest
+import os
 
-import six
 import h5py
 
 from pax import core
@@ -13,9 +13,9 @@ plugins_to_test = [
         'extension':    'hdf5',
     },
     {
-        'name':         'ROOT',
-        'read_plugin':  'ROOT.ReadROOTClass',
-        'write_plugin': 'ROOT.WriteROOTClass',
+        'name':         'ROOTClass',
+        'read_plugin':  'ROOTClass.ReadROOTClass',
+        'write_plugin': 'ROOTClass.WriteROOTClass',
         'extension':    'root',
     },
 
@@ -27,10 +27,6 @@ class TestReprocessing(unittest.TestCase):
     # TODO: delete the HDF5 files
     def test_reprocessing(self):
 
-        # For now, skip this test on  python 2
-        if six.PY2:
-            return
-
         for plugin_info in plugins_to_test:
             print("\n\nNow testing %s\n" % plugin_info['name'])
 
@@ -40,22 +36,28 @@ class TestReprocessing(unittest.TestCase):
                 'output': plugin_info['write_plugin'],
                 'output_name': 'output1'}})
             mypax.run()
+            self.assertTrue(os.path.exists('output1.' + plugin_info['extension']))
 
             # Reprocess from the format to test to an HDF5 file
+            output2_filename = 'output_after_%s' % plugin_info['name']
             mypax = core.Processor(config_names='reclassify', config_dict={'pax': {
                 'input_name':  'output1.' + plugin_info['extension'],
                 'input': plugin_info['read_plugin'],
-                'output_name': 'output_after_%s' % plugin_info['name']}})
+                'output_name': output2_filename}})
             mypax.run()
+            output2_filename += '.hdf5'
 
             # Open both HDF5 files.
             # TODO: This only works if the table writer is the first plugin tested!
-            store1 = h5py.File('output1.hdf5')
-            store2 = h5py.File('output2.hdf5')
+            self.assertTrue(os.path.exists('output1.hdf5'))
+            self.assertTrue(os.path.exists(output2_filename))
+            store1 = h5py.File('output1.hdf5')      # This takes the first output from the HDF5 reprocessing!
+            store2 = h5py.File(output2_filename)
+            self.assertTrue('Event' in store1)
+            self.assertTrue('Event' in store2)
 
-            # Verify both have same number of peaks etc
-            # NOT Hit, it's not read by default (for speed)
-            for dname in ('Event', 'Peak', 'ReconstructedPosition'):
+            # Verify both have same number of events, peaks etc
+            for dname in ('Event', 'Peak', 'ReconstructedPosition', 'Interaction'):
                 self.assertEqual(store1[dname].len(), store2[dname].len())
 
         # TODO: Clean up
