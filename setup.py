@@ -26,6 +26,11 @@ except ImportError:
 else:
     del requirements[requirements.index('h5py')]
 
+try:
+    import ROOT
+except ImportError:
+    pass
+
 # Snappy cannot be installed automatically on windows
 if os.name == 'nt':
     print("You're on windows: we can't install snappy manually. "
