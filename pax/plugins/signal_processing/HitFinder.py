@@ -73,12 +73,16 @@ class FindHits(plugin.TransformPlugin):
         self.make_diagnostic_plots = c.get('make_diagnostic_plots', 'never')
         self.make_diagnostic_plots_in = c.get('make_diagnostic_plots_in', 'small_pf_diagnostic_plots')
 
+        self.terminal_pulse_length_threshold = c.get('terminal_pulse_length_threshold', float('inf'))
+        self.terminal_pulse_length_threshold /= c.get('sample_duration')
+
         if self.make_diagnostic_plots != 'never':
             if not os.path.exists(self.make_diagnostic_plots_in):
                 os.makedirs(self.make_diagnostic_plots_in)
 
         # Keep track of how many times the "too many hits" warning has been shown
         self.too_many_hits_warnings_shown = 0
+        self.zle_breakdown_warnings_shown = 0
 
     def transform_event(self, event):
         dt = self.config['sample_duration']
@@ -115,6 +119,19 @@ class FindHits(plugin.TransformPlugin):
             if pmt_gain == 0:
                 continue
 
+            # Also don't do hitfinding in the pulse if it is a ZLE breakdown
+            if stop == event.length() - 1 and stop - start >= self.terminal_pulse_length_threshold:
+                if self.zle_breakdown_warnings_shown >= 3:
+                    show_to = self.log.debug
+                else:
+                    show_to = self.log.info
+                show_to("Pulse %s-%s in channel %s has been ignored "
+                        "because of a possible ZLE breakdown" % (start, stop, channel))
+                self.zle_breakdown_warnings_shown += 1
+                if self.zle_breakdown_warnings_shown == 3:
+                    self.log.info('Further ZLE breakdown messages will be suppressed!')
+                continue
+
             # Check if the DAQ pulse was ADC-saturated (clipped)
             # This means the raw waveform dropped to 0,
             # i.e. we went digitizer_reference_baseline above the reference baseline
@@ -144,7 +161,7 @@ class FindHits(plugin.TransformPlugin):
             # Show too-many-hits message if needed
             # This message really should be shown the first few times, as you should be aware how often this occurs
             elif n_hits_found >= self.max_hits_per_pulse:
-                if self.too_many_hits_warnings_shown > 3:
+                if self.too_many_hits_warnings_shown >= 3:
                     show_to = self.log.debug
                 else:
                     show_to = self.log.info
