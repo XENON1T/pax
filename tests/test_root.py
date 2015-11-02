@@ -1,5 +1,4 @@
 import unittest
-import six
 
 import numpy as np
 
@@ -8,7 +7,6 @@ class TestRoot(unittest.TestCase):
     """Test to see if python can use pyROOT
     """
 
-    @unittest.skipIf(six.PY2, "ROOTpy not yet installed on Python 2 on Travis")
     def test_root_write(self):
         import ROOT
         file_out = ROOT.TFile("test_tree.root", "recreate")
