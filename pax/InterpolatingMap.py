@@ -28,6 +28,8 @@ class InterpolateAndExtrapolate(object):
 
     def __call__(self, *args):
         # Call with one point at a time only!!!
+        if np.any(np.isnan(args)):
+            return np.nan
         distances, indices = self.kdtree.query(args, self.neighbours_to_use)
         return np.average(self.values[indices], weights=1/np.clip(distances, 1e-6, float('inf')))
 
