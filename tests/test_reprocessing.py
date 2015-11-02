@@ -4,6 +4,7 @@ import os
 import h5py
 
 from pax import core
+import gc
 
 plugins_to_test = [
     {
@@ -24,19 +25,20 @@ plugins_to_test = [
 
 class TestReprocessing(unittest.TestCase):
 
-    # TODO: delete the HDF5 files
     def test_reprocessing(self):
 
         for plugin_info in plugins_to_test:
             print("\n\nNow testing %s\n" % plugin_info['name'])
 
             # Process the first event from the XED file to the format to test
+            output1_filename = 'output1.' + plugin_info['extension']
+            self.assertFalse(os.path.exists(output1_filename))
             mypax = core.Processor(config_names='XENON100', config_dict={'pax': {
                 'events_to_process': [0],
                 'output': plugin_info['write_plugin'],
                 'output_name': 'output1'}})
             mypax.run()
-            self.assertTrue(os.path.exists('output1.' + plugin_info['extension']))
+            del mypax
 
             # Reprocess from the format to test to an HDF5 file
             output2_filename = 'output_after_%s' % plugin_info['name']
@@ -45,27 +47,24 @@ class TestReprocessing(unittest.TestCase):
                 'input': plugin_info['read_plugin'],
                 'output_name': output2_filename}})
             mypax.run()
+            del mypax
             output2_filename += '.hdf5'
 
-            # Open both HDF5 files.
-            # TODO: This only works if the table writer is the first plugin tested!
-            self.assertTrue(os.path.exists('output1.hdf5'))
+            gc.collect()        # Somehow this is necessary to really close all files file...
+            os.remove(output1_filename)
+
+            # Open the resulting HDF5
             self.assertTrue(os.path.exists(output2_filename))
-            store1 = h5py.File('output1.hdf5')      # This takes the first output from the HDF5 reprocessing!
-            store2 = h5py.File(output2_filename)
-            self.assertTrue('Event' in store1)
-            self.assertTrue('Event' in store2)
+            store = h5py.File(output2_filename)
+            self.assertTrue('Event' in store)
+            self.assertEqual(store['Event'].len(), 1)
+            # TODO: the values below change if we change pax!
+            self.assertEqual(store['Peak'].len(), 50)
+            self.assertEqual(store['Interaction'].len(), 8)
 
-            # Verify both have same number of events, peaks etc
-            for dname in ('Event', 'Peak', 'ReconstructedPosition', 'Interaction'):
-                self.assertEqual(store1[dname].len(), store2[dname].len())
-
-        # TODO: Clean up
-        # Somehow this doesn't work:
-        # store1.close()
-        # store2.close()
-        # os.remove('output1.hdf5')
-        # os.remove('output2.hdf5')
+            store.close()
+            gc.collect()        # Somehow this is necessary to really close all files file...
+            os.remove(output2_filename)
 
 
 if __name__ == '__main__':

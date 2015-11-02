@@ -75,11 +75,8 @@ class WriteROOTClass(plugin.OutputPlugin):
                 self.processor.timer.punch()
 
             # Construct the event tree
-            # Branchref() is needed to enable convenient readout of TRef and TRefArray
-            # TODO: somehow it works with or without it??
             self.event_tree = ROOT.TTree(self.config['tree_name'],
                                          'Tree with %s events from pax' % self.config['tpc_name'])
-            self.event_tree.BranchRef()
 
             # Write the event class C++ definition
             # Do this here, since it requires an instance (for length of arrays)
@@ -228,14 +225,17 @@ class ReadROOTClass(plugin.InputPlugin):
                                         start_time=root_event.start_time,
                                         sample_duration=root_event.sample_duration,
                                         stop_time=root_event.stop_time)
-            self.set_python_object_attrs(root_event, event)
+            self.set_python_object_attrs(root_event, event, self.config['fields_to_ignore'])
             yield event
 
-    def set_python_object_attrs(self, root_object, py_object):
+    def set_python_object_attrs(self, root_object, py_object, fields_to_ignore):
         """Sets attribute values of py_object to corresponding values in ROOT_object
         Returns nothing (modifies py_object in place)
         """
         for field_name, default_value in py_object.get_fields_data():
+
+            if field_name in fields_to_ignore:
+                continue
 
             try:
                 root_value = getattr(root_object, field_name)
@@ -249,7 +249,7 @@ class ReadROOTClass(plugin.InputPlugin):
                 result = []
                 for child_i in range(len(root_value)):
                     child_py_object = getattr(datastructure, child_class_name)()
-                    self.set_python_object_attrs(root_value[child_i], child_py_object)
+                    self.set_python_object_attrs(root_value[child_i], child_py_object, fields_to_ignore)
                     result.append(child_py_object)
 
             elif isinstance(default_value, np.ndarray):
