@@ -25,14 +25,7 @@ class Model(object):
       - dump as dictionary and JSON
     """
 
-    def __init__(self, kwargs_dict=None, quick_init=False, **kwargs):
-
-        # If quick=True, use shortcut. Use for simple classes only; will bypass type checking!
-        if quick_init:
-            self.__dict__.update(kwargs_dict)
-            self.__dict__.update(kwargs)
-            return
-
+    def __init__(self, kwargs_dict=None, **kwargs):
         # Initialize the collection fields to empty lists
         # object.__setattr__ is needed to bypass type checking in StrictModel
         list_field_info = self.get_list_field_info()
@@ -102,8 +95,10 @@ class Model(object):
         # TODO: increase performance by pre-sorting keys?
         # self.__dict__.items() does not return default values set in class declaration
         # Hence we need something more complicated
+
         class_dict = self.__class__.__dict__
         self_dict = self.__dict__
+
         for field_name in sorted(class_dict.keys()):
             if field_name in self_dict:
                 # The instance has a value for this field: return it
@@ -120,7 +115,24 @@ class Model(object):
                 # Yes, yield the class-level value
                 yield (field_name, value_in_class)
 
-    def to_dict(self, convert_numpy_arrays_to=None, fields_to_ignore=None):
+    @classmethod
+    def get_dtype(cls):
+        """Get a dtype for a numpy structured array equivalent to the class
+        Works only for flat classes (no list fields) containing int, float, and bool
+        """
+        type_mapping = {'int':    np.int64,
+                        'float':  np.float64,
+                        'long':   np.int64,
+                        'bool':   np.bool_}
+        dtype = []
+        # Get field types from a dummy instance of the class
+        for field_name, default_value in cls().get_fields_data():
+            value_type = default_value.__class__.__name__
+            if value_type in type_mapping:
+                dtype.append((field_name, type_mapping[value_type]))
+        return np.dtype(dtype)
+
+    def to_dict(self, convert_numpy_arrays_to=None, fields_to_ignore=None, nan_to_none=False):
         result = {}
         if fields_to_ignore is None:
             fields_to_ignore = tuple()
@@ -129,10 +141,12 @@ class Model(object):
                 continue
             if isinstance(v, Model):
                 result[k] = v.to_dict(convert_numpy_arrays_to=convert_numpy_arrays_to,
-                                      fields_to_ignore=fields_to_ignore)
+                                      fields_to_ignore=fields_to_ignore,
+                                      nan_to_none=nan_to_none)
             elif isinstance(v, list):
                 result[k] = [el.to_dict(convert_numpy_arrays_to=convert_numpy_arrays_to,
-                                        fields_to_ignore=fields_to_ignore) for el in v]
+                                        fields_to_ignore=fields_to_ignore,
+                                        nan_to_none=nan_to_none) for el in v]
             elif isinstance(v, np.ndarray) and convert_numpy_arrays_to is not None:
                 if convert_numpy_arrays_to == 'list':
                     result[k] = v.tolist()
@@ -140,17 +154,24 @@ class Model(object):
                     result[k] = bson.Binary(v.tostring())
                 else:
                     raise ValueError('convert_numpy_arrays_to must be "list" or "bytes"')
+            elif nan_to_none and isinstance(v, float):
+                if not np.isfinite(v):
+                    result[k] = None
+                else:
+                    result[k] = v
             else:
                 result[k] = v
         return result
 
-    def to_json(self, fields_to_ignore=None):
+    def to_json(self, fields_to_ignore=None, nan_to_none=False):
         return json.dumps(self.to_dict(convert_numpy_arrays_to='list',
-                                       fields_to_ignore=fields_to_ignore))
+                                       fields_to_ignore=fields_to_ignore,
+                                       nan_to_none=nan_to_none))
 
-    def to_bson(self, fields_to_ignore=None):
+    def to_bson(self, fields_to_ignore=None, nan_to_none=False):
         return bson.BSON.encode(self.to_dict(convert_numpy_arrays_to='bytes',
-                                             fields_to_ignore=fields_to_ignore))
+                                             fields_to_ignore=fields_to_ignore,
+                                             nan_to_none=nan_to_none))
 
     @classmethod
     def from_json(cls, x):
@@ -178,7 +199,7 @@ casting_allowed_for = {
 
 class ListField(object):
     def __init__(self, element_type):
-        if not type(element_type) == type:
+        if not issubclass(element_type, Model):
             raise ValueError("Model collections must specify a type")
         self.element_type = element_type
 
@@ -192,15 +213,15 @@ class StrictModel(Model):
     def __setattr__(self, key, value):
 
         # Get the old attr.
-        # #Will raise AttributeError if doesn't exists, which is what we want
+        # Will raise AttributeError if doesn't exists, which is what we want
         old_val = getattr(self, key)
         old_type = type(old_val)
         new_type = type(value)
-        old_class_name = old_val.__class__.__name__
-        new_class_name = value.__class__.__name__
 
         # Check for attempted type change
         if old_type != new_type:
+            old_class_name = old_val.__class__.__name__
+            new_class_name = value.__class__.__name__
 
             # Are we allowed to cast the type?
             if old_class_name in casting_allowed_for and new_class_name in casting_allowed_for[old_class_name]:
@@ -214,7 +235,7 @@ class StrictModel(Model):
                                    new_class_name))
 
         # Check for attempted dtype change
-        if isinstance(old_val, np.ndarray):
+        if old_type == np.ndarray:
             if old_val.dtype != value.dtype:
                 raise TypeError('Attribute %s of class %s should have numpy dtype %s, not %s' % (
                     key, self.__class__.__name__, old_val.dtype, value.dtype))

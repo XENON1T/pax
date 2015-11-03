@@ -2,10 +2,11 @@ import numpy as np
 import numba
 
 # For diagnostic plotting:
+from textwrap import dedent
 import matplotlib.pyplot as plt
 import os
 
-from pax import plugin, datastructure, utils
+from pax import plugin, datastructure, dsputils
 
 
 class FindHits(plugin.TransformPlugin):
@@ -71,6 +72,7 @@ class FindHits(plugin.TransformPlugin):
 
         self.make_diagnostic_plots = c.get('make_diagnostic_plots', 'never')
         self.make_diagnostic_plots_in = c.get('make_diagnostic_plots_in', 'small_pf_diagnostic_plots')
+
         if self.make_diagnostic_plots != 'never':
             if not os.path.exists(self.make_diagnostic_plots_in):
                 os.makedirs(self.make_diagnostic_plots_in)
@@ -79,15 +81,15 @@ class FindHits(plugin.TransformPlugin):
         self.too_many_hits_warnings_shown = 0
 
     def transform_event(self, event):
+        dt = self.config['sample_duration']
+        hits_per_pulse = []
+        reference_baseline = self.config['digitizer_reference_baseline']
+        dynamic_low_threshold_coeff = self.config['dynamic_low_threshold_coeff']
+
         # Allocate numpy arrays to hold numba hitfinder results
         # -1 is a placeholder for values that should never appear (0 would be bad as it often IS a possible value)
-        hits_buffer = -1 * np.ones((self.max_hits_per_pulse, 2), dtype=np.int64)
-        argmaxes = -1 * np.ones(self.max_hits_per_pulse, dtype=np.int64)
-        areas = -1 * np.ones(self.max_hits_per_pulse, dtype=np.float64)
-        centers = -1 * np.ones(self.max_hits_per_pulse, dtype=np.float64)
-        deviations = -1 * np.ones(self.max_hits_per_pulse, dtype=np.float64)
-
-        dt = self.config['sample_duration']
+        hit_bounds_buffer = -1 * np.ones((self.max_hits_per_pulse, 2), dtype=np.int64)
+        hits_buffer = np.zeros(self.max_hits_per_pulse, dtype=datastructure.Hit.get_dtype())
 
         for pulse_i, pulse in enumerate(event.pulses):
             start = pulse.left
@@ -100,7 +102,7 @@ class FindHits(plugin.TransformPlugin):
 
             # Subtract reference baseline, invert (so hits point up from baseline)
             # This is convenient so we don't have to reinterpret min, max, etc
-            w = self.config['digitizer_reference_baseline'] - w
+            w = reference_baseline - w
 
             pulse.baseline, pulse.noise_sigma, pulse.minimum, pulse.maximum = \
                 compute_pulse_properties(w, self.initial_baseline_samples)
@@ -117,7 +119,7 @@ class FindHits(plugin.TransformPlugin):
             # This means the raw waveform dropped to 0,
             # i.e. we went digitizer_reference_baseline above the reference baseline
             # i.e. we went digitizer_reference_baseline - pulse.baseline above baseline
-            is_saturated = pulse.maximum >= self.config['digitizer_reference_baseline'] - pulse.baseline
+            is_saturated = pulse.maximum >= reference_baseline - pulse.baseline
 
             # Compute thresholds based on noise level
             high_threshold = max(self.config['height_over_noise_high_threshold'] * pulse.noise_sigma,
@@ -129,12 +131,11 @@ class FindHits(plugin.TransformPlugin):
 
             # Call the numba hit finder -- see its docstring for description
             n_hits_found = pulse.n_hits_found = find_intervals_above_threshold(
-                w, high_threshold, low_threshold, hits_buffer,
-                dynamic_low_threshold_coeff=self.config['dynamic_low_threshold_coeff'])
+                w, high_threshold, low_threshold, hit_bounds_buffer, dynamic_low_threshold_coeff)
 
-            # Only view the part of hits_buffer that contains hits found in this event
-            # The rest of hits_buffer contains -1's or stuff from previous pulses
-            hits_found = hits_buffer[:n_hits_found]
+            # Only view the part of hit_bounds_buffer that contains hits found in this event
+            # The rest of hit_bounds_buffer contains -1's or stuff from previous pulses
+            hit_bounds_found = hit_bounds_buffer[:n_hits_found]
 
             # If no hits were found, this is a noise pulse: update the noise pulse count
             if n_hits_found == 0:
@@ -155,68 +156,26 @@ class FindHits(plugin.TransformPlugin):
                 if self.too_many_hits_warnings_shown == 3:
                     self.log.info('Further too-many hit messages will be suppressed!')
 
-            # Compute area, max, and center of each hit in numba
-            # Results stored in argmaxes, areas, centers; declared outside loop, see above
-            compute_hit_properties(w, hits_found, argmaxes, areas, centers, deviations)
-
             # Store the found hits in the datastructure
             # Convert area, noise_sigma and height from adc counts -> pe
-            adc_to_pe = utils.adc_to_pe(self.config, channel)
+            adc_to_pe = dsputils.adc_to_pe(self.config, channel)
             noise_sigma_pe = pulse.noise_sigma * adc_to_pe
-            for i, hit in enumerate(hits_found):
 
-                # Do sanity checks
-                area = areas[i] * adc_to_pe
-                center = (centers[i] + start + hit[0]) * dt
-                height = w[hit[0] + argmaxes[i]] * adc_to_pe
-                left = start + hit[0]
-                right = start + hit[1]
-                max_idx = start + hit[0] + argmaxes[i]
-                if not (0 <= left <= max_idx <= right) \
-                   or not (left <= center / dt <= right) \
-                   or not (0 <= high_threshold * adc_to_pe <= height <= area):
-                    raise RuntimeError("You found a hitfinder bug!\n"
-                                       "Current hit %d-%d-%d, in event %s, channel %s, pulse %s.\n"
-                                       "Indices in pulse: %s-%s-%s. Pulse bounds: %d-%d.\n"
-                                       "Center of gravity at %s.\n"
-                                       "Height is %s, noise sigma is %s, threshold at %s.\n"
-                                       "Area is %d.\n"
-                                       "Please file a bug report!" % (
-                                           left, max_idx, right, event.event_number, channel, pulse_i,
-                                           hit[0], hit[0] + argmaxes[i], hit[1], start, stop,
-                                           center,
-                                           height, noise_sigma_pe, high_threshold * adc_to_pe,
-                                           area))
+            build_hits(w, hit_bounds_found, hits_buffer,
+                       adc_to_pe, channel, noise_sigma_pe, dt, start, pulse_i)
+            hits = hits_buffer[:n_hits_found].copy()
 
-                # If the pulse reached the ADC saturation threshold, we should count the saturated samples in each hit
-                # This is rare enough that it doesn't need to be in numba
-                n_saturated = 0
-                if is_saturated:
-                    n_saturated = np.count_nonzero(w[hit[0]:hit[1] + 1] >=
-                                                   self.config['digitizer_reference_baseline'] - pulse.baseline)
+            # If the pulse reached the ADC saturation threshold, we should count the saturated samples in each hit
+            # This is rare enough that it doesn't need to be in numba
+            if is_saturated:
+                for i, hit in enumerate(hit_bounds_found):
+                    hits['n_saturated'] = np.count_nonzero(w[hit[0]:hit[1] + 1] >=
+                                                           self.config['digitizer_reference_baseline'] - pulse.baseline)
 
-                # Store the hit
-                # int's need to be cast to avoid weird numpy types in our datastructure
-                # leaving them in would lead to strange BSON encoding errors
-                # (bson.errors.InvalidDocument: Cannot encode object: 4332)
-                # Type checking in data_model could takes care of this, but it's too slow
-                event.all_hits.append(datastructure.Hit({
-                    'channel':             channel,
-                    'left':                int(left),
-                    'index_of_maximum':    int(max_idx),
-                    'center':              center,
-                    'right':               int(right),
-                    'area':                area,
-                    'height':              height,
-                    'noise_sigma':         noise_sigma_pe,
-                    'found_in_pulse':      pulse_i,
-                    'n_saturated':         n_saturated,
-                    'sum_absolute_deviation': deviations[i] * dt
-                }, quick_init=True))
+            hits_per_pulse.append(hits)
 
             # Diagnostic plotting
-            # Difficult to move to separate plugin:
-            # would have to re-group hits by pulse, move settings like threshold to DEFAULT or use hack...
+            # TODO: Move to separate plugin, we have dict_group_by now
 
             # Do we need to show this pulse? If not: continue
             if self.make_diagnostic_plots == 'never':
@@ -224,20 +183,20 @@ class FindHits(plugin.TransformPlugin):
             elif self.make_diagnostic_plots == 'tricky cases':
                 # Always show pulse if noise level is very high
                 if noise_sigma_pe < 0.5:
-                    if len(hits_found) == 0:
+                    if len(hit_bounds_found) == 0:
                         # Show pulse if it nearly went over threshold
                         if not pulse.maximum > 0.8 * high_threshold:
                             continue
                     else:
                         # Show pulse if any of its hit nearly didn't go over threshold
                         if not any([event.all_hits[-(i+1)].height < 1.2 * high_threshold * adc_to_pe
-                                   for i in range(len(hits_found))]):
+                                   for i in range(len(hit_bounds_found))]):
                             continue
             elif self.make_diagnostic_plots == 'no hits':
-                if len(hits_found) != 0:
+                if len(hit_bounds_found) != 0:
                     continue
             elif self.make_diagnostic_plots == 'hits only':
-                if len(hits_found) == 0:
+                if len(hit_bounds_found) == 0:
                     continue
             elif self.make_diagnostic_plots == 'saturated':
                 if not is_saturated:
@@ -246,9 +205,13 @@ class FindHits(plugin.TransformPlugin):
                 if self.make_diagnostic_plots != 'always':
                     raise ValueError("Invalid make_diagnostic_plots option: %s!" % self.make_diagnostic_plots)
 
-            # Setup the twin-y-axis plot
-            fig, ax1 = plt.subplots(figsize=(10, 7))
+            plt.figure(figsize=(14, 10))
+            data_for_title = (event.event_number, start, stop, channel)
+            plt.title('Event %s, pulse %d-%d, Channel %d' % data_for_title)
+            ax1 = plt.gca()
             ax2 = ax1.twinx()
+            ax1.set_position((.1, .1, .6, .85))
+            ax2.set_position((.1, .1, .6, .85))
             ax1.set_xlabel("Sample number (%s ns)" % event.sample_duration)
             ax1.set_ylabel("ADC counts above baseline")
             ax2.set_ylabel("pe / sample")
@@ -261,29 +224,54 @@ class FindHits(plugin.TransformPlugin):
             ax1.plot(np.ones_like(w) * low_threshold, '--', label='Boundary threshold', color='green')
 
             # Mark the hit ranges & center of gravity point
-            for hit_i, hit in enumerate(hits_found):
+            for hit_i, hit in enumerate(hit_bounds_found):
                 ax1.axvspan(hit[0] - 0.5, hit[1] + 0.5, color='red', alpha=0.2)
-                # Remember: array 'centers' is still in samples since start of hit...
-                ax1.axvline([centers[hit_i] + hit[0]], linestyle=':', color='gray')
 
             # Make sure the y-scales match
             ax2.set_ylim(ax1.get_ylim()[0] * adc_to_pe, ax1.get_ylim()[1] * adc_to_pe)
 
+            # Add pulse / hit information
+            if len(hits) != 0:
+                largest_hit = hits[np.argmax(hits['area'])]
+                plt.figtext(0.75, 0.9, dedent("""
+                            Pulse maximum: {pulse.maximum:.5g}
+                            Pulse minimum: {pulse.minimum:.5g}
+                              (both in ADCc above baseline)
+                            Pulse baseline: {pulse.baseline}
+                              (ADCc above reference baseline)
+
+                            Gain in this PMT: {gain:.3g}
+
+                            Largest hit info ({left}-{right}):
+                            Area: {hit_area:.5g} pe
+                            Height: {hit_height:.4g} pe
+                            Saturated samples: {hit_n_saturated}
+                            """.format(pulse=pulse,
+                                       gain=self.config['gains'][pulse.channel],
+                                       left=largest_hit['left']-pulse.left,
+                                       right=largest_hit['right']-pulse.left,
+                                       hit_area=largest_hit['area'],
+                                       hit_height=largest_hit['height'],
+                                       hit_n_saturated=largest_hit['n_saturated'])),
+                            fontsize=14, verticalalignment='top')
+
             # Finish the plot, save, close
             leg = ax1.legend()
             leg.get_frame().set_alpha(0.5)
-            bla = (event.event_number, start, stop, channel)
-            plt.title('Event %s, pulse %d-%d, Channel %d' % bla)
             plt.savefig(os.path.join(self.make_diagnostic_plots_in,
-                                     'event%04d_pulse%05d-%05d_ch%03d.png' % bla))
+                                     'event%04d_pulse%05d-%05d_ch%03d.png' % data_for_title))
+            plt.xlim(0, len(pulse.raw_data))
+            plt.show()
             plt.close()
+
+        event.all_hits = np.concatenate(hits_per_pulse)
 
         return event
 
 
 @numba.jit(numba.int32(numba.float64[:], numba.float64, numba.float64, numba.int64[:, :], numba.float64),
            nopython=True, cache=True)
-def find_intervals_above_threshold(w, high_threshold, low_threshold, result_buffer, dynamic_low_threshold_coeff=0):
+def find_intervals_above_threshold(w, high_threshold, low_threshold, result_buffer, dynamic_low_threshold_coeff):
     """Fills result_buffer with l, r bounds of intervals in w > low_threshold which exceed high_threshold somewhere
         result_buffer: numpy N*2 array of ints, will be filled by function.
     Returns: number of intervals found
@@ -342,24 +330,22 @@ def find_intervals_above_threshold(w, high_threshold, low_threshold, result_buff
 
 
 @numba.jit(numba.void(numba.float64[:], numba.int64[:, :],
-                      numba.int64[:], numba.float64[:], numba.float64[:], numba.float64[:]),
+                      numba.from_dtype(datastructure.Hit.get_dtype())[:],
+                      numba.float64, numba.int64, numba.float64, numba.int64, numba.int64, numba.int64),
            nopython=True, cache=True)
-def compute_hit_properties(w, raw_hits, argmaxes, areas, centers, deviations):
-    """Find properties of hits in w indicated by (l, r) bounds in raw_hits.
-        raw_hits should be a numpy array of (left, right) bounds (inclusive)
-    Other arguments are numpy arrays which will be filled with results:
-        argmax, area, center of gravity and sum absolute deviation from center
-    centers, argmaxes, deviations are returned in samples (from start) -- you probably want to convert this!
+def build_hits(w, hit_bounds, hits_buffer, adc_to_pe, channel, noise_sigma_pe, dt, start, pulse_i):
+    """Populates hits_buffer with properties from hits indicated by hit_bounds.
+        hit_bounds should be a numpy array of (left, right) bounds (inclusive)
     Returns nothing.
     """
-    for hit_i in range(len(raw_hits)):
+    for hit_i in range(len(hit_bounds)):
         amplitude = -999.9
         argmax = -1
         area = 0.0
         center = 0.0
         deviation = 0.0
-        left = raw_hits[hit_i, 0]
-        right = raw_hits[hit_i, 1]
+        left = hit_bounds[hit_i, 0]
+        right = hit_bounds[hit_i, 1]
         for i, x in enumerate(w[left:right + 1]):
             if x > amplitude:
                 amplitude = x
@@ -370,10 +356,18 @@ def compute_hit_properties(w, raw_hits, argmaxes, areas, centers, deviations):
         for i, x in enumerate(w[left:right + 1]):
             deviation += x * abs(i - center)
         deviation /= area
-        argmaxes[hit_i] = argmax
-        areas[hit_i] = area
-        centers[hit_i] = center
-        deviations[hit_i] = deviation
+
+        # Store the hit properties
+        hits_buffer[hit_i].channel = channel
+        hits_buffer[hit_i].found_in_pulse = pulse_i
+        hits_buffer[hit_i].noise_sigma = noise_sigma_pe
+        hits_buffer[hit_i].left = left + start
+        hits_buffer[hit_i].right = right + start
+        hits_buffer[hit_i].area = area * adc_to_pe
+        hits_buffer[hit_i].sum_absolute_deviation = deviation
+        hits_buffer[hit_i].center = (start + left + center) * dt
+        hits_buffer[hit_i].height = w[argmax + left] * adc_to_pe
+        hits_buffer[hit_i].index_of_maximum = start + left + argmax
 
 
 @numba.jit(numba.typeof((1.0, 1.0, 1.0, 1.0))(numba.float64[:], numba.int64),

@@ -19,10 +19,8 @@ import multiprocessing
 # Hack to ensure correct matplotlib backend is chosen
 # Without this, pax's plotting does not work when using a system without a graphical display
 # Stolen from http://stackoverflow.com/questions/8257385/automatic-detection-of-display-availability-with-matplotlib
-# Note the version with os.environ does not work on windows
 import matplotlib
-r = os.system('python -c "import matplotlib.pyplot as plt;plt.figure()"')
-if r != 0:
+if os.name != 'nt' and not 'DISPLAY' in os.environ:
     matplotlib.use('Agg')
 
 import pax    # For version
