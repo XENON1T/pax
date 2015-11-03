@@ -20,7 +20,7 @@ import multiprocessing
 # Without this, pax's plotting does not work when using a system without a graphical display
 # Stolen from http://stackoverflow.com/questions/8257385/automatic-detection-of-display-availability-with-matplotlib
 import matplotlib
-if os.name != 'nt' and not 'DISPLAY' in os.environ:
+if os.name != 'nt' and not os.environ.get('DISPLAY'):
     matplotlib.use('Agg')
 
 import pax    # For version
