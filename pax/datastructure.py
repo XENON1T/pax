@@ -218,7 +218,7 @@ class Peak(StrictModel):
                 return rp
         return None
 
-    def get_position_from_preferred_algorithm(self, algorithm_list, get_from=None):
+    def get_position_from_preferred_algorithm(self, algorithm_list):
         """Return reconstructed position by the first algorithm in list,
         unless it doesn't exist or is a nan position, then moves on to further algorithms."""
         for algo in algorithm_list:

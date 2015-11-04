@@ -90,7 +90,7 @@ class WaveformSimulator(plugin.InputPlugin):
         electron_times = self.simulator.s2_electrons(electrons_generated=electrons, t=t, z=z)
         if not len(electron_times):
             return None
-        photon_times = self.simulator.s2_scintillation(electron_times)
+        photon_times = self.simulator.s2_scintillation(electron_times, x, y)
         if not len(photon_times):
             return None
         self.store_true_peak('s2', t, x, y, z, photon_times, electron_times)
@@ -108,7 +108,7 @@ class WaveformSimulator(plugin.InputPlugin):
                 Defaults to s1_default_recombination_time.
         :return: start_time, channel_waveforms
         """
-        photon_times = self.simulator.s1_photons(photons, recoil_type, t)
+        photon_times = self.simulator.s1_photons(photons, recoil_type, x, y, z, t)
         if not len(photon_times):
             return None
         self.store_true_peak('s1', t, x, y, z, photon_times)
@@ -153,8 +153,14 @@ class WaveformSimulator(plugin.InputPlugin):
                                            y=y,
                                            z=z))
 
-        # Combine the hitpatterns by their overloaded addition operator, then simulate waveforms
-        event = self.simulator.to_pax_event(sum([h for h in hitpatterns if h is not None]))
+        hitpatterns = [h for h in hitpatterns if h is not None]
+        if len(hitpatterns):
+            # Combine the hitpatterns by their overloaded addition operator (sorry)
+            big_hitpattern = sum(hitpatterns)
+        else:
+            # Create an empty hitpattern
+            big_hitpattern = None
+        event = self.simulator.to_pax_event(big_hitpattern)
         if hasattr(self, 'dataset_name'):
             event.dataset_name = self.dataset_name
         event.event_number = self.current_event
