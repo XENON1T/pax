@@ -70,7 +70,7 @@ install:
   - conda update -q conda
   - conda info -a # Useful for debugging any issues with conda
   - conda config --add channels http://conda.anaconda.org/NLeSC  
-  - conda create -q -n pax python=$TRAVIS_PYTHON_VERSION root=${ROOT} numpy scipy matplotlib pandas cython h5py numba pip python-snappy pytables scikit-learn
+  - conda create -q -n pax python=$TRAVIS_PYTHON_VERSION root=${ROOT} numpy scipy matplotlib pandas cython h5py numba pip python-snappy pytables scikit-learn rootpy
   - source activate pax
   - pip install coveralls nose coverage
 
