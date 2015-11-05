@@ -210,9 +210,9 @@ class WriteROOTClass(plugin.OutputPlugin):
         for field_name, field_type, field_code in self.config['extra_fields'].get(model_name, []):
             class_attributes += '\t%s %s;\n' % (field_type, field_name)
 
-        define = "#ifndef %s" %( model_name.upper() + "\n")  + "#define %s " % ( model_name.upper() + "\n")
+        define = "#ifndef %s" % (model_name.upper() + "\n") + "#define %s " % (model_name.upper() + "\n")
 
-        return class_template.format(ifndefs = define, class_name=model_name,
+        return class_template.format(ifndefs=define, class_name=model_name,
                                      data_attributes=class_attributes,
                                      child_classes_code=child_classes_code,
                                      class_version=pax.__version__.replace('.', ''))
