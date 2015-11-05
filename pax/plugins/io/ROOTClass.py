@@ -123,6 +123,16 @@ class WriteROOTClass(plugin.OutputPlugin):
                     root_vector.push_back(element_root_object)
                 self.last_collection[element_name] = list_of_elements
 
+            elif isinstance(field_value, np.ndarray):
+                # Unfortunately we can't store numpy arrays directly into ROOT's ROOT.PyXXXBuffer.
+                # Doing so will not give an error, but the data will be mangled!
+                # Instead we'd have to use python's old array module...
+                # For now we'll simply store the elements one-by-one
+                # This isn't very efficient, but it seems the speed is still good.
+                root_field = getattr(root_object, field_name)
+                for i, x in enumerate(field_value):
+                    root_field[i] = x
+
             else:
                 # Everything else apparently just works magically:
                 setattr(root_object, field_name, field_value)
@@ -261,7 +271,9 @@ class ReadROOTClass(plugin.InputPlugin):
                     self.log.warning("Strange error in numpy array field %s, type from ROOT object is %s, "
                                      "which is not iterable!" % (field_name, type(root_value)))
                     continue
-                result = np.array(root_value, dtype=default_value.dtype)
+                # Use list() for same reason as described above in WriteROOTClass:
+                # Something is wrong with letting the root buffers interact with numpy arrays directly
+                result = np.array(list(root_value), dtype=default_value.dtype)
 
             else:
                 result = root_value
