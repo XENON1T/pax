@@ -89,6 +89,7 @@ In this option you'll know where the code is, so you can look at it, play with i
 First `cd` to the folder you want pax to be installed. Then run::
 
     git clone https://github.com/XENON1T/pax.git
+    source activate pax
     cd pax
     python setup.py develop
 

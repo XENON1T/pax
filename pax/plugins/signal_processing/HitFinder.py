@@ -264,7 +264,10 @@ class FindHits(plugin.TransformPlugin):
             plt.show()
             plt.close()
 
-        event.all_hits = np.concatenate(hits_per_pulse)
+        if len(hits_per_pulse):
+            event.all_hits = np.concatenate(hits_per_pulse)
+        else:
+            self.log.warning("Event has no pulses??!")
 
         return event
 
