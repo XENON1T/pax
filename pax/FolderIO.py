@@ -5,6 +5,7 @@ import shutil
 import zipfile
 
 from bson import json_util
+from six.moves import input
 
 from pax import utils, plugin
 

@@ -113,6 +113,9 @@ def group_by(x, group_by_fields='Event', return_group_indices=False):
     else:
         to_return = x
 
+    if not len(x):
+        return []
+
     # Indices to determine split points from
     indices = fields_view(x, group_by_fields)
 
