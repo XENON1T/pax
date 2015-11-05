@@ -2,13 +2,12 @@ import os
 import re
 import numpy as np
 import ROOT
+import rootpy.stl as stl
 
 import pax      # For version number
 from pax import plugin, datastructure
 
-import rootpy.stl as stl
 from rootpy.userdata import BINARY_PATH
-# import rootpy.compiled as C
 
 overall_header = """
 #include "TFile.h"
