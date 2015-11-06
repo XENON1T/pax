@@ -150,11 +150,13 @@ class WriteROOTClass(plugin.OutputPlugin):
         return self.last_collection[py_object.__class__.__name__].index(py_object)
 
     def write_to_disk(self):
-        self.event_tree.Write()
+        if self.event_tree:
+            self.event_tree.Write()
 
     def shutdown(self):
         self.write_to_disk()
-        self.f.Close()
+        if self.f: 
+            self.f.Close()
 
     def _build_model_class(self, model):
         """Return ROOT C++ class definition corresponding to instance of data_model.Model
