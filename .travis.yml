@@ -41,8 +41,6 @@ addons:
     - libxft-dev
     - libxext-dev
     - gcc-multilib
-#    - libsnappy1
-#    - libsnappy-dev
     - python-software-properties
     - gcc-4.8
     - g++-4.8
@@ -60,8 +58,8 @@ install:
   - gcc --version
 
   # Conda
-  - if [ "${TRAVIS_OS_NAME}" == "osx" ]; then brew install wget; fi
-  - wget -nv http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
+  - if [ "${TRAVIS_OS_NAME}" == "osx" ]; then curl --silent http://repo.continuum.io/miniconda/Miniconda-latest-MacOSX-x86_64.sh -o miniconda.sh; fi
+  - if [ "${TRAVIS_OS_NAME}" == "linux" ]; then wget -nv http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh; fi
   
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
@@ -84,8 +82,4 @@ install:
 # command to run tests, e.g. python setup.py test
 script:
   - make test
-#  - make coverage
   - make lint
-
-#after_success:
-#  - coveralls
