@@ -23,8 +23,8 @@ services:
   - mongodb
 
 env:
-  - ROOT=5.34.25
-  - ROOT=6.03.04
+  - ROOT=5
+  - ROOT=6
 
 addons:
   apt:
@@ -41,26 +41,25 @@ addons:
     - libxft-dev
     - libxext-dev
     - gcc-multilib
-    - libsnappy1
-    - libsnappy-dev
     - python-software-properties
     - gcc-4.8
     - g++-4.8
 
 os:
-  #- osx
+  - osx
   - linux
+  
+matrix:
+  allow_failures:
+    - os: osx
 
 install:
   - deactivate
   - gcc --version
 
   # Conda
-  - if [ "${TRAVIS_OS_NAME}" == "osx" ]; then brew install wget; fi
-  - if [ $TRAVIS_PYTHON_VERSION == 2.7 ]; then wget -nv http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh; fi
-  - if [ $TRAVIS_PYTHON_VERSION == 3.4 ]; then wget -nv http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh; fi
-  #- if [ "${TRAVIS_OS_NAME}" == "linux" ]; then wget -nv http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh; fi
-  #- if [ "${TRAVIS_OS_NAME}" == "osx" ]; then wget -nv http://repo.continuum.io/miniconda/Miniconda3-3.9.1-MacOSX-x86_64.sh -O miniconda.sh; fi
+  - if [ "${TRAVIS_OS_NAME}" == "osx" ]; then curl --silent http://repo.continuum.io/miniconda/Miniconda-latest-MacOSX-x86_64.sh -o miniconda.sh; fi
+  - if [ "${TRAVIS_OS_NAME}" == "linux" ]; then wget -nv http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh; fi
   
   - bash miniconda.sh -b -p $HOME/miniconda
   - export PATH="$HOME/miniconda/bin:$PATH"
@@ -68,24 +67,10 @@ install:
   - conda config --set always_yes yes --set changeps1 no
   - conda update -q conda
   - conda info -a # Useful for debugging any issues with conda
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION numpy scipy matplotlib pandas pytables cython h5py numba pip scikit-learn
-  - source activate test-environment
-  - if [ "${TRAVIS_OS_NAME}" == "osx" ]; then conda remove libpng libtiff sqlite; fi
+  - conda config --add channels http://conda.anaconda.org/NLeSC  
+  - conda create -q -n pax python=$TRAVIS_PYTHON_VERSION root=${ROOT} numpy scipy matplotlib pandas cython h5py numba pip python-snappy pytables scikit-learn rootpy
+  - source activate pax
   - pip install coveralls nose coverage
-
-  # ROOT 
-  # - unset ROOT # uncomment to not install ROOT
-  # - if test -n "$ROOT"; then source travis/install-ROOT.sh; fi
-  - if test -n "$ROOT"; then source travis/install-ROOT-binary.sh; fi
-  #- source travis/save-ROOT.sh
-
-  # Copy modified ROOT.py to proper directory
-  - if [ "${ROOT}" == "6.02.05" ]; then cp /home/travis/build/XENON1T/pax/travis/modified_ROOT_v${ROOT}.py /home/travis/build/XENON1T/pax/root-6.02.05/lib/ROOT.py; fi
-  - if [ "${ROOT}" == "5.34.25" ]; then cp /home/travis/build/XENON1T/pax/travis/modified_ROOT_v${ROOT}.py /home/travis/build/XENON1T/pax/root/lib/ROOT.py; fi
-
-  # Does pyROOT still work?
-  #- root -l -q
-  #- python -c "import ROOT; ROOT.TBrowser()"
 
   # Install pax
   - python setup.py install
@@ -97,9 +82,4 @@ install:
 # command to run tests, e.g. python setup.py test
 script:
   - make test
-#  - make coverage
   - make lint
-
-#after_success:
-#  - coveralls
-

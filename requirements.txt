@@ -8,7 +8,6 @@ prettytable          # Timing report formatting
 pandas>=0.16         # Used for some optional I/O stuff
 tables               # Used by pandas for HDF5 output
 flake8
-avro-python3
 python-snappy>=0.5
 numba>=0.19
 scikit-learn

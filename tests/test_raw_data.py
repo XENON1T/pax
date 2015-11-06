@@ -27,11 +27,6 @@ plugins_to_test = [
         'write_plugin': 'XED.WriteXED',
     },
     {
-        'name':         'Avro',
-        'read_plugin':  'Avro.ReadAvro',
-        'write_plugin': 'Avro.WriteAvro',
-    },
-    {
         'name':         'ZippedPickles',
         'read_plugin':  'Pickle.ReadZippedPickles',
         'write_plugin': 'Pickle.WriteZippedPickles',

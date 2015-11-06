@@ -13,10 +13,8 @@ history = open('HISTORY.rst').read().replace('.. :changelog:', '')
 
 requirements = open('requirements.txt').read().splitlines()
 
-# The avro package has a different name in python2:
+# configparser is not in the python2 standard library:
 if six.PY2:
-    del requirements[requirements.index('avro-python3')]
-    requirements.append('avro')
     requirements.append('configparser')
 
 # For some reason h5py is often not seen by pip if it was installed by conda...
@@ -27,6 +25,11 @@ except ImportError:
     pass
 else:
     del requirements[requirements.index('h5py')]
+
+try:
+    import ROOT
+except ImportError:
+    pass
 
 # Snappy cannot be installed automatically on windows
 if os.name == 'nt':

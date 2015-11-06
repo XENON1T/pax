@@ -5,12 +5,10 @@ from bson.json_util import dumps
 import numpy as np
 
 from pax import plugin, exceptions, datastructure
-from pax.data_model import Model
 from pax.formats import flat_data_formats
 
 
 class TableWriter(plugin.OutputPlugin):
-
     """Output data to flat table formats
     Convert our data structure to numpy record arrays, one for each class (Event, Peak, ReconstructedPosition, ...).
     Then output to one of several output formats (see formats.py)
@@ -127,12 +125,6 @@ class TableWriter(plugin.OutputPlugin):
         Store all the event data internally, write to disk when appropriate.
         This function follows the plugin API.
         """
-        # Hack to convert s1, s2 in interaction objects to numbers
-        for i in range(len(event.interactions)):
-            for q in ('s1', 's2'):
-                peak = getattr(event.interactions[i], q)
-                object.__setattr__(event.interactions[i], q, event.peaks.index(peak))
-
         self._model_to_tuples(event,
                               index_fields=[('Event', event.event_number), ])
         self.events_ready_for_conversion += 1
@@ -217,71 +209,40 @@ class TableWriter(plugin.OutputPlugin):
                 # Initialize dtype with the index fields
                 'dtype':                [(x[0], np.int64) for x in index_fields],
                 'index_depth':          len(m_indices),
-                # Dictionary of collection field's {field_names: collection
-                # class name}
-                'subcollection_fields': m.get_list_field_info(),
                 'first_index':          0
             }
             first_time_seen = True
 
-        # Handle the subcollection fields first
-        collection_field_name = {}    # Maps child types to collection field names
-        for field_name, field_type in self.data[m_name]['subcollection_fields'].items():
+        for field_name, field_value in m.get_fields_data():
+
             if field_name in self.config['fields_to_ignore']:
                 continue
 
-            field_value = getattr(m, field_name)
-            child_class_name = field_type.__name__
-            collection_field_name[child_class_name] = field_name
+            if isinstance(field_value, list):
+                # This is a model collection field.
+                # Get its type (can't get from the list itself, could be empty)
+                child_class_name = m.get_list_field_info()[field_name]
 
-            # Store the absolute start index & number of children
-            child_start = self.get_index_of(child_class_name)
-            n_children = len(field_value)
-            if first_time_seen:
-                # Add data types for n_x (unless already present, e.g. peak.n_hits) and x_start field names.
-                # Will have int type.
-                if not hasattr(m, 'n_%s' % field_name):
-                    self.data[m_name]['dtype'].append(self._numpy_field_dtype('n_%s' % field_name, 0))
-                self.data[m_name]['dtype'].append(self._numpy_field_dtype('%s_start' % field_name, 0))
-            if not hasattr(m, 'n_%s' % field_name):
-                m_data.append(n_children)
-            m_data.append(child_start)
-
-            # We'll ship model collections off to their own tuples (later record arrays)
-            # Convert each child_model to a dataframe, with a new index
-            # appended to the index trail
-            for new_index, child_model in enumerate(field_value):
-                self._model_to_tuples(child_model,
-                                      index_fields + [(type(child_model).__name__,
-                                                       new_index)])
-
-        # Handle the ordinary (non-subcollection) fields
-        for field_name, field_value in m.get_fields_data():
-
-            if field_name in self.config['fields_to_ignore'] or isinstance(field_value, list):
-                continue
-
-            elif isinstance(field_value, Model):
-                # Individual child model: store the child number instead
-                # Note: only works if collection is in the same model!
-                child_class_name = field_value.__class__.__name__
-
+                # Store the absolute start index & number of children
+                child_start = self.get_index_of(child_class_name)
+                n_children = len(field_value)
                 if first_time_seen:
-                    self.data[m_name]['dtype'].append(self._numpy_field_dtype(field_name, 0))
+                    # Add data types for n_x (unless already present, e.g. peak.n_hits) and x_start field names.
+                    # Will have int type.
+                    if not hasattr(m, 'n_%s' % field_name):
+                        self.data[m_name]['dtype'].append(self._numpy_field_dtype('n_%s' % field_name, 0))
+                    self.data[m_name]['dtype'].append(self._numpy_field_dtype('%s_start' % field_name, 0))
+                if not hasattr(m, 'n_%s' % field_name):
+                    m_data.append(n_children)
+                m_data.append(child_start)
 
-                # We know the number the next child should get. What number is this one?
-                for child_i_from_back, child in enumerate(reversed(getattr(m,
-                                                                           collection_field_name[child_class_name]))):
-                    # Note the is instead of ==, we really want the same child, not just one that looks the same
-                    if child is field_value:
-                        break
-                else:
-                    # Assume fake child, fallthrough in datastructure (e.g. event without S1)
-                    m_data.append(datastructure.INT_NAN)
-                    continue
-
-                child_i = self.get_index_of(child_class_name) - 1 - child_i_from_back
-                m_data.append(child_i)
+                # We'll ship model collections off to their own tuples (later record arrays)
+                # Convert each child_model to a dataframe, with a new index
+                # appended to the index trail
+                for new_index, child_model in enumerate(field_value):
+                    self._model_to_tuples(child_model,
+                                          index_fields + [(type(child_model).__name__,
+                                                           new_index)])
 
             elif isinstance(field_value, np.ndarray) and field_value.dtype.names is not None:
                 # Hey this is already a structure array :-) Treat like a collection field (except don't recurse)
@@ -300,8 +261,7 @@ class TableWriter(plugin.OutputPlugin):
             elif isinstance(field_value, np.ndarray) and not self.output_format.supports_array_fields:
                 # Hack for formats without array field support: NumpyArrayFields must get their own dataframe
                 #  -- assumes field names are unique!
-                # dataframe columns = str(positions in the array) ('0', '1',
-                # '2', ...)
+                # dataframe columns = str(positions in the array) ('0', '1', '2', ...)
 
                 # Is this the first time we see this numpy array field?
                 if field_name not in self.data:
@@ -313,8 +273,7 @@ class TableWriter(plugin.OutputPlugin):
                         # Initialize dtype with the index fields + every column
                         # in array becomes a field.... :-(
                         'dtype':           [(x[0], np.int64) for x in index_fields] +
-                                           [(str(i), field_value.dtype)
-                                            for i in range(len(field_value))],
+                                           [(str(i), field_value.dtype) for i in range(len(field_value))],
                         'index_depth':     len(m_indices),
                     }
                 self.data[field_name]['tuples'].append(tuple(m_indices + field_value.tolist()))
@@ -459,7 +418,6 @@ class TableReader(plugin.InputPlugin):
             assert len(in_this_event['Event']) == 1
             e_record = in_this_event['Event'][0]
             peaks = in_this_event['Peak']
-            peak_numbers = peaks['Peak'].tolist()      # Needed to build interaction objects
 
             event = self.convert_record(datastructure.Event, e_record)
 
@@ -492,17 +450,12 @@ class TableReader(plugin.InputPlugin):
 
                 if self.read_interactions:
                     interactions = in_this_event['Interaction']
-                    for intr_i, intr_record in enumerate(interactions):
-                        intr = self.convert_record(datastructure.Interaction, intr_record, ignore_type_checks=True)
-                        # Hack to build s1 and s2 attributes from peak numbers
-                        for q in ('s1', 's2'):
-                            peak = event.peaks[peak_numbers.index(getattr(intr, q))]
-                            object.__setattr__(intr, q, peak)
-                        event.interactions.append(intr)
+                    for intr_record in interactions:
+                        event.interactions.append(self.convert_record(datastructure.Interaction, intr_record))
 
             yield event
 
-    def convert_record(self, class_to_load_to, record, ignore_type_checks=False):
+    def convert_record(self, class_to_load_to, record):
         # We defined a nice custom init for event... ahem... now we have to do
         # cumbersome stuff...
         if class_to_load_to == datastructure.Event:
@@ -514,13 +467,9 @@ class TableReader(plugin.InputPlugin):
             result = class_to_load_to()
         for k, v in self._numpy_record_to_dict(record).items():
             # If result doesn't have this attribute, ignore it
-            # This happens for n_peaks etc. and attributes that have been
-            # removed
+            # This happens for n_peaks etc. and attributes that have been removed
             if hasattr(result, k):
-                if ignore_type_checks:
-                    object.__setattr__(result, k, v)
-                else:
-                    setattr(result, k, v)
+                setattr(result, k, v)
         return result
 
     def _numpy_record_to_dict(self, record):

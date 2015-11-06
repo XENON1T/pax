@@ -22,29 +22,28 @@ see `this FAQ entry <http://xenon1t.github.io/pax/faq.html#can-i-set-up-pax-on-m
 
 Python 3
 ^^^^^^^^
-Pax is written in Python 3; we recommend the
+
+pax is written in Python; we recommend the
 scientific python distribution `Anaconda <https://store.continuum.io/cshop/anaconda/>`_. To set this up in your linux home directory, do::
 
   wget http://repo.continuum.io/archive/Anaconda3-2.1.0-Linux-x86_64.sh
   bash Anaconda3-2.1.0-Linux-x86_64.sh  # Say 'yes' to appending to .bashrc
   export PATH=~/anaconda3/bin:$PATH  # If installed in default location
 
-You need to point anaconda to the physics-specific packages of e.g. ROOT.  You can do this by putting the following in `~/.condarc`::
+You need to point Anaconda to the physics-specific packages of e.g. ROOT.  You can do this by running the following::
 
-  channels:
-    - http://conda.anaconda.org/NLeSC
-    - defaults
+  conda config --add channels http://conda.anaconda.org/NLeSC  
 
-Alternatively, you can install Python 3.4 yourself (highly not recommended since ROOT probably won't work).  Note that you need write permission to the python distribution's directory and that Python 2 does not currently work.  
+Alternatively, you can install Python 3.4 yourself (highly not recommended since ROOT and JIT compiler probably won't work).   
 
 Additional python packages
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 Pax depends on several other python packages. While most python packages will install automatically,
 some contain C++ code which must be compiled. If you have Anaconda you can get appropriate binaries 
-for your platform using the `conda` tool::
+for your platform using the `conda` tool (you can change python to 2, or root to 5)::
 
   conda update conda
-  conda create -n pax numpy scipy matplotlib pandas cython h5py numba pip python-snappy pytables scikit-learn
+  conda create -n pax python=3 root=6 numpy scipy matplotlib pandas cython h5py numba pip python-snappy pytables scikit-learn rootpy
   
 Whenever you want to use `pax`, you have to run the following command to set it up::
   
@@ -52,7 +51,7 @@ Whenever you want to use `pax`, you have to run the following command to set it 
   
 You can put this in your `.bashrc` if you want it to be setup when you login. For the rest of the installation and to run pax, be sure to be inside this environment. There should be (pax) at the beginning of your command line.
 
-If you're using ubuntu and do not have a compiler installed (including Fortran compilers), then you should run:
+If you're using Ubuntu and do not have a compiler installed (including Fortran compilers), then you should run:
 
   sudo apt-get install build-essential
   
