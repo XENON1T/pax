@@ -155,7 +155,7 @@ class WriteROOTClass(plugin.OutputPlugin):
 
     def shutdown(self):
         self.write_to_disk()
-        if self.f: 
+        if self.f:
             self.f.Close()
 
     def _build_model_class(self, model):
