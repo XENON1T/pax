@@ -627,7 +627,7 @@ class Event(StrictModel):
         """Return the S1 of the primary interaction, or if that does not exist, the largest S1 in the tpc.
         Returns None if neither exist"""
         if self.interactions:
-            return self.interactions[0].s1
+            return self.peaks[self.interactions[0].s1]
         else:
             try:
                 return self.s1s()[0]
@@ -639,7 +639,7 @@ class Event(StrictModel):
         """Return the S2 of the primary interaction, or if that does not exist, the largest S2 in the tpc.
         Returns None if neither exist"""
         if self.interactions:
-            return self.interactions[0].s2
+            return self.peaks[self.interactions[0].s2]
         else:
             try:
                 return self.s2s()[0]
