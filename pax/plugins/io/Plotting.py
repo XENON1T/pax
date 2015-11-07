@@ -8,13 +8,7 @@ import os
 import time
 import textwrap
 
-# Hack to ensure correct matplotlib backend is chosen
-# This is duplicated from the paxer script
-# We need to duplicate it here, because pax can also be run without paxer
 import matplotlib
-if os.name != 'nt' and not os.environ.get('DISPLAY'):
-    matplotlib.use('Agg')
-
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 import numpy as np

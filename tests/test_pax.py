@@ -216,6 +216,9 @@ class TestPax(unittest.TestCase):
     def test_plotting(self):
         """ Plot the first event from the default XED file
         """
+        import matplotlib
+        # Force matplotlib to switch to a non-GUI backend, so the test runs on Travis
+        matplotlib.pyplot.switch_backend('Agg')
         mypax = core.Processor(config_names='XENON100',
                                config_dict={'pax': {'output': 'Plotting.PlotEventSummary',
                                                     'events_to_process': [0],
