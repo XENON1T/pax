@@ -27,7 +27,7 @@ pax is written in Python; we recommend the
 scientific python distribution `Anaconda <https://store.continuum.io/cshop/anaconda/>`_. For linux, to set this up in your home directory, do::
 
   wget http://repo.continuum.io/archive/Anaconda3-2.4.0-Linux-x86_64.sh  # Linux
-  bash Anaconda3-2.1.0-Linux-x86_64.sh  # Say 'yes' to appending to .bashrc
+  bash Anaconda3-2.4.0-Linux-x86_64.sh  # Say 'yes' to appending to .bashrc
   
 From Mac OSX, you should do instead::
 
