@@ -24,10 +24,18 @@ Python 3
 ^^^^^^^^
 
 pax is written in Python; we recommend the
-scientific python distribution `Anaconda <https://store.continuum.io/cshop/anaconda/>`_. To set this up in your linux home directory, do::
+scientific python distribution `Anaconda <https://store.continuum.io/cshop/anaconda/>`_. For linux, to set this up in your home directory, do::
 
-  wget http://repo.continuum.io/archive/Anaconda3-2.1.0-Linux-x86_64.sh
+  wget http://repo.continuum.io/archive/Anaconda3-2.4.0-Linux-x86_64.sh  # Linux
   bash Anaconda3-2.1.0-Linux-x86_64.sh  # Say 'yes' to appending to .bashrc
+  
+From Mac OSX, you should do instead::
+
+  curl http://repo.continuum.io/archive/Anaconda3-2.4.0-MacOSX-x86_64.sh # Mac OSX
+  bash Anaconda3-2.4.0-MacOSX-x86_64.sh  # Say 'yes' to appending to .bashrc
+  
+Lastly, for both OSX and Linux::
+
   export PATH=~/anaconda3/bin:$PATH  # If installed in default location
 
 You need to point Anaconda to the physics-specific packages of e.g. ROOT.  You can do this by running the following::
