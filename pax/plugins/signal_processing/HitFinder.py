@@ -261,7 +261,6 @@ class FindHits(plugin.TransformPlugin):
             plt.savefig(os.path.join(self.make_diagnostic_plots_in,
                                      'event%04d_pulse%05d-%05d_ch%03d.png' % data_for_title))
             plt.xlim(0, len(pulse.raw_data))
-            plt.show()
             plt.close()
 
         if len(hits_per_pulse):
