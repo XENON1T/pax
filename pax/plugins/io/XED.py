@@ -17,10 +17,10 @@ The write plugin always writes zle0 XED files with bzip2 data compression.
 
 from __future__ import division
 import bz2
-import io
 import time
 from itertools import groupby
 import math
+import six
 
 import numpy as np
 
@@ -180,11 +180,11 @@ class ReadXED(InputFromFolder):
 
             data_to_decompress = self.current_xedfile.read(event_layer_metadata['size'] - 28 - mask_bytes)
             try:
-                chunk_fake_file = io.BytesIO(bz2.decompress(data_to_decompress))
-            except OSError:
+                chunk_fake_file = six.BytesIO(bz2.decompress(data_to_decompress))
+            except (OSError, IOError):
                 # Maybe it wasn't compressed after all? We can at least try
                 # TODO: figure this out from flags
-                chunk_fake_file = io.BytesIO(data_to_decompress)
+                chunk_fake_file = six.BytesIO(data_to_decompress)
 
             # Loop over all channels in the event to get the pulses
             for channel_id in channels_included:
@@ -194,7 +194,7 @@ class ReadXED(InputFromFolder):
                                                            dtype='<u4')[0] - 1))
 
                 # Read the channel data into another fake binary file
-                channel_fake_file = io.BytesIO(chunk_fake_file.read(channel_data_size))
+                channel_fake_file = six.BytesIO(chunk_fake_file.read(channel_data_size))
 
                 # Read the channel data control word by control word.
                 # sample_position keeps track of where in the waveform a new

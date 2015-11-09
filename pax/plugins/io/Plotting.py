@@ -12,6 +12,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 import numpy as np
+from six.moves import input
 
 # Init stuff for 3d plotting
 # Please do not remove, although it appears to be unused, 3d plotting won't work without it
