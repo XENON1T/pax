@@ -69,7 +69,7 @@ install:
   - conda create -q -n pax python=${PYTHON} root=${ROOT} numpy scipy matplotlib pandas cython h5py numba pip python-snappy pytables scikit-learn rootpy
   - source activate pax
   # tmp hack will be fixed
-  - conda uninstall -q sqlite libpng libx11 
+  # - conda uninstall -q sqlite libpng libx11 
   - pip install coveralls nose coverage
 
   # Install pax
