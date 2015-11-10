@@ -534,6 +534,8 @@ class PeakViewer(PlotBase):
     max_characters = 70
 
     def substartup(self):
+        # Default setting for first peak to show
+        self.starting_peak = self.config.get('starting_peak', 'largest')
         # Dictionary mapping event number to left boundary index of desired starting peak
         self.starting_peak_per_event = self.config.get('starting_peak_per_event', {})
         # Convert keys = event numbers to integers -- necessary since JSON only allows string dictionary keys...
@@ -602,7 +604,16 @@ class PeakViewer(PlotBase):
         self.peak_text = self.fig.text(x, start_y + 3 * row_y + y_sep_middle, '', verticalalignment='top')
 
         ##
-        # Get the TPC peaks and select one
+        # Peak hitpatterns
+        ##
+        y = start_y + 2 * row_y + y_sep_middle
+        self.bot_hitp_ax = plt.axes([start_x, y, column_x, row_y])
+        self.top_hitp_ax = plt.axes([start_x, y + row_y, column_x, row_y],
+                                    sharex=self.bot_hitp_ax)
+        self.top_hitp_ax.get_xaxis().set_visible(False)
+
+        ##
+        # Get the TPC peaks
         ##
         # Did the user specify a peak number? If so, get it
         self.peak_i = self.starting_peak_per_event.get(event.event_number, None)
@@ -611,30 +622,6 @@ class PeakViewer(PlotBase):
         if len(self.peaks) == 0:
             self.log.debug("No peaks in this event, will be a boring peakviewer plot...")
             return event
-
-        if event.event_number in self.starting_peak_per_event:
-            # The user specified the left boundary of the desired starting peak
-            desired_left = self.starting_peak_per_event[event.event_number]
-            self.peak_i = np.argmin([np.abs(p.left - desired_left) for p in self.peaks])
-            if self.peaks[self.peak_i].left != desired_left:
-                self.log.warning('There is no (tpc, non-lone-hit) peak starting at index %d! '
-                                 'Taking closest peak (%d-%d) instead.' % (desired_left,
-                                                                           self.peaks[self.peak_i].left,
-                                                                           self.peaks[self.peak_i].right))
-            self.log.debug("Selected user-defined peak %d" % self.peak_i)
-        else:
-            # Usual case: just pick the largest peak (regarless of its type)
-            self.peak_i = np.argmax([p.area for p in self.peaks])
-            self.log.debug("Largest peak is %d (peak list runs from 0-%d)" % (self.peak_i, len(self.peaks)-1))
-
-        ##
-        # Peak hitpatterns
-        ##
-        y = start_y + 2 * row_y + y_sep_middle
-        self.bot_hitp_ax = plt.axes([start_x, y, column_x, row_y])
-        self.top_hitp_ax = plt.axes([start_x, y + row_y, column_x, row_y],
-                                    sharex=self.bot_hitp_ax)
-        self.top_hitp_ax.get_xaxis().set_visible(False)
 
         ##
         # Peak Waveforms
@@ -668,13 +655,48 @@ class PeakViewer(PlotBase):
         self.make_button([x + 3 * button_width + buttons_x_space, y, button_width, button_height],
                          'Main S2', self.draw_main_s2)
 
-        self.draw_peak()
+        ##
+        # Select and draw the desired peak
+        ##
+        if event.event_number in self.starting_peak_per_event:
+            # The user specified the left boundary of the desired starting peak
+            desired_left = self.starting_peak_per_event[event.event_number]
+            self.peak_i = np.argmin([np.abs(p.left - desired_left) for p in self.peaks])
+            if self.peaks[self.peak_i].left != desired_left:
+                self.log.warning('There is no (tpc, non-lone-hit) peak starting at index %d! '
+                                 'Taking closest peak (%d-%d) instead.' % (desired_left,
+                                                                           self.peaks[self.peak_i].left,
+                                                                           self.peaks[self.peak_i].right))
+            self.log.debug("Selected user-defined peak %d" % self.peak_i)
+            self.draw_peak()
+
+        elif self.starting_peak == 'first':
+            self.peak_i = 0
+            self.draw_peak()
+
+        elif self.starting_peak == 'main_s1':
+            self.draw_main_s1()
+
+        elif self.starting_peak == 'main_s2':
+            self.draw_main_s2()
+
+        if self.peak_i is None:
+            # Either self.starting_peak is 'largest' or one of the other peak selections failed
+            # (e.g. couldn't draw the main s1 because there is no S1)
+            # Just pick the largest peak (regardless of its type)
+            self.peak_i = np.argmax([p.area for p in self.peaks])
+            self.log.debug("Largest peak is %d (peak list runs from 0-%d)" % (self.peak_i, len(self.peaks)-1))
+            self.draw_peak()
+
         # Draw the color bar for the top or bottom hitpattern plot (they share them)
         # In the rare case the top has no data points, take it from the bottom
         sc_for_hitp = self.top_hitp_sc if self.peaks[self.peak_i].area_fraction_top != 0 else self.bot_hitp_sc
         plt.colorbar(sc_for_hitp, ax=[self.top_hitp_ax, self.bot_hitp_ax])
 
     def draw_peak(self):
+        if self.peak_i is None:
+            raise RuntimeError("self.peak_i is None: peak viewer bug!")
+
         # Select the requested peak
         self.peak_i = self.peak_i % len(self.peaks)
         peak = self.peaks[self.peak_i]
