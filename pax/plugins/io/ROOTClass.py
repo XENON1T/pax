@@ -61,6 +61,7 @@ class WriteROOTClass(plugin.OutputPlugin):
         self.config.setdefault('buffer_size', 16000)
         self.config.setdefault('fields_to_ignore', ('all_hits', 'raw_data', 'sum_waveforms',
                                                     'hits', 'pulses'))
+        self.config.setdefault('output_class_code', True)
         self._custom_types = []
 
         # TODO: add overwrite check
@@ -78,16 +79,25 @@ class WriteROOTClass(plugin.OutputPlugin):
             self.event_tree = ROOT.TTree(self.config['tree_name'],
                                          'Tree with %s events from pax' % self.config['tpc_name'])
 
-            # Write the event class C++ definition
+            # Get the event class C++ definition
             # Do this here, since it requires an instance (for length of arrays)
-
-            full_name = os.path.join(BINARY_PATH, 'modules', 'pax_event_class.cpp')
-
             # TODO: This fails if the first event doesn't have a peak!!
-            with open(full_name, mode='w') as outfile:
-                outfile.write(overall_header)
-                outfile.write(self._build_model_class(event))
-            load_event_class(full_name)
+            class_code = overall_header + self._build_model_class(event)
+
+            # Write the pax event class to an internal location
+            # This way we don't get lots of autodict blablabla files in the output directory
+            # TODO: How do we know BINARY_PATH/modules/.... is writeable for the user? Maybe use tempdir?
+            pax_class_path = os.path.join(BINARY_PATH, 'modules', 'pax_event_class.cpp')
+            with open(pax_class_path, mode='w') as outfile:
+                outfile.write(class_code)
+
+            # Write a copy of the event class to the working directory (if desired)
+            if self.config['output_class_code']:
+                with open('pax_event_class.cpp', mode='w') as outfile:
+                    outfile.write(class_code)
+
+            # Load the event class and make the event object
+            load_event_class(pax_class_path)
             self.log.debug("Event class loaded, creating event")
             self.root_event = ROOT.Event()
             # TODO: setting the splitlevel to 0 or 99 seems to have no effect??
