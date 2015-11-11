@@ -44,7 +44,13 @@ def load_event_class(filename):
                 classnames.append(m.group(1))
 
     # Load the file in ROOT
-    ROOT.gROOT.ProcessLine('.L %s+' % filename)
+    libname = os.path.splitext(filename)[0]+"_cpp"
+    if os.path.exists(libname):
+        if ROOT.gSystem.Load(libname) not in (0, 1):
+            raise RuntimeError(
+                "failed to load the library '{0}'".format(libname))
+    else:
+        ROOT.gROOT.ProcessLine('.L %s+' % filename)
     # C.register_file(filename,classnames)
 
     # Build the required dictionaries for the vectors of classes
