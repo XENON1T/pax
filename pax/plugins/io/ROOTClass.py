@@ -47,17 +47,14 @@ def load_event_class(filename):
     libname = os.path.splitext(filename)[0]+"_cpp"
     if os.path.exists(libname):
         if ROOT.gSystem.Load(libname) not in (0, 1):
-            raise RuntimeError(
-                "failed to load the library '{0}'".format(libname))
+            raise RuntimeError("failed to load the "
+                               "library '{0}'".format(libname))
     else:
         ROOT.gROOT.ProcessLine('.L %s+' % filename)
-    # C.register_file(filename,classnames)
 
     # Build the required dictionaries for the vectors of classes
     for name in classnames:
         stl.generate("vector<%s>" % name, "%s;<vector>" % filename, True)
-        # ROOT.gInterpreter.GenerateDictionary("vector<%s>" % name, filename)
-
 
 class WriteROOTClass(plugin.OutputPlugin):
 
