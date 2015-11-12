@@ -20,6 +20,21 @@ Installation prerequisites
 We will assume you are installing on Mac or Linux here. For installation on Windows, 
 see `this FAQ entry <http://xenon1t.github.io/pax/faq.html#can-i-set-up-pax-on-my-windows-machine>`_. 
 
+Check that no other ROOT is seen
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Ensure that there is no other ROOT version that can be seen by your terminal.  You can check this by running the following at the command line::
+
+  root
+  
+Which should return ``bash: root: command not found``.  Also check that Python cannot see ROOT.  You do this by running::
+
+  python -c "import ROOT"
+
+and this command should say ``ImportError: No module named 'ROOT'``.  
+
+If there are multiple versions of ROOT, then when you try to use pax, pax will want to use the ROOT library that will subsequently implode.  You will get segmentation faults and other very nasty issues.  This is an issue with ROOT and not pax, but almost every issue we have with pax is related to there being multiple ROOT versions that fight with one another.
+
 Python 3
 ^^^^^^^^
 
