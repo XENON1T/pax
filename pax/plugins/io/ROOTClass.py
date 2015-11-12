@@ -57,7 +57,6 @@ def load_event_class(filename):
     for name in classnames:
         stl.generate("std::vector<%s>" % name, "%s;<vector>" % filename, True)
 
-
 class WriteROOTClass(plugin.OutputPlugin):
 
     def startup(self):
