@@ -15,17 +15,9 @@ import numpy as np
 base_logger = logging.getLogger('TableWriter')
 
 try:
-    import ROOT   # noqa
-except ImportError:
-    base_logger.warning("pyROOT didn't import - if you use the ROOT format, pax will crash!")
-except SyntaxError:
-    base_logger.warning("pyROOT not made for Python3? - if you use the ROOT format, pax will crash!")
-
-try:
     import pandas
 except ImportError:
     base_logger.warning("You don't have pandas -- if you use any of the pandas formats, pax will crash!")
-
 
 try:
     import h5py
@@ -161,6 +153,7 @@ class ROOTDump(TableFormat):
     # ROOT types, strings are handled seperately!
     root_type = {'float32': '/F',
                  'float64': '/D',
+                 'int16': '/S',
                  'int32': '/I',
                  'int64': '/L',
                  'bool': '/O',
@@ -174,19 +167,24 @@ class ROOTDump(TableFormat):
                   'C': np.dtype('object')}
 
     def __init__(self, *args, **kwargs):
+        base_logger.warn("The tabular ROOT output is old and may crash!")
+        # Avoid importing ROOT until it is needed
+        import ROOT   # noqa
+        self.ROOT = ROOT
+
         # This line makes sure all TTree objects are NOT owned
         # by python, avoiding segfaults when garbage collecting
-        ROOT.TTree.__init__._creates = False
+        self.ROOT.TTree.__init__._creates = False
         # DON'T use the Python3 super trick here, we want this code to run in python2 as well!
         TableFormat.__init__(self, *args, **kwargs)
 
     def open(self, name, mode):
         if mode == 'w':
-            self.f = ROOT.TFile(name, "RECREATE")
+            self.f = self.ROOT.TFile(name, "RECREATE")
             self.trees = {}
             self.branch_buffers = {}
         elif mode == 'r':
-            self.f = ROOT.TFile(name)
+            self.f = self.ROOT.TFile(name)
         else:
             raise ValueError("Invalid mode")
 
@@ -199,7 +197,7 @@ class ROOTDump(TableFormat):
             # Create tree first time write data is called
             if treename not in self.trees:
                 self.log.debug("Creating tree: %s" % treename)
-                self.trees[treename] = ROOT.TTree(treename, treename)
+                self.trees[treename] = self.ROOT.TTree(treename, treename)
                 self.branch_buffers[treename] = {}
                 for fieldname in records.dtype.names:
                     field_data = records[fieldname]
