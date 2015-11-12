@@ -51,7 +51,7 @@ some contain C++ code which must be compiled. If you have Anaconda you can get a
 for your platform using the `conda` tool (you can change python to 2, or root to 5)::
 
   conda update conda
-  conda create -n pax python=3 root=6 numpy scipy matplotlib pandas cython h5py numba pip python-snappy pytables scikit-learn rootpy
+  conda create -n pax python=3 root=5 numpy scipy matplotlib pandas cython h5py numba pip python-snappy pytables scikit-learn rootpy
   
 Whenever you want to use `pax`, you have to run the following command to set it up::
   
