@@ -66,7 +66,7 @@ some contain C++ code which must be compiled. If you have Anaconda you can get a
 for your platform using the `conda` tool (you can change python to 2, or root to 5)::
 
   conda update conda
-  conda create -n pax python=3 root=5 rootpy numpy scipy matplotlib pandas cython h5py numba pip python-snappy pytables scikit-learn 
+  conda create -n pax python=3 root=5 rootpy numpy scipy matplotlib pandas cython h5py numba=0.21.0 pip python-snappy pytables scikit-learn 
   
 If you do not want ROOT support, you can skip the root and rootpy part of the above command (then everything except ROOT files but including event display will work).
 
