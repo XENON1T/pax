@@ -7,7 +7,8 @@ import ROOT
 
 import pax  # For version number
 from pax import plugin, datastructure
-
+import sysconfig
+import six
 ##
 # Build the pax event class path
 ##
@@ -58,6 +59,11 @@ def load_event_class(filename):
 
     # Load the file in ROOT
     libname = os.path.splitext(filename)[0] + "_cpp"
+    if six.PY2:
+        libname = libname+sysconfig.get_config_var('SO')
+    else:
+        libname = libname+sysconfig.get_config_var('SHLIB_SUFFIX')
+
     if os.path.exists(libname):
         if ROOT.gSystem.Load(libname) not in (0, 1):
             raise RuntimeError("failed to load the library '{0}'".format(libname))
