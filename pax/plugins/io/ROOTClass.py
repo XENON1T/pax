@@ -15,6 +15,7 @@ overall_header = """
 #include "TObject.h"
 #include "TString.h"
 #include <vector>
+
 """
 
 class_template = """
@@ -55,7 +56,7 @@ def load_event_class(filename):
 
     # Build the required dictionaries for the vectors of classes
     for name in classnames:
-        stl.generate("vector<%s>" % name, "%s;<vector>" % filename, True)
+        stl.generate("std::vector<%s>" % name, "%s;<vector>" % filename, True)
 
 
 class WriteROOTClass(plugin.OutputPlugin):
