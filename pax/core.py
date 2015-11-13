@@ -12,14 +12,6 @@ if six.PY2:
 else:
     import importlib
 
-
-try:
-    import ROOT     # noqa
-except ImportError:
-    pass
-except SyntaxError:
-    pass
-
 import numpy as np
 
 from prettytable import PrettyTable     # Timing report
