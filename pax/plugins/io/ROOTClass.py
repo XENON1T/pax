@@ -28,6 +28,7 @@ overall_header = """
 #include "TObject.h"
 #include "TString.h"
 #include <vector>
+
 """
 
 class_template = """
@@ -75,7 +76,7 @@ def load_event_class(filename):
         if os.name == 'nt':
             ROOT.gInterpreter.GenerateDictionary("vector<%s>" % name, filename)
         else:
-            stl.generate("vector<%s>" % name, "%s;<vector>" % filename, True)
+            stl.generate("std::vector<%s>" % name, "%s;<vector>" % filename, True)
 
 
 class WriteROOTClass(plugin.OutputPlugin):
@@ -250,7 +251,7 @@ class WriteROOTClass(plugin.OutputPlugin):
                     else:
                         source = field_value[0]
                     child_classes_code += '\n' + self._build_model_class(source)
-                class_attributes += '\tvector <%s>  %s;\n' % (element_model_name, field_name)
+                class_attributes += '\tstd::vector <%s>  %s;\n' % (element_model_name, field_name)
 
             # Numpy array (assumed fixed-length, 1-d)
             elif isinstance(field_value, np.ndarray):
