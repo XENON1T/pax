@@ -522,7 +522,7 @@ class Simulator(object):
 
     def distribute_s2_photons(self, n_photons, x, y):
         if not self.s2_patterns:
-            return self.randomize_photons_over_channels(n_photons, self.config['channels_top'])
+            return self.randomize_photons_over_channels(n_photons, self.config['channels_in_detector']['tpc'])
 
         # How many photons to the top array?
         n_top = np.random.binomial(n=n_photons, p=self.config['s2_mean_area_fraction_top'])
