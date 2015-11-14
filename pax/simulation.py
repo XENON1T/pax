@@ -538,8 +538,7 @@ class Simulator(object):
             hitp = self.distribute_photons_by_pattern(n_top, self.s2_patterns, (x, y))
 
         # The bottom photons are distributed randomly
-        hitp += self.randomize_photons_over_channels(n_photons - n_top,
-                                                     channels=self.config['channels_bottom'])
+        hitp += self.randomize_photons_over_channels(n_photons - n_top, channels=self.config['channels_bottom'])
         return hitp
 
     def distribute_s1_photons(self, n_photons, x, y, z):
@@ -569,7 +568,7 @@ class Simulator(object):
         :return: array of length sim.config['n_channels'] with photon counts per channel
         """
         if n_photons == 0:
-            return np.zeros(self.config['n_channels'])
+            return np.zeros(self.config['n_channels'], dtype=np.int64)
 
         # Include only channels that can receive photons
         if channels is None:
