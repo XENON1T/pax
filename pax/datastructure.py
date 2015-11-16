@@ -26,9 +26,14 @@ class ReconstructedPosition(StrictModel):
     x = float('nan')  #: x position (cm)
     y = float('nan')  #: y position (cm)
 
-    #: goodness-of-fit parameter generated with PosRecChiSquareGamma
+    #: For 3d-position reconstruction algorithms, the z-position (cm)
+    #: This is NOT related to drift time, which is an interaction-level quantity!
+    z = float('nan')
+
+    #: goodness-of-fit of hitpattern to position
     goodness_of_fit = float('nan')
-    # : number of degrees of freedom calculated with PosRecChiSquareGamma
+
+    # : number of degrees of freedom used in goodness-of-fit calculation
     ndf = float('nan')
 
     #: Name of algorithm used for computation

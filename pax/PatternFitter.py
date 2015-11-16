@@ -48,6 +48,7 @@ class PatternFitter(object):
         self.log.debug('Loaded pattern file named: %s' % json_data['name'])
         self.log.debug('Description:\n    ' + re.sub(r'\n', r'\n    ', json_data['description']))
         self.log.debug('Data shape: %s' % str(self.data.shape))
+        self.log.debug('Will zoom in by factor %s' % zoom_factor)
         self.dimensions = len(json_data['coordinate_system'])    # Spatial dimensions (other one is sampling points)
 
         # Zoom the spatial map using linear interpolation, if desired
@@ -67,6 +68,8 @@ class PatternFitter(object):
                                                        maximum=stop,
                                                        n_bins=n_bins,
                                                        bin_spacing=(stop - start)/n_bins))
+        self.log.debug('Coordinate ranges: %s' % ', '.join(['%s-%s (%d bins)' % (cd.minimum, cd.maximum, cd.n_bins)
+                                                            for cd in self.coordinate_data]))
 
         # TODO: Technically we should zero the bins outside the tpc bounds again:
         # some LCE may have leaked into this region due to upsampling... but doesn't matter:

@@ -743,8 +743,12 @@ class PeakViewer(PlotBase):
                                    if peak.area_fraction_top != 0 else float('nan')),
             pos.goodness_of_fit / (peak.n_contributing_channels_top
                                    if peak.n_contributing_channels_top != 0 else float('nan')))
-        peak_text += 'Top spread: %0.1fcm, Bottom spread: %0.1fcm' % (peak.top_hitpattern_spread,
-                                                                      peak.bottom_hitpattern_spread)
+        peak_text += 'Top spread: %0.1fcm, Bottom spread: %0.1fcm\n' % (peak.top_hitpattern_spread,
+                                                                        peak.bottom_hitpattern_spread)
+        pos3d = peak.get_reconstructed_position_from_algorithm('PosRecThreeDPatternFit')
+        if not np.isnan(pos3d.x):
+            peak_text += '3d position: x=%0.1f, y=%0.1f, z=%0.1f (all cm)' % (pos3d.x, pos3d.y, pos3d.z)
+
         self.peak_text.set_text(self.wrap_multiline(peak_text, self.max_characters))
 
         plt.draw()
