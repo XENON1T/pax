@@ -54,7 +54,7 @@ processing and other data processing on the XENON100/XENON1T raw data.</p>
 see <a class="reference external" href="http://xenon1t.github.io/pax/faq.html#can-i-set-up-pax-on-my-windows-machine">this FAQ entry</a>.</p>
 <div class="section" id="check-that-no-other-root-is-seen">
 <h2>Check that no other ROOT is seen<a class="headerlink" href="#check-that-no-other-root-is-seen" title="Permalink to this headline">¶</a></h2>
-<p>Ensure that there is no other ROOT version that can be seen by your terminal.  You can check this by running the following at the command line:</p>
+<p>It is advisable to ensure that there is no other ROOT version that can be seen by your terminal (though not required).  You can check this by running the following at the command line:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">root</span>
 </pre></div>
 </div>
@@ -63,7 +63,7 @@ see <a class="reference external" href="http://xenon1t.github.io/pax/faq.html#ca
 </pre></div>
 </div>
 <p>and this command should say <code class="docutils literal"><span class="pre">ImportError:</span> <span class="pre">No</span> <span class="pre">module</span> <span class="pre">named</span> <span class="pre">'ROOT'</span></code>.</p>
-<p>If there are multiple versions of ROOT, then when you try to use pax, pax will want to use the ROOT library that will subsequently implode.  You will get segmentation faults and other very nasty issues.  This is an issue with ROOT and not pax, but almost every issue we have with pax is related to there being multiple ROOT versions that fight with one another.</p>
+<p>If there are multiple versions of ROOT, then when you try to use pax, pax will want to use the ROOT library that will subsequently implode.  You can get segmentation faults and other very nasty issues.  This is an issue with ROOT and not pax, but almost every issue we have with pax is related to there being multiple ROOT versions that fight with one another.</p>
 </div>
 <div class="section" id="python-3">
 <h2>Python 3<a class="headerlink" href="#python-3" title="Permalink to this headline">¶</a></h2>
