@@ -45,40 +45,37 @@ def run():
 
     Find a dataset to process, then process it with settings from command line.
     """
-    try:
-        mongo_url = os.environ['MONGO_URL']
-    except KeyError:
-        raise RuntimeError("You need to set the variable MONGO_URL."
-                           "\texport MONGO_URL=mongodb://eb0/untriggered")
 
-    client = pymongo.MongoClient(mongo_url,
-                                 serverSelectionTimeoutMS=500)
-    
+    # Fetch command line arguments
     args, log = handle_args()
 
-    query = {"trigger.status": "waiting_to_be_processed"}
-
-    log.info("Searching for run")
+    logging.info("Connection to %s" % args.mongo)
+    client = pymongo.MongoClient(args.mongo)
 
     try:
         client.admin.command('ping')
-        log.debug("Connection successful to %s:%d",
-                  args.address,
-                  args.port)
+        log.debug("Connection successful to %s", args.mongo)
     except pymongo.errors.ConnectionFailure:
-        log.fatal("Cannot connect to MongoDB at %s:%d" % (args.address,
-                                                          args.port))
+        log.fatal("Cannot connect to MongoDB at %s" % (args.mongo))
         raise
 
-    log.debug('Fetching databases: %s', args.database)
-    db = client.get_database(args.database)
+    authenticate(client)
 
-    log.debug('Getting collection: %s', args.collection)
-    collection = db.get_collection(args.collection)
+    query = {'detectors.tpc.trigger.status': 'waiting_to_be_processed'}
+
+    log.info("Searching for run")
+
+
+
+    db = client.get_default_database()
+    log.debug('Fetched databases: %s', db.name)
+
+    collection = db.get_collection('runs')
+    log.debug('Got collection: %s', collection.name)
 
     while 1:
         run_doc = collection.find_one_and_update(query,
-                                                 {'$set': {'trigger.status': 'staging'}})
+                                                 {'$set': {'detectors.tpc.trigger.status': 'staging'}})
 
         if run_doc is None:
             if args.impatient:
@@ -108,11 +105,7 @@ def run():
                                    'output': output,
                                    'output_name': filename, },
 
-                           'MongoDB': {'runs_database_location': {'address': args.address,
-                                                                  'database': args.database,
-                                                                  'port': args.port,
-                                                                  'collection': args.collection
-                                                                  },
+                           'MongoDB': {'runs_database': args.mongo,
                                        'window': args.window * units.us,
                                        'left': args.left * units.us,
                                        'right': args.right * units.us,
@@ -131,6 +124,24 @@ def run():
                 collection.update(query,
                                   {'$set': {'trigger.status': 'error'}})
 
+
+def authenticate(client, database_name = None):
+    try:
+        mongo_user = os.environ['MONGO_USER']
+    except KeyError:
+        raise RuntimeError("You need to set the variable MONGO_USER."
+                           "\texport MONGO_USER=eb")
+    try:
+        mongo_password = os.environ['MONGO_PASSWORD']
+    except KeyError:
+        raise RuntimeError("You need to set the variable MONGO_PASSWORD."
+                           "\texport MONGO_PASSWORD=XXXXXX")
+
+    if database_name == None:
+        database = client.get_default_database()
+    else:
+        database = client[database_name]
+    database.authenticate(mongo_user, mongo_password)
 
 def handle_args():
     """Command line argument processing
@@ -172,6 +183,12 @@ def handle_args():
                         default=1,
                         type=int,
                         help="Wait time between searching if no data")
+
+    parser.add_argument('--mongo',
+                        default='mongodb://master:27017,master:27018/run',
+                        type=str,
+                        help='Run database MongoDB URI')
+
     # Log level control
     parser.add_argument('--log', default=None,
                         help="Set log level, e.g. 'debug'")

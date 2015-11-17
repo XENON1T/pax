@@ -457,8 +457,3 @@ def wraplist(x):
 
 if __name__ == "__main__":
     main()
-    roots = objgraph.get_leaking_objects()
-
-    print('done', len(roots) )
-    print(objgraph.show_most_common_types(objects=roots))
-

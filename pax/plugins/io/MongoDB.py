@@ -15,6 +15,7 @@ import snappy
 
 from pax.datastructure import Event, Pulse
 from pax import plugin, units
+from pax.eventbuilder import authenticate
 
 
 START_KEY = 'time'
@@ -85,13 +86,29 @@ class IOMongoDB():
         # change midrun.  For example, the run can end.
         self.run_doc_id = self.config['run_doc']
         self.log.debug("Run doc %s", self.run_doc_id)
-        self.setup_access('run',
-                          **self.config['runs_database_location'])
+
+        client_run = pymongo.MongoClient(self.config['runs_database'],
+                                         serverSelectionTimeoutMS=500)
+        authenticate(client_run)
+        try:
+            client_run.admin.command('ping')
+            self.log.debug("Connection succesful")
+        except pymongo.errors.ConnectionFailure:
+            self.log.fatal("Cannot connect to MongoDB at %s" % self.config['runs_database'])
+            raise
+        m = {}
+        m['client'] = client_run
+        self.log.debug('Fetching run DB')
+        m['database'] = m['client'].get_default_database()
+        self.log.debug('Getting runs collection')
+        m['collection'] = m['database'].get_collection('runs')
+
+        self.mongo['run'] = m
 
         self.log.info("Fetching run document %s",
                       self.run_doc_id)
         self.query = {'_id': self.run_doc_id}
-        update = {'$set': {'trigger.status': 'processing'}}
+        update = {'$set': {'detectors.tpc.trigger.status': 'processing'}}
         self.run_doc = self.mongo['run']['collection'].find_one_and_update(self.query,
                                                                            update)
         self.sort_key = [(START_KEY, 1),
@@ -121,7 +138,8 @@ class IOMongoDB():
                      address,
                      database,
                      collection,
-                     port=27017):
+                     port=27017,
+                     **kwargs):
         wc = pymongo.write_concern.WriteConcern(w=0)
 
         m = {}  # Holds connection, database info, and collection info
@@ -140,6 +158,7 @@ class IOMongoDB():
                 c = pymongo.MongoClient(address,
                                         port,
                                         serverSelectionTimeoutMS=500)
+            authenticate(c, database)
             self.connections[address] = c
 
             try:
@@ -162,22 +181,14 @@ class IOMongoDB():
 
     def setup_input(self):
         self.log.info("run_doc")
-        self.log.info(self.run_doc['reader'])
+        self.log.info(self.run_doc['detectors']['tpc'])
 
-        buff = self.run_doc['reader']['storage_buffer']
-
-        # Delete after Dan's change in kodiaq issue #48
-        buff2 = {}
-        buff2['address'] = buff['dbaddr']
-        buff2['database'] = buff['dbname']
-        buff2['collection'] = buff['dbcollection']
-        buff = buff2
+        buff = self.run_doc['detectors']['tpc']['mongo_buffer']
+        self.compressed = buff['compressed']
 
         self.setup_access('input',
                           **buff)
         self.mongo['input']['collection'].ensure_index(self.sort_key)
-
-        self.compressed = self.run_doc['reader']['compressed']
 
     def update_run_doc(self):
         self.run_doc = self.mongo['run']['collection'].find_one(self.query)
