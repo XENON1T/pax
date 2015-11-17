@@ -57,10 +57,10 @@
 
 <span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">division</span>
 <span class="kn">import</span> <span class="nn">bz2</span>
-<span class="kn">import</span> <span class="nn">io</span>
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">groupby</span>
 <span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">six</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 
@@ -220,11 +220,11 @@
 
             <span class="n">data_to_decompress</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_xedfile</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">event_layer_metadata</span><span class="p">[</span><span class="s">&#39;size&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="mi">28</span> <span class="o">-</span> <span class="n">mask_bytes</span><span class="p">)</span>
             <span class="k">try</span><span class="p">:</span>
-                <span class="n">chunk_fake_file</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">bz2</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">data_to_decompress</span><span class="p">))</span>
-            <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
+                <span class="n">chunk_fake_file</span> <span class="o">=</span> <span class="n">six</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">bz2</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">data_to_decompress</span><span class="p">))</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">OSError</span><span class="p">,</span> <span class="ne">IOError</span><span class="p">):</span>
                 <span class="c"># Maybe it wasn&#39;t compressed after all? We can at least try</span>
                 <span class="c"># TODO: figure this out from flags</span>
-                <span class="n">chunk_fake_file</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">data_to_decompress</span><span class="p">)</span>
+                <span class="n">chunk_fake_file</span> <span class="o">=</span> <span class="n">six</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">data_to_decompress</span><span class="p">)</span>
 
             <span class="c"># Loop over all channels in the event to get the pulses</span>
             <span class="k">for</span> <span class="n">channel_id</span> <span class="ow">in</span> <span class="n">channels_included</span><span class="p">:</span>
@@ -234,7 +234,7 @@
                                                            <span class="n">dtype</span><span class="o">=</span><span class="s">&#39;&lt;u4&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
 
                 <span class="c"># Read the channel data into another fake binary file</span>
-                <span class="n">channel_fake_file</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">chunk_fake_file</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">channel_data_size</span><span class="p">))</span>
+                <span class="n">channel_fake_file</span> <span class="o">=</span> <span class="n">six</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">chunk_fake_file</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">channel_data_size</span><span class="p">))</span>
 
                 <span class="c"># Read the channel data control word by control word.</span>
                 <span class="c"># sample_position keeps track of where in the waveform a new</span>

@@ -41,79 +41,8 @@
 <div class="section" id="submodules">
 <h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
 </div>
-<div class="section" id="module-pax.plugins.io.Avro">
-<span id="pax-plugins-io-avro-module"></span><h2>pax.plugins.io.Avro module<a class="headerlink" href="#module-pax.plugins.io.Avro" title="Permalink to this headline">¶</a></h2>
-<p>(deprecated for BSON) Avro is responsible for the raw digitizer data storage</p>
-<p>Avro is a remote procedure call and data serialization framework developed
-within Apache&#8217;s Hadoop project.  We use it within &#8216;pax&#8217; to store the raw data
-from the experiment to disk.  These classes are used, for example, by the data
-aquisition system to write the raw data coming from the experiment.  More
-information about Avro can be found at:</p>
-<div class="highlight-python"><div class="highlight"><pre>http://en.wikipedia.org/wiki/Apache_Avro
-</pre></div>
-</div>
-<p>This replaced &#8216;xdio&#8217; from XENON100.</p>
-<dl class="class">
-<dt id="pax.plugins.io.Avro.ReadAvro">
-<em class="property">class </em><code class="descclassname">pax.plugins.io.Avro.</code><code class="descname">ReadAvro</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/Avro.html#ReadAvro"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Avro.ReadAvro" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.FolderIO.InputFromFolder" title="pax.FolderIO.InputFromFolder"><code class="xref py py-class docutils literal"><span class="pre">pax.FolderIO.InputFromFolder</span></code></a></p>
-<p>Read raw Avro data from an Avro file or folder of Avro files</p>
-<dl class="method">
-<dt id="pax.plugins.io.Avro.ReadAvro.close">
-<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/Avro.html#ReadAvro.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Avro.ReadAvro.close" title="Permalink to this definition">¶</a></dt>
-<dd><p>Close the currently open file</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="pax.plugins.io.Avro.ReadAvro.file_extension">
-<code class="descname">file_extension</code><em class="property"> = 'avro'</em><a class="headerlink" href="#pax.plugins.io.Avro.ReadAvro.file_extension" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.Avro.ReadAvro.get_all_events_in_current_file">
-<code class="descname">get_all_events_in_current_file</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/Avro.html#ReadAvro.get_all_events_in_current_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Avro.ReadAvro.get_all_events_in_current_file" title="Permalink to this definition">¶</a></dt>
-<dd><p>Yield events from Avro file iteratively</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.Avro.ReadAvro.open">
-<code class="descname">open</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/Avro.html#ReadAvro.open"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Avro.ReadAvro.open" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.io.Avro.WriteAvro">
-<em class="property">class </em><code class="descclassname">pax.plugins.io.Avro.</code><code class="descname">WriteAvro</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/Avro.html#WriteAvro"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Avro.WriteAvro" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.FolderIO.WriteToFolder" title="pax.FolderIO.WriteToFolder"><code class="xref py py-class docutils literal"><span class="pre">pax.FolderIO.WriteToFolder</span></code></a></p>
-<p>Write raw Avro data of PMT pulses to a folder of small Avro files</p>
-<dl class="method">
-<dt id="pax.plugins.io.Avro.WriteAvro.close">
-<code class="descname">close</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/Avro.html#WriteAvro.close"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Avro.WriteAvro.close" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="attribute">
-<dt id="pax.plugins.io.Avro.WriteAvro.file_extension">
-<code class="descname">file_extension</code><em class="property"> = 'avro'</em><a class="headerlink" href="#pax.plugins.io.Avro.WriteAvro.file_extension" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.Avro.WriteAvro.open">
-<code class="descname">open</code><span class="sig-paren">(</span><em>filename</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/Avro.html#WriteAvro.open"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Avro.WriteAvro.open" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.Avro.WriteAvro.startup">
-<code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/Avro.html#WriteAvro.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Avro.WriteAvro.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.Avro.WriteAvro.write_event_to_current_file">
-<code class="descname">write_event_to_current_file</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/Avro.html#WriteAvro.write_event_to_current_file"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Avro.WriteAvro.write_event_to_current_file" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
+<div class="section" id="pax-plugins-io-avro-module">
+<h2>pax.plugins.io.Avro module<a class="headerlink" href="#pax-plugins-io-avro-module" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="module-pax.plugins.io.BSON">
 <span id="pax-plugins-io-bson-module"></span><h2>pax.plugins.io.BSON module<a class="headerlink" href="#module-pax.plugins.io.BSON" title="Permalink to this headline">¶</a></h2>
@@ -403,27 +332,6 @@ numpy.</p>
 <span id="pax-plugins-io-pickle-module"></span><h2>pax.plugins.io.Pickle module<a class="headerlink" href="#module-pax.plugins.io.Pickle" title="Permalink to this headline">¶</a></h2>
 <p>Read/write event class from/to gzip-compressed pickle files.</p>
 <dl class="class">
-<dt id="pax.plugins.io.Pickle.DirWithPickleFiles">
-<em class="property">class </em><code class="descclassname">pax.plugins.io.Pickle.</code><code class="descname">DirWithPickleFiles</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/Pickle.html#DirWithPickleFiles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Pickle.DirWithPickleFiles" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.InputPlugin" title="pax.plugin.InputPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.InputPlugin</span></code></a></p>
-<dl class="method">
-<dt id="pax.plugins.io.Pickle.DirWithPickleFiles.get_events">
-<code class="descname">get_events</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/Pickle.html#DirWithPickleFiles.get_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Pickle.DirWithPickleFiles.get_events" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.Pickle.DirWithPickleFiles.get_single_event">
-<code class="descname">get_single_event</code><span class="sig-paren">(</span><em>index</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/Pickle.html#DirWithPickleFiles.get_single_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Pickle.DirWithPickleFiles.get_single_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.Pickle.DirWithPickleFiles.startup">
-<code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/Pickle.html#DirWithPickleFiles.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Pickle.DirWithPickleFiles.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
 <dt id="pax.plugins.io.Pickle.PickleIO">
 <em class="property">class </em><code class="descclassname">pax.plugins.io.Pickle.</code><code class="descname">PickleIO</code><a class="reference internal" href="_modules/pax/plugins/io/Pickle.html#PickleIO"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Pickle.PickleIO" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
@@ -447,17 +355,6 @@ numpy.</p>
 </dd></dl>
 
 <dl class="class">
-<dt id="pax.plugins.io.Pickle.WriteToPickleFile">
-<em class="property">class </em><code class="descclassname">pax.plugins.io.Pickle.</code><code class="descname">WriteToPickleFile</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/Pickle.html#WriteToPickleFile"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Pickle.WriteToPickleFile" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.OutputPlugin" title="pax.plugin.OutputPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.OutputPlugin</span></code></a></p>
-<dl class="method">
-<dt id="pax.plugins.io.Pickle.WriteToPickleFile.write_event">
-<code class="descname">write_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/Pickle.html#WriteToPickleFile.write_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Pickle.WriteToPickleFile.write_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
 <dt id="pax.plugins.io.Pickle.WriteZippedPickles">
 <em class="property">class </em><code class="descclassname">pax.plugins.io.Pickle.</code><code class="descname">WriteZippedPickles</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/Pickle.html#WriteZippedPickles"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.Pickle.WriteZippedPickles" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.Pickle.PickleIO" title="pax.plugins.io.Pickle.PickleIO"><code class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.Pickle.PickleIO</span></code></a>, <a class="reference internal" href="pax.html#pax.FolderIO.WriteZipped" title="pax.FolderIO.WriteZipped"><code class="xref py py-class docutils literal"><span class="pre">pax.FolderIO.WriteZipped</span></code></a></p>
@@ -465,41 +362,8 @@ numpy.</p>
 </dd></dl>
 
 </div>
-<div class="section" id="module-pax.plugins.io.RawWaveformDump">
-<span id="pax-plugins-io-rawwaveformdump-module"></span><h2>pax.plugins.io.RawWaveformDump module<a class="headerlink" href="#module-pax.plugins.io.RawWaveformDump" title="Permalink to this headline">¶</a></h2>
-<p>Dumps event waveforms to file using numpy.tofile</p>
-<dl class="class">
-<dt id="pax.plugins.io.RawWaveformDump.DumpSumWaveformToBinary">
-<em class="property">class </em><code class="descclassname">pax.plugins.io.RawWaveformDump.</code><code class="descname">DumpSumWaveformToBinary</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/RawWaveformDump.html#DumpSumWaveformToBinary"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.RawWaveformDump.DumpSumWaveformToBinary" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.RawWaveformDump.WaveformDumperBase" title="pax.plugins.io.RawWaveformDump.WaveformDumperBase"><code class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.RawWaveformDump.WaveformDumperBase</span></code></a></p>
-<dl class="method">
-<dt id="pax.plugins.io.RawWaveformDump.DumpSumWaveformToBinary.get_waveform_to_dump">
-<code class="descname">get_waveform_to_dump</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/RawWaveformDump.html#DumpSumWaveformToBinary.get_waveform_to_dump"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.RawWaveformDump.DumpSumWaveformToBinary.get_waveform_to_dump" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
-<dl class="class">
-<dt id="pax.plugins.io.RawWaveformDump.WaveformDumperBase">
-<em class="property">class </em><code class="descclassname">pax.plugins.io.RawWaveformDump.</code><code class="descname">WaveformDumperBase</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/RawWaveformDump.html#WaveformDumperBase"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.RawWaveformDump.WaveformDumperBase" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.OutputPlugin" title="pax.plugin.OutputPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.OutputPlugin</span></code></a></p>
-<dl class="method">
-<dt id="pax.plugins.io.RawWaveformDump.WaveformDumperBase.get_waveform_to_dump">
-<code class="descname">get_waveform_to_dump</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/RawWaveformDump.html#WaveformDumperBase.get_waveform_to_dump"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.RawWaveformDump.WaveformDumperBase.get_waveform_to_dump" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.RawWaveformDump.WaveformDumperBase.startup">
-<code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/RawWaveformDump.html#WaveformDumperBase.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.RawWaveformDump.WaveformDumperBase.startup" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.plugins.io.RawWaveformDump.WaveformDumperBase.write_event">
-<code class="descname">write_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/RawWaveformDump.html#WaveformDumperBase.write_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.RawWaveformDump.WaveformDumperBase.write_event" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-</dd></dl>
-
+<div class="section" id="pax-plugins-io-rawwaveformdump-module">
+<h2>pax.plugins.io.RawWaveformDump module<a class="headerlink" href="#pax-plugins-io-rawwaveformdump-module" title="Permalink to this headline">¶</a></h2>
 </div>
 <div class="section" id="module-pax.plugins.io.WaveformSimulator">
 <span id="pax-plugins-io-waveformsimulator-module"></span><h2>pax.plugins.io.WaveformSimulator module<a class="headerlink" href="#module-pax.plugins.io.WaveformSimulator" title="Permalink to this headline">¶</a></h2>
@@ -727,12 +591,12 @@ This way we don&#8217;t have to update size fields in headers.</p>
   <ul>
 <li><a class="reference internal" href="#">pax.plugins.io package</a><ul>
 <li><a class="reference internal" href="#submodules">Submodules</a></li>
-<li><a class="reference internal" href="#module-pax.plugins.io.Avro">pax.plugins.io.Avro module</a></li>
+<li><a class="reference internal" href="#pax-plugins-io-avro-module">pax.plugins.io.Avro module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.BSON">pax.plugins.io.BSON module</a></li>
 <li><a class="reference internal" href="#pax-plugins-io-bulkoutput-module">pax.plugins.io.BulkOutput module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.MongoDB">pax.plugins.io.MongoDB module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.Pickle">pax.plugins.io.Pickle module</a></li>
-<li><a class="reference internal" href="#module-pax.plugins.io.RawWaveformDump">pax.plugins.io.RawWaveformDump module</a></li>
+<li><a class="reference internal" href="#pax-plugins-io-rawwaveformdump-module">pax.plugins.io.RawWaveformDump module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.WaveformSimulator">pax.plugins.io.WaveformSimulator module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io.XED">pax.plugins.io.XED module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.io">Module contents</a></li>

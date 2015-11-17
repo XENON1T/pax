@@ -52,38 +52,58 @@ processing and other data processing on the XENON100/XENON1T raw data.</p>
 <h1>Installation prerequisites<a class="headerlink" href="#installation-prerequisites" title="Permalink to this headline">¶</a></h1>
 <p>We will assume you are installing on Mac or Linux here. For installation on Windows,
 see <a class="reference external" href="http://xenon1t.github.io/pax/faq.html#can-i-set-up-pax-on-my-windows-machine">this FAQ entry</a>.</p>
+<div class="section" id="check-that-no-other-root-is-seen">
+<h2>Check that no other ROOT is seen<a class="headerlink" href="#check-that-no-other-root-is-seen" title="Permalink to this headline">¶</a></h2>
+<p>Ensure that there is no other ROOT version that can be seen by your terminal.  You can check this by running the following at the command line:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="n">root</span>
+</pre></div>
+</div>
+<p>Which should return <code class="docutils literal"><span class="pre">bash:</span> <span class="pre">root:</span> <span class="pre">command</span> <span class="pre">not</span> <span class="pre">found</span></code>.  Also check that Python cannot see ROOT.  You do this by running:</p>
+<div class="highlight-python"><div class="highlight"><pre>python -c &quot;import ROOT&quot;
+</pre></div>
+</div>
+<p>and this command should say <code class="docutils literal"><span class="pre">ImportError:</span> <span class="pre">No</span> <span class="pre">module</span> <span class="pre">named</span> <span class="pre">'ROOT'</span></code>.</p>
+<p>If there are multiple versions of ROOT, then when you try to use pax, pax will want to use the ROOT library that will subsequently implode.  You will get segmentation faults and other very nasty issues.  This is an issue with ROOT and not pax, but almost every issue we have with pax is related to there being multiple ROOT versions that fight with one another.</p>
+</div>
 <div class="section" id="python-3">
 <h2>Python 3<a class="headerlink" href="#python-3" title="Permalink to this headline">¶</a></h2>
-<p>Pax is written in Python 3; we recommend the
-scientific python distribution <a class="reference external" href="https://store.continuum.io/cshop/anaconda/">Anaconda</a>. To set this up in your linux home directory, do:</p>
-<div class="highlight-python"><div class="highlight"><pre>wget http://repo.continuum.io/archive/Anaconda3-2.1.0-Linux-x86_64.sh
-bash Anaconda3-2.1.0-Linux-x86_64.sh  # Say &#39;yes&#39; to appending to .bashrc
-export PATH=~/anaconda3/bin:$PATH  # If installed in default location
+<p>pax is written in Python; we recommend the
+scientific python distribution <a class="reference external" href="https://store.continuum.io/cshop/anaconda/">Anaconda</a>. For linux, to set this up in your home directory, do:</p>
+<div class="highlight-python"><div class="highlight"><pre>wget http://repo.continuum.io/archive/Anaconda3-2.4.0-Linux-x86_64.sh  # Linux
+bash Anaconda3-2.4.0-Linux-x86_64.sh  # Say &#39;yes&#39; to appending to .bashrc
 </pre></div>
 </div>
-<p>You need to point anaconda to the physics-specific packages of e.g. ROOT.  You can do this by putting the following in <cite>~/.condarc</cite>:</p>
-<div class="highlight-python"><div class="highlight"><pre>channels:
-  - http://conda.anaconda.org/NLeSC
-  - defaults
+<p>From Mac OSX, you should do instead:</p>
+<div class="highlight-python"><div class="highlight"><pre>curl http://repo.continuum.io/archive/Anaconda3-2.4.0-MacOSX-x86_64.sh # Mac OSX
+bash Anaconda3-2.4.0-MacOSX-x86_64.sh  # Say &#39;yes&#39; to appending to .bashrc
 </pre></div>
 </div>
-<p>Alternatively, you can install Python 3.4 yourself (highly not recommended since ROOT probably won&#8217;t work).  Note that you need write permission to the python distribution&#8217;s directory and that Python 2 does not currently work.</p>
+<p>Lastly, for both OSX and Linux:</p>
+<div class="highlight-python"><div class="highlight"><pre>export PATH=~/anaconda3/bin:$PATH  # If installed in default location
+</pre></div>
+</div>
+<p>You need to point Anaconda to the physics-specific packages of e.g. ROOT.  You can do this by running the following:</p>
+<div class="highlight-python"><div class="highlight"><pre>conda config --add channels http://conda.anaconda.org/NLeSC
+</pre></div>
+</div>
+<p>Alternatively, you can install Python 3.4 yourself (highly not recommended since ROOT and JIT compiler probably won&#8217;t work).</p>
 </div>
 <div class="section" id="additional-python-packages">
 <h2>Additional python packages<a class="headerlink" href="#additional-python-packages" title="Permalink to this headline">¶</a></h2>
 <p>Pax depends on several other python packages. While most python packages will install automatically,
 some contain C++ code which must be compiled. If you have Anaconda you can get appropriate binaries
-for your platform using the <cite>conda</cite> tool:</p>
+for your platform using the <cite>conda</cite> tool (you can change python to 2, or root to 5):</p>
 <div class="highlight-python"><div class="highlight"><pre>conda update conda
-conda create -n pax numpy scipy matplotlib pandas cython h5py numba pip python-snappy pytables scikit-learn
+conda create -n pax python=3 root=5 rootpy numpy scipy matplotlib pandas cython h5py numba=0.21.0 pip python-snappy pytables scikit-learn
 </pre></div>
 </div>
+<p>If you do not want ROOT support, you can skip the root and rootpy part of the above command (then everything except ROOT files but including event display will work).</p>
 <p>Whenever you want to use <cite>pax</cite>, you have to run the following command to set it up:</p>
 <div class="highlight-python"><div class="highlight"><pre>source activate pax
 </pre></div>
 </div>
 <p>You can put this in your <cite>.bashrc</cite> if you want it to be setup when you login. For the rest of the installation and to run pax, be sure to be inside this environment. There should be (pax) at the beginning of your command line.</p>
-<p>If you&#8217;re using ubuntu and do not have a compiler installed (including Fortran compilers), then you should run:</p>
+<p>If you&#8217;re using Ubuntu and do not have a compiler installed (including Fortran compilers), then you should run:</p>
 <blockquote>
 <div>sudo apt-get install build-essential</div></blockquote>
 <p>If this doesn&#8217;t work, then just proceed ahead if commands such as <cite>gcc</cite> work for you.</p>
@@ -113,6 +133,7 @@ conda create -n pax numpy scipy matplotlib pandas cython h5py numba pip python-s
 <p>In this option you&#8217;ll know where the code is, so you can look at it, play with it, and if you change anything you don&#8217;t need to reinstall for your changes to take effect... However, be aware you are using the very latest (&#8216;nightly&#8217;) version of pax, which may contain more bugs (but often contains less bugs).</p>
 <p>First <cite>cd</cite> to the folder you want pax to be installed. Then run:</p>
 <div class="highlight-python"><div class="highlight"><pre>git clone https://github.com/XENON1T/pax.git
+source activate pax
 cd pax
 python setup.py develop
 </pre></div>
@@ -185,6 +206,7 @@ You can look through other configuration files such as <cite>_base.ini</cite> an
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Installation prerequisites</a><ul>
+<li><a class="reference internal" href="#check-that-no-other-root-is-seen">Check that no other ROOT is seen</a></li>
 <li><a class="reference internal" href="#python-3">Python 3</a></li>
 <li><a class="reference internal" href="#additional-python-packages">Additional python packages</a></li>
 <li><a class="reference internal" href="#git-and-github">Git and Github</a></li>

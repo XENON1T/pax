@@ -58,12 +58,12 @@
 </li>
 <li class="toctree-l3"><a class="reference internal" href="pax.plugins.io.html">pax.plugins.io package</a><ul>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#submodules">Submodules</a></li>
-<li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.Avro">pax.plugins.io.Avro module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#pax-plugins-io-avro-module">pax.plugins.io.Avro module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.BSON">pax.plugins.io.BSON module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#pax-plugins-io-bulkoutput-module">pax.plugins.io.BulkOutput module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.MongoDB">pax.plugins.io.MongoDB module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.Pickle">pax.plugins.io.Pickle module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.RawWaveformDump">pax.plugins.io.RawWaveformDump module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#pax-plugins-io-rawwaveformdump-module">pax.plugins.io.RawWaveformDump module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.WaveformSimulator">pax.plugins.io.WaveformSimulator module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.XED">pax.plugins.io.XED module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io">Module contents</a></li>
@@ -458,8 +458,83 @@ All other parameters like compute_gof</p>
 </dd></dl>
 
 </div>
-<div class="section" id="pax-core-module">
-<h2>pax.core module<a class="headerlink" href="#pax-core-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-pax.core">
+<span id="pax-core-module"></span><h2>pax.core module<a class="headerlink" href="#module-pax.core" title="Permalink to this headline">¶</a></h2>
+<p>The backbone of pax - the Processor class</p>
+<dl class="class">
+<dt id="pax.core.Processor">
+<em class="property">class </em><code class="descclassname">pax.core.</code><code class="descname">Processor</code><span class="sig-paren">(</span><em>config_names=()</em>, <em>config_paths=()</em>, <em>config_string=None</em>, <em>config_dict=None</em>, <em>just_testing=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/core.html#Processor"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="attribute">
+<dt id="pax.core.Processor.fallback_configuration">
+<code class="descname">fallback_configuration</code><em class="property"> = 'XENON100'</em><a class="headerlink" href="#pax.core.Processor.fallback_configuration" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.core.Processor.get_metadata">
+<code class="descname">get_metadata</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/core.html#Processor.get_metadata"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor.get_metadata" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.core.Processor.get_plugin_by_name">
+<code class="descname">get_plugin_by_name</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/core.html#Processor.get_plugin_by_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor.get_plugin_by_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return plugin by class name. Use for testing.</p>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="pax.core.Processor.get_plugin_search_paths">
+<em class="property">static </em><code class="descname">get_plugin_search_paths</code><span class="sig-paren">(</span><em>extra_paths=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/core.html#Processor.get_plugin_search_paths"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor.get_plugin_search_paths" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns paths where we should search for plugins
+Search for plugins in  ., ./plugins, utils.PAX_DIR/plugins, any directories in config[&#8216;plugin_paths&#8217;]
+Search in all subdirs of the above, except for __pycache__ dirs</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.core.Processor.instantiate_plugin">
+<code class="descname">instantiate_plugin</code><span class="sig-paren">(</span><em>name</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/core.html#Processor.instantiate_plugin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor.instantiate_plugin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Take plugin class name and build class from it</p>
+<p>The python default module locations are also searched... I think.. so don&#8217;t name your module &#8216;glob&#8217;...</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.core.Processor.load_configuration">
+<code class="descname">load_configuration</code><span class="sig-paren">(</span><em>config_names</em>, <em>config_paths</em>, <em>config_string</em>, <em>config_dict</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/core.html#Processor.load_configuration"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor.load_configuration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Load a configuration &#8211; see init&#8217;s docstring
+:return: nested dictionary of evaluated configuration values, use as: config[section][key].</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.core.Processor.process_event">
+<code class="descname">process_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/core.html#Processor.process_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor.process_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Process one event with all action plugins. Returns processed event.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.core.Processor.run">
+<code class="descname">run</code><span class="sig-paren">(</span><em>clean_shutdown=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/core.html#Processor.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run the processor over all events, then shuts down the plugins (unless clean_shutdown=False)</p>
+<dl class="docutils">
+<dt>If clean_shutdown=False, will not shutdown plugin classes</dt>
+<dd>(they still shut down if the Processor class is deleted)
+Use only if for some arcane reason you want to run a single instance more than once.
+If you do, you get in trouble if you start a new Processor instance that tries to write to the same files.</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.core.Processor.setup_logging">
+<code class="descname">setup_logging</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/core.html#Processor.setup_logging"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor.setup_logging" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets up logging. Must have loaded config first.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.core.Processor.shutdown">
+<code class="descname">shutdown</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/core.html#Processor.shutdown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.core.Processor.shutdown" title="Permalink to this definition">¶</a></dt>
+<dd><p>Call shutdown on all plugins</p>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 <div class="section" id="pax-data-model-module">
 <h2>pax.data_model module<a class="headerlink" href="#pax-data-model-module" title="Permalink to this headline">¶</a></h2>
@@ -567,7 +642,7 @@ names of functionality between major releases.  You may add variables in minor
 releases.  Patch releases cannot modify this.</p>
 <dl class="class">
 <dt id="pax.datastructure.Event">
-<em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">Event</code><span class="sig-paren">(</span><em>n_channels</em>, <em>start_time</em>, <em>partial=False</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">Event</code><span class="sig-paren">(</span><em>n_channels</em>, <em>start_time</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Event" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.data_model.StrictModel" title="pax.data_model.StrictModel"><code class="xref py py-class docutils literal"><span class="pre">pax.data_model.StrictModel</span></code></a></p>
 <p>Event class</p>
 <p>Stores high level information about the triggered event.</p>
@@ -655,7 +730,7 @@ Deprecated &#8211; for Xerawdp matching only</p>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.lone_hits_per_channel">
-<code class="descname">lone_hits_per_channel</code><em class="property"> = array([], dtype=int64)</em><a class="headerlink" href="#pax.datastructure.Event.lone_hits_per_channel" title="Permalink to this definition">¶</a></dt>
+<code class="descname">lone_hits_per_channel</code><em class="property"> = array([], dtype=int16)</em><a class="headerlink" href="#pax.datastructure.Event.lone_hits_per_channel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Number of lone hits (peaks with only one channel contributing) per channel
 AFTER suspicious channel hit rejection.
 Keep in mind a &#8220;lone hit&#8221; peak can consist of several hits, they just have to be in one channel.
@@ -664,7 +739,7 @@ Hmm, maybe they should be named single channel peaks rather than lone hits?</p>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.lone_hits_per_channel_before">
-<code class="descname">lone_hits_per_channel_before</code><em class="property"> = array([], dtype=int64)</em><a class="headerlink" href="#pax.datastructure.Event.lone_hits_per_channel_before" title="Permalink to this definition">¶</a></dt>
+<code class="descname">lone_hits_per_channel_before</code><em class="property"> = array([], dtype=int16)</em><a class="headerlink" href="#pax.datastructure.Event.lone_hits_per_channel_before" title="Permalink to this definition">¶</a></dt>
 <dd><p>Number of lone hits (peaks with only one channel contributing) per channel
 BEFORE suspicious channel hit rejection.
 This is used to check / calibrate the suspicious channel hit rejection.</p>
@@ -693,13 +768,13 @@ Has to be the same as n_channels in config, provided here for deserialization ea
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.n_hits_rejected">
-<code class="descname">n_hits_rejected</code><em class="property"> = array([], dtype=int64)</em><a class="headerlink" href="#pax.datastructure.Event.n_hits_rejected" title="Permalink to this definition">¶</a></dt>
+<code class="descname">n_hits_rejected</code><em class="property"> = array([], dtype=int16)</em><a class="headerlink" href="#pax.datastructure.Event.n_hits_rejected" title="Permalink to this definition">¶</a></dt>
 <dd><p>Number of hits rejected in the suspicious channel algorithm</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Event.noise_pulses_in">
-<code class="descname">noise_pulses_in</code><em class="property"> = array([], dtype=int64)</em><a class="headerlink" href="#pax.datastructure.Event.noise_pulses_in" title="Permalink to this definition">¶</a></dt>
+<code class="descname">noise_pulses_in</code><em class="property"> = array([], dtype=int16)</em><a class="headerlink" href="#pax.datastructure.Event.noise_pulses_in" title="Permalink to this definition">¶</a></dt>
 <dd><p>Number of noise pulses (pulses without any hits found) per channel</p>
 </dd></dl>
 
@@ -908,7 +983,7 @@ Note: in Pulse the same number is stored in ADC-counts</p>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Interaction.s1">
-<code class="descname">s1</code><em class="property"> = &lt;pax.datastructure.Peak object&gt;</em><a class="headerlink" href="#pax.datastructure.Interaction.s1" title="Permalink to this definition">¶</a></dt>
+<code class="descname">s1</code><em class="property"> = -99999</em><a class="headerlink" href="#pax.datastructure.Interaction.s1" title="Permalink to this definition">¶</a></dt>
 <dd><p>The S1 peak of the interaction</p>
 </dd></dl>
 
@@ -926,7 +1001,7 @@ Note: in Pulse the same number is stored in ADC-counts</p>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Interaction.s2">
-<code class="descname">s2</code><em class="property"> = &lt;pax.datastructure.Peak object&gt;</em><a class="headerlink" href="#pax.datastructure.Interaction.s2" title="Permalink to this definition">¶</a></dt>
+<code class="descname">s2</code><em class="property"> = -99999</em><a class="headerlink" href="#pax.datastructure.Interaction.s2" title="Permalink to this definition">¶</a></dt>
 <dd><p>The S2 peak of the interaction</p>
 </dd></dl>
 
@@ -1058,7 +1133,7 @@ For XDP matching rightmost sample is not included in area integral.</p>
 
 <dl class="method">
 <dt id="pax.datastructure.Peak.get_position_from_preferred_algorithm">
-<code class="descname">get_position_from_preferred_algorithm</code><span class="sig-paren">(</span><em>algorithm_list</em>, <em>get_from=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Peak.get_position_from_preferred_algorithm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.get_position_from_preferred_algorithm" title="Permalink to this definition">¶</a></dt>
+<code class="descname">get_position_from_preferred_algorithm</code><span class="sig-paren">(</span><em>algorithm_list</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#Peak.get_position_from_preferred_algorithm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.Peak.get_position_from_preferred_algorithm" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return reconstructed position by the first algorithm in list,
 unless it doesn&#8217;t exist or is a nan position, then moves on to further algorithms.</p>
 </dd></dl>
@@ -1415,11 +1490,95 @@ starts at zero and is an integer because it&#8217;s an index.</p>
 </dd></dl>
 
 </div>
-<div class="section" id="pax-dsputils-module">
-<h2>pax.dsputils module<a class="headerlink" href="#pax-dsputils-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-pax.dsputils">
+<span id="pax-dsputils-module"></span><h2>pax.dsputils module<a class="headerlink" href="#module-pax.dsputils" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="pax.dsputils.adc_to_pe">
+<code class="descclassname">pax.dsputils.</code><code class="descname">adc_to_pe</code><span class="sig-paren">(</span><em>config</em>, <em>channel</em>, <em>use_reference_gain=False</em>, <em>use_reference_gain_if_zero=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/dsputils.html#adc_to_pe"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.adc_to_pe" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gives the conversion factor from ADC counts above baseline to pe/bin
+Use as: w_in_pe_bin = adc_to_pe(config, channel) * w_in_adc_above_baseline</p>
+<blockquote>
+<div><ul class="simple">
+<li>config should be a configuration dictionary (self.config in a pax plugin)</li>
+<li>If use_reference_gain is True, will always use config.get(&#8216;pmt_reference_gain&#8217;, 2e6) rather than the pmt gain</li>
+<li>If use_reference_gain_if_zero=True will do the above only if channel gain is 0.</li>
+</ul>
+</div></blockquote>
+<p>If neither of these are true, and gain is 0, will return 0.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.dsputils.cluster_by_diff">
+<code class="descclassname">pax.dsputils.</code><code class="descname">cluster_by_diff</code><span class="sig-paren">(</span><em>x</em>, <em>diff_threshold</em>, <em>return_indices=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/dsputils.html#cluster_by_diff"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.cluster_by_diff" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns list of lists of indices of clusters in x,
+making cluster boundaries whenever values are &gt;= threshold apart.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.dsputils.count_hits_per_channel">
+<code class="descclassname">pax.dsputils.</code><code class="descname">count_hits_per_channel</code><span class="sig-paren">(</span><em>peak</em>, <em>config</em>, <em>weights=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/dsputils.html#count_hits_per_channel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.count_hits_per_channel" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pax.dsputils.gaps_between_hits">
+<code class="descclassname">pax.dsputils.</code><code class="descname">gaps_between_hits</code><a class="reference internal" href="_modules/pax/dsputils.html#gaps_between_hits"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.gaps_between_hits" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return array of gaps between hits: a hit&#8217;s &#8216;gap&#8217; is the # of samples before that hit free of other hits.
+The gap of the first hit is 0 by definition.
+Hits should already be sorted by left boundary; we&#8217;ll check this and throw an error if not.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.dsputils.get_detector_by_channel">
+<code class="descclassname">pax.dsputils.</code><code class="descname">get_detector_by_channel</code><span class="sig-paren">(</span><em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/dsputils.html#get_detector_by_channel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.get_detector_by_channel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a channel -&gt; detector lookup dictionary from a configuration</p>
+</dd></dl>
+
 </div>
-<div class="section" id="pax-eventbuilder-module">
-<h2>pax.eventbuilder module<a class="headerlink" href="#pax-eventbuilder-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-pax.eventbuilder">
+<span id="pax-eventbuilder-module"></span><h2>pax.eventbuilder module<a class="headerlink" href="#module-pax.eventbuilder" title="Permalink to this headline">¶</a></h2>
+<p>Event builder routines</p>
+<p>The event builder is responsible for finding events within the DAQ output
+stream and turning this into events that the end user can process.  The data is
+fetched untriggered, which means that there is no event structure.  Or rather,
+it is just a stream of PMT pulses that need to be assembled into events.  This
+is exactly what this code does.  There are two inputs requires:</p>
+<ul class="simple">
+<li>Location of runs database</li>
+<li>Trigger settings</li>
+</ul>
+<dl class="docutils">
+<dt>This code is meant to run in production, therefore a runs database must be</dt>
+<dd>provided.  This code will use this database to locate what data needs to be
+processed and handle it appropriately.</dd>
+</dl>
+<p>This code is also responsible triggering (i.e., deciding which events to
+record).  At present there are two stages to the triggering: a pretrigger and
+a pax-event trigger.  The pretrigger is a simple sliding window coincidence
+trigger that runs over the data to identify possible signals.  The parameters
+of this are then, clearly, the size of the window and the coincidence
+requirement.  Another parameter is how much data to save around the discovered
+peak, which often is an S2.</p>
+<p>The second level trigger, which we often do not run, processed the event in pax
+and is used to make, e.g., radial cuts.  At present, the code just writes HDF5
+files.</p>
+<p>It is worth mentioning that is an &#8216;expert modes&#8217; with a flag for mega events:
+an event of one second is made that can be used for computing the trigger
+efficiency.</p>
+<p>The entry point to this code is typically via bin/event-builder.</p>
+<dl class="function">
+<dt id="pax.eventbuilder.handle_args">
+<code class="descclassname">pax.eventbuilder.</code><code class="descname">handle_args</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/eventbuilder.html#handle_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.eventbuilder.handle_args" title="Permalink to this definition">¶</a></dt>
+<dd><p>Command line argument processing</p>
+<p>This routine is also responsible for setting up logging.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.eventbuilder.run">
+<code class="descclassname">pax.eventbuilder.</code><code class="descname">run</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/eventbuilder.html#run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.eventbuilder.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Start running the event builder</p>
+<p>Find a dataset to process, then process it with settings from command line.</p>
+</dd></dl>
+
 </div>
 <div class="section" id="module-pax.exceptions">
 <span id="pax-exceptions-module"></span><h2>pax.exceptions module<a class="headerlink" href="#module-pax.exceptions" title="Permalink to this headline">¶</a></h2>
@@ -1729,7 +1888,7 @@ This is</p>
 
 <dl class="attribute">
 <dt id="pax.formats.ROOTDump.numpy_type">
-<code class="descname">numpy_type</code><em class="property"> = {'I': &lt;class 'numpy.int32'&gt;, 'L': &lt;class 'numpy.int64'&gt;, 'F': &lt;class 'numpy.float32'&gt;, 'O': &lt;class 'bool'&gt;, 'D': &lt;class 'numpy.float64'&gt;, 'C': dtype('O')}</em><a class="headerlink" href="#pax.formats.ROOTDump.numpy_type" title="Permalink to this definition">¶</a></dt>
+<code class="descname">numpy_type</code><em class="property"> = {'L': &lt;class 'numpy.int64'&gt;, 'D': &lt;class 'numpy.float64'&gt;, 'C': dtype('O'), 'I': &lt;class 'numpy.int32'&gt;, 'F': &lt;class 'numpy.float32'&gt;, 'O': &lt;class 'bool'&gt;}</em><a class="headerlink" href="#pax.formats.ROOTDump.numpy_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -1744,7 +1903,7 @@ This is</p>
 
 <dl class="attribute">
 <dt id="pax.formats.ROOTDump.root_type">
-<code class="descname">root_type</code><em class="property"> = {'int64': '/L', 'S': '/C', 'bool': '/O', 'float64': '/D', 'float32': '/F', 'int32': '/I'}</em><a class="headerlink" href="#pax.formats.ROOTDump.root_type" title="Permalink to this definition">¶</a></dt>
+<code class="descname">root_type</code><em class="property"> = {'int32': '/I', 'int16': '/S', 'int64': '/L', 'float32': '/F', 'bool': '/O', 'S': '/C', 'float64': '/D'}</em><a class="headerlink" href="#pax.formats.ROOTDump.root_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -2024,8 +2183,129 @@ Does NOT put in empty lists if indices skip a value! (e.g. events without peaks)
 </dd></dl>
 
 </div>
-<div class="section" id="pax-simulation-module">
-<h2>pax.simulation module<a class="headerlink" href="#pax-simulation-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-pax.simulation">
+<span id="pax-simulation-module"></span><h2>pax.simulation module<a class="headerlink" href="#module-pax.simulation" title="Permalink to this headline">¶</a></h2>
+<p>Waveform simulator (&#8220;FaX&#8221;) - physics backend
+The only I/O stuff here is pax event creation, everything else is in the WaveformSimulator plugins</p>
+<dl class="class">
+<dt id="pax.simulation.SimulatedHitpattern">
+<em class="property">class </em><code class="descclassname">pax.simulation.</code><code class="descname">SimulatedHitpattern</code><span class="sig-paren">(</span><em>simulator</em>, <em>photon_timings=()</em>, <em>x=0</em>, <em>y=0</em>, <em>z=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#SimulatedHitpattern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.SimulatedHitpattern" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.simulation.Simulator">
+<em class="property">class </em><code class="descclassname">pax.simulation.</code><code class="descname">Simulator</code><span class="sig-paren">(</span><em>config_to_init</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="pax.simulation.Simulator.distribute_photons_by_pattern">
+<code class="descname">distribute_photons_by_pattern</code><span class="sig-paren">(</span><em>n_photons</em>, <em>pattern_fitter</em>, <em>coordinate_tuple</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.distribute_photons_by_pattern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.distribute_photons_by_pattern" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.simulation.Simulator.distribute_s1_photons">
+<code class="descname">distribute_s1_photons</code><span class="sig-paren">(</span><em>n_photons</em>, <em>x</em>, <em>y</em>, <em>z</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.distribute_s1_photons"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.distribute_s1_photons" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.simulation.Simulator.distribute_s2_photons">
+<code class="descname">distribute_s2_photons</code><span class="sig-paren">(</span><em>n_photons</em>, <em>x</em>, <em>y</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.distribute_s2_photons"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.distribute_s2_photons" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.simulation.Simulator.get_luminescence_times">
+<code class="descname">get_luminescence_times</code><span class="sig-paren">(</span><em>n</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.get_luminescence_times"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.get_luminescence_times" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.simulation.Simulator.make_hitpattern">
+<code class="descname">make_hitpattern</code><span class="sig-paren">(</span><em>photon_times</em>, <em>x=0</em>, <em>y=0</em>, <em>z=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.make_hitpattern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.make_hitpattern" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.simulation.Simulator.pmt_pulse_current">
+<code class="descname">pmt_pulse_current</code><span class="sig-paren">(</span><em>gain</em>, <em>offset=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.pmt_pulse_current"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.pmt_pulse_current" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.simulation.Simulator.randomize_photons_over_channels">
+<code class="descname">randomize_photons_over_channels</code><span class="sig-paren">(</span><em>n_photons</em>, <em>channels=None</em>, <em>relative_lce_per_channel=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.randomize_photons_over_channels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.randomize_photons_over_channels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Distribute photon_timings over channels according to relative_lce_per_channel</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>n_photons</strong> &#8211; number of photons to distribute</li>
+<li><strong>channels</strong> &#8211; list of channel numbers that can receive photons. This will still be filtered
+to include only channels in self.config[&#8216;channels_for_photons&#8217;].</li>
+<li><strong>relative_lce_per_channel</strong> &#8211; list of relative lce per channel. Should all be &gt;= 0.
+If omitted, will distribute photons uniformly over channels.
+Does not have to be normalized to sum to 1.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">array of length sim.config[&#8216;n_channels&#8217;] with photon counts per channel</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.simulation.Simulator.s1_photons">
+<code class="descname">s1_photons</code><span class="sig-paren">(</span><em>n_photons</em>, <em>recoil_type</em>, <em>x=0.0</em>, <em>y=0.0</em>, <em>z=0</em>, <em>t=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.s1_photons"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.s1_photons" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a list of photon production times caused by an S1 process.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.simulation.Simulator.s2_electrons">
+<code class="descname">s2_electrons</code><span class="sig-paren">(</span><em>electrons_generated=None</em>, <em>z=0.0</em>, <em>t=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.s2_electrons"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.s2_electrons" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return a list of electron arrival times in the ELR region caused by an S2 process.</p>
+<blockquote>
+<div>electrons             -   total # of drift electrons generated at the interaction site
+t                     -   Time at which the original energy deposition occurred.
+z                     -   Depth below the GATE mesh where the interaction occurs.</div></blockquote>
+<p>As usual, all units in the same system used by pax (if you specify raw values: ns, cm)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.simulation.Simulator.s2_scintillation">
+<code class="descname">s2_scintillation</code><span class="sig-paren">(</span><em>electron_arrival_times</em>, <em>x=0.0</em>, <em>y=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.s2_scintillation"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.s2_scintillation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Given a list of electron arrival times, returns photon production times</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.simulation.Simulator.singlet_triplet_delays">
+<code class="descname">singlet_triplet_delays</code><span class="sig-paren">(</span><em>times</em>, <em>t1</em>, <em>t3</em>, <em>singlet_ratio</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.singlet_triplet_delays"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.singlet_triplet_delays" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Given a list of eximer formation times, returns excimer decay times.</dt>
+<dd><p class="first">t1            - singlet state lifetime
+t3            - triplet state lifetime
+singlet_ratio - fraction of excimers that become singlets</p>
+<blockquote class="last">
+<div>(NOT the ratio of singlets/triplets!)</div></blockquote>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.simulation.Simulator.to_pax_event">
+<code class="descname">to_pax_event</code><span class="sig-paren">(</span><em>hitpattern</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.to_pax_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.to_pax_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simulate PMT response to a hitpattern of photons
+Returns None if you pass a hitlist without any hits
+returns start_time (in units, ie ns), pmt waveform matrix</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.simulation.truncated_gauss_rvs">
+<code class="descclassname">pax.simulation.</code><code class="descname">truncated_gauss_rvs</code><span class="sig-paren">(</span><em>my_mean</em>, <em>my_std</em>, <em>left_boundary</em>, <em>right_boundary</em>, <em>n_rvs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#truncated_gauss_rvs"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.truncated_gauss_rvs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get Gauss with specified mean and std, truncated to boundaries
+See <a class="reference external" href="http://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.stats.truncnorm.html">http://docs.scipy.org/doc/scipy-0.14.0/reference/generated/scipy.stats.truncnorm.html</a></p>
+</dd></dl>
+
 </div>
 <div class="section" id="module-pax.units">
 <span id="pax-units-module"></span><h2>pax.units module<a class="headerlink" href="#module-pax.units" title="Permalink to this headline">¶</a></h2>
@@ -2097,16 +2377,16 @@ punch() returns ms since timer creation or last punch</p>
 <li><a class="reference internal" href="#module-pax.FolderIO">pax.FolderIO module</a></li>
 <li><a class="reference internal" href="#module-pax.InterpolatingMap">pax.InterpolatingMap module</a></li>
 <li><a class="reference internal" href="#module-pax.PatternFitter">pax.PatternFitter module</a></li>
-<li><a class="reference internal" href="#pax-core-module">pax.core module</a></li>
+<li><a class="reference internal" href="#module-pax.core">pax.core module</a></li>
 <li><a class="reference internal" href="#pax-data-model-module">pax.data_model module</a></li>
 <li><a class="reference internal" href="#module-pax.datastructure">pax.datastructure module</a></li>
-<li><a class="reference internal" href="#pax-dsputils-module">pax.dsputils module</a></li>
-<li><a class="reference internal" href="#pax-eventbuilder-module">pax.eventbuilder module</a></li>
+<li><a class="reference internal" href="#module-pax.dsputils">pax.dsputils module</a></li>
+<li><a class="reference internal" href="#module-pax.eventbuilder">pax.eventbuilder module</a></li>
 <li><a class="reference internal" href="#module-pax.exceptions">pax.exceptions module</a></li>
 <li><a class="reference internal" href="#module-pax.formats">pax.formats module</a></li>
 <li><a class="reference internal" href="#module-pax.plugin">pax.plugin module</a></li>
 <li><a class="reference internal" href="#module-pax.recarray_tools">pax.recarray_tools module</a></li>
-<li><a class="reference internal" href="#pax-simulation-module">pax.simulation module</a></li>
+<li><a class="reference internal" href="#module-pax.simulation">pax.simulation module</a></li>
 <li><a class="reference internal" href="#module-pax.units">pax.units module</a></li>
 <li><a class="reference internal" href="#module-pax.utils">pax.utils module</a></li>
 <li><a class="reference internal" href="#module-pax">Module contents</a></li>

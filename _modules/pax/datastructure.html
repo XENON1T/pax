@@ -258,7 +258,7 @@
                 <span class="k">return</span> <span class="n">rp</span>
         <span class="k">return</span> <span class="bp">None</span>
 </div>
-<div class="viewcode-block" id="Peak.get_position_from_preferred_algorithm"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.get_position_from_preferred_algorithm">[docs]</a>    <span class="k">def</span> <span class="nf">get_position_from_preferred_algorithm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">algorithm_list</span><span class="p">,</span> <span class="n">get_from</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+<div class="viewcode-block" id="Peak.get_position_from_preferred_algorithm"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak.get_position_from_preferred_algorithm">[docs]</a>    <span class="k">def</span> <span class="nf">get_position_from_preferred_algorithm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">algorithm_list</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return reconstructed position by the first algorithm in list,</span>
 <span class="sd">        unless it doesn&#39;t exist or is a nan position, then moves on to further algorithms.&quot;&quot;&quot;</span>
         <span class="k">for</span> <span class="n">algo</span> <span class="ow">in</span> <span class="n">algorithm_list</span><span class="p">:</span>
@@ -416,10 +416,10 @@
     <span class="sd">&quot;&quot;&quot;An interaction in the TPC, reconstructed from a pair of S1 and S2 peaks.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c">#: The S1 peak of the interaction</span>
-    <span class="n">s1</span> <span class="o">=</span> <span class="n">Peak</span><span class="p">()</span>
+    <span class="n">s1</span> <span class="o">=</span> <span class="n">INT_NAN</span>
 
     <span class="c">#: The S2 peak of the interaction</span>
-    <span class="n">s2</span> <span class="o">=</span> <span class="n">Peak</span><span class="p">()</span>
+    <span class="n">s2</span> <span class="o">=</span> <span class="n">INT_NAN</span>
 
     <span class="c">##</span>
     <span class="c"># Position information</span>
@@ -554,26 +554,26 @@
     <span class="n">pulses</span> <span class="o">=</span> <span class="n">ListField</span><span class="p">(</span><span class="n">Pulse</span><span class="p">)</span>
 
     <span class="c">#: Number of noise pulses (pulses without any hits found) per channel</span>
-    <span class="n">noise_pulses_in</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+    <span class="n">noise_pulses_in</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
 
     <span class="c">#: Number of lone hits (peaks with only one channel contributing) per channel</span>
     <span class="c">#: BEFORE suspicious channel hit rejection.</span>
     <span class="c">#: This is used to check / calibrate the suspicious channel hit rejection.</span>
-    <span class="n">lone_hits_per_channel_before</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+    <span class="n">lone_hits_per_channel_before</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
 
     <span class="c">#: Number of lone hits (peaks with only one channel contributing) per channel</span>
     <span class="c">#: AFTER suspicious channel hit rejection.</span>
     <span class="c">#: Keep in mind a &quot;lone hit&quot; peak can consist of several hits, they just have to be in one channel.</span>
     <span class="c">#: Hmm, maybe they should be named single channel peaks rather than lone hits?</span>
-    <span class="n">lone_hits_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+    <span class="n">lone_hits_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
 
     <span class="c">#: Was channel flagged as suspicious?</span>
     <span class="n">is_channel_suspicious</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
 
     <span class="c">#: Number of hits rejected in the suspicious channel algorithm</span>
-    <span class="n">n_hits_rejected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+    <span class="n">n_hits_rejected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_channels</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">partial</span><span class="o">=</span><span class="bp">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_channels</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 
         <span class="c"># Start time is mandatory, so it is not in kwargs</span>
         <span class="n">kwargs</span><span class="p">[</span><span class="s">&#39;start_time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">start_time</span>
@@ -596,11 +596,11 @@
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Negative event duration&quot;</span><span class="p">)</span>
 
         <span class="c"># Initialize numpy arrays -- need to have n_channels and self.length</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">noise_pulses_in</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_channels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">n_hits_rejected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_channels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">noise_pulses_in</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_channels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_hits_rejected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_channels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">is_channel_suspicious</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_channels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lone_hits_per_channel_before</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_channels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">lone_hits_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_channels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lone_hits_per_channel_before</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_channels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">lone_hits_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_channels</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
 <div class="viewcode-block" id="Event.empty_event"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.empty_event">[docs]</a>    <span class="k">def</span> <span class="nf">empty_event</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
@@ -667,7 +667,7 @@
         <span class="sd">&quot;&quot;&quot;Return the S1 of the primary interaction, or if that does not exist, the largest S1 in the tpc.</span>
 <span class="sd">        Returns None if neither exist&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interactions</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">interactions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">s1</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">peaks</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">interactions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">s1</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">s1s</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
@@ -679,7 +679,7 @@
         <span class="sd">&quot;&quot;&quot;Return the S2 of the primary interaction, or if that does not exist, the largest S2 in the tpc.</span>
 <span class="sd">        Returns None if neither exist&quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interactions</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">interactions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">s2</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">peaks</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">interactions</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">s2</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">s2s</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>

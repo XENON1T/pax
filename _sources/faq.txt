@@ -3,6 +3,11 @@ Installation and setup
 ==========================
 
 
+Setup PyCharm
+~~~~~~~~~~~~~
+
+See http://docs.continuum.io/anaconda/ide_integration#pycharm
+
 How do I set up `pax` at LNGS on xecluster?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
