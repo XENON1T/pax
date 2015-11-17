@@ -16,6 +16,8 @@ except ImportError:
     import Queue as queue   #noqa
 import multiprocessing
 
+import objgraph
+
 # Hack to ensure correct matplotlib backend is chosen
 # Without this, pax's plotting does not work when using a system without a graphical display
 # Stolen from http://stackoverflow.com/questions/8257385/automatic-detection-of-display-availability-with-matplotlib
@@ -455,3 +457,8 @@ def wraplist(x):
 
 if __name__ == "__main__":
     main()
+    roots = objgraph.get_leaking_objects()
+
+    print('done', len(roots) )
+    print(objgraph.show_most_common_types(objects=roots))
+

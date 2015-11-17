@@ -34,6 +34,7 @@ The entry point to this code is typically via bin/event-builder.
 
 import argparse
 import logging
+import os
 import pymongo
 import time
 from pax import core, units
@@ -44,15 +45,21 @@ def run():
 
     Find a dataset to process, then process it with settings from command line.
     """
+    try:
+        mongo_url = os.environ['MONGO_URL']
+    except KeyError:
+        raise RuntimeError("You need to set the variable MONGO_URL."
+                           "\texport MONGO_URL=mongodb://eb0/untriggered")
+
+    client = pymongo.MongoClient(mongo_url,
+                                 serverSelectionTimeoutMS=500)
+    
     args, log = handle_args()
 
     query = {"trigger.status": "waiting_to_be_processed"}
 
     log.info("Searching for run")
 
-    client = pymongo.MongoClient(args.address,
-                                 args.port,
-                                 serverSelectionTimeoutMS=500)
     try:
         client.admin.command('ping')
         log.debug("Connection successful to %s:%d",
@@ -160,25 +167,7 @@ def handle_args():
     trigger_group.add_argument('--right',
                                type=int, default=200,
                                help='Right extension to save (us)')
-    run_db_str = 'The runs database stores all metadata about runs, including' \
-                 ' which are waiting to be triggered. Communication is ' \
-                 'required to find data.  More information on the MongoDB ' \
-                 'jargon (e.g., "collection") can be found in their docs.'
-    run_db_group = parser.add_argument_group(title='Runs database settings',
-                                             description=run_db_str)
-    run_db_group.add_argument('--address',
-                              default='daqeb0',
-                              help='Address or hostname of MongoDB instance.')
-    run_db_group.add_argument('--database',
-                              default='online',
-                              help='')
-    run_db_group.add_argument('--collection',
-                              default='runs',
-                              help='')
-    run_db_group.add_argument('--port',
-                              default=27000,
-                              type=int,
-                              help='Listening port of MongoDB.')
+
     parser.add_argument('--wait',
                         default=1,
                         type=int,
@@ -197,8 +186,8 @@ def handle_args():
     console = logging.StreamHandler()
     console.setLevel(logging.DEBUG)
     # set a format which is simpler for console use
-    formatter = logging.Formatter(
-        '%(asctime)s %(name)-12s: %(levelname)-8s %(message)s')
+    formatter = logging.Formatter('%(asctime)s %(name)-12s: '
+                                  '%(levelname)-8s %(message)s')
     # tell the handler to use this format
     console.setFormatter(formatter)
     # add the handler to the root logger
