@@ -4,15 +4,10 @@ History
 -------
 
 ------------------
-4.2.0 (2015-11-17)
+4.1.0 (2015-11-17)
 ------------------
 
 * ROOT class output
-
-------------------
-4.1.0 (2015-10-29)
-------------------
-
 * Signal processing speedup (#245)
 * S1 3d pattern simulation & goodness of fit computation (#237)
 * Modifications for working with other TPCs (#247)
