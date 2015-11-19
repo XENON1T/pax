@@ -89,22 +89,11 @@ def run():
             log.info("Building events for %s",
                      run_doc['name'])
 
-            filename = '%s' % run_doc['name']
-
-            if args.processed:
-                plugin_group_names = ['input',  'preprocessing',  'dsp',
-                                      'transform', 'output']
-                output = ['Table.TableWriter']
-            else:
-                plugin_group_names = ['input',  'preprocessing', 'output']
-                output = ['BSON.WriteZippedBSON']
+            pax_config = {'filename' : '%s' % run_doc['name'],}
 
             config_names = 'eventbuilder'
             config_dict = {'DEFAULT': {'run_doc': run_doc['_id']},
-                           'pax': {'plugin_group_names': plugin_group_names,
-                                   'output': output,
-                                   'output_name': filename, },
-
+                           'pax': pax_config,
                            'MongoDB': {'runs_database': args.mongo,
                                        'window': args.window * units.us,
                                        'left': args.left * units.us,
@@ -123,6 +112,7 @@ def run():
                 log.exception(e)
                 collection.update(query,
                                   {'$set': {'trigger.status': 'error'}})
+                raise
 
 
 def authenticate(client, database_name = None):
@@ -155,9 +145,6 @@ def handle_args():
     parser.add_argument('--impatient',
                         action='store_true',
                         help="Event builder will not wait for new data")
-    parser.add_argument('--processed',
-                        action='store_true',
-                        help="Write processed files too")
     parser.add_argument('--mega_event',
                         action='store_true',
                         help="used for trigger efficiency")

@@ -79,7 +79,9 @@ class IOMongoDB():
         self.connections = {}  # MongoClient objects
         self.mongo = {}        #
 
-        self.pmt_mappings = self.config['pmt_mappings']
+        self.pmts = self.config['pmts']
+        self.pmt_mappings = {(x['digitizer']['module'],
+                              x['digitizer']['channel']): x['pmt_position'] for x in self.pmts}
 
         # Each MongoDB class must acquire the run database document that
         # describes this acquisition.  This is partly because the state can
@@ -87,8 +89,8 @@ class IOMongoDB():
         self.run_doc_id = self.config['run_doc']
         self.log.debug("Run doc %s", self.run_doc_id)
 
-        client_run = pymongo.MongoClient(self.config['runs_database'],
-                                         serverSelectionTimeoutMS=500)
+        self.log.debug('Connecting to %s', self.config['runs_database'])
+        client_run = pymongo.MongoClient(self.config['runs_database'])
         authenticate(client_run)
         try:
             client_run.admin.command('ping')
@@ -151,13 +153,11 @@ class IOMongoDB():
                 replica_set, address = address.split('/')
 
                 c = pymongo.MongoClient(address,
-                                        replicaSet=replica_set,
-                                        serverSelectionTimeoutMS=500)
+                                        replicaSet=replica_set)
             else:
 
                 c = pymongo.MongoClient(address,
-                                        port,
-                                        serverSelectionTimeoutMS=500)
+                                        port)
             authenticate(c, database)
             self.connections[address] = c
 
@@ -192,7 +192,7 @@ class IOMongoDB():
 
     def update_run_doc(self):
         self.run_doc = self.mongo['run']['collection'].find_one(self.query)
-        self.data_taking_ended = self.run_doc['reader']['data_taking_ended']
+        self.data_taking_ended = ('endtimestamp' in self.run_doc)
 
     def number_events(self):
         return self.number_of_events

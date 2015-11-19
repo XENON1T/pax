@@ -104,8 +104,7 @@ class FindHits(plugin.TransformPlugin):
             # This is convenient so we don't have to reinterpret min, max, etc
             w = reference_baseline - w
 
-            pulse.baseline, pulse.noise_sigma, pulse.minimum, pulse.maximum = \
-                compute_pulse_properties(w, self.initial_baseline_samples)
+            pulse.baseline, pulse.noise_sigma, pulse.minimum, pulse.maximum = compute_pulse_properties(w, self.initial_baseline_samples)
 
             w -= pulse.baseline
 
@@ -130,8 +129,11 @@ class FindHits(plugin.TransformPlugin):
                                 - self.config['height_over_min_low_threshold'] * pulse.minimum)
 
             # Call the numba hit finder -- see its docstring for description
-            n_hits_found = pulse.n_hits_found = find_intervals_above_threshold(
-                w, high_threshold, low_threshold, hit_bounds_buffer, dynamic_low_threshold_coeff)
+            n_hits_found = pulse.n_hits_found = find_intervals_above_threshold(w,
+                                                                               high_threshold,
+                                                                               low_threshold,
+                                                                               hit_bounds_buffer,
+                                                                               dynamic_low_threshold_coeff)
 
             # Only view the part of hit_bounds_buffer that contains hits found in this event
             # The rest of hit_bounds_buffer contains -1's or stuff from previous pulses
