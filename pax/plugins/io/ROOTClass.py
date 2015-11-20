@@ -89,12 +89,11 @@ class WriteROOTClass(plugin.OutputPlugin):
 
         output_file = self.config['output_name'] + '.root'
         if os.path.exists(output_file):
-            print("\n\nOutput file %s already exists. Overwrite? [y/n]:" % output_file)
-            if input().lower() not in ('y', 'yes'):
-                print("\nFine, Exiting pax...\n")
-                exit()
+            print("\n\nOutput file %s already exists, overwriting." % output_file)
 
-        self.f = ROOT.TFile(output_file, "RECREATE")
+        self.f = ROOT.TFile(output_file,
+                            "RECREATE")
+        self.f.cd()
         self.event_tree = None
 
     def write_event(self, event):
@@ -148,6 +147,7 @@ class WriteROOTClass(plugin.OutputPlugin):
         self.set_root_object_attrs(event, self.root_event)
         self.event_tree.Fill()
 
+
     def set_root_object_attrs(self, python_object, root_object):
         """Set attribute values of the root object based on data_model
         instance python object
@@ -167,9 +167,11 @@ class WriteROOTClass(plugin.OutputPlugin):
                 list_of_elements = getattr(python_object, field_name)
 
                 root_vector = getattr(root_object, field_name)
+
                 root_vector.clear()
                 for element_python_object in list_of_elements:
                     element_root_object = getattr(ROOT, element_name)()
+                    ROOT.SetOwnership(element_root_object, True)
                     self.set_root_object_attrs(element_python_object, element_root_object)
                     root_vector.push_back(element_root_object)
                 self.last_collection[element_name] = list_of_elements
@@ -190,13 +192,13 @@ class WriteROOTClass(plugin.OutputPlugin):
                 # Everything else apparently just works magically:
                 setattr(root_object, field_name, field_value)
 
-        # Add values to user-defined fields
-        for field_name, field_type, field_code in self.config['extra_fields'].get(obj_name,
-                                                                                  []):
-            field = getattr(root_object, field_name)
-            exec(field_code,
-                 dict(root_object=root_object, python_object=python_object,
-                      field=field, self=self))
+        # # Add values to user-defined fields
+        # for field_name, field_type, field_code in self.config['extra_fields'].get(obj_name,
+        #                                                                           []):
+        #     field = getattr(root_object, field_name)
+        #     exec(field_code,
+        #          dict(root_object=root_object, python_object=python_object,
+        #               field=field, self=self))
 
     def _get_index(self, py_object):
         """Return index of py_object in last collection of models of
