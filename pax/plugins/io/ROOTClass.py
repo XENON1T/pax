@@ -184,21 +184,22 @@ class WriteROOTClass(plugin.OutputPlugin):
                 # For now we'll simply store the elements one-by-one
                 # This isn't very efficient, but it seems the speed is still
                 # good.
-                root_field = getattr(root_object, field_name)
-                for i, x in enumerate(field_value):
-                    root_field[i] = x
+                # root_field = getattr(root_object, field_name)
+                # for i, x in enumerate(field_value):
+                #     root_field[i] = x
+                continue
 
             else:
                 # Everything else apparently just works magically:
                 setattr(root_object, field_name, field_value)
 
         # # Add values to user-defined fields
-        # for field_name, field_type, field_code in self.config['extra_fields'].get(obj_name,
-        #                                                                           []):
-        #     field = getattr(root_object, field_name)
-        #     exec(field_code,
-        #          dict(root_object=root_object, python_object=python_object,
-        #               field=field, self=self))
+        for field_name, field_type, field_code in self.config['extra_fields'].get(obj_name,
+                                                                                  []):
+            field = getattr(root_object, field_name)
+            exec(field_code,
+                 dict(root_object=root_object, python_object=python_object,
+                      field=field, self=self))
 
     def _get_index(self, py_object):
         """Return index of py_object in last collection of models of
