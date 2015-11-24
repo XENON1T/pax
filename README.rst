@@ -84,6 +84,10 @@ Of course we assume you have a functional basic compilation environment. On a fr
   
 to setup the necessary compilers.
 
+On a Mac, please run the following to make sure that ROOT works::
+
+  xcode-select --install
+
 
 Git and Github
 ^^^^^^^^^^^^^^
