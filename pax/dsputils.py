@@ -6,7 +6,7 @@ from pax.datastructure import Hit
 
 
 @numba.jit(numba.int64[:](numba.from_dtype(Hit.get_dtype())[:]),
-           nopython=True, cache=True)
+           nopython=True)
 def gaps_between_hits(hits):
     """Return array of gaps between hits: a hit's 'gap' is the # of samples before that hit free of other hits.
     The gap of the first hit is 0 by definition.
