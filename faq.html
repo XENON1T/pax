@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Installation and setup &mdash; Processor for Analyzing XENON1T 4.0.1 documentation</title>
+    <title>Installation and setup &mdash; Processor for Analyzing XENON1T 4.1.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '4.0.1',
+        VERSION:     '4.1.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.0.1 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.1.0 documentation" href="index.html" />
     <link rel="next" title="Event format" href="format.html" />
     <link rel="prev" title="Installation prerequisites" href="readme.html" />
    
@@ -48,7 +48,8 @@
 <h2>How do I set up <cite>pax</cite> at LNGS on xecluster?<a class="headerlink" href="#how-do-i-set-up-pax-at-lngs-on-xecluster" title="Permalink to this headline">¶</a></h2>
 <p>You can either use a pax someone else has set up, or set up your own. To use Chris&#8217; pax, use the following command:</p>
 <blockquote>
-<div>export PATH=/home/tunnell/anaconda3/bin:$PATH</div></blockquote>
+<div>export PATH=/home/tunnell/anaconda3/bin:$PATH
+source activate pax</div></blockquote>
 <p>This can be added to your <cite>.bashrc</cite> to be run automatically when you login.</p>
 <p>To set up a developer installation of pax in your xecluster home directory, first follow the steps for installing anaconda and the required packages in the main readme (I didn&#8217;t try to install snappy but used the workaround). Then add the following to your .bashrc:</p>
 <div class="highlight-python"><div class="highlight"><pre># use git in totally insecure mode

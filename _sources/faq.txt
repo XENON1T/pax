@@ -14,6 +14,7 @@ How do I set up `pax` at LNGS on xecluster?
 You can either use a pax someone else has set up, or set up your own. To use Chris' pax, use the following command:
 
   export PATH=/home/tunnell/anaconda3/bin:$PATH
+  source activate pax
 
 This can be added to your `.bashrc` to be run automatically when you login.
 

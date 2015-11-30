@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax package &mdash; Processor for Analyzing XENON1T 4.0.1 documentation</title>
+    <title>pax package &mdash; Processor for Analyzing XENON1T 4.1.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '4.0.1',
+        VERSION:     '4.1.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.0.1 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.1.0 documentation" href="index.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -82,7 +82,7 @@
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.signal_processing.html#submodules">Submodules</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.signal_processing.html#module-pax.plugins.signal_processing.CheckPulses">pax.plugins.signal_processing.CheckPulses module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.signal_processing.html#pax-plugins-signal-processing-cluster-module">pax.plugins.signal_processing.Cluster module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="pax.plugins.signal_processing.html#pax-plugins-signal-processing-hitfinder-module">pax.plugins.signal_processing.HitFinder module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.signal_processing.html#module-pax.plugins.signal_processing.HitFinder">pax.plugins.signal_processing.HitFinder module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.signal_processing.html#module-pax.plugins.signal_processing">Module contents</a></li>
 </ul>
 </li>
@@ -1566,6 +1566,11 @@ an event of one second is made that can be used for computing the trigger
 efficiency.</p>
 <p>The entry point to this code is typically via bin/event-builder.</p>
 <dl class="function">
+<dt id="pax.eventbuilder.authenticate">
+<code class="descclassname">pax.eventbuilder.</code><code class="descname">authenticate</code><span class="sig-paren">(</span><em>client</em>, <em>database_name=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/eventbuilder.html#authenticate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.eventbuilder.authenticate" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
 <dt id="pax.eventbuilder.handle_args">
 <code class="descclassname">pax.eventbuilder.</code><code class="descname">handle_args</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/eventbuilder.html#handle_args"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.eventbuilder.handle_args" title="Permalink to this definition">¶</a></dt>
 <dd><p>Command line argument processing</p>
@@ -1888,7 +1893,7 @@ This is</p>
 
 <dl class="attribute">
 <dt id="pax.formats.ROOTDump.numpy_type">
-<code class="descname">numpy_type</code><em class="property"> = {'D': &lt;class 'numpy.float64'&gt;, 'F': &lt;class 'numpy.float32'&gt;, 'O': &lt;class 'bool'&gt;, 'I': &lt;class 'numpy.int32'&gt;, 'L': &lt;class 'numpy.int64'&gt;, 'C': dtype('O')}</em><a class="headerlink" href="#pax.formats.ROOTDump.numpy_type" title="Permalink to this definition">¶</a></dt>
+<code class="descname">numpy_type</code><em class="property"> = {'F': &lt;class 'numpy.float32'&gt;, 'D': &lt;class 'numpy.float64'&gt;, 'L': &lt;class 'numpy.int64'&gt;, 'C': dtype('O'), 'O': &lt;class 'bool'&gt;, 'I': &lt;class 'numpy.int32'&gt;}</em><a class="headerlink" href="#pax.formats.ROOTDump.numpy_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -1903,7 +1908,7 @@ This is</p>
 
 <dl class="attribute">
 <dt id="pax.formats.ROOTDump.root_type">
-<code class="descname">root_type</code><em class="property"> = {'int16': '/S', 'float64': '/D', 'bool': '/O', 'int64': '/L', 'float32': '/F', 'S': '/C', 'int32': '/I'}</em><a class="headerlink" href="#pax.formats.ROOTDump.root_type" title="Permalink to this definition">¶</a></dt>
+<code class="descname">root_type</code><em class="property"> = {'bool': '/O', 'int64': '/L', 'S': '/C', 'float32': '/F', 'float64': '/D', 'int16': '/S', 'int32': '/I'}</em><a class="headerlink" href="#pax.formats.ROOTDump.root_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
