@@ -46,7 +46,7 @@
 
 
 <span class="nd">@numba.jit</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">[:](</span><span class="n">numba</span><span class="o">.</span><span class="n">from_dtype</span><span class="p">(</span><span class="n">Hit</span><span class="o">.</span><span class="n">get_dtype</span><span class="p">())[:]),</span>
-           <span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+           <span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 <div class="viewcode-block" id="gaps_between_hits"><a class="viewcode-back" href="../../pax.html#pax.dsputils.gaps_between_hits">[docs]</a><span class="k">def</span> <span class="nf">gaps_between_hits</span><span class="p">(</span><span class="n">hits</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Return array of gaps between hits: a hit&#39;s &#39;gap&#39; is the # of samples before that hit free of other hits.</span>
 <span class="sd">    The gap of the first hit is 0 by definition.</span>

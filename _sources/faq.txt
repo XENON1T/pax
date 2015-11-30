@@ -11,12 +11,17 @@ See http://docs.continuum.io/anaconda/ide_integration#pycharm
 How do I set up `pax` at LNGS on xecluster?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can either use a pax someone else has set up, or set up your own. To use Chris' pax, use the following command:
+You can either use a pax someone else has set up, or set up your own. Usually either Chris or Jelle's pax is in mostly functional condition. To use Chris' pax, use the following commands:
 
+  ssh xecluster06
   export PATH=/home/tunnell/anaconda3/bin:$PATH
   source activate pax
+  
+To use Jelle's pax, use the command:
 
-This can be added to your `.bashrc` to be run automatically when you login.
+  export PATH=/home/aalbers/anaconda/bin:$PATH
+
+Either of these can be added to your `.bashrc` to be run automatically when you login.
 
 To set up a developer installation of pax in your xecluster home directory, first follow the steps for installing anaconda and the required packages in the main readme (I didn't try to install snappy but used the workaround). Then add the following to your .bashrc::
 

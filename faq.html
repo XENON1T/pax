@@ -46,11 +46,15 @@
 </div>
 <div class="section" id="how-do-i-set-up-pax-at-lngs-on-xecluster">
 <h2>How do I set up <cite>pax</cite> at LNGS on xecluster?<a class="headerlink" href="#how-do-i-set-up-pax-at-lngs-on-xecluster" title="Permalink to this headline">¶</a></h2>
-<p>You can either use a pax someone else has set up, or set up your own. To use Chris&#8217; pax, use the following command:</p>
+<p>You can either use a pax someone else has set up, or set up your own. Usually either Chris or Jelle&#8217;s pax is in mostly functional condition. To use Chris&#8217; pax, use the following commands:</p>
 <blockquote>
-<div>export PATH=/home/tunnell/anaconda3/bin:$PATH
+<div>ssh xecluster06
+export PATH=/home/tunnell/anaconda3/bin:$PATH
 source activate pax</div></blockquote>
-<p>This can be added to your <cite>.bashrc</cite> to be run automatically when you login.</p>
+<p>To use Jelle&#8217;s pax, use the command:</p>
+<blockquote>
+<div>export PATH=/home/aalbers/anaconda/bin:$PATH</div></blockquote>
+<p>Either of these can be added to your <cite>.bashrc</cite> to be run automatically when you login.</p>
 <p>To set up a developer installation of pax in your xecluster home directory, first follow the steps for installing anaconda and the required packages in the main readme (I didn&#8217;t try to install snappy but used the workaround). Then add the following to your .bashrc:</p>
 <div class="highlight-python"><div class="highlight"><pre># use git in totally insecure mode
 export PATH=/home/kaminsky/software/bin:$PATH

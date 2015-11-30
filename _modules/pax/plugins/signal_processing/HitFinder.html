@@ -144,7 +144,8 @@
             <span class="c"># This is convenient so we don&#39;t have to reinterpret min, max, etc</span>
             <span class="n">w</span> <span class="o">=</span> <span class="n">reference_baseline</span> <span class="o">-</span> <span class="n">w</span>
 
-            <span class="n">pulse</span><span class="o">.</span><span class="n">baseline</span><span class="p">,</span> <span class="n">pulse</span><span class="o">.</span><span class="n">noise_sigma</span><span class="p">,</span> <span class="n">pulse</span><span class="o">.</span><span class="n">minimum</span><span class="p">,</span> <span class="n">pulse</span><span class="o">.</span><span class="n">maximum</span> <span class="o">=</span> <span class="n">compute_pulse_properties</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_baseline_samples</span><span class="p">)</span>
+            <span class="n">pulse</span><span class="o">.</span><span class="n">baseline</span><span class="p">,</span> <span class="n">pulse</span><span class="o">.</span><span class="n">noise_sigma</span><span class="p">,</span> <span class="n">pulse</span><span class="o">.</span><span class="n">minimum</span><span class="p">,</span> <span class="n">pulse</span><span class="o">.</span><span class="n">maximum</span> <span class="o">=</span> \
+                <span class="n">compute_pulse_properties</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">initial_baseline_samples</span><span class="p">)</span>
 
             <span class="n">w</span> <span class="o">-=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">baseline</span>
 
@@ -158,7 +159,9 @@
             <span class="c"># This means the raw waveform dropped to 0,</span>
             <span class="c"># i.e. we went digitizer_reference_baseline above the reference baseline</span>
             <span class="c"># i.e. we went digitizer_reference_baseline - pulse.baseline above baseline</span>
-            <span class="n">is_saturated</span> <span class="o">=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">maximum</span> <span class="o">&gt;=</span> <span class="n">reference_baseline</span> <span class="o">-</span> <span class="n">pulse</span><span class="o">.</span><span class="n">baseline</span>
+            <span class="c"># 0.5 is needed to avoid floating-point rounding errors to cause saturation not to be reported</span>
+            <span class="c"># Somehow happens only when you use simulated data -- apparently np.clip rounds slightly different</span>
+            <span class="n">is_saturated</span> <span class="o">=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">maximum</span> <span class="o">&gt;=</span> <span class="n">reference_baseline</span> <span class="o">-</span> <span class="n">pulse</span><span class="o">.</span><span class="n">baseline</span> <span class="o">-</span> <span class="mf">0.5</span>
 
             <span class="c"># Compute thresholds based on noise level</span>
             <span class="n">high_threshold</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;height_over_noise_high_threshold&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">pulse</span><span class="o">.</span><span class="n">noise_sigma</span><span class="p">,</span>
@@ -169,11 +172,8 @@
                                 <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;height_over_min_low_threshold&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">pulse</span><span class="o">.</span><span class="n">minimum</span><span class="p">)</span>
 
             <span class="c"># Call the numba hit finder -- see its docstring for description</span>
-            <span class="n">n_hits_found</span> <span class="o">=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">n_hits_found</span> <span class="o">=</span> <span class="n">find_intervals_above_threshold</span><span class="p">(</span><span class="n">w</span><span class="p">,</span>
-                                                                               <span class="n">high_threshold</span><span class="p">,</span>
-                                                                               <span class="n">low_threshold</span><span class="p">,</span>
-                                                                               <span class="n">hit_bounds_buffer</span><span class="p">,</span>
-                                                                               <span class="n">dynamic_low_threshold_coeff</span><span class="p">)</span>
+            <span class="n">n_hits_found</span> <span class="o">=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">n_hits_found</span> <span class="o">=</span> <span class="n">find_intervals_above_threshold</span><span class="p">(</span>
+                <span class="n">w</span><span class="p">,</span> <span class="n">high_threshold</span><span class="p">,</span> <span class="n">low_threshold</span><span class="p">,</span> <span class="n">hit_bounds_buffer</span><span class="p">,</span> <span class="n">dynamic_low_threshold_coeff</span><span class="p">)</span>
 
             <span class="c"># Only view the part of hit_bounds_buffer that contains hits found in this event</span>
             <span class="c"># The rest of hit_bounds_buffer contains -1&#39;s or stuff from previous pulses</span>
@@ -209,10 +209,12 @@
 
             <span class="c"># If the pulse reached the ADC saturation threshold, we should count the saturated samples in each hit</span>
             <span class="c"># This is rare enough that it doesn&#39;t need to be in numba</span>
+            <span class="c"># -0.5 for same reason as above (floating point rounding)</span>
             <span class="k">if</span> <span class="n">is_saturated</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">hit</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">hit_bounds_found</span><span class="p">):</span>
-                    <span class="n">hits</span><span class="p">[</span><span class="s">&#39;n_saturated&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="n">hit</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">hit</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span>
-                                                           <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;digitizer_reference_baseline&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">pulse</span><span class="o">.</span><span class="n">baseline</span><span class="p">)</span>
+                    <span class="n">hits</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s">&#39;n_saturated&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">count_nonzero</span><span class="p">(</span><span class="n">w</span><span class="p">[</span><span class="n">hit</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">hit</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span>
+                                                              <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;digitizer_reference_baseline&#39;</span><span class="p">]</span> <span class="o">-</span>
+                                                              <span class="n">pulse</span><span class="o">.</span><span class="n">baseline</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span>
 
             <span class="n">hits_per_pulse</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hits</span><span class="p">)</span>
 
@@ -314,7 +316,7 @@
 
 </div></div>
 <span class="nd">@numba.jit</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">int32</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">[:,</span> <span class="p">:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span>
-           <span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+           <span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 <div class="viewcode-block" id="find_intervals_above_threshold"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.HitFinder.find_intervals_above_threshold">[docs]</a><span class="k">def</span> <span class="nf">find_intervals_above_threshold</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">high_threshold</span><span class="p">,</span> <span class="n">low_threshold</span><span class="p">,</span> <span class="n">result_buffer</span><span class="p">,</span> <span class="n">dynamic_low_threshold_coeff</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Fills result_buffer with l, r bounds of intervals in w &gt; low_threshold which exceed high_threshold somewhere</span>
 <span class="sd">        result_buffer: numpy N*2 array of ints, will be filled by function.</span>
@@ -376,7 +378,7 @@
 <span class="nd">@numba.jit</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">void</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">[:,</span> <span class="p">:],</span>
                       <span class="n">numba</span><span class="o">.</span><span class="n">from_dtype</span><span class="p">(</span><span class="n">datastructure</span><span class="o">.</span><span class="n">Hit</span><span class="o">.</span><span class="n">get_dtype</span><span class="p">())[:],</span>
                       <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">),</span>
-           <span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+           <span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 <div class="viewcode-block" id="build_hits"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.HitFinder.build_hits">[docs]</a><span class="k">def</span> <span class="nf">build_hits</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">hit_bounds</span><span class="p">,</span> <span class="n">hits_buffer</span><span class="p">,</span> <span class="n">adc_to_pe</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">noise_sigma_pe</span><span class="p">,</span> <span class="n">dt</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">pulse_i</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Populates hits_buffer with properties from hits indicated by hit_bounds.</span>
 <span class="sd">        hit_bounds should be a numpy array of (left, right) bounds (inclusive)</span>
@@ -415,7 +417,7 @@
 
 </div>
 <span class="nd">@numba.jit</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">typeof</span><span class="p">((</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))(</span><span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">int64</span><span class="p">),</span>
-           <span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+           <span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 <div class="viewcode-block" id="compute_pulse_properties"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.HitFinder.compute_pulse_properties">[docs]</a><span class="k">def</span> <span class="nf">compute_pulse_properties</span><span class="p">(</span><span class="n">w</span><span class="p">,</span> <span class="n">initial_baseline_samples</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Compute basic pulse properties quickly</span>
 <span class="sd">    :param w: Raw pulse waveform in ADC counts</span>

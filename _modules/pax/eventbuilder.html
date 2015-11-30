@@ -74,7 +74,6 @@
 
 <span class="kn">import</span> <span class="nn">argparse</span>
 <span class="kn">import</span> <span class="nn">logging</span>
-<span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">pymongo</span>
 <span class="kn">import</span> <span class="nn">time</span>
 <span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">core</span><span class="p">,</span> <span class="n">units</span>
@@ -85,37 +84,34 @@
 
 <span class="sd">    Find a dataset to process, then process it with settings from command line.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="c"># Fetch command line arguments</span>
     <span class="n">args</span><span class="p">,</span> <span class="n">log</span> <span class="o">=</span> <span class="n">handle_args</span><span class="p">()</span>
 
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Connection to </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">args</span><span class="o">.</span><span class="n">mongo</span><span class="p">)</span>
-    <span class="n">client</span> <span class="o">=</span> <span class="n">pymongo</span><span class="o">.</span><span class="n">MongoClient</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">mongo</span><span class="p">)</span>
-
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">client</span><span class="o">.</span><span class="n">admin</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="s">&#39;ping&#39;</span><span class="p">)</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Connection successful to </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">mongo</span><span class="p">)</span>
-    <span class="k">except</span> <span class="n">pymongo</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">ConnectionFailure</span><span class="p">:</span>
-        <span class="n">log</span><span class="o">.</span><span class="n">fatal</span><span class="p">(</span><span class="s">&quot;Cannot connect to MongoDB at </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">mongo</span><span class="p">))</span>
-        <span class="k">raise</span>
-
-    <span class="n">authenticate</span><span class="p">(</span><span class="n">client</span><span class="p">)</span>
-
-    <span class="n">query</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;detectors.tpc.trigger.status&#39;</span><span class="p">:</span> <span class="s">&#39;waiting_to_be_processed&#39;</span><span class="p">}</span>
+    <span class="n">query</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;trigger.status&quot;</span><span class="p">:</span> <span class="s">&quot;waiting_to_be_processed&quot;</span><span class="p">}</span>
 
     <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Searching for run&quot;</span><span class="p">)</span>
 
+    <span class="n">client</span> <span class="o">=</span> <span class="n">pymongo</span><span class="o">.</span><span class="n">MongoClient</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">address</span><span class="p">,</span>
+                                 <span class="n">args</span><span class="o">.</span><span class="n">port</span><span class="p">,</span>
+                                 <span class="n">serverSelectionTimeoutMS</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">client</span><span class="o">.</span><span class="n">admin</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="s">&#39;ping&#39;</span><span class="p">)</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Connection successful to </span><span class="si">%s</span><span class="s">:</span><span class="si">%d</span><span class="s">&quot;</span><span class="p">,</span>
+                  <span class="n">args</span><span class="o">.</span><span class="n">address</span><span class="p">,</span>
+                  <span class="n">args</span><span class="o">.</span><span class="n">port</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">pymongo</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">ConnectionFailure</span><span class="p">:</span>
+        <span class="n">log</span><span class="o">.</span><span class="n">fatal</span><span class="p">(</span><span class="s">&quot;Cannot connect to MongoDB at </span><span class="si">%s</span><span class="s">:</span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">address</span><span class="p">,</span>
+                                                          <span class="n">args</span><span class="o">.</span><span class="n">port</span><span class="p">))</span>
+        <span class="k">raise</span>
 
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Fetching databases: </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">database</span><span class="p">)</span>
+    <span class="n">db</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_database</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">database</span><span class="p">)</span>
 
-    <span class="n">db</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_default_database</span><span class="p">()</span>
-    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Fetched databases: </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span> <span class="n">db</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-
-    <span class="n">collection</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">get_collection</span><span class="p">(</span><span class="s">&#39;runs&#39;</span><span class="p">)</span>
-    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Got collection: </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span> <span class="n">collection</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+    <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Getting collection: </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">collection</span><span class="p">)</span>
+    <span class="n">collection</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">get_collection</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">collection</span><span class="p">)</span>
 
     <span class="k">while</span> <span class="mi">1</span><span class="p">:</span>
         <span class="n">run_doc</span> <span class="o">=</span> <span class="n">collection</span><span class="o">.</span><span class="n">find_one_and_update</span><span class="p">(</span><span class="n">query</span><span class="p">,</span>
-                                                 <span class="p">{</span><span class="s">&#39;$set&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;detectors.tpc.trigger.status&#39;</span><span class="p">:</span> <span class="s">&#39;staging&#39;</span><span class="p">}})</span>
+                                                 <span class="p">{</span><span class="s">&#39;$set&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;trigger.status&#39;</span><span class="p">:</span> <span class="s">&#39;staging&#39;</span><span class="p">}})</span>
 
         <span class="k">if</span> <span class="n">run_doc</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">impatient</span><span class="p">:</span>
@@ -129,12 +125,27 @@
             <span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Building events for </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span>
                      <span class="n">run_doc</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">])</span>
 
-            <span class="n">pax_config</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;filename&#39;</span> <span class="p">:</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">run_doc</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">],}</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="s">&#39;</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">run_doc</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">]</span>
+
+            <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">processed</span><span class="p">:</span>
+                <span class="n">plugin_group_names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;input&#39;</span><span class="p">,</span>  <span class="s">&#39;preprocessing&#39;</span><span class="p">,</span>  <span class="s">&#39;dsp&#39;</span><span class="p">,</span>
+                                      <span class="s">&#39;transform&#39;</span><span class="p">,</span> <span class="s">&#39;output&#39;</span><span class="p">]</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;Table.TableWriter&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">plugin_group_names</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;input&#39;</span><span class="p">,</span>  <span class="s">&#39;preprocessing&#39;</span><span class="p">,</span> <span class="s">&#39;output&#39;</span><span class="p">]</span>
+                <span class="n">output</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;BSON.WriteZippedBSON&#39;</span><span class="p">]</span>
 
             <span class="n">config_names</span> <span class="o">=</span> <span class="s">&#39;eventbuilder&#39;</span>
             <span class="n">config_dict</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;DEFAULT&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;run_doc&#39;</span><span class="p">:</span> <span class="n">run_doc</span><span class="p">[</span><span class="s">&#39;_id&#39;</span><span class="p">]},</span>
-                           <span class="s">&#39;pax&#39;</span><span class="p">:</span> <span class="n">pax_config</span><span class="p">,</span>
-                           <span class="s">&#39;MongoDB&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;runs_database&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">mongo</span><span class="p">,</span>
+                           <span class="s">&#39;pax&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;plugin_group_names&#39;</span><span class="p">:</span> <span class="n">plugin_group_names</span><span class="p">,</span>
+                                   <span class="s">&#39;output&#39;</span><span class="p">:</span> <span class="n">output</span><span class="p">,</span>
+                                   <span class="s">&#39;output_name&#39;</span><span class="p">:</span> <span class="n">filename</span><span class="p">,</span> <span class="p">},</span>
+
+                           <span class="s">&#39;MongoDB&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;runs_database_location&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;address&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">address</span><span class="p">,</span>
+                                                                  <span class="s">&#39;database&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">database</span><span class="p">,</span>
+                                                                  <span class="s">&#39;port&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">port</span><span class="p">,</span>
+                                                                  <span class="s">&#39;collection&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">collection</span>
+                                                                  <span class="p">},</span>
                                        <span class="s">&#39;window&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">window</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">us</span><span class="p">,</span>
                                        <span class="s">&#39;left&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">left</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">us</span><span class="p">,</span>
                                        <span class="s">&#39;right&#39;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">right</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">us</span><span class="p">,</span>
@@ -152,26 +163,7 @@
                 <span class="n">log</span><span class="o">.</span><span class="n">exception</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
                 <span class="n">collection</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">query</span><span class="p">,</span>
                                   <span class="p">{</span><span class="s">&#39;$set&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;trigger.status&#39;</span><span class="p">:</span> <span class="s">&#39;error&#39;</span><span class="p">}})</span>
-                <span class="k">raise</span>
 
-</div>
-<div class="viewcode-block" id="authenticate"><a class="viewcode-back" href="../../pax.html#pax.eventbuilder.authenticate">[docs]</a><span class="k">def</span> <span class="nf">authenticate</span><span class="p">(</span><span class="n">client</span><span class="p">,</span> <span class="n">database_name</span> <span class="o">=</span> <span class="bp">None</span><span class="p">):</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">mongo_user</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&#39;MONGO_USER&#39;</span><span class="p">]</span>
-    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;You need to set the variable MONGO_USER.&quot;</span>
-                           <span class="s">&quot;</span><span class="se">\t</span><span class="s">export MONGO_USER=eb&quot;</span><span class="p">)</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">mongo_password</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s">&#39;MONGO_PASSWORD&#39;</span><span class="p">]</span>
-    <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;You need to set the variable MONGO_PASSWORD.&quot;</span>
-                           <span class="s">&quot;</span><span class="se">\t</span><span class="s">export MONGO_PASSWORD=XXXXXX&quot;</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">database_name</span> <span class="o">==</span> <span class="bp">None</span><span class="p">:</span>
-        <span class="n">database</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_default_database</span><span class="p">()</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">database</span> <span class="o">=</span> <span class="n">client</span><span class="p">[</span><span class="n">database_name</span><span class="p">]</span>
-    <span class="n">database</span><span class="o">.</span><span class="n">authenticate</span><span class="p">(</span><span class="n">mongo_user</span><span class="p">,</span> <span class="n">mongo_password</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="handle_args"><a class="viewcode-back" href="../../pax.html#pax.eventbuilder.handle_args">[docs]</a><span class="k">def</span> <span class="nf">handle_args</span><span class="p">():</span>
     <span class="sd">&quot;&quot;&quot;Command line argument processing</span>
@@ -185,6 +177,9 @@
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;--impatient&#39;</span><span class="p">,</span>
                         <span class="n">action</span><span class="o">=</span><span class="s">&#39;store_true&#39;</span><span class="p">,</span>
                         <span class="n">help</span><span class="o">=</span><span class="s">&quot;Event builder will not wait for new data&quot;</span><span class="p">)</span>
+    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;--processed&#39;</span><span class="p">,</span>
+                        <span class="n">action</span><span class="o">=</span><span class="s">&#39;store_true&#39;</span><span class="p">,</span>
+                        <span class="n">help</span><span class="o">=</span><span class="s">&quot;Write processed files too&quot;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;--mega_event&#39;</span><span class="p">,</span>
                         <span class="n">action</span><span class="o">=</span><span class="s">&#39;store_true&#39;</span><span class="p">,</span>
                         <span class="n">help</span><span class="o">=</span><span class="s">&quot;used for trigger efficiency&quot;</span><span class="p">)</span>
@@ -205,17 +200,29 @@
     <span class="n">trigger_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;--right&#39;</span><span class="p">,</span>
                                <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
                                <span class="n">help</span><span class="o">=</span><span class="s">&#39;Right extension to save (us)&#39;</span><span class="p">)</span>
-
+    <span class="n">run_db_str</span> <span class="o">=</span> <span class="s">&#39;The runs database stores all metadata about runs, including&#39;</span> \
+                 <span class="s">&#39; which are waiting to be triggered. Communication is &#39;</span> \
+                 <span class="s">&#39;required to find data.  More information on the MongoDB &#39;</span> \
+                 <span class="s">&#39;jargon (e.g., &quot;collection&quot;) can be found in their docs.&#39;</span>
+    <span class="n">run_db_group</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_argument_group</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s">&#39;Runs database settings&#39;</span><span class="p">,</span>
+                                             <span class="n">description</span><span class="o">=</span><span class="n">run_db_str</span><span class="p">)</span>
+    <span class="n">run_db_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;--address&#39;</span><span class="p">,</span>
+                              <span class="n">default</span><span class="o">=</span><span class="s">&#39;daqeb0&#39;</span><span class="p">,</span>
+                              <span class="n">help</span><span class="o">=</span><span class="s">&#39;Address or hostname of MongoDB instance.&#39;</span><span class="p">)</span>
+    <span class="n">run_db_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;--database&#39;</span><span class="p">,</span>
+                              <span class="n">default</span><span class="o">=</span><span class="s">&#39;online&#39;</span><span class="p">,</span>
+                              <span class="n">help</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">run_db_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;--collection&#39;</span><span class="p">,</span>
+                              <span class="n">default</span><span class="o">=</span><span class="s">&#39;runs&#39;</span><span class="p">,</span>
+                              <span class="n">help</span><span class="o">=</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+    <span class="n">run_db_group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;--port&#39;</span><span class="p">,</span>
+                              <span class="n">default</span><span class="o">=</span><span class="mi">27000</span><span class="p">,</span>
+                              <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
+                              <span class="n">help</span><span class="o">=</span><span class="s">&#39;Listening port of MongoDB.&#39;</span><span class="p">)</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;--wait&#39;</span><span class="p">,</span>
                         <span class="n">default</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
                         <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span>
                         <span class="n">help</span><span class="o">=</span><span class="s">&quot;Wait time between searching if no data&quot;</span><span class="p">)</span>
-
-    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;--mongo&#39;</span><span class="p">,</span>
-                        <span class="n">default</span><span class="o">=</span><span class="s">&#39;mongodb://master:27017,master:27018/run&#39;</span><span class="p">,</span>
-                        <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span>
-                        <span class="n">help</span><span class="o">=</span><span class="s">&#39;Run database MongoDB URI&#39;</span><span class="p">)</span>
-
     <span class="c"># Log level control</span>
     <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s">&#39;--log&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span>
                         <span class="n">help</span><span class="o">=</span><span class="s">&quot;Set log level, e.g. &#39;debug&#39;&quot;</span><span class="p">)</span>
@@ -230,8 +237,8 @@
     <span class="n">console</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">StreamHandler</span><span class="p">()</span>
     <span class="n">console</span><span class="o">.</span><span class="n">setLevel</span><span class="p">(</span><span class="n">logging</span><span class="o">.</span><span class="n">DEBUG</span><span class="p">)</span>
     <span class="c"># set a format which is simpler for console use</span>
-    <span class="n">formatter</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span><span class="s">&#39;</span><span class="si">%(asctime)s</span><span class="s"> </span><span class="si">%(name)-12s</span><span class="s">: &#39;</span>
-                                  <span class="s">&#39;</span><span class="si">%(levelname)-8s</span><span class="s"> </span><span class="si">%(message)s</span><span class="s">&#39;</span><span class="p">)</span>
+    <span class="n">formatter</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">Formatter</span><span class="p">(</span>
+        <span class="s">&#39;</span><span class="si">%(asctime)s</span><span class="s"> </span><span class="si">%(name)-12s</span><span class="s">: </span><span class="si">%(levelname)-8s</span><span class="s"> </span><span class="si">%(message)s</span><span class="s">&#39;</span><span class="p">)</span>
     <span class="c"># tell the handler to use this format</span>
     <span class="n">console</span><span class="o">.</span><span class="n">setFormatter</span><span class="p">(</span><span class="n">formatter</span><span class="p">)</span>
     <span class="c"># add the handler to the root logger</span>

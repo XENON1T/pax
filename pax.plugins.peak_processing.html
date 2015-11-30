@@ -154,8 +154,61 @@ Stolen from <a class="reference external" href="http://stackoverflow.com/questio
 </dd></dl>
 
 </div>
-<div class="section" id="pax-plugins-peak-processing-naturalbreaksclustering-module">
-<h2>pax.plugins.peak_processing.NaturalBreaksClustering module<a class="headerlink" href="#pax-plugins-peak-processing-naturalbreaksclustering-module" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="module-pax.plugins.peak_processing.NaturalBreaksClustering">
+<span id="pax-plugins-peak-processing-naturalbreaksclustering-module"></span><h2>pax.plugins.peak_processing.NaturalBreaksClustering module<a class="headerlink" href="#module-pax.plugins.peak_processing.NaturalBreaksClustering" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pax.plugins.peak_processing.NaturalBreaksClustering.NaturalBreaksClustering">
+<em class="property">class </em><code class="descclassname">pax.plugins.peak_processing.NaturalBreaksClustering.</code><code class="descname">NaturalBreaksClustering</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/NaturalBreaksClustering.html#NaturalBreaksClustering"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.NaturalBreaksClustering.NaturalBreaksClustering" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.TransformPlugin" title="pax.plugin.TransformPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.TransformPlugin</span></code></a></p>
+<p>Split peaks by a variation on the &#8216;natural breaks&#8217; algorithm.
+Any gaps (distances between hits) in peaks larger than min_gap_size_for_break are tested by computing a
+&#8216;goodness of split&#8217; for splitting the cluster at that point.
+If it is larger than min_split_goodness(n_hits), the cluster is split at that gap and the declustering is
+called recursively for the newly minted clusters.</p>
+<p>The threshold function min_split_goodness(n_hits) has to be chosen so that S1s and S2s are not split up.
+This can be done by simulating them with pax&#8217;s integrated waveform simulator.
+Keep in mind that this simulation has to be re-done with every significant change in a detector property
+that affects the signal shape (in particular, a change in electric fields).</p>
+<dl class="method">
+<dt id="pax.plugins.peak_processing.NaturalBreaksClustering.NaturalBreaksClustering.cluster">
+<code class="descname">cluster</code><span class="sig-paren">(</span><em>peak</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/NaturalBreaksClustering.html#NaturalBreaksClustering.cluster"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.NaturalBreaksClustering.NaturalBreaksClustering.cluster" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cluster hits in peak by variant on the natural breaks algorithm.
+Returns list of new peaks constructed from the peak (if no change, will be list with one element).
+Will set interior_split_goodness and birthing_split_goodness attributes</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.peak_processing.NaturalBreaksClustering.NaturalBreaksClustering.startup">
+<code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/NaturalBreaksClustering.html#NaturalBreaksClustering.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.NaturalBreaksClustering.NaturalBreaksClustering.startup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.peak_processing.NaturalBreaksClustering.NaturalBreaksClustering.transform_event">
+<code class="descname">transform_event</code><span class="sig-paren">(</span><em>event</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/peak_processing/NaturalBreaksClustering.html#NaturalBreaksClustering.transform_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.NaturalBreaksClustering.NaturalBreaksClustering.transform_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.plugins.peak_processing.NaturalBreaksClustering.compute_every_split_goodness">
+<code class="descclassname">pax.plugins.peak_processing.NaturalBreaksClustering.</code><code class="descname">compute_every_split_goodness</code><a class="reference internal" href="_modules/pax/plugins/peak_processing/NaturalBreaksClustering.html#compute_every_split_goodness"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.NaturalBreaksClustering.compute_every_split_goodness" title="Permalink to this definition">¶</a></dt>
+<dd><p>Computes the &#8220;goodness of split&#8221; for several split points: see compute_split_goodness</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.plugins.peak_processing.NaturalBreaksClustering.compute_split_goodness">
+<code class="descclassname">pax.plugins.peak_processing.NaturalBreaksClustering.</code><code class="descname">compute_split_goodness</code><a class="reference internal" href="_modules/pax/plugins/peak_processing/NaturalBreaksClustering.html#compute_split_goodness"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.peak_processing.NaturalBreaksClustering.compute_split_goodness" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Return &#8220;goodness of split&#8221; for splitting hits &gt;= split_index into right cluster, &lt; into left.</dt>
+<dd>left, right: left, right indices of hits
+area: area of hits</dd>
+<dt>&#8220;goodness of split&#8221; = 1 - (sad(left cluster) + sad(right cluster) / sad(all_hits)</dt>
+<dd>where sad = weighted (by area) sum of absolute deviation from mean.</dd>
+</dl>
+<p>For more information, see this note:
+<a class="reference external" href="https://xecluster.lngs.infn.it/dokuwiki/doku.php?id=xenon:xenon1t:processor:natural_breaks_clustering">https://xecluster.lngs.infn.it/dokuwiki/doku.php?id=xenon:xenon1t:processor:natural_breaks_clustering</a></p>
+</dd></dl>
+
 </div>
 <div class="section" id="module-pax.plugins.peak_processing.RejectNoiseHits">
 <span id="pax-plugins-peak-processing-rejectnoisehits-module"></span><h2>pax.plugins.peak_processing.RejectNoiseHits module<a class="headerlink" href="#module-pax.plugins.peak_processing.RejectNoiseHits" title="Permalink to this headline">¶</a></h2>
@@ -202,7 +255,7 @@ Works with a penalty point system (see #126):
 <li><a class="reference internal" href="#module-pax.plugins.peak_processing.BasicProperties">pax.plugins.peak_processing.BasicProperties module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.peak_processing.ClassifyPeaks">pax.plugins.peak_processing.ClassifyPeaks module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.peak_processing.HitpatternSpread">pax.plugins.peak_processing.HitpatternSpread module</a></li>
-<li><a class="reference internal" href="#pax-plugins-peak-processing-naturalbreaksclustering-module">pax.plugins.peak_processing.NaturalBreaksClustering module</a></li>
+<li><a class="reference internal" href="#module-pax.plugins.peak_processing.NaturalBreaksClustering">pax.plugins.peak_processing.NaturalBreaksClustering module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.peak_processing.RejectNoiseHits">pax.plugins.peak_processing.RejectNoiseHits module</a></li>
 <li><a class="reference internal" href="#module-pax.plugins.peak_processing">Module contents</a></li>
 </ul>
