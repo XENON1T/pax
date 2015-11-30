@@ -119,7 +119,9 @@ class FindHits(plugin.TransformPlugin):
             # This means the raw waveform dropped to 0,
             # i.e. we went digitizer_reference_baseline above the reference baseline
             # i.e. we went digitizer_reference_baseline - pulse.baseline above baseline
-            is_saturated = pulse.maximum >= reference_baseline - pulse.baseline
+            # 0.5 is needed to avoid floating-point rounding errors to cause saturation not to be reported
+            # Somehow happens only when you use simulated data -- apparently np.clip rounds slightly different
+            is_saturated = pulse.maximum >= reference_baseline - pulse.baseline - 0.5
 
             # Compute thresholds based on noise level
             high_threshold = max(self.config['height_over_noise_high_threshold'] * pulse.noise_sigma,
@@ -167,10 +169,12 @@ class FindHits(plugin.TransformPlugin):
 
             # If the pulse reached the ADC saturation threshold, we should count the saturated samples in each hit
             # This is rare enough that it doesn't need to be in numba
+            # -0.5 for same reason as above (floating point rounding)
             if is_saturated:
                 for i, hit in enumerate(hit_bounds_found):
-                    hits['n_saturated'] = np.count_nonzero(w[hit[0]:hit[1] + 1] >=
-                                                           self.config['digitizer_reference_baseline'] - pulse.baseline)
+                    hits[i]['n_saturated'] = np.count_nonzero(w[hit[0]:hit[1] + 1] >=
+                                                              self.config['digitizer_reference_baseline'] -
+                                                              pulse.baseline - 0.5)
 
             hits_per_pulse.append(hits)
 
