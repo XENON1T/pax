@@ -91,10 +91,14 @@ class CheckBounds(plugin.TransformPlugin):
 
                 # Always throw error if pulse is completely outside event
                 if overhang >= length or start_index <= -length or end_index < 0:
-                    raise exceptions.PulseBeyondEventError(
-                        'Pulse %s in channel %s (%s-%s) is entirely outside '
-                        'event bounds (%s-%s)! See issue #43.' % (
-                            occ_i, channel, start_index, end_index, 0, event_length - 1))
+                    self.log.warning('Pulse %s in channel %s (%s-%s) is entirely outside '
+                                     'event bounds (%s-%s)! See issue #43.' % (occ_i,
+                                                                               channel,
+                                                                               start_index,
+                                                                               end_index,
+                                                                               0,
+                                                                               event_length - 1))
+                    continue
 
                 pulse_wave = occ.raw_data
 

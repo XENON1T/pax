@@ -61,7 +61,9 @@ def run():
 
     authenticate(client)
 
-    query = {'detectors.tpc.trigger.status': 'waiting_to_be_processed'}
+    status_name = 'detectors.tpc.trigger.status'
+
+    query = {status_name: 'waiting_to_be_processed'}
 
     log.info("Searching for run")
 
@@ -75,7 +77,7 @@ def run():
 
     while 1:
         run_doc = collection.find_one_and_update(query,
-                                                 {'$set': {'detectors.tpc.trigger.status': 'staging'}})
+                                                 {'$set': {status_name: 'staging'}})
 
         if run_doc is None:
             if args.impatient:
@@ -111,7 +113,7 @@ def run():
             except pymongo.errors.ServerSelectionTimeoutError as e:
                 log.exception(e)
                 collection.update(query,
-                                  {'$set': {'trigger.status': 'error'}})
+                                  {'$set': {status_name: 'error'}})
                 raise
 
 
