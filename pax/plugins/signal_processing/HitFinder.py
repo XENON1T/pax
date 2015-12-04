@@ -118,7 +118,9 @@ class FindHits(plugin.TransformPlugin):
             # This means the raw waveform dropped to 0,
             # i.e. we went digitizer_reference_baseline above the reference baseline
             # i.e. we went digitizer_reference_baseline - pulse.baseline above baseline
-            is_saturated = pulse.maximum >= reference_baseline - pulse.baseline
+            # 0.5 is needed to avoid floating-point rounding errors to cause saturation not to be reported
+            # Somehow happens only when you use simulated data -- apparently np.clip rounds slightly different
+            is_saturated = pulse.maximum >= reference_baseline - pulse.baseline - 0.5
 
             # Compute thresholds based on noise level
             high_threshold = max(self.config['height_over_noise_high_threshold'] * pulse.noise_sigma,
@@ -169,10 +171,12 @@ class FindHits(plugin.TransformPlugin):
 
             # If the pulse reached the ADC saturation threshold, we should count the saturated samples in each hit
             # This is rare enough that it doesn't need to be in numba
+            # -0.5 for same reason as above (floating point rounding)
             if is_saturated:
                 for i, hit in enumerate(hit_bounds_found):
-                    hits['n_saturated'] = np.count_nonzero(w[hit[0]:hit[1] + 1] >=
-                                                           self.config['digitizer_reference_baseline'] - pulse.baseline)
+                    hits[i]['n_saturated'] = np.count_nonzero(w[hit[0]:hit[1] + 1] >=
+                                                              self.config['digitizer_reference_baseline'] -
+                                                              pulse.baseline - 0.5)
 
             hits_per_pulse.append(hits)
 
@@ -274,7 +278,7 @@ class FindHits(plugin.TransformPlugin):
 
 
 @numba.jit(numba.int32(numba.float64[:], numba.float64, numba.float64, numba.int64[:, :], numba.float64),
-           nopython=True, cache=True)
+           nopython=True)
 def find_intervals_above_threshold(w, high_threshold, low_threshold, result_buffer, dynamic_low_threshold_coeff):
     """Fills result_buffer with l, r bounds of intervals in w > low_threshold which exceed high_threshold somewhere
         result_buffer: numpy N*2 array of ints, will be filled by function.
@@ -336,7 +340,7 @@ def find_intervals_above_threshold(w, high_threshold, low_threshold, result_buff
 @numba.jit(numba.void(numba.float64[:], numba.int64[:, :],
                       numba.from_dtype(datastructure.Hit.get_dtype())[:],
                       numba.float64, numba.int64, numba.float64, numba.int64, numba.int64, numba.int64),
-           nopython=True, cache=True)
+           nopython=True)
 def build_hits(w, hit_bounds, hits_buffer, adc_to_pe, channel, noise_sigma_pe, dt, start, pulse_i):
     """Populates hits_buffer with properties from hits indicated by hit_bounds.
         hit_bounds should be a numpy array of (left, right) bounds (inclusive)
@@ -375,7 +379,7 @@ def build_hits(w, hit_bounds, hits_buffer, adc_to_pe, channel, noise_sigma_pe, d
 
 
 @numba.jit(numba.typeof((1.0, 1.0, 1.0, 1.0))(numba.float64[:], numba.int64),
-           nopython=True, cache=True)
+           nopython=True)
 def compute_pulse_properties(w, initial_baseline_samples):
     """Compute basic pulse properties quickly
     :param w: Raw pulse waveform in ADC counts

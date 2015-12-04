@@ -62,9 +62,9 @@ class Simulator(object):
             c['reduced_e_in_gas'] / units.Td))
 
         # Which channels stand to receive any photons?
-        # TODO: In XENON100, channel 0 will receive photons unless magically_avoid_dead_pmts=True
-        # To prevent this, subtract 0 from channel_for_photons. But don't do that for XENON1T!!
         channels_for_photons = c['channels_in_detector']['tpc']
+        if c['pmt_0_is_fake']:
+            channels_for_photons = [ch for ch in channels_for_photons if ch != 0]
         if c.get('magically_avoid_dead_pmts', False):
             channels_for_photons = [ch for ch in channels_for_photons if c['gains'][ch] > 0]
         if c.get('magically_avoid_s1_excluded_pmts', False) and \
