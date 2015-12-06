@@ -92,7 +92,7 @@ class NaturalBreaksClustering(plugin.TransformPlugin):
 
 
 @numba.jit(numba.float64(numba.float64[:], numba.float64[:], numba.float64[:]),
-           nopython=True, cache=True)
+           nopython=True)
 def _sad_fallback(x, areas, fallback):
     # While there is a one-pass algorithm for variance, I haven't found one for sad.. maybe it doesn't exists
     # First calculate the weighted mean.
@@ -113,7 +113,7 @@ def _sad_fallback(x, areas, fallback):
 @numba.jit(numba.float64(numba.int64[:], numba.int64[:],
                          numba.float64[:], numba.float64[:], numba.float64[:],
                          numba.float64[:]),
-           nopython=False, cache=True)
+           nopython=False)
 def compute_every_split_goodness(gaps, split_indices,
                                  center, deviation, area,
                                  results):
@@ -125,7 +125,7 @@ def compute_every_split_goodness(gaps, split_indices,
 
 
 @numba.jit(numba.float64(numba.int64, numba.float64[:], numba.float64[:], numba.float64[:]),
-           nopython=False, cache=True)
+           nopython=False)
 def compute_split_goodness(split_index, center, deviation, area):
     """Return "goodness of split" for splitting hits >= split_index into right cluster, < into left.
        left, right: left, right indices of hits

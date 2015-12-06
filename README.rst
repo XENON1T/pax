@@ -16,29 +16,15 @@ processing and other data processing on the XENON100/XENON1T raw data.
 
 Installation prerequisites
 ==========================
-
 We will assume you are installing on Mac or Linux here. For installation on Windows, 
 see `this FAQ entry <http://xenon1t.github.io/pax/faq.html#can-i-set-up-pax-on-my-windows-machine>`_. 
 
-Check that no other ROOT is seen
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Ensure that there is no other ROOT version that can be seen by your terminal.  You can check this by running the following at the command line::
-
-  root
-  
-Which should return ``bash: root: command not found``.  Also check that Python cannot see ROOT.  You do this by running::
-
-  python -c "import ROOT"
-
-and this command should say ``ImportError: No module named 'ROOT'``.  
-
-If there are multiple versions of ROOT, then when you try to use pax, pax will want to use the ROOT library that will subsequently implode.  You will get segmentation faults and other very nasty issues.  This is an issue with ROOT and not pax, but almost every issue we have with pax is related to there being multiple ROOT versions that fight with one another.
+Instead of installing pax you can use pax from other people on xecluster. See the `FAQ <https://github.com/XENON1T/pax/blob/master/docs/faq.rst>`_
 
 Python 3
 ^^^^^^^^
 
-pax is written in Python; we recommend the
+Pax is written in Python; we recommend the
 scientific python distribution `Anaconda <https://store.continuum.io/cshop/anaconda/>`_. For linux, to set this up in your home directory, do::
 
   wget http://repo.continuum.io/archive/Anaconda3-2.4.0-Linux-x86_64.sh  # Linux
@@ -57,7 +43,23 @@ You need to point Anaconda to the physics-specific packages of e.g. ROOT.  You c
 
   conda config --add channels http://conda.anaconda.org/NLeSC  
 
-Alternatively, you can install Python 3.4 yourself (highly not recommended since ROOT and JIT compiler probably won't work).   
+Alternatively, you can install Python yourself (kudos if you actually get ROOT and numba to work).   
+
+
+Check that no other ROOT is seen
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Several people have encountered ROOT incompatibility issues when installing pax. Before continuing, we advise you to check that no other ROOT version that can be seen by your terminal, e.g try::
+
+  root
+  
+Which should return ``bash: root: command not found``.  Also check that Python cannot see ROOT::
+
+  python -c "import ROOT"
+
+should say ``ImportError: No module named 'ROOT'``.  
+
+If there are multiple versions of ROOT around, strange segfaults and other weird issues can result. This is an issue with ROOT and not pax.
+
 
 Additional python packages
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -68,7 +70,7 @@ for your platform using the `conda` tool (you can change python to 2, or root to
   conda update conda
   conda create -n pax python=3 root=5 rootpy numpy scipy matplotlib pandas cython h5py numba=0.21.0 pip python-snappy pytables scikit-learn 
   
-If you do not want ROOT support, you can skip the root and rootpy part of the above command (then everything except ROOT files but including event display will work).
+If you do not want ROOT support, or have ROOT-related issues, you can leave out root and rootpy in the above command. Everything in pax, except of course ROOT I/O, will continue to work.
 
 Whenever you want to use `pax`, you have to run the following command to set it up::
   
@@ -76,11 +78,15 @@ Whenever you want to use `pax`, you have to run the following command to set it 
   
 You can put this in your `.bashrc` if you want it to be setup when you login. For the rest of the installation and to run pax, be sure to be inside this environment. There should be (pax) at the beginning of your command line.
 
-If you're using Ubuntu and do not have a compiler installed (including Fortran compilers), then you should run:
+Of course we assume you have a functional basic compilation environment. On a fresh Ubuntu you may have to do e.g.
 
   sudo apt-get install build-essential
   
-If this doesn't work, then just proceed ahead if commands such as `gcc` work for you.  
+to setup the necessary compilers.
+
+On a Mac, please run the following to make sure that ROOT works::
+
+  xcode-select --install
 
 
 Git and Github
@@ -175,5 +181,3 @@ the `PlotEventSummary` that was produced in the first command from above.
 
 There are many, many configuration options you can change. 
 You can look through other configuration files such as `_base.ini` and `XENON100.ini` to get an idea of what you can do. Also, you can try to explore what plugins are included in pax. You can ask us questions on gitter (click button above) or email. Oh, and did we mention the the documentation at http://xenon1t.github.io/pax/?
-
-.. [1] *Sneaky snappy workaround*: follow the instructions for 'developer installation', but just before `python setup.py develop`, edit `requirements.txt` in the pax folder and put a comment (`#`) sign in front of the `python-snappy>=0.5` line. Save the file and run `python setup.py develop`. Now you can use pax even if you couldn't install snappy. Har-har. If you use anything that involves the MongoDB interface, pax will crash; don't say we didn't warn you.
