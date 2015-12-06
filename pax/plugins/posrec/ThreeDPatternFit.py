@@ -10,9 +10,13 @@ class PosRecThreeDPatternFit(plugin.PosRecPlugin):
         self.pf = self.processor.simulator.s1_patterns
         self.config.setdefault('minimizer', 'grid')
         self.config.setdefault('statistic', 'chi2gamma')
+        self.config.setdefault('only_s1s', True)
 
     def reconstruct_position(self, peak):
         """Reconstruct position by optimizing hitpattern goodness of fit to per-PMT LCE map."""
+        if self.config['only_s1s'] and peak.type != 's1':
+            return None
+
         # Which PMTs should we include?
         is_pmt_in = self.is_pmt_alive.copy()
         if self.config.get('ignore_saturated_PMTs', False):
@@ -27,7 +31,7 @@ class PosRecThreeDPatternFit(plugin.PosRecPlugin):
         # Pe observed per pmt. Don't QE correct: pattern map has been adjusted for QE already
         areas_observed = peak.area_per_channel[self.pmts]
 
-        # For now just take a TPC-wide grid
+        # For now just take a TPC-wide grid... not very good for performance!!
         z_mid = self.config['tpc_length'] / 2
         grid_size = 4 * max(z_mid, self.config['tpc_radius'])
 

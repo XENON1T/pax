@@ -6,6 +6,7 @@ import re
 import logging
 
 import numpy as np
+import numexpr as ne
 import matplotlib.pyplot as plt
 from scipy.optimize import fmin_powell
 from scipy.ndimage.interpolation import zoom as image_zoom
@@ -173,21 +174,24 @@ class PatternFitter(object):
             pmt_selection = self.default_pmt_selection
         if square_syst_errors is None:
             square_syst_errors = (self.default_errors * areas_observed) ** 2
-        square_syst_errors = square_syst_errors[pmt_selection]
 
+        # The following aliases are used in the numexprs below
         areas_observed = areas_observed.copy()[pmt_selection]
-        total_observed = areas_observed.sum()
-        fractions_expected = self.data[bin_selection + [pmt_selection]].copy()
-        fractions_expected /= fractions_expected.sum(axis=-1)[..., np.newaxis]
-        areas_expected = total_observed * fractions_expected
+        q = self.data[bin_selection + [pmt_selection]]
+        qsum = q.sum(axis=-1)[..., np.newaxis]          # noqa
+        fractions_expected = ne.evaluate("q / qsum")    # noqa
+        total_observed = areas_observed.sum()           # noqa
+        ao = areas_observed                             # noqa
+        square_syst_errors = square_syst_errors[pmt_selection]    # noqa
 
         # The actual goodness of fit computation is here...
+        # Areas expected = fractions_expected * sum(areas_observed)
         if statistic == 'chi2gamma':
-            result = (areas_observed + np.clip(areas_observed, 0, 1) - areas_expected) ** 2
-            result /= areas_expected + square_syst_errors + 1
+            result = ne.evaluate("(ao + where(ao > 1, 1, ao) - {ae})**2 /"
+                                 "({ae} + square_syst_errors + 1)".format(ae='fractions_expected * total_observed'))
         elif statistic == 'chi2':
-            result = (areas_observed - areas_expected) ** 2
-            result /= areas_expected + square_syst_errors
+            result = ne.evaluate("(ao + {ae})**2 /"
+                                 "({ae} + square_syst_errors".format(ae='fractions_expected * total_observed'))
         else:
             raise ValueError('Pattern goodness of fit statistic %s not implemented!' % statistic)
 
