@@ -302,7 +302,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
         # Used to timeout if DAQ crashes and no data will come
         time_out_counter = time.time()
 
-        while not self.data_taking_ended:
+        while 1:
             # Grab new run document in case run ended.  This much happen before
             # processing data to avoid a race condition where the run ends
             # between processing and checking that the run has ended
@@ -327,6 +327,16 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
 
             n = len(times)
             if n == 0:
+                # If run ended, begin cleanup
+                #
+                # This variable is updated at the start of while loop.
+                if self.data_taking_ended:
+                    self.log.fatal("Data taking ended.")
+                    status = self.mongo['run']['collection'].update_one({'_id': self.run_doc_id},
+                                                                        {'$set': {'detectors.tpc.trigger.status': 'processed',
+                                                                                  'detectors.tpc.trigger.ended': True}})
+                    self.log.debug(status)
+
                 self.log.fatal("Nothing found, continue")
                 time.sleep(1)  # todo: configure
                 if time.time() - time_out_counter > 60:  # seconds
@@ -380,15 +390,6 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
                             stop_time=t1,
                             event_number=i)
 
-            # If run ended, begin cleanup
-            #
-            # This variable is updated at the start of while loop.
-            if self.data_taking_ended:
-                self.log.fatal("Data taking ended.")
-                status = self.mongo['run']['collection'].update_one({'_id': self.run_doc_id},
-                                                                    {'$set': {'trigger.status': 'processed',
-                                                                              'trigger.ended': True}})
-                self.log.debug(status)
 
 
 class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, IOMongoDB):

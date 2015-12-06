@@ -91,7 +91,7 @@ def run():
             log.info("Building events for %s",
                      run_doc['name'])
 
-            pax_config = {'filename' : '%s' % run_doc['name'],}
+            pax_config = {'output_name' : 'raw_%s' % run_doc['name'],}
 
             config_names = 'eventbuilder'
             config_dict = {'DEFAULT': {'run_doc': run_doc['_id']},
