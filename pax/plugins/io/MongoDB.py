@@ -336,6 +336,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
                                                                         {'$set': {'detectors.tpc.trigger.status': 'processed',
                                                                                   'detectors.tpc.trigger.ended': True}})
                     self.log.debug(status)
+                    break
 
                 self.log.fatal("Nothing found, continue")
                 time.sleep(1)  # todo: configure
