@@ -68,7 +68,7 @@ some contain C++ code which must be compiled. If you have Anaconda you can get a
 for your platform using the `conda` tool (you can change python to 2, or root to 5)::
 
   conda update conda
-  conda create -n pax python=3 root=5 rootpy numpy scipy matplotlib pandas cython h5py numba=0.21.0 pip python-snappy pytables scikit-learn 
+  conda create -n pax python=3.4 root=5 rootpy numpy scipy matplotlib pandas cython h5py numba=0.21.0 pip python-snappy pytables scikit-learn 
   
 If you do not want ROOT support, or have ROOT-related issues, you can leave out root and rootpy in the above command. Everything in pax, except of course ROOT I/O, will continue to work.
 
