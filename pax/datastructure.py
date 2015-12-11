@@ -177,7 +177,7 @@ class Peak(StrictModel):
     left = 0                 #: Index of left bound (inclusive) in event.
     right = 0                #: Index of right bound (INCLUSIVE) in event.
 
-    #: Weighted (by hit area) mean of hit times (since event start)
+    #: Weighted (by hit area) mean of hit times (since event start) [ns]
     hit_time_mean = 0.0
 
     #: Weighted (by hit area) std of hit times
@@ -259,7 +259,7 @@ class Peak(StrictModel):
     #: Index in the event's sum waveform at which this peak has its maximum.
     index_of_maximum = 0
 
-    #: Time at which the peak's sum waveform has its center of gravity.
+    #: Time at which the peak's sum waveform has its center of gravity [ns].
     center_time = 0.0
 
     #: Height of sum waveform (in pe/bin)
