@@ -402,6 +402,9 @@ class Interaction(StrictModel):
     drift_time = float('nan')
 
     #: z position (cm), calculated from drift time
+    #:
+    #: The center of the TPC would be a negative z.  This is different
+    #: than what we had in XeRawDP.
     z = float('nan')
 
     #: r position (cm)
