@@ -232,6 +232,7 @@ class PlotBase(plugin.OutputPlugin):
         ax.set_xlim(-1.2*r, 1.2*r)
         ax.set_ylim(-1.2*r, 1.2*r)
 	# Sets labels on the hitpattern plot
+	# 'labelpad' adjusts position
         ax.set_xlabel('x (cm)',labelpad=1)
         ax.set_ylabel('y (cm)',labelpad=1)
 
