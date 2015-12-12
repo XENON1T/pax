@@ -103,6 +103,8 @@ Installing pax
 ==============
 There are two ways to install pax. Either method will automatically try to install any python packages pax depends on -- although we hope you installed the most important ones already (see above). If a module does not install, try using `conda` or `pip` to install missing dependencies. 
 
+**Do NOT do this on Midway/Stockholm: you risk messing up its central pax installation!** If you want to intall your own pax for developing, try installing it locally or on xecluster.
+
 Option 1: user installation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In this option the pax code will be hidden away somewhere deep in python's directory structure so you won't accidentally look at it and learn our dangerous secrets. Also, you will only be able to update pax after we make a new release (about once a month). If this appeals to you, run::
