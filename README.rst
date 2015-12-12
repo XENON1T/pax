@@ -30,10 +30,13 @@ scientific python distribution `Anaconda <https://store.continuum.io/cshop/anaco
   wget http://repo.continuum.io/archive/Anaconda3-2.4.0-Linux-x86_64.sh  # Linux
   bash Anaconda3-2.4.0-Linux-x86_64.sh  # Say 'yes' to appending to .bashrc
   
-From Mac OSX, you should do instead::
+From Mac OSX, you should instead download the .sh file, located here:
 
-  curl http://repo.continuum.io/archive/Anaconda3-2.4.0-MacOSX-x86_64.sh # Mac OSX
-  bash Anaconda3-2.4.0-MacOSX-x86_64.sh  # Say 'yes' to appending to .bashrc
+    http://repo.continuum.io/archive/Anaconda3-2.4.0-MacOSX-x86_64.sh
+    
+In the directory containing the file above, run the following command, and type 'yes' to confirm the installation.
+
+    bash Anaconda3-2.4.0-MacOSX-x86_64.sh  
   
 Lastly, for both OSX and Linux::
 
