@@ -9,6 +9,7 @@ import pax  # For version number
 from pax import plugin, datastructure
 import sysconfig
 import six
+import array
 ##
 # Build the pax event class path
 ##
@@ -171,7 +172,7 @@ class WriteROOTClass(plugin.OutputPlugin):
                 root_vector.clear()
                 for element_python_object in list_of_elements:
                     element_root_object = getattr(ROOT, element_name)()
-                    ROOT.SetOwnership(element_root_object, True)
+                    #ROOT.SetOwnership(element_root_object, True)
                     self.set_root_object_attrs(element_python_object, element_root_object)
                     root_vector.push_back(element_root_object)
                 self.last_collection[element_name] = list_of_elements
@@ -184,10 +185,15 @@ class WriteROOTClass(plugin.OutputPlugin):
                 # For now we'll simply store the elements one-by-one
                 # This isn't very efficient, but it seems the speed is still
                 # good.
-                # root_field = getattr(root_object, field_name)
+                root_field = getattr(root_object, field_name)
+                root_field_type = root_field.typecode.decode("UTF-8")
+
+                root_field_new = array.array(root_field_type, field_value.tolist())
+
+                setattr(root_object, field_name, root_field_new)
+
                 # for i, x in enumerate(field_value):
                 #     root_field[i] = x
-                continue
 
             else:
                 # Everything else apparently just works magically:
