@@ -1,7 +1,6 @@
 import os
 import re
 
-from six.moves import input
 import numpy as np
 import ROOT
 
@@ -9,6 +8,7 @@ import pax  # For version number
 from pax import plugin, datastructure
 import sysconfig
 import six
+import array
 ##
 # Build the pax event class path
 ##
@@ -89,12 +89,11 @@ class WriteROOTClass(plugin.OutputPlugin):
 
         output_file = self.config['output_name'] + '.root'
         if os.path.exists(output_file):
-            print("\n\nOutput file %s already exists. Overwrite? [y/n]:" % output_file)
-            if input().lower() not in ('y', 'yes'):
-                print("\nFine, Exiting pax...\n")
-                exit()
+            print("\n\nOutput file %s already exists, overwriting." % output_file)
 
-        self.f = ROOT.TFile(output_file, "RECREATE")
+        self.f = ROOT.TFile(output_file,
+                            "RECREATE")
+        self.f.cd()
         self.event_tree = None
 
     def write_event(self, event):
@@ -167,6 +166,7 @@ class WriteROOTClass(plugin.OutputPlugin):
                 list_of_elements = getattr(python_object, field_name)
 
                 root_vector = getattr(root_object, field_name)
+
                 root_vector.clear()
                 for element_python_object in list_of_elements:
                     element_root_object = getattr(ROOT, element_name)()
@@ -183,14 +183,20 @@ class WriteROOTClass(plugin.OutputPlugin):
                 # This isn't very efficient, but it seems the speed is still
                 # good.
                 root_field = getattr(root_object, field_name)
-                for i, x in enumerate(field_value):
-                    root_field[i] = x
+                root_field_type = root_field.typecode.decode("UTF-8")
+
+                root_field_new = array.array(root_field_type, field_value.tolist())
+
+                setattr(root_object, field_name, root_field_new)
+
+                # for i, x in enumerate(field_value):
+                #     root_field[i] = x
 
             else:
                 # Everything else apparently just works magically:
                 setattr(root_object, field_name, field_value)
 
-        # Add values to user-defined fields
+        # # Add values to user-defined fields
         for field_name, field_type, field_code in self.config['extra_fields'].get(obj_name,
                                                                                   []):
             field = getattr(root_object, field_name)
