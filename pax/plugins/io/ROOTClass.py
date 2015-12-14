@@ -1,7 +1,6 @@
 import os
 import re
 
-from six.moves import input
 import numpy as np
 import ROOT
 
@@ -148,7 +147,6 @@ class WriteROOTClass(plugin.OutputPlugin):
         self.set_root_object_attrs(event, self.root_event)
         self.event_tree.Fill()
 
-
     def set_root_object_attrs(self, python_object, root_object):
         """Set attribute values of the root object based on data_model
         instance python object
@@ -172,7 +170,6 @@ class WriteROOTClass(plugin.OutputPlugin):
                 root_vector.clear()
                 for element_python_object in list_of_elements:
                     element_root_object = getattr(ROOT, element_name)()
-                    #ROOT.SetOwnership(element_root_object, True)
                     self.set_root_object_attrs(element_python_object, element_root_object)
                     root_vector.push_back(element_root_object)
                 self.last_collection[element_name] = list_of_elements
