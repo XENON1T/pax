@@ -6,6 +6,7 @@ import re
 import logging
 
 import numpy as np
+import numexpr as ne
 import matplotlib.pyplot as plt
 from scipy.optimize import fmin_powell
 from scipy.ndimage.interpolation import zoom as image_zoom
@@ -48,6 +49,7 @@ class PatternFitter(object):
         self.log.debug('Loaded pattern file named: %s' % json_data['name'])
         self.log.debug('Description:\n    ' + re.sub(r'\n', r'\n    ', json_data['description']))
         self.log.debug('Data shape: %s' % str(self.data.shape))
+        self.log.debug('Will zoom in by factor %s' % zoom_factor)
         self.dimensions = len(json_data['coordinate_system'])    # Spatial dimensions (other one is sampling points)
 
         # Zoom the spatial map using linear interpolation, if desired
@@ -67,6 +69,8 @@ class PatternFitter(object):
                                                        maximum=stop,
                                                        n_bins=n_bins,
                                                        bin_spacing=(stop - start)/n_bins))
+        self.log.debug('Coordinate ranges: %s' % ', '.join(['%s-%s (%d bins)' % (cd.minimum, cd.maximum, cd.n_bins)
+                                                            for cd in self.coordinate_data]))
 
         # TODO: Technically we should zero the bins outside the tpc bounds again:
         # some LCE may have leaked into this region due to upsampling... but doesn't matter:
@@ -170,21 +174,24 @@ class PatternFitter(object):
             pmt_selection = self.default_pmt_selection
         if square_syst_errors is None:
             square_syst_errors = (self.default_errors * areas_observed) ** 2
-        square_syst_errors = square_syst_errors[pmt_selection]
 
+        # The following aliases are used in the numexprs below
         areas_observed = areas_observed.copy()[pmt_selection]
-        total_observed = areas_observed.sum()
-        fractions_expected = self.data[bin_selection + [pmt_selection]].copy()
-        fractions_expected /= fractions_expected.sum(axis=-1)[..., np.newaxis]
-        areas_expected = total_observed * fractions_expected
+        q = self.data[bin_selection + [pmt_selection]]
+        qsum = q.sum(axis=-1)[..., np.newaxis]          # noqa
+        fractions_expected = ne.evaluate("q / qsum")    # noqa
+        total_observed = areas_observed.sum()           # noqa
+        ao = areas_observed                             # noqa
+        square_syst_errors = square_syst_errors[pmt_selection]    # noqa
 
         # The actual goodness of fit computation is here...
+        # Areas expected = fractions_expected * sum(areas_observed)
         if statistic == 'chi2gamma':
-            result = (areas_observed + np.clip(areas_observed, 0, 1) - areas_expected) ** 2
-            result /= areas_expected + square_syst_errors + 1
+            result = ne.evaluate("(ao + where(ao > 1, 1, ao) - {ae})**2 /"
+                                 "({ae} + square_syst_errors + 1)".format(ae='fractions_expected * total_observed'))
         elif statistic == 'chi2':
-            result = (areas_observed - areas_expected) ** 2
-            result /= areas_expected + square_syst_errors
+            result = ne.evaluate("(ao + {ae})**2 /"
+                                 "({ae} + square_syst_errors".format(ae='fractions_expected * total_observed'))
         else:
             raise ValueError('Pattern goodness of fit statistic %s not implemented!' % statistic)
 
