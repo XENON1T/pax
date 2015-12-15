@@ -11,7 +11,7 @@ See http://docs.continuum.io/anaconda/ide_integration#pycharm
 How do I set up `pax` at LNGS on xecluster?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A central installation of pax on xecluster can be setup as follows:
+A central installation of pax on xecluster can be setup as follows::
 
   ssh xecluster06
   PAXER
