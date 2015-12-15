@@ -11,36 +11,46 @@ See http://docs.continuum.io/anaconda/ide_integration#pycharm
 How do I set up `pax` at LNGS on xecluster?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-You can either use a pax someone else has set up, or set up your own. Usually either Chris or Jelle's pax is in mostly functional condition. To use Chris' pax, use the following commands:
+A central installation of pax on xecluster can be setup as follows:
 
   ssh xecluster06
-  export PATH=/home/tunnell/anaconda3/bin:$PATH
-  source activate pax
+  PAXER
   
-To use Jelle's pax, use the command:
+Details on the wiki: https://xecluster.lngs.infn.it/dokuwiki/doku.php?id=xenon:xenon1t:cmp:centralpax
 
-  export PATH=/home/aalbers/anaconda/bin:$PATH
+To set up a developer installation of pax, first you can either follow the steps for installing anaconda and the required packages in the main readme (longer and more disk space), or use the central installation by setting::
 
-Either of these can be added to your `.bashrc` to be run automatically when you login.
+    export PATH="/archive_lngs/common/anaconda3/bin:$PATH"  # Taken from output of PAXER above
 
-To set up a developer installation of pax in your xecluster home directory, first follow the steps for installing anaconda and the required packages in the main readme (I didn't try to install snappy but used the workaround). Then add the following to your .bashrc::
+then creating your own environment on xecluster01 with::
+
+    conda create -n <name_of_your_environment> <list_of_packages_from_main_readme_for_creating_pax_environment>
+
+Some additional packages are required to be installed as follows (still on xecluster01)::
+
+    cd ~
+    wget http://curl.haxx.se/ca/cacert.pem ~/cacert.pem
+    mkdir -p .pip
+    cp /home/aalbers/.pip/pip.conf ~/.pip
+    pip install avro-python3 flake8 prettytable tqdm pymongo
+
+Then, to access our GitHub repository from xecluster01, add the following to your .bashrc::
 
     # use git in totally insecure mode
     export PATH=/home/kaminsky/software/bin:$PATH
     export GIT_SSL_NO_VERIFY=true
 
-Now follow these steps::
+and restart the shell (or input those commands into your terminal). Download the package::
 
-    cd ~
     git clone https://github.com/XENON1T/pax.git
-    wget http://curl.haxx.se/ca/cacert.pem ~/cacert.pem
-    mkdir .pip
-    cp /home/aalbers/.pip/pip.conf ~/.pip
-    pip install avro-python3 flake8 prettytable tqdm pymongo
+
+And finally set it up within your new environment::
+
+    source activate <name_of_your_environment>
     cd pax
     python setup.py develop
 
-If it complains about any more missing modules, install it using pip install. 
+If it complains about any more missing modules, install it using pip install (on xecluster01, within your environment). 
 
 Whichever way you want to use pax, you check that it worked using the following command::
 
