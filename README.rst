@@ -16,41 +16,49 @@ processing and other data processing on the XENON100/XENON1T raw data.
 
 Installation prerequisites
 ==========================
+
 We will assume you are installing on Mac or Linux here. For installation on Windows, 
 see `this FAQ entry <http://xenon1t.github.io/pax/faq.html#can-i-set-up-pax-on-my-windows-machine>`_. 
 
-Instead of installing pax you can use pax from other people on xecluster. See the `FAQ <https://github.com/XENON1T/pax/blob/master/docs/faq.rst>`_
+Instead of installing pax you can use pax from the central installation on xecluster or other cluster. See the `FAQ <https://github.com/XENON1T/pax/blob/master/docs/faq.rst>`_ for more details.
 
-Python 3
-^^^^^^^^
+If you wish to develop pax, you can either follow these instructions from the beginning which installs your own copy of the Anaconda libraries, or use an existing Anaconda installation (skip to the "Setting Up the Anaconda Libraries" section below for this).
 
-Pax is written in Python; we recommend the
-scientific python distribution `Anaconda <https://store.continuum.io/cshop/anaconda/>`_. For linux, to set this up in your home directory, do::
+
+Installing Python 3 and Anaconda Libraries
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Pax is written in Python; we recommend the scientific python distribution `Anaconda <https://store.continuum.io/cshop/anaconda/>`_. To install this in Linux do::
 
   wget http://repo.continuum.io/archive/Anaconda3-2.4.0-Linux-x86_64.sh  # Linux
-  bash Anaconda3-2.4.0-Linux-x86_64.sh  # Say 'yes' to appending to .bashrc
+  bash Anaconda3-2.4.0-Linux-x86_64.sh  # Say 'yes' to appending to .bashrc and specify the installation directory
   
-From Mac OSX, you should instead download the .sh file, located here:
+--------------------------------
+
+For Mac OS X, you should instead download the .sh file located here:
 
     http://repo.continuum.io/archive/Anaconda3-2.4.0-MacOSX-x86_64.sh
     
-In the directory containing the file above, run the following command, and type 'yes' to confirm the installation.
+In the directory containing the file above, run the following command::
 
-    bash Anaconda3-2.4.0-MacOSX-x86_64.sh  
+    bash Anaconda3-2.4.0-MacOSX-x86_64.sh  # Say 'yes' to appending to .bashrc and specify the installation directory
   
-Lastly, for both OSX and Linux::
+Setting Up the Anaconda Libraries
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-  export PATH=~/anaconda3/bin:$PATH  # If installed in default location
+For both Linux and Mac OS X::
 
-You need to point Anaconda to the physics-specific packages of e.g. ROOT.  You can do this by running the following::
+  export PATH=~/anaconda3/bin:$PATH  # If installed in default location, otherwise replace with the 
+                                     # path you specified above or the path of the central installation 
+
+You need to point Anaconda to the physics-specific packages e.g. ROOT.  You can do this by running the following::
 
   conda config --add channels http://conda.anaconda.org/NLeSC  
-
-Alternatively, you can install Python yourself (kudos if you actually get ROOT and numba to work).   
 
 
 Check that no other ROOT is seen
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 Several people have encountered ROOT incompatibility issues when installing pax. Before continuing, we advise you to check that no other ROOT version that can be seen by your terminal, e.g try::
 
   root
@@ -66,20 +74,25 @@ If there are multiple versions of ROOT around, strange segfaults and other weird
 
 Additional python packages
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 Pax depends on several other python packages. While most python packages will install automatically,
-some contain C++ code which must be compiled. If you have Anaconda you can get appropriate binaries 
-for your platform using the `conda` tool (you can change python to 2, or root to 5)::
+some contain C++ code which must be compiled. With Anaconda you can get appropriate binaries 
+for your platform using the `conda` tool as follows. Make sure to replace <environment_name> with the desired name of your environment (usually it is 'pax' for central installations) in the following command::
 
   conda update conda
-  conda create -n pax python=3.4 root=5 rootpy numpy scipy matplotlib pandas cython h5py numba=0.21.0 pip python-snappy pytables scikit-learn 
+  conda create -n <environment_name> python=3.4 root=5 rootpy numpy scipy matplotlib pandas cython h5py numba=0.21.0 pip python-snappy pytables scikit-learn 
   
-If you do not want ROOT support, or have ROOT-related issues, you can leave out root and rootpy in the above command. Everything in pax, except of course ROOT I/O, will continue to work.
+If you do not want ROOT support, or have ROOT-related issues, you can leave out root and rootpy in the above command. Everything in pax, except of course ROOT I/O, will continue to work. You can also try root=6 for the newer version of ROOT.
 
-Whenever you want to use `pax`, you have to run the following command to set it up::
+If you want to use Ipython notebook within this environment (e.g. to import pax libraries), you should also add 'ipython ipython-notebook' to the list of libraries above.
+
+Whenever you want to use `pax`, you have to run the following command to set it up your environment (containing all the dependencies)::
   
-  source activate pax
+  source activate <environment_name>
   
-You can put this in your `.bashrc` if you want it to be setup when you login. For the rest of the installation and to run pax, be sure to be inside this environment. There should be (pax) at the beginning of your command line.
+You can put this in your `.bashrc` if you want it to be setup when you login. For the rest of the installation and to run pax, be sure to be inside this environment. There should be (<environment_name>) at the beginning of your command line.
+
+-----------------------------------
 
 Of course we assume you have a functional basic compilation environment. On a fresh Ubuntu you may have to do e.g.
 
@@ -104,27 +117,30 @@ To get the code of pax, you need access to the private XENON1T github repository
 
 Installing pax
 ==============
+
 There are two ways to install pax. Either method will automatically try to install any python packages pax depends on -- although we hope you installed the most important ones already (see above). If a module does not install, try using `conda` or `pip` to install missing dependencies. 
 
-**Do NOT do this on Midway/Stockholm: you risk messing up its central pax installation!** If you want to intall your own pax for developing, try installing it locally or on xecluster.
+**WARNING: If you are working with a central installation of Anaconda, e.g. on Midway, Stockholm, or xecluster, there is a risk of overwriting the central installation (we are still working out some permissions issues)!** To avoid this, make sure you are either using your own installation of Anaconda or have created a new environment by replacing <environment_name> in the instructions above.
 
-Option 1: user installation
+Option 1: User installation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 In this option the pax code will be hidden away somewhere deep in python's directory structure so you won't accidentally look at it and learn our dangerous secrets. Also, you will only be able to update pax after we make a new release (about once a month). If this appeals to you, run::
 
     pip install git+https://github.com/XENON1T/pax.git
     
-To update to a newer version, add ` --upgrade`` to the command above.
+To update to a newer version, add ` --upgrade`` to the command above (or just run the same command again).
 
 
-Option 2: developer installation
+Option 2: Developer installation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 In this option you'll know where the code is, so you can look at it, play with it, and if you change anything you don't need to reinstall for your changes to take effect... However, be aware you are using the very latest ('nightly') version of pax, which may contain more bugs (but often contains less bugs). 
 
 First `cd` to the folder you want pax to be installed. Then run::
 
     git clone https://github.com/XENON1T/pax.git
-    source activate pax
+    source activate <environment_name>  # Make sure you specify your own environment 
+                                        # when using a central installation of Anaconda
     cd pax
     python setup.py develop
 
