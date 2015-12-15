@@ -59,6 +59,11 @@ Whichever way you want to use pax, you check that it worked using the following 
 which should result in Python3 being used to print the pax version.
 
 
+How do I run `pax` at Midway (UChicago)?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+https://xecluster.lngs.infn.it/dokuwiki/doku.php?id=xenon:xenon1t:cmp:computing:midway_cluster:instructions
+
 
 How do I run `pax` at Nikhef?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
