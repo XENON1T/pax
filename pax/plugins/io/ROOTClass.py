@@ -191,7 +191,9 @@ class WriteROOTClass(plugin.OutputPlugin):
                 # This isn't very efficient, but it seems the speed is still
                 # good.
                 root_field = getattr(root_object, field_name)
-                root_field_type = root_field.typecode.decode("UTF-8")
+                root_field_type = root_field.typecode
+                if six.PY3:
+                    root_field_type = root_field_type.decode("UTF-8")
 
                 root_field_new = array.array(root_field_type, field_value.tolist())
 
