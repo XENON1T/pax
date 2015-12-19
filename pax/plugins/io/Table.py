@@ -181,7 +181,7 @@ class TableWriter(plugin.OutputPlugin):
             self.output_format.close()
 
     def get_index_of(self, mname):
-        # Returns index +1 of last last entry in self.data[mname]. Returns -1
+        # Returns index +1 of last last entry in self.data[mname]. Returns 0
         # if no mname seen before.
         if mname not in self.data:
             return 0

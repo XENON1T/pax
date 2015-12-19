@@ -26,9 +26,14 @@ class ReconstructedPosition(StrictModel):
     x = float('nan')  #: x position (cm)
     y = float('nan')  #: y position (cm)
 
-    #: goodness-of-fit parameter generated with PosRecChiSquareGamma
+    #: For 3d-position reconstruction algorithms, the z-position (cm)
+    #: This is NOT related to drift time, which is an interaction-level quantity!
+    z = float('nan')
+
+    #: goodness-of-fit of hitpattern to position
     goodness_of_fit = float('nan')
-    # : number of degrees of freedom calculated with PosRecChiSquareGamma
+
+    # : number of degrees of freedom used in goodness-of-fit calculation
     ndf = float('nan')
 
     #: Name of algorithm used for computation
@@ -177,7 +182,7 @@ class Peak(StrictModel):
     left = 0                 #: Index of left bound (inclusive) in event.
     right = 0                #: Index of right bound (INCLUSIVE) in event.
 
-    #: Weighted (by hit area) mean of hit times (since event start)
+    #: Weighted (by hit area) mean of hit times (since event start) [ns]
     hit_time_mean = 0.0
 
     #: Weighted (by hit area) std of hit times
@@ -259,7 +264,7 @@ class Peak(StrictModel):
     #: Index in the event's sum waveform at which this peak has its maximum.
     index_of_maximum = 0
 
-    #: Time at which the peak's sum waveform has its center of gravity.
+    #: Time at which the peak's sum waveform has its center of gravity [ns].
     center_time = 0.0
 
     #: Height of sum waveform (in pe/bin)
@@ -402,6 +407,9 @@ class Interaction(StrictModel):
     drift_time = float('nan')
 
     #: z position (cm), calculated from drift time
+    #:
+    #: The center of the TPC would be a negative z.  This is different
+    #: than what we had in XeRawDP.
     z = float('nan')
 
     #: r position (cm)

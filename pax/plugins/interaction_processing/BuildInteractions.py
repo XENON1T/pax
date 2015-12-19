@@ -8,7 +8,7 @@ class BuildInteractions(plugin.TransformPlugin):
     """Construct interactions from combinations of S1 and S2, as long as
       - The S2 occurs after the S1
       - The S2 is larger than s2_pairing_threshold (avoids single electrons)
-    Mo more than pair_n_s2s S2s S2s and pair_n_s1s S1s will be paired with each other
+    Mo more than pair_n_s2s S2s and pair_n_s1s S1s will be paired with each other
     Pairing will start from the largest S1 and S2, then move down S2s in area and eventually down S1s in area
 
     xy_posrec_preference = ['algo1', 'algo2', ...]
