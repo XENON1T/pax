@@ -233,7 +233,7 @@ class StrictModel(Model):
                                    self.__class__.__name__,
                                    old_class_name,
                                    new_class_name,
-                                   casting_allowed_for[old_class_name]))
+                                   casting_allowed_for.get(old_class_name, '')))
 
         # Check for attempted dtype change
         if old_type == np.ndarray:

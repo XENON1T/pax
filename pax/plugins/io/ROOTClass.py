@@ -358,16 +358,23 @@ class ReadROOTClass(plugin.InputPlugin):
                 self.log.debug("%s not in root object?" % field_name)
                 continue
 
-            if isinstance(default_value, list):
-                child_class_name = py_object.get_list_field_info()[
-                    field_name].__name__
-                result = []
-                for child_i in range(len(root_value)):
-                    child_py_object = getattr(datastructure, child_class_name)()
-                    self.set_python_object_attrs(root_value[child_i],
-                                                 child_py_object,
-                                                 fields_to_ignore)
-                    result.append(child_py_object)
+            if field_name in ('hits', 'all_hits'):
+                # Special case for hit fields
+                # Convert from root objects to numpy array
+                hit_dtype = datastructure.Hit.get_dtype()
+                result = np.array([tuple([getattr(hit, fn)
+                                          for fn in hit_dtype.names])
+                                   for hit in root_value], dtype=hit_dtype)
+
+            elif isinstance(default_value, list):
+                    child_class_name = py_object.get_list_field_info()[field_name].__name__
+                    result = []
+                    for child_i in range(len(root_value)):
+                        child_py_object = getattr(datastructure, child_class_name)()
+                        self.set_python_object_attrs(root_value[child_i],
+                                                     child_py_object,
+                                                     fields_to_ignore)
+                        result.append(child_py_object)
 
             elif isinstance(default_value, np.ndarray):
                 try:
