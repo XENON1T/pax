@@ -91,8 +91,7 @@ class WriteROOTClass(plugin.OutputPlugin):
         if os.path.exists(output_file):
             print("\n\nOutput file %s already exists, overwriting." % output_file)
 
-        self.f = ROOT.TFile(output_file,
-                            "RECREATE")
+        self.f = ROOT.TFile(output_file, "RECREATE")
         self.f.cd()
         self.event_tree = None
 
@@ -104,8 +103,7 @@ class WriteROOTClass(plugin.OutputPlugin):
 
             # Construct the event tree
             self.event_tree = ROOT.TTree(self.config['tree_name'],
-                                         'Tree with %s events from pax' %
-                                         self.config['tpc_name'])
+                                         'Tree with %s events from pax' % self.config['tpc_name'])
 
             # Get the event class C++ definition
             # Do this here, since it requires an instance (for length of arrays)
@@ -135,9 +133,8 @@ class WriteROOTClass(plugin.OutputPlugin):
             load_event_class(class_file)
             self.log.debug("Event class loaded, creating event")
             self.root_event = ROOT.Event()
-            # TODO: setting the splitlevel to 0 or 99 seems to have no effect??
-            self.event_tree.Branch('events', 'Event', self.root_event,
-                                   self.config['buffer_size'], 99)
+            # TODO: does setting the splitlevel to 0 or 99 actually have an effect?
+            self.event_tree.Branch('events', 'Event', self.root_event, self.config['buffer_size'], 99)
 
             if self.config['exclude_compilation_from_timer']:
                 self.processor.timer.punch()
@@ -175,40 +172,26 @@ class WriteROOTClass(plugin.OutputPlugin):
                 self.last_collection[element_name] = list_of_elements
 
             elif isinstance(field_value, np.ndarray):
-                # Unfortunately we can't store numpy arrays directly into
-                # ROOT's ROOT.PyXXXBuffer.
+                # Unfortunately we can't store numpy arrays directly into ROOT's ROOT.PyXXXBuffer.
                 # Doing so will not give an error, but the data will be mangled!
-                # Instead we'd have to use python's old array module...
-                # For now we'll simply store the elements one-by-one
-                # This isn't very efficient, but it seems the speed is still
-                # good.
+                # Instead we have to use python's old array module...
                 root_field = getattr(root_object, field_name)
                 root_field_type = root_field.typecode.decode("UTF-8")
-
                 root_field_new = array.array(root_field_type, field_value.tolist())
-
                 setattr(root_object, field_name, root_field_new)
-
-                # for i, x in enumerate(field_value):
-                #     root_field[i] = x
-
             else:
                 # Everything else apparently just works magically:
                 setattr(root_object, field_name, field_value)
 
         # # Add values to user-defined fields
-        for field_name, field_type, field_code in self.config['extra_fields'].get(obj_name,
-                                                                                  []):
+        for field_name, field_type, field_code in self.config['extra_fields'].get(obj_name, []):
             field = getattr(root_object, field_name)
             exec(field_code,
-                 dict(root_object=root_object, python_object=python_object,
-                      field=field, self=self))
+                 dict(root_object=root_object, python_object=python_object, field=field, self=self))
 
     def _get_index(self, py_object):
-        """Return index of py_object in last collection of models of
-        corresponding type seen in event"""
-        return self.last_collection[py_object.__class__.__name__].index(
-            py_object)
+        """Return index of py_object in last collection of models of corresponding type seen in event"""
+        return self.last_collection[py_object.__class__.__name__].index(py_object)
 
     def write_to_disk(self):
         if self.event_tree:
@@ -219,24 +202,16 @@ class WriteROOTClass(plugin.OutputPlugin):
         if self.f:
             self.f.Close()
 
+    def get_root_type(self, field_name, python_type):
+        if field_name in self.config['force_types']:
+            return self.config['force_types'][field_name]
+        return self.config['type_mapping'][python_type]
+
     def _build_model_class(self, model):
-        """Return ROOT C++ class definition corresponding to instance of
-        data_model.Model
+        """Return ROOT C++ class definition corresponding to instance of data_model.Model
         """
         model_name = model.__class__.__name__
         self.log.debug('Building ROOT class for %s' % model_name)
-
-        type_mapping = {'float': 'Float_t',
-                        'float64': 'Double_t',
-                        'float32': 'Float_t',
-                        'int': 'Int_t',
-                        'int16': 'Short_t',
-                        'int32': 'Int_t',
-                        'int64': 'Long64_t',
-                        'bool': 'Bool_t',
-                        'bool_': 'Bool_t',
-                        'long': 'Long64_t',
-                        'str': 'TString'}
 
         list_field_info = model.get_list_field_info()
         class_attributes = ''
@@ -261,12 +236,15 @@ class WriteROOTClass(plugin.OutputPlugin):
 
             # Numpy array (assumed fixed-length, 1-d)
             elif isinstance(field_value, np.ndarray):
-                class_attributes += '\t%s  %s[%d];\n' % (type_mapping[field_value.dtype.type.__name__],
+                class_attributes += '\t%s  %s[%d];\n' % (self.get_root_type(field_name,
+                                                                            field_value.dtype.type.__name__),
                                                          field_name, len(field_value))
 
             # Everything else (int, float, bool)
             else:
-                class_attributes += '\t%s  %s;\n' % (type_mapping[type(field_value).__name__], field_name)
+                class_attributes += '\t%s  %s;\n' % (self.get_root_type(field_name,
+                                                                        type(field_value).__name__),
+                                                     field_name)
 
         # Add any user-defined extra fields
         for field_name, field_type, field_code in self.config['extra_fields'].get(model_name,
