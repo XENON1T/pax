@@ -61,12 +61,13 @@ class ReadXED(InputFromFolder):
 
     file_extension = 'xed'
 
-    def get_first_and_last_event_number(self, filename):
-        """Return the first and last event number in file specified by filename"""
+    def get_event_number_info(self, filename):
+        """Return the first, last and total event numbers in file specified by filename"""
         with open(filename, 'rb') as xedfile:
             fmd = np.fromfile(xedfile, dtype=xed_file_header, count=1)[0]
             return (fmd['first_event_number'],
-                    fmd['first_event_number'] + fmd['events_in_file'] - 1)
+                    fmd['first_event_number'] + fmd['events_in_file'] - 1,
+                    fmd['events_in_file'])
 
     def close(self):
         """Close the currently open file"""
