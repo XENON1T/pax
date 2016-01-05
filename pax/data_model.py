@@ -154,11 +154,8 @@ class Model(object):
                     result[k] = bson.Binary(v.tostring())
                 else:
                     raise ValueError('convert_numpy_arrays_to must be "list" or "bytes"')
-            elif nan_to_none and isinstance(v, float):
-                if not np.isfinite(v):
-                    result[k] = None
-                else:
-                    result[k] = v
+            elif nan_to_none and isinstance(v, float) and not np.isfinite(v):
+                result[k] = None
             else:
                 result[k] = v
         return result

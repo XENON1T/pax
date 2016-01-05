@@ -12,7 +12,7 @@ from scipy.spatial import KDTree
 ##
 
 class InterpolateAndExtrapolate(object):
-    """Linearly interpolate- or extrapolation between nearest N points
+    """Linearly interpolate- or extrapolate between nearest N points
     Needed to roll our own because scipy's linear Nd interpolator refuses to extrapolate
     """
 
