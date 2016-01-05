@@ -332,9 +332,10 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
                 # This variable is updated at the start of while loop.
                 if self.data_taking_ended:
                     self.log.fatal("Data taking ended.")
+                    update_query = {'$set': {'detectors.tpc.trigger.status': 'processed',
+                                    'detectors.tpc.trigger.ended': True}}
                     status = self.mongo['run']['collection'].update_one({'_id': self.run_doc_id},
-                                                                        {'$set': {'detectors.tpc.trigger.status': 'processed',
-                                                                                  'detectors.tpc.trigger.ended': True}})
+                                                                        update_query)
                     self.log.debug(status)
                     break
 
@@ -390,7 +391,6 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
                             sample_duration=self.sample_duration,
                             stop_time=t1,
                             event_number=i)
-
 
 
 class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, IOMongoDB):

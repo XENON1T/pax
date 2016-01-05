@@ -64,6 +64,7 @@ class CheckBounds(plugin.TransformPlugin):
 
     def startup(self):
         self.truncate_pulses_partially_outside = self.config.get('truncate_pulses_partially_outside', False)
+        self.allow_pulse_completely_outside = self.config.get('allow_pulse_completely_outside', False)
 
     def transform_event(self, event):
 
@@ -73,13 +74,14 @@ class CheckBounds(plugin.TransformPlugin):
                 event.event_number, event.sample_duration, self.config['sample_duration']))
 
         event_length = event.length()
+        pulses_to_ignore = []
 
-        for occ_i, occ in enumerate(event.pulses):
+        for pulse_i, pulse in enumerate(event.pulses):
 
-            start_index = occ.left
-            length = occ.length
-            end_index = occ.right
-            channel = occ.channel
+            start_index = pulse.left
+            length = pulse.length
+            end_index = pulse.right
+            channel = pulse.channel
 
             ##
             #  Pulse bounds checking / truncation (see issue 43)
@@ -89,23 +91,23 @@ class CheckBounds(plugin.TransformPlugin):
 
             if start_index < 0 or end_index < 0 or overhang > 0:
 
-                # Always throw error if pulse is completely outside event
                 if overhang >= length or start_index <= -length or end_index < 0:
-                    self.log.warning('Pulse %s in channel %s (%s-%s) is entirely outside '
-                                     'event bounds (%s-%s)! See issue #43.' % (occ_i,
-                                                                               channel,
-                                                                               start_index,
-                                                                               end_index,
-                                                                               0,
-                                                                               event_length - 1))
-                    continue
+                    text = ('Pulse %s in channel %s (%s-%s) is entirely outside '
+                            'event bounds (%s-%s)! See issue #43.' % (pulse_i, channel, start_index, end_index,
+                                                                      0, event_length - 1))
+                    if self.allow_pulse_completely_outside:
+                        self.log.warning(text)
+                        pulses_to_ignore.append(pulse_i)
+                        continue
+                    else:
+                        raise exceptions.PulseBeyondEventError(text)
 
-                pulse_wave = occ.raw_data
+                pulse_wave = pulse.raw_data
 
                 # If partially outside, truncate with warning, or give error, according to config
                 message = 'Pulse %s in channel %s (%s-%s) is partially outside ' \
                           'event bounds (%s-%s). See issue #43' % (
-                              occ_i, channel, start_index, end_index, 0, event_length - 1)
+                              pulse_i, channel, start_index, end_index, 0, event_length - 1)
 
                 if not self.truncate_pulses_partially_outside:
                     raise exceptions.PulseBeyondEventError(message)
@@ -120,11 +122,13 @@ class CheckBounds(plugin.TransformPlugin):
                     end_index = event_length - 1
 
                 # Update the pulse data, so hit finder won't look at old un-truncated occ
-                event.pulses[occ_i] = occ = datastructure.Pulse(
+                event.pulses[pulse_i] = pulse = datastructure.Pulse(
                     left=start_index,
                     right=end_index,
                     channel=channel,
                     raw_data=pulse_wave
                 )
+
+        event.pulses = [p for p_i, p in enumerate(event.pulses) if p_i not in pulses_to_ignore]
 
         return event

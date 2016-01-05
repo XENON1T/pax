@@ -67,8 +67,6 @@ def run():
 
     log.info("Searching for run")
 
-
-
     db = client.get_default_database()
     log.debug('Fetched databases: %s', db.name)
 
@@ -88,10 +86,9 @@ def run():
                          args.wait)
                 time.sleep(args.wait)
         else:
-            log.info("Building events for %s",
-                     run_doc['name'])
+            log.info("Building events for %s", run_doc['name'])
 
-            pax_config = {'output_name' : 'raw_%s' % run_doc['name'],}
+            pax_config = {'output_name': 'raw_%s' % run_doc['name']}
 
             config_names = 'eventbuilder'
             config_dict = {'DEFAULT': {'run_doc': run_doc['_id']},
@@ -117,7 +114,7 @@ def run():
                 raise
 
 
-def authenticate(client, database_name = None):
+def authenticate(client, database_name=None):
     try:
         mongo_user = os.environ['MONGO_USER']
     except KeyError:
@@ -129,11 +126,12 @@ def authenticate(client, database_name = None):
         raise RuntimeError("You need to set the variable MONGO_PASSWORD."
                            "\texport MONGO_PASSWORD=XXXXXX")
 
-    if database_name == None:
+    if database_name is None:
         database = client.get_default_database()
     else:
         database = client[database_name]
     database.authenticate(mongo_user, mongo_password)
+
 
 def handle_args():
     """Command line argument processing
