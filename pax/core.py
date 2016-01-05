@@ -12,14 +12,6 @@ if six.PY2:
 else:
     import importlib
 
-
-try:
-    import ROOT     # noqa
-except ImportError:
-    pass
-except SyntaxError:
-    pass
-
 import numpy as np
 
 from prettytable import PrettyTable     # Timing report
@@ -494,10 +486,8 @@ class Processor:
             if total_time > 0:
                 timing_report.add_row(['TOTAL',
                                        round(100., 1),
-                                       round(total_time / events_actually_processed,
-                                             1),
-                                       round(1000 * events_actually_processed / total_time,
-                                             1),
+                                       round(total_time / events_actually_processed, 1),
+                                       round(1000 * events_actually_processed / total_time, 1),
                                        round(total_time / 1000, 1)])
             else:
                 timing_report.add_row(['TOTAL',

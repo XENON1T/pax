@@ -181,7 +181,7 @@ class TableWriter(plugin.OutputPlugin):
             self.output_format.close()
 
     def get_index_of(self, mname):
-        # Returns index +1 of last last entry in self.data[mname]. Returns -1
+        # Returns index +1 of last last entry in self.data[mname]. Returns 0
         # if no mname seen before.
         if mname not in self.data:
             return 0
@@ -256,7 +256,8 @@ class TableWriter(plugin.OutputPlugin):
                                            [(fn, field_value[fn].dtype) for fn in field_value.dtype.names],
                         'index_depth':     len(m_indices),
                     }
-                self.data[field_name]['tuples'].append(tuple(m_indices + list(field_value.tolist()[0])))
+                for element in field_value.tolist():
+                    self.data[field_name]['tuples'].append(tuple(m_indices + list(element)))
 
             elif isinstance(field_value, np.ndarray) and not self.output_format.supports_array_fields:
                 # Hack for formats without array field support: NumpyArrayFields must get their own dataframe

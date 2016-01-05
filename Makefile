@@ -14,6 +14,7 @@ help:
 
 clean: clean-build clean-pyc
 	rm -fr htmlcov/
+	rm -f test_tree.root output1.hdf5 output2.hdf5 xe100_120402_2000_000000_pax4.0.1.root xe100_120402_2000_000000_pax4.0.1.hdf5
 
 clean-build:
 	rm -fr build/
@@ -28,7 +29,7 @@ clean-pyc:
 lint:
 	flake8 --max-line-length=120 pax tests bin
 
-test:
+test:	clean
 	python setup.py test
 
 test-all:

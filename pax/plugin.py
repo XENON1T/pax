@@ -139,10 +139,14 @@ class PosRecPlugin(TransformPlugin):
      - don't get passed peaks without top pmts active (we add the nan-position automatically)
      - have self.pmts and self.pmt_locations available in the same way
     """
+    uses_only_top = True
 
     def _pre_startup(self):
         # List of integers of which PMTs to use, this algorithm uses the top pmt array to reconstruct
-        self.pmts = np.array(self.config['channels_top'])
+        if self.uses_only_top:
+            self.pmts = np.array(self.config['channels_top'])
+        else:
+            self.pmts = np.array(self.config['channels_in_detector']['tpc'])
 
         # (x,y) Locations of these PMTs, stored as np.array([(x,y), (x,y), ...])
         self.pmt_locations = np.zeros((len(self.pmts), 2))

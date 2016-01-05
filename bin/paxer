@@ -278,11 +278,8 @@ def main():
             pax_instance.shutdown()
             print("Exiting")
             sys.exit()
-    else:  # Parallel processing
-        if os.name == 'nt':
-            raise NotImplementedError("Pax parallelization is not supported "
-                                      "under Windows (due to lack of fork).")
 
+    else:  # Parallel processing
         override_dict['pax']['plugin_group_names'] = ['input']
         p = core.Processor(config_names=args.config,
                            config_paths=args.config_path,
