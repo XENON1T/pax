@@ -108,7 +108,7 @@ class Simulator(object):
         # Init s1 pattern maps
         # NB: do NOT adjust patterns for QE, map is data derived, so no need.
         log.debug("Initializing s1 patterns...")
-        if 's1_patterns_file' in self.config:
+        if c.get('s1_patterns_file', None) is not None:
             self.s1_patterns = PatternFitter(filename=utils.data_file_name(c['s1_patterns_file']),
                                              zoom_factor=c.get('s1_patterns_zoom_factor', 1),
                                              default_errors=c['relative_qe_error'] + c['relative_gain_error'])

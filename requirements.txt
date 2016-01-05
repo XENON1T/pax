@@ -13,3 +13,4 @@ numba>=0.19
 scikit-learn
 h5py
 six
+numexpr
