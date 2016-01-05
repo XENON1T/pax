@@ -221,6 +221,7 @@ class TestPax(unittest.TestCase):
         matplotlib.pyplot.switch_backend('Agg')
         mypax = core.Processor(config_names='XENON100',
                                config_dict={'pax': {'output': 'Plotting.PlotEventSummary',
+                                                    'pre_output': [],
                                                     'events_to_process': [0],
                                                     'output_name': 'plots_test'}})
         mypax.run()

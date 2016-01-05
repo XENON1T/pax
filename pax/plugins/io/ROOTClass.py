@@ -248,7 +248,11 @@ class WriteROOTClass(plugin.OutputPlugin):
                     self._custom_types.append(element_model_name)
                     if not len(field_value):
                         self.log.warning("Don't have a %s instance to use: making default one..." % element_model_name)
-                        source = element_model()
+                        if element_model_name == 'Pulse':
+                            # Pulse has a custom __init__ we need to obey... why did we do this again?
+                            source = element_model(channel=0, left=0, right=0)
+                        else:
+                            source = element_model()
                     else:
                         source = field_value[0]
                     child_classes_code += '\n' + self._build_model_class(source)
@@ -345,14 +349,14 @@ class ReadROOTClass(plugin.InputPlugin):
                                    for hit in root_value], dtype=hit_dtype)
 
             elif isinstance(default_value, list):
-                    child_class_name = py_object.get_list_field_info()[field_name].__name__
-                    result = []
-                    for child_i in range(len(root_value)):
-                        child_py_object = getattr(datastructure, child_class_name)()
-                        self.set_python_object_attrs(root_value[child_i],
-                                                     child_py_object,
-                                                     fields_to_ignore)
-                        result.append(child_py_object)
+                child_class_name = py_object.get_list_field_info()[field_name].__name__
+                result = []
+                for child_i in range(len(root_value)):
+                    child_py_object = getattr(datastructure, child_class_name)()
+                    self.set_python_object_attrs(root_value[child_i],
+                                                 child_py_object,
+                                                 fields_to_ignore)
+                    result.append(child_py_object)
 
             elif isinstance(default_value, np.ndarray):
                 try:
