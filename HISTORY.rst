@@ -4,6 +4,15 @@ History
 -------
 
 ------------------
+4.2.0 (upcoming)
+------------------
+ * Fixes for ROOT output: memory leak (#282), LED output (#283), long int fields (#289)
+ * Event builder changes (#278)
+ * 3D position reconstruction for S1s (#277)
+ * Hits and Pulses for S1s saved by default (#283)
+ * Raw data filename format changed, progress bar fix (#289)
+
+------------------
 4.1.2 (2015-11-30)
 ------------------
 
