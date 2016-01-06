@@ -116,6 +116,7 @@ class Peak(StrictModel):
     ##
 
     #: The hits that make up this peak
+    #: To save space, we usually only store the hits for s1s.
     hits = np.array([], dtype=Hit.get_dtype())
 
     #: Total areas of all hits per PMT (pe).
@@ -318,6 +319,8 @@ class Pulse(StrictModel):
     For DAQs with zero-length encoding or self-triggering, there will be several of these per channel per event.
 
     Remember that PMT signals show as downward fluctuations in raw digitizer data.
+    In processed data output, only pulses contributing hits to S1s are stored (except in LED mode), and the
+    raw_data field is never stored.
     """
 
     #: Start index/sample of this pulse (inclusive)
@@ -335,6 +338,7 @@ class Pulse(StrictModel):
     raw_data = np.array([], np.int16)
 
     #: Baseline in ADC counts relative to reference baseline -- but float!
+    #: This field is omitted in processed data (to save space)
     baseline = float('nan')
 
     #: Maximum amplitude reached in the pulse (in ADC counts above pulse baseline)
@@ -498,6 +502,7 @@ class Event(StrictModel):
 
     #: Array of all hits found in event
     #: These will get grouped into peaks during clustering
+    #: This is usually emptied before output (but not in LED mode)
     all_hits = np.array([], dtype=Hit.get_dtype())
 
     #: A list :class:`pax.datastructure.SumWaveform` objects.
@@ -505,6 +510,7 @@ class Event(StrictModel):
 
     #: A list of :class:`pax.datastructure.Interaction` objects.
     #: An pulse holds a stream of samples in one channel provided by the digitizer.
+    #: To save space, only the pulses contributing hits to S1s are kept in the output (but not in LED mode)
     pulses = ListField(Pulse)
 
     #: Number of noise pulses (pulses without any hits found) per channel

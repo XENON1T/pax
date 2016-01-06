@@ -188,9 +188,9 @@ class Model(object):
 casting_allowed_for = {
     'int':    ['int16', 'int32', 'int64', 'Int64', 'Int32', 'long'],
     'float':  ['int', 'int16', 'int32', 'int64', 'Int64', 'Int32', 'float32', 'float64', 'long'],
-    'bool':   ['int', 'int16', 'int32', 'int64', 'Int64', 'Int32', 'long'],
+    'bool':   ['int', 'int16', 'int32', 'int64', 'Int64', 'Int32', 'long', 'bool_'],
     'long':   ['int', 'int16', 'int32', 'int64', 'Int64', 'Int32'],
-    'str':    ['unicode']
+    'str':    ['unicode'],
 }
 
 
@@ -225,11 +225,12 @@ class StrictModel(Model):
                 value = old_type(value)
 
             else:
-                raise TypeError('Attribute %s of class %s should be a %s, not a %s. '
+                raise TypeError('Attribute %s of class %s should be a %s, not a %s. Allowed other types: %s.'
                                 % (key,
                                    self.__class__.__name__,
                                    old_class_name,
-                                   new_class_name))
+                                   new_class_name,
+                                   casting_allowed_for.get(old_class_name, '')))
 
         # Check for attempted dtype change
         if old_type == np.ndarray:

@@ -42,9 +42,10 @@ class TestReprocessing(unittest.TestCase):
 
             # Reprocess from the format to test to an HDF5 file
             output2_filename = 'output_after_%s' % plugin_info['name']
-            mypax = core.Processor(config_names='reclassify', config_dict={'pax': {
+            mypax = core.Processor(config_names=['XENON100', 'reclassify'], config_dict={'pax': {
                 'input_name':  'output1.' + plugin_info['extension'],
                 'input': plugin_info['read_plugin'],
+                'output': 'Table.TableWriter',
                 'output_name': output2_filename}})
             mypax.run()
             del mypax

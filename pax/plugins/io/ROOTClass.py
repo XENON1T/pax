@@ -74,7 +74,7 @@ def load_event_class(filename):
     # Build the required dictionaries for the vectors of classes
     for name in classnames:
         if os.name == 'nt':
-            ROOT.gInterpreter.GenerateDictionary("vector<%s>" % name, filename)
+            ROOT.gInterpreter.GenerateDictionary("std::vector<%s>" % name, filename)
         else:
             stl.generate("std::vector<%s>" % name, "%s;<vector>" % filename, True)
 
@@ -157,26 +157,36 @@ class WriteROOTClass(plugin.OutputPlugin):
             if field_name in fields_to_ignore:
                 continue
 
-            elif isinstance(field_value, list):
+            elif isinstance(field_value, list) or field_name in ('hits', 'all_hits'):
                 # Collection field -- recursively initialize collection elements
-                element_name = list_field_info[field_name].__name__
-                list_of_elements = getattr(python_object, field_name)
+                if field_name in ('hits', 'all_hits'):
+                    # Special handling for hit fields:
+                    # Convert the hits from numpy array to ordinary pax data models
+                    hits_list = []
+                    for h in field_value:
+                        hits_list.append(datastructure.Hit(**{k: h[k] for k in field_value.dtype.names}))
+                    field_value = hits_list
+                    element_name = 'Hit'
+                else:
+                    element_name = list_field_info[field_name].__name__
 
                 root_vector = getattr(root_object, field_name)
 
                 root_vector.clear()
-                for element_python_object in list_of_elements:
+                for element_python_object in field_value:
                     element_root_object = getattr(ROOT, element_name)()
                     self.set_root_object_attrs(element_python_object, element_root_object)
                     root_vector.push_back(element_root_object)
-                self.last_collection[element_name] = list_of_elements
+                self.last_collection[element_name] = field_value
 
             elif isinstance(field_value, np.ndarray):
                 # Unfortunately we can't store numpy arrays directly into ROOT's ROOT.PyXXXBuffer.
                 # Doing so will not give an error, but the data will be mangled!
                 # Instead we have to use python's old array module...
                 root_field = getattr(root_object, field_name)
-                root_field_type = root_field.typecode.decode("UTF-8")
+                root_field_type = root_field.typecode
+                if six.PY3:
+                    root_field_type = root_field_type.decode("UTF-8")
                 root_field_new = array.array(root_field_type, field_value.tolist())
                 setattr(root_object, field_name, root_field_new)
             else:
@@ -221,14 +231,28 @@ class WriteROOTClass(plugin.OutputPlugin):
                 continue
 
             # Collections (e.g. event.peaks)
-            elif field_name in list_field_info:
-                element_model_name = list_field_info[field_name].__name__
+            elif field_name in list_field_info or field_name in ('hits', 'all_hits'):
+                if field_name in ('hits', 'all_hits'):
+                    # Special handling for hit fields. These are stored as numpy structured arrays in the datastructure,
+                    # but will be converted to 'ordinary' pax data models for storage (see set_root_object_attrs).
+                    # field_value = [] makes sure the code below makes a new instance of Hit
+                    # rather than taking the first element of the array (which is a np.void object)
+                    element_model_name = 'Hit'
+                    element_model = datastructure.Hit
+                    field_value = []
+                else:
+                    element_model_name = list_field_info[field_name].__name__
+                    element_model = list_field_info[field_name]
                 self.log.debug("List column %s encountered. Type is %s" % (field_name, element_model_name))
                 if element_model_name not in self._custom_types:
                     self._custom_types.append(element_model_name)
                     if not len(field_value):
                         self.log.warning("Don't have a %s instance to use: making default one..." % element_model_name)
-                        source = list_field_info[field_name]()
+                        if element_model_name == 'Pulse':
+                            # Pulse has a custom __init__ we need to obey... why did we do this again?
+                            source = element_model(channel=0, left=0, right=0)
+                        else:
+                            source = element_model()
                     else:
                         source = field_value[0]
                     child_classes_code += '\n' + self._build_model_class(source)
@@ -316,9 +340,16 @@ class ReadROOTClass(plugin.InputPlugin):
                 self.log.debug("%s not in root object?" % field_name)
                 continue
 
-            if isinstance(default_value, list):
-                child_class_name = py_object.get_list_field_info()[
-                    field_name].__name__
+            if field_name in ('hits', 'all_hits'):
+                # Special case for hit fields
+                # Convert from root objects to numpy array
+                hit_dtype = datastructure.Hit.get_dtype()
+                result = np.array([tuple([getattr(hit, fn)
+                                          for fn in hit_dtype.names])
+                                   for hit in root_value], dtype=hit_dtype)
+
+            elif isinstance(default_value, list):
+                child_class_name = py_object.get_list_field_info()[field_name].__name__
                 result = []
                 for child_i in range(len(root_value)):
                     child_py_object = getattr(datastructure, child_class_name)()
