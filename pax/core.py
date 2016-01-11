@@ -6,6 +6,11 @@ import six
 import itertools
 import os
 import time
+import multiprocessing
+try:
+    import queue
+except ImportError:
+    import Queue as queue   #noqa
 from configparser import ConfigParser, ExtendedInterpolation
 if six.PY2:
     import imp
@@ -24,9 +29,22 @@ from pax import units, simulation, utils
 # import gc
 # import objgraph
 
+# Multiprocess status codes
+MP_STATUS = dict(normal=0,
+                 shutdown=1,
+                 crashing=2,
+                 input_in_progress=3,
+                 input_done=4,
+                 processing_done=5)
+
 
 class Processor:
     fallback_configuration = 'XENON100'    # Configuration to use when none is specified
+
+    def check_crash(self):
+        if self.status == MP_STATUS['crashing']:
+            raise RuntimeError("Exiting %s due to crash" % ('worker %s' % self.worker_number
+                                                            if self.worker_number is not None else 'master process'))
 
     def __init__(self, config_names=(), config_paths=(), config_string=None, config_dict=None, just_testing=False):
         """Setup pax using configuration data from three sources:
@@ -56,11 +74,56 @@ class Processor:
         if 'Why_doesnt_configparser_let_me_disable_DEFAULT' in self.config:
             del self.config['Why_doesnt_configparser_let_me_disable_DEFAULT']
 
-        self.log = self.setup_logging()
         pc = self.config['pax']
+        self.worker_number = pc.get('_worker_number')
+        self.log = self.setup_logging()
+        if self.worker_number is not None:
+            # I'm a child processor
+            self.status = pc['status']
+            self.input_queue = pc['input_queue']
+            self.output_queue = pc.get('output_queue', None)
 
-        self.log.info("This is PAX version %s, running with configuration for %s." % (
-            pax.__version__, self.config['DEFAULT'].get('tpc_name', 'UNSPECIFIED TPC NAME')))
+        else:
+            # I'm the main processor
+            self.log.info("This is PAX version %s, running with configuration for %s." % (
+                pax.__version__, self.config['DEFAULT'].get('tpc_name', 'UNSPECIFIED TPC NAME')))
+
+            n_cpus = pc.get('n_cpus', 1)
+            if n_cpus != 1:
+                # Setup multiprocessing
+                # Bla here
+                self.status = multiprocessing.Value('i')
+                self.status.value = MP_STATUS['normal']
+                self.input_queue = multiprocessing.Queue()
+                self.output_queue = multiprocessing.Queue()
+
+                # Start worker processes
+                self.processing_workers = []
+                from copy import deepcopy
+                for worker_number in range(n_cpus):
+                    c = deepcopy(self.config)
+                    c['pax'].update(dict(plugin_group_names=[q for q in pc['plugin_group_names']
+                                                             if q not in ('input', 'output')],
+                                         input_queue=self.input_queue,
+                                         output_queue=self.output_queue,
+                                         status=self.status,
+                                         _worker_number=worker_number))
+                    self.processing_workers.append(multiprocessing.Process(target=Processor,
+                                                                           kwargs=dict(config_dict=c)))
+
+                c = deepcopy(self.config)
+                c.update(dict(plugin_group_names=['output'],
+                              _worker_number=-1,
+                              status=self.status,
+                              input_queue=self.input_queue))
+                self.output_worker = multiprocessing.Process(target=Processor,
+                                                             kwargs=dict(config_dict=c))
+
+                # Start my child processes
+                for w in self.processing_workers + [self.output_worker]:
+                    w.start()
+
+                print(pc['plugin_group_names'])
 
         # Start up the simulator
         # Must be done explicitly here, as plugins can rely on its presence in startup
@@ -74,7 +137,7 @@ class Processor:
                 self.log.warning('You did not specify any configuration for the waveform simulator!\n' +
                                  'If you attempt to load the waveform simulator, pax will crash!')
 
-        # Get the list of plugins from the configuration file
+        # Get the list of plugins from the configuration
         # plugin_names[group] is a list of all plugins we have to initialize in the group 'group'
         plugin_names = {}
         if 'plugin_group_names' not in pc:
@@ -149,12 +212,9 @@ class Processor:
             self.number_of_events = min(self.number_of_events, self.stop_after)
 
         else:
-            # During tests there is often no input plugin
-            # events are added manually
+            # During multiprocessing or testing there is often no input plugin events are added manually
             self.input_plugin = None
-            if not just_testing:
-                self.log.warning("No input plugin specified: how are you "
-                                 "planning to get any events?")
+            self.log.debug("No input plugin specified: how are you planning to get any events?")
 
         # Load the action plugins
         if len(action_plugin_names) > 0:
@@ -163,9 +223,7 @@ class Processor:
         # During tests of input plugins there is often no action plugin
         else:
             self.action_plugins = []
-            if not just_testing:
-                self.log.warning("No action plugins specified: this will be a "
-                                 "pretty boring processing run...")
+            self.log.debug("No action plugins specified: this will be a pretty boring processing run...")
 
         self.timer = utils.Timer()
 
@@ -414,90 +472,144 @@ class Processor:
             If you do, you get in trouble if you start a new Processor instance that tries to write to the same files.
 
         """
-        if not hasattr(self, 'input_plugin'):
-            raise RuntimeError("Attempt to run a Processor without an input_plugin attribute... WTF??")
-
-        if self.input_plugin is None:
-            # You're allowed to specify no input plugin, which is useful for testing. (You may want to feed events
-            # in by hand). If you do this, you can't use the run method. In case somebody ever tries:
-            raise RuntimeError("You just tried to run a Processor without specifyin input plugin.")
-
-        if self.input_plugin.has_shut_down:
-            raise RuntimeError("Attempt to run a Processor twice.")
-
-        i = 0  # in case loop does not run
-        # This is the actual event loop.  'tqdm' is a progress bar.
-
-        self.timer.punch()
-        for i, event in enumerate(tqdm(self.get_events(),
-                                       desc='Event',
-                                       total=self.number_of_events)):
-            self.input_plugin.total_time_taken += self.timer.punch()
-
-            if i >= self.stop_after:
-                self.log.info("User-defined limit of %d events reached." % i)
-                break
-
-            self.process_event(event)
-
-            self.log.debug("Event %d (%d processed)" % (event.event_number, i))
-
-        else:   # If no break occurred:
-            self.log.info("All events from input source have been processed.")
-
-        events_actually_processed = i + 1
-
-        if self.config['pax']['print_timing_report']:
-
-            all_plugins = [self.input_plugin] + self.action_plugins
-            timing_report = PrettyTable(['Plugin',
-                                         '%',
-                                         '/event (ms)',
-                                         '#/s',
-                                         'Total (s)'])
-            timing_report.align = "r"
-            timing_report.align["Plugin"] = "l"
-            total_time = sum([plugin.total_time_taken for plugin in all_plugins])
-
-            for plugin in all_plugins:
-                t = plugin.total_time_taken
-
-                if t > 0:
-                    time_per_event_ms = round(t / events_actually_processed, 1)
-
-                    event_rate_hz = round(1000 * events_actually_processed / t, 1)
-                    if event_rate_hz > 100:
-                        event_rate_hz = ''
-
-                    timing_report.add_row([plugin.__class__.__name__,
-                                           round(100 * t / total_time, 1),
-                                           time_per_event_ms,
-                                           event_rate_hz,
-                                           round(t / 1000, 1)])
+        self.log.info("Running process %s" % self.worker_number)
+        if self.worker_number is not None:
+            # I'm a child processor
+            self.check_crash()
+            while True:
+                # Check if we can end before we fetch event blocks:
+                # the last block may get added while we are fetching events
+                if self.worker_number == -1:
+                    # Output worker
+                    can_end = self.status.value == MP_STATUS['processing_done']
                 else:
-                    timing_report.add_row([plugin.__class__.__name__,
-                                           0,
-                                           0,
-                                           'n/a',
-                                           round(t / 1000, 1)])
+                    can_end = self.status.value == MP_STATUS['input_done']
+                try:
 
-            if total_time > 0:
-                timing_report.add_row(['TOTAL',
-                                       round(100., 1),
-                                       round(total_time / events_actually_processed, 1),
-                                       round(1000 * events_actually_processed / total_time, 1),
-                                       round(total_time / 1000, 1)])
+                    results = []
+                    for event in self.input_queue.get(block=True, timeout=1):
+                        self.check_crash()
+                        results.append(self.process_event(event))
+                    if self.output_queue:
+                        self.output_queue.put(results)
+                except queue.Empty():
+                    if can_end:
+                        break
+                except Exception:
+                    self.status = MP_STATUS['crashing']
+                    raise
+
+        else:
+            # I'm a master or standalone processor
+            if self.input_plugin is None:
+                # You're allowed to specify no input plugin, which is useful for testing. (You may want to feed events
+                # in by hand). If you do this, you can't use the run method. In case somebody ever tries:
+                raise RuntimeError("You just tried to run a Processor without specifying input plugin.")
+
+            if self.input_plugin.has_shut_down:
+                raise RuntimeError("Attempt to run a Processor twice!")
+
+            if hasattr(self, 'processing_workers'):
+                # I'm a master processor
+                block_size = self.config['pax'].get('event_block_size', 10)
+                max_queue_blocks = self.config['pax'].get('max_queue_blocks', 100)
+
+                event_block = []
+                for event in self.get_events():
+                    event_block.append(event)
+                    self.check_crash()
+                    if len(event_block) >= block_size:
+                        self.input_queue.put(event_block)
+                        event_block = []
+                    while self.input_queue.qsize() >= max_queue_blocks:
+                        time.sleep(1)
+                self.input_queue.put(event_block)
+                self.status.value = MP_STATUS['input_done']
+
+                # Wait for child processes to die or crash
+                # Note we never use join/wait -- so we never wait for something that may not happen
+                while True:
+                    self.check_crash()
+                    if all([not w.is_alive() for w in self.processing_workers]):
+                        self.status.value = MP_STATUS['processing_done']
+                    if not self.output_worker.is_alive():
+                        break
+                    print('\r%d blocks in processing queue, %d in output queue. Status %d' % (
+                            self.input_queue.qsize(),
+                            self.output_queue.qsize(),
+                            [k for k, v in MP_STATUS.items() if v == self.status.value][0]),
+                          end="")
+                    time.sleep(1)
+
             else:
-                timing_report.add_row(['TOTAL',
-                                       round(100., 1),
-                                       0,
-                                       'n/a',
-                                       round(total_time / 1000, 1)])
-            self.log.info("Timing report:\n" + str(timing_report))
+                # I'm a standalone processor
+                i = 0  # in case loop does not run
+                self.timer.punch()
+                for i, event in enumerate(tqdm(self.get_events(),
+                                               desc='Event',
+                                               total=self.number_of_events)):
+                    self.input_plugin.total_time_taken += self.timer.punch()
+                    if i >= self.stop_after:
+                        self.log.info("User-defined limit of %d events reached." % i)
+                        break
+                    self.process_event(event)
+                    self.log.debug("Event %d (%d processed)" % (event.event_number, i))
+                else:   # If no break occurred:
+                    self.log.info("All events from input source have been processed.")
+
+                if self.config['pax']['print_timing_report']:
+                    self.make_timing_report(i + 1)
 
         # Shutdown all plugins now -- don't wait until this Processor instance gets deleted
         if clean_shutdown:
             self.shutdown()
+
+    def make_timing_report(self, events_actually_processed):
+        all_plugins = [self.input_plugin] + self.action_plugins
+        timing_report = PrettyTable(['Plugin',
+                                     '%',
+                                     '/event (ms)',
+                                     '#/s',
+                                     'Total (s)'])
+        timing_report.align = "r"
+        timing_report.align["Plugin"] = "l"
+        total_time = sum([plugin.total_time_taken for plugin in all_plugins])
+
+        for plugin in all_plugins:
+            t = plugin.total_time_taken
+
+            if t > 0:
+                time_per_event_ms = round(t / events_actually_processed, 1)
+
+                event_rate_hz = round(1000 * events_actually_processed / t, 1)
+                if event_rate_hz > 100:
+                    event_rate_hz = ''
+
+                timing_report.add_row([plugin.__class__.__name__,
+                                       round(100 * t / total_time, 1),
+                                       time_per_event_ms,
+                                       event_rate_hz,
+                                       round(t / 1000, 1)])
+            else:
+                timing_report.add_row([plugin.__class__.__name__,
+                                       0,
+                                       0,
+                                       'n/a',
+                                       round(t / 1000, 1)])
+
+        if total_time > 0:
+            timing_report.add_row(['TOTAL',
+                                   round(100., 1),
+                                   round(total_time / events_actually_processed, 1),
+                                   round(1000 * events_actually_processed / total_time, 1),
+                                   round(total_time / 1000, 1)])
+        else:
+            timing_report.add_row(['TOTAL',
+                                   round(100., 1),
+                                   0,
+                                   'n/a',
+                                   round(total_time / 1000, 1)])
+        self.log.info("Timing report:\n" + str(timing_report))
 
     def shutdown(self):
         """Call shutdown on all plugins"""
