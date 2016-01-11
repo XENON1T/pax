@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.signal_processing.CheckPulses &mdash; Processor for Analyzing XENON1T 4.1.1 documentation</title>
+    <title>pax.plugins.signal_processing.CheckPulses &mdash; Processor for Analyzing XENON1T 4.1.2 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '4.1.1',
+        VERSION:     '4.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.1.1 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.1.2 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   
@@ -104,6 +104,7 @@
 
 <div class="viewcode-block" id="CheckBounds.startup"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.CheckPulses.CheckBounds.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">truncate_pulses_partially_outside</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;truncate_pulses_partially_outside&#39;</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">allow_pulse_completely_outside</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;allow_pulse_completely_outside&#39;</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="CheckBounds.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.CheckPulses.CheckBounds.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
 
@@ -113,13 +114,14 @@
                 <span class="n">event</span><span class="o">.</span><span class="n">event_number</span><span class="p">,</span> <span class="n">event</span><span class="o">.</span><span class="n">sample_duration</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;sample_duration&#39;</span><span class="p">]))</span>
 
         <span class="n">event_length</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">length</span><span class="p">()</span>
+        <span class="n">pulses_to_ignore</span> <span class="o">=</span> <span class="p">[]</span>
 
-        <span class="k">for</span> <span class="n">occ_i</span><span class="p">,</span> <span class="n">occ</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">pulses</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">pulse_i</span><span class="p">,</span> <span class="n">pulse</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">pulses</span><span class="p">):</span>
 
-            <span class="n">start_index</span> <span class="o">=</span> <span class="n">occ</span><span class="o">.</span><span class="n">left</span>
-            <span class="n">length</span> <span class="o">=</span> <span class="n">occ</span><span class="o">.</span><span class="n">length</span>
-            <span class="n">end_index</span> <span class="o">=</span> <span class="n">occ</span><span class="o">.</span><span class="n">right</span>
-            <span class="n">channel</span> <span class="o">=</span> <span class="n">occ</span><span class="o">.</span><span class="n">channel</span>
+            <span class="n">start_index</span> <span class="o">=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">left</span>
+            <span class="n">length</span> <span class="o">=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">length</span>
+            <span class="n">end_index</span> <span class="o">=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">right</span>
+            <span class="n">channel</span> <span class="o">=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">channel</span>
 
             <span class="c">##</span>
             <span class="c">#  Pulse bounds checking / truncation (see issue 43)</span>
@@ -129,19 +131,23 @@
 
             <span class="k">if</span> <span class="n">start_index</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">end_index</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">overhang</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
 
-                <span class="c"># Always throw error if pulse is completely outside event</span>
                 <span class="k">if</span> <span class="n">overhang</span> <span class="o">&gt;=</span> <span class="n">length</span> <span class="ow">or</span> <span class="n">start_index</span> <span class="o">&lt;=</span> <span class="o">-</span><span class="n">length</span> <span class="ow">or</span> <span class="n">end_index</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">PulseBeyondEventError</span><span class="p">(</span>
-                        <span class="s">&#39;Pulse </span><span class="si">%s</span><span class="s"> in channel </span><span class="si">%s</span><span class="s"> (</span><span class="si">%s</span><span class="s">-</span><span class="si">%s</span><span class="s">) is entirely outside &#39;</span>
-                        <span class="s">&#39;event bounds (</span><span class="si">%s</span><span class="s">-</span><span class="si">%s</span><span class="s">)! See issue #43.&#39;</span> <span class="o">%</span> <span class="p">(</span>
-                            <span class="n">occ_i</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">start_index</span><span class="p">,</span> <span class="n">end_index</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">event_length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+                    <span class="n">text</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;Pulse </span><span class="si">%s</span><span class="s"> in channel </span><span class="si">%s</span><span class="s"> (</span><span class="si">%s</span><span class="s">-</span><span class="si">%s</span><span class="s">) is entirely outside &#39;</span>
+                            <span class="s">&#39;event bounds (</span><span class="si">%s</span><span class="s">-</span><span class="si">%s</span><span class="s">)! See issue #43.&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pulse_i</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">start_index</span><span class="p">,</span> <span class="n">end_index</span><span class="p">,</span>
+                                                                      <span class="mi">0</span><span class="p">,</span> <span class="n">event_length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">allow_pulse_completely_outside</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+                        <span class="n">pulses_to_ignore</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pulse_i</span><span class="p">)</span>
+                        <span class="k">continue</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">PulseBeyondEventError</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
 
-                <span class="n">pulse_wave</span> <span class="o">=</span> <span class="n">occ</span><span class="o">.</span><span class="n">raw_data</span>
+                <span class="n">pulse_wave</span> <span class="o">=</span> <span class="n">pulse</span><span class="o">.</span><span class="n">raw_data</span>
 
                 <span class="c"># If partially outside, truncate with warning, or give error, according to config</span>
                 <span class="n">message</span> <span class="o">=</span> <span class="s">&#39;Pulse </span><span class="si">%s</span><span class="s"> in channel </span><span class="si">%s</span><span class="s"> (</span><span class="si">%s</span><span class="s">-</span><span class="si">%s</span><span class="s">) is partially outside &#39;</span> \
                           <span class="s">&#39;event bounds (</span><span class="si">%s</span><span class="s">-</span><span class="si">%s</span><span class="s">). See issue #43&#39;</span> <span class="o">%</span> <span class="p">(</span>
-                              <span class="n">occ_i</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">start_index</span><span class="p">,</span> <span class="n">end_index</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">event_length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+                              <span class="n">pulse_i</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span> <span class="n">start_index</span><span class="p">,</span> <span class="n">end_index</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">event_length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
 
                 <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">truncate_pulses_partially_outside</span><span class="p">:</span>
                     <span class="k">raise</span> <span class="n">exceptions</span><span class="o">.</span><span class="n">PulseBeyondEventError</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
@@ -156,12 +162,14 @@
                     <span class="n">end_index</span> <span class="o">=</span> <span class="n">event_length</span> <span class="o">-</span> <span class="mi">1</span>
 
                 <span class="c"># Update the pulse data, so hit finder won&#39;t look at old un-truncated occ</span>
-                <span class="n">event</span><span class="o">.</span><span class="n">pulses</span><span class="p">[</span><span class="n">occ_i</span><span class="p">]</span> <span class="o">=</span> <span class="n">occ</span> <span class="o">=</span> <span class="n">datastructure</span><span class="o">.</span><span class="n">Pulse</span><span class="p">(</span>
+                <span class="n">event</span><span class="o">.</span><span class="n">pulses</span><span class="p">[</span><span class="n">pulse_i</span><span class="p">]</span> <span class="o">=</span> <span class="n">pulse</span> <span class="o">=</span> <span class="n">datastructure</span><span class="o">.</span><span class="n">Pulse</span><span class="p">(</span>
                     <span class="n">left</span><span class="o">=</span><span class="n">start_index</span><span class="p">,</span>
                     <span class="n">right</span><span class="o">=</span><span class="n">end_index</span><span class="p">,</span>
                     <span class="n">channel</span><span class="o">=</span><span class="n">channel</span><span class="p">,</span>
                     <span class="n">raw_data</span><span class="o">=</span><span class="n">pulse_wave</span>
                 <span class="p">)</span>
+
+        <span class="n">event</span><span class="o">.</span><span class="n">pulses</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p_i</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">pulses</span><span class="p">)</span> <span class="k">if</span> <span class="n">p_i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">pulses_to_ignore</span><span class="p">]</span>
 
         <span class="k">return</span> <span class="n">event</span></div></div>
 </pre></div>

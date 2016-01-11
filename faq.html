@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Installation and setup &mdash; Processor for Analyzing XENON1T 4.1.1 documentation</title>
+    <title>Installation and setup &mdash; Processor for Analyzing XENON1T 4.1.2 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '4.1.1',
+        VERSION:     '4.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.1.1 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.1.2 documentation" href="index.html" />
     <link rel="next" title="Event format" href="format.html" />
     <link rel="prev" title="Installation prerequisites" href="readme.html" />
    
@@ -46,38 +46,54 @@
 </div>
 <div class="section" id="how-do-i-set-up-pax-at-lngs-on-xecluster">
 <h2>How do I set up <cite>pax</cite> at LNGS on xecluster?<a class="headerlink" href="#how-do-i-set-up-pax-at-lngs-on-xecluster" title="Permalink to this headline">¶</a></h2>
-<p>You can either use a pax someone else has set up, or set up your own. Usually either Chris or Jelle&#8217;s pax is in mostly functional condition. To use Chris&#8217; pax, use the following commands:</p>
-<blockquote>
-<div>ssh xecluster06
-export PATH=/home/tunnell/anaconda3/bin:$PATH
-source activate pax</div></blockquote>
-<p>To use Jelle&#8217;s pax, use the command:</p>
-<blockquote>
-<div>export PATH=/home/aalbers/anaconda/bin:$PATH</div></blockquote>
-<p>Either of these can be added to your <cite>.bashrc</cite> to be run automatically when you login.</p>
-<p>To set up a developer installation of pax in your xecluster home directory, first follow the steps for installing anaconda and the required packages in the main readme (I didn&#8217;t try to install snappy but used the workaround). Then add the following to your .bashrc:</p>
+<p>A central installation of pax on xecluster can be setup as follows:</p>
+<div class="highlight-python"><div class="highlight"><pre>ssh xecluster06
+PAXER
+</pre></div>
+</div>
+<p>Details on the wiki: <a class="reference external" href="https://xecluster.lngs.infn.it/dokuwiki/doku.php?id=xenon:xenon1t:cmp:centralpax">https://xecluster.lngs.infn.it/dokuwiki/doku.php?id=xenon:xenon1t:cmp:centralpax</a></p>
+<p>To set up a developer installation of pax, first you can either follow the steps for installing anaconda and the required packages in the main readme (longer and more disk space), or use the central installation by setting:</p>
+<div class="highlight-python"><div class="highlight"><pre>export PATH=&quot;/archive_lngs/common/anaconda3/bin:$PATH&quot;  # Taken from output of PAXER above
+</pre></div>
+</div>
+<p>then creating your own environment on xecluster01 with:</p>
+<div class="highlight-python"><div class="highlight"><pre>conda create -n &lt;name_of_your_environment&gt; &lt;list_of_packages_from_main_readme_for_creating_pax_environment&gt;
+</pre></div>
+</div>
+<p>Some additional packages are required to be installed as follows (still on xecluster01):</p>
+<div class="highlight-python"><div class="highlight"><pre>cd ~
+wget http://curl.haxx.se/ca/cacert.pem ~/cacert.pem
+mkdir -p .pip
+cp /home/aalbers/.pip/pip.conf ~/.pip
+pip install avro-python3 flake8 prettytable tqdm pymongo
+</pre></div>
+</div>
+<p>Then, to access our GitHub repository from xecluster01, add the following to your .bashrc:</p>
 <div class="highlight-python"><div class="highlight"><pre># use git in totally insecure mode
 export PATH=/home/kaminsky/software/bin:$PATH
 export GIT_SSL_NO_VERIFY=true
 </pre></div>
 </div>
-<p>Now follow these steps:</p>
-<div class="highlight-python"><div class="highlight"><pre>cd ~
-git clone https://github.com/XENON1T/pax.git
-wget http://curl.haxx.se/ca/cacert.pem ~/cacert.pem
-mkdir .pip
-cp /home/aalbers/.pip/pip.conf ~/.pip
-pip install avro-python3 flake8 prettytable tqdm pymongo
+<p>and restart the shell (or input those commands into your terminal). Download the package:</p>
+<div class="highlight-python"><div class="highlight"><pre>git clone https://github.com/XENON1T/pax.git
+</pre></div>
+</div>
+<p>And finally set it up within your new environment:</p>
+<div class="highlight-python"><div class="highlight"><pre>source activate &lt;name_of_your_environment&gt;
 cd pax
 python setup.py develop
 </pre></div>
 </div>
-<p>If it complains about any more missing modules, install it using pip install.</p>
+<p>If it complains about any more missing modules, install it using pip install (on xecluster01, within your environment).</p>
 <p>Whichever way you want to use pax, you check that it worked using the following command:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="n">paxer</span> <span class="o">--</span><span class="n">version</span>
 </pre></div>
 </div>
 <p>which should result in Python3 being used to print the pax version.</p>
+</div>
+<div class="section" id="how-do-i-run-pax-at-midway-uchicago">
+<h2>How do I run <cite>pax</cite> at Midway (UChicago)?<a class="headerlink" href="#how-do-i-run-pax-at-midway-uchicago" title="Permalink to this headline">¶</a></h2>
+<p><a class="reference external" href="https://xecluster.lngs.infn.it/dokuwiki/doku.php?id=xenon:xenon1t:cmp:computing:midway_cluster:instructions">https://xecluster.lngs.infn.it/dokuwiki/doku.php?id=xenon:xenon1t:cmp:computing:midway_cluster:instructions</a></p>
 </div>
 <div class="section" id="how-do-i-run-pax-at-nikhef">
 <h2>How do I run <cite>pax</cite> at Nikhef?<a class="headerlink" href="#how-do-i-run-pax-at-nikhef" title="Permalink to this headline">¶</a></h2>
@@ -203,6 +219,7 @@ source travis/install-ROOT.sh</p>
 <li><a class="reference internal" href="#">Installation and setup</a><ul>
 <li><a class="reference internal" href="#setup-pycharm">Setup PyCharm</a></li>
 <li><a class="reference internal" href="#how-do-i-set-up-pax-at-lngs-on-xecluster">How do I set up <cite>pax</cite> at LNGS on xecluster?</a></li>
+<li><a class="reference internal" href="#how-do-i-run-pax-at-midway-uchicago">How do I run <cite>pax</cite> at Midway (UChicago)?</a></li>
 <li><a class="reference internal" href="#how-do-i-run-pax-at-nikhef">How do I run <cite>pax</cite> at Nikhef?</a></li>
 <li><a class="reference internal" href="#can-i-set-up-pax-on-my-windows-machine">Can I set up pax on my windows machine?</a></li>
 <li><a class="reference internal" href="#how-do-i-get-pyroot-working">How do I get pyROOT working</a></li>

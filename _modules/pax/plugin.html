@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugin &mdash; Processor for Analyzing XENON1T 4.1.1 documentation</title>
+    <title>pax.plugin &mdash; Processor for Analyzing XENON1T 4.1.2 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '4.1.1',
+        VERSION:     '4.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.1.1 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.1.2 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
@@ -179,10 +179,14 @@
 <span class="sd">     - don&#39;t get passed peaks without top pmts active (we add the nan-position automatically)</span>
 <span class="sd">     - have self.pmts and self.pmt_locations available in the same way</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">uses_only_top</span> <span class="o">=</span> <span class="bp">True</span>
 
     <span class="k">def</span> <span class="nf">_pre_startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="c"># List of integers of which PMTs to use, this algorithm uses the top pmt array to reconstruct</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">pmts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_top&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">uses_only_top</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pmts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_top&#39;</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pmts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_in_detector&#39;</span><span class="p">][</span><span class="s">&#39;tpc&#39;</span><span class="p">])</span>
 
         <span class="c"># (x,y) Locations of these PMTs, stored as np.array([(x,y), (x,y), ...])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pmt_locations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pmts</span><span class="p">),</span> <span class="mi">2</span><span class="p">))</span>

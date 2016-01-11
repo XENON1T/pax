@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.PatternFitter &mdash; Processor for Analyzing XENON1T 4.1.1 documentation</title>
+    <title>pax.PatternFitter &mdash; Processor for Analyzing XENON1T 4.1.2 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '4.1.1',
+        VERSION:     '4.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.1.1 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.1.2 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
@@ -46,6 +46,7 @@
 <span class="kn">import</span> <span class="nn">logging</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">numexpr</span> <span class="kn">as</span> <span class="nn">ne</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
 <span class="kn">from</span> <span class="nn">scipy.optimize</span> <span class="kn">import</span> <span class="n">fmin_powell</span>
 <span class="kn">from</span> <span class="nn">scipy.ndimage.interpolation</span> <span class="kn">import</span> <span class="n">zoom</span> <span class="k">as</span> <span class="n">image_zoom</span>
@@ -88,6 +89,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Loaded pattern file named: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">json_data</span><span class="p">[</span><span class="s">&#39;name&#39;</span><span class="p">])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Description:</span><span class="se">\n</span><span class="s">    &#39;</span> <span class="o">+</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s">r&#39;\n&#39;</span><span class="p">,</span> <span class="s">r&#39;\n    &#39;</span><span class="p">,</span> <span class="n">json_data</span><span class="p">[</span><span class="s">&#39;description&#39;</span><span class="p">]))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Data shape: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Will zoom in by factor </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">zoom_factor</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dimensions</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">json_data</span><span class="p">[</span><span class="s">&#39;coordinate_system&#39;</span><span class="p">])</span>    <span class="c"># Spatial dimensions (other one is sampling points)</span>
 
         <span class="c"># Zoom the spatial map using linear interpolation, if desired</span>
@@ -107,6 +109,8 @@
                                                        <span class="n">maximum</span><span class="o">=</span><span class="n">stop</span><span class="p">,</span>
                                                        <span class="n">n_bins</span><span class="o">=</span><span class="n">n_bins</span><span class="p">,</span>
                                                        <span class="n">bin_spacing</span><span class="o">=</span><span class="p">(</span><span class="n">stop</span> <span class="o">-</span> <span class="n">start</span><span class="p">)</span><span class="o">/</span><span class="n">n_bins</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Coordinate ranges: </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="s">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s">&#39;</span><span class="si">%s</span><span class="s">-</span><span class="si">%s</span><span class="s"> (</span><span class="si">%d</span><span class="s"> bins)&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">cd</span><span class="o">.</span><span class="n">minimum</span><span class="p">,</span> <span class="n">cd</span><span class="o">.</span><span class="n">maximum</span><span class="p">,</span> <span class="n">cd</span><span class="o">.</span><span class="n">n_bins</span><span class="p">)</span>
+                                                            <span class="k">for</span> <span class="n">cd</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">coordinate_data</span><span class="p">]))</span>
 
         <span class="c"># TODO: Technically we should zero the bins outside the tpc bounds again:</span>
         <span class="c"># some LCE may have leaked into this region due to upsampling... but doesn&#39;t matter:</span>
@@ -210,21 +214,24 @@
             <span class="n">pmt_selection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_pmt_selection</span>
         <span class="k">if</span> <span class="n">square_syst_errors</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
             <span class="n">square_syst_errors</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">default_errors</span> <span class="o">*</span> <span class="n">areas_observed</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
-        <span class="n">square_syst_errors</span> <span class="o">=</span> <span class="n">square_syst_errors</span><span class="p">[</span><span class="n">pmt_selection</span><span class="p">]</span>
 
+        <span class="c"># The following aliases are used in the numexprs below</span>
         <span class="n">areas_observed</span> <span class="o">=</span> <span class="n">areas_observed</span><span class="o">.</span><span class="n">copy</span><span class="p">()[</span><span class="n">pmt_selection</span><span class="p">]</span>
-        <span class="n">total_observed</span> <span class="o">=</span> <span class="n">areas_observed</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-        <span class="n">fractions_expected</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">bin_selection</span> <span class="o">+</span> <span class="p">[</span><span class="n">pmt_selection</span><span class="p">]]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-        <span class="n">fractions_expected</span> <span class="o">/=</span> <span class="n">fractions_expected</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)[</span><span class="o">...</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
-        <span class="n">areas_expected</span> <span class="o">=</span> <span class="n">total_observed</span> <span class="o">*</span> <span class="n">fractions_expected</span>
+        <span class="n">q</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">bin_selection</span> <span class="o">+</span> <span class="p">[</span><span class="n">pmt_selection</span><span class="p">]]</span>
+        <span class="n">qsum</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)[</span><span class="o">...</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>          <span class="c"># noqa</span>
+        <span class="n">fractions_expected</span> <span class="o">=</span> <span class="n">ne</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="s">&quot;q / qsum&quot;</span><span class="p">)</span>    <span class="c"># noqa</span>
+        <span class="n">total_observed</span> <span class="o">=</span> <span class="n">areas_observed</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>           <span class="c"># noqa</span>
+        <span class="n">ao</span> <span class="o">=</span> <span class="n">areas_observed</span>                             <span class="c"># noqa</span>
+        <span class="n">square_syst_errors</span> <span class="o">=</span> <span class="n">square_syst_errors</span><span class="p">[</span><span class="n">pmt_selection</span><span class="p">]</span>    <span class="c"># noqa</span>
 
         <span class="c"># The actual goodness of fit computation is here...</span>
+        <span class="c"># Areas expected = fractions_expected * sum(areas_observed)</span>
         <span class="k">if</span> <span class="n">statistic</span> <span class="o">==</span> <span class="s">&#39;chi2gamma&#39;</span><span class="p">:</span>
-            <span class="n">result</span> <span class="o">=</span> <span class="p">(</span><span class="n">areas_observed</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">areas_observed</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="n">areas_expected</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
-            <span class="n">result</span> <span class="o">/=</span> <span class="n">areas_expected</span> <span class="o">+</span> <span class="n">square_syst_errors</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">ne</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="s">&quot;(ao + where(ao &gt; 1, 1, ao) - {ae})**2 /&quot;</span>
+                                 <span class="s">&quot;({ae} + square_syst_errors + 1)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ae</span><span class="o">=</span><span class="s">&#39;fractions_expected * total_observed&#39;</span><span class="p">))</span>
         <span class="k">elif</span> <span class="n">statistic</span> <span class="o">==</span> <span class="s">&#39;chi2&#39;</span><span class="p">:</span>
-            <span class="n">result</span> <span class="o">=</span> <span class="p">(</span><span class="n">areas_observed</span> <span class="o">-</span> <span class="n">areas_expected</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
-            <span class="n">result</span> <span class="o">/=</span> <span class="n">areas_expected</span> <span class="o">+</span> <span class="n">square_syst_errors</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">ne</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="s">&quot;(ao + {ae})**2 /&quot;</span>
+                                 <span class="s">&quot;({ae} + square_syst_errors&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ae</span><span class="o">=</span><span class="s">&#39;fractions_expected * total_observed&#39;</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;Pattern goodness of fit statistic </span><span class="si">%s</span><span class="s"> not implemented!&#39;</span> <span class="o">%</span> <span class="n">statistic</span><span class="p">)</span>
 

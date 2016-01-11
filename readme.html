@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Installation prerequisites &mdash; Processor for Analyzing XENON1T 4.1.1 documentation</title>
+    <title>Installation prerequisites &mdash; Processor for Analyzing XENON1T 4.1.2 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '4.1.1',
+        VERSION:     '4.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.1.1 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.1.2 documentation" href="index.html" />
     <link rel="next" title="Installation and setup" href="faq.html" />
     <link rel="prev" title="Welcome to processor for Analyzing XENON1T’s documentation!" href="index.html" />
    
@@ -52,29 +52,35 @@ processing and other data processing on the XENON100/XENON1T raw data.</p>
 <h1>Installation prerequisites<a class="headerlink" href="#installation-prerequisites" title="Permalink to this headline">¶</a></h1>
 <p>We will assume you are installing on Mac or Linux here. For installation on Windows,
 see <a class="reference external" href="http://xenon1t.github.io/pax/faq.html#can-i-set-up-pax-on-my-windows-machine">this FAQ entry</a>.</p>
-<p>Instead of installing pax you can use pax from other people on xecluster. See the <a class="reference external" href="https://github.com/XENON1T/pax/blob/master/docs/faq.rst">FAQ</a></p>
-<div class="section" id="python-3">
-<h2>Python 3<a class="headerlink" href="#python-3" title="Permalink to this headline">¶</a></h2>
-<p>Pax is written in Python; we recommend the
-scientific python distribution <a class="reference external" href="https://store.continuum.io/cshop/anaconda/">Anaconda</a>. For linux, to set this up in your home directory, do:</p>
+<p>Instead of installing pax you can use pax from the central installation on xecluster or other cluster. See the <a class="reference external" href="https://github.com/XENON1T/pax/blob/master/docs/faq.rst">FAQ</a> for more details.</p>
+<p>If you wish to develop pax, you can either follow these instructions from the beginning which installs your own copy of the Anaconda libraries, or use an existing Anaconda installation (skip to the &#8220;Setting Up the Anaconda Libraries&#8221; section below for this).</p>
+<div class="section" id="installing-python-3-and-anaconda-libraries">
+<h2>Installing Python 3 and Anaconda Libraries<a class="headerlink" href="#installing-python-3-and-anaconda-libraries" title="Permalink to this headline">¶</a></h2>
+<p>Pax is written in Python; we recommend the scientific python distribution <a class="reference external" href="https://store.continuum.io/cshop/anaconda/">Anaconda</a>. To install this in Linux do:</p>
 <div class="highlight-python"><div class="highlight"><pre>wget http://repo.continuum.io/archive/Anaconda3-2.4.0-Linux-x86_64.sh  # Linux
-bash Anaconda3-2.4.0-Linux-x86_64.sh  # Say &#39;yes&#39; to appending to .bashrc
+bash Anaconda3-2.4.0-Linux-x86_64.sh  # Say &#39;yes&#39; to appending to .bashrc and specify the installation directory
 </pre></div>
 </div>
-<p>From Mac OSX, you should do instead:</p>
-<div class="highlight-python"><div class="highlight"><pre>curl http://repo.continuum.io/archive/Anaconda3-2.4.0-MacOSX-x86_64.sh # Mac OSX
-bash Anaconda3-2.4.0-MacOSX-x86_64.sh  # Say &#39;yes&#39; to appending to .bashrc
+<hr class="docutils" />
+<p>For Mac OS X, you should instead download the .sh file located here:</p>
+<blockquote>
+<div><a class="reference external" href="http://repo.continuum.io/archive/Anaconda3-2.4.0-MacOSX-x86_64.sh">http://repo.continuum.io/archive/Anaconda3-2.4.0-MacOSX-x86_64.sh</a></div></blockquote>
+<p>In the directory containing the file above, run the following command:</p>
+<div class="highlight-python"><div class="highlight"><pre>bash Anaconda3-2.4.0-MacOSX-x86_64.sh  # Say &#39;yes&#39; to appending to .bashrc and specify the installation directory
 </pre></div>
 </div>
-<p>Lastly, for both OSX and Linux:</p>
-<div class="highlight-python"><div class="highlight"><pre>export PATH=~/anaconda3/bin:$PATH  # If installed in default location
+</div>
+<div class="section" id="setting-up-the-anaconda-libraries">
+<h2>Setting Up the Anaconda Libraries<a class="headerlink" href="#setting-up-the-anaconda-libraries" title="Permalink to this headline">¶</a></h2>
+<p>For both Linux and Mac OS X:</p>
+<div class="highlight-python"><div class="highlight"><pre>export PATH=~/anaconda3/bin:$PATH  # If installed in default location, otherwise replace with the
+                                   # path you specified above or the path of the central installation
 </pre></div>
 </div>
-<p>You need to point Anaconda to the physics-specific packages of e.g. ROOT.  You can do this by running the following:</p>
+<p>You need to point Anaconda to the physics-specific packages e.g. ROOT.  You can do this by running the following:</p>
 <div class="highlight-python"><div class="highlight"><pre>conda config --add channels http://conda.anaconda.org/NLeSC
 </pre></div>
 </div>
-<p>Alternatively, you can install Python yourself (kudos if you actually get ROOT and numba to work).</p>
 </div>
 <div class="section" id="check-that-no-other-root-is-seen">
 <h2>Check that no other ROOT is seen<a class="headerlink" href="#check-that-no-other-root-is-seen" title="Permalink to this headline">¶</a></h2>
@@ -92,18 +98,20 @@ bash Anaconda3-2.4.0-MacOSX-x86_64.sh  # Say &#39;yes&#39; to appending to .bash
 <div class="section" id="additional-python-packages">
 <h2>Additional python packages<a class="headerlink" href="#additional-python-packages" title="Permalink to this headline">¶</a></h2>
 <p>Pax depends on several other python packages. While most python packages will install automatically,
-some contain C++ code which must be compiled. If you have Anaconda you can get appropriate binaries
-for your platform using the <cite>conda</cite> tool (you can change python to 2, or root to 5):</p>
+some contain C++ code which must be compiled. With Anaconda you can get appropriate binaries
+for your platform using the <cite>conda</cite> tool as follows. Make sure to replace &lt;environment_name&gt; with the desired name of your environment (usually it is &#8216;pax&#8217; for central installations) in the following command:</p>
 <div class="highlight-python"><div class="highlight"><pre>conda update conda
-conda create -n pax python=3 root=5 rootpy numpy scipy matplotlib pandas cython h5py numba=0.21.0 pip python-snappy pytables scikit-learn
+conda create -n &lt;environment_name&gt; python=3.4 root=5 rootpy numpy scipy matplotlib pandas cython h5py numba=0.21.0 pip python-snappy pytables scikit-learn
 </pre></div>
 </div>
-<p>If you do not want ROOT support, or have ROOT-related issues, you can leave out root and rootpy in the above command. Everything in pax, except of course ROOT I/O, will continue to work.</p>
-<p>Whenever you want to use <cite>pax</cite>, you have to run the following command to set it up:</p>
-<div class="highlight-python"><div class="highlight"><pre>source activate pax
+<p>If you do not want ROOT support, or have ROOT-related issues, you can leave out root and rootpy in the above command. Everything in pax, except of course ROOT I/O, will continue to work. You can also try root=6 for the newer version of ROOT.</p>
+<p>If you want to use Ipython notebook within this environment (e.g. to import pax libraries), you should also add &#8216;ipython ipython-notebook&#8217; to the list of libraries above.</p>
+<p>Whenever you want to use <cite>pax</cite>, you have to run the following command to set it up your environment (containing all the dependencies):</p>
+<div class="highlight-python"><div class="highlight"><pre>source activate &lt;environment_name&gt;
 </pre></div>
 </div>
-<p>You can put this in your <cite>.bashrc</cite> if you want it to be setup when you login. For the rest of the installation and to run pax, be sure to be inside this environment. There should be (pax) at the beginning of your command line.</p>
+<p>You can put this in your <cite>.bashrc</cite> if you want it to be setup when you login. For the rest of the installation and to run pax, be sure to be inside this environment. There should be (&lt;environment_name&gt;) at the beginning of your command line.</p>
+<hr class="docutils" />
 <p>Of course we assume you have a functional basic compilation environment. On a fresh Ubuntu you may have to do e.g.</p>
 <blockquote>
 <div>sudo apt-get install build-essential</div></blockquote>
@@ -125,20 +133,22 @@ conda create -n pax python=3 root=5 rootpy numpy scipy matplotlib pandas cython 
 <div class="section" id="installing-pax">
 <h1>Installing pax<a class="headerlink" href="#installing-pax" title="Permalink to this headline">¶</a></h1>
 <p>There are two ways to install pax. Either method will automatically try to install any python packages pax depends on &#8211; although we hope you installed the most important ones already (see above). If a module does not install, try using <cite>conda</cite> or <cite>pip</cite> to install missing dependencies.</p>
+<p><strong>WARNING: If you are working with a central installation of Anaconda, e.g. on Midway, Stockholm, or xecluster, there is a risk of overwriting the central installation (we are still working out some permissions issues)!</strong> To avoid this, make sure you are either using your own installation of Anaconda or have created a new environment by replacing &lt;environment_name&gt; in the instructions above.</p>
 <div class="section" id="option-1-user-installation">
-<h2>Option 1: user installation<a class="headerlink" href="#option-1-user-installation" title="Permalink to this headline">¶</a></h2>
+<h2>Option 1: User installation<a class="headerlink" href="#option-1-user-installation" title="Permalink to this headline">¶</a></h2>
 <p>In this option the pax code will be hidden away somewhere deep in python&#8217;s directory structure so you won&#8217;t accidentally look at it and learn our dangerous secrets. Also, you will only be able to update pax after we make a new release (about once a month). If this appeals to you, run:</p>
 <div class="highlight-python"><div class="highlight"><pre>pip install git+https://github.com/XENON1T/pax.git
 </pre></div>
 </div>
-<p>To update to a newer version, add ` &#8211;upgrade`` to the command above.</p>
+<p>To update to a newer version, add ` &#8211;upgrade`` to the command above (or just run the same command again).</p>
 </div>
 <div class="section" id="option-2-developer-installation">
-<h2>Option 2: developer installation<a class="headerlink" href="#option-2-developer-installation" title="Permalink to this headline">¶</a></h2>
+<h2>Option 2: Developer installation<a class="headerlink" href="#option-2-developer-installation" title="Permalink to this headline">¶</a></h2>
 <p>In this option you&#8217;ll know where the code is, so you can look at it, play with it, and if you change anything you don&#8217;t need to reinstall for your changes to take effect... However, be aware you are using the very latest (&#8216;nightly&#8217;) version of pax, which may contain more bugs (but often contains less bugs).</p>
 <p>First <cite>cd</cite> to the folder you want pax to be installed. Then run:</p>
 <div class="highlight-python"><div class="highlight"><pre>git clone https://github.com/XENON1T/pax.git
-source activate pax
+source activate &lt;environment_name&gt;  # Make sure you specify your own environment
+                                    # when using a central installation of Anaconda
 cd pax
 python setup.py develop
 </pre></div>
@@ -205,15 +215,16 @@ You can look through other configuration files such as <cite>_base.ini</cite> an
   <h3><a href="index.html">Table Of Contents</a></h3>
   <ul>
 <li><a class="reference internal" href="#">Installation prerequisites</a><ul>
-<li><a class="reference internal" href="#python-3">Python 3</a></li>
+<li><a class="reference internal" href="#installing-python-3-and-anaconda-libraries">Installing Python 3 and Anaconda Libraries</a></li>
+<li><a class="reference internal" href="#setting-up-the-anaconda-libraries">Setting Up the Anaconda Libraries</a></li>
 <li><a class="reference internal" href="#check-that-no-other-root-is-seen">Check that no other ROOT is seen</a></li>
 <li><a class="reference internal" href="#additional-python-packages">Additional python packages</a></li>
 <li><a class="reference internal" href="#git-and-github">Git and Github</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#installing-pax">Installing pax</a><ul>
-<li><a class="reference internal" href="#option-1-user-installation">Option 1: user installation</a></li>
-<li><a class="reference internal" href="#option-2-developer-installation">Option 2: developer installation</a></li>
+<li><a class="reference internal" href="#option-1-user-installation">Option 1: User installation</a></li>
+<li><a class="reference internal" href="#option-2-developer-installation">Option 2: Developer installation</a></li>
 <li><a class="reference internal" href="#to-check-if-your-installation-is-working">To check if your installation is working</a></li>
 </ul>
 </li>

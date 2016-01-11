@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.datastructure &mdash; Processor for Analyzing XENON1T 4.1.1 documentation</title>
+    <title>pax.datastructure &mdash; Processor for Analyzing XENON1T 4.1.2 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '4.1.1',
+        VERSION:     '4.1.2',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.1.1 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.1.2 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
@@ -66,45 +66,44 @@
     <span class="n">x</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>  <span class="c">#: x position (cm)</span>
     <span class="n">y</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>  <span class="c">#: y position (cm)</span>
 
-    <span class="c">#: goodness-of-fit parameter generated with PosRecChiSquareGamma</span>
+    <span class="c">#: For 3d-position reconstruction algorithms, the z-position (cm)</span>
+    <span class="c">#: This is NOT related to drift time, which is an interaction-level quantity!</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
+
+    <span class="c">#: Goodness-of-fit of hitpattern to position (provided by PosRecTopPatternFit)</span>
+    <span class="c">#: For PosRecThreedPatternFit, the 3d position goodness-of-fit.</span>
     <span class="n">goodness_of_fit</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
-    <span class="c"># : number of degrees of freedom calculated with PosRecChiSquareGamma</span>
+
+    <span class="c">#: Number of degrees of freedom used in goodness-of-fit calculation</span>
     <span class="n">ndf</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
 
-    <span class="c">#: Name of algorithm used for computation</span>
+    <span class="c">#: Name of algorithm which provided this position</span>
     <span class="n">algorithm</span> <span class="o">=</span> <span class="s">&#39;none&#39;</span>
 
-    <span class="c"># : Errors - currently not used</span>
-    <span class="c"># error_matrix = np.array([], dtype=np.float64)</span>
-
-    <span class="c"># For convenience: cylindrical coordinates</span>
-    <span class="c"># Must be properties so InterpolatingDetectorMap can transparently use</span>
-    <span class="c"># cylindrical coordinates</span>
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">r</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Radial position&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">y</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
 
     <span class="c">#: phi position, i.e. angle wrt the x=0 axis in the xy plane (radians)</span>
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">phi</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Angular position (radians, origin at positive x-axis)&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="p">)</span>
 
 </div>
 <div class="viewcode-block" id="Hit"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Hit">[docs]</a><span class="k">class</span> <span class="nc">Hit</span><span class="p">(</span><span class="n">StrictModel</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A hit results from, within individual channel, fluctation above baseline.</span>
+    <span class="sd">&quot;&quot;&quot;A significant upwards fluctuation in a channel,</span>
+<span class="sd">    usually indicative of one or more detected photo-electrons.</span>
+<span class="sd">    These are clustered into groups called peaks later.</span>
 
-<span class="sd">    These are be clustered into ordinary peaks later. This is commonly</span>
-<span class="sd">    called a &#39;hit&#39; in particle physics detectors.  Very generally, a hit is</span>
-<span class="sd">    made every time that the data recorded for one channel flucates above</span>
-<span class="sd">    baseline.</span>
-
-<span class="sd">    The Hit class is never actually used to build python objects.</span>
-<span class="sd">    Instead we build a numpy dtype from this declaration, and use it in arrays of hits</span>
+<span class="sd">    Inside pax this Hit class is rarely used, for performance reasons;</span>
+<span class="sd">    instead we build a numpy dtype from this declaration, and use it in arrays of hits.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c">#: Channel in which this peak was found</span>
+    <span class="c">#: Channel in which this hit was found</span>
     <span class="n">channel</span> <span class="o">=</span> <span class="mi">0</span>
 
-    <span class="c">#: Index in the event at which this peak has its maximum.</span>
+    <span class="c">#: Index/sample in the event at which this hit has its maximum.</span>
     <span class="n">index_of_maximum</span> <span class="o">=</span> <span class="mi">0</span>
 
     <span class="c">#: Time (since start of event in ns) of hit&#39;s center of gravity</span>
@@ -113,38 +112,40 @@
     <span class="c">#: Weighted sum of absolute deviation (in ns) of hit waveform from hit center</span>
     <span class="n">sum_absolute_deviation</span> <span class="o">=</span> <span class="mf">0.0</span>
 
-    <span class="n">left</span> <span class="o">=</span> <span class="mi">0</span>                 <span class="c">#: Index of left bound (inclusive) of peak.</span>
-    <span class="n">right</span> <span class="o">=</span> <span class="mi">0</span>                <span class="c">#: Index of right bound (INCLUSIVE!!) of peak</span>
+    <span class="n">left</span> <span class="o">=</span> <span class="mi">0</span>                 <span class="c">#: Index/sample of left bound (inclusive) of peak.</span>
+    <span class="n">right</span> <span class="o">=</span> <span class="mi">0</span>                <span class="c">#: Index/sample of right bound (INCLUSIVE!!) of peak</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Length of the hit (in samples)&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">right</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">left</span> <span class="o">+</span> <span class="mi">1</span>
 
-    <span class="n">area</span> <span class="o">=</span> <span class="mf">0.0</span>                  <span class="c">#: Area of the peak in photoelectrons</span>
+    <span class="n">area</span> <span class="o">=</span> <span class="mf">0.0</span>               <span class="c">#: Area of the hit in photoelectrons</span>
 
-    <span class="c">#: Height of highest point in peak (in pe/bin)</span>
+    <span class="c">#: Height of highest point in hit (in pe/sample)</span>
     <span class="n">height</span> <span class="o">=</span> <span class="mf">0.0</span>
 
-    <span class="c">#: Noise sigma in pe/bin of pulse in which peak was found.</span>
-    <span class="c">#: Note: in Pulse the same number is stored in ADC-counts</span>
+    <span class="c">#: Noise sigma in pe/sample of the pulse in which the hit was found.</span>
+    <span class="c">#: Note: in Pulse the same number is stored in ADC-counts.</span>
     <span class="n">noise_sigma</span> <span class="o">=</span> <span class="mf">0.0</span>
 
-    <span class="c">#: Index of pulse (in event.pulses) in which peak was found</span>
+    <span class="c">#: Index of pulse (in event.pulses) in which hit was found</span>
     <span class="n">found_in_pulse</span> <span class="o">=</span> <span class="mi">0</span>
 
-    <span class="c">#: Set to True if rejected by suspicious channel algorithm</span>
+    <span class="c">#: Set to True if rejected by suspicious channel algorithm.</span>
+    <span class="c">#: This means the hit should be disregarded by clustering algorithms.</span>
     <span class="n">is_rejected</span> <span class="o">=</span> <span class="bp">False</span>
 
-    <span class="c">#: Number of samples with ADC saturation in this hit</span>
+    <span class="c">#: Number of samples in this hit where the ADC saturates</span>
     <span class="n">n_saturated</span> <span class="o">=</span> <span class="mi">0</span>
 
 </div>
 <div class="viewcode-block" id="Peak"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak">[docs]</a><span class="k">class</span> <span class="nc">Peak</span><span class="p">(</span><span class="n">StrictModel</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Peak</span>
-
-<span class="sd">    A peak will be, e.g., S1 or S2.</span>
+    <span class="sd">&quot;&quot;&quot;A group of nearby hits across one or more channels.</span>
+<span class="sd">    Peaks will be classified as e.g. s1, s2, lone_hit, unknown, coincidence</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c">#: Type of peak (e.g., &#39;s1&#39;, &#39;s2&#39;, ...)</span>
+    <span class="c">#: Type of peak (e.g., &#39;s1&#39;, &#39;s2&#39;, ...):</span>
+    <span class="c">#: NB &#39;lone_hit&#39; incicates one or more hits in a single channel. Use lone_hit_channel to retrieve that channel.</span>
     <span class="nb">type</span> <span class="o">=</span> <span class="s">&#39;unknown&#39;</span>
 
     <span class="c">#: Detector in which the peak was found, e.g. tpc or veto</span>
@@ -154,26 +155,27 @@
     <span class="c">#  Hit, area, and saturation data</span>
     <span class="c">##</span>
 
-    <span class="c">#: Peaks in individual channels that make up this peak</span>
+    <span class="c">#: The hits that make up this peak</span>
+    <span class="c">#: To save space, we usually only store the hits for s1s.</span>
     <span class="n">hits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">Hit</span><span class="o">.</span><span class="n">get_dtype</span><span class="p">())</span>
 
-    <span class="c">#: Array of areas in each PMT.</span>
+    <span class="c">#: Total areas of all hits per PMT (pe).</span>
     <span class="n">area_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="s">&#39;float64&#39;</span><span class="p">)</span>
 
-    <span class="c">#: Area of the pulse in photoelectrons. Includes only contributing pmts in the right detector.</span>
-    <span class="c">#: For XDP matching rightmost sample is not included in area integral.</span>
+    <span class="c">#: Total area of all hits across all PMTs (pes).</span>
+    <span class="c">#: In XerawdpImitation mode, rightmost sample is not included in area integral.</span>
     <span class="n">area</span> <span class="o">=</span> <span class="mf">0.0</span>
 
-    <span class="c">#: Fraction of area in the top array</span>
+    <span class="c">#: Fraction of area in the top PMTs</span>
     <span class="n">area_fraction_top</span> <span class="o">=</span> <span class="mf">0.0</span>
 
     <span class="c">#: Number of hits in the peak, per channel (that is, it&#39;s an array with index = channel number)</span>
     <span class="n">hits_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
 
-    <span class="c">#: Total channels which contribute to the peak</span>
+    <span class="c">#: Number of channels which contribute to the peak</span>
     <span class="n">n_contributing_channels</span> <span class="o">=</span> <span class="mi">0</span>
 
-    <span class="c">#: Total channels in the top array contributing to the peak</span>
+    <span class="c">#: Number of channels in the top array contributing to the peak</span>
     <span class="n">n_contributing_channels_top</span> <span class="o">=</span> <span class="mi">0</span>
 
     <span class="c">#: Total number of hits in the peak</span>
@@ -187,43 +189,48 @@
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">is_channel_saturated</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Boolean array of n_channels which indicates if there was ADC saturation in any hit</span>
+<span class="sd">        in that channel during the peak&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_saturated_per_channel</span> <span class="o">&gt;</span> <span class="mi">0</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">saturated_channels</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;List of channels which contribute hits with saturated channels in this peak&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_saturated_per_channel</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="c">#: Total number of samples with ADC saturation threshold in all channels in this peak</span>
     <span class="n">n_saturated_samples</span> <span class="o">=</span> <span class="mi">0</span>
 
-    <span class="c">#: Total number of channels in the peakwhich have at least one saturated hit</span>
+    <span class="c">#: Total number of channels in the peakw hich have at least one saturated hit</span>
     <span class="n">n_saturated_channels</span> <span class="o">=</span> <span class="mi">0</span>
 
-    <span class="c">#: If the peak is a lone hit: the channel the hit is in</span>
+    <span class="c">#: If the peak is a lone_hit: the channel the hit is / hits are in</span>
     <span class="n">lone_hit_channel</span> <span class="o">=</span> <span class="n">INT_NAN</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">does_channel_contribute</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Boolean array of n_channels which tells you if the channel contributes any hit&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">area_per_channel</span> <span class="o">&gt;</span> <span class="mi">0</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">contributing_channels</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;List of channels which contribute one or more hits to this peak&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">does_channel_contribute</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
 
     <span class="c">##</span>
     <span class="c"># Time distribution information</span>
     <span class="c">##</span>
 
-    <span class="n">left</span> <span class="o">=</span> <span class="mi">0</span>                 <span class="c">#: Index of left bound (inclusive) in event.</span>
-    <span class="n">right</span> <span class="o">=</span> <span class="mi">0</span>                <span class="c">#: Index of right bound (INCLUSIVE) in event.</span>
+    <span class="n">left</span> <span class="o">=</span> <span class="mi">0</span>                 <span class="c">#: Index/sample of left bound (inclusive) in event.</span>
+    <span class="n">right</span> <span class="o">=</span> <span class="mi">0</span>                <span class="c">#: Index/sample of right bound (INCLUSIVE) in event.</span>
 
-    <span class="c">#: Weighted (by hit area) mean of hit times (since event start)</span>
+    <span class="c">#: Weighted (by hit area) mean of hit times (since event start) [ns]</span>
     <span class="n">hit_time_mean</span> <span class="o">=</span> <span class="mf">0.0</span>
 
-    <span class="c">#: Weighted (by hit area) std of hit times</span>
+    <span class="c">#: Weighted (by hit area) std of hit times [ns]</span>
     <span class="n">hit_time_std</span> <span class="o">=</span> <span class="mf">0.0</span>
 
-    <span class="c">#: Central range of peak (hit-only) sum waveform which includes a given decile (0-10) of area.</span>
+    <span class="c">#: Central range of peak (hit-only) sum waveform which includes a given decile (0-10) of area [ns].</span>
     <span class="c">#: e.g. range_area_decile[5] = range of 50% area = distance (in time) between point</span>
     <span class="c">#: of 25% area and 75% area (with boundary samples added fractionally).</span>
     <span class="c">#: First element (0) is always zero, last element (10) is the full range of the peak.</span>
@@ -268,10 +275,10 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Could not find any position from the chosen algorithms: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">algorithm_list</span><span class="p">)</span>
 
-    <span class="c">#: Weighted-average distance of top array hits from weighted mean center on top array (cm)</span></div>
+    <span class="c">#: Weighted-average distance of top array hits from weighted mean hitpattern center on top array (cm)</span></div>
     <span class="n">top_hitpattern_spread</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
 
-    <span class="c">#: Weighted-average distance of bottom array hits from weighted mean center on bottom array (cm)</span>
+    <span class="c">#: Weighted-average distance of bottom array hits from weighted mean hitpattern center on bottom array (cm)</span>
     <span class="n">bottom_hitpattern_spread</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
 
     <span class="c">##</span>
@@ -281,7 +288,7 @@
     <span class="c">#: Weighted (by area) mean hit amplitude / noise level in that hit&#39;s channel</span>
     <span class="n">mean_amplitude_to_noise</span> <span class="o">=</span> <span class="mf">0.0</span>
 
-    <span class="c">#: Number of pulses without hits overlapping (at least partially) with this peak.</span>
+    <span class="c">#: Number of pulses without hits in the event overlapping (in time; at least partially) with this peak.</span>
     <span class="c">#: Includes channels from other detectors (since veto and tpc cables could influence each other)</span>
     <span class="n">n_noise_pulses</span> <span class="o">=</span> <span class="mi">0</span>
 
@@ -289,17 +296,17 @@
     <span class="c"># Sum-waveform properties</span>
     <span class="c">##</span>
 
-    <span class="c">#: The peak&#39;s sum waveform in pe/bin</span>
+    <span class="c">#: Cut-out of the peak&#39;s sum waveform in pe/bin</span>
     <span class="c">#: The peak&#39;s center of gravity is always in the center of the array.</span>
     <span class="n">sum_waveform</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
 
     <span class="c">#: For tpc peaks, the peak&#39;s sum waveform in the top array only. Aligned with the sum waveform.</span>
     <span class="n">sum_waveform_top</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
 
-    <span class="c">#: Index in the event&#39;s sum waveform at which this peak has its maximum.</span>
+    <span class="c">#: Index/sample in the event&#39;s sum waveform at which this peak has its maximum.</span>
     <span class="n">index_of_maximum</span> <span class="o">=</span> <span class="mi">0</span>
 
-    <span class="c">#: Time at which the peak&#39;s sum waveform has its center of gravity.</span>
+    <span class="c">#: Time since start of the event at which the peak&#39;s sum waveform has its center of gravity [ns].</span>
     <span class="n">center_time</span> <span class="o">=</span> <span class="mf">0.0</span>
 
     <span class="c">#: Height of sum waveform (in pe/bin)</span>
@@ -348,37 +355,36 @@
 
 </div></div>
 <div class="viewcode-block" id="Pulse"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Pulse">[docs]</a><span class="k">class</span> <span class="nc">Pulse</span><span class="p">(</span><span class="n">StrictModel</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A DAQ pulse</span>
+    <span class="sd">&quot;&quot;&quot;A region of raw digitizer data.</span>
+<span class="sd">    For DAQs with zero-length encoding or self-triggering, there will be several of these per channel per event.</span>
 
-<span class="sd">    A DAQ pulse can also be thought of as a pulse in a PMT.  Remember that this is</span>
-<span class="sd">    inverted.</span>
+<span class="sd">    Remember that PMT signals show as downward fluctuations in raw digitizer data.</span>
+<span class="sd">    In processed data output, only pulses contributing hits to S1s are stored (except in LED mode), and the</span>
+<span class="sd">    raw_data field is never stored.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="c">#: Start time of this pulse: samples</span>
-    <span class="c">#:</span>
-    <span class="c">#: Units are samples. This nonnegative number starts at zero and is an integer because</span>
-    <span class="c">#: it&#39;s an index.</span>
+    <span class="c">#: Start index/sample of this pulse (inclusive)</span>
+    <span class="c">#: This refers to a hypothetical array containing the event waveform information.</span>
+    <span class="c">#: For example, 0 is the first sample that could exist in the event, 1 the second, etc.</span>
     <span class="n">left</span> <span class="o">=</span> <span class="n">INT_NAN</span>
 
-    <span class="c">#: Stoptime of this pulse within event</span>
-    <span class="c">#:</span>
-    <span class="c">#: Units are samples and this time is inclusive of last sample.  This nonnegative number</span>
-    <span class="c">#: starts at zero and is an integer because it&#39;s an index.</span>
+    <span class="c">#: Stop index/sample of this pulse (INCLUSIVE!)</span>
     <span class="n">right</span> <span class="o">=</span> <span class="n">INT_NAN</span>
 
     <span class="c">#: Channel number the pulse belongs to</span>
     <span class="n">channel</span> <span class="o">=</span> <span class="n">INT_NAN</span>
 
-    <span class="c">#: Raw wave data (numpy array of int16, ADC counts)</span>
+    <span class="c">#: Raw wave data (numpy array of int16, raw ADC counts)</span>
     <span class="n">raw_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
 
     <span class="c">#: Baseline in ADC counts relative to reference baseline -- but float!</span>
+    <span class="c">#: This field is omitted in processed data (to save space)</span>
     <span class="n">baseline</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
 
-    <span class="c">#: Maximum amplitude reached in the pulse (in ADC counts above baseline)</span>
+    <span class="c">#: Maximum amplitude reached in the pulse (in ADC counts above pulse baseline)</span>
     <span class="n">maximum</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
 
-    <span class="c">#: Minimum amplitude (in ADC counts above baseline, so should be negative)</span>
+    <span class="c">#: Minimum amplitude (in ADC counts above pulse baseline, so should be negative)</span>
     <span class="n">minimum</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
 
     <span class="c">#: Noise sigma for this pulse (in ADC counts - but float!)</span>
@@ -415,10 +421,10 @@
 <div class="viewcode-block" id="Interaction"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Interaction">[docs]</a><span class="k">class</span> <span class="nc">Interaction</span><span class="p">(</span><span class="n">StrictModel</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;An interaction in the TPC, reconstructed from a pair of S1 and S2 peaks.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c">#: The S1 peak of the interaction</span>
+    <span class="c">#: Index (in event.peaks) of the s1 peak of this interaction</span>
     <span class="n">s1</span> <span class="o">=</span> <span class="n">INT_NAN</span>
 
-    <span class="c">#: The S2 peak of the interaction</span>
+    <span class="c">#: Index (in event.peaks) of the s2 peak of this interaction</span>
     <span class="n">s2</span> <span class="o">=</span> <span class="n">INT_NAN</span>
 
     <span class="c">##</span>
@@ -426,22 +432,23 @@
     <span class="c">##</span>
 
     <span class="c">#: The reconstructed position of the interaction</span>
-    <span class="n">x</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>  <span class="c">#: x position (cm)</span>
-    <span class="n">y</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>  <span class="c">#: y position (cm)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>  <span class="c">#: x position of the interaction (cm)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>  <span class="c">#: y position of the interaction (cm)</span>
 
-    <span class="c">#: goodness-of-fit parameter of s2 hitpattern to x,y position reconstructed by PosRecChiSquareGamma</span>
+    <span class="c">#: goodness-of-fit parameter of s2 hitpattern to x,y position reconstructed by PosRecTopPatternFit</span>
     <span class="n">xy_posrec_goodness_of_fit</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
 
-    <span class="c">#: number of degrees of freedom calculated with PosRecChiSquareGamma</span>
+    <span class="c">#: number of degrees of freedom calculated with PosRecTopPatternFit</span>
     <span class="n">xy_posrec_ndf</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
 
-    <span class="c">#: Algorithm used for xy position reconstructed</span>
+    <span class="c">#: Algorithm used to reconstruct xy position</span>
     <span class="n">xy_posrec_algorithm</span> <span class="o">=</span> <span class="s">&#39;none&#39;</span>
 
-    <span class="c">#: drift time (ns) between S1 and S2</span>
+    <span class="c">#: Drift time (ns) between s1 and s2</span>
     <span class="n">drift_time</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
 
-    <span class="c">#: z position (cm), calculated from drift time</span>
+    <span class="c">#: z position (cm) calculated from drift time.</span>
+    <span class="c">#: This is simply drift time * drift velocity, so it is positive!</span>
     <span class="n">z</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
 
     <span class="c">#: r position (cm)</span>
@@ -486,12 +493,6 @@
     <span class="k">def</span> <span class="nf">log_cs2_cs1</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">corrected_s2_area</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">corrected_s1_area</span><span class="p">)</span>
 
-    <span class="c"># #: Estimated interaction energy in keV (ee? nr?)</span>
-    <span class="c"># energy = float(&#39;nan&#39;)</span>
-    <span class="c">#</span>
-    <span class="c"># #: Estimated error on interaction energy in keV (ee? nr?)</span>
-    <span class="c"># energy_error = float(&#39;nan&#39;)</span>
-
     <span class="c">##</span>
     <span class="c"># Likelihoods</span>
     <span class="c">##</span>
@@ -501,37 +502,33 @@
 
 </div>
 <div class="viewcode-block" id="Event"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event">[docs]</a><span class="k">class</span> <span class="nc">Event</span><span class="p">(</span><span class="n">StrictModel</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Event class</span>
-
-<span class="sd">    Stores high level information about the triggered event.</span>
+    <span class="sd">&quot;&quot;&quot;Object holding high-level information about a triggered event,</span>
+<span class="sd">    and list of objects (such as Peak, Hit and Pulse) containing lower-level information.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">dataset_name</span> <span class="o">=</span> <span class="s">&#39;Unknown&#39;</span>  <span class="c"># The name of the dataset this event belongs to</span>
+    <span class="c">#: The name of the dataset this event belongs to</span>
+    <span class="n">dataset_name</span> <span class="o">=</span> <span class="s">&#39;Unknown&#39;</span>
 
-    <span class="c"># A nonnegative integer that uniquely identifies the event within the</span>
-    <span class="c"># dataset.</span>
+    <span class="c">#: A nonnegative integer that uniquely identifies the event within the dataset.</span>
     <span class="n">event_number</span> <span class="o">=</span> <span class="mi">0</span>
 
-    <span class="c">#: Number of channels in the event</span>
-    <span class="c">#: Has to be the same as n_channels in config, provided here for deserialization ease</span>
+    <span class="c">#: Total number of channels in the event (whether or not they see anything).</span>
+    <span class="c">#: Has to be the same as n_channels in config, provided here for deserialization ease.</span>
     <span class="n">n_channels</span> <span class="o">=</span> <span class="n">INT_NAN</span>
 
-    <span class="c">#: Integer start time of the event in nanoseconds</span>
-    <span class="c">#:</span>
-    <span class="c">#: Time that the first sample starts. This is a 64-bit number that follows the</span>
-    <span class="c">#: UNIX clock. Or rather, it starts from January 1, 1970.  This must be an integer</span>
-    <span class="c">#: because floats have rounding that result in imprecise times.  You could</span>
-    <span class="c">#: think of this as the time of the earliest sample.</span>
+    <span class="c">#: Integer start time of the event in nanoseconds since January 1, 1970.</span>
+    <span class="c">#: This is the time that the first sample starts.</span>
+    <span class="c">#: NB: don&#39;t do floating-point arithmetic on 64-bit integers such as these,</span>
+    <span class="c">#: floats have rounding that result in loss of precision.</span>
     <span class="n">start_time</span> <span class="o">=</span> <span class="nb">long</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
-    <span class="c">#: Integer stop time of the event in nanoseconds</span>
-    <span class="c">#</span>
-    <span class="c">#: This stop time includes the last recorded sample.  Therefore, it&#39;s the right</span>
-    <span class="c">#: edge of the last sample.  This is a 64-bit integer for the reasons explained</span>
-    <span class="c">#: in &#39;start_time&#39;.</span>
+    <span class="c">#: Integer stop time of the event in nanoseconds since January 1, 1970.</span>
+    <span class="c">#: This is the time that the last sample ends.</span>
+    <span class="c">#: NB: don&#39;t do floating-point arithmetic on 64-bit integers such as these,</span>
+    <span class="c">#: floats have rounding that result in loss of precision.</span>
     <span class="n">stop_time</span> <span class="o">=</span> <span class="nb">long</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
-    <span class="c">#: Time duration of a sample (in pax units, i.e. ns)</span>
-    <span class="c">#: For V1724 digitizers (e.g. XENON), this is 10 nanoseconds always.</span>
+    <span class="c">#: Time duration of a sample (in ns).</span>
+    <span class="c">#: For V1724 digitizers (e.g. XENON), this is 10 nanoseconds.</span>
     <span class="c">#: This is also in config, but we need it here too, to convert between event duration and length in samples</span>
     <span class="c">#: Must be an int for same reason as start_time and stop_time</span>
     <span class="c">#: DO NOT set to 10 ns as default, otherwise no way to check if it was given to constructor!</span>
@@ -543,34 +540,35 @@
     <span class="c">#: A list of :class:`pax.datastructure.Peak` objects.</span>
     <span class="n">peaks</span> <span class="o">=</span> <span class="n">ListField</span><span class="p">(</span><span class="n">Peak</span><span class="p">)</span>
 
-    <span class="c">#: Temporary array of hits -- will be shipped off to peaks later</span>
+    <span class="c">#: Array of all hits found in event</span>
+    <span class="c">#: These will get grouped into peaks during clustering</span>
+    <span class="c">#: This is usually emptied before output (but not in LED mode)</span>
     <span class="n">all_hits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">Hit</span><span class="o">.</span><span class="n">get_dtype</span><span class="p">())</span>
 
     <span class="c">#: A list :class:`pax.datastructure.SumWaveform` objects.</span>
     <span class="n">sum_waveforms</span> <span class="o">=</span> <span class="n">ListField</span><span class="p">(</span><span class="n">SumWaveform</span><span class="p">)</span>
 
-    <span class="c">#: A list of all pulses in the event (containing instances of the Pulse class)</span>
-    <span class="c">#: An pulse holds a stream of samples in one channel, as provided by the digitizer.</span>
+    <span class="c">#: A list of :class:`pax.datastructure.Interaction` objects.</span>
+    <span class="c">#: An pulse holds a stream of samples in one channel provided by the digitizer.</span>
+    <span class="c">#: To save space, only the pulses contributing hits to S1s are kept in the output (but not in LED mode)</span>
     <span class="n">pulses</span> <span class="o">=</span> <span class="n">ListField</span><span class="p">(</span><span class="n">Pulse</span><span class="p">)</span>
 
     <span class="c">#: Number of noise pulses (pulses without any hits found) per channel</span>
     <span class="n">noise_pulses_in</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
 
-    <span class="c">#: Number of lone hits (peaks with only one channel contributing) per channel</span>
-    <span class="c">#: BEFORE suspicious channel hit rejection.</span>
-    <span class="c">#: This is used to check / calibrate the suspicious channel hit rejection.</span>
+    <span class="c">#: Number of lone hits per channel BEFORE suspicious channel hit rejection.</span>
+    <span class="c">#: lone_hit is a peak type (sorry, confusing...) indicating just one contributing channel.</span>
+    <span class="c">#: Use this to check / calibrate the suspicious channel hit rejection.</span>
     <span class="n">lone_hits_per_channel_before</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
 
-    <span class="c">#: Number of lone hits (peaks with only one channel contributing) per channel</span>
-    <span class="c">#: AFTER suspicious channel hit rejection.</span>
-    <span class="c">#: Keep in mind a &quot;lone hit&quot; peak can consist of several hits, they just have to be in one channel.</span>
-    <span class="c">#: Hmm, maybe they should be named single channel peaks rather than lone hits?</span>
+    <span class="c">#: Number of lone hits per channel AFTER suspicious channel hit rejection.</span>
+    <span class="c">#: lone_hit is a peak type (sorry, confusing...) indicating just one contributing channel</span>
     <span class="n">lone_hits_per_channel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
 
     <span class="c">#: Was channel flagged as suspicious?</span>
     <span class="n">is_channel_suspicious</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
 
-    <span class="c">#: Number of hits rejected in the suspicious channel algorithm</span>
+    <span class="c">#: Number of hits rejected per channel in the suspicious channel algorithm</span>
     <span class="n">n_hits_rejected</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int16</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_channels</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -636,8 +634,8 @@
 </div>
 <div class="viewcode-block" id="Event.s1s"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.s1s">[docs]</a>    <span class="k">def</span> <span class="nf">s1s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="s">&#39;tpc&#39;</span><span class="p">,</span> <span class="n">sort_key</span><span class="o">=</span><span class="s">&#39;area&#39;</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>  <span class="c"># noqa</span>
         <span class="sd">&quot;&quot;&quot;List of S1 (scintillation) signals in this event</span>
-
-<span class="sd">        Returns a list of :class:`pax.datastructure.Peak` objects</span>
+<span class="sd">        In the ROOT class output, this returns a list of integer indices in event.peaks</span>
+<span class="sd">        Inside pax, returns a list of :class:`pax.datastructure.Peak` objects</span>
 <span class="sd">          whose type is &#39;s1&#39;, and</span>
 <span class="sd">          who are in the detector specified by the &#39;detector&#39; argument (unless detector=&#39;all&#39;)</span>
 <span class="sd">        The returned list is sorted DESCENDING (i.e. reversed!) by the key sort_key (default area)</span>
@@ -646,12 +644,13 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_peaks_by_type</span><span class="p">(</span><span class="s">&#39;s1&#39;</span><span class="p">,</span> <span class="n">sort_key</span><span class="o">=</span><span class="n">sort_key</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="n">reverse</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="n">detector</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="Event.S1s"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.S1s">[docs]</a>    <span class="k">def</span> <span class="nf">S1s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;See s1s&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">s1s</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="Event.s2s"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.s2s">[docs]</a>    <span class="k">def</span> <span class="nf">s2s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="s">&#39;tpc&#39;</span><span class="p">,</span> <span class="n">sort_key</span><span class="o">=</span><span class="s">&#39;area&#39;</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="bp">True</span><span class="p">):</span>  <span class="c"># noqa</span>
         <span class="sd">&quot;&quot;&quot;List of S2 (ionization) signals in this event</span>
-
-<span class="sd">        Returns a list of :class:`pax.datastructure.Peak` objects</span>
+<span class="sd">        In the ROOT class output, this returns a list of integer indices in event.peaks.</span>
+<span class="sd">        Inside pax, returns a list of :class:`pax.datastructure.Peak` objects</span>
 <span class="sd">          whose type is &#39;s2&#39;, and</span>
 <span class="sd">          who are in the detector specified by the &#39;detector&#39; argument (unless detector=&#39;all&#39;)</span>
 <span class="sd">        The returned list is sorted DESCENDING (i.e. reversed!) by the key sort_key (default area)</span>
@@ -660,6 +659,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_peaks_by_type</span><span class="p">(</span><span class="n">desired_type</span><span class="o">=</span><span class="s">&#39;s2&#39;</span><span class="p">,</span> <span class="n">sort_key</span><span class="o">=</span><span class="n">sort_key</span><span class="p">,</span> <span class="n">reverse</span><span class="o">=</span><span class="n">reverse</span><span class="p">,</span> <span class="n">detector</span><span class="o">=</span><span class="n">detector</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="Event.S2s"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Event.S2s">[docs]</a>    <span class="k">def</span> <span class="nf">S2s</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;See s2s&quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">s2s</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </div>
     <span class="nd">@property</span>
