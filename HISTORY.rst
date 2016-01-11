@@ -4,8 +4,9 @@ History
 -------
 
 ------------------
-4.2.0 (upcoming)
+4.2.0 (2016-01-11)
 ------------------
+
  * Fixes for ROOT output: memory leak (#282), LED output (#283), long int fields (#289)
  * Event builder changes (#278)
  * 3D position reconstruction for S1s (#277)
