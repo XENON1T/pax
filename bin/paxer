@@ -7,6 +7,7 @@ specify a configuration via the --config command line argument.
 """
 
 import argparse
+import time
 import os
 import sys
 import copy
@@ -142,6 +143,7 @@ class ProcessorEvents(BaseProcess):
             try:
                 for event in next_events:
                     answer.append(p.process_event(event))
+                                    
             except Exception as e:
                 # Oh no, a crash!
                 self.has_crashed.set()
@@ -156,6 +158,10 @@ class ProcessorEvents(BaseProcess):
 
             # Put output to result queue to await being picked up by Output thread
             self.result_queue.put(answer)
+
+            # If the output worker has trouble catching up, sleep for a bit
+            while self.result_queue.qsize() >= 100:
+                time.sleep(5)
 
 
 class OutputEvents(BaseProcess):
@@ -185,8 +191,9 @@ class OutputEvents(BaseProcess):
                 break
 
             # Useful statistics
-            print('\rprocessing queue:', self.task_queue.qsize(),
-                  'output queue:', self.result_queue.qsize(), end="")
+            sys.stdout.write('\rprocessing queue: %d, output queue: %s' % (self.task_queue.qsize(),
+                                                                           self.result_queue.qsize()))
+            sys.stdout.flush()
 
             try:
                 # Get events, or raise queue.Empty if timed out
@@ -199,6 +206,7 @@ class OutputEvents(BaseProcess):
 
                 # Tell result queue that events processed
                 self.result_queue.task_done()
+
             except queue.Empty:
                 # If queue is empty, and input and processing done, then exit
                 # the while loop.
@@ -343,6 +351,9 @@ def main():
             if len(events) > multiprocessing_block_size:
                 tasks.put(events)
                 events = []
+            # If the processing workers have trouble catching up, sleep for a bit
+            while tasks.qsize() >= 100:
+                time.sleep(5)
         if len(events):
             tasks.put(events)
         input_pax.shutdown()
