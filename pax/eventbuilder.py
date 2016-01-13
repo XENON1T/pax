@@ -63,7 +63,10 @@ def run():
 
     status_name = 'detectors.tpc.trigger.status'
 
-    query = {status_name: 'waiting_to_be_processed'}
+    if args.name:
+        query = {'name' : args.name}
+    else:
+        query = {status_name: 'waiting_to_be_processed'}
 
     log.info("Searching for run")
 
@@ -113,6 +116,10 @@ def run():
                                   {'$set': {status_name: 'error'}})
                 raise
 
+        # If we're trying to build a single run, don't try again to find it
+        if args.name:
+            break
+
 
 def authenticate(client, database_name=None):
     try:
@@ -142,6 +149,11 @@ def handle_args():
                                                  " data aquisiton. This tools "
                                                  "starts the distributed "
                                                  "processing of events.")
+    parser.add_argument('--name',
+                        type=str,
+                        help="Instead of building all waiting_to_be_processed runs,"
+                             "look for this specific run and build it.")
+
     parser.add_argument('--impatient',
                         action='store_true',
                         help="Event builder will not wait for new data")
