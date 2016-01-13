@@ -5,12 +5,13 @@ import logging
 import six
 import itertools
 import os
+import sys
 import time
 import multiprocessing
 try:
     import queue
 except ImportError:
-    import Queue as queue   #noqa
+    import Queue as queue   # noqa
 from configparser import ConfigParser, ExtendedInterpolation
 if six.PY2:
     import imp
@@ -42,9 +43,13 @@ class Processor:
     fallback_configuration = 'XENON100'    # Configuration to use when none is specified
 
     def check_crash(self):
-        if self.status == MP_STATUS['crashing']:
-            raise RuntimeError("Exiting %s due to crash" % ('worker %s' % self.worker_number
-                                                            if self.worker_number is not None else 'master process'))
+        if self.status.value == MP_STATUS['crashing']:
+            if self.worker_id is None:
+                self.log.fatal("Crash detected, giving worker processes five seconds to die in peace")
+                time.sleep(5)
+                self.log.fatal("That's it, farewell cruel world!")
+                exit('')
+            exit('')
 
     def __init__(self, config_names=(), config_paths=(), config_string=None, config_dict=None, just_testing=False):
         """Setup pax using configuration data from three sources:
@@ -75,13 +80,18 @@ class Processor:
             del self.config['Why_doesnt_configparser_let_me_disable_DEFAULT']
 
         pc = self.config['pax']
-        self.worker_number = pc.get('_worker_number')
+        self.worker_id = pc.get('_worker_id')
         self.log = self.setup_logging()
-        if self.worker_number is not None:
+
+        if self.worker_id is not None:
             # I'm a child processor
             self.status = pc['status']
             self.input_queue = pc['input_queue']
             self.output_queue = pc.get('output_queue', None)
+            # Remove multiprocessing objects from config datastructure,
+            # so it can be dumped to JSON afterwards
+            for k in ['input_queue', 'output_queue', 'status']:
+                pc[k] = None
 
         else:
             # I'm the main processor
@@ -89,13 +99,15 @@ class Processor:
                 pax.__version__, self.config['DEFAULT'].get('tpc_name', 'UNSPECIFIED TPC NAME')))
 
             n_cpus = pc.get('n_cpus', 1)
+            if n_cpus == 'all':
+                n_cpus = multiprocessing.cpu_count()
+            n_cpus = int(n_cpus)   # On the command line it gets passed as a string, since 'all' is possible
             if n_cpus != 1:
                 # Setup multiprocessing
-                # Bla here
-                self.status = multiprocessing.Value('i')
-                self.status.value = MP_STATUS['normal']
-                self.input_queue = multiprocessing.Queue()
-                self.output_queue = multiprocessing.Queue()
+                self.manager = multiprocessing.Manager()
+                self.status = self.manager.Value('i', MP_STATUS['normal'])
+                self.input_queue = self.manager.Queue()
+                self.output_queue = self.manager.Queue()
 
                 # Start worker processes
                 self.processing_workers = []
@@ -107,15 +119,15 @@ class Processor:
                                          input_queue=self.input_queue,
                                          output_queue=self.output_queue,
                                          status=self.status,
-                                         _worker_number=worker_number))
+                                         _worker_id='processing_%d' % worker_number))
                     self.processing_workers.append(multiprocessing.Process(target=Processor,
                                                                            kwargs=dict(config_dict=c)))
 
                 c = deepcopy(self.config)
-                c.update(dict(plugin_group_names=['output'],
-                              _worker_number=-1,
-                              status=self.status,
-                              input_queue=self.input_queue))
+                c['pax'].update(dict(plugin_group_names=['output'],
+                                     _worker_id='output',
+                                     status=self.status,
+                                     input_queue=self.input_queue))
                 self.output_worker = multiprocessing.Process(target=Processor,
                                                              kwargs=dict(config_dict=c))
 
@@ -123,7 +135,8 @@ class Processor:
                 for w in self.processing_workers + [self.output_worker]:
                     w.start()
 
-                print(pc['plugin_group_names'])
+                # I will just focus on input
+                pc['plugin_group_names'] = ['input']
 
         # Start up the simulator
         # Must be done explicitly here, as plugins can rely on its presence in startup
@@ -226,6 +239,12 @@ class Processor:
             self.log.debug("No action plugins specified: this will be a pretty boring processing run...")
 
         self.timer = utils.Timer()
+
+        # For worker processed, we have to call run from init: nobody else wil...
+        self.max_queue_blocks = self.config['pax'].get('max_queue_blocks', 100)
+        self.block_size = self.config['pax'].get('event_block_size', 10)
+        if self.worker_id is not None:
+            self.run()
 
     def load_configuration(self, config_names, config_paths, config_string, config_dict):
         """Load a configuration -- see init's docstring
@@ -472,31 +491,35 @@ class Processor:
             If you do, you get in trouble if you start a new Processor instance that tries to write to the same files.
 
         """
-        self.log.info("Running process %s" % self.worker_number)
-        if self.worker_number is not None:
+        if self.worker_id is not None:
             # I'm a child processor
             self.check_crash()
+
             while True:
                 # Check if we can end before we fetch event blocks:
                 # the last block may get added while we are fetching events
-                if self.worker_number == -1:
-                    # Output worker
-                    can_end = self.status.value == MP_STATUS['processing_done']
-                else:
-                    can_end = self.status.value == MP_STATUS['input_done']
-                try:
+                can_end = self.status.value == MP_STATUS['processing_done' if self.worker_id == 'output'
+                                                         else 'input_done']
 
+                try:
+                    self.check_crash()
                     results = []
                     for event in self.input_queue.get(block=True, timeout=1):
                         self.check_crash()
                         results.append(self.process_event(event))
                     if self.output_queue:
                         self.output_queue.put(results)
-                except queue.Empty():
+                    if self.worker_id != 'output':
+                        # If the output worker has trouble catching up, sleep for a bit
+                        while self.output_queue.qsize() >= self.max_queue_blocks:
+                            self.check_crash()
+                            time.sleep(1)
+                except queue.Empty:
                     if can_end:
                         break
+                    time.sleep(1)
                 except Exception:
-                    self.status = MP_STATUS['crashing']
+                    self.status.value = MP_STATUS['crashing']
                     raise
 
         else:
@@ -511,35 +534,38 @@ class Processor:
 
             if hasattr(self, 'processing_workers'):
                 # I'm a master processor
-                block_size = self.config['pax'].get('event_block_size', 10)
-                max_queue_blocks = self.config['pax'].get('max_queue_blocks', 100)
-
                 event_block = []
-                for event in self.get_events():
+                for i, event in enumerate(self.get_events()):
                     event_block.append(event)
                     self.check_crash()
-                    if len(event_block) >= block_size:
+                    self.update_status()
+                    if len(event_block) >= self.block_size:
                         self.input_queue.put(event_block)
                         event_block = []
-                    while self.input_queue.qsize() >= max_queue_blocks:
+                    # If the processing workers have trouble catching up, sleep for a bit
+                    while self.input_queue.qsize() >= self.max_queue_blocks:
+                        self.check_crash()
+                        self.update_status()
                         time.sleep(1)
+                    if i >= self.stop_after:
+                        self.log.info("Read in user-defined limit of %d events." % i)
+                        break
                 self.input_queue.put(event_block)
+                self.check_crash()
+                self.update_status()
                 self.status.value = MP_STATUS['input_done']
 
                 # Wait for child processes to die or crash
                 # Note we never use join/wait -- so we never wait for something that may not happen
                 while True:
                     self.check_crash()
+                    self.update_status()
                     if all([not w.is_alive() for w in self.processing_workers]):
                         self.status.value = MP_STATUS['processing_done']
                     if not self.output_worker.is_alive():
                         break
-                    print('\r%d blocks in processing queue, %d in output queue. Status %d' % (
-                            self.input_queue.qsize(),
-                            self.output_queue.qsize(),
-                            [k for k, v in MP_STATUS.items() if v == self.status.value][0]),
-                          end="")
                     time.sleep(1)
+                self.log.info("Pax is done, goodbye!")
 
             else:
                 # I'm a standalone processor
@@ -563,6 +589,14 @@ class Processor:
         # Shutdown all plugins now -- don't wait until this Processor instance gets deleted
         if clean_shutdown:
             self.shutdown()
+
+    def update_status(self):
+        sys.stdout.write('\rStatus: %s. Processing queue: %d events. Output queue: %s events.' % (
+            [k for k, v in MP_STATUS.items() if v == self.status.value][0],
+            self.input_queue.qsize() * self.block_size,
+            self.output_queue.qsize() * self.block_size,
+        ))
+        sys.stdout.flush()
 
     def make_timing_report(self, events_actually_processed):
         all_plugins = [self.input_plugin] + self.action_plugins
