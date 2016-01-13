@@ -67,6 +67,7 @@ def sampletime_fmt(num):
 class IOMongoDB():
 
     def startup(self):
+        self.detector = self.config['detector']
         self.start_key = self.config['start_key']
         self.stop_key = self.config['stop_key']
 
@@ -110,7 +111,7 @@ class IOMongoDB():
         self.log.info("Fetching run document %s",
                       self.run_doc_id)
         self.query = {'_id': self.run_doc_id}
-        update = {'$set': {'detectors.tpc.trigger.status': 'processing'}}
+        update = {'$set': {'detectors.%s.trigger.status' % self.detector: 'processing'}}
         self.run_doc = self.mongo['run']['collection'].find_one_and_update(self.query,
                                                                            update)
         self.sort_key = [(START_KEY, 1),
@@ -181,9 +182,9 @@ class IOMongoDB():
 
     def setup_input(self):
         self.log.info("run_doc")
-        self.log.info(self.run_doc['detectors']['tpc'])
+        self.log.info(self.run_doc['detectors'][self.detector])
 
-        buff = self.run_doc['detectors']['tpc']['mongo_buffer']
+        buff = self.run_doc['detectors'][self.detector]['mongo_buffer']
         self.compressed = buff['compressed']
 
         self.setup_access('input',
@@ -332,8 +333,8 @@ class MongoDBReadUntriggered(plugin.InputPlugin,
                 # This variable is updated at the start of while loop.
                 if self.data_taking_ended:
                     self.log.fatal("Data taking ended.")
-                    update_query = {'$set': {'detectors.tpc.trigger.status': 'processed',
-                                    'detectors.tpc.trigger.ended': True}}
+                    update_query = {'$set': {'detectors.%s.trigger.status' % self.detector: 'processed',
+                                    'detectors.%s.trigger.ended' % self.detector: True}}
                     status = self.mongo['run']['collection'].update_one({'_id': self.run_doc_id},
                                                                         update_query)
                     self.log.debug(status)

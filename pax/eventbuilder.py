@@ -101,7 +101,8 @@ def run():
                                        'left': args.left * units.us,
                                        'right': args.right * units.us,
                                        'multiplicity': args.multiplicity,
-                                       'mega_event': args.mega_event
+                                       'mega_event': args.mega_event,
+                                       'detector': args.detector,
                                        }
                            }
             try:
@@ -153,6 +154,10 @@ def handle_args():
                         type=str,
                         help="Instead of building all waiting_to_be_processed runs,"
                              "look for this specific run and build it.")
+    parser.add_argument('--detector',
+                        type=str,
+                        default='tpc',
+                        help="Detector to build events for")
 
     parser.add_argument('--impatient',
                         action='store_true',
