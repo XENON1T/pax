@@ -118,7 +118,8 @@ class IOMongoDB():
                          (STOP_KEY, 1)]
 
         self.mongo_find_options = {'sort': self.sort_key,
-                                   'cursor_type': pymongo.cursor.CursorType.EXHAUST}
+                                   # 'cursor_type': pymongo.cursor.CursorType.EXHAUST
+                                   }
 
         # Digitizer bins
         self.sample_duration = self.config.get('sample_duration')
