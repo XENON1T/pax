@@ -150,15 +150,13 @@ class IOMongoDB():
         # Used for coordinating which runs to analyze
         self.log.debug("Connecting to: %s" % address)
         if address not in self.connections:
-            if '/' in address:  # HACK, fix kodiaq
-                replica_set, address = address.split('/')
-
-                c = pymongo.MongoClient(address,
-                                        replicaSet=replica_set)
-            else:
-
-                c = pymongo.MongoClient(address,
-                                        port)
+            # if '/' in address:  # HACK, fix kodiaq
+            #     replica_set, address = address.split('/')
+            #
+            #     c = pymongo.MongoClient(address,
+            #                             replicaSet=replica_set)
+            # else:
+            c = pymongo.MongoClient(address, port)
             authenticate(c, database)
             self.connections[address] = c
 
