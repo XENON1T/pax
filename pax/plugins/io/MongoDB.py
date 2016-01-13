@@ -80,7 +80,7 @@ class IOMongoDB():
         self.connections = {}  # MongoClient objects
         self.mongo = {}        #
 
-        self.pmts = self.config['pmts']
+        self.pmts = self.config['pmts' if self.detector == 'tpc' else 'pmts_muon_veto']
         self.pmt_mappings = {(x['digitizer']['module'],
                               x['digitizer']['channel']): x['pmt_position'] for x in self.pmts}
 
