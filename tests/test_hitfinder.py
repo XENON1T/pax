@@ -4,8 +4,8 @@ import numpy as np
 from pax import core, datastructure, utils
 import os
 import sys
-sys.path.append(os.path.join(utils.PAX_DIR, 'plugins', 'signal_processing'))
 import HitFinder
+sys.path.append(os.path.join(utils.PAX_DIR, 'plugins', 'signal_processing'))
 
 
 class TestHitFinder(unittest.TestCase):
