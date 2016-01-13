@@ -9,11 +9,12 @@ releases.  Patch releases cannot modify this.
 """
 import numpy as np
 import six
-if six.PY3:
-    long = int
 
 from pax import units
 from pax.data_model import StrictModel, ListField
+if six.PY3:
+    long = int
+
 
 INT_NAN = -99999    # Do not change without talking to me. -Tunnell 12/3/2015 ... and me. -Jelle 05/08/2015
 
