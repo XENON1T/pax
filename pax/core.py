@@ -12,18 +12,17 @@ try:
     import queue
 except ImportError:
     import Queue as queue   # noqa
-from configparser import ConfigParser, ExtendedInterpolation
+
 if six.PY2:
     import imp
 else:
     import importlib
-
-import numpy as np
-
 from prettytable import PrettyTable     # Timing report
 from tqdm import tqdm                   # Progress bar
+
 import pax      # Needed for pax.__version__
-from pax import units, simulation, utils
+from pax import simulation, utils
+from pax.ConfigLoader import ConfigLoader
 
 # For diagnosing suspected memory leaks, uncomment this code
 # and similar code in process_event
@@ -40,16 +39,6 @@ MP_STATUS = dict(normal=0,
 
 
 class Processor:
-    fallback_configuration = 'XENON100'    # Configuration to use when none is specified
-
-    def check_crash(self):
-        if self.status.value == MP_STATUS['crashing']:
-            if self.worker_id is None:
-                self.log.fatal("Crash detected, giving worker processes five seconds to die in peace")
-                time.sleep(5)
-                self.log.fatal("That's it, farewell cruel world!")
-                exit('')
-            exit('')
 
     def __init__(self, config_names=(), config_paths=(), config_string=None, config_dict=None, just_testing=False):
         """Setup pax using configuration data from three sources:
@@ -74,10 +63,7 @@ class Processor:
           setting that will not be modified once set. New instances of the Processor class will have
           the same log level as the first, regardless of their configuration.  See #78.
         """
-        self.config = self.load_configuration(config_names, config_paths, config_string, config_dict)
-        self.config['DEFAULT'] = self.config.get('DEFAULT', {})    # Enable empty [DEFAULT] for tests
-        if 'Why_doesnt_configparser_let_me_disable_DEFAULT' in self.config:
-            del self.config['Why_doesnt_configparser_let_me_disable_DEFAULT']
+        self.config = ConfigLoader()(config_names, config_paths, config_string, config_dict)
 
         pc = self.config['pax']
         self.worker_id = pc.get('_worker_id')
@@ -246,132 +232,6 @@ class Processor:
         if self.worker_id is not None:
             self.run()
 
-    def load_configuration(self, config_names, config_paths, config_string, config_dict):
-        """Load a configuration -- see init's docstring
-        :return: nested dictionary of evaluated configuration values, use as: config[section][key].
-        """
-        if config_dict is None:
-            config_dict = {}
-
-        # Support for string arguments
-        if isinstance(config_names, str):
-            config_names = [config_names]
-        if isinstance(config_paths, str):
-            config_paths = [config_paths]
-
-        # Temporary attributes, will be deleted when function ends.
-        # We want this function to recurse on another method, which always needs access to these
-        # TODO: Is there a more pythonic way to do this?
-        self.config_files_read = []      # Need to clean this here so tests can re-load the config
-
-        self.configp = ConfigParser(inline_comment_prefixes='#',
-                                    interpolation=ExtendedInterpolation(),
-                                    strict=True,
-                                    default_section='Why_doesnt_configparser_let_me_disable_DEFAULT')
-
-        # Allow for case-sensitive configuration keys
-        self.configp.optionxform = str
-
-        # Make a list of all config paths / file objects to load
-        config_files = []
-        for config_name in config_names:
-            config_files.append(os.path.join(utils.PAX_DIR, 'config', config_name + '.ini'))
-        for config_path in config_paths:
-            config_files.append(config_path)
-        if config_string is not None:
-            config_files.append(six.StringIO(config_string))
-        if len(config_files) == 0 and config_dict == {}:
-            # Load the fallback configuration
-            # Have to use print, logging is not yet setup...
-            print("WARNING: no configuration specified: loading %s config!" % self.fallback_configuration)
-            config_files.append(os.path.join(utils.PAX_DIR, 'config', self.fallback_configuration + '.ini'))
-
-        # Loads the files into configparser, also takes care of inheritance.
-        for config_file_thing in config_files:
-            self._load_file_into_configparser(config_file_thing)
-
-        # Get a dict with all names visible by the eval:
-        #  - all variables from the units submodule
-        #  - np
-        visible_variables = {name: getattr(units, name) for name in dir(units)}
-        visible_variables['np'] = np
-
-        # Evaluate the values in the ini file
-        evaled_config = {}
-        for section_name, section_dict in self.configp.items():
-            evaled_config[section_name] = {}
-            for key, value in section_dict.items():
-                # Eval value in a context where all units are defined
-                evaled_config[section_name][key] = eval(value, visible_variables)
-
-        # Apply the config_dict
-        for section_name in config_dict.keys():
-            if section_name in evaled_config:
-                evaled_config[section_name].update(config_dict[section_name])
-            else:
-                evaled_config[section_name] = config_dict[section_name]
-
-        # Delete temporary attributes
-        del self.configp
-        del self.config_files_read
-
-        return evaled_config
-
-    def _load_file_into_configparser(self, config_file):
-        """Loads a configuration file into our config parser, with support for inheritance.
-
-        :param config_file: path or file object of configuration file to read
-        :return: None
-        """
-        if isinstance(config_file, str):
-            if not os.path.isfile(config_file):
-                raise ValueError("Configuration file %s does not exist!" % config_file)
-            if config_file in self.config_files_read:
-                # This file has already been loaded: don't load it again
-                # If we did, it would cause problems with inheritance diamonds
-                return
-            self.configp.read(config_file)
-            self.config_files_read.append(config_file)
-        else:
-            self.configp.read_file(config_file)
-            # Apparently ConfigParser.read_file doesn't reset the read position?
-            # Or maybe it has to do with using StringIO instead of real files?
-            # Anyway, we want to read in the file again (for overriding parent instructions), so:
-            config_file.seek(0)
-
-        # Determine the path(s) of the parent config file(s)
-        parent_file_paths = []
-
-        if 'parent_configuration' in self.configp['pax']:
-            # This file inherits from other config file(s) in the 'config' directory
-            parent_files = eval(self.configp['pax']['parent_configuration'])
-            if not isinstance(parent_files, list):
-                parent_files = [parent_files]
-            parent_file_paths.extend([
-                os.path.join(utils.PAX_DIR, 'config', pf + '.ini')
-                for pf in parent_files])
-
-        if 'parent_configuration_file' in self.configp['pax']:
-            # This file inherits from user-defined config file(s)
-            parent_files = eval(self.configp['pax']['parent_configuration_file'])
-            if not isinstance(parent_files, list):
-                parent_files = [parent_files]
-            parent_file_paths.extend(parent_files)
-
-        if len(parent_file_paths) == 0:
-            # This file has no parents...
-            return
-
-        # Unfortunately, configparser can only override settings, not set missing ones.
-        # We have no choice but to load the parent file(s), then reload the original one again.
-        # By doing this in a recursing function, multi-level inheritance is supported.
-        for pfp in parent_file_paths:
-            self._load_file_into_configparser(pfp)
-        if isinstance(config_file, str):
-            self.configp.read(config_file)
-        else:
-            self.configp.read_file(config_file)
-
     def setup_logging(self):
         """Sets up logging. Must have loaded config first."""
 
@@ -537,29 +397,25 @@ class Processor:
                 event_block = []
                 for i, event in enumerate(self.get_events()):
                     event_block.append(event)
-                    self.check_crash()
-                    self.update_status()
+                    self.master_heartbeat()
                     if len(event_block) >= self.block_size:
                         self.input_queue.put(event_block)
                         event_block = []
                     # If the processing workers have trouble catching up, sleep for a bit
                     while self.input_queue.qsize() >= self.max_queue_blocks:
-                        self.check_crash()
-                        self.update_status()
+                        self.master_heartbeat()
                         time.sleep(1)
                     if i >= self.stop_after:
                         self.log.info("Read in user-defined limit of %d events." % i)
                         break
                 self.input_queue.put(event_block)
-                self.check_crash()
-                self.update_status()
+                self.master_heartbeat()
                 self.status.value = MP_STATUS['input_done']
 
                 # Wait for child processes to die or crash
                 # Note we never use join/wait -- so we never wait for something that may not happen
                 while True:
-                    self.check_crash()
-                    self.update_status()
+                    self.master_heartbeat()
                     if all([not w.is_alive() for w in self.processing_workers]):
                         self.status.value = MP_STATUS['processing_done']
                     if not self.output_worker.is_alive():
@@ -589,6 +445,19 @@ class Processor:
         # Shutdown all plugins now -- don't wait until this Processor instance gets deleted
         if clean_shutdown:
             self.shutdown()
+
+    def master_heartbeat(self):
+        self.check_crash()
+        self.update_status()
+
+    def check_crash(self):
+        if self.status.value == MP_STATUS['crashing']:
+            if self.worker_id is None:
+                self.log.fatal("Crash detected, giving worker processes five seconds to die in peace")
+                time.sleep(5)
+                self.log.fatal("That's it, farewell cruel world!")
+                exit('')
+            exit('')
 
     def update_status(self):
         sys.stdout.write('\rStatus: %s. Processing queue: %d events. Output queue: %s events.' % (
