@@ -67,7 +67,8 @@ class InterpolatingMap(object):
             bla = gzip.open(filename).read()
             self.data = json.loads(bla.decode())
         else:
-            self.data = json.load(open(filename))
+            with open(filename) as data_file:
+                self.data = json.load(data_file)
         self.coordinate_system = cs = self.data['coordinate_system']
         self.dimensions = len(cs)
         self.interpolators = {}
