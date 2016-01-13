@@ -29,9 +29,10 @@ class InputFromFolder(plugin.InputPlugin):
 
         if not os.path.isdir(input_name):
             if not input_name.endswith('.' + self.file_extension):
-                self.log.warning("input_name %s does not end "
-                                 "with the expected file extension %s" % (input_name,
-                                                                          self.file_extension))
+                self.log.error("input_name %s does not end "
+                               "with the expected file extension %s" % (input_name,
+                                                                        self.file_extension))
+                return
             self.log.debug("InputFromFolder: Single file mode")
             self.init_file(input_name)
 
