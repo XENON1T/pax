@@ -88,7 +88,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
         self.log.info("\tSearch window: %s s", self.search_window / units.s)
 
     def get_events(self):
-        self.last_pulse_time = 0  # ns
+        self.last_time_searched = 0  # ns
 
         # Used to timeout if DAQ crashes and no data will come
         time_of_last_daq_response = time.time()
@@ -100,13 +100,14 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
             self.update_run_doc()
 
             # Query for pulse start & stop times within a large search window
-            search_after = self.last_pulse_time   # TODO: add configurable delay?
+            search_after = self.last_time_searched   # TODO: add configurable delay?
             self.log.info("Searching for pulses after %s", sampletime_fmt(search_after))
             query = {self.start_key: {'$gt': self._to_mt(search_after),
                                       '$lt': self._to_mt(search_after + self.search_window)}}
             times = list(self.input_collection.find(query,
                                                     projection=[self.start_key, self.stop_key],
                                                     **self.mongo_find_options))
+            self.last_time_searched += self.search_window
 
             if not len(times):
                 # No more pulse data found. Did the run end?
@@ -129,9 +130,6 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
             x = np.zeros(len(times), dtype=np.int64)
             for i, doc in enumerate(times):
                 x[i] = int(0.5 * (doc[self.start_key] + doc[self.stop_key]))
-
-            # Update time of last found pulse
-            self.last_pulse_time = x[-1]   # TODO race condition? subtract second?
             self.log.info("Acquired pulse time data in range [%s, %s]", sampletime_fmt(x[0]), sampletime_fmt(x[-1]))
 
             if self.config['mega_event']:
@@ -146,6 +144,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                                                    left=self.config['left_extension'],
                                                    right=self.config['right_extension'])
                 self.log.info("Found %d event ranges", len(event_ranges))
+                self.log.debug(event_ranges)
 
             for i, (t0, t1) in enumerate(event_ranges):
                 self.last_event_number += 1
@@ -172,7 +171,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
         """
         if left > 0:
             raise ValueError("Left offset must be negative!")
-        self.pulse_ranges_buffer = -1
+        self.pulse_ranges_buffer *= -1
         n_ranges_found = _sliding_window_numba(x, window, multiplicity,
                                                left, right, self.pulse_ranges_buffer,
                                                len(self.pulse_ranges_buffer))
@@ -186,10 +185,12 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoDBReader):
     """Read pulse data from untriggered MongoDB into event ranges provided by trigger MongoDBReadUntriggered
     This is a separate plugin, since reading the raw pulse data is the expensive operation we want to parallelize.
     """
+    def startup(self):
+        MongoDBReader.startup(self)
 
     def transform_event(self, event):
         t0, t1 = int(event.start_time), int(event.stop_time)  # ns
-        self.log.info("Fetching pulse data for event in range [%s, %s]", sampletime_fmt(t0), sampletime_fmt(t1))
+        self.log.debug("Fetching pulse data for event in range [%s, %s]", sampletime_fmt(t0), sampletime_fmt(t1))
 
         self.mongo_iterator = self.input_collection.find({self.start_key: {"$gte": self._to_mt(t0),
                                                                            "$lte": self._to_mt(t1)}},
@@ -213,7 +214,7 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoDBReader):
                                  "which doesn't exist according to PMT mapping! Ignoring...",
                                  pulse_doc['module'], pulse_doc['channel'])
 
-        self.log.debug("%d pulses in event %s", (len(event.pulses), event.event_number))
+        self.log.debug("%d pulses in event %s" %(len(event.pulses), event.event_number))
         return event
 
 
@@ -275,6 +276,6 @@ def sampletime_fmt(num):
     """num is in 1s of ns"""
     for x in ['ns', 'us', 'ms', 's', 'ks', 'Ms', 'G', 'T']:
         if num < 1000.0:
-            return "%3.1f %s" % (num, x)
+            return "%3.3f %s" % (num, x)
         num /= 1000.0
     return "%3.1f %s" % (num, 's')
