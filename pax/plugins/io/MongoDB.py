@@ -28,6 +28,7 @@ class MongoDBReader:
         # Used to have 'cursor_type': pymongo.cursor.CursorType.EXHAUST here as well
 
         # Load the digitizer channel -> PMT index mapping
+        self.detector = self.config['detector']
         self.pmts = self.config['pmts' if self.detector == 'tpc' else 'pmts_muon_veto']
         self.pmt_mappings = {(x['digitizer']['module'],
                               x['digitizer']['channel']): x['pmt_position'] for x in self.pmts}
@@ -111,8 +112,8 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                 # No more pulse data found. Did the run end?
                 # self.data_taking_ended is updated in self.update_run_doc(), called right after we started the loop
                 if self.data_taking_ended:
-                    self.log.info("Data taking ended.")
-                    status = self.runs.update_one({'_id': self.run_doc_id},
+                    self.log.info("No pulses found, and data taking ended.")
+                    status = self.runs.update_one({'_id': self.config['run_doc_id']},
                                                   {'$set': {'detectors.%s.trigger.status' % self.detector: 'processed',
                                                             'detectors.%s.trigger.ended' % self.detector: True}})
                     self.log.debug("Answer from updating rundb doc: %s" % status)

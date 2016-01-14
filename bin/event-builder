@@ -46,7 +46,7 @@ def main():
     args = get_command_line_arguments()
     log = setup_logging(loglevel=args.log)
 
-    mongo_manager = MongoManager(config={k: eval('args.%s' % k, globals=dict(args=args))
+    mongo_manager = MongoManager(config={k: eval('args.%s' % k, dict(args=args))
                                          for k in ('user', 'password', 'host', 'port')})
     runs = mongo_manager.get_database('run').get_collection('runs')
 
@@ -81,6 +81,10 @@ def main():
                                        'multiplicity': args.multiplicity,
                                        'mega_event': args.mega_event,
                                        'detector': args.detector,
+                                       'user': args.user,
+                                       'password': args.password,
+                                       'host': args.host,
+                                       'port': args.port,
                                        }
                            }
             try:
@@ -178,8 +182,8 @@ def get_command_line_arguments():
                         type=int,
                         help="Wait time between searching if no data")
 
-    parser.add_argument('--log', default=None,
-                        help="Set log level, e.g. 'debug'")
+    parser.add_argument('--log', default='INFO',
+                        help="Set log level, e.g. DEBUG")
 
     args = parser.parse_args()
     return args

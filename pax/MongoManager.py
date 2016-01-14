@@ -8,12 +8,13 @@ class MongoManager:
 
     def __init__(self, config):
         self.config = config
+        self.clients = {}
         self.log = logging.getLogger('MongoManager')
 
     def get_database(self, database_name=None):
-        uri = 'mongodb://{user}:{password}@{host}:{port}'.format(**self.config)
-
         if database_name not in self.clients:
+            uri = 'mongodb://{user}:{password}@{host}:{port}/{database}'.format(database=database_name,
+                                                                                **self.config)
             self.log.debug("Connecting to Mongo using uri %s" % uri)
             client = pymongo.MongoClient(uri)
 
@@ -24,14 +25,14 @@ class MongoManager:
                 self.log.debug("Grabbing database %s" % database_name)
                 database = client[database_name]
 
-            database.authenticate(self.config['username'], self.config['password'])
+            database.authenticate(self.config['user'], self.config['password'])
             client.admin.command('ping')        # raises pymongo.errors.ConnectionFailure on failure
 
-            self.clients[database_name] = client
+            self.clients[database_name] = dict(client=client, db=database)
 
-        return database
+        return self.clients[database_name]['db']
 
     def shutdown(self):
         self.log.debug('Shutting down all MongoDB clients')
-        for client in self.clients.values():
-            client.close()
+        for v in self.clients.values():
+            v['client'].close()
