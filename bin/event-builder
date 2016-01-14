@@ -130,7 +130,7 @@ def get_command_line_arguments():
                                                  "processing of events.")
 
     connection_group = parser.add_argument_group(title='MongoDB connection settings')
-    connection_group.add_argument('--host', default='gw', type='str',
+    connection_group.add_argument('--host', default='gw', type=str,
                                   help='MongoDB hostname')
     connection_group.add_argument('--port', default=27017, type=int,
                                   help='Port on host where MongoDB runs')
