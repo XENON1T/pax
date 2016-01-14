@@ -43,7 +43,8 @@ class MongoDBReader:
         # TODO: can username, host, password, settings different from standard db access info?
         # Then we have to pass extra args to MongoManager
         self.input_info = nfo = self.run_doc['detectors'][self.detector]['mongo_buffer']
-        self.input_collection = mm.get_database(nfo['database']).get_collection(nfo['collection'])
+        self.input_collection = mm.get_database(database_name=nfo['database'],
+                                                uri=nfo['address']).get_collection(nfo['collection'])
         self.input_collection.ensure_index(self.sort_key)
 
     def update_run_doc(self):
@@ -93,6 +94,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
         # Used to timeout if DAQ crashes and no data will come
         time_of_last_daq_response = time.time()
 
+        self.log.info("Total number of pulses in the collection: %s" % self.input_collection.count())
         while True:
             # Update the run document, so we know if the run ended.
             # This must happen before querying for more data, to avoid a race condition where the run ends
