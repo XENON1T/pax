@@ -129,7 +129,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
             # to numpy array of pulse midpoint times in pax time units (ns)
             x = np.zeros(len(times), dtype=np.int64)
             for i, doc in enumerate(times):
-                x[i] = int(0.5 * (doc[self.start_key] + doc[self.stop_key]))
+                x[i] = int(0.5 * (self._from_mt(doc[self.start_key]) + self._from_mt(doc[self.stop_key])))
             self.log.info("Acquired pulse time data in range [%s, %s]", sampletime_fmt(x[0]), sampletime_fmt(x[-1]))
 
             if self.config['mega_event']:
@@ -189,8 +189,9 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoDBReader):
         MongoDBReader.startup(self)
 
     def transform_event(self, event):
-        t0, t1 = int(event.start_time), int(event.stop_time)  # ns
+        t0, t1 = event.start_time, event.stop_time  # ns
         self.log.debug("Fetching pulse data for event in range [%s, %s]", sampletime_fmt(t0), sampletime_fmt(t1))
+        self.log.debug("Total number of pulses in collection: %d" % self.input_collection.count())
 
         self.mongo_iterator = self.input_collection.find({self.start_key: {"$gte": self._to_mt(t0),
                                                                            "$lte": self._to_mt(t1)}},
