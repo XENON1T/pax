@@ -10,18 +10,233 @@ import time
 
 import numpy as np
 import numba
-import pymongo
 import snappy
 
 from pax.datastructure import Event, Pulse
 from pax import plugin, units
-from pax.eventbuilder import authenticate
 
 
-START_KEY = 'time'
-STOP_KEY = 'endtime'
+class MongoDBReader:
+    def startup(self):
+        self.sample_duration = self.config['sample_duration']
+
+        # Setup keys and options for finding pulses
+        self.start_key = self.config['start_key']
+        self.stop_key = self.config['stop_key']
+        self.sort_key = ([(self.start_key, 1), (self.stop_key, 1)])
+        self.mongo_find_options = {'sort': self.sort_key}
+        # Used to have 'cursor_type': pymongo.cursor.CursorType.EXHAUST here as well
+
+        # Load the digitizer channel -> PMT index mapping
+        self.pmts = self.config['pmts' if self.detector == 'tpc' else 'pmts_muon_veto']
+        self.pmt_mappings = {(x['digitizer']['module'],
+                              x['digitizer']['channel']): x['pmt_position'] for x in self.pmts}
+
+        # Connect to the runs db
+        mm = self.processor.mongo_manager
+        self.runs = mm.get_database('run').get_collection('runs')
+        self.update_run_doc()
+
+        # Connect to the input database
+        # Input database connection settings are specified in the run doc
+        # TODO: can username, host, password, settings different from standard db access info?
+        # Then we have to pass extra args to MongoManager
+        self.input_info = nfo = self.run_doc['detectors'][self.detector]['mongo_buffer']
+        self.input_collection = mm.get_database(nfo['database']).get_collection(nfo['collection'])
+        self.input_collection.ensure_index(self.sort_key)
+
+    def update_run_doc(self):
+        self.run_doc = self.runs.find_one({'_id': self.config['run_doc_id']})
+        self.data_taking_ended = 'endtimestamp' in self.run_doc
+
+    def _to_mt(self, x):
+        # Takes time in ns and converts to samples
+        # makes number small by 10
+        return int(x * units.ns // self.sample_duration)
+
+    def _from_mt(self, x):
+        # Takes time in samples and converts to ns
+        # Makes number bigger by 10
+        return int(x * self.sample_duration // units.ns)
 
 
+class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
+
+    """Read from MongoDB and build events
+    This will perform a sliding window trigger on the pulse midpoint times.
+    No PMT pulse data is read in this class to ensure speed.
+    """
+    last_event_number = 0
+
+    def startup(self):
+        MongoDBReader.startup(self)
+
+        # Load a few more config settings
+        self.detector = self.config['detector']
+        self.search_window = self.config.get('search_window', 60 * units.s)
+
+        # Initialize the buffer to hold the pulse ranges
+        self.pulse_ranges_buffer = np.ones((self.config.get('pulse_ranges_buffer_size', int(1e4)), 2),
+                                           dtype=np.int64) * -1
+
+        self.log.info("Building events with:")
+        self.log.info("\tSliding window: %0.2f us", self.config['window'] / units.us)
+        self.log.info("\tMultiplicity: %d coincident pulses", self.config['multiplicity'])
+        self.log.info("\tLeft extension: %0.2f us", self.config['left_extension'] / units.us)
+        self.log.info("\tRight extension: %0.2f us", self.config['right_extension'] / units.us)
+        self.log.info("\tSearch window: %s s", self.search_window / units.s)
+
+    def get_events(self):
+        self.last_pulse_time = 0  # ns
+
+        # Used to timeout if DAQ crashes and no data will come
+        time_of_last_daq_response = time.time()
+
+        while True:
+            # Update the run document, so we know if the run ended.
+            # This must happen before querying for more data, to avoid a race condition where the run ends
+            # while the query is in process.
+            self.update_run_doc()
+
+            # Query for pulse start & stop times within a large search window
+            search_after = self.last_pulse_time   # TODO: add configurable delay?
+            self.log.info("Searching for pulses after %s", sampletime_fmt(search_after))
+            query = {self.start_key: {'$gt': self._to_mt(search_after),
+                                      '$lt': self._to_mt(search_after + self.search_window)}}
+            times = list(self.input_collection.find(query,
+                                                    projection=[self.start_key, self.stop_key],
+                                                    **self.mongo_find_options))
+
+            if not len(times):
+                # No more pulse data found. Did the run end?
+                # self.data_taking_ended is updated in self.update_run_doc(), called right after we started the loop
+                if self.data_taking_ended:
+                    self.log.info("Data taking ended.")
+                    status = self.runs.update_one({'_id': self.run_doc_id},
+                                                  {'$set': {'detectors.%s.trigger.status' % self.detector: 'processed',
+                                                            'detectors.%s.trigger.ended' % self.detector: True}})
+                    self.log.debug("Answer from updating rundb doc: %s" % status)
+                    break
+                if time.time() - time_of_last_daq_response > 60:  # seconds   # TODO: configure
+                    raise RuntimeError('Timed out waiting for new data (DAQ crash?)')
+                self.log.info("No data found, but run is still ongoing. Waiting for new data.")
+                time.sleep(1)  # TODO: configure
+                continue
+
+            # Convert response from list of dictionaries of start & stop time in samples
+            # to numpy array of pulse midpoint times in pax time units (ns)
+            x = np.zeros(len(times), dtype=np.int64)
+            for i, doc in enumerate(times):
+                x[i] = int(0.5 * (doc[self.start_key] + doc[self.stop_key]))
+
+            # Update time of last found pulse
+            self.last_pulse_time = x[-1]   # TODO race condition? subtract second?
+            self.log.info("Acquired pulse time data in range [%s, %s]", sampletime_fmt(x[0]), sampletime_fmt(x[-1]))
+
+            if self.config['mega_event']:
+                self.log.info("Building mega-event with all data in search range.")
+                event_ranges = [[x[0], x[-1]]]
+
+            else:
+                # Do the sliding window coindidence trigger
+                event_ranges = self.sliding_window(x,
+                                                   window=self.config['window'],
+                                                   multiplicity=self.config['multiplicity'],
+                                                   left=self.config['left_extension'],
+                                                   right=self.config['right_extension'])
+                self.log.info("Found %d event ranges", len(event_ranges))
+
+            for i, (t0, t1) in enumerate(event_ranges):
+                self.last_event_number += 1
+                yield Event(n_channels=self.config['n_channels'],
+                            start_time=t0,
+                            sample_duration=self.sample_duration,
+                            stop_time=t1,
+                            dataset_name=self.run_doc['name'],
+                            event_number=self.last_event_number)
+
+            # Update time of last DAQ reponse
+            # Better to do this here than before building: if the building * processing takes a long time
+            # we don't want to think the DAQ has crashed
+            time_of_last_daq_response = time.time()
+
+    def sliding_window(self, x, window=1000, multiplicity=3, left=-10, right=7):
+        """Sliding window cluster finder (with range extension)
+
+        x is a list of times.  A window will slide over the values in x and
+        this function will return all ranges with more than 'multiplicity'
+        of pulses.
+        Also, left and right will be added to ranges, where left can be the
+        drift length.
+        """
+        if left > 0:
+            raise ValueError("Left offset must be negative!")
+        self.pulse_ranges_buffer = -1
+        n_ranges_found = _sliding_window_numba(x, window, multiplicity,
+                                               left, right, self.pulse_ranges_buffer,
+                                               len(self.pulse_ranges_buffer))
+        if n_ranges_found >= len(self.pulse_ranges_buffer):
+            self.log.fatal("Too many pulse ranges to fit in buffer... :-(?")
+        return self.pulse_ranges_buffer[:n_ranges_found]
+
+
+class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoDBReader):
+
+    """Read pulse data from untriggered MongoDB into event ranges provided by trigger MongoDBReadUntriggered
+    This is a separate plugin, since reading the raw pulse data is the expensive operation we want to parallelize.
+    """
+
+    def transform_event(self, event):
+        t0, t1 = int(event.start_time), int(event.stop_time)  # ns
+        self.log.info("Fetching pulse data for event in range [%s, %s]", sampletime_fmt(t0), sampletime_fmt(t1))
+
+        self.mongo_iterator = self.input_collection.find({self.start_key: {"$gte": self._to_mt(t0),
+                                                                           "$lte": self._to_mt(t1)}},
+                                                         **self.mongo_find_options)
+        for i, pulse_doc in enumerate(self.mongo_iterator):
+            digitizer_id = (pulse_doc['module'], pulse_doc['channel'])
+            if digitizer_id in self.pmt_mappings:
+                # Fetch the raw data
+                data = pulse_doc['data']
+                if self.input_info['compressed']:
+                    data = snappy.decompress(data)
+
+                time_within_event = self._from_mt(pulse_doc[self.start_key]) - t0  # ns
+
+                event.pulses.append(Pulse(left=self._to_mt(time_within_event),
+                                          raw_data=np.fromstring(data,
+                                                                 dtype="<i2"),
+                                          channel=self.pmt_mappings[digitizer_id]))
+            else:
+                self.log.warning("Found data from digitizer module %d, channel %d,"
+                                 "which doesn't exist according to PMT mapping! Ignoring...",
+                                 pulse_doc['module'], pulse_doc['channel'])
+
+        self.log.debug("%d pulses in event %s", (len(event.pulses), event.event_number))
+        return event
+
+
+class MongoDBWriteTriggered(plugin.OutputPlugin):
+    """Write raw or processed events to MongoDB
+
+    These events are already triggered.  We first convert event class to a dict,
+    then pymongo converts that to BSON.  We have to convert the numpy arrays to
+    bytes because otherwise we get type errors since pymongo doesn't know about
+    numpy.
+    """
+
+    def startup(self):
+        mm = self.processor.mongo_manager
+        # TODO: grab output_name from somewhere???
+        self.output_collection = mm.get_database('output').get_collection(self.config['output_name'])
+
+    def write_event(self, event_class):
+        # Convert event class to pymongo-able dictionary, then insert into the database
+        event_dict = event_class.to_dict(convert_numpy_arrays_to='bytes')
+        self.output_collection.write(event_dict)
+
+
+# TODO: This needs tests!!!
 @numba.jit((numba.int64)(numba.int64[:],
                          numba.int64, numba.int64, numba.int64, numba.int64,
                          numba.int64[:, :], numba.int64), nopython=True)
@@ -62,423 +277,3 @@ def sampletime_fmt(num):
             return "%3.1f %s" % (num, x)
         num /= 1000.0
     return "%3.1f %s" % (num, 's')
-
-
-class IOMongoDB():
-
-    def startup(self):
-        self.detector = self.config['detector']
-        self.start_key = self.config['start_key']
-        self.stop_key = self.config['stop_key']
-
-        if START_KEY == STOP_KEY:
-            raise ValueError("START_KEY and STOP_KEY must be different."
-                             "Otherwise, must modify query logic.")
-
-        self.number_of_events = 0
-
-        self.connections = {}  # MongoClient objects
-        self.mongo = {}        #
-
-        self.pmts = self.config['pmts' if self.detector == 'tpc' else 'pmts_muon_veto']
-        self.pmt_mappings = {(x['digitizer']['module'],
-                              x['digitizer']['channel']): x['pmt_position'] for x in self.pmts}
-
-        # Each MongoDB class must acquire the run database document that
-        # describes this acquisition.  This is partly because the state can
-        # change midrun.  For example, the run can end.
-        self.run_doc_id = self.config['run_doc']
-        self.log.debug("Run doc %s", self.run_doc_id)
-
-        self.log.debug('Connecting to %s', self.config['runs_database'])
-        client_run = pymongo.MongoClient(self.config['runs_database'])
-        authenticate(client_run)
-        try:
-            client_run.admin.command('ping')
-            self.log.debug("Connection succesful")
-        except pymongo.errors.ConnectionFailure:
-            self.log.fatal("Cannot connect to MongoDB at %s" % self.config['runs_database'])
-            raise
-        m = {}
-        m['client'] = client_run
-        self.log.debug('Fetching run DB')
-        m['database'] = m['client'].get_default_database()
-        self.log.debug('Getting runs collection')
-        m['collection'] = m['database'].get_collection('runs')
-
-        self.mongo['run'] = m
-
-        self.log.info("Fetching run document %s",
-                      self.run_doc_id)
-        self.query = {'_id': self.run_doc_id}
-        update = {'$set': {'detectors.%s.trigger.status' % self.detector: 'processing'}}
-        self.run_doc = self.mongo['run']['collection'].find_one_and_update(self.query,
-                                                                           update)
-        self.sort_key = [(START_KEY, 1),
-                         (STOP_KEY, 1)]
-
-        self.mongo_find_options = {'sort': self.sort_key,
-                                   # 'cursor_type': pymongo.cursor.CursorType.EXHAUST
-                                   }
-
-        # Digitizer bins
-        self.sample_duration = self.config.get('sample_duration')
-        self.log.debug("Time unit: %f", self.sample_duration)
-
-        # Retrieved from runs database
-        self.data_taking_ended = False
-
-    def _to_mt(self, x):
-        # Takes time in ns and converts to samples
-        # makes number small by 10
-        return int(x * units.ns // self.sample_duration)
-
-    def _from_mt(self, x):
-        # Takes time in samples and converts to ns
-        # Makes number bigger by 10
-        return int(x * self.sample_duration // units.ns)
-
-    def setup_access(self, name,
-                     address,
-                     database,
-                     collection,
-                     port=27017,
-                     **kwargs):
-        wc = pymongo.write_concern.WriteConcern(w=0)
-
-        m = {}  # Holds connection, database info, and collection info
-
-        # Used for coordinating which runs to analyze
-        self.log.debug("Connecting to: %s" % address)
-        if address not in self.connections:
-            # if '/' in address:  # HACK, fix kodiaq
-            #     replica_set, address = address.split('/')
-            #
-            #     c = pymongo.MongoClient(address,
-            #                             replicaSet=replica_set)
-            # else:
-            c = pymongo.MongoClient(address, port)
-            authenticate(c, database)
-            self.connections[address] = c
-
-            try:
-                self.connections[address].admin.command('ping')
-                self.log.debug("Connection succesful")
-            except pymongo.errors.ConnectionFailure:
-                self.log.fatal("Cannot connect to MongoDB at %s" % address)
-                raise
-
-        m['client'] = self.connections[address]
-
-        self.log.debug('Fetching databases: %s', database)
-        m['database'] = m['client'].get_database(database,
-                                                 write_concern=wc)
-
-        self.log.debug('Getting collection: %s', collection)
-        m['collection'] = m['database'].get_collection(collection,
-                                                       write_concern=wc)
-        self.mongo[name] = m
-
-    def setup_input(self):
-        self.log.info("run_doc")
-        self.log.info(self.run_doc['detectors'][self.detector])
-
-        buff = self.run_doc['detectors'][self.detector]['mongo_buffer']
-        self.compressed = buff['compressed']
-
-        self.setup_access('input',
-                          **buff)
-        self.mongo['input']['collection'].ensure_index(self.sort_key)
-
-    def update_run_doc(self):
-        self.run_doc = self.mongo['run']['collection'].find_one(self.query)
-        self.data_taking_ended = ('endtimestamp' in self.run_doc)
-
-    def number_events(self):
-        return self.number_of_events
-
-    @staticmethod
-    def chunks(l, n):
-        """ Yield successive n-sized chunks from l.
-        """
-        for i in range(0, len(l), n):
-            yield l[i:i + n]
-
-    def shutdown(self):
-        for connection in self.connections:
-            connection.close()
-
-
-class MongoDBReadUntriggered(plugin.InputPlugin,
-                             IOMongoDB):
-
-    """Read from MongoDB and build events
-
-    This will perform a sliding window trigger on the times.  No PMT pulse
-    data is read in this class to ensure speed.
-    """
-
-    def startup(self):
-        IOMongoDB.startup(self)  # Setup with baseclass
-
-        # Load constants from config
-        self.window = int(self.config['window'])
-        self.multiplicity = int(self.config['multiplicity'])
-        self.left = float(self.config['left_extension'])
-        self.right = float(self.config['right_extension'])
-
-        # Used when measuring trigger efficiency.  Turns everything into just
-        # one really big event.
-        self.mega_event = bool(self.config['mega_event'])
-
-        self.log.info("Building events with:")
-        self.log.info("\tSliding window: %0.2f us", self.window / units.us * units.ns)
-        self.log.info("\tMultiplicity: %d hits", self.multiplicity)
-        self.log.info("\tLeft extension: %0.2f us", self.left / units.us * units.ns)
-        self.log.info("\tRight extension: %0.2f us", self.right / units.us * units.ns)
-
-        self.setup_input()
-
-    def sliding_window(self, x, n, window=1000, multiplicity=3, left=-10, right=7):
-        """Sliding window cluster finder (with range extension)
-
-        x is a list of times.  A window will slide over the values in x and
-        this function will return all event ranges with more than 'multiplicity'
-        of pulses.  We assume that any pulses will have ~1 pe area.
-        Also, left and right will be added to ranges, where left can be the
-        drift length.
-        """
-        if left > 0:
-            raise ValueError("Left offset must be negative")
-        ranges = []
-
-        i = 0  # Start of range to test
-        j = 0  # End of range to test
-
-        while j < x.size:  # For every pulse... extend end
-            if x[j] - x[i] > window:  # If time diff greater than window, form new cluster
-                if j - i > multiplicity:  # If more than 100 pulses, trigger
-                    if len(ranges) > 0 and ranges[-1][1] + window > x[i]:
-                        ranges[-1][1] = x[j - 1] + right
-                    else:
-                        ranges.append([x[i] + left, x[j - 1] + right])
-                i += 1
-            else:
-                j += 1
-
-        if j - i > multiplicity:  # If more than 10 pulses, trigger
-            ranges.append([x[i] + left, x[j - 1] + right])
-
-        return ranges
-
-    def sliding_window2(self, x, ranges_buffer_size,
-                        window=1000, multiplicity=3,
-                        left=-10, right=7):
-        """Sliding window cluster finder (with range extension)
-
-        x is a list of times.  A window will slide over the values in x and
-        this function will return all event ranges with more than 'multiplicity'
-        of pulses.  We assume that any pulses will have ~1 pe area.
-        Also, left and right will be added to ranges, where left can be the
-        drift length.  n is the number of possible ranges.
-        """
-        if left > 0:
-            raise ValueError("Left offset must be negative")
-
-        ranges_buffer = -1 * np.ones((ranges_buffer_size,
-                                      2),
-                                     dtype=np.int64)
-
-        n_ranges_found = _sliding_window_numba(x, window, multiplicity,
-                                               left, right, ranges_buffer,
-                                               ranges_buffer_size)
-        if n_ranges_found >= ranges_buffer_size:
-            print("Too many ranges to fit in buffer... :-(?")
-        return ranges_buffer[:n_ranges_found]
-
-    def get_events(self):
-        self.last_time = 0  # ns
-
-        # Used to timeout if DAQ crashes and no data will come
-        time_out_counter = time.time()
-
-        while 1:
-            # Grab new run document in case run ended.  This much happen before
-            # processing data to avoid a race condition where the run ends
-            # between processing and checking that the run has ended
-            #
-            self.update_run_doc()
-
-            self.ranges = []
-
-            c = self.mongo['input']['collection']
-
-            delay = 0  # ns
-
-            search_after = self.last_time - delay  # ns
-            self.log.info("Searching for pulses after %s",
-                          sampletime_fmt(search_after))
-            # times is in digitizer samples
-            times = list(c.find({START_KEY: {'$gt': self._to_mt(search_after),
-                                             '$lt': self._to_mt(search_after + 60.0 * units.s)
-                                             }},
-                                projection=[START_KEY, STOP_KEY],
-                                **self.mongo_find_options))
-
-            n = len(times)
-            if n == 0:
-                # If run ended, begin cleanup
-                #
-                # This variable is updated at the start of while loop.
-                if self.data_taking_ended:
-                    self.log.fatal("Data taking ended.")
-                    update_query = {'$set': {'detectors.%s.trigger.status' % self.detector: 'processed',
-                                    'detectors.%s.trigger.ended' % self.detector: True}}
-                    status = self.mongo['run']['collection'].update_one({'_id': self.run_doc_id},
-                                                                        update_query)
-                    self.log.debug(status)
-                    break
-
-                self.log.fatal("Nothing found, continue")
-                time.sleep(1)  # todo: configure
-                if time.time() - time_out_counter > 60:  # seconds
-                    raise RuntimeError('Timed out waiting for new data (DAQ crash?)')
-
-                continue
-
-            # Reset timeout counter used for finding crashed DAQ
-            time_out_counter = time.time()
-
-            x = [[self._from_mt(doc[START_KEY]),
-                  self._from_mt(doc[STOP_KEY])] for doc in times]  # in digitizer units
-            x = np.array(x, dtype=np.int64)
-            x = x.mean(axis=1, dtype=np.int64)  # in ns
-
-            self.log.info("Processing range [%s, %s]",
-                          sampletime_fmt(x[0]),
-                          sampletime_fmt(x[-1]))
-
-            self.last_time = x[-1]   # TODO race condition? subtract second?
-            self.first_time = x[0]
-            rate = 2000
-            n = int(((x[-1] - x[0]) // units.s) * rate)
-
-            self.ranges = self.sliding_window(x,
-                                              n,
-                                              window=self.window,
-                                              multiplicity=self.multiplicity,
-                                              left=self.left,
-                                              right=self.right)
-
-            self.log.info("Found %d events", len(self.ranges))
-            self.number_of_events = len(self.ranges)
-
-            if self.mega_event:
-                # Used for trigger efficiency studies
-                self.log.info("Mega event")
-                yield Event(n_channels=self.config['n_channels'],
-                            start_time=x[0],
-                            sample_duration=self.sample_duration,
-                            stop_time=x[-1],
-                            event_number=0)
-                break
-
-            for i, this_range in enumerate(self.ranges):
-                t0, t1 = [int(t) for t in this_range]
-
-                yield Event(n_channels=self.config['n_channels'],
-                            start_time=t0,
-                            sample_duration=self.sample_duration,
-                            stop_time=t1,
-                            event_number=i)
-
-
-class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, IOMongoDB):
-
-    """Read untriggered data from MongoDB into event classes
-
-    After MongoDBReadUntriggered has identified events, this class actually
-    reads out the raw data from MongoDB.  This is a separate class to ensure
-    that we can parallelize.
-    """
-
-    def startup(self):
-        IOMongoDB.startup(self)  # Setup with baseclass
-
-        self.setup_input()
-
-    def transform_event(self, event):
-        t0, t1 = int(event.start_time), int(event.stop_time)  # ns
-
-        event = Event(start_time=event.start_time,
-                      stop_time=event.stop_time,
-                      n_channels=self.config['n_channels'],
-                      sample_duration=self.sample_duration,
-                      event_number=event.event_number)
-
-        self.log.info("Building event in range [%s, %s]",
-                      sampletime_fmt(t0),
-                      sampletime_fmt(t1))
-
-        query = {START_KEY: {"$gte": self._to_mt(t0),
-                             "$lte": self._to_mt(t1)},
-                 # STOP_KEY: {"$lte": self._to_mt(t1)}
-                 }
-
-        self.mongo_iterator = self.mongo['input']['collection'].find(query,
-                                                                     **self.mongo_find_options)
-
-        # self.log.fatal(self.mongo_iterator.explain())
-        # input()
-        pulse_objects = []
-
-        for i, pulse_doc in enumerate(self.mongo_iterator):
-            # Fetch raw data from document
-            data = pulse_doc['data']
-
-            time_within_event = self._from_mt(pulse_doc[START_KEY]) - t0  # ns
-
-            if self.compressed:
-                data = snappy.decompress(data)
-
-            id = (pulse_doc['module'], pulse_doc['channel'])
-            if id in self.pmt_mappings:
-                channel = self.pmt_mappings[id]
-
-                pulse_objects.append(Pulse(left=self._to_mt(time_within_event),
-                                           raw_data=np.fromstring(data,
-                                                                  dtype="<i2"),
-                                           channel=channel))
-            else:
-                self.log.warning("Found data from module %d digitizer channel "
-                                 "%d, but not in PMT mapping.  Ignoring.",
-                                 pulse_doc['module'],
-                                 pulse_doc['channel'])
-        self.log.debug("%d pulses added", len(pulse_objects))
-        event.pulses = pulse_objects
-        return event
-
-
-class MongoDBWriteTriggered(plugin.OutputPlugin,
-                            IOMongoDB):
-    """Write entire processed event to MongoDB
-
-    These events are already triggered.  We first convert event class to a dict,
-    then pymongo converts that to BSON.  We have to convert the numpy arrays to
-    bytes because otherwise we get type errors since pymongo doesn't know about
-    numpy.
-    """
-
-    def startup(self):
-        IOMongoDB.startup(self)  # Setup with baseclass
-        self.setup_access('output')
-        self.c = self.mongo['output']['collection']
-
-    def write_event(self, event_class):
-        # Write the data to database
-
-        # Convert event class to pymongo-able dictionary
-        event_dict = event_class.to_dict(convert_numpy_arrays_to='bytes')
-
-        # Insert dictionary into database
-        self.c.write(event_dict)
