@@ -7,17 +7,17 @@ import itertools
 import os
 import time
 from configparser import ConfigParser, ExtendedInterpolation
-if six.PY2:
-    import imp
-else:
-    import importlib
-
 import numpy as np
 
 from prettytable import PrettyTable     # Timing report
 from tqdm import tqdm                   # Progress bar
 import pax      # Needed for pax.__version__
 from pax import units, simulation, utils
+if six.PY2:
+    import imp
+else:
+    import importlib
+
 
 # For diagnosing suspected memory leaks, uncomment this code
 # and similar code in process_event
