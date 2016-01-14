@@ -223,7 +223,7 @@ class PatternFitter(object):
         direc = None
         if self.dimensions == 2:
             # Hack to match old chi2gamma results
-            s = lambda d: 1 if d < 0 else -1
+            s = lambda d: 1 if d < 0 else -1  # flake8: noqa
             direc = np.array([[s(start_coordinates[0]), 0],
                               [0, s(start_coordinates[1])]])
 

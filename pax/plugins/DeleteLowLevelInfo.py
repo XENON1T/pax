@@ -17,7 +17,8 @@ class DeleteLowLevelInfo(plugin.TransformPlugin):
                 pulses_to_keep.extend(p.hits['found_in_pulse'].tolist())
             else:
                 p.hits = p.hits[:0]   # Set hits to an empty array
+        pulses_to_keep = np.unique(pulses_to_keep)
         event.all_hits = event.all_hits[:0]
-        event.pulses = [p for i, p in enumerate(event.pulses) if i in np.unique(pulses_to_keep)]
+        event.pulses = [p for i, p in enumerate(event.pulses) if i in pulses_to_keep]
         event.sum_waveforms = []
         return event

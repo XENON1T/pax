@@ -7,6 +7,7 @@ Typically, you'll specify a configuration via the --config command line argument
 For more control, you want to make your own configuration file and load it with --config_path your_config.ini
 """
 import argparse
+import time
 import os
 import sys
 import pax
@@ -20,6 +21,207 @@ import matplotlib
 if os.name != 'nt' and not os.environ.get('DISPLAY'):
     matplotlib.use('Agg')
 
+<<<<<<< HEAD
+=======
+import pax    # For version
+from pax import core, utils, formats
+
+from collections import OrderedDict
+
+# Make the output plugin aliases
+# Don't know yet if we want to display these ordered lexically or conceptually in --help:
+# work with an ordereddict to store the conceptual order in case we change our minds
+output_plugin_aliases = OrderedDict([
+    ('none',  'Dummy.DummyOutput'),
+    ('plot',  'Plotting.PlotEventSummary'),
+    ('plot_interactive',  'Plotting.PeakViewer'),
+])
+# Add output aliases from TableWriter formats
+output_plugin_aliases.update([(fc, ('Table.TableWriter', {'output_format': fc}))
+                              for fc in formats.flat_data_formats.keys()])
+output_plugin_aliases.update([
+    ('root',         'ROOTClass.WriteROOTClass'),
+
+    # Zipped formats -- allow arbitrary event numbering
+    ('zpickle', 'Pickle.WriteZippedPickles'),
+    ('zbson', 'BSON.WriteZippedBSON'),
+
+    # Non-zipped formats
+    ('bson',  'BSON.WriteBSON'),
+    ('json',  'BSON.WriteJSON'),
+    ('xed',   'XED.WriteXED'),
+
+    # Formats that don't have a plugin to read data back
+    ('raw_dump',     'RawWaveformDump.DumpSumWaveformToBinary'),
+    ('mongo',        'Mongo.MongoDBWriteTriggered'),
+])
+
+input_plugin_aliases = OrderedDict([
+    ('none',  'Dummy.DummyInput'),
+    ('xed',      'XED.ReadXED'),
+
+    # Zipped formats
+    ('zbson',   'BSON.ReadZippedBSON'),
+    ('zpickle', 'Pickle.ReadZippedPickles'),
+
+    # Nonzipped formats
+    ('bson',    'BSON.ReadBSON'),
+    ('json',    'BSON.ReadJSON'),
+])
+input_plugin_aliases.update([(fc, ('Table.TableReader', {'format': fc}))
+                             for fc in formats.flat_data_formats.keys()])
+input_plugin_aliases.update([
+    # Simulator input formats shouldn't be here: if you load simulated events you want a different config as well,
+    # so you still want to use the Simulator ini file.
+
+    # ROOT
+    ('root',     'ROOTClass.ReadROOTClass'),
+
+    # Mongo
+    ('mongo_untriggered', 'MongoDBReadUntriggered'),
+    ('mongo_untriggered', 'MongoDBReadUntriggered'),
+])
+
+
+class BaseProcess(multiprocessing.Process):
+
+    """Base class for starting pax threads
+    """
+
+    def __init__(self, task_queue, result_queue,
+                 input_done, process_done, output_done, has_crashed,
+                 config_names, config_path, config_dict):
+        multiprocessing.Process.__init__(self)
+
+        # Queues for feeding events in and out
+        self.task_queue = task_queue
+        self.result_queue = result_queue
+
+        # Multiprocessing 'Events'. These are booleans that indicated whether
+        # each stage has finished.
+        self.input_done = input_done
+        self.process_done = process_done
+        self.output_done = output_done
+        self.has_crashed = has_crashed
+
+        # pax configuations
+        self.config_names = config_names
+        self.config_path = config_path
+        self.config_dict = config_dict
+
+    def run(self):
+        # Defined in subclass
+        raise NotImplementedError()
+
+
+class ProcessorEvents(BaseProcess):
+    """Thread for processing single events
+
+    This thread will be fed via the task queue and report its results via the
+    result queue.  It will initialize its own 'pax' Processor instance.  It
+    waits until it has received a 'poison pill', which tells it to shut down.
+    """
+
+    def run(self):
+        # Initialize pax instance
+        p = core.Processor(config_names=self.config_names,
+                           config_paths=self.config_path,
+                           config_dict=self.config_dict)
+
+        # Loop until a 'poison pill' found (next_events == None)
+        while True:
+            next_events = self.task_queue.get()
+            answer = []
+            if next_events is None or self.has_crashed.is_set():  # Poison pill of None means shutdown
+                p.log.info('Exiting processor worker')
+                p.shutdown()
+                self.task_queue.task_done()
+                break
+
+            # If not None, means these are events to process
+            try:
+                for event in next_events:
+                    answer.append(p.process_event(event))
+                                    
+            except Exception as e:
+                # Oh no, a crash!
+                self.has_crashed.set()
+                self.task_queue.task_done()
+                # Turn into a "vampire" which slurps the entire task queue
+                for _ in self.task_queue.get():
+                    self.task_queue.task_done()
+                raise e
+
+            # Notify queue that these events processed
+            self.task_queue.task_done()
+
+            # Put output to result queue to await being picked up by Output thread
+            self.result_queue.put(answer)
+
+            # If the output worker has trouble catching up, sleep for a bit
+            while self.result_queue.qsize() >= 100:
+                time.sleep(5)
+
+
+class OutputEvents(BaseProcess):
+
+    """Thread for writing events to disk
+
+    Typically, there should only be one Output instance since often output
+    operations are not parallelizable.
+    """
+
+    def run(self):
+        # Initialize pax instance
+        p = core.Processor(config_names=self.config_names,
+                           config_paths=self.config_path,
+                           config_dict=self.config_dict)
+
+        #  Wait until can_end == True
+        while True:
+            # Need to check if we can end before we fetch events because
+            # of the race condition where input and processing are done, but
+            # there are still events left in the results queue waiting to be
+            # processed
+            can_end = self.input_done.is_set() and self.process_done.is_set()
+
+            # In case of a crash, end immediately
+            if self.has_crashed.is_set():
+                break
+
+            # Useful statistics
+            sys.stdout.write('\rprocessing queue: %d, output queue: %s' % (self.task_queue.qsize(),
+                                                                           self.result_queue.qsize()))
+            sys.stdout.flush()
+
+            try:
+                # Get events, or raise queue.Empty if timed out
+                next_events = self.result_queue.get(block=True,
+                                                    timeout=1)  # second
+
+                # If events, write them to output
+                for event in next_events:
+                    p.process_event(event)
+
+                # Tell result queue that events processed
+                self.result_queue.task_done()
+
+            except queue.Empty:
+                # If queue is empty, and input and processing done, then exit
+                # the while loop.
+                if can_end:
+                    break
+            except Exception as e:
+                # Oh no, a crash! Try to get out to avoid a hang
+                self.has_crashed.set()
+                self.result_queue.task_done()
+                self.output_done.set()
+                raise e
+
+        self.output_done.set()
+        p.shutdown()
+
+>>>>>>> ef48eab2bdfe57cffd631cf61acb561155902b00
 
 def main():
     input_plugin_aliases, output_plugin_aliases = get_aliases()
@@ -77,7 +279,6 @@ def main():
         override_dict['pax']['output_name'] = 'SCREEN'
         override_dict['pax']['output'] = 'Plotting.PeakViewer'
         override_dict['pax']['pre_output'] = []
-
 
     pax_instance = core.Processor(config_names=args.config,
                                   config_paths=args.config_path,

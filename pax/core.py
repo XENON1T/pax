@@ -11,18 +11,18 @@ import multiprocessing
 try:
     import queue
 except ImportError:
-    import Queue as queue   # noqa
+    import Queue as queue   # flake8: noqa
 
-if six.PY2:
-    import imp
-else:
-    import importlib
 from prettytable import PrettyTable     # Timing report
 from tqdm import tqdm                   # Progress bar
 
 import pax      # Needed for pax.__version__
-from pax import simulation, utils
 from pax.ConfigLoader import ConfigLoader
+from pax import simulation, utils
+if six.PY2:
+    import imp
+else:
+    import importlib
 
 # For diagnosing suspected memory leaks, uncomment this code
 # and similar code in process_event
