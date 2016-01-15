@@ -2,27 +2,20 @@
 """
 import pickle
 
-from pax.FolderIO import ReadZipped, WriteZipped
+from pax.FolderIO import WriteZippedEncoder, ReadZippedDecoder
 
 
 ##
 # Zipped pickles
 ##
 
-class PickleIO():
+class EncodePickle(WriteZippedEncoder):
 
-    def from_format(self, doc):
-        return pickle.loads(doc)
-
-    def to_format(self, event):
+    def encode_event(self, event):
         return pickle.dumps(event)
 
 
-class ReadZippedPickles(PickleIO, ReadZipped):
-    """Read a folder of zipfiles containing gzipped pickle files"""
-    pass
+class DecodePickle(ReadZippedDecoder):
 
-
-class WriteZippedPickles(PickleIO, WriteZipped):
-    """Write raw data to a folder of zipfiles containing gzipped pickles"""
-    pass
+    def decode_event(self, event):
+        return pickle.loads(event)

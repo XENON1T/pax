@@ -281,14 +281,17 @@ class WriteToFolder(plugin.OutputPlugin):
 
 
 ##
-# Zipfile of events
+# Zipfiles of events
 ##
 
 class ReadZipped(InputFromFolder):
-
     """Read a folder of zipfiles containing [some format]
+    Should be followed by a decoded plugin who will decompress and decode the events.
+    It's better to split this task up, since input is single-core only,
+    while encoding & compressing can still be done by the processing workers
     """
     file_extension = 'zip'
+    do_output_check = False
 
     def open(self, filename):
         self.current_file = zipfile.ZipFile(filename)
@@ -301,36 +304,59 @@ class ReadZipped(InputFromFolder):
     def get_single_event_in_current_file(self, event_number):
         with self.current_file.open(str(event_number)) as event_file_in_zip:
             data = event_file_in_zip.read()
-            data = zlib.decompress(data)
-            return self.from_format(data)
+            return data
 
     def close(self):
         """Close the currently open file"""
         self.current_file.close()
 
-    def from_format(self, doc):
+
+class ReadZippedDecoder(plugin.TransformPlugin):
+    do_input_check = False
+
+    def transform_event(self, event):
+        event = zlib.decompress(event)
+        return self.decode_event(event)
+
+    def decode_event(self, event):
         raise NotImplementedError
 
 
 class WriteZipped(WriteToFolder):
-
     """Write raw data to a folder of zipfiles containing [some format]
-    We use zlib, not zip's deflate, for compression.
+    Should be preceded by a WriteZippedEncoder who will encode and compress the events.
+    It's better to split this task up, since output is single-core only,
+    while encoding & compressing can still be done by the processing workers
     """
+    do_input_check = False
     file_extension = 'zip'
 
     def open(self, filename):
         self.current_file = zipfile.ZipFile(filename, mode='w')
-        self.compresslevel = self.config.get('compresslevel', 4)
 
     def write_event_to_current_file(self, event):
-        # Convert the event to the desired format (e.g. bson)
-        data = self.to_format(event)
-        data = zlib.compress(data, self.compresslevel)
-        self.current_file.writestr(str(event.event_number), data)
+        # The "events" we get are actually tuples (event_number, compressed zip data)
+        event_number, data = event
+        self.current_file.writestr(str(event_number), data)
 
     def close(self):
         self.current_file.close()
 
-    def to_format(self, doc):
+
+class WriteZippedEncoder(plugin.TransformPlugin):
+    """Encode and compress an event for entry into a zipfile.
+    Note we use zlib, not zip's deflate, for compression.
+    """
+    do_output_check = False
+
+    def startup(self):
+        self.compresslevel = self.config.get('compresslevel', 4)
+
+    def transform_event(self, event):
+        event_number = event.event_number
+        event = self.encode_event(event)
+        event = zlib.compress(event, self.compresslevel)
+        return event_number, self.decode_event(event)
+
+    def encode_event(self, event):
         raise NotImplementedError

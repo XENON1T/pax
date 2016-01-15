@@ -70,20 +70,26 @@ class InputPlugin(BasePlugin):
 
 class ProcessPlugin(BasePlugin):
     """Plugin that can process events"""
+    # Set these to False if you don't want to check the input/output are actually pax events
+    do_input_check = True
+    do_output_check = True
+
     def _pre_startup(self):
         # Give the logger another name, we need self.log for the adapter
         self._log = self.log
 
     def process_event(self, event=None):
-        if not isinstance(event, Event):
-            raise RuntimeError("%s received a %s instead of an Event" % (self.name, type(event)))
+        if self.do_input_check:
+            if not isinstance(event, Event):
+                raise RuntimeError("%s received a %s instead of an Event" % (self.name, type(event)))
         if self.has_shut_down:
             raise RuntimeError("%s was asked to process an event, but it has already shut down!" % self.name)
         # Setup the logging adapter which will prepend [Event: ...] to the logging messages
         self.log = EventLoggingAdapter(self._log, dict(event_number=event.event_number))
         event = self._process_event(event)
-        if not isinstance(event, Event):
-            raise RuntimeError("%s returned a %s instead of an event." % (self.name, type(event)))
+        if self.do_output_check:
+            if not isinstance(event, Event):
+                raise RuntimeError("%s returned a %s instead of an event." % (self.name, type(event)))
         return event
 
     def _process_event(self, event):
