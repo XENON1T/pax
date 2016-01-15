@@ -217,7 +217,7 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoDBReader):
                                  "which doesn't exist according to PMT mapping! Ignoring...",
                                  pulse_doc['module'], pulse_doc['channel'])
 
-        self.log.debug("%d pulses in event %s" %(len(event.pulses), event.event_number))
+        self.log.debug("%d pulses in event %s" % (len(event.pulses), event.event_number))
         return event
 
 
