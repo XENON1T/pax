@@ -1,6 +1,4 @@
 import unittest
-import six
-import os
 
 import numpy as np
 
@@ -10,11 +8,6 @@ class TestRoot(unittest.TestCase):
     """
 
     def test_root_write(self):
-
-        # For now, skip this test on windows and python 2
-        if os.name == 'nt' or six.PY2:
-            return
-
         import ROOT
         file_out = ROOT.TFile("test_tree.root", "recreate")
         t = ROOT.TTree("name_of_tree", "tree title")

@@ -12,15 +12,13 @@ class BasicProperties(plugin.TransformPlugin):
     """
 
     def transform_event(self, event):
+        first_top_ch = np.min(np.array(self.config['channels_top']))
         last_top_ch = np.max(np.array(self.config['channels_top']))
 
         for peak in event.peaks:
             hits = peak.hits
             if len(hits) == 0:
                 raise ValueError("Can't compute properties of an empty peak!")
-            if len(hits) == 1:
-                peak.type = 'lone_hit'
-                event.lone_hits_per_channel[hits[0]['channel']] += 1
 
             peak.left = hits['left'].min()
             peak.right = hits['right'].max()
@@ -44,16 +42,22 @@ class BasicProperties(plugin.TransformPlugin):
             peak.mean_amplitude_to_noise /= peak.area
 
             # Compute top fraction
-            peak.area_fraction_top = np.sum(peak.area_per_channel[:last_top_ch + 1]) / peak.area
-            peak.hits_fraction_top = np.sum(peak.hits_per_channel[:last_top_ch + 1]) / peak.area
+            peak.area_fraction_top = np.sum(peak.area_per_channel[first_top_ch:last_top_ch + 1]) / peak.area
+            peak.hits_fraction_top = np.sum(peak.hits_per_channel[first_top_ch:last_top_ch + 1]) / peak.area
 
             # Compute timing quantities
             peak.hit_time_mean, peak.hit_time_std = weighted_mean_variance(hits['center'], hits['area'])
             peak.hit_time_std **= 0.5  # Convert variance to std
-            peak.n_contributing_channels_top = np.sum((peak.area_per_channel[:last_top_ch + 1] > 0))
+            peak.n_contributing_channels_top = np.sum((peak.area_per_channel[first_top_ch:last_top_ch + 1] > 0))
 
             if peak.n_contributing_channels == 0:
                 raise RuntimeError("Every peak should have at least one contributing channel... what's going on?")
+
+            if peak.n_contributing_channels == 1:
+                peak.type = 'lone_hit'
+                channel = hits[0]['channel']
+                event.lone_hits_per_channel[channel] += 1
+                peak.lone_hit_channel = channel
 
         return event
 

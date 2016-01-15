@@ -14,6 +14,14 @@ Event
     :members:
     :undoc-members:
 
+-----------
+Interaction
+-----------
+
+.. autoclass:: pax.datastructure.Interaction
+    :members:
+    :undoc-members:
+
 ----
 Peak
 ----

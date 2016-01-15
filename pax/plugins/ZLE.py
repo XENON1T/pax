@@ -3,10 +3,11 @@ import numpy as np
 from pax import plugin, datastructure, utils
 import os
 import sys
-sys.path.append(os.path.join(utils.PAX_DIR, 'plugins', 'signal_processing'))
+
 from HitFinder import find_intervals_above_threshold
 
 import matplotlib.pyplot as plt
+sys.path.append(os.path.join(utils.PAX_DIR, 'plugins', 'signal_processing'))
 
 
 class SoftwareZLE(plugin.TransformPlugin):
@@ -44,10 +45,18 @@ class SoftwareZLE(plugin.TransformPlugin):
             if self.debug:
                 plt.plot(w)
 
+            # Get the ZLE threshold
+            # Note a threshold of X digitizer bins actually means that the data acquisition
+            # triggers when the waveform becomes greater than X, i.e. X+1 or more (see #273)
+            # hence the + 1
+            if str(pulse.channel) in self.config.get('special_thresholds', {}):
+                threshold = self.config['special_thresholds'][str(pulse.channel)] + 1
+            else:
+                threshold = self.config['zle_threshold'] + 1
+
             # Find intervals above ZLE threshold
-            high_threshold = low_threshold = self.config['zle_threshold']
             n_itvs_found = find_intervals_above_threshold(w.astype(np.float64),
-                                                          high_threshold, low_threshold, zle_intervals_buffer,
+                                                          threshold, threshold, zle_intervals_buffer,
                                                           dynamic_low_threshold_coeff=0)
 
             if n_itvs_found == self.config['max_intervals']:

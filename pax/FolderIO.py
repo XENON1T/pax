@@ -5,6 +5,7 @@ import shutil
 import zipfile
 
 from bson import json_util
+from six.moves import input
 
 from pax import utils, plugin
 
@@ -28,9 +29,10 @@ class InputFromFolder(plugin.InputPlugin):
 
         if not os.path.isdir(input_name):
             if not input_name.endswith('.' + self.file_extension):
-                self.log.warning("input_name %s does not end "
-                                 "with the expected file extension %s" % (input_name,
-                                                                          self.file_extension))
+                self.log.error("input_name %s does not end "
+                               "with the expected file extension %s" % (input_name,
+                                                                        self.file_extension))
+                return
             self.log.debug("InputFromFolder: Single file mode")
             self.init_file(input_name)
 
@@ -51,18 +53,18 @@ class InputFromFolder(plugin.InputPlugin):
         self.select_file(0)
 
         # Set the number of total events
-        self.number_of_events = sum([fr['last_event'] - fr['first_event'] + 1
-                                     for fr in self.raw_data_files])
+        self.number_of_events = sum([fr['n_events'] for fr in self.raw_data_files])
 
     def init_file(self, filename):
         """Find out the first and last event contained in filename
-        Appends {'filename': ..., 'first_event': ..., 'last_event':...} to self.raw_data_files
+        Appends {'filename': ..., 'first_event': ..., 'last_event':..., 'n_events':...} to self.raw_data_files
         """
-        first_event, last_event = self.get_first_and_last_event_number(filename)
+        first_event, last_event, n_events = self.get_event_number_info(filename)
         self.log.debug("InputFromFolder: Initializing %s", filename)
         self.raw_data_files.append({'filename': filename,
                                     'first_event': first_event,
-                                    'last_event': last_event})
+                                    'last_event': last_event,
+                                    'n_events': n_events})
 
     def select_file(self, i):
         """Selects the ith file from self.raw_data_files for reading
@@ -128,11 +130,20 @@ class InputFromFolder(plugin.InputPlugin):
         return self.get_single_event_in_current_file(event_number)
 
     # If reading in from a folder-of-files format not written by FolderIO,
-    # you'll probably have to overwrite this. (e.g. XED does)
-    def get_first_and_last_event_number(self, filename):
-        """Return the first and last event number in file specified by filename"""
-        _, _, first_event, last_event = os.path.splitext(os.path.basename(filename))[0].split('-')
-        return int(first_event), int(last_event)
+    # you'll probably have to overwrite this. (e.g. ReadXED does)
+    def get_event_number_info(self, filename):
+        """Return the first, last and total event numbers in file specified by filename"""
+        stuff = os.path.splitext(os.path.basename(filename))[0].split('-')
+        if len(stuff) == 4:
+            # Old format, which didn't have an event numbers field... progress bar will be off...
+            _, _, first_event, last_event = stuff
+            return int(first_event), int(last_event), int(last_event) - int(first_event) + 1
+        elif len(stuff) == 5:
+            _, _, first_event, last_event, n_events = stuff
+            return int(first_event), int(last_event), int(n_events)
+        else:
+            raise ValueError("Invalid file name: %s. "
+                             "Should be tpcname-something-firstevent-lastevent-nevents.%s" % self.file_extension)
 
     ##
     # Child class should override these
@@ -240,11 +251,12 @@ class WriteToFolder(plugin.OutputPlugin):
         # Rename the temporary file to reflect the events we've written to it
         os.rename(self.tempfile,
                   os.path.join(self.output_dir,
-                               '%s-%d-%06d-%06d.%s' % (self.config['tpc_name'],
-                                                       self.config['run_number'],
-                                                       self.first_event_in_current_file,
-                                                       self.last_event_written,
-                                                       self.file_extension)))
+                               '%s-%d-%06d-%06d-%06d.%s' % (self.config['tpc_name'],
+                                                            self.config['run_number'],
+                                                            self.first_event_in_current_file,
+                                                            self.last_event_written,
+                                                            self.events_written_to_current_file,
+                                                            self.file_extension)))
 
     def shutdown(self):
         if self.has_shut_down:

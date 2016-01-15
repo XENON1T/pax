@@ -213,6 +213,22 @@ class TestPax(unittest.TestCase):
         self.assertIsInstance(pl, plugin.OutputPlugin)
         # TODO: do some checks on the simulator output
 
+    def test_plotting(self):
+        """ Plot the first event from the default XED file
+        """
+        import matplotlib
+        # Force matplotlib to switch to a non-GUI backend, so the test runs on Travis
+        matplotlib.pyplot.switch_backend('Agg')
+        mypax = core.Processor(config_names='XENON100',
+                               config_dict={'pax': {'output': 'Plotting.PlotEventSummary',
+                                                    'pre_output': [],
+                                                    'events_to_process': [0],
+                                                    'output_name': 'plots_test'}})
+        mypax.run()
+        self.assertTrue(os.path.exists('./plots_test'))
+        self.assertTrue(os.path.exists('./plots_test/000000.png'))
+        shutil.rmtree('plots_test')
+
 
 if __name__ == '__main__':
     unittest.main()

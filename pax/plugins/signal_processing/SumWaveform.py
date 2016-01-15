@@ -82,7 +82,7 @@ class SumWaveform(plugin.TransformPlugin):
         return event
 
 
-@numba.jit(numba.void(numba.float32[:], numba.int64[:], numba.int64[:], numba.int64), nopython=True, cache=True)
+@numba.jit(numba.void(numba.float32[:], numba.int64[:], numba.int64[:], numba.int64), nopython=True)
 def zero_waveform_outside_hits(w, left, right, pulse_left):
     """Assumes hits don't overlap, and are sorted from left to right"""
     if len(left) == 0:

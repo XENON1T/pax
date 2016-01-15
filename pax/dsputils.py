@@ -6,7 +6,7 @@ from pax.datastructure import Hit
 
 
 @numba.jit(numba.int64[:](numba.from_dtype(Hit.get_dtype())[:]),
-           nopython=True, cache=True)
+           nopython=True)
 def gaps_between_hits(hits):
     """Return array of gaps between hits: a hit's 'gap' is the # of samples before that hit free of other hits.
     The gap of the first hit is 0 by definition.
@@ -29,7 +29,7 @@ def gaps_between_hits(hits):
 
 
 def count_hits_per_channel(peak, config, weights=None):
-    return np.bincount(peak.hits['channel'], minlength=config['n_channels'], weights=weights)
+    return np.bincount(peak.hits['channel'].astype(np.int16), minlength=config['n_channels'], weights=weights)
 
 
 def adc_to_pe(config, channel, use_reference_gain=False, use_reference_gain_if_zero=False):

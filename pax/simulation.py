@@ -14,6 +14,7 @@ from scipy import stats
 
 from pax import units, utils, datastructure
 from pax.PatternFitter import PatternFitter
+from pax.InterpolatingMap import InterpolatingMap
 from pax.dsputils import cluster_by_diff
 from pax.utils import Memoize
 
@@ -61,9 +62,9 @@ class Simulator(object):
             c['reduced_e_in_gas'] / units.Td))
 
         # Which channels stand to receive any photons?
-        # TODO: In XENON100, channel 0 will receive photons unless magically_avoid_dead_pmts=True
-        # To prevent this, subtract 0 from channel_for_photons. But don't do that for XENON1T!!
         channels_for_photons = c['channels_in_detector']['tpc']
+        if c['pmt_0_is_fake']:
+            channels_for_photons = [ch for ch in channels_for_photons if ch != 0]
         if c.get('magically_avoid_dead_pmts', False):
             channels_for_photons = [ch for ch in channels_for_photons if c['gains'][ch] > 0]
         if c.get('magically_avoid_s1_excluded_pmts', False) and \
@@ -90,6 +91,10 @@ class Simulator(object):
             # (which is one row per channel)
             self.channel_offset = 1 if c['pmt_0_is_fake'] else 0
 
+        # Load light yields
+        self.s1_light_yield_map = InterpolatingMap(utils.data_file_name(c['s1_light_yield_map']))
+        self.s2_light_yield_map = InterpolatingMap(utils.data_file_name(c['s2_light_yield_map']))
+
         # Init s2 per pmt lce map
         qes = np.array(c['quantum_efficiencies'])
         if c.get('s2_patterns_file', None) is not None:
@@ -103,7 +108,7 @@ class Simulator(object):
         # Init s1 pattern maps
         # NB: do NOT adjust patterns for QE, map is data derived, so no need.
         log.debug("Initializing s1 patterns...")
-        if 's1_patterns_file' in self.config:
+        if c.get('s1_patterns_file', None) is not None:
             self.s1_patterns = PatternFitter(filename=utils.data_file_name(c['s1_patterns_file']),
                                              zoom_factor=c.get('s1_patterns_zoom_factor', 1),
                                              default_errors=c['relative_qe_error'] + c['relative_gain_error'])
@@ -149,14 +154,15 @@ class Simulator(object):
             e_arrival_times += np.random.normal(drift_time_mean, drift_time_stdev, electrons_seen)
         return e_arrival_times
 
-    def s1_photons(self, n_photons, recoil_type, t=0.):
+    def s1_photons(self, n_photons, recoil_type, x=0., y=0., z=0, t=0.):
         """
         Returns a list of photon production times caused by an S1 process.
 
         """
-        # Apply detection efficiency
+        # Apply relative light yield & detection efficiency
         log.debug("Creating an s1 from %s photons..." % n_photons)
-        n_photons = np.random.binomial(n=n_photons, p=self.config['s1_detection_efficiency'])
+        ly = self.s1_light_yield_map.get_value(x, y, z) * self.config['s1_detection_efficiency']
+        n_photons = np.random.binomial(n=n_photons, p=ly)
         log.debug("    %s photons are detected." % n_photons)
         if n_photons == 0:
             return np.array([])
@@ -216,15 +222,12 @@ class Simulator(object):
 
         return timings + t * np.ones(len(timings))
 
-    def s2_scintillation(self, electron_arrival_times):
-        """
-        Given a list of electron arrival times, returns photon production times
-        """
-
+    def s2_scintillation(self, electron_arrival_times, x=0.0, y=0.0):
+        """Given a list of electron arrival times, returns photon production times"""
         # How many photons does each electron make?
-        # TODO: xy correction!
+        c = self.config
         photons_produced = np.random.poisson(
-            self.config['s2_secondary_sc_gain_density'] * self.config['elr_gas_gap_length'],
+            c['s2_secondary_sc_gain_density'] * c['elr_gas_gap_length'] * self.s2_light_yield_map.get_value(x, y),
             len(electron_arrival_times)
         )
         total_photons = np.sum(photons_produced)
@@ -242,9 +245,9 @@ class Simulator(object):
         # Account for singlet/triplet excimer decay times
         return self.singlet_triplet_delays(
             s2_pe_times,
-            t1=self.config['singlet_lifetime_gas'],
-            t3=self.config['triplet_lifetime_gas'],
-            singlet_ratio=self.config['singlet_fraction_gas']
+            t1=c['singlet_lifetime_gas'],
+            t3=c['triplet_lifetime_gas'],
+            singlet_ratio=c['singlet_fraction_gas']
         )
 
     def singlet_triplet_delays(self, times, t1, t3, singlet_ratio):
@@ -313,6 +316,9 @@ class Simulator(object):
         Returns None if you pass a hitlist without any hits
         returns start_time (in units, ie ns), pmt waveform matrix
         """
+        if hitpattern is None:
+            # Generate an empty (noise-only) event
+            hitpattern = SimulatedHitpattern(self)
         if not isinstance(hitpattern, SimulatedHitpattern):
             raise ValueError("to_pax_event takes an instance of SimulatedHitpattern, you gave a %s." % type(hitpattern))
 
@@ -366,7 +372,6 @@ class Simulator(object):
                 pmt_pulse_center_clusters = [all_pmt_pulse_centers]
 
             for pmt_pulse_centers in pmt_pulse_center_clusters:
-
                 # Build the waveform pulse by pulse (bin by bin was slow, hope this
                 # is faster)
 
@@ -517,7 +522,7 @@ class Simulator(object):
 
     def distribute_s2_photons(self, n_photons, x, y):
         if not self.s2_patterns:
-            return self.randomize_photons_over_channels(n_photons, self.config['channels_top'])
+            return self.randomize_photons_over_channels(n_photons, self.config['channels_in_detector']['tpc'])
 
         # How many photons to the top array?
         n_top = np.random.binomial(n=n_photons, p=self.config['s2_mean_area_fraction_top'])
@@ -533,8 +538,7 @@ class Simulator(object):
             hitp = self.distribute_photons_by_pattern(n_top, self.s2_patterns, (x, y))
 
         # The bottom photons are distributed randomly
-        hitp += self.randomize_photons_over_channels(n_photons - n_top,
-                                                     channels=self.config['channels_bottom'])
+        hitp += self.randomize_photons_over_channels(n_photons - n_top, channels=self.config['channels_bottom'])
         return hitp
 
     def distribute_s1_photons(self, n_photons, x, y, z):
@@ -564,7 +568,7 @@ class Simulator(object):
         :return: array of length sim.config['n_channels'] with photon counts per channel
         """
         if n_photons == 0:
-            return np.zeros(self.config['n_channels'])
+            return np.zeros(self.config['n_channels'], dtype=np.int64)
 
         # Include only channels that can receive photons
         if channels is None:
@@ -607,8 +611,16 @@ class Simulator(object):
 
 class SimulatedHitpattern(object):
 
-    def __init__(self, simulator, photon_timings, x=0, y=0, z=0):
+    def __init__(self, simulator, photon_timings=tuple(), x=0, y=0, z=0):
         self.config = simulator.config
+
+        if not len(photon_timings):
+            # Create empty hitpattern
+            self.arrival_times_per_channel = {ch: [] for ch in range(simulator.config['n_channels'])}
+            self.min = 0
+            self.max = 0
+            self.n_photons = 0
+            return
 
         # Correct for PMT TTS
         photon_timings += np.random.normal(
@@ -622,9 +634,6 @@ class SimulatedHitpattern(object):
         self.min = min(photon_timings)
         self.max = max(photon_timings)
         self.n_photons = len(photon_timings)
-
-        if not len(photon_timings):
-            raise ValueError('Need at least 1 photon timing to produce a valid hitpattern')
 
         # Shuffle all timings in the array, so channel 1 doesn't always get the first photon
         # Don't rely on randomize_photons_over_channels to do this, we'll be splitting top v bottom here

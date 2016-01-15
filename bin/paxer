@@ -7,6 +7,7 @@ specify a configuration via the --config command line argument.
 """
 
 import argparse
+import time
 import os
 import sys
 import copy
@@ -19,10 +20,8 @@ import multiprocessing
 # Hack to ensure correct matplotlib backend is chosen
 # Without this, pax's plotting does not work when using a system without a graphical display
 # Stolen from http://stackoverflow.com/questions/8257385/automatic-detection-of-display-availability-with-matplotlib
-# Note the version with os.environ does not work on windows
 import matplotlib
-r = os.system('python -c "import matplotlib.pyplot as plt;plt.figure()"')
-if r != 0:
+if os.name != 'nt' and not os.environ.get('DISPLAY'):
     matplotlib.use('Agg')
 
 import pax    # For version
@@ -42,6 +41,8 @@ output_plugin_aliases = OrderedDict([
 output_plugin_aliases.update([(fc, ('Table.TableWriter', {'output_format': fc}))
                               for fc in formats.flat_data_formats.keys()])
 output_plugin_aliases.update([
+    ('root',         'ROOTClass.WriteROOTClass'),
+
     # Zipped formats -- allow arbitrary event numbering
     ('zpickle', 'Pickle.WriteZippedPickles'),
     ('zbson', 'BSON.WriteZippedBSON'),
@@ -51,13 +52,9 @@ output_plugin_aliases.update([
     ('json',  'BSON.WriteJSON'),
     ('xed',   'XED.WriteXED'),
 
-    # Old raw formats (deprecated / problematic)
-    ('_raw_pickles', 'Pickle.WriteToPickleFile'),
-    ('_avro',        'Avro.WriteAvro'),
-
     # Formats that don't have a plugin to read data back
     ('raw_dump',     'RawWaveformDump.DumpSumWaveformToBinary'),
-    ('mongo',        'Mongo.MongoDBWriteTriggered')
+    ('mongo',        'Mongo.MongoDBWriteTriggered'),
 ])
 
 input_plugin_aliases = OrderedDict([
@@ -71,7 +68,6 @@ input_plugin_aliases = OrderedDict([
     # Nonzipped formats
     ('bson',    'BSON.ReadBSON'),
     ('json',    'BSON.ReadJSON'),
-    ('avro',    'Avro.ReadAvro'),
 ])
 input_plugin_aliases.update([(fc, ('Table.TableReader', {'format': fc}))
                              for fc in formats.flat_data_formats.keys()])
@@ -79,12 +75,12 @@ input_plugin_aliases.update([
     # Simulator input formats shouldn't be here: if you load simulated events you want a different config as well,
     # so you still want to use the Simulator ini file.
 
+    # ROOT
+    ('root',     'ROOTClass.ReadROOTClass'),
+
     # Mongo
     ('mongo_untriggered', 'MongoDBReadUntriggered'),
     ('mongo_untriggered', 'MongoDBReadUntriggered'),
-
-    # Deprecated formats. Note some plugins have deprecated write code but not read code.
-    ('_raw_pickles',  'Pickle.DirWithPickleFiles'),
 ])
 
 
@@ -94,7 +90,7 @@ class BaseProcess(multiprocessing.Process):
     """
 
     def __init__(self, task_queue, result_queue,
-                 input_done, process_done, output_done,
+                 input_done, process_done, output_done, has_crashed,
                  config_names, config_path, config_dict):
         multiprocessing.Process.__init__(self)
 
@@ -107,6 +103,7 @@ class BaseProcess(multiprocessing.Process):
         self.input_done = input_done
         self.process_done = process_done
         self.output_done = output_done
+        self.has_crashed = has_crashed
 
         # pax configuations
         self.config_names = config_names
@@ -119,12 +116,11 @@ class BaseProcess(multiprocessing.Process):
 
 
 class ProcessorEvents(BaseProcess):
-
     """Thread for processing single events
 
     This thread will be fed via the task queue and report its results via the
     result queue.  It will initialize its own 'pax' Processor instance.  It
-    waits until it has received a 'poisson pill', which tells it to shut down.
+    waits until it has received a 'poison pill', which tells it to shut down.
     """
 
     def run(self):
@@ -133,28 +129,39 @@ class ProcessorEvents(BaseProcess):
                            config_paths=self.config_path,
                            config_dict=self.config_dict)
 
-        # Loop until a 'poisson pill' found (next_events == None)
+        # Loop until a 'poison pill' found (next_events == None)
         while True:
             next_events = self.task_queue.get()
             answer = []
-            if next_events is None:  # Poison pill of None means shutdown
-                p.log.info('Exiting')
+            if next_events is None or self.has_crashed.is_set():  # Poison pill of None means shutdown
+                p.log.info('Exiting processor worker')
                 p.shutdown()
                 self.task_queue.task_done()
                 break
 
             # If not None, means these are events to process
-            for event in next_events:
-                answer.append(p.process_event(event))
+            try:
+                for event in next_events:
+                    answer.append(p.process_event(event))
+                                    
+            except Exception as e:
+                # Oh no, a crash!
+                self.has_crashed.set()
+                self.task_queue.task_done()
+                # Turn into a "vampire" which slurps the entire task queue
+                for _ in self.task_queue.get():
+                    self.task_queue.task_done()
+                raise e
 
             # Notify queue that these events processed
             self.task_queue.task_done()
 
-            # Put output to result queue to await being picked up by Output
-            # thread
+            # Put output to result queue to await being picked up by Output thread
             self.result_queue.put(answer)
 
-        return
+            # If the output worker has trouble catching up, sleep for a bit
+            while self.result_queue.qsize() >= 100:
+                time.sleep(5)
 
 
 class OutputEvents(BaseProcess):
@@ -179,12 +186,14 @@ class OutputEvents(BaseProcess):
             # processed
             can_end = self.input_done.is_set() and self.process_done.is_set()
 
+            # In case of a crash, end immediately
+            if self.has_crashed.is_set():
+                break
+
             # Useful statistics
-            print('input_done:', self.input_done.is_set(),
-                  'process_done:', self.process_done.is_set(),
-                  'output_done:', self.output_done.is_set(),
-                  'blocks waiting input:', self.task_queue.qsize(),
-                  'blocks waiting output:', self.result_queue.qsize())
+            sys.stdout.write('\rprocessing queue: %d, output queue: %s' % (self.task_queue.qsize(),
+                                                                           self.result_queue.qsize()))
+            sys.stdout.flush()
 
             try:
                 # Get events, or raise queue.Empty if timed out
@@ -197,15 +206,21 @@ class OutputEvents(BaseProcess):
 
                 # Tell result queue that events processed
                 self.result_queue.task_done()
+
             except queue.Empty:
                 # If queue is empty, and input and processing done, then exit
                 # the while loop.
                 if can_end:
-                    self.output_done.set()
-                    p.shutdown()
                     break
+            except Exception as e:
+                # Oh no, a crash! Try to get out to avoid a hang
+                self.has_crashed.set()
+                self.result_queue.task_done()
+                self.output_done.set()
+                raise e
 
-        return
+        self.output_done.set()
+        p.shutdown()
 
 
 def main():
@@ -261,12 +276,14 @@ def main():
     # Overrides for plotting
     if args.plot_to_dir or args.plot:
         override_dict['pax']['output_name'] = 'SCREEN'
+        override_dict['pax']['pre_output'] = []    # Avoid dumping the stuff we want to plot!
         override_dict['pax']['output'] = 'Plotting.PlotEventSummary'
     if args.plot_to_dir:
         override_dict['pax']['output_name'] = args.plot_to_dir
     if args.plot_interactive:
         override_dict['pax']['output_name'] = 'SCREEN'
         override_dict['pax']['output'] = 'Plotting.PeakViewer'
+        override_dict['pax']['pre_output'] = []
 
     ##
     # Single-core processing
@@ -283,13 +300,10 @@ def main():
             pax_instance.shutdown()
             print("Exiting")
             sys.exit()
-    else:  # Parallel processing
-        if os.name == 'nt':
-            raise NotImplementedError("Pax parallelization is not supported "
-                                      "under Windows (due to lack of fork).")
 
+    else:  # Parallel processing
         override_dict['pax']['plugin_group_names'] = ['input']
-        p = core.Processor(config_names=args.config,
+        input_pax = core.Processor(config_names=args.config,
                            config_paths=args.config_path,
                            config_dict=copy.deepcopy(override_dict))
 
@@ -299,6 +313,7 @@ def main():
         input_done = multiprocessing.Event()
         process_done = multiprocessing.Event()
         output_done = multiprocessing.Event()
+        has_crashed = multiprocessing.Event()
 
         # Establish communication queues
         tasks = multiprocessing.JoinableQueue()
@@ -306,53 +321,62 @@ def main():
 
         # Start consumers
         num_consumers = args.cpus
-        p.log.info('Creating %d consumers',
-                   num_consumers)
+        input_pax.log.info('Creating %d consumers', num_consumers)
         consumers = [ProcessorEvents(tasks, results,
-                                     input_done, process_done, output_done,
+                                     input_done, process_done, output_done, has_crashed,
                                      args.config,
                                      args.config_path,
                                      config_dict=copy.deepcopy(override_dict)) for _ in range(num_consumers)]
 
         override_dict['pax']['plugin_group_names'] = ['output']
         consumer_output = OutputEvents(tasks, results,
-                                       input_done, process_done, output_done,
+                                       input_done, process_done, output_done, has_crashed,
                                        args.config,
                                        args.config_path,
                                        config_dict=copy.deepcopy(override_dict))
 
-        # Start all worker threads
+        # Start all consumer threads
         for w in consumers + [consumer_output]:
             w.start()
 
-        # Enqueue jobs
+        # Enqueue events to the consumers in blocks of 10
+        # TODO: Make the block size configurable, and figure out a reasonable block size
         events = []
-        n = 10  # chunk in threads (TODO: what is best n?)
-
-        for event in p.get_events():
+        multiprocessing_block_size = 10
+        for event in input_pax.get_events():
+            if has_crashed.is_set():
+                print("One of the processor workers crashed: aborting further input!")
+                break
             events.append(event)
-            if len(events) > n:
+            if len(events) > multiprocessing_block_size:
                 tasks.put(events)
                 events = []
-
-        # If anything left over
+            # If the processing workers have trouble catching up, sleep for a bit
+            while tasks.qsize() >= 100:
+                time.sleep(5)
         if len(events):
             tasks.put(events)
-        p.shutdown()
+        input_pax.shutdown()
 
-        # Input stage done
-        input_done.set()
-
-        # Put poison pills to tell thread to quit
+        # Finalize input
+        if has_crashed.is_set():
+            raise RuntimeError("Premature exit due to crash!")
+        # Put "poison pills" to the task queues: these tell the workers nothing more is coming and it is ok to quit
         for i in range(num_consumers):
             tasks.put(None)
+        input_done.set()
 
-        print("Wait for consumers to finish")
+        print("Input done: waiting for processing to finish")
         tasks.join()  # blocks until processing done
-
         process_done.set()  # processing done
+        if has_crashed.is_set():
+            raise RuntimeError("Premature exit due to crash!")
 
+        print("Processing done: waiting for output to finish")
         output_done.wait()  # wait until output done
+
+        if has_crashed.is_set():
+            raise RuntimeError("Premature exit due to crash!")
         print("All events processed.  Exiting...")
 
 

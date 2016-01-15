@@ -34,6 +34,7 @@ The entry point to this code is typically via bin/event-builder.
 
 import argparse
 import logging
+import os
 import pymongo
 import time
 from pax import core, units
@@ -44,34 +45,37 @@ def run():
 
     Find a dataset to process, then process it with settings from command line.
     """
+
+    # Fetch command line arguments
     args, log = handle_args()
 
-    query = {"trigger.status": "waiting_to_be_processed"}
+    logging.info("Connection to %s" % args.mongo)
+    client = pymongo.MongoClient(args.mongo)
+
+    try:
+        client.admin.command('ping')
+        log.debug("Connection successful to %s", args.mongo)
+    except pymongo.errors.ConnectionFailure:
+        log.fatal("Cannot connect to MongoDB at %s" % (args.mongo))
+        raise
+
+    authenticate(client)
+
+    status_name = 'detectors.tpc.trigger.status'
+
+    query = {status_name: 'waiting_to_be_processed'}
 
     log.info("Searching for run")
 
-    client = pymongo.MongoClient(args.address,
-                                 args.port,
-                                 serverSelectionTimeoutMS=500)
-    try:
-        client.admin.command('ping')
-        log.debug("Connection successful to %s:%d",
-                  args.address,
-                  args.port)
-    except pymongo.errors.ConnectionFailure:
-        log.fatal("Cannot connect to MongoDB at %s:%d" % (args.address,
-                                                          args.port))
-        raise
+    db = client.get_default_database()
+    log.debug('Fetched databases: %s', db.name)
 
-    log.debug('Fetching databases: %s', args.database)
-    db = client.get_database(args.database)
-
-    log.debug('Getting collection: %s', args.collection)
-    collection = db.get_collection(args.collection)
+    collection = db.get_collection('runs')
+    log.debug('Got collection: %s', collection.name)
 
     while 1:
         run_doc = collection.find_one_and_update(query,
-                                                 {'$set': {'trigger.status': 'staging'}})
+                                                 {'$set': {status_name: 'staging'}})
 
         if run_doc is None:
             if args.impatient:
@@ -82,30 +86,14 @@ def run():
                          args.wait)
                 time.sleep(args.wait)
         else:
-            log.info("Building events for %s",
-                     run_doc['name'])
+            log.info("Building events for %s", run_doc['name'])
 
-            filename = '%s' % run_doc['name']
-
-            if args.processed:
-                plugin_group_names = ['input',  'preprocessing',  'dsp',
-                                      'transform', 'output']
-                output = ['Table.TableWriter']
-            else:
-                plugin_group_names = ['input',  'preprocessing', 'output']
-                output = ['BSON.WriteZippedBSON']
+            pax_config = {'output_name': 'raw_%s' % run_doc['name']}
 
             config_names = 'eventbuilder'
             config_dict = {'DEFAULT': {'run_doc': run_doc['_id']},
-                           'pax': {'plugin_group_names': plugin_group_names,
-                                   'output': output,
-                                   'output_name': filename, },
-
-                           'MongoDB': {'runs_database_location': {'address': args.address,
-                                                                  'database': args.database,
-                                                                  'port': args.port,
-                                                                  'collection': args.collection
-                                                                  },
+                           'pax': pax_config,
+                           'MongoDB': {'runs_database': args.mongo,
                                        'window': args.window * units.us,
                                        'left': args.left * units.us,
                                        'right': args.right * units.us,
@@ -122,7 +110,27 @@ def run():
             except pymongo.errors.ServerSelectionTimeoutError as e:
                 log.exception(e)
                 collection.update(query,
-                                  {'$set': {'trigger.status': 'error'}})
+                                  {'$set': {status_name: 'error'}})
+                raise
+
+
+def authenticate(client, database_name=None):
+    try:
+        mongo_user = os.environ['MONGO_USER']
+    except KeyError:
+        raise RuntimeError("You need to set the variable MONGO_USER."
+                           "\texport MONGO_USER=eb")
+    try:
+        mongo_password = os.environ['MONGO_PASSWORD']
+    except KeyError:
+        raise RuntimeError("You need to set the variable MONGO_PASSWORD."
+                           "\texport MONGO_PASSWORD=XXXXXX")
+
+    if database_name is None:
+        database = client.get_default_database()
+    else:
+        database = client[database_name]
+    database.authenticate(mongo_user, mongo_password)
 
 
 def handle_args():
@@ -137,9 +145,6 @@ def handle_args():
     parser.add_argument('--impatient',
                         action='store_true',
                         help="Event builder will not wait for new data")
-    parser.add_argument('--processed',
-                        action='store_true',
-                        help="Write processed files too")
     parser.add_argument('--mega_event',
                         action='store_true',
                         help="used for trigger efficiency")
@@ -160,29 +165,17 @@ def handle_args():
     trigger_group.add_argument('--right',
                                type=int, default=200,
                                help='Right extension to save (us)')
-    run_db_str = 'The runs database stores all metadata about runs, including' \
-                 ' which are waiting to be triggered. Communication is ' \
-                 'required to find data.  More information on the MongoDB ' \
-                 'jargon (e.g., "collection") can be found in their docs.'
-    run_db_group = parser.add_argument_group(title='Runs database settings',
-                                             description=run_db_str)
-    run_db_group.add_argument('--address',
-                              default='daqeb0',
-                              help='Address or hostname of MongoDB instance.')
-    run_db_group.add_argument('--database',
-                              default='online',
-                              help='')
-    run_db_group.add_argument('--collection',
-                              default='runs',
-                              help='')
-    run_db_group.add_argument('--port',
-                              default=27000,
-                              type=int,
-                              help='Listening port of MongoDB.')
+
     parser.add_argument('--wait',
                         default=1,
                         type=int,
                         help="Wait time between searching if no data")
+
+    parser.add_argument('--mongo',
+                        default='mongodb://master:27017,master:27018/run',
+                        type=str,
+                        help='Run database MongoDB URI')
+
     # Log level control
     parser.add_argument('--log', default=None,
                         help="Set log level, e.g. 'debug'")
@@ -197,8 +190,8 @@ def handle_args():
     console = logging.StreamHandler()
     console.setLevel(logging.DEBUG)
     # set a format which is simpler for console use
-    formatter = logging.Formatter(
-        '%(asctime)s %(name)-12s: %(levelname)-8s %(message)s')
+    formatter = logging.Formatter('%(asctime)s %(name)-12s: '
+                                  '%(levelname)-8s %(message)s')
     # tell the handler to use this format
     console.setFormatter(formatter)
     # add the handler to the root logger

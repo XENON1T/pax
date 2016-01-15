@@ -2,8 +2,11 @@ from __future__ import division
 from collections import namedtuple
 import json
 import gzip
+import re
+import logging
 
 import numpy as np
+import numexpr as ne
 import matplotlib.pyplot as plt
 from matplotlib import _cntr
 from scipy.optimize import fmin_powell
@@ -22,8 +25,8 @@ class PatternFitter(object):
     def __init__(self, filename, zoom_factor=1, adjust_to_qe=None, default_errors=None):
         """Initialize a pattern map file from filename.
         Format of the file is very similar to InterpolatingMap; a (gzip compressed) json containing:
-            'coordinate_system' :   [['x', x_min, x_max, n_x], ['y',...
-            'map' :                 [[valuex1y1, valuex1y2, ..], [valuex2y1, valuex2y2, ..], ...
+            'coordinate_system' :   [['x', (x_min, x_max, n_x)], ['y',...
+            'map' :                 [[[valuex1y1pmt1, valuex1y1pmt2, ...], ...], ...]
             'name':                 'Nice file with maps',
             'description':          'Say what the maps are, who you are, your favorite food, etc',
             'timestamp':            unix epoch seconds timestamp
@@ -39,11 +42,16 @@ class PatternFitter(object):
             of fit statistic, as follows:
                 squared_systematic_errors = (areas_observed * default_errors)**2
         """
-        bla = gzip.open(utils.data_file_name(filename)).read()
-        data = json.loads(bla.decode())
+        self.log = logging.getLogger('PatternFitter')
+        with gzip.open(utils.data_file_name(filename)) as infile:
+            json_data = json.loads(infile.read().decode())
 
-        self.data = np.array(data['map'])
-        self.dimensions = len(data['coordinate_system'])    # Spatial dimensions (other one is sampling points)
+        self.data = np.array(json_data['map'])
+        self.log.debug('Loaded pattern file named: %s' % json_data['name'])
+        self.log.debug('Description:\n    ' + re.sub(r'\n', r'\n    ', json_data['description']))
+        self.log.debug('Data shape: %s' % str(self.data.shape))
+        self.log.debug('Will zoom in by factor %s' % zoom_factor)
+        self.dimensions = len(json_data['coordinate_system'])    # Spatial dimensions (other one is sampling points)
 
         # Zoom the spatial map using linear interpolation, if desired
         if zoom_factor != 1:
@@ -56,12 +64,14 @@ class PatternFitter(object):
 
         # Store bin starts and distances for quick access, assuming uniform bin sizes
         self.coordinate_data = []
-        for name, (start, stop, n_bins) in data['coordinate_system']:
+        for name, (start, stop, n_bins) in json_data['coordinate_system']:
             n_bins *= zoom_factor
             self.coordinate_data.append(CoordinateData(minimum=start,
                                                        maximum=stop,
                                                        n_bins=n_bins,
                                                        bin_spacing=(stop - start)/n_bins))
+        self.log.debug('Coordinate ranges: %s' % ', '.join(['%s-%s (%d bins)' % (cd.minimum, cd.maximum, cd.n_bins)
+                                                            for cd in self.coordinate_data]))
 
         # TODO: Technically we should zero the bins outside the tpc bounds again:
         # some LCE may have leaked into this region due to upsampling... but doesn't matter:
@@ -84,7 +94,7 @@ class PatternFitter(object):
         sum_pattern = pattern.sum()
         if sum_pattern == 0:
             raise CoordinateOutOfRangeException("Expected light pattern at coordinates %s "
-                                                "consists of only zeros!" % coordinates)
+                                                "consists of only zeros!" % str(coordinates))
         return pattern / sum_pattern
 
     def compute_gof(self, coordinates, areas_observed,
@@ -176,21 +186,24 @@ class PatternFitter(object):
             pmt_selection = self.default_pmt_selection
         if square_syst_errors is None:
             square_syst_errors = (self.default_errors * areas_observed) ** 2
-        square_syst_errors = square_syst_errors[pmt_selection]
 
+        # The following aliases are used in the numexprs below
         areas_observed = areas_observed.copy()[pmt_selection]
-        total_observed = areas_observed.sum()
-        fractions_expected = self.data[bin_selection + [pmt_selection]].copy()
-        fractions_expected /= fractions_expected.sum(axis=-1)[..., np.newaxis]
-        areas_expected = total_observed * fractions_expected
+        q = self.data[bin_selection + [pmt_selection]]
+        qsum = q.sum(axis=-1)[..., np.newaxis]          # noqa
+        fractions_expected = ne.evaluate("q / qsum")    # noqa
+        total_observed = areas_observed.sum()           # noqa
+        ao = areas_observed                             # noqa
+        square_syst_errors = square_syst_errors[pmt_selection]    # noqa
 
         # The actual goodness of fit computation is here...
+        # Areas expected = fractions_expected * sum(areas_observed)
         if statistic == 'chi2gamma':
-            result = (areas_observed + np.clip(areas_observed, 0, 1) - areas_expected) ** 2
-            result /= areas_expected + square_syst_errors + 1
+            result = ne.evaluate("(ao + where(ao > 1, 1, ao) - {ae})**2 /"
+                                 "({ae} + square_syst_errors + 1)".format(ae='fractions_expected * total_observed'))
         elif statistic == 'chi2':
-            result = (areas_observed - areas_expected) ** 2
-            result /= areas_expected + square_syst_errors
+            result = ne.evaluate("(ao + {ae})**2 /"
+                                 "({ae} + square_syst_errors".format(ae='fractions_expected * total_observed'))
         else:
             raise ValueError('Pattern goodness of fit statistic %s not implemented!' % statistic)
 
@@ -267,7 +280,7 @@ class PatternFitter(object):
         direc = None
         if self.dimensions == 2:
             # Hack to match old chi2gamma results
-            s = lambda d: 1 if d < 0 else -1
+            s = lambda d: 1 if d < 0 else -1  # flake8: noqa
             direc = np.array([[s(start_coordinates[0]), 0],
                               [0, s(start_coordinates[1])]])
 

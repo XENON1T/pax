@@ -32,7 +32,7 @@ class GapSizeClustering(plugin.TransformPlugin):
                                           hits=hits_in_this_peak)
 
                 # Area per channel must be computed here so RejectNoiseHits can use it
-                # unfortunate code duplication with basicProperties!
+                # unfortunate code duplication with BasicProperties!
                 peak.area_per_channel = dsputils.count_hits_per_channel(peak, self.config,
                                                                         weights=hits_in_this_peak['area'])
                 if np.sum(peak.area_per_channel > 0) == 1:

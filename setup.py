@@ -13,10 +13,8 @@ history = open('HISTORY.rst').read().replace('.. :changelog:', '')
 
 requirements = open('requirements.txt').read().splitlines()
 
-# The avro package has a different name in python2:
+# configparser is not in the python2 standard library:
 if six.PY2:
-    del requirements[requirements.index('avro-python3')]
-    requirements.append('avro')
     requirements.append('configparser')
 
 # For some reason h5py is often not seen by pip if it was installed by conda...
@@ -27,6 +25,11 @@ except ImportError:
     pass
 else:
     del requirements[requirements.index('h5py')]
+
+try:
+    import ROOT
+except ImportError:
+    pass
 
 # Snappy cannot be installed automatically on windows
 if os.name == 'nt':
@@ -41,7 +44,7 @@ test_requirements = requirements + ['flake8',
 
 setup(
     name='pax',
-    version='4.0.1',
+    version='4.2.0',
     description='PAX is the raw data processor for the XENON1T experiment, with support for other LXe TPCs.',
     long_description=readme + '\n\n' + history,
     author='Christopher Tunnell and Jelle Aalbers for the XENON1T collaboration',

@@ -7,25 +7,17 @@ import itertools
 import os
 import time
 from configparser import ConfigParser, ExtendedInterpolation
-if six.PY2:
-    import imp
-else:
-    import importlib
-
-
-try:
-    import ROOT     # noqa
-except ImportError:
-    pass
-except SyntaxError:
-    pass
-
 import numpy as np
 
 from prettytable import PrettyTable     # Timing report
 from tqdm import tqdm                   # Progress bar
 import pax      # Needed for pax.__version__
 from pax import units, simulation, utils
+if six.PY2:
+    import imp
+else:
+    import importlib
+
 
 # For diagnosing suspected memory leaks, uncomment this code
 # and similar code in process_event
@@ -134,12 +126,8 @@ class Processor:
                                  len(plugin_names['input']))
 
             self.input_plugin = self.instantiate_plugin(plugin_names['input'][0])
-
-            self.stop_after = float('inf')
-            if 'stop_after' in pc and pc['stop_after'] is not None:
-                self.stop_after = pc['stop_after']
-
-            self.total_number_events = min(self.input_plugin.number_of_events, self.stop_after)
+            self.number_of_events = self.input_plugin.number_of_events
+            self.stop_after = pc.get('stop_after', float('inf'))
 
             # Parse the event numbers file, if one is given
             if pc.get('event_numbers_file', None) is not None:
@@ -148,7 +136,7 @@ class Processor:
 
             if pc.get('events_to_process', None) is not None:
                 # The user specified which events to process:
-                self.total_number_events = min(len(pc['events_to_process']), self.stop_after)
+                self.number_of_events = len(pc['events_to_process'])
 
                 def get_events():
                     for event_number in pc['events_to_process']:
@@ -157,6 +145,8 @@ class Processor:
             else:
                 # Let the input plugin decide which events to process:
                 self.get_events = self.input_plugin.get_events
+
+            self.number_of_events = min(self.number_of_events, self.stop_after)
 
         else:
             # During tests there is often no input plugin
@@ -441,7 +431,7 @@ class Processor:
         self.timer.punch()
         for i, event in enumerate(tqdm(self.get_events(),
                                        desc='Event',
-                                       total=self.total_number_events)):
+                                       total=self.number_of_events)):
             self.input_plugin.total_time_taken += self.timer.punch()
 
             if i >= self.stop_after:
@@ -494,10 +484,8 @@ class Processor:
             if total_time > 0:
                 timing_report.add_row(['TOTAL',
                                        round(100., 1),
-                                       round(total_time / events_actually_processed,
-                                             1),
-                                       round(1000 * events_actually_processed / total_time,
-                                             1),
+                                       round(total_time / events_actually_processed, 1),
+                                       round(1000 * events_actually_processed / total_time, 1),
                                        round(total_time / 1000, 1)])
             else:
                 timing_report.add_row(['TOTAL',

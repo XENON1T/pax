@@ -1,7 +1,6 @@
 import numpy as np
 
-from pax import plugin, utils, exceptions
-from pax.InterpolatingMap import InterpolatingMap
+from pax import plugin, exceptions
 from pax.datastructure import Interaction
 
 
@@ -9,7 +8,7 @@ class BuildInteractions(plugin.TransformPlugin):
     """Construct interactions from combinations of S1 and S2, as long as
       - The S2 occurs after the S1
       - The S2 is larger than s2_pairing_threshold (avoids single electrons)
-    Mo more than pair_n_s2s S2s S2s and pair_n_s1s S1s will be paired with each other
+    Mo more than pair_n_s2s S2s and pair_n_s1s S1s will be paired with each other
     Pairing will start from the largest S1 and S2, then move down S2s in area and eventually down S1s in area
 
     xy_posrec_preference = ['algo1', 'algo2', ...]
@@ -36,10 +35,10 @@ class BuildInteractions(plugin.TransformPlugin):
                     continue
 
                 ia = Interaction()
-                ia.s1 = s1
-                ia.s2 = s2
+                ia.s1 = event.peaks.index(s1)
+                ia.s2 = event.peaks.index(s2)
                 ia.drift_time = dt
-                ia.set_position(ia.s2.get_position_from_preferred_algorithm(self.config['xy_posrec_preference']))
+                ia.set_position(s2.get_position_from_preferred_algorithm(self.config['xy_posrec_preference']))
 
                 # Append to event
                 event.interactions.append(ia)
@@ -53,8 +52,8 @@ class BasicInteractionProperties(plugin.TransformPlugin):
     """
 
     def startup(self):
-        self.s1_correction_map = InterpolatingMap(utils.data_file_name(self.config['s1_correction_map']))
-        self.s2_correction_map = InterpolatingMap(utils.data_file_name(self.config['s2_correction_map']))
+        self.s1_light_yield_map = self.processor.simulator.s1_light_yield_map
+        self.s2_light_yield_map = self.processor.simulator.s2_light_yield_map
         self.s1_patterns = self.processor.simulator.s1_patterns
         self.s2_patterns = self.processor.simulator.s2_patterns
         self.zombie_pmts_s1 = np.array(self.config.get('zombie_pmts_s1', []))
@@ -65,35 +64,37 @@ class BasicInteractionProperties(plugin.TransformPlugin):
     def transform_event(self, event):
 
         for ia in event.interactions:
+            s1 = event.peaks[ia.s1]
+            s2 = event.peaks[ia.s2]
+
             # Electron lifetime correction to S2 area
             ia.s2_area_correction *= np.exp(ia.drift_time / self.config['electron_lifetime_liquid'])
 
             # Determine z position from drift time
             ia.z = self.config['drift_velocity_liquid'] * ia.drift_time
 
-            # S1(x, y, z) and S2(x, y) corrections for varying light yield
-            # TODO: replace correction map by light yield maps in simulator, then divide by their value here
-            ia.s1_area_correction *= self.s1_correction_map.get_value_at(ia)
-            ia.s2_area_correction *= self.s2_correction_map.get_value_at(ia)
+            # S1 and S2 area correction: divide by relative light yield at the position
+            ia.s1_area_correction /= self.s1_light_yield_map.get_value_at(ia)
+            ia.s2_area_correction /= self.s2_light_yield_map.get_value_at(ia)
 
             if self.s2_patterns is not None and self.do_saturation_correction:
                 # Correct for S2 saturation
                 # As we don't have an (x, y) dependent LCE map for the bottom PMTs for S2s,
                 # we can only compute the correction on the top area.
                 ia.s2_area_correction *= self.area_correction(
-                    peak=ia.s2,
+                    peak=s2,
                     channels_in_pattern=self.config['channels_top'],
                     expected_pattern=self.s2_patterns.expected_pattern((ia.x, ia.y)),
-                    confused_channels=np.union1d(ia.s2.saturated_channels, self.zombie_pmts_s2))
+                    confused_channels=np.union1d(s2.saturated_channels, self.zombie_pmts_s2))
 
             if self.s1_patterns is not None:
-                confused_s1_channels = np.union1d(ia.s1.saturated_channels, self.zombie_pmts_s1)
+                confused_s1_channels = np.union1d(s1.saturated_channels, self.zombie_pmts_s1)
 
                 # Correct for S1 saturation
                 try:
                     if self.do_saturation_correction:
                         ia.s1_area_correction *= self.area_correction(
-                            peak=ia.s1,
+                            peak=s1,
                             channels_in_pattern=self.tpc_channels,
                             expected_pattern=self.s1_patterns.expected_pattern((ia.x, ia.y, ia.drift_time)),
                             confused_channels=confused_s1_channels)
@@ -101,7 +102,7 @@ class BasicInteractionProperties(plugin.TransformPlugin):
                     # Compute the S1 pattern fit statistic
                     ia.s1_pattern_fit = self.s1_patterns.compute_gof(
                         (ia.x, ia.y, ia.drift_time),
-                        ia.s1.area_per_channel[self.tpc_channels],
+                        s1.area_per_channel[self.tpc_channels],
                         pmt_selection=np.setdiff1d(self.tpc_channels, confused_s1_channels),
                         statistic=self.config['s1_pattern_statistic'])
 

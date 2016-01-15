@@ -12,7 +12,7 @@ from scipy.spatial import KDTree
 ##
 
 class InterpolateAndExtrapolate(object):
-    """Linearly interpolate- or extrapolation between nearest N points
+    """Linearly interpolate- or extrapolate between nearest N points
     Needed to roll our own because scipy's linear Nd interpolator refuses to extrapolate
     """
 
@@ -28,6 +28,8 @@ class InterpolateAndExtrapolate(object):
 
     def __call__(self, *args):
         # Call with one point at a time only!!!
+        if np.any(np.isnan(args)):
+            return np.nan
         distances, indices = self.kdtree.query(args, self.neighbours_to_use)
         return np.average(self.values[indices], weights=1/np.clip(distances, 1e-6, float('inf')))
 
@@ -78,7 +80,7 @@ class InterpolatingMap(object):
             map_data = np.array(self.data[map_name])
             if self.dimensions == 0:
                 # 0 D -- placeholder maps which take no arguments and always return a single value
-                itp_fun = lambda: map_data
+                itp_fun = lambda *args: map_data  # flake8: noqa
             else:
                 itp_fun = InterpolateAndExtrapolate(points=np.array(cs), values=np.array(map_data))
 
