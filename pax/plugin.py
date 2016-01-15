@@ -82,10 +82,11 @@ class ProcessPlugin(BasePlugin):
         if self.do_input_check:
             if not isinstance(event, Event):
                 raise RuntimeError("%s received a %s instead of an Event" % (self.name, type(event)))
-        if self.has_shut_down:
-            raise RuntimeError("%s was asked to process an event, but it has already shut down!" % self.name)
         # Setup the logging adapter which will prepend [Event: ...] to the logging messages
         self.log = EventLoggingAdapter(self._log, dict(event_number=event.event_number))
+        if self.has_shut_down:
+            raise RuntimeError("%s was asked to process an event, but it has already shut down!" % self.name)
+
         event = self._process_event(event)
         if self.do_output_check:
             if not isinstance(event, Event):

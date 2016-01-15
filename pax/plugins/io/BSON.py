@@ -57,4 +57,5 @@ class EncodeBSON(WriteZippedEncoder):
 class DecodeBSON(ReadZippedDecoder):
 
     def decode_event(self, event):
-         return datastructure.Event.from_bson(event)
+        event = datastructure.Event.from_bson(event)
+        return event

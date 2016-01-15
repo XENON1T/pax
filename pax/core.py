@@ -144,6 +144,16 @@ class Processor:
                 self.log.warning('You did not specify any plugin groups to load: are you testing me?')
             pc['plugin_group_names'] = []
 
+        # Make plugin group names for the encoder and decoder plugins
+        # By having this code here, we ensure they are always just after/before input/output,
+        # no matter what plugin group names the user is using
+        if 'input' in pc['plugin_group_names'] and pc.get('decoder_plugin') is not None:
+            assert pc['plugin_group_names'][0] == 'input'
+            pc['plugin_group_names'].insert(1, 'decoder_plugin')
+        if 'output' in pc['plugin_group_names'] and pc.get('encoder_plugin') is not None:
+            assert pc['plugin_group_names'][-1] == 'output'
+            pc['plugin_group_names'].insert(len(pc['plugin_group_names']) - 1, 'encoder_plugin')
+
         for plugin_group_name in pc['plugin_group_names']:
             if plugin_group_name not in pc:
                 raise ValueError('Invalid configuration: plugin group list %s missing' % plugin_group_name)

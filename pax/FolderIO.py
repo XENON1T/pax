@@ -1,8 +1,10 @@
+"""I/O plugin base classes for input to/from folders or zipfiles
+"""
+from collections import namedtuple
 import glob
 import zlib
 import os
 import shutil
-import zipfile
 
 from bson import json_util
 from six.moves import input
@@ -279,68 +281,30 @@ class WriteToFolder(plugin.OutputPlugin):
     def close(self):
         raise NotImplementedError
 
-
 ##
-# Zipfiles of events
+# Encoders for zipfiles of events
+# Zipfile readers themselves are in plugins/io/Zip.py
+# (they have to be in /pax/plugins/... to be found)
 ##
 
-class ReadZipped(InputFromFolder):
-    """Read a folder of zipfiles containing [some format]
-    Should be followed by a decoded plugin who will decompress and decode the events.
-    It's better to split this task up, since input is single-core only,
-    while encoding & compressing can still be done by the processing workers
-    """
-    file_extension = 'zip'
-    do_output_check = False
-
-    def open(self, filename):
-        self.current_file = zipfile.ZipFile(filename)
-        self.event_numbers = sorted([int(x)
-                                     for x in self.current_file.namelist()])
-
-    def get_event_numbers_in_current_file(self):
-        return self.event_numbers
-
-    def get_single_event_in_current_file(self, event_number):
-        with self.current_file.open(str(event_number)) as event_file_in_zip:
-            data = event_file_in_zip.read()
-            return data
-
-    def close(self):
-        """Close the currently open file"""
-        self.current_file.close()
+# An event proxy object which can hold raw data bytes
+# but still has an event_number attribute
+# The decoders below and WriteZipped & Readzipper knows what to do with this,
+# other code will be fooled into treating it as a normal event
+# (except the explicit event class checks in ProcessPlugin of course,
+#  these have to be disabled by as needed using do_output_check and do_input_check)
+EventProxy = namedtuple('EventProxy', ['data', 'event_number'])
 
 
 class ReadZippedDecoder(plugin.TransformPlugin):
     do_input_check = False
 
-    def transform_event(self, event):
-        event = zlib.decompress(event)
-        return self.decode_event(event)
+    def transform_event(self, event_proxy):
+        data = zlib.decompress(event_proxy.data)
+        return self.decode_event(data)
 
     def decode_event(self, event):
         raise NotImplementedError
-
-
-class WriteZipped(WriteToFolder):
-    """Write raw data to a folder of zipfiles containing [some format]
-    Should be preceded by a WriteZippedEncoder who will encode and compress the events.
-    It's better to split this task up, since output is single-core only,
-    while encoding & compressing can still be done by the processing workers
-    """
-    do_input_check = False
-    file_extension = 'zip'
-
-    def open(self, filename):
-        self.current_file = zipfile.ZipFile(filename, mode='w')
-
-    def write_event_to_current_file(self, event):
-        # The "events" we get are actually tuples (event_number, compressed zip data)
-        event_number, data = event
-        self.current_file.writestr(str(event_number), data)
-
-    def close(self):
-        self.current_file.close()
 
 
 class WriteZippedEncoder(plugin.TransformPlugin):
@@ -354,9 +318,9 @@ class WriteZippedEncoder(plugin.TransformPlugin):
 
     def transform_event(self, event):
         event_number = event.event_number
-        event = self.encode_event(event)
-        event = zlib.compress(event, self.compresslevel)
-        return event_number, self.decode_event(event)
+        data = self.encode_event(event)
+        data = zlib.compress(data, self.compresslevel)
+        return EventProxy(data=data, event_number=event_number)
 
     def encode_event(self, event):
         raise NotImplementedError

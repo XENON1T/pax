@@ -7,14 +7,11 @@ from pax import core
 
 plugins_to_test = [
     {
-        'name':         'BSON',
-        'read_plugin':  'BSON.ReadBSON',
-        'write_plugin': 'BSON.WriteBSON',
-    },
-    {
         'name':         'ZippedBSON',
-        'read_plugin':  'BSON.ReadZippedBSON',
-        'write_plugin': 'BSON.WriteZippedBSON',
+        'read_plugin':  'Zip.ReadZipped',
+        'decoder':      'BSON.DecodeBSON',
+        'encoder':      'BSON.EncodeBSON',
+        'write_plugin': 'Zip.WriteZipped',
     },
     {
         'name':         'JSON',
@@ -24,12 +21,15 @@ plugins_to_test = [
     {
         'name':         'XED',
         'read_plugin':  'XED.ReadXED',
+        'decoder':      'XED.DecodeXED',
         'write_plugin': 'XED.WriteXED',
     },
     {
         'name':         'ZippedPickles',
-        'read_plugin':  'Pickle.ReadZippedPickles',
-        'write_plugin': 'Pickle.WriteZippedPickles',
+        'read_plugin':  'Zip.ReadZipped',
+        'decoder':      'Pickle.DecodePickle',
+        'encoder':      'Pickle.EncodePickle',
+        'write_plugin': 'Zip.WriteZipped',
     },
 ]
 
@@ -55,9 +55,12 @@ class TestRawData(unittest.TestCase):
             config = {'pax': {'events_to_process': [0, 1],
                               'plugin_group_names': ['input', 'output'],
                               'input': 'XED.ReadXED',
+                              'decoder': 'XED.DecodeXED',
                               'output': plugin_info['write_plugin']},
                       plugin_info['write_plugin']: {'output_name': tempdir,
                                                     'overwrite_output': True}}
+            if 'encoder' in plugin_info:
+                config['pax']['encoder_plugin'] = plugin_info['encoder']
 
             mypax = core.Processor(config_names='XENON100', config_dict=config)
 
@@ -67,12 +70,17 @@ class TestRawData(unittest.TestCase):
                               'plugin_group_names': ['input'],
                               'input': plugin_info['read_plugin']},
                       plugin_info['read_plugin']: {'input_name': tempdir}}
+            if 'decoder' in plugin_info:
+                config['pax']['decoder_plugin'] = plugin_info['decoder']
 
             mypax2 = core.Processor(config_names='XENON100', config_dict=config)
             self.read_plugin = mypax2.input_plugin
 
             try:
                 events = list(self.read_plugin.get_events())
+                if 'decoder' in plugin_info:
+                    dp = mypax2.get_plugin_by_name(plugin_info['decoder'].split('.')[1])
+                    events = [dp.transform_event(event) for event in events]
             except Exception as e:
                 mypax2.shutdown()
                 raise e
