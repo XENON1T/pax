@@ -9,13 +9,13 @@ from pax.FolderIO import WriteZippedEncoder, ReadZippedDecoder
 # Zipped pickles
 ##
 
-class EncodePickle(WriteZippedEncoder):
+class EncodeZPickle(WriteZippedEncoder):
 
     def encode_event(self, event):
         return pickle.dumps(event)
 
 
-class DecodePickle(ReadZippedDecoder):
+class DecodeZPickle(ReadZippedDecoder):
 
     def decode_event(self, event):
         return pickle.loads(event)

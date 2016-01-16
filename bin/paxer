@@ -213,11 +213,10 @@ def get_aliases():
         ('root',         'ROOTClass.WriteROOTClass'),
 
         # Zipped formats -- allow arbitrary event numbering
-        ('zpickle', ('Pickle.EncodePickles', 'Zip.WriteZipped')),
-        ('zbson',   ('BSON.EncodeBSON', 'Zip.WriteZipped')),
+        ('zpickle', ('Pickle.EncodeZPickle', 'Zip.WriteZipped')),
+        ('zbson',   ('BSON.EncodeZBSON', 'Zip.WriteZipped')),
 
         # Non-zipped formats
-        ('bson',  'BSON.WriteBSON'),
         ('json',  'BSON.WriteJSON'),
         ('xed',   'XED.WriteXED'),
 
@@ -231,11 +230,10 @@ def get_aliases():
         ('xed',      'XED.ReadXED'),
 
         # Zipped formats
-        ('zbson',   ('Zip.ReadZipped', 'BSON.DecodeBSON')),
-        ('zpickle', ('Zip.ReadZipped', 'BSON.DecodePickle')),
+        ('zbson',   ('Zip.ReadZipped', 'BSON.DecodeZBSON')),
+        ('zpickle', ('Zip.ReadZipped', 'BSON.DecodeZPickle')),
 
         # Nonzipped formats
-        ('bson',    'BSON.ReadBSON'),
         ('json',    'BSON.ReadJSON'),
     ])
     input_plugin_aliases.update([(fc, ('Table.TableReader', {'format': fc}))

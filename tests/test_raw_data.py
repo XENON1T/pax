@@ -9,8 +9,8 @@ plugins_to_test = [
     {
         'name':         'ZippedBSON',
         'read_plugin':  'Zip.ReadZipped',
-        'decoder':      'BSON.DecodeBSON',
-        'encoder':      'BSON.EncodeBSON',
+        'decoder':      'BSON.DecodeZBSON',
+        'encoder':      'BSON.EncodeZBSON',
         'write_plugin': 'Zip.WriteZipped',
     },
     {
@@ -27,8 +27,8 @@ plugins_to_test = [
     {
         'name':         'ZippedPickles',
         'read_plugin':  'Zip.ReadZipped',
-        'decoder':      'Pickle.DecodePickle',
-        'encoder':      'Pickle.EncodePickle',
+        'decoder':      'Pickle.DecodeZPickle',
+        'encoder':      'Pickle.EncodeZPickle',
         'write_plugin': 'Zip.WriteZipped',
     },
 ]

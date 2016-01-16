@@ -17,7 +17,7 @@ from prettytable import PrettyTable     # Timing report
 from tqdm import tqdm                   # Progress bar
 
 import pax      # Needed for pax.__version__
-from pax.ConfigLoader import ConfigLoader
+from pax.configuration import load_configuration
 from pax import simulation, utils
 if six.PY2:
     import imp
@@ -63,7 +63,7 @@ class Processor:
           setting that will not be modified once set. New instances of the Processor class will have
           the same log level as the first, regardless of their configuration.  See #78.
         """
-        self.config = ConfigLoader()(config_names, config_paths, config_string, config_dict)
+        self.config = load_configuration(config_names, config_paths, config_string, config_dict)
 
         pc = self.config['pax']
         self.worker_id = pc.get('_worker_id')

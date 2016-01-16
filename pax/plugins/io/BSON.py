@@ -48,13 +48,13 @@ class WriteJSON(WriteToFolder):
 # Zipped BSON
 ##
 
-class EncodeBSON(WriteZippedEncoder):
+class EncodeZBSON(WriteZippedEncoder):
 
     def encode_event(self, event):
         return event.to_bson(fields_to_ignore=self.config['fields_to_ignore'])
 
 
-class DecodeBSON(ReadZippedDecoder):
+class DecodeZBSON(ReadZippedDecoder):
 
     def decode_event(self, event):
         event = datastructure.Event.from_bson(event)
