@@ -17,6 +17,8 @@ from pax import plugin, units
 
 
 class MongoDBReader:
+    use_monary = False
+
     def startup(self):
         self.sample_duration = self.config['sample_duration']
 
@@ -43,9 +45,25 @@ class MongoDBReader:
         # TODO: can username, host, password, settings different from standard db access info?
         # Then we have to pass extra args to MongoManager
         self.input_info = nfo = self.run_doc['detectors'][self.detector]['mongo_buffer']
-        self.input_collection = mm.get_database(database_name=nfo['database'],
-                                                uri=nfo['address']).get_collection(nfo['collection'])
-        self.input_collection.ensure_index(self.sort_key)
+        if self.use_monary:
+            if not mm.monary_enabled:
+                self.log.warning("Use of monary was requested, but monary did not import. Reverting to pymongo.")
+                self.use_monary = False
+
+        if self.use_monary:
+            self.monary_client = mm.get_database(database_name=nfo['database'],
+                                                 uri=nfo['address'],
+                                                 monary=True)
+
+            def do_monary_query(query, fields, types, database=nfo['database'], collection=nfo['collection']):
+                return self.monary_client.query(database, collection, query, fields, types)
+
+            self.do_monary_query = do_monary_query
+
+        else:
+            self.input_collection = mm.get_database(database_name=nfo['database'],
+                                                    uri=nfo['address']).get_collection(nfo['collection'])
+            self.input_collection.ensure_index(self.sort_key)
 
     def update_run_doc(self):
         self.run_doc = self.runs.find_one({'_id': self.config['run_doc_id']})
@@ -69,6 +87,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
     No PMT pulse data is read in this class to ensure speed.
     """
     last_event_number = 0
+    use_monary = True
 
     def startup(self):
         MongoDBReader.startup(self)
@@ -94,7 +113,9 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
         # Used to timeout if DAQ crashes and no data will come
         time_of_last_daq_response = time.time()
 
-        self.log.info("Total number of pulses in the collection: %s" % self.input_collection.count())
+        if not self.use_monary:
+            self.log.debug("Total number of pulses in collection: %d" % self.input_collection.count())
+
         while True:
             # Update the run document, so we know if the run ended.
             # This must happen before querying for more data, to avoid a race condition where the run ends
@@ -106,12 +127,26 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
             self.log.info("Searching for pulses after %s", sampletime_fmt(search_after))
             query = {self.start_key: {'$gt': self._to_mt(search_after),
                                       '$lt': self._to_mt(search_after + self.search_window)}}
-            times = list(self.input_collection.find(query,
-                                                    projection=[self.start_key, self.stop_key],
-                                                    **self.mongo_find_options))
+
+            if self.use_monary:
+                start_times, stop_times = self.do_monary_query(query=query,
+                                                               fields=[self.start_key, self.stop_key],
+                                                               types=['int64', 'int64'])
+                x = np.round(0.5 * (start_times + stop_times) * self.sample_duration).astype(np.int64)
+
+            else:
+                times = list(self.input_collection.find(query,
+                                                        projection=[self.start_key, self.stop_key],
+                                                        **self.mongo_find_options))
+                # Convert response from list of dictionaries of start & stop time in samples
+                # to numpy array of pulse midpoint times in pax time units (ns)
+                x = np.zeros(len(times), dtype=np.int64)
+                for i, doc in enumerate(times):
+                    x[i] = int(0.5 * (self._from_mt(doc[self.start_key]) + self._from_mt(doc[self.stop_key])))
+
             self.last_time_searched += self.search_window
 
-            if not len(times):
+            if not len(x):
                 # No more pulse data found. Did the run end?
                 # self.data_taking_ended is updated in self.update_run_doc(), called right after we started the loop
                 if self.data_taking_ended:
@@ -127,11 +162,6 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                 time.sleep(1)  # TODO: configure
                 continue
 
-            # Convert response from list of dictionaries of start & stop time in samples
-            # to numpy array of pulse midpoint times in pax time units (ns)
-            x = np.zeros(len(times), dtype=np.int64)
-            for i, doc in enumerate(times):
-                x[i] = int(0.5 * (self._from_mt(doc[self.start_key]) + self._from_mt(doc[self.stop_key])))
             self.log.info("Acquired pulse time data in range [%s, %s]", sampletime_fmt(x[0]), sampletime_fmt(x[-1]))
 
             if self.config['mega_event']:
@@ -193,7 +223,8 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoDBReader):
     def transform_event(self, event):
         t0, t1 = event.start_time, event.stop_time  # ns
         self.log.debug("Fetching pulse data for event in range [%s, %s]", sampletime_fmt(t0), sampletime_fmt(t1))
-        self.log.debug("Total number of pulses in collection: %d" % self.input_collection.count())
+        if not self.use_monary:
+            self.log.debug("Total number of pulses in collection: %d" % self.input_collection.count())
 
         self.mongo_iterator = self.input_collection.find({self.start_key: {"$gte": self._to_mt(t0),
                                                                            "$lte": self._to_mt(t1)}},
@@ -242,9 +273,9 @@ class MongoDBWriteTriggered(plugin.OutputPlugin):
 
 
 # TODO: This needs tests!!!
-@numba.jit((numba.int64)(numba.int64[:],
-                         numba.int64, numba.int64, numba.int64, numba.int64,
-                         numba.int64[:, :], numba.int64), nopython=True)
+@numba.jit(numba.int64(numba.int64[:],
+                       numba.int64, numba.int64, numba.int64, numba.int64,
+                       numba.int64[:, :], numba.int64), nopython=True)
 def _sliding_window_numba(x,
                           window, multiplicity, left, right,
                           ranges_buffer, ranges_buffer_size):
