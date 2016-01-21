@@ -183,26 +183,25 @@ class Simulator(object):
                                         n_rvs=len(photon_detection_times))
 
             # Add PMT afterpulses
-            for generation_i in range(self.config['n_pmt_afterpulse_generations']):
-                ap_times = []
-                ap_gains = []
-                for ap_data in self.config['pmt_afterpulse_types'].values():
-                    ap_data.setdefault('gain_mean', self.config['gains'][channel])
-                    ap_data.setdefault('gain_rms', self.config['gain_sigmas'][channel])
+            ap_times = []
+            ap_gains = []
+            for ap_data in self.config['pmt_afterpulse_types'].values():
+                ap_data.setdefault('gain_mean', self.config['gains'][channel])
+                ap_data.setdefault('gain_rms', self.config['gain_sigmas'][channel])
 
-                    # How many photons will make this kind of afterpulse?
-                    n_afterpulses = np.random.binomial(n=len(photon_detection_times),
-                                                       p=ap_data['p'])
-                    if not n_afterpulses:
-                        continue
+                # How many photons will make this kind of afterpulse?
+                n_afterpulses = np.random.binomial(n=len(photon_detection_times),
+                                                   p=ap_data['p'])
+                if not n_afterpulses:
+                    continue
 
-                    # Find the time and gain of the afterpulses
-                    ap_times.extend(np.random.choice(photon_detection_times, size=n_afterpulses, replace=False) +
-                                    np.random.normal(ap_data['delay_mean'], ap_data['delay_rms'], size=n_afterpulses))
-                    ap_gains.extend(np.random.normal(ap_data['gain_mean'], ap_data['gain_rms'], size=n_afterpulses))
+                # Find the time and gain of the afterpulses
+                ap_times.extend(np.random.choice(photon_detection_times, size=n_afterpulses, replace=False) +
+                                np.random.normal(ap_data['delay_mean'], ap_data['delay_rms'], size=n_afterpulses))
+                ap_gains.extend(np.random.normal(ap_data['gain_mean'], ap_data['gain_rms'], size=n_afterpulses))
 
-                gains = np.concatenate((gains, ap_gains))
-                photon_detection_times = np.concatenate((photon_detection_times, ap_times))
+            gains = np.concatenate((gains, ap_gains))
+            photon_detection_times = np.concatenate((photon_detection_times, ap_times))
 
             #  Add padding, sort (eh.. or were we already sorted? and is sorting necessary at all??)
             pmt_pulse_centers = np.sort(photon_detection_times + self.config['event_padding'])
