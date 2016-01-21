@@ -8,36 +8,10 @@ import os
 import csv
 
 import numpy as np
-
 import pandas
+
 from pax import plugin, units, utils
-
-
-def uniform_circle_rv(radius, n_samples=None):
-    """Sample x,y uniformly in acircle with radius"""
-
-    if n_samples is None:
-        just_give_one = True
-        n_samples = 1
-    else:
-        just_give_one = False
-
-    xs = []
-    ys = []
-
-    for sample_i in range(n_samples):
-        while True:
-            x = np.random.uniform(-radius, radius)
-            y = np.random.uniform(-radius, radius)
-            if x**2 + y**2 <= radius**2:
-                break
-        xs.append(x)
-        ys.append(y)
-
-    if just_give_one:
-        return xs[0], ys[0]
-    else:
-        return xs, ys
+from pax.utils import uniform_circle_rv
 
 
 class WaveformSimulator(plugin.InputPlugin):
@@ -95,10 +69,7 @@ class WaveformSimulator(plugin.InputPlugin):
             return None
         self.store_true_peak('s2', t, x, y, z, photon_times, electron_times)
         # Generate S2 hitpattern "at the anode": cue for  simulator to use the S2 LCE map
-        return self.simulator.make_hitpattern(photon_times,
-                                              x=x,
-                                              y=y,
-                                              z=-self.config['gate_to_anode_distance'])
+        return self.simulator.queue_signal(photon_times, x, y, z=-self.config['gate_to_anode_distance'])
 
     def s1(self, photons, recoil_type, t=0., x=0., y=0., z=0.):
         """
@@ -112,7 +83,7 @@ class WaveformSimulator(plugin.InputPlugin):
         if not len(photon_times):
             return None
         self.store_true_peak('s1', t, x, y, z, photon_times)
-        return self.simulator.make_hitpattern(photon_times, x=x, y=y, z=z)
+        return self.simulator.queue_signal(photon_times, x=x, y=y, z=z)
 
     def get_instructions_for_next_event(self):
         raise NotImplementedError()
@@ -120,11 +91,9 @@ class WaveformSimulator(plugin.InputPlugin):
     def simulate_single_event(self, instructions):
         self.truth_peaks = []
 
-        hitpatterns = []
         for q in instructions:
             self.log.debug("Simulating %s photons and %s electrons at %s cm depth, at t=%s ns" % (
-                q['s1_photons'], q['s2_electrons'], q['depth'], q['t']
-            ))
+                q['s1_photons'], q['s2_electrons'], q['depth'], q['t']))
 
             # Should we choose x and yrandomly?
             if q['x'] == 'random':
@@ -139,33 +108,20 @@ class WaveformSimulator(plugin.InputPlugin):
                 z = float(q['depth']) * units.cm
 
             if int(q['s1_photons']):
-                hitpatterns.append(self.s1(photons=int(q['s1_photons']),
-                                           recoil_type=q['recoil_type'],
-                                           t=float(q['t']),
-                                           x=x,
-                                           y=y,
-                                           z=z))
+                self.s1(photons=int(q['s1_photons']),
+                        recoil_type=q['recoil_type'],
+                        t=float(q['t']), x=x, y=y, z=z)
 
             if int(q['s2_electrons']):
-                hitpatterns.append(self.s2(electrons=int(q['s2_electrons']),
-                                           t=float(q['t']),
-                                           x=x,
-                                           y=y,
-                                           z=z))
+                self.s2(electrons=int(q['s2_electrons']),
+                        t=float(q['t']), x=x, y=y, z=z)
 
-        hitpatterns = [h for h in hitpatterns if h is not None]
-        if len(hitpatterns):
-            # Combine the hitpatterns by their overloaded addition operator (sorry)
-            big_hitpattern = sum(hitpatterns)
-        else:
-            # Create an empty hitpattern
-            big_hitpattern = None
-        event = self.simulator.to_pax_event(big_hitpattern)
+        event = self.simulator.make_pax_event()
         if hasattr(self, 'dataset_name'):
             event.dataset_name = self.dataset_name
         event.event_number = self.current_event
 
-        # Add start time offset to all times in the truth information peak
+        # Add start time offset to all peak start times in the truth file
         # Can't be done at the time of peak creation, it is only known now...
         # TODO: That's no longer true! so fix it
         for p in self.truth_peaks:
@@ -179,17 +135,14 @@ class WaveformSimulator(plugin.InputPlugin):
         return event
 
     def get_events(self):
-
         for instruction_number, instructions in enumerate(self.get_instructions_for_next_event()):
             self.current_instruction = instruction_number
             for repetition_i in range(self.config['event_repetitions']):
                 self.current_repetition = repetition_i
                 self.current_event = instruction_number * self.config['event_repetitions'] + repetition_i
-                self.log.debug('Instruction %s, iteration %s, event number %s' % (
-                    instruction_number, repetition_i, self.current_event))
-                event = self.simulate_single_event(instructions)
-                if event is not None:
-                    yield event
+                self.log.debug('Instruction %s, iteration %s, event number %s' % (instruction_number,
+                                                                                  repetition_i, self.current_event))
+                yield self.simulate_single_event(instructions)
 
 
 class WaveformSimulatorFromCSV(WaveformSimulator):
