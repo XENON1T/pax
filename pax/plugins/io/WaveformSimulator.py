@@ -11,7 +11,32 @@ import numpy as np
 import pandas
 
 from pax import plugin, units, utils
-from pax.utils import uniform_circle_rv
+
+
+def uniform_circle_rv(radius, n_samples=None):
+    """Sample n_samples from x,y uniformly in a circle with radius"""
+    if n_samples is None:
+        just_give_one = True
+        n_samples = 1
+    else:
+        just_give_one = False
+
+    xs = []
+    ys = []
+
+    for sample_i in range(n_samples):
+        while True:
+            x = np.random.uniform(-radius, radius)
+            y = np.random.uniform(-radius, radius)
+            if x**2 + y**2 <= radius**2:
+                break
+        xs.append(x)
+        ys.append(y)
+
+    if just_give_one:
+        return xs[0], ys[0]
+    else:
+        return xs, ys
 
 
 class WaveformSimulator(plugin.InputPlugin):
