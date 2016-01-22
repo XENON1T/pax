@@ -202,6 +202,21 @@ class TestPax(unittest.TestCase):
         self.assertEqual(mypax.get_plugin_by_name('DummyOutput').last_event.event_number, 7)
         os.remove('temp_eventlist.txt')
 
+    def test_process_event_list_multiprocessing(self):
+        """Take a list of event numbers from a file, then process them on two cores
+        Note this is merely a no-crash test!
+        """
+        with open('temp_eventlist.txt', mode='w') as outfile:
+            outfile.write("0\n7\n")
+        config = {'pax': {'event_numbers_file': 'temp_eventlist.txt',
+                          'n_cpus': 2,
+                          'plugin_group_names': ['input', 'dsp', 'output'],
+                          'dsp': 'CheckPulses.CheckBounds',
+                          'output': 'Dummy.DummyOutput'}}
+        mypax = core.Processor(config_names='XENON100', config_dict=config)
+        mypax.run()
+        os.remove('temp_eventlist.txt')
+
     def test_simulator(self):
         """ Process the events in dummy_waveforms.csv
         """

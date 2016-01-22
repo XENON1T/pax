@@ -33,12 +33,12 @@ else:
 MP_STATUS = dict(normal=0,
                  shutdown=1,
                  crashing=2,
-                 input_in_progress=3,
-                 input_done=4,
-                 processing_done=5)
+                 input_done=3,
+                 processing_done=42)
 
 
-class Processor:
+class BaseProcessor:
+    """Base class for pax processors (standalone/master or worker)"""
 
     def __init__(self, config_names=(), config_paths=(), config_string=None, config_dict=None, just_testing=False):
         """Setup pax using configuration data from three sources:
@@ -69,60 +69,8 @@ class Processor:
         self.worker_id = pc.get('_worker_id')
         self.log = self.setup_logging()
 
-        if self.worker_id is not None:
-            # I'm a child processor
-            self.status = pc['status']
-            self.input_queue = pc['input_queue']
-            self.output_queue = pc.get('output_queue', None)
-            # Remove multiprocessing objects from config datastructure,
-            # so it can be dumped to JSON afterwards
-            for k in ['input_queue', 'output_queue', 'status']:
-                pc[k] = None
-
-        else:
-            # I'm the main processor
-            self.log.info("This is PAX version %s, running with configuration for %s." % (
-                pax.__version__, self.config['DEFAULT'].get('tpc_name', 'UNSPECIFIED TPC NAME')))
-
-            n_cpus = pc.get('n_cpus', 1)
-            if n_cpus == 'all':
-                n_cpus = multiprocessing.cpu_count()
-            n_cpus = int(n_cpus)   # On the command line it gets passed as a string, since 'all' is possible
-            if n_cpus != 1:
-                # Setup multiprocessing
-                self.manager = multiprocessing.Manager()
-                self.status = self.manager.Value('i', MP_STATUS['normal'])
-                self.input_queue = self.manager.Queue()
-                self.output_queue = self.manager.Queue()
-
-                # Start worker processes
-                self.processing_workers = []
-                from copy import deepcopy
-                for worker_number in range(n_cpus):
-                    c = deepcopy(self.config)
-                    c['pax'].update(dict(plugin_group_names=[q for q in pc['plugin_group_names']
-                                                             if q not in ('input', 'output')],
-                                         input_queue=self.input_queue,
-                                         output_queue=self.output_queue,
-                                         status=self.status,
-                                         _worker_id='processing_%d' % worker_number))
-                    self.processing_workers.append(multiprocessing.Process(target=Processor,
-                                                                           kwargs=dict(config_dict=c)))
-
-                c = deepcopy(self.config)
-                c['pax'].update(dict(plugin_group_names=['output'],
-                                     _worker_id='output',
-                                     status=self.status,
-                                     input_queue=self.input_queue))
-                self.output_worker = multiprocessing.Process(target=Processor,
-                                                             kwargs=dict(config_dict=c))
-
-                # Start my child processes
-                for w in self.processing_workers + [self.output_worker]:
-                    w.start()
-
-                # I will just focus on input
-                pc['plugin_group_names'] = ['input']
+        # Do worker/master specific code
+        self.setup_multiprocessing()
 
         # Start up the simulator
         # Must be done explicitly here, as plugins can rely on its presence in startup
@@ -242,6 +190,12 @@ class Processor:
         if self.worker_id is not None:
             self.run()
 
+    def setup_multiprocessing(self):
+        raise NotImplementedError
+
+    def run(self, clean_shutdown=True):
+        raise NotImplementedError
+
     def setup_logging(self):
         """Sets up logging. Must have loaded config first."""
 
@@ -352,6 +306,68 @@ class Processor:
         # objgraph.show_growth(limit=5)
         return event
 
+    def shutdown(self):
+        """Call shutdown on all plugins"""
+        self.log.debug("Shutting down all plugins...")
+        if self.input_plugin is not None:
+            self.log.debug("Shutting down %s..." % self.input_plugin.name)
+            self.input_plugin.shutdown()
+            self.input_plugin.has_shut_down = True
+        for ap in self.action_plugins:
+            self.log.debug("Shutting down %s..." % ap.name)
+            ap.shutdown()
+            ap.has_shut_down = True
+
+
+class Processor(BaseProcessor):
+    """Standalone or master processor. See  __init__ for more info."""
+
+    def setup_multiprocessing(self):
+        pc = self.config['pax']
+        self.log.info("This is PAX version %s, running with configuration for %s." % (
+            pax.__version__, self.config['DEFAULT'].get('tpc_name', 'UNSPECIFIED TPC NAME')))
+
+        n_cpus = pc.get('n_cpus', 1)
+        if n_cpus == 'all':
+            n_cpus = multiprocessing.cpu_count()
+        n_cpus = int(n_cpus)   # On the command line it gets passed as a string, since 'all' is possible
+
+        if n_cpus != 1:
+            # Setup multiprocessing
+            self.manager = multiprocessing.Manager()
+            self.status = self.manager.Value('i', MP_STATUS['normal'])
+            self.input_queue = self.manager.Queue()
+            self.output_queue = self.manager.Queue()
+
+            # Start worker processes
+            self.processing_workers = []
+            from copy import deepcopy
+            for worker_number in range(n_cpus):
+                c = deepcopy(self.config)
+                c['pax'].update(dict(plugin_group_names=[q for q in pc['plugin_group_names']
+                                                         if q not in ('input', 'output')],
+                                     input_queue=self.input_queue,
+                                     output_queue=self.output_queue,
+                                     status=self.status,
+                                     _worker_id='processing_%d' % worker_number))
+                self.processing_workers.append(multiprocessing.Process(target=WorkerProcessor,
+                                                                       kwargs=dict(config_dict=c)))
+
+            c = deepcopy(self.config)
+            c['pax'].update(dict(plugin_group_names=['output'],
+                                 _worker_id='output',
+                                 status=self.status,
+                                 input_queue=self.input_queue))
+            self.output_worker = multiprocessing.Process(target=Processor,
+                                                         kwargs=dict(config_dict=c))
+
+            # Start my child processes
+            for w in self.processing_workers + [self.output_worker]:
+                w.start()
+
+            # I will just focus on input
+            pc['plugin_group_names'] = ['input']
+
     def run(self, clean_shutdown=True):
         """Run the processor over all events, then shuts down the plugins (unless clean_shutdown=False)
 
@@ -359,98 +375,70 @@ class Processor:
             (they still shut down if the Processor class is deleted)
             Use only if for some arcane reason you want to run a single instance more than once.
             If you do, you get in trouble if you start a new Processor instance that tries to write to the same files.
-
         """
-        if self.worker_id is not None:
-            # I'm a child processor
-            self.check_crash()
+        if self.input_plugin is None:
+            # You're allowed to specify no input plugin, which is useful for testing. (You may want to feed events
+            # in by hand). If you do this, you can't use the run method. In case somebody ever tries:
+            raise RuntimeError("You just tried to run a Processor without specifying input plugin.")
 
-            while True:
-                # Check if we can end before we fetch event blocks:
-                # the last block may get added while we are fetching events
-                can_end = self.status.value == MP_STATUS['processing_done' if self.worker_id == 'output'
-                                                         else 'input_done']
+        if self.input_plugin.has_shut_down:
+            raise RuntimeError("Attempt to run a Processor twice!")
 
-                try:
-                    self.check_crash()
-                    results = []
-                    for event in self.input_queue.get(block=True, timeout=1):
-                        self.check_crash()
-                        results.append(self.process_event(event))
-                    if self.output_queue:
-                        self.output_queue.put(results)
-                    if self.worker_id != 'output':
-                        # If the output worker has trouble catching up, sleep for a bit
-                        while self.output_queue.qsize() >= self.max_queue_blocks:
-                            self.check_crash()
-                            time.sleep(1)
-                except queue.Empty:
-                    if can_end:
-                        break
+        if self.config['pax'].get('n_cpus', 1) != 1:
+            # I'm a master processor
+            event_block = []
+            for i, event in enumerate(self.get_events()):
+                event_block.append(event)
+
+                self.master_heartbeat()
+
+                if len(event_block) >= self.block_size:
+                    self.input_queue.put(event_block)
+                    event_block = []
+
+                # If the processing workers have trouble catching up, sleep for a bit
+                while self.input_queue.qsize() >= self.max_queue_blocks:
+                    self.master_heartbeat()
                     time.sleep(1)
-                except Exception:
-                    self.status.value = MP_STATUS['crashing']
-                    raise
+
+                if i >= self.stop_after:
+                    self.log.info("Read in user-defined limit of %d events." % i)
+                    break
+
+            self.input_queue.put(event_block)
+            self.master_heartbeat()
+            self.status.value = MP_STATUS['input_done']
+
+            # Wait for child processes to die or crash
+            # Note we never use join/wait -- so we never wait for something that may not happen
+            while True:
+                self.master_heartbeat()
+                if all([not w.is_alive() for w in self.processing_workers]):
+                    self.status.value = MP_STATUS['processing_done']
+                if not self.output_worker.is_alive():
+                    break
+                time.sleep(1)
+            self.log.info("Pax is done, goodbye!")
 
         else:
-            # I'm a master or standalone processor
-            if self.input_plugin is None:
-                # You're allowed to specify no input plugin, which is useful for testing. (You may want to feed events
-                # in by hand). If you do this, you can't use the run method. In case somebody ever tries:
-                raise RuntimeError("You just tried to run a Processor without specifying input plugin.")
+            # I'm a standalone processor
+            i = 0  # in case loop does not run
+            self.timer.punch()
+            for i, event in enumerate(tqdm(self.get_events(),
+                                           desc='Event',
+                                           total=self.number_of_events)):
+                self.input_plugin.total_time_taken += self.timer.punch()
+                if i >= self.stop_after:
+                    self.log.info("User-defined limit of %d events reached." % i)
 
-            if self.input_plugin.has_shut_down:
-                raise RuntimeError("Attempt to run a Processor twice!")
+                    break
+                self.process_event(event)
+                self.log.debug("Event %d (%d processed)" % (event.event_number, i))
+            else:   # If no break occurred:
+                self.log.info("All events from input source have been processed.")
 
-            if hasattr(self, 'processing_workers'):
-                # I'm a master processor
-                event_block = []
-                for i, event in enumerate(self.get_events()):
-                    event_block.append(event)
-                    self.master_heartbeat()
-                    if len(event_block) >= self.block_size:
-                        self.input_queue.put(event_block)
-                        event_block = []
-                    # If the processing workers have trouble catching up, sleep for a bit
-                    while self.input_queue.qsize() >= self.max_queue_blocks:
-                        self.master_heartbeat()
-                        time.sleep(1)
-                    if i >= self.stop_after:
-                        self.log.info("Read in user-defined limit of %d events." % i)
-                        break
-                self.input_queue.put(event_block)
-                self.master_heartbeat()
-                self.status.value = MP_STATUS['input_done']
-
-                # Wait for child processes to die or crash
-                # Note we never use join/wait -- so we never wait for something that may not happen
-                while True:
-                    self.master_heartbeat()
-                    if all([not w.is_alive() for w in self.processing_workers]):
-                        self.status.value = MP_STATUS['processing_done']
-                    if not self.output_worker.is_alive():
-                        break
-                    time.sleep(1)
-                self.log.info("Pax is done, goodbye!")
-
-            else:
-                # I'm a standalone processor
-                i = 0  # in case loop does not run
-                self.timer.punch()
-                for i, event in enumerate(tqdm(self.get_events(),
-                                               desc='Event',
-                                               total=self.number_of_events)):
-                    self.input_plugin.total_time_taken += self.timer.punch()
-                    if i >= self.stop_after:
-                        self.log.info("User-defined limit of %d events reached." % i)
-                        break
-                    self.process_event(event)
-                    self.log.debug("Event %d (%d processed)" % (event.event_number, i))
-                else:   # If no break occurred:
-                    self.log.info("All events from input source have been processed.")
-
-                if self.config['pax']['print_timing_report']:
-                    self.make_timing_report(i + 1)
+            if self.config['pax']['print_timing_report']:
+                self.make_timing_report(i + 1)
 
         # Shutdown all plugins now -- don't wait until this Processor instance gets deleted
         if clean_shutdown:
@@ -459,15 +447,6 @@ class Processor:
     def master_heartbeat(self):
         self.check_crash()
         self.update_status()
-
-    def check_crash(self):
-        if self.status.value == MP_STATUS['crashing']:
-            if self.worker_id is None:
-                self.log.fatal("Crash detected, giving worker processes five seconds to die in peace")
-                time.sleep(5)
-                self.log.fatal("That's it, farewell cruel world!")
-                exit('')
-            exit('')
 
     def update_status(self):
         sys.stdout.write('\rStatus: %s. Processing queue: %d events. Output queue: %s events.' % (
@@ -524,14 +503,61 @@ class Processor:
                                    round(total_time / 1000, 1)])
         self.log.info("Timing report:\n" + str(timing_report))
 
-    def shutdown(self):
-        """Call shutdown on all plugins"""
-        self.log.debug("Shutting down all plugins...")
-        if self.input_plugin is not None:
-            self.log.debug("Shutting down %s..." % self.input_plugin.name)
-            self.input_plugin.shutdown()
-            self.input_plugin.has_shut_down = True
-        for ap in self.action_plugins:
-            self.log.debug("Shutting down %s..." % ap.name)
-            ap.shutdown()
-            ap.has_shut_down = True
+    def check_crash(self):
+        if self.status.value == MP_STATUS['crashing']:
+            self.log.fatal("Crash detected, giving worker processes five seconds to die in peace")
+            time.sleep(5)
+            self.log.fatal("That's it, farewell cruel world!")
+            exit('')
+
+
+class WorkerProcessor(BaseProcessor):
+    """Worker processor, called as part of multiprocessing. See BaseProcessor for more info."""
+
+    def setup_multiprocessing(self):
+        pc = self.config['pax']
+        self.status = pc['status']
+        self.input_queue = pc['input_queue']
+        self.output_queue = pc.get('output_queue', None)
+        # Remove multiprocessing objects from config datastructure,
+        # so it can be dumped to JSON afterwards
+        for k in ['input_queue', 'output_queue', 'status']:
+            pc[k] = None
+
+    def run(self, clean_shutdown=True):
+        self.check_crash()
+
+        while True:
+            # Check if we can end before we fetch event blocks:
+            # the last block may get added while we are fetching events
+            can_end = self.status.value == MP_STATUS['processing_done' if self.worker_id == 'output'
+                                                     else 'input_done']
+
+            try:
+                self.check_crash()
+                results = []
+                for event in self.input_queue.get(block=True, timeout=1):
+                    self.check_crash()
+                    results.append(self.process_event(event))
+                if self.output_queue:
+                    self.output_queue.put(results)
+                if self.worker_id != 'output':
+                    # If the output worker has trouble catching up, sleep for a bit
+                    while self.output_queue.qsize() >= self.max_queue_blocks:
+                        self.check_crash()
+                        time.sleep(1)
+            except queue.Empty:
+                if can_end:
+                    break
+                time.sleep(1)
+            except Exception:
+                self.status.value = MP_STATUS['crashing']
+                raise
+
+        # Shutdown all plugins now -- don't wait until this Processor instance gets deleted
+        if clean_shutdown:
+            self.shutdown()
+
+    def check_crash(self):
+        if self.status.value == MP_STATUS['crashing']:
+            exit('')
