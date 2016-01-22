@@ -66,18 +66,21 @@ class Processor:
         self.config = load_configuration(config_names, config_paths, config_string, config_dict)
 
         pc = self.config['pax']
-        self.worker_id = pc.get('_worker_id')
+        self.worker_id = pc.get('_worker_id', 'master')
         self.log = self.setup_logging()
 
-        if self.worker_id is not None:
+        if self.worker_id != 'master':
+            self.log.debug("I'm worker %s" % self.worker_id)
             # I'm a child processor
+            self.multiprocessing = True
             self.status = pc['status']
             self.input_queue = pc['input_queue']
             self.output_queue = pc.get('output_queue', None)
             # Remove multiprocessing objects from config datastructure,
-            # so it can be dumped to JSON afterwards
+            # so it can be serialized later
             for k in ['input_queue', 'output_queue', 'status']:
                 pc[k] = None
+
 
         else:
             # I'm the main processor
@@ -88,8 +91,11 @@ class Processor:
             if n_cpus == 'all':
                 n_cpus = multiprocessing.cpu_count()
             n_cpus = int(n_cpus)   # On the command line it gets passed as a string, since 'all' is possible
-            if n_cpus != 1:
+            if n_cpus == 1:
+                self.multiprocessing = False
+            else:
                 # Setup multiprocessing
+                self.multiprocessing = True
                 self.manager = multiprocessing.Manager()
                 self.status = self.manager.Value('i', MP_STATUS['normal'])
                 self.input_queue = self.manager.Queue()
@@ -113,7 +119,7 @@ class Processor:
                 c['pax'].update(dict(plugin_group_names=['output'],
                                      _worker_id='output',
                                      status=self.status,
-                                     input_queue=self.input_queue))
+                                     input_queue=self.output_queue))
                 self.output_worker = multiprocessing.Process(target=Processor,
                                                              kwargs=dict(config_dict=c))
 
@@ -144,15 +150,22 @@ class Processor:
                 self.log.warning('You did not specify any plugin groups to load: are you testing me?')
             pc['plugin_group_names'] = []
 
-        # Make plugin group names for the encoder and decoder plugins
-        # By having this code here, we ensure they are always just after/before input/output,
-        # no matter what plugin group names the user is using
-        if 'input' in pc['plugin_group_names'] and pc.get('decoder_plugin') is not None:
-            assert pc['plugin_group_names'][0] == 'input'
-            pc['plugin_group_names'].insert(1, 'decoder_plugin')
-        if 'output' in pc['plugin_group_names'] and pc.get('encoder_plugin') is not None:
-            assert pc['plugin_group_names'][-1] == 'output'
-            pc['plugin_group_names'].insert(len(pc['plugin_group_names']) - 1, 'encoder_plugin')
+        if not self.multiprocessing or self.worker_id not in ('master', 'output'):
+            # Standalone or child processor (not output)
+            # Make plugin group names for the encoder and decoder plugins
+            # By having this code here, we ensure they are always just after/before input/output,
+            # no matter what plugin group names the user is using
+            if pc.get('decoder_plugin') is not None:
+                decoder_pos = 0
+                if len(pc['plugin_group_names']) and pc['plugin_group_names'][0] == 'input':
+                    decoder_pos += 1
+                pc['plugin_group_names'].insert(decoder_pos, 'decoder_plugin')
+
+            if pc.get('encoder_plugin') is not None:
+                encoder_pos = len(pc['plugin_group_names'])
+                if len(pc['plugin_group_names']) and pc['plugin_group_names'][-1] == 'output':
+                    encoder_pos -= 1
+                pc['plugin_group_names'].insert(encoder_pos, 'encoder_plugin')
 
         for plugin_group_name in pc['plugin_group_names']:
             if plugin_group_name not in pc:
@@ -239,7 +252,7 @@ class Processor:
         # For worker processed, we have to call run from init: nobody else wil...
         self.max_queue_blocks = self.config['pax'].get('max_queue_blocks', 100)
         self.block_size = self.config['pax'].get('event_block_size', 10)
-        if self.worker_id is not None:
+        if self.worker_id != 'master':
             self.run()
 
     def setup_logging(self):
@@ -361,7 +374,7 @@ class Processor:
             If you do, you get in trouble if you start a new Processor instance that tries to write to the same files.
 
         """
-        if self.worker_id is not None:
+        if self.worker_id != 'master':
             # I'm a child processor
             self.check_crash()
 
@@ -373,11 +386,14 @@ class Processor:
 
                 try:
                     self.check_crash()
+                    event_block = self.input_queue.get(block=True, timeout=1)
+                    self.log.debug("Fetched %d events from the queue" % len(event_block))
                     results = []
-                    for event in self.input_queue.get(block=True, timeout=1):
+                    for event in event_block:
                         self.check_crash()
                         results.append(self.process_event(event))
                     if self.output_queue:
+                        self.log.debug("Pushing %d events to output queue" % len(results))
                         self.output_queue.put(results)
                     if self.worker_id != 'output':
                         # If the output worker has trouble catching up, sleep for a bit
@@ -385,6 +401,8 @@ class Processor:
                             self.check_crash()
                             time.sleep(1)
                 except queue.Empty:
+                    self.log.debug("%s found empty input queue, can_end is %s, status is %s" % (
+                        self.worker_id, can_end, self.status.value))
                     if can_end:
                         break
                     time.sleep(1)
@@ -402,7 +420,7 @@ class Processor:
             if self.input_plugin.has_shut_down:
                 raise RuntimeError("Attempt to run a Processor twice!")
 
-            if hasattr(self, 'processing_workers'):
+            if self.multiprocessing:
                 # I'm a master processor
                 event_block = []
                 for i, event in enumerate(self.get_events()):
@@ -462,11 +480,11 @@ class Processor:
 
     def check_crash(self):
         if self.status.value == MP_STATUS['crashing']:
-            if self.worker_id is None:
+            if self.worker_id == 'master':
                 self.log.fatal("Crash detected, giving worker processes five seconds to die in peace")
                 time.sleep(5)
                 self.log.fatal("That's it, farewell cruel world!")
-                exit('')
+                raise RuntimeError("Terminated pax multiprocessing due to crash in one of the workers.")
             exit('')
 
     def update_status(self):
