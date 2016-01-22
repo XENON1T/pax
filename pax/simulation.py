@@ -22,7 +22,7 @@ log = logging.getLogger('SimulationCore')
 
 
 class Simulator(object):
-
+    
     def __init__(self, config_to_init):
         c = self.config = config_to_init
 
@@ -68,7 +68,7 @@ class Simulator(object):
         if c.get('magically_avoid_dead_pmts', False):
             channels_for_photons = [ch for ch in channels_for_photons if c['gains'][ch] > 0]
         if c.get('magically_avoid_s1_excluded_pmts', False) and \
-           'channels_excluded_for_s1' in c:
+            'channels_excluded_for_s1' in c:
             channels_for_photons = [ch for ch in channels_for_photons
                                     if ch not in c['channels_excluded_for_s1']]
         c['channels_for_photons'] = channels_for_photons
@@ -114,16 +114,16 @@ class Simulator(object):
                                              default_errors=c['relative_qe_error'] + c['relative_gain_error'])
         else:
             self.s1_patterns = None
-
+    
     def s2_electrons(self, electrons_generated=None, z=0., t=0.):
         """Return a list of electron arrival times in the ELR region caused by an S2 process.
-
+        
             electrons             -   total # of drift electrons generated at the interaction site
             t                     -   Time at which the original energy deposition occurred.
             z                     -   Depth below the GATE mesh where the interaction occurs.
         As usual, all units in the same system used by pax (if you specify raw values: ns, cm)
         """
-
+        
         if z < 0:
             log.warning("Unphysical depth: %s cm below gate. Not generating S2." % z)
             return []
@@ -142,10 +142,10 @@ class Simulator(object):
         electron_lifetime_correction = -1 * drift_time_mean / self.config['electron_lifetime_liquid']
         electron_lifetime_correction = math.exp(electron_lifetime_correction)
         prob = self.config['electron_extraction_yield'] * electron_lifetime_correction
-
+        
         electrons_seen = np.random.binomial(n=electrons_generated,
                                             p=prob)
-
+        
         log.debug("    %s electrons survive the drift." % electrons_generated)
 
         # Calculate electron arrival times in the ELR region
@@ -153,7 +153,7 @@ class Simulator(object):
         if drift_time_stdev:
             e_arrival_times += np.random.normal(drift_time_mean, drift_time_stdev, electrons_seen)
         return e_arrival_times
-
+    
     def s1_photons(self, n_photons, recoil_type, x=0., y=0., z=0, t=0.):
         """
         Returns a list of photon production times caused by an S1 process.
@@ -166,12 +166,12 @@ class Simulator(object):
         log.debug("    %s photons are detected." % n_photons)
         if n_photons == 0:
             return np.array([])
-
+        
         if recoil_type.lower() == 'er':
 
             # How many of these are primary excimers? Others arise through recombination.
             n_primaries = np.random.binomial(n=n_photons, p=self.config['s1_ER_primary_excimer_fraction'])
-
+            
             primary_timings = self.singlet_triplet_delays(
                 np.zeros(n_primaries),  # No recombination delay for primary excimers
                 t1=self.config['singlet_lifetime_liquid'],
@@ -192,9 +192,9 @@ class Simulator(object):
                 t3=self.config['triplet_lifetime_liquid'],
                 singlet_ratio=self.config['s1_ER_secondary_singlet_fraction']
             )
-
+            
             timings = np.concatenate((primary_timings, secondary_timings))
-
+        
         elif recoil_type.lower() == 'nr':
 
             # Neglible recombination time, same singlet/triplet ratio for primary & secondary excimers
@@ -205,7 +205,7 @@ class Simulator(object):
                 t3=self.config['triplet_lifetime_liquid'],
                 singlet_ratio=self.config['s1_NR_singlet_fraction']
             )
-
+        
         elif recoil_type.lower() == 'alpha':
 
             # again neglible recombination time, same singlet/triplet ratio for primary & secondary excimers
@@ -216,12 +216,12 @@ class Simulator(object):
                 t3=self.config['alpha_triplet_lifetime_liquid'],
                 singlet_ratio=self.config['s1_ER_alpha_singlet_fraction']
             )
-
+        
         else:
             raise ValueError('Recoil type must be ER, NR or alpha, not %s' % type)
-
+        
         return timings + t * np.ones(len(timings))
-
+    
     def s2_scintillation(self, electron_arrival_times, x=0.0, y=0.0):
         """Given a list of electron arrival times, returns photon production times"""
         # How many photons does each electron make?
@@ -249,7 +249,50 @@ class Simulator(object):
             t3=c['triplet_lifetime_gas'],
             singlet_ratio=c['singlet_fraction_gas']
         )
+    
+    def after_pulse_electrons(self, primary_photon_times, primary_photon_Xs, primary_photon_Ys, primary_photon_Zs):
+        """
+        return a list of impurity electrons, Xs, Ys, Zs (Z default set to liquid surface)
+        """
+        output_electron_times = []
+        output_electron_Xs = []
+        output_electron_Ys = []
+        output_electron_Zs = []
 
+        # configuration
+        sensitive_volume_radius = self.config['tpc_radius']
+        after_pulse_probabilities = self.config['after_pulse_probabilities']
+        after_pulse_time_delay_types = self.config['after_pulse_time_delay_types']
+        after_pulse_time_delay_params1 = self.config['after_pulse_time_delay_params1']
+        after_pulse_time_delay_params2 = self.config['after_pulse_time_delay_params2']
+
+         #loop over all photons and all possible after pulse channels
+        for photon_id in range(0, len(primary_photon_times) ):
+            photon_time = primary_photon_times[photon_id]
+            photon_X = primary_photon_Xs[photon_id]
+            photon_Y = primary_photon_Ys[photon_id]
+            photon_Z = primary_photon_Zs[photon_id]
+            for after_pulse_type_id in range(0, len(after_pulse_probabilities)):
+                after_pulse_probability = after_pulse_probabilities[after_pulse_type_id]
+                after_pulse_time_delay_type = after_pulse_time_delay_types[after_pulse_type_id]
+                after_pulse_time_delay_param1 = after_pulse_time_delay_params1[after_pulse_type_id]
+                after_pulse_time_delay_param2 = after_pulse_time_delay_params2[after_pulse_type_id]
+                if np.random.uniform(0,1000000000) > 1000000000.*after_pulse_probability:
+                    continue
+                
+                after_pulse_time_delay = self.generate_after_pulse_time_delay(after_pulse_time_delay_type, after_pulse_time_delay_param1,after_pulse_time_delay_param2)
+                if after_pulse_time_delay<0:
+                    continue
+                after_pulse_radius2 = np.random.uniform(0, sensitive_volume_radius*sensitive_volume_radius)
+                after_pulse_theta = np.random.uniform(0, np.pi*2.)
+                # fill the outputs
+                output_electron_times.append(photon_time + after_pulse_time_delay)
+                output_electron_Xs.append(np.sqrt(after_pulse_radius2) * np.cos(after_pulse_theta))
+                output_electron_Ys.append(np.sqrt(after_pulse_radius2) * np.sin(after_pulse_theta))
+                output_electron_Zs.append(-self.config['gate_to_anode_distance'])
+        
+        return (output_electron_times, output_electron_Xs, output_electron_Ys, output_electron_Zs)
+    
     def singlet_triplet_delays(self, times, t1, t3, singlet_ratio):
         """
         Given a list of eximer formation times, returns excimer decay times.
@@ -263,9 +306,9 @@ class Simulator(object):
             np.random.exponential(t1, n_singlets),
             np.random.exponential(t3, len(times) - n_singlets)
         ])
-
+    
     def get_luminescence_times(self, n):
-
+        
         dg = self.config['elr_gas_gap_length']
 
         # Distance between liquid level and uniform -> line field crossover point
@@ -294,9 +337,9 @@ class Simulator(object):
             # NB: does not take electron bending towards anode into account, so probably worse!
         ))
         result *= 1/(self.config['gas_drift_velocity_slope'] * self.config['reduced_e_in_gas'])
-
+        
         return result
-
+    
     def pmt_pulse_current(self, gain, offset=0):
         # Rounds offset to nearest pmt_pulse_time_rounding so we can exploit caching
         return gain * pmt_pulse_current_raw(
@@ -307,10 +350,10 @@ class Simulator(object):
             self.config['pmt_rise_time'],
             self.config['pmt_fall_time'],
         )
-
+    
     def make_hitpattern(self, photon_times, x=0, y=0, z=0):
         return SimulatedHitpattern(simulator=self, photon_timings=photon_times, x=x, y=y, z=z)
-
+    
     def to_pax_event(self, hitpattern):
         """Simulate PMT response to a hitpattern of photons
         Returns None if you pass a hitlist without any hits
@@ -334,7 +377,7 @@ class Simulator(object):
         # Ensure the event length is even (else it cannot be written to XED)
         if event.length() % 2 != 0:
             event.stop_time += self.config['sample_duration']
-
+        
         log.debug("Now performing hitpattern to waveform conversion for %s photons" % hitpattern.n_photons)
         # TODO: Account for random initial digitizer state  wrt interaction?
         # Where?
@@ -348,19 +391,19 @@ class Simulator(object):
             # If the channel is dead, we don't do anything.
             if self.config['gains'][channel] == 0:
                 continue
-
+            
             photon_detection_times = np.array(photon_detection_times)
-
+            
             log.debug("Simulating %d photons in channel %d (gain=%s, gain_sigma=%s)" % (
                 len(photon_detection_times), channel,
                 self.config['gains'][channel], self.config['gain_sigmas'][channel]))
-
+            
             if self.config['pmt_0_is_fake'] and channel == 0:
                 continue
 
             #  Add padding, sort (eh.. or were we already sorted? and is sorting necessary at all??)
             all_pmt_pulse_centers = np.sort(photon_detection_times + self.config['event_padding'])
-
+            
             if self.config['cheap_zle']:
                 # No photons in this channel -- don't bother simulating noise
                 if len(photon_detection_times) == 0:
@@ -370,7 +413,7 @@ class Simulator(object):
             else:
                 # All in one cluster...
                 pmt_pulse_center_clusters = [all_pmt_pulse_centers]
-
+            
             for pmt_pulse_centers in pmt_pulse_center_clusters:
                 # Build the waveform pulse by pulse (bin by bin was slow, hope this
                 # is faster)
@@ -381,7 +424,7 @@ class Simulator(object):
                 offsets = pmt_pulse_centers % dt
                 center_index = (pmt_pulse_centers - offsets) / dt   # Absolute index in waveform of pe-pulse center
                 center_index = center_index.astype(np.int)
-
+                
                 if self.config['cheap_zle']:
                     # For cheap ZLE, define some padding around the cluster
                     start_index = np.min(center_index) - int(self.config['zle_padding'] / dt)
@@ -392,9 +435,9 @@ class Simulator(object):
                     start_index = 0
                     end_index = event.length() - 1
                 pulse_length = end_index - start_index + 1
-
+                
                 current_wave = np.zeros(pulse_length)
-
+                
                 if len(center_index) > self.config['use_simplified_simulator_from']:
 
                     # TODO: Is this actually faster still? Should check!
@@ -419,7 +462,7 @@ class Simulator(object):
                     normalized_pulse = self.pmt_pulse_current(gain=1)
                     normalized_pulse /= np.sum(normalized_pulse)
                     current_wave = np.convolve(current_wave, normalized_pulse, mode='same')
-
+                
                 elif len(center_index) > 0:
 
                     # Use a Gaussian truncated to positive values for the SPE gain distribution
@@ -449,16 +492,16 @@ class Simulator(object):
                             raise RuntimeError(
                                 "Generated pulse is %s samples long, can't be inserted between %s and %s" % (
                                     len(generated_pulse), left_index, righter_index))
-
+                        
                         if left_index < 0:
                             raise RuntimeError("Invalid left index %s: can't be negative!" % left_index)
-
+                        
                         if righter_index >= len(current_wave):
                             raise RuntimeError("Invalid right index %s: can't "
                                                "be longer than length of wave "
                                                "(%s)!" % (righter_index,
                                                           len(current_wave)))
-
+                        
                         current_wave[left_index: righter_index] += generated_pulse
 
                 # Did you order some Gaussian current noise with that?
@@ -502,7 +545,7 @@ class Simulator(object):
                         baseline = np.mean(real_noise[:min(len(real_noise), 50)])
                         real_noise = baseline + noise_amplitude * (real_noise - baseline)
                     adc_wave += real_noise[:pulse_length]
-
+                
                 else:
                     # If you don't want to superpose onto real noise,
                     # we should add a reference baseline
@@ -510,16 +553,16 @@ class Simulator(object):
 
                 # Digitizers have finite number of bits per channel, so clip the signal.
                 adc_wave = np.clip(adc_wave, 0, 2 ** (self.config['digitizer_bits']))
-
+                
                 event.pulses.append(datastructure.Pulse(
                     channel=channel,
                     left=start_index,
                     raw_data=adc_wave.astype(np.int16)))
-
+        
         log.debug("Simulated pax event of %s samples length and %s pulses "
                   "created." % (event.length(), len(event.pulses)))
         return event
-
+    
     def distribute_s2_photons(self, n_photons, x, y):
         if not self.s2_patterns:
             return self.randomize_photons_over_channels(n_photons, self.config['channels_in_detector']['tpc'])
@@ -540,13 +583,13 @@ class Simulator(object):
         # The bottom photons are distributed randomly
         hitp += self.randomize_photons_over_channels(n_photons - n_top, channels=self.config['channels_bottom'])
         return hitp
-
+    
     def distribute_s1_photons(self, n_photons, x, y, z):
         if not self.s1_patterns:
             return self.randomize_photons_over_channels(n_photons, self.config['channels_in_detector']['tpc'])
         # TODO: compensate for S2 width & drift velocity increase after gate (both ~us effects though, not important)
         return self.distribute_photons_by_pattern(n_photons, self.s1_patterns, (x, y, z))
-
+    
     def distribute_photons_by_pattern(self, n_photons, pattern_fitter, coordinate_tuple):
         # TODO: assumes channels drawn from top, or from all channels (i.e. first index 0!!!)
         # Note a CoordinateOutOfRange exception can be raised if points outside the TPC radius are asked
@@ -558,7 +601,7 @@ class Simulator(object):
 
     def randomize_photons_over_channels(self, n_photons, channels=None, relative_lce_per_channel=None):
         """Distribute photon_timings over channels according to relative_lce_per_channel
-
+        
         :param n_photons: number of photons to distribute
         :param channels: list of channel numbers that can receive photons. This will still be filtered
          to include only channels in self.config['channels_for_photons'].
@@ -593,7 +636,7 @@ class Simulator(object):
         # This is because of how numpy handles values on bin edges
         hitp, _ = np.histogram(channel_index_for_p,
                                bins=self.config['n_channels'], range=(0, self.config['n_channels']))
-
+        
         if not len(hitp) == self.config['n_channels']:
             raise RuntimeError("You found a simulator bug!\n"
                                "Hitpattern has wrong length "
@@ -604,16 +647,78 @@ class Simulator(object):
                                "(%d, should be %d)" % (np.sum(hitp), n_photons))
         return hitp
 
+    def distribute_pmt_after_pulses(self, arrival_timings_per_channel):
+        # distribute the pmt after pulses
+        # Each PMT channel has three parameters for describing the PMT afterpulses:
+        # probability for one photon hit to create an after pulse
+        # time delay of the after pulse with respect to the primary
+        # time delay rms
+        # transfer the timings before pmt after pulses allocation into a new dictionary,
+        # which will the output later
+        arrival_times_per_channel = arrival_timings_per_channel   
+        if len(arrival_times_per_channel)==0:
+            return arrival_times_per_channel   
+        for channel, photon_detection_times in arrival_times_per_channel.items():
+            # copy one original photon detection times, which will add the after pulses later and replace the original one
+            photon_detection_times_after_pulses = []
+            if len(photon_detection_times)==0:
+                continue
+
+            # get the pmt after pulse parameters
+            pmt_after_pulse_probabilities = self.config['pmt_after_pulse_probabilities'][channel]
+            pmt_after_pulse_time_delays = self.config['pmt_after_pulse_time_delays'][channel] #ns
+            pmt_after_pulse_time_delay_RMSs = self.config['pmt_after_pulse_time_delay_RMSs'][channel] #ns
+            
+            counter = 0
+            for photon_detection_time in photon_detection_times:
+                for pmt_after_pulse_type_id in range(0, len(pmt_after_pulse_probabilities)):
+                    pmt_after_pulse_probability = pmt_after_pulse_probabilities[pmt_after_pulse_type_id]
+                    pmt_after_pulse_time_delay = pmt_after_pulse_time_delays[pmt_after_pulse_type_id]
+                    pmt_after_pulse_time_delay_RMS = pmt_after_pulse_time_delay_RMSs[pmt_after_pulse_type_id]
+                    
+                    
+                    if not np.random.uniform(0, 10000000)<10000000.*pmt_after_pulse_probability:
+                        continue
+
+                      # generate the after pulse
+                    pmt_after_pulse_real_time_delay = np.random.normal(pmt_after_pulse_time_delay, pmt_after_pulse_time_delay_RMS)
+                    photon_detection_times_after_pulses.append(photon_detection_time+pmt_after_pulse_real_time_delay)
+            
+            
+            arrival_times_per_channel[channel] = np.concatenate((photon_detection_times, photon_detection_times_after_pulses))
+        
+        return arrival_times_per_channel
+
+
+    def generate_after_pulse_time_delay(self, after_pulse_time_delay_type, after_pulse_time_delay_param1, after_pulse_time_delay_param2):
+        # give the time delay according to the types
+        # Three types currently valid
+        # expo: exponential(param1)
+        # gauss: gaussian(param1, param2)
+        # uniform: uniform(param1, param2)        
+        if after_pulse_time_delay_type=='expo':
+            RandomValue = np.random.exponential(after_pulse_time_delay_param1)
+            if RandomValue>after_pulse_time_delay_param2:
+                return -1
+            return RandomValue
+        if after_pulse_time_delay_type=='gauss':
+            return np.random.normal(after_pulse_time_delay_param1,after_pulse_time_delay_param2)
+        if after_pulse_time_delay_type=='uniform':
+            return np.random.uniform(after_pulse_time_delay_param1,after_pulse_time_delay_param2)
+        
+        return -1
+
+
 
 ##
 # Hitpattern simulation
 ##
 
 class SimulatedHitpattern(object):
-
+    
     def __init__(self, simulator, photon_timings=tuple(), x=0, y=0, z=0):
         self.config = simulator.config
-
+        
         if not len(photon_timings):
             # Create empty hitpattern
             self.arrival_times_per_channel = {ch: [] for ch in range(simulator.config['n_channels'])}
@@ -639,17 +744,23 @@ class SimulatedHitpattern(object):
         # Don't rely on randomize_photons_over_channels to do this, we'll be splitting top v bottom here
         # and want that split to be random too.
         np.random.shuffle(photon_timings)
-
+        
         if z == - self.config['gate_to_anode_distance']:
             # Generated at anode: use S2 LCE data
             hitp = simulator.distribute_s2_photons(self.n_photons, x, y)
         else:
             hitp = simulator.distribute_s1_photons(self.n_photons, x, y, z)
 
-        # Split photon times over channels
-        self.arrival_times_per_channel = dict(zip(range(simulator.config['n_channels']),
-                                                  np.split(photon_timings, np.cumsum(hitp))))
 
+        # Split photon times over channels
+        arrival_timings_per_channel = dict(zip(range(simulator.config['n_channels']), np.split(photon_timings, np.cumsum(hitp))))
+        #self.arrival_times_per_channel = dict(zip(range(simulator.config['n_channels']), np.split(photon_timings, np.cumsum(hitp))))
+
+        #by Qing Lin
+        # add the pmt after pulses
+        self.arrival_times_per_channel=simulator.distribute_pmt_after_pulses(arrival_timings_per_channel)
+    
+    
     def __add__(self, other):
         # Don't reuse __init__, we don't want another TTS correction..
         # print("add called self=%s, other=%s" % (type(self), type(other)))
@@ -665,13 +776,16 @@ class SimulatedHitpattern(object):
             for ch in contributing_channels
         }
         return self
-
+    
     def __radd__(self, other):
         # print("radd called self=%s, other=%s" % (type(self), type(other)))
         if other is 0:
             # Apparently sum() starts trying to add stuff to 0...
             return self
         self.__add__(other)
+
+
+
 
 
 ##
