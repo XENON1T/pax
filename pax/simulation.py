@@ -124,13 +124,13 @@ class Simulator(object):
         As usual, all units in the same system used by pax (if you specify raw values: ns, cm)
         """
 
-        if z < 0:
-            log.warning("Unphysical depth: %s cm below gate. Not generating S2." % z)
+        if not - self.config['tpc_length'] <= z <= 0:
+            log.warning("Unphysical depth: %s cm below gate. Not generating S2." % - z)
             return []
         log.debug("Creating an s2 from %s electrons..." % electrons_generated)
 
         # Average drift time, taking faster drift velocity after gate into account
-        drift_time_mean = z / self.config['drift_velocity_liquid'] + \
+        drift_time_mean = - z / self.config['drift_velocity_liquid'] + \
             (self.config['gate_to_anode_distance'] - self.config['elr_gas_gap_length']) \
             / self.config['drift_velocity_liquid_above_gate']
 
