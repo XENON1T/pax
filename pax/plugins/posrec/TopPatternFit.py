@@ -29,6 +29,12 @@ class PosRecTopPatternFit(plugin.PosRecPlugin):
             is_pmt_in[saturated_pmts] = False
         is_pmt_in = is_pmt_in[self.pmts]
 
+        # Check if any pmts are in -- if all living PMTs saturated we can't reconstruct a position
+        if not np.sum(is_pmt_in):
+            self.log.warning("All living PMTs for peak %d-%d are saturated... Can't reconstruct a position." % (
+                peak.left, peak.right))
+            return None
+
         # Number of degrees of freedom, n_channels - model degrees of freedom (x,y) - 1
         ndf = np.count_nonzero(is_pmt_in) - 2 - 1
 

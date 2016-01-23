@@ -9,6 +9,8 @@ from pax import plugin, datastructure
 import sysconfig
 import six
 import array
+import json
+
 ##
 # Build the pax event class path
 ##
@@ -94,6 +96,9 @@ class WriteROOTClass(plugin.OutputPlugin):
         self.f = ROOT.TFile(output_file, "RECREATE")
         self.f.cd()
         self.event_tree = None
+
+        # Write the metadata to the file as JSON
+        ROOT.TNamed('pax_metadata', json.dumps(self.processor.get_metadata())).Write()
 
     def write_event(self, event):
 

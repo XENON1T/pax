@@ -4,10 +4,9 @@ from pax import plugin, datastructure, utils
 import os
 import sys
 
-from HitFinder import find_intervals_above_threshold
-
 import matplotlib.pyplot as plt
 sys.path.append(os.path.join(utils.PAX_DIR, 'plugins', 'signal_processing'))
+from HitFinder import find_intervals_above_threshold   # flake8: noqa
 
 
 class SoftwareZLE(plugin.TransformPlugin):
