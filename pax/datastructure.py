@@ -409,7 +409,7 @@ class Interaction(StrictModel):
     drift_time = float('nan')
 
     #: z position (cm) calculated from drift time.
-    #: This is simply drift time * drift velocity, so it is positive!
+    #: This is simply - drift time * drift velocity
     z = float('nan')
 
     #: r position (cm)
