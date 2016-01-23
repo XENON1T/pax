@@ -25,9 +25,9 @@ import six
 import numpy as np
 
 from pax import units
-from pax.datastructure import Event, Pulse
+from pax.datastructure import Event, Pulse, EventProxy
 
-from pax.FolderIO import InputFromFolder, WriteToFolder, EventProxy
+from pax.FolderIO import InputFromFolder, WriteToFolder
 from pax import plugin
 
 

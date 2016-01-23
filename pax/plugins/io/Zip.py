@@ -1,4 +1,5 @@
-from pax.FolderIO import InputFromFolder, WriteToFolder, EventProxy
+from pax.FolderIO import InputFromFolder, WriteToFolder
+from pax.datastructure import EventProxy
 import zipfile
 
 

@@ -210,7 +210,7 @@ def get_aliases():
     output_plugin_aliases.update([(fc, ('Table.TableWriter', {'output_format': fc}))
                                   for fc in formats.flat_data_formats.keys()])
     output_plugin_aliases.update([
-        ('root',         'ROOTClass.WriteROOTClass'),
+        ('root',         ('ROOTClass.EncodeROOTClass', 'ROOTClass.WriteROOTClass')),
 
         # Zipped formats -- allow arbitrary event numbering
         ('zpickle', ('Pickle.EncodeZPickle', 'Zip.WriteZipped')),

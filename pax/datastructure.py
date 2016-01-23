@@ -7,6 +7,7 @@ NOTE: This class is stable within major releases.  Do not change any variable
 names of functionality between major releases.  You may add variables in minor
 releases.  Patch releases cannot modify this.
 """
+from collections import namedtuple
 import numpy as np
 import six
 
@@ -671,3 +672,12 @@ class Event(StrictModel):
                        reverse=reverse)
 
         return peaks
+
+
+# An event proxy object which can hold raw data bytes
+# but still has an event_number attribute
+# The decoders for and WriteZipped & Readzipped knows what to do with this,
+# other code will be fooled into treating it as a normal event
+# (except the explicit event class checks in ProcessPlugin of course,
+#  these have to be disabled by as needed using do_output_check and do_input_check)
+EventProxy = namedtuple('EventProxy', ['data', 'event_number'])

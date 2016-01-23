@@ -6,22 +6,15 @@ import ROOT
 
 import pax  # For version number
 from pax import plugin, datastructure
+from pax.datastructure import EventProxy
 import sysconfig
 import six
 import array
 import json
-
-##
-# Build the pax event class path
-##
-if os.name != 'nt':
-    import rootpy.stl as stl
-    from rootpy.userdata import BINARY_PATH
-    PAX_ROOT_CLASS_PATH = os.path.join(BINARY_PATH, 'modules')
-else:
-    # On Windows, rootpy doesn't work: just dump everything in the current directory...
-    PAX_ROOT_CLASS_PATH = '.'
-
+import pickle
+import rootpy.stl as stl
+from rootpy.userdata import BINARY_PATH
+PAX_ROOT_CLASS_PATH = os.path.join(BINARY_PATH, 'modules')
 PAX_ROOT_CLASS_NAME = 'pax_event_class_%s.cpp' % pax.__version__.replace('.', '')
 
 overall_header = """
@@ -49,9 +42,20 @@ public:
 """
 
 
-def load_event_class(filename):
-    """Read a C++ root class definition, generating dictionaries for vectors
-    of classes"""
+def load_event_class(filename=None, force_recompile=False):
+    """Read a C++ root class definition, generating dictionaries for vectors of classes"""
+    if filename is None:
+        # If the user provided a pax_event_class.cpp in the cwd, use that instead.
+        # This enables files with incompatible pax event class versions to be read --
+        # -- at least, attempted to be read. Of course, if pax is newer, its datastructure has changed...
+        if os.path.exists('pax_event_class.cpp'):
+            filename = 'pax_event_class.cpp'
+        # Final call: usual name in the usual location
+        elif os.path.exists(os.path.join(PAX_ROOT_CLASS_PATH, PAX_ROOT_CLASS_NAME)):
+            filename = os.path.join(PAX_ROOT_CLASS_PATH, PAX_ROOT_CLASS_NAME)
+        else:
+            raise RuntimeError("Didn't find a pax event class anywhere!\n")
+
     # Find the classes defined in the file
     classnames = []
     with open(filename, 'r') as classfile:
@@ -67,7 +71,7 @@ def load_event_class(filename):
     else:
         libname = libname+sysconfig.get_config_var('SHLIB_SUFFIX')
 
-    if os.path.exists(libname):
+    if os.path.exists(libname) and not force_recompile:
         if ROOT.gSystem.Load(libname) not in (0, 1):
             raise RuntimeError("failed to load the library '{0}'".format(libname))
     else:
@@ -81,73 +85,63 @@ def load_event_class(filename):
             stl.generate("std::vector<%s>" % name, "%s;<vector>" % filename, True)
 
 
-class WriteROOTClass(plugin.OutputPlugin):
+class EncodeROOTClass(plugin.TransformPlugin):
+    do_output_check = False
+
     def startup(self):
-        self.config.setdefault('buffer_size', 16000)
         self.config.setdefault('fields_to_ignore',
                                ('all_hits', 'raw_data', 'sum_waveforms', 'hits', 'pulses'))
-        self.config.setdefault('output_class_code', True)
         self._custom_types = []
+        self.class_is_loaded = False
+        self.last_collection = {}
 
-        output_file = self.config['output_name'] + '.root'
-        if os.path.exists(output_file):
-            print("\n\nOutput file %s already exists, overwriting." % output_file)
-
-        self.f = ROOT.TFile(output_file, "RECREATE")
-        self.f.cd()
-        self.event_tree = None
-
-        # Write the metadata to the file as JSON
-        ROOT.TNamed('pax_metadata', json.dumps(self.processor.get_metadata())).Write()
-
-    def write_event(self, event):
-
-        if not self.event_tree:
+    def transform_event(self, event):
+        if not self.class_is_loaded:
             if self.config['exclude_compilation_from_timer']:
                 self.processor.timer.punch()
 
-            # Construct the event tree
-            self.event_tree = ROOT.TTree(self.config['tree_name'],
-                                         'Tree with %s events from pax' % self.config['tpc_name'])
+            # Check if the class code exists -- if not, create it.
+            # If you run a new pax version for the first time in multiprocessing mode, this could get ugly
+            if not (os.path.exists(os.path.join(PAX_ROOT_CLASS_PATH, PAX_ROOT_CLASS_NAME)) and not
+                    os.path.exists('pax_event_class.cpp')) or self.config.get('force_class_rewrite'):
+                self.log.warning("Event class code for this pax version not found: creating it now!")
+                self.create_class_code(event)
 
-            # Get the event class C++ definition
-            # Do this here, since it requires an instance (for length of arrays)
-            # TODO: This fails if the first event doesn't have a peak!!
-            class_code = overall_header + self._build_model_class(event)
+            load_event_class()
 
-            # Where o where shall we write the class?
-            # Check if PAX_ROOT_CLASS_PATH is writeable. If not, use the current directory to write the class.
-            class_file_cwd = os.path.join('.', PAX_ROOT_CLASS_NAME)
-            if os.access(PAX_ROOT_CLASS_PATH, os.W_OK):
-                class_file = os.path.join(PAX_ROOT_CLASS_PATH, PAX_ROOT_CLASS_NAME)
-                with open(class_file, mode='w') as outfile:
-                    outfile.write(class_code)
-                # Write a copy of the event class to the working directory (if desired)
-                if self.config.get('output_class_code', True):
-                    with open(class_file_cwd, mode='w') as outfile:
-                        outfile.write(class_code)
-            else:
-                self.log.warning("Could not write to the default pax event class location %s!\n"
-                                 "We'll write the pax event class (and its compiled library) "
-                                 "to the current directory instead." % PAX_ROOT_CLASS_PATH)
-                class_file = class_file_cwd
+        root_event = ROOT.Event()
+        self.set_root_object_attrs(event, root_event)
+        self.last_collection = {}
+
+        return EventProxy(event_number=event.event_number, data=pickle.dumps(root_event))
+
+    def create_class_code(self, event):
+        """Build the event class C++ definition corresponding to pax_event
+        Do this here, since it requires an instance (for length of arrays)
+        TODO: This fails if the first event doesn't have a peak!!
+        """
+        class_code = overall_header + self._build_model_class(event)
+
+        # Where o where shall we write the class?
+        # Check if PAX_ROOT_CLASS_PATH is writeable. If not, use the current directory to write the class.
+        class_file_cwd = os.path.join('.', PAX_ROOT_CLASS_NAME)
+        if os.access(PAX_ROOT_CLASS_PATH, os.W_OK):
+            class_filename = os.path.join(PAX_ROOT_CLASS_PATH, PAX_ROOT_CLASS_NAME)
+            with open(class_filename, mode='w') as outfile:
+                outfile.write(class_code)
+            # Write a copy of the event class to the working directory (if desired)
+            if self.config.get('output_class_code', True):
                 with open(class_file_cwd, mode='w') as outfile:
                     outfile.write(class_code)
+        else:
+            self.log.warning("Could not write to the default pax event class location %s!\n"
+                             "We'll write the pax event class (and its compiled library) "
+                             "to the current directory instead." % PAX_ROOT_CLASS_PATH)
+            class_filename = class_file_cwd
+            with open(class_file_cwd, mode='w') as outfile:
+                outfile.write(class_code)
 
-            # Load the event class and make the event object
-            load_event_class(class_file)
-            self.log.debug("Event class loaded, creating event")
-            self.root_event = ROOT.Event()
-            # TODO: does setting the splitlevel to 0 or 99 actually have an effect?
-            self.event_tree.Branch('events', 'Event', self.root_event, self.config['buffer_size'], 99)
-
-            if self.config['exclude_compilation_from_timer']:
-                self.processor.timer.punch()
-
-        # Last collection of each data model type seen
-        self.last_collection = {}
-        self.set_root_object_attrs(event, self.root_event)
-        self.event_tree.Fill()
+        return class_filename
 
     def set_root_object_attrs(self, python_object, root_object):
         """Set attribute values of the root object based on data_model
@@ -208,15 +202,6 @@ class WriteROOTClass(plugin.OutputPlugin):
         """Return index of py_object in last collection of models of corresponding type seen in event"""
         return self.last_collection[py_object.__class__.__name__].index(py_object)
 
-    def write_to_disk(self):
-        if self.event_tree:
-            self.event_tree.Write()
-
-    def shutdown(self):
-        self.write_to_disk()
-        if self.f:
-            self.f.Close()
-
     def get_root_type(self, field_name, python_type):
         if field_name in self.config['force_types']:
             return self.config['force_types'][field_name]
@@ -252,7 +237,7 @@ class WriteROOTClass(plugin.OutputPlugin):
                 if element_model_name not in self._custom_types:
                     self._custom_types.append(element_model_name)
                     if not len(field_value):
-                        self.log.warning("Don't have a %s instance to use: making default one..." % element_model_name)
+                        self.log.debug("Don't have a %s instance to use: making default one..." % element_model_name)
                         if element_model_name == 'Pulse':
                             # Pulse has a custom __init__ we need to obey... why did we do this again?
                             source = element_model(channel=0, left=0, right=0)
@@ -290,24 +275,61 @@ class WriteROOTClass(plugin.OutputPlugin):
                                      class_version=pax.__version__.replace('.', ''))
 
 
+class WriteROOTClass(plugin.OutputPlugin):
+    do_input_check = False
+    do_output_check = False
+
+    def startup(self):
+        self.config.setdefault('buffer_size', 16000)
+        self.config.setdefault('output_class_code', True)
+
+        output_file = self.config['output_name'] + '.root'
+        if os.path.exists(output_file):
+            print("\n\nOutput file %s already exists, overwriting." % output_file)
+
+        self.f = ROOT.TFile(output_file, "RECREATE")
+        self.f.cd()
+        self.event_tree = None
+
+        # Write the metadata to the file as JSON
+        ROOT.TNamed('pax_metadata', json.dumps(self.processor.get_metadata())).Write()
+
+    def write_event(self, event_proxy):
+        if not self.event_tree:
+            # Construct the event tree
+            self.event_tree = ROOT.TTree(self.config['tree_name'],
+                                         'Tree with %s events from pax' % self.config['tpc_name'])
+
+            # Load the event class and make the event object
+            load_event_class()
+            self.log.debug("Event class loaded, creating event")
+            self.root_event = ROOT.Event()
+
+            # TODO: does setting the splitlevel to 0 or 99 actually have an effect?
+            self.event_tree.Branch('events', 'Event', self.root_event, self.config['buffer_size'], 99)
+
+        # Copy the event
+        # I haven't seen any documentation for the __assign__ thing... but it works :-)
+        self.root_event.__assign__(pickle.loads(event_proxy.data))
+
+        self.event_tree.Fill()
+
+    def write_to_disk(self):
+        if self.event_tree:
+            self.event_tree.Write()
+
+    def shutdown(self):
+        self.write_to_disk()
+        if self.f:
+            self.f.Close()
+
+
 class ReadROOTClass(plugin.InputPlugin):
     def startup(self):
         if not os.path.exists(self.config['input_name']):
             raise ValueError("Input file %s does not exist" % self.config['input_name'])
 
-        # If the user provided a pax_event_class.cpp in the cwd, use that instead.
-        # This enables files with incompatible pax event class versions to be read --
-        # -- at least, attempted to be read. Of course, if pax is newer, its datastructure has changed...
-        class_file = os.path.join(PAX_ROOT_CLASS_PATH, PAX_ROOT_CLASS_NAME)
-        if os.path.exists('./pax_event_class.cpp'):
-            self.log.info("Found pax_event_class.cpp in current working directory: \n"
-                          "We'll use this to try to read the file rather than %s." % class_file)
-            load_event_class('./pax_event_class.cpp')
-        elif os.path.exists(class_file):
-            load_event_class(class_file)
-        else:
-            raise RuntimeError("Didn't find a pax event class!\n"
-                               "Please provide one at ./pax_event_class.cpp or %s." % class_file)
+        load_event_class()
 
         # Make sure to store the ROOT file as an attribute
         # Else it will go out of scope => we die after next garbage collect
@@ -329,8 +351,7 @@ class ReadROOTClass(plugin.InputPlugin):
             yield event
 
     def set_python_object_attrs(self, root_object, py_object, fields_to_ignore):
-        """Sets attribute values of py_object to corresponding values in
-        ROOT_object
+        """Sets attribute values of py_object to corresponding values in root_object
         Returns nothing (modifies py_object in place)
         """
         for field_name, default_value in py_object.get_fields_data():

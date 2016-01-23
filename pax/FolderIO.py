@@ -1,15 +1,15 @@
 """I/O plugin base classes for input to/from folders or zipfiles
 """
-from collections import namedtuple
 import glob
 import zlib
 import os
 import shutil
 
 from bson import json_util
-from six.moves import input
 
+from six.moves import input
 from pax import utils, plugin
+from pax.datastructure import EventProxy
 
 
 class InputFromFolder(plugin.InputPlugin):
@@ -281,21 +281,12 @@ class WriteToFolder(plugin.OutputPlugin):
     def close(self):
         raise NotImplementedError
 
+
 ##
 # Encoders for zipfiles of events
 # Zipfile readers themselves are in plugins/io/Zip.py
 # (they have to be in /pax/plugins/... to be found)
 ##
-
-# An event proxy object which can hold raw data bytes
-# but still has an event_number attribute
-# The decoders below and WriteZipped & Readzipper knows what to do with this,
-# other code will be fooled into treating it as a normal event
-# (except the explicit event class checks in ProcessPlugin of course,
-#  these have to be disabled by as needed using do_output_check and do_input_check)
-EventProxy = namedtuple('EventProxy', ['data', 'event_number'])
-
-
 class ReadZippedDecoder(plugin.TransformPlugin):
     do_input_check = False
 
