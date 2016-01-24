@@ -17,6 +17,8 @@ plugins_to_test = [
         'name':         'JSON',
         'read_plugin':  'BSON.ReadJSON',
         'write_plugin': 'BSON.WriteJSON',
+        'encoder':      None,
+        'decoder':      None,
     },
     {
         'name':         'XED',
@@ -55,7 +57,7 @@ class TestRawData(unittest.TestCase):
             config = {'pax': {'events_to_process': [0, 1],
                               'plugin_group_names': ['input', 'output'],
                               'input': 'XED.ReadXED',
-                              'decoder': 'XED.DecodeXED',
+                              'decoder_plugin': 'XED.DecodeXED',
                               'output': plugin_info['write_plugin']},
                       plugin_info['write_plugin']: {'output_name': tempdir,
                                                     'overwrite_output': True}}

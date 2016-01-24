@@ -77,6 +77,7 @@ class TestPax(unittest.TestCase):
 
     def test_dummy_output_plugin(self):
         mypax = core.Processor(config_dict={'pax': {'plugin_group_names':   ['output'],
+                                                    'encoder_plugin': None,
                                                     'output':                'Dummy.DummyOutput'}},
                                just_testing=True)
         self.assertIsInstance(mypax, core.Processor)
@@ -165,6 +166,7 @@ class TestPax(unittest.TestCase):
         """ Process the first event from the XED file.
         """
         config = {'pax': {'events_to_process': [0],
+                          'encoder_plugin': None,
                           'output': 'Dummy.DummyOutput'}}
         mypax = core.Processor(config_names='XENON100', config_dict=config)
         mypax.run()
@@ -175,6 +177,7 @@ class TestPax(unittest.TestCase):
         mypax = core.Processor(config_names=['XENON100', 'XerawdpImitation'],
                                config_dict={'pax': {
                                    'events_to_process': [0],
+                                   'encoder_plugin': None,
                                    'output': 'Dummy.DummyOutput'}})
         mypax.run()
         pl = mypax.get_plugin_by_name('DummyOutput')
@@ -196,6 +199,7 @@ class TestPax(unittest.TestCase):
             outfile.write("0\n7\n")
         config = {'pax': {'event_numbers_file': 'temp_eventlist.txt',
                           'plugin_group_names': ['input', 'output'],
+                          'encoder_plugin': None,
                           'output': 'Dummy.DummyOutput'}}
         mypax = core.Processor(config_names='XENON100', config_dict=config)
         mypax.run()
@@ -232,6 +236,7 @@ class TestPax(unittest.TestCase):
         """
         mypax = core.Processor(config_names=['XENON100', 'Simulation'],
                                config_dict={'pax': {
+                                   'encoder_plugin': None,
                                    'output': 'Dummy.DummyOutput'}})
         mypax.run()
         pl = mypax.get_plugin_by_name('DummyOutput')
@@ -247,6 +252,7 @@ class TestPax(unittest.TestCase):
         mypax = core.Processor(config_names='XENON100',
                                config_dict={'pax': {'output': 'Plotting.PlotEventSummary',
                                                     'pre_output': [],
+                                                    'encoder_plugin': None,
                                                     'events_to_process': [0],
                                                     'output_name': 'plots_test'}})
         mypax.run()
