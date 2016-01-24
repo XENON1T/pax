@@ -12,6 +12,7 @@ plugins_to_test = [
         'read_plugin':  'Table.TableReader',
         'write_plugin': 'Table.TableWriter',
         'encoder_plugin': None,
+        'decoder_plugin': None,
         'extension':    'hdf5',
     },
     {
@@ -49,6 +50,7 @@ class TestReprocessing(unittest.TestCase):
                 'input_name':  'output1.' + plugin_info['extension'],
                 'input': plugin_info['read_plugin'],
                 'output': 'Table.TableWriter',
+                'decoder_plugin': None,
                 'output_name': output2_filename}})
             mypax.run()
             del mypax

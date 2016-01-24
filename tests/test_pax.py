@@ -215,6 +215,7 @@ class TestPax(unittest.TestCase):
                           'plugin_group_names': ['input', 'output'],
                           'n_cpus': 2,
                           'output_name': 'test_output',
+                          'encoder_plugin': None,
                           'output': 'Table.TableWriter'},
                   'Table.TableWriter': {'output_format': 'csv'}}
         mypax = core.Processor(config_names='XENON100', config_dict=config)
