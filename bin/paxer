@@ -9,8 +9,6 @@ For more control, you want to make your own configuration file and load it with 
 import argparse
 import os
 import sys
-import pax
-from pax import core, utils, formats
 from collections import OrderedDict
 
 # Hack to ensure correct matplotlib backend is chosen
@@ -19,6 +17,11 @@ from collections import OrderedDict
 import matplotlib
 if os.name != 'nt' and not os.environ.get('DISPLAY'):
     matplotlib.use('Agg')
+
+# These imports must be after matplotlib.use, otherwise the backend is already chosen
+# (so which of them is actually importing matplotlib.pyplot??)
+import pax    # flake8: noqa
+from pax import core, utils, formats    # flake8: noqa
 
 
 def main():

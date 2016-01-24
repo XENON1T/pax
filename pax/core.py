@@ -23,6 +23,7 @@ if six.PY2:
     import imp
 else:
     import importlib
+import heapq
 
 # For diagnosing suspected memory leaks, uncomment this code
 # and similar code in process_event
@@ -80,7 +81,6 @@ class Processor:
             # so it can be serialized later
             for k in ['input_queue', 'output_queue', 'status']:
                 pc[k] = None
-
 
         else:
             # I'm the main processor
@@ -377,38 +377,69 @@ class Processor:
         if self.worker_id != 'master':
             # I'm a child processor
             self.check_crash()
-
             while True:
                 # Check if we can end before we fetch event blocks:
                 # the last block may get added while we are fetching events
                 can_end = self.status.value == MP_STATUS['processing_done' if self.worker_id == 'output'
                                                          else 'input_done']
 
-                try:
+                if self.worker_id == 'output':
+                    # The output worker has an additional complication: blocks must be written in proper order
                     self.check_crash()
-                    event_block = self.input_queue.get(block=True, timeout=1)
-                    self.log.debug("Fetched %d events from the queue" % len(event_block))
-                    results = []
-                    for event in event_block:
-                        self.check_crash()
-                        results.append(self.process_event(event))
-                    if self.output_queue:
-                        self.log.debug("Pushing %d events to output queue" % len(results))
-                        self.output_queue.put(results)
-                    if self.worker_id != 'output':
-                        # If the output worker has trouble catching up, sleep for a bit
-                        while self.output_queue.qsize() >= self.max_queue_blocks:
+                    block_heap = []
+                    block_id = -1
+
+                    try:
+                        # If we don't have the block we want yet, keep fetching event blocks from the queue .
+                        # Note: if one block takes much longer than the others, this would slurp all blocks
+                        # while waiting for the difficult one to come through, potentially exhausting your RAM...
+                        while not (len(block_heap) and block_heap[0][0] == block_id + 1):
                             self.check_crash()
-                            time.sleep(1)
-                except queue.Empty:
-                    self.log.debug("%s found empty input queue, can_end is %s, status is %s" % (
-                        self.worker_id, can_end, self.status.value))
-                    if can_end:
-                        break
-                    time.sleep(1)
+                            heapq.heappush(block_heap, self.input_queue.get(block=True, timeout=1))
+
+                    except queue.Empty:
+                        if can_end and not len(block_heap):
+                            # We're done!
+                            break
+                        # Queue is empty, but either we're not in the processing_done status, or we're waiting for a
+                        # block which hasn't arrived on the queue yet. Wait, then try the queue again.
+                        time.sleep(1)
+                        continue
+
+                    # Pop the next event block from the heap
+                    block_id, event_block = heapq.heappop(block_heap)
+
+                else:
+                    # Ordinary worker
+                    self.check_crash()
+                    try:
+                        block_id, event_block = self.input_queue.get(block=True, timeout=1)
+                    except queue.Empty:
+                        if can_end:
+                            # We're done!
+                            break
+                        # Queue is empty: wait for more data, then check can_end again
+                        self.log.debug("%s found empty input queue, can_end is %s, status is %s" % (
+                            self.worker_id, can_end, self.status.value))
+                        time.sleep(1)
+                        continue
+
+                try:
+                    for i, event in enumerate(event_block):
+                        self.check_crash()
+                        event_block[i] = self.process_event(event)
                 except Exception:
+                    # Crash occurred during processing: notify everyone else, then die
                     self.status.value = MP_STATUS['crashing']
                     raise
+
+                if self.worker_id != 'output':
+                    # Push the result to the output queue
+                    self.output_queue.put((block_id, event_block))
+                    # If the output worker has trouble catching up, sleep for a bit
+                    while self.output_queue.qsize() >= self.max_queue_blocks:
+                        self.check_crash()
+                        time.sleep(1)
 
         else:
             # I'm a master or standalone processor
@@ -422,12 +453,14 @@ class Processor:
 
             if self.multiprocessing:
                 # I'm a master processor
+                block_id = 0
                 event_block = []
                 for i, event in enumerate(self.get_events()):
                     event_block.append(event)
                     self.master_heartbeat()
                     if len(event_block) >= self.block_size:
-                        self.input_queue.put(event_block)
+                        self.input_queue.put((block_id, event_block))
+                        block_id += 1
                         event_block = []
                     # If the processing workers have trouble catching up, sleep for a bit
                     while self.input_queue.qsize() >= self.max_queue_blocks:
@@ -436,7 +469,7 @@ class Processor:
                     if i >= self.stop_after:
                         self.log.info("Read in user-defined limit of %d events." % i)
                         break
-                self.input_queue.put(event_block)
+                self.input_queue.put((block_id, event_block))
                 self.master_heartbeat()
                 self.status.value = MP_STATUS['input_done']
 

@@ -289,38 +289,37 @@ class WriteROOTClass(plugin.OutputPlugin):
 
         self.f = ROOT.TFile(output_file, "RECREATE")
         self.f.cd()
-        self.event_tree = None
+        self.tree_created = False
 
         # Write the metadata to the file as JSON
         ROOT.TNamed('pax_metadata', json.dumps(self.processor.get_metadata())).Write()
 
     def write_event(self, event_proxy):
-        if not self.event_tree:
-            # Construct the event tree
+        if not self.tree_created:
+            # Load the event class
+            # This assumes the class was already created with EncodeROOTClass
+            # If you first run a new pax version in multiprocessing mode, this may get weird
+            # You can't have this in startup(), because EncodeROOTClass only writes the class when
+            # the first event arrives
+            load_event_class()
+
+            # Make the event tree
             self.event_tree = ROOT.TTree(self.config['tree_name'],
                                          'Tree with %s events from pax' % self.config['tpc_name'])
-
-            # Load the event class and make the event object
-            load_event_class()
             self.log.debug("Event class loaded, creating event")
             self.root_event = ROOT.Event()
 
             # TODO: does setting the splitlevel to 0 or 99 actually have an effect?
             self.event_tree.Branch('events', 'Event', self.root_event, self.config['buffer_size'], 99)
+            self.tree_created = True
 
-        # Copy the event
         # I haven't seen any documentation for the __assign__ thing... but it works :-)
         self.root_event.__assign__(pickle.loads(event_proxy.data))
-
         self.event_tree.Fill()
 
-    def write_to_disk(self):
-        if self.event_tree:
-            self.event_tree.Write()
-
     def shutdown(self):
-        self.write_to_disk()
-        if self.f:
+        if self.tree_created:
+            self.event_tree.Write()
             self.f.Close()
 
 
