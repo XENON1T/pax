@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.posrec package &mdash; Processor for Analyzing XENON1T 4.1.2 documentation</title>
+    <title>pax.plugins.posrec package &mdash; Processor for Analyzing XENON1T 4.2.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '4.1.2',
+        VERSION:     '4.2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.1.2 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.2.0 documentation" href="index.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -61,18 +61,24 @@
 <p>Neural network position reconstruction</p>
 <dl class="class">
 <dt id="pax.plugins.posrec.NeuralNet.NeuralNet">
-<em class="property">class </em><code class="descclassname">pax.plugins.posrec.NeuralNet.</code><code class="descname">NeuralNet</code><span class="sig-paren">(</span><em>n_inputs</em>, <em>n_hidden</em>, <em>n_output</em>, <em>weights</em>, <em>biases</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/posrec/NeuralNet.html#NeuralNet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.posrec.NeuralNet.NeuralNet" title="Permalink to this definition">¶</a></dt>
+<em class="property">class </em><code class="descclassname">pax.plugins.posrec.NeuralNet.</code><code class="descname">NeuralNet</code><span class="sig-paren">(</span><em>structure</em>, <em>weights</em>, <em>biases</em>, <em>activation_scale</em>, <em>output_layer_function</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/posrec/NeuralNet.html#NeuralNet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.posrec.NeuralNet.NeuralNet" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <dl class="docutils">
-<dt>Single hidden layer feed-forward neural net</dt>
+<dt>Feed-forward neural net with an arbitrary number of hidden layers</dt>
 <dd><ul class="first last simple">
 <li>Input layer without activation function or bias</li>
-<li>Hidden layer with atanh(sum + bias) activation function</li>
-<li>Output layer with sum + bias (i.e. identity) activation function</li>
+<li>Hidden layers with tanh(sum + bias) activation function</li>
+<li>Output layer with sum + bias or tanh(sum + bias) activation function</li>
 </ul>
 </dd>
 </dl>
 <p>All neurons in a layer are connected to all neurons in the previous layer.</p>
+<dl class="method">
+<dt id="pax.plugins.posrec.NeuralNet.NeuralNet.get_indices_range">
+<code class="descname">get_indices_range</code><span class="sig-paren">(</span><em>layer_i</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/posrec/NeuralNet.html#NeuralNet.get_indices_range"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.posrec.NeuralNet.NeuralNet.get_indices_range" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return the range of weights and biases to be used in this layer</p>
+</dd></dl>
+
 <dl class="method">
 <dt id="pax.plugins.posrec.NeuralNet.NeuralNet.run">
 <code class="descname">run</code><span class="sig-paren">(</span><em>input_values</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/posrec/NeuralNet.html#NeuralNet.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.posrec.NeuralNet.NeuralNet.run" title="Permalink to this definition">¶</a></dt>
@@ -90,7 +96,7 @@
 <dt id="pax.plugins.posrec.NeuralNet.PosRecNeuralNet">
 <em class="property">class </em><code class="descclassname">pax.plugins.posrec.NeuralNet.</code><code class="descname">PosRecNeuralNet</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/posrec/NeuralNet.html#PosRecNeuralNet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.posrec.NeuralNet.PosRecNeuralNet" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.PosRecPlugin" title="pax.plugin.PosRecPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.PosRecPlugin</span></code></a></p>
-<p>Reconstruct S2 x,y positions from top pmt hit pattern using a single hidden layer feed-foward neural net</p>
+<p>Reconstruct S2 x,y positions from top pmt hit pattern using a feed-foward neural net</p>
 <p>See Alex Kish&#8217; thesis for details:
 <a class="reference external" href="http://www.physik.uzh.ch/groups/groupbaudis/darkmatter/theses/xenon/Kish_THESISelectronic.pdf">http://www.physik.uzh.ch/groups/groupbaudis/darkmatter/theses/xenon/Kish_THESISelectronic.pdf</a></p>
 <dl class="method">

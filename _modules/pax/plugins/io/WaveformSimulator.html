@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.io.WaveformSimulator &mdash; Processor for Analyzing XENON1T 4.1.2 documentation</title>
+    <title>pax.plugins.io.WaveformSimulator &mdash; Processor for Analyzing XENON1T 4.2.0 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '4.1.2',
+        VERSION:     '4.2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.1.2 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.2.0 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   
@@ -162,9 +162,8 @@
 
         <span class="n">hitpatterns</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">instructions</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Simulating </span><span class="si">%s</span><span class="s"> photons and </span><span class="si">%s</span><span class="s"> electrons at </span><span class="si">%s</span><span class="s"> cm depth, at t=</span><span class="si">%s</span><span class="s"> ns&quot;</span> <span class="o">%</span> <span class="p">(</span>
-                <span class="n">q</span><span class="p">[</span><span class="s">&#39;s1_photons&#39;</span><span class="p">],</span> <span class="n">q</span><span class="p">[</span><span class="s">&#39;s2_electrons&#39;</span><span class="p">],</span> <span class="n">q</span><span class="p">[</span><span class="s">&#39;depth&#39;</span><span class="p">],</span> <span class="n">q</span><span class="p">[</span><span class="s">&#39;t&#39;</span><span class="p">]</span>
-            <span class="p">))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Simulating </span><span class="si">%s</span><span class="s"> photons and </span><span class="si">%s</span><span class="s"> electrons at </span><span class="si">%s</span><span class="s"> cm z, at t=</span><span class="si">%s</span><span class="s"> ns&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">q</span><span class="p">[</span><span class="s">&#39;s1_photons&#39;</span><span class="p">],</span> <span class="n">q</span><span class="p">[</span><span class="s">&#39;s2_electrons&#39;</span><span class="p">],</span> <span class="n">q</span><span class="p">[</span><span class="s">&#39;z&#39;</span><span class="p">],</span> <span class="n">q</span><span class="p">[</span><span class="s">&#39;t&#39;</span><span class="p">]))</span>
 
             <span class="c"># Should we choose x and yrandomly?</span>
             <span class="k">if</span> <span class="n">q</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;random&#39;</span><span class="p">:</span>
@@ -173,10 +172,10 @@
                 <span class="n">x</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="s">&#39;x&#39;</span><span class="p">])</span>
                 <span class="n">y</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="s">&#39;y&#39;</span><span class="p">])</span>
 
-            <span class="k">if</span> <span class="n">q</span><span class="p">[</span><span class="s">&#39;depth&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;random&#39;</span><span class="p">:</span>
-                <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;tpc_length&#39;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="n">q</span><span class="p">[</span><span class="s">&#39;z&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;random&#39;</span><span class="p">:</span>
+                <span class="n">z</span> <span class="o">=</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;tpc_length&#39;</span><span class="p">])</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">z</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="s">&#39;depth&#39;</span><span class="p">])</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">cm</span>
+                <span class="n">z</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="s">&#39;z&#39;</span><span class="p">])</span> <span class="o">*</span> <span class="n">units</span><span class="o">.</span><span class="n">cm</span>
 
             <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="s">&#39;s1_photons&#39;</span><span class="p">]):</span>
                 <span class="n">hitpatterns</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">s1</span><span class="p">(</span><span class="n">photons</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">q</span><span class="p">[</span><span class="s">&#39;s1_photons&#39;</span><span class="p">]),</span>
@@ -252,6 +251,11 @@
         <span class="n">instruction_number</span> <span class="o">=</span> <span class="mi">0</span>
         <span class="n">instruction</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">instruction_reader</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">p</span><span class="p">[</span><span class="s">&#39;depth&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;random&#39;</span><span class="p">:</span>
+                <span class="n">p</span><span class="p">[</span><span class="s">&#39;z&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;random&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">p</span><span class="p">[</span><span class="s">&#39;z&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span> <span class="o">*</span> <span class="nb">float</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s">&#39;depth&#39;</span><span class="p">])</span>
+            <span class="k">del</span> <span class="n">p</span><span class="p">[</span><span class="s">&#39;depth&#39;</span><span class="p">]</span>
             <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s">&#39;instruction&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="n">instruction_number</span><span class="p">:</span>
                 <span class="c"># Deposition is part of the previous instruction</span>
                 <span class="n">instruction</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
@@ -282,7 +286,7 @@
         <span class="c"># Fax name        #Root name    #Conversion factor (multiplicative)</span>
         <span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">,</span>             <span class="s">&#39;Nest_x&#39;</span><span class="p">,</span>     <span class="mf">0.1</span><span class="p">),</span>
         <span class="p">(</span><span class="s">&#39;y&#39;</span><span class="p">,</span>             <span class="s">&#39;Nest_y&#39;</span><span class="p">,</span>     <span class="mf">0.1</span><span class="p">),</span>
-        <span class="p">(</span><span class="s">&#39;depth&#39;</span><span class="p">,</span>         <span class="s">&#39;Nest_z&#39;</span><span class="p">,</span>     <span class="o">-</span><span class="mf">0.1</span><span class="p">),</span>
+        <span class="p">(</span><span class="s">&#39;z&#39;</span><span class="p">,</span>             <span class="s">&#39;Nest_z&#39;</span><span class="p">,</span>     <span class="mf">0.1</span><span class="p">),</span>
         <span class="p">(</span><span class="s">&#39;s1_photons&#39;</span><span class="p">,</span>    <span class="s">&#39;Nest_nph&#39;</span><span class="p">,</span>   <span class="mi">1</span><span class="p">),</span>
         <span class="p">(</span><span class="s">&#39;s2_electrons&#39;</span><span class="p">,</span>  <span class="s">&#39;Nest_nel&#39;</span><span class="p">,</span>   <span class="mi">1</span><span class="p">),</span>
         <span class="p">(</span><span class="s">&#39;t&#39;</span><span class="p">,</span>             <span class="s">&#39;Nest_t&#39;</span><span class="p">,</span>     <span class="mi">10</span> <span class="o">**</span> <span class="mi">9</span><span class="p">),</span>
@@ -290,6 +294,7 @@
     <span class="p">)</span>
 
 <div class="viewcode-block" id="WaveformSimulatorFromNEST.startup"><a class="viewcode-back" href="../../../../simulator.html#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s">&#39;add_to_z&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&#39;This plugin is completely untested and will probably crash!&#39;</span><span class="p">)</span>
         <span class="n">filename</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;input_name&#39;</span><span class="p">]</span>
         <span class="kn">import</span> <span class="nn">ROOT</span>
@@ -316,8 +321,8 @@
                     <span class="n">peaks</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="n">variable_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">values</span><span class="p">[</span><span class="n">variable_name</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">conversion_factor</span>
 
             <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">peaks</span><span class="p">:</span>
-                <span class="c"># Subtract depth of gate mesh, see xenon:xenon100:mc:roottree, bottom of page</span>
-                <span class="n">p</span><span class="p">[</span><span class="s">&#39;depth&#39;</span><span class="p">]</span> <span class="o">-=</span> <span class="mf">2.15</span> <span class="o">+</span> <span class="mf">0.25</span>
+                <span class="c"># Correct the z-coordinate system</span>
+                <span class="n">p</span><span class="p">[</span><span class="s">&#39;z&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;add_to_z&#39;</span><span class="p">]</span>
                 <span class="c"># Fix ER / NR label</span>
                 <span class="k">if</span> <span class="n">p</span><span class="p">[</span><span class="s">&#39;recoil_type&#39;</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
                     <span class="n">p</span><span class="p">[</span><span class="s">&#39;recoil_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;NR&#39;</span>

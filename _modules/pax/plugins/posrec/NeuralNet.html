@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.posrec.NeuralNet &mdash; Processor for Analyzing XENON1T 4.1.2 documentation</title>
+    <title>pax.plugins.posrec.NeuralNet &mdash; Processor for Analyzing XENON1T 4.2.0 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '4.1.2',
+        VERSION:     '4.2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.1.2 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.2.0 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   
@@ -40,12 +40,12 @@
   <h1>Source code for pax.plugins.posrec.NeuralNet</h1><div class="highlight"><pre>
 <span class="sd">&quot;&quot;&quot;Neural network position reconstruction&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span>
+<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">utils</span>
 
 
 <div class="viewcode-block" id="PosRecNeuralNet"><a class="viewcode-back" href="../../../../pax.plugins.posrec.html#pax.plugins.posrec.NeuralNet.PosRecNeuralNet">[docs]</a><span class="k">class</span> <span class="nc">PosRecNeuralNet</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">PosRecPlugin</span><span class="p">):</span>
 
-    <span class="sd">&quot;&quot;&quot;Reconstruct S2 x,y positions from top pmt hit pattern using a single hidden layer feed-foward neural net</span>
+    <span class="sd">&quot;&quot;&quot;Reconstruct S2 x,y positions from top pmt hit pattern using a feed-foward neural net</span>
 
 <span class="sd">    See Alex Kish&#39; thesis for details:</span>
 <span class="sd">    http://www.physik.uzh.ch/groups/groupbaudis/darkmatter/theses/xenon/Kish_THESISelectronic.pdf</span>
@@ -60,11 +60,23 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">input_channels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmts</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">nn_output_unit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;nn_output_unit&#39;</span><span class="p">]</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">nn</span> <span class="o">=</span> <span class="n">NeuralNet</span><span class="p">(</span><span class="n">n_inputs</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">input_channels</span><span class="p">),</span>
-                            <span class="n">n_hidden</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;hidden_layer_neurons&#39;</span><span class="p">],</span>
-                            <span class="n">n_output</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>   <span class="c"># x, y</span>
-                            <span class="n">weights</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">],</span>
-                            <span class="n">biases</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;biases&#39;</span><span class="p">])</span>
+        <span class="c"># Possibly scale the input of the activation function by a supplied value (float)</span>
+        <span class="n">activation_scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;activation_function_scale&#39;</span><span class="p">]</span>
+
+        <span class="c"># Apply the activation function to the output layer (bool)</span>
+        <span class="n">output_layer_function</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;output_layer_function&#39;</span><span class="p">]</span>
+
+        <span class="c"># Load the file defining the structure (number of nodes per layer)</span>
+        <span class="c"># as well as the weights and biases of the neural network</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">data_file_name</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;neural_net_file&#39;</span><span class="p">]))</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">nn</span> <span class="o">=</span> <span class="n">NeuralNet</span><span class="p">(</span><span class="n">structure</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;structure&#39;</span><span class="p">],</span>
+                            <span class="n">weights</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;weights&#39;</span><span class="p">],</span>
+                            <span class="n">biases</span><span class="o">=</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;biases&#39;</span><span class="p">],</span>
+                            <span class="n">activation_scale</span><span class="o">=</span><span class="n">activation_scale</span><span class="p">,</span>
+                            <span class="n">output_layer_function</span><span class="o">=</span><span class="n">output_layer_function</span><span class="p">)</span>
+
+        <span class="n">data</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 </div>
 <div class="viewcode-block" id="PosRecNeuralNet.reconstruct_position"><a class="viewcode-back" href="../../../../pax.plugins.posrec.html#pax.plugins.posrec.NeuralNet.PosRecNeuralNet.reconstruct_position">[docs]</a>    <span class="k">def</span> <span class="nf">reconstruct_position</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">peak</span><span class="p">):</span>
         <span class="n">input_areas</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">area_per_channel</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">input_channels</span><span class="p">]</span>
@@ -76,26 +88,36 @@
 
 </div></div>
 <div class="viewcode-block" id="NeuralNet"><a class="viewcode-back" href="../../../../pax.plugins.posrec.html#pax.plugins.posrec.NeuralNet.NeuralNet">[docs]</a><span class="k">class</span> <span class="nc">NeuralNet</span><span class="p">():</span>
-    <span class="sd">&quot;&quot;&quot;Single hidden layer feed-forward neural net</span>
+    <span class="sd">&quot;&quot;&quot;Feed-forward neural net with an arbitrary number of hidden layers</span>
 <span class="sd">     - Input layer without activation function or bias</span>
-<span class="sd">     - Hidden layer with atanh(sum + bias) activation function</span>
-<span class="sd">     - Output layer with sum + bias (i.e. identity) activation function</span>
+<span class="sd">     - Hidden layers with tanh(sum + bias) activation function</span>
+<span class="sd">     - Output layer with sum + bias or tanh(sum + bias) activation function</span>
 <span class="sd">    All neurons in a layer are connected to all neurons in the previous layer.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_inputs</span><span class="p">,</span> <span class="n">n_hidden</span><span class="p">,</span> <span class="n">n_output</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">biases</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">structure</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">biases</span><span class="p">,</span> <span class="n">activation_scale</span><span class="p">,</span> <span class="n">output_layer_function</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_inputs</span> <span class="o">=</span> <span class="n">structure</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_output</span> <span class="o">=</span> <span class="n">structure</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_layers</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">structure</span><span class="p">)</span>
 
-        <span class="c"># Boilerplate for storing args...</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">n_inputs</span> <span class="o">=</span> <span class="n">n_inputs</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">n_hidden</span> <span class="o">=</span> <span class="n">n_hidden</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">n_output</span> <span class="o">=</span> <span class="n">n_output</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">structure</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">structure</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">biases</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">biases</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">activation_scale</span> <span class="o">=</span> <span class="n">activation_scale</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_layer_function</span> <span class="o">=</span> <span class="n">output_layer_function</span>
+
+        <span class="c"># Calculate the number of connections in the network, per-layer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">n_connections_per_layer</span> <span class="o">=</span> <span class="p">[</span><span class="n">structure</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">structure</span><span class="p">[</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_layers</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)]</span>
+        <span class="c"># Create lists of the first weights and bias indices in each layer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weight_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_connections_per_layer</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">bias_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">structure</span><span class="p">[</span><span class="mi">1</span><span class="p">:]),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
         <span class="c"># Sanity checks</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">biases</span><span class="p">)</span> <span class="o">==</span> <span class="n">n_hidden</span> <span class="o">+</span> <span class="n">n_output</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">structure</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;There are not enough layers in the network, need at least 2+1&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">biases</span><span class="p">)</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">structure</span><span class="p">[</span><span class="mi">1</span><span class="p">:]):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Each hidden and output neuron must have a bias!&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span> <span class="o">==</span> <span class="n">n_inputs</span> <span class="o">*</span> <span class="n">n_hidden</span> <span class="o">+</span> <span class="n">n_hidden</span> <span class="o">*</span> <span class="n">n_output</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_connections_per_layer</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Invalid length of weights for totally connected neuron layers.&quot;</span><span class="p">)</span>
 
 <div class="viewcode-block" id="NeuralNet.run"><a class="viewcode-back" href="../../../../pax.plugins.posrec.html#pax.plugins.posrec.NeuralNet.NeuralNet.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_values</span><span class="p">):</span>
@@ -103,21 +125,36 @@
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_values</span><span class="p">)</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_inputs</span>
 
         <span class="c"># Input layer neurons do nothing</span>
+        <span class="n">hidden_values</span> <span class="o">=</span> <span class="n">input_values</span>
 
-        <span class="c"># Run the hidden layer, apply tanh activation function</span>
-        <span class="n">hidden_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_layer</span><span class="p">(</span><span class="n">input_values</span><span class="p">,</span>
-                                       <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">n_inputs</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_hidden</span><span class="p">])</span>
-        <span class="n">hidden_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="n">hidden_values</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">biases</span><span class="p">[:</span><span class="bp">self</span><span class="o">.</span><span class="n">n_hidden</span><span class="p">])</span>
+        <span class="c"># Run all hidden layers, apply tanh activation function</span>
+        <span class="k">for</span> <span class="n">hidden_layer_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_layers</span> <span class="o">-</span> <span class="mi">2</span><span class="p">):</span>
+            <span class="c"># First calculate what range of weights and biases we have to provide</span>
+            <span class="n">wr</span><span class="p">,</span> <span class="n">br</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_indices_range</span><span class="p">(</span><span class="n">hidden_layer_i</span><span class="p">)</span>
 
-        <span class="c"># Run the output layer, apply identity activation function (just add bias)</span>
-        <span class="n">output_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_layer</span><span class="p">(</span><span class="n">hidden_values</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">n_inputs</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_hidden</span><span class="p">:])</span>
-        <span class="k">return</span> <span class="n">output_values</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">biases</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">n_hidden</span><span class="p">:]</span>
+            <span class="n">hidden_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_layer</span><span class="p">(</span><span class="n">hidden_values</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">wr</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">wr</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+            <span class="n">hidden_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tanh</span><span class="p">((</span><span class="n">hidden_values</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">biases</span><span class="p">[</span><span class="n">br</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">br</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">activation_scale</span><span class="p">)</span>
+
+        <span class="c"># Run the output layer, apply activation function</span>
+        <span class="n">wr</span><span class="p">,</span> <span class="n">br</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_indices_range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_layers</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">output_values</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_layer</span><span class="p">(</span><span class="n">hidden_values</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="p">[</span><span class="n">wr</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">wr</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_layer_function</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">tanh</span><span class="p">((</span><span class="n">output_values</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">biases</span><span class="p">[</span><span class="n">br</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">br</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">activation_scale</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">output_values</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">biases</span><span class="p">[</span><span class="n">br</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">br</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
 </div>
 <div class="viewcode-block" id="NeuralNet.run_layer"><a class="viewcode-back" href="../../../../pax.plugins.posrec.html#pax.plugins.posrec.NeuralNet.NeuralNet.run_layer">[docs]</a>    <span class="k">def</span> <span class="nf">run_layer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_values</span><span class="p">,</span> <span class="n">weights</span><span class="p">):</span>
-        <span class="c"># Dendrite values: weighted inputs</span>
-        <span class="n">dendrite_values</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">input_values</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">input_values</span><span class="p">))</span> <span class="o">*</span> <span class="n">weights</span>
+        <span class="n">weighted_inputs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="n">input_values</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">input_values</span><span class="p">))</span> <span class="o">*</span> <span class="n">weights</span>
         <span class="c"># Sum weighted inputs for each hidden layer neuron separately</span>
-        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dendrite_values</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_values</span><span class="p">)),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div></div>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">weighted_inputs</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_values</span><span class="p">)),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="NeuralNet.get_indices_range"><a class="viewcode-back" href="../../../../pax.plugins.posrec.html#pax.plugins.posrec.NeuralNet.NeuralNet.get_indices_range">[docs]</a>    <span class="k">def</span> <span class="nf">get_indices_range</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">layer_i</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Return the range of weights and biases to be used in this layer&quot;&quot;&quot;</span>
+        <span class="n">weight_range</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">weight_indices</span><span class="p">[</span><span class="n">layer_i</span><span class="p">],</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">weight_indices</span><span class="p">[</span><span class="n">layer_i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="n">bias_range</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">bias_indices</span><span class="p">[</span><span class="n">layer_i</span><span class="p">],</span>
+                      <span class="bp">self</span><span class="o">.</span><span class="n">bias_indices</span><span class="p">[</span><span class="n">layer_i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">weight_range</span><span class="p">,</span> <span class="n">bias_range</span></div></div>
 </pre></div>
 
           </div>

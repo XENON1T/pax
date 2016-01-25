@@ -1,0 +1,221 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pax.configuration &mdash; Processor for Analyzing XENON1T 4.2.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '4.2.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Processor for Analyzing XENON1T 4.2.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pax.configuration</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">configparser</span> <span class="kn">import</span> <span class="n">ConfigParser</span><span class="p">,</span> <span class="n">ExtendedInterpolation</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">six</span>
+
+<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">units</span><span class="p">,</span> <span class="n">utils</span>
+
+<span class="n">FALLBACK_CONFIGURATION</span> <span class="o">=</span> <span class="s">&#39;XENON100&#39;</span>    <span class="c"># Configuration to use when none is specified</span>
+
+
+<div class="viewcode-block" id="load_configuration"><a class="viewcode-back" href="../../pax.html#pax.configuration.load_configuration">[docs]</a><span class="k">def</span> <span class="nf">load_configuration</span><span class="p">(</span><span class="n">config_names</span><span class="o">=</span><span class="p">(),</span> <span class="n">config_paths</span><span class="o">=</span><span class="p">(),</span> <span class="n">config_string</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">config_dict</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Load pax configuration using configuration data. See the docstring of Processor for more info.</span>
+<span class="sd">    :return: nested dictionary of evaluated configuration values, use as: config[section][key].</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">config_dict</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">config_dict</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="c"># Support for string arguments</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config_names</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">config_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">config_names</span><span class="p">]</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config_paths</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="n">config_paths</span> <span class="o">=</span> <span class="p">[</span><span class="n">config_paths</span><span class="p">]</span>
+
+    <span class="n">configp</span> <span class="o">=</span> <span class="n">ConfigParser</span><span class="p">(</span><span class="n">inline_comment_prefixes</span><span class="o">=</span><span class="s">&#39;#&#39;</span><span class="p">,</span>
+                           <span class="n">interpolation</span><span class="o">=</span><span class="n">ExtendedInterpolation</span><span class="p">(),</span>
+                           <span class="n">strict</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
+                           <span class="n">default_section</span><span class="o">=</span><span class="s">&#39;Why_doesnt_configparser_let_me_disable_DEFAULT&#39;</span><span class="p">)</span>
+
+    <span class="c"># Allow for case-sensitive configuration keys</span>
+    <span class="n">configp</span><span class="o">.</span><span class="n">optionxform</span> <span class="o">=</span> <span class="nb">str</span>
+
+    <span class="c"># Make a list of all config paths / file objects we should load</span>
+    <span class="n">config_files</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">config_name</span> <span class="ow">in</span> <span class="n">config_names</span><span class="p">:</span>
+        <span class="n">config_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">PAX_DIR</span><span class="p">,</span> <span class="s">&#39;config&#39;</span><span class="p">,</span> <span class="n">config_name</span> <span class="o">+</span> <span class="s">&#39;.ini&#39;</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">config_path</span> <span class="ow">in</span> <span class="n">config_paths</span><span class="p">:</span>
+        <span class="n">config_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">config_path</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">config_string</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+        <span class="n">config_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">StringIO</span><span class="p">(</span><span class="n">config_string</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">config_files</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">config_dict</span> <span class="o">==</span> <span class="p">{}:</span>
+        <span class="c"># Load the fallback configuration</span>
+        <span class="c"># Have to use print, logging is not yet setup...</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;WARNING: no configuration specified: loading </span><span class="si">%s</span><span class="s"> config!&quot;</span> <span class="o">%</span> <span class="n">FALLBACK_CONFIGURATION</span><span class="p">)</span>
+        <span class="n">config_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">PAX_DIR</span><span class="p">,</span> <span class="s">&#39;config&#39;</span><span class="p">,</span> <span class="n">FALLBACK_CONFIGURATION</span> <span class="o">+</span> <span class="s">&#39;.ini&#39;</span><span class="p">))</span>
+
+    <span class="c"># Define an interior function for loading config files: supports recursion</span>
+    <span class="n">config_files_read</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="nf">_load_file_into_configparser</span><span class="p">(</span><span class="n">config_file</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Loads a configuration file into our config parser, with support for inheritance.</span>
+
+<span class="sd">        :param config_file: path or file object of configuration file to read</span>
+<span class="sd">        :return: None</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config_file</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">config_file</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Configuration file </span><span class="si">%s</span><span class="s"> does not exist!&quot;</span> <span class="o">%</span> <span class="n">config_file</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">config_file</span> <span class="ow">in</span> <span class="n">config_files_read</span><span class="p">:</span>
+                <span class="c"># This file has already been loaded: don&#39;t load it again</span>
+                <span class="c"># If we did, it would cause problems with inheritance diamonds</span>
+                <span class="k">return</span>
+            <span class="n">configp</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">config_file</span><span class="p">)</span>
+            <span class="n">config_files_read</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">config_file</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">configp</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">config_file</span><span class="p">)</span>
+            <span class="c"># Apparently ConfigParser.read_file doesn&#39;t reset the read position?</span>
+            <span class="c"># Or maybe it has to do with using StringIO instead of real files?</span>
+            <span class="c"># Anyway, we want to read in the file again (for overriding parent instructions), so:</span>
+            <span class="n">config_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c"># Determine the path(s) of the parent config file(s)</span>
+        <span class="n">parent_file_paths</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="s">&#39;parent_configuration&#39;</span> <span class="ow">in</span> <span class="n">configp</span><span class="p">[</span><span class="s">&#39;pax&#39;</span><span class="p">]:</span>
+            <span class="c"># This file inherits from other config file(s) in the &#39;config&#39; directory</span>
+            <span class="n">parent_files</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">configp</span><span class="p">[</span><span class="s">&#39;pax&#39;</span><span class="p">][</span><span class="s">&#39;parent_configuration&#39;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parent_files</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="n">parent_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">parent_files</span><span class="p">]</span>
+            <span class="n">parent_file_paths</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">PAX_DIR</span><span class="p">,</span> <span class="s">&#39;config&#39;</span><span class="p">,</span> <span class="n">pf</span> <span class="o">+</span> <span class="s">&#39;.ini&#39;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">pf</span> <span class="ow">in</span> <span class="n">parent_files</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="s">&#39;parent_configuration_file&#39;</span> <span class="ow">in</span> <span class="n">configp</span><span class="p">[</span><span class="s">&#39;pax&#39;</span><span class="p">]:</span>
+            <span class="c"># This file inherits from user-defined config file(s)</span>
+            <span class="n">parent_files</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">configp</span><span class="p">[</span><span class="s">&#39;pax&#39;</span><span class="p">][</span><span class="s">&#39;parent_configuration_file&#39;</span><span class="p">])</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parent_files</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+                <span class="n">parent_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">parent_files</span><span class="p">]</span>
+            <span class="n">parent_file_paths</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">parent_files</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parent_file_paths</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c"># This file has no parents...</span>
+            <span class="k">return</span>
+
+        <span class="c"># Unfortunately, configparser can only override settings, not set missing ones.</span>
+        <span class="c"># We have no choice but to load the parent file(s), then reload the original one again.</span>
+        <span class="c"># By doing this in a recursing function, multi-level inheritance is supported.</span>
+        <span class="k">for</span> <span class="n">pfp</span> <span class="ow">in</span> <span class="n">parent_file_paths</span><span class="p">:</span>
+            <span class="n">_load_file_into_configparser</span><span class="p">(</span><span class="n">pfp</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config_file</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">configp</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">config_file</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">configp</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">config_file</span><span class="p">)</span>
+
+    <span class="c"># Loads the files into configparser, also takes care of inheritance.</span>
+    <span class="k">for</span> <span class="n">config_file_thing</span> <span class="ow">in</span> <span class="n">config_files</span><span class="p">:</span>
+        <span class="n">_load_file_into_configparser</span><span class="p">(</span><span class="n">config_file_thing</span><span class="p">)</span>
+
+    <span class="c"># Get a dict with all names visible by the eval:</span>
+    <span class="c">#  - all variables from the units submodule</span>
+    <span class="c">#  - np</span>
+    <span class="n">visible_variables</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">units</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">units</span><span class="p">)}</span>
+    <span class="n">visible_variables</span><span class="p">[</span><span class="s">&#39;np&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span>
+
+    <span class="c"># Evaluate the values in the ini file</span>
+    <span class="n">evaled_config</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">section_name</span><span class="p">,</span> <span class="n">section_dict</span> <span class="ow">in</span> <span class="n">configp</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">evaled_config</span><span class="p">[</span><span class="n">section_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">section_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c"># Eval value in a context where all units are defined</span>
+            <span class="n">evaled_config</span><span class="p">[</span><span class="n">section_name</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">visible_variables</span><span class="p">)</span>
+
+    <span class="c"># Apply the config_dict</span>
+    <span class="k">for</span> <span class="n">section_name</span> <span class="ow">in</span> <span class="n">config_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">section_name</span> <span class="ow">in</span> <span class="n">evaled_config</span><span class="p">:</span>
+            <span class="n">evaled_config</span><span class="p">[</span><span class="n">section_name</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">config_dict</span><span class="p">[</span><span class="n">section_name</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">evaled_config</span><span class="p">[</span><span class="n">section_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">config_dict</span><span class="p">[</span><span class="n">section_name</span><span class="p">]</span>
+
+    <span class="c"># Make sure [DEFAULT] is at least present</span>
+    <span class="n">evaled_config</span><span class="p">[</span><span class="s">&#39;DEFAULT&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">evaled_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;DEFAULT&#39;</span><span class="p">,</span> <span class="p">{})</span>
+    <span class="k">if</span> <span class="s">&#39;Why_doesnt_configparser_let_me_disable_DEFAULT&#39;</span> <span class="ow">in</span> <span class="n">evaled_config</span><span class="p">:</span>
+        <span class="k">del</span> <span class="n">evaled_config</span><span class="p">[</span><span class="s">&#39;Why_doesnt_configparser_let_me_disable_DEFAULT&#39;</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">evaled_config</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2014, Christopher Tunnell.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

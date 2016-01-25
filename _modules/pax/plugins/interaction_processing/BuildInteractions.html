@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.interaction_processing.BuildInteractions &mdash; Processor for Analyzing XENON1T 4.1.2 documentation</title>
+    <title>pax.plugins.interaction_processing.BuildInteractions &mdash; Processor for Analyzing XENON1T 4.2.0 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '4.1.2',
+        VERSION:     '4.2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.1.2 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.2.0 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   
@@ -111,7 +111,7 @@
             <span class="n">ia</span><span class="o">.</span><span class="n">s2_area_correction</span> <span class="o">*=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">ia</span><span class="o">.</span><span class="n">drift_time</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;electron_lifetime_liquid&#39;</span><span class="p">])</span>
 
             <span class="c"># Determine z position from drift time</span>
-            <span class="n">ia</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;drift_velocity_liquid&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">ia</span><span class="o">.</span><span class="n">drift_time</span>
+            <span class="n">ia</span><span class="o">.</span><span class="n">z</span> <span class="o">=</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;drift_velocity_liquid&#39;</span><span class="p">]</span> <span class="o">*</span> <span class="n">ia</span><span class="o">.</span><span class="n">drift_time</span>
 
             <span class="c"># S1 and S2 area correction: divide by relative light yield at the position</span>
             <span class="n">ia</span><span class="o">.</span><span class="n">s1_area_correction</span> <span class="o">/=</span> <span class="bp">self</span><span class="o">.</span><span class="n">s1_light_yield_map</span><span class="o">.</span><span class="n">get_value_at</span><span class="p">(</span><span class="n">ia</span><span class="p">)</span>
@@ -141,7 +141,7 @@
 
                     <span class="c"># Compute the S1 pattern fit statistic</span>
                     <span class="n">ia</span><span class="o">.</span><span class="n">s1_pattern_fit</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">s1_patterns</span><span class="o">.</span><span class="n">compute_gof</span><span class="p">(</span>
-                        <span class="p">(</span><span class="n">ia</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">ia</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">ia</span><span class="o">.</span><span class="n">drift_time</span><span class="p">),</span>
+                        <span class="p">(</span><span class="n">ia</span><span class="o">.</span><span class="n">x</span><span class="p">,</span> <span class="n">ia</span><span class="o">.</span><span class="n">y</span><span class="p">,</span> <span class="n">ia</span><span class="o">.</span><span class="n">z</span><span class="p">),</span>
                         <span class="n">s1</span><span class="o">.</span><span class="n">area_per_channel</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">tpc_channels</span><span class="p">],</span>
                         <span class="n">pmt_selection</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">setdiff1d</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tpc_channels</span><span class="p">,</span> <span class="n">confused_s1_channels</span><span class="p">),</span>
                         <span class="n">statistic</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;s1_pattern_statistic&#39;</span><span class="p">])</span>

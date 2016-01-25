@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.FolderIO &mdash; Processor for Analyzing XENON1T 4.1.2 documentation</title>
+    <title>pax.FolderIO &mdash; Processor for Analyzing XENON1T 4.2.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '4.1.2',
+        VERSION:     '4.2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.1.2 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.2.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
@@ -38,16 +38,18 @@
           <div class="body" role="main">
             
   <h1>Source code for pax.FolderIO</h1><div class="highlight"><pre>
+<span class="sd">&quot;&quot;&quot;I/O plugin base classes for input to/from folders or zipfiles</span>
+<span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">glob</span>
 <span class="kn">import</span> <span class="nn">zlib</span>
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">shutil</span>
-<span class="kn">import</span> <span class="nn">zipfile</span>
 
 <span class="kn">from</span> <span class="nn">bson</span> <span class="kn">import</span> <span class="n">json_util</span>
-<span class="kn">from</span> <span class="nn">six.moves</span> <span class="kn">import</span> <span class="nb">input</span>
 
+<span class="kn">from</span> <span class="nn">six.moves</span> <span class="kn">import</span> <span class="nb">input</span>
 <span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">utils</span><span class="p">,</span> <span class="n">plugin</span>
+<span class="kn">from</span> <span class="nn">pax.datastructure</span> <span class="kn">import</span> <span class="n">EventProxy</span>
 
 
 <div class="viewcode-block" id="InputFromFolder"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.InputFromFolder">[docs]</a><span class="k">class</span> <span class="nc">InputFromFolder</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">InputPlugin</span><span class="p">):</span>
@@ -69,9 +71,10 @@
 
         <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">input_name</span><span class="p">):</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">input_name</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s">&#39;.&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_extension</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;input_name </span><span class="si">%s</span><span class="s"> does not end &quot;</span>
-                                 <span class="s">&quot;with the expected file extension </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">input_name</span><span class="p">,</span>
-                                                                          <span class="bp">self</span><span class="o">.</span><span class="n">file_extension</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;input_name </span><span class="si">%s</span><span class="s"> does not end &quot;</span>
+                               <span class="s">&quot;with the expected file extension </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">input_name</span><span class="p">,</span>
+                                                                        <span class="bp">self</span><span class="o">.</span><span class="n">file_extension</span><span class="p">))</span>
+                <span class="k">return</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;InputFromFolder: Single file mode&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">init_file</span><span class="p">(</span><span class="n">input_name</span><span class="p">)</span>
 
@@ -320,58 +323,37 @@
 
 
 <span class="c">##</span>
-<span class="c"># Zipfile of events</span>
-<span class="c">##</span>
-</div></div>
-<div class="viewcode-block" id="ReadZipped"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.ReadZipped">[docs]</a><span class="k">class</span> <span class="nc">ReadZipped</span><span class="p">(</span><span class="n">InputFromFolder</span><span class="p">):</span>
+<span class="c"># Encoders for zipfiles of events</span>
+<span class="c"># Zipfile readers themselves are in plugins/io/Zip.py</span>
+<span class="c"># (they have to be in /pax/plugins/... to be found)</span>
+<span class="c">##</span></div></div>
+<div class="viewcode-block" id="ReadZippedDecoder"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.ReadZippedDecoder">[docs]</a><span class="k">class</span> <span class="nc">ReadZippedDecoder</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
+    <span class="n">do_input_check</span> <span class="o">=</span> <span class="bp">False</span>
 
-    <span class="sd">&quot;&quot;&quot;Read a folder of zipfiles containing [some format]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">file_extension</span> <span class="o">=</span> <span class="s">&#39;zip&#39;</span>
-
-<div class="viewcode-block" id="ReadZipped.open"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.ReadZipped.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_file</span> <span class="o">=</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">event_numbers</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-                                     <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_file</span><span class="o">.</span><span class="n">namelist</span><span class="p">()])</span>
+<div class="viewcode-block" id="ReadZippedDecoder.transform_event"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.ReadZippedDecoder.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_proxy</span><span class="p">):</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">event_proxy</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">decode_event</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
 </div>
-<div class="viewcode-block" id="ReadZipped.get_event_numbers_in_current_file"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.ReadZipped.get_event_numbers_in_current_file">[docs]</a>    <span class="k">def</span> <span class="nf">get_event_numbers_in_current_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">event_numbers</span>
-</div>
-<div class="viewcode-block" id="ReadZipped.get_single_event_in_current_file"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.ReadZipped.get_single_event_in_current_file">[docs]</a>    <span class="k">def</span> <span class="nf">get_single_event_in_current_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event_number</span><span class="p">):</span>
-        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_file</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">event_number</span><span class="p">))</span> <span class="k">as</span> <span class="n">event_file_in_zip</span><span class="p">:</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">event_file_in_zip</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
-            <span class="n">data</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">from_format</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-</div>
-<div class="viewcode-block" id="ReadZipped.close"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.ReadZipped.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Close the currently open file&quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-</div>
-<div class="viewcode-block" id="ReadZipped.from_format"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.ReadZipped.from_format">[docs]</a>    <span class="k">def</span> <span class="nf">from_format</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc</span><span class="p">):</span>
+<div class="viewcode-block" id="ReadZippedDecoder.decode_event"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.ReadZippedDecoder.decode_event">[docs]</a>    <span class="k">def</span> <span class="nf">decode_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 
 </div></div>
-<div class="viewcode-block" id="WriteZipped"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.WriteZipped">[docs]</a><span class="k">class</span> <span class="nc">WriteZipped</span><span class="p">(</span><span class="n">WriteToFolder</span><span class="p">):</span>
-
-    <span class="sd">&quot;&quot;&quot;Write raw data to a folder of zipfiles containing [some format]</span>
-<span class="sd">    We use zlib, not zip&#39;s deflate, for compression.</span>
+<div class="viewcode-block" id="WriteZippedEncoder"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.WriteZippedEncoder">[docs]</a><span class="k">class</span> <span class="nc">WriteZippedEncoder</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Encode and compress an event for entry into a zipfile.</span>
+<span class="sd">    Note we use zlib, not zip&#39;s deflate, for compression.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">file_extension</span> <span class="o">=</span> <span class="s">&#39;zip&#39;</span>
+    <span class="n">do_output_check</span> <span class="o">=</span> <span class="bp">False</span>
 
-<div class="viewcode-block" id="WriteZipped.open"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.WriteZipped.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_file</span> <span class="o">=</span> <span class="n">zipfile</span><span class="o">.</span><span class="n">ZipFile</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+<div class="viewcode-block" id="WriteZippedEncoder.startup"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.WriteZippedEncoder.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">compresslevel</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;compresslevel&#39;</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
 </div>
-<div class="viewcode-block" id="WriteZipped.write_event_to_current_file"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.WriteZipped.write_event_to_current_file">[docs]</a>    <span class="k">def</span> <span class="nf">write_event_to_current_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
-        <span class="c"># Convert the event to the desired format (e.g. bson)</span>
-        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">to_format</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+<div class="viewcode-block" id="WriteZippedEncoder.transform_event"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.WriteZippedEncoder.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="n">event_number</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">event_number</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encode_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">zlib</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">compresslevel</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_file</span><span class="o">.</span><span class="n">writestr</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">event_number</span><span class="p">),</span> <span class="n">data</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">EventProxy</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">event_number</span><span class="o">=</span><span class="n">event_number</span><span class="p">)</span>
 </div>
-<div class="viewcode-block" id="WriteZipped.close"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.WriteZipped.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">current_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
-</div>
-<div class="viewcode-block" id="WriteZipped.to_format"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.WriteZipped.to_format">[docs]</a>    <span class="k">def</span> <span class="nf">to_format</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc</span><span class="p">):</span>
+<div class="viewcode-block" id="WriteZippedEncoder.encode_event"><a class="viewcode-back" href="../../pax.html#pax.FolderIO.WriteZippedEncoder.encode_event">[docs]</a>    <span class="k">def</span> <span class="nf">encode_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div></div>
 </pre></div>
 

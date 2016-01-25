@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.io.Pickle &mdash; Processor for Analyzing XENON1T 4.1.2 documentation</title>
+    <title>pax.plugins.io.Pickle &mdash; Processor for Analyzing XENON1T 4.2.0 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '4.1.2',
+        VERSION:     '4.2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.1.2 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.2.0 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   
@@ -42,30 +42,23 @@
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">pickle</span>
 
-<span class="kn">from</span> <span class="nn">pax.FolderIO</span> <span class="kn">import</span> <span class="n">ReadZipped</span><span class="p">,</span> <span class="n">WriteZipped</span>
+<span class="kn">from</span> <span class="nn">pax.FolderIO</span> <span class="kn">import</span> <span class="n">WriteZippedEncoder</span><span class="p">,</span> <span class="n">ReadZippedDecoder</span>
 
 
 <span class="c">##</span>
 <span class="c"># Zipped pickles</span>
 <span class="c">##</span>
 
-<div class="viewcode-block" id="PickleIO"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.Pickle.PickleIO">[docs]</a><span class="k">class</span> <span class="nc">PickleIO</span><span class="p">():</span>
+<div class="viewcode-block" id="EncodeZPickle"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.Pickle.EncodeZPickle">[docs]</a><span class="k">class</span> <span class="nc">EncodeZPickle</span><span class="p">(</span><span class="n">WriteZippedEncoder</span><span class="p">):</span>
 
-<div class="viewcode-block" id="PickleIO.from_format"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.Pickle.PickleIO.from_format">[docs]</a>    <span class="k">def</span> <span class="nf">from_format</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">doc</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">pickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
-</div>
-<div class="viewcode-block" id="PickleIO.to_format"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.Pickle.PickleIO.to_format">[docs]</a>    <span class="k">def</span> <span class="nf">to_format</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+<div class="viewcode-block" id="EncodeZPickle.encode_event"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.Pickle.EncodeZPickle.encode_event">[docs]</a>    <span class="k">def</span> <span class="nf">encode_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">pickle</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
 
 </div></div>
-<div class="viewcode-block" id="ReadZippedPickles"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.Pickle.ReadZippedPickles">[docs]</a><span class="k">class</span> <span class="nc">ReadZippedPickles</span><span class="p">(</span><span class="n">PickleIO</span><span class="p">,</span> <span class="n">ReadZipped</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Read a folder of zipfiles containing gzipped pickle files&quot;&quot;&quot;</span>
-    <span class="k">pass</span>
+<div class="viewcode-block" id="DecodeZPickle"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.Pickle.DecodeZPickle">[docs]</a><span class="k">class</span> <span class="nc">DecodeZPickle</span><span class="p">(</span><span class="n">ReadZippedDecoder</span><span class="p">):</span>
 
-</div>
-<div class="viewcode-block" id="WriteZippedPickles"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.Pickle.WriteZippedPickles">[docs]</a><span class="k">class</span> <span class="nc">WriteZippedPickles</span><span class="p">(</span><span class="n">PickleIO</span><span class="p">,</span> <span class="n">WriteZipped</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;Write raw data to a folder of zipfiles containing gzipped pickles&quot;&quot;&quot;</span>
-    <span class="k">pass</span></div>
+<div class="viewcode-block" id="DecodeZPickle.decode_event"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.Pickle.DecodeZPickle.decode_event">[docs]</a>    <span class="k">def</span> <span class="nf">decode_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">pickle</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">event</span><span class="p">)</span></div></div>
 </pre></div>
 
           </div>

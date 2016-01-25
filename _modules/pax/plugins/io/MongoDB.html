@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.io.MongoDB &mdash; Processor for Analyzing XENON1T 4.1.1 documentation</title>
+    <title>pax.plugins.io.MongoDB &mdash; Processor for Analyzing XENON1T 4.2.0 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '4.1.1',
+        VERSION:     '4.2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.1.1 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.2.0 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   
@@ -55,6 +55,7 @@
 
 <span class="kn">from</span> <span class="nn">pax.datastructure</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">Pulse</span>
 <span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">plugin</span><span class="p">,</span> <span class="n">units</span>
+<span class="kn">from</span> <span class="nn">pax.eventbuilder</span> <span class="kn">import</span> <span class="n">authenticate</span>
 
 
 <span class="n">START_KEY</span> <span class="o">=</span> <span class="s">&#39;time&#39;</span>
@@ -118,20 +119,38 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">connections</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c"># MongoClient objects</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mongo</span> <span class="o">=</span> <span class="p">{}</span>        <span class="c">#</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">pmt_mappings</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pmt_mappings&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pmts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pmts&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pmt_mappings</span> <span class="o">=</span> <span class="p">{(</span><span class="n">x</span><span class="p">[</span><span class="s">&#39;digitizer&#39;</span><span class="p">][</span><span class="s">&#39;module&#39;</span><span class="p">],</span>
+                              <span class="n">x</span><span class="p">[</span><span class="s">&#39;digitizer&#39;</span><span class="p">][</span><span class="s">&#39;channel&#39;</span><span class="p">]):</span> <span class="n">x</span><span class="p">[</span><span class="s">&#39;pmt_position&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmts</span><span class="p">}</span>
 
         <span class="c"># Each MongoDB class must acquire the run database document that</span>
         <span class="c"># describes this acquisition.  This is partly because the state can</span>
         <span class="c"># change midrun.  For example, the run can end.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">run_doc_id</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;run_doc&#39;</span><span class="p">]</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Run doc </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_doc_id</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">setup_access</span><span class="p">(</span><span class="s">&#39;run&#39;</span><span class="p">,</span>
-                          <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;runs_database_location&#39;</span><span class="p">])</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Connecting to </span><span class="si">%s</span><span class="s">&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;runs_database&#39;</span><span class="p">])</span>
+        <span class="n">client_run</span> <span class="o">=</span> <span class="n">pymongo</span><span class="o">.</span><span class="n">MongoClient</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;runs_database&#39;</span><span class="p">])</span>
+        <span class="n">authenticate</span><span class="p">(</span><span class="n">client_run</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">client_run</span><span class="o">.</span><span class="n">admin</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="s">&#39;ping&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Connection succesful&quot;</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">pymongo</span><span class="o">.</span><span class="n">errors</span><span class="o">.</span><span class="n">ConnectionFailure</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">fatal</span><span class="p">(</span><span class="s">&quot;Cannot connect to MongoDB at </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;runs_database&#39;</span><span class="p">])</span>
+            <span class="k">raise</span>
+        <span class="n">m</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">m</span><span class="p">[</span><span class="s">&#39;client&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">client_run</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Fetching run DB&#39;</span><span class="p">)</span>
+        <span class="n">m</span><span class="p">[</span><span class="s">&#39;database&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">m</span><span class="p">[</span><span class="s">&#39;client&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_default_database</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Getting runs collection&#39;</span><span class="p">)</span>
+        <span class="n">m</span><span class="p">[</span><span class="s">&#39;collection&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">m</span><span class="p">[</span><span class="s">&#39;database&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get_collection</span><span class="p">(</span><span class="s">&#39;runs&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">mongo</span><span class="p">[</span><span class="s">&#39;run&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">m</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Fetching run document </span><span class="si">%s</span><span class="s">&quot;</span><span class="p">,</span>
                       <span class="bp">self</span><span class="o">.</span><span class="n">run_doc_id</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">query</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_doc_id</span><span class="p">}</span>
-        <span class="n">update</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;$set&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;trigger.status&#39;</span><span class="p">:</span> <span class="s">&#39;processing&#39;</span><span class="p">}}</span>
+        <span class="n">update</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;$set&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;detectors.tpc.trigger.status&#39;</span><span class="p">:</span> <span class="s">&#39;processing&#39;</span><span class="p">}}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mongo</span><span class="p">[</span><span class="s">&#39;run&#39;</span><span class="p">][</span><span class="s">&#39;collection&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">find_one_and_update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">,</span>
                                                                            <span class="n">update</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">sort_key</span> <span class="o">=</span> <span class="p">[(</span><span class="n">START_KEY</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
@@ -161,7 +180,8 @@
                      <span class="n">address</span><span class="p">,</span>
                      <span class="n">database</span><span class="p">,</span>
                      <span class="n">collection</span><span class="p">,</span>
-                     <span class="n">port</span><span class="o">=</span><span class="mi">27017</span><span class="p">):</span>
+                     <span class="n">port</span><span class="o">=</span><span class="mi">27017</span><span class="p">,</span>
+                     <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="n">wc</span> <span class="o">=</span> <span class="n">pymongo</span><span class="o">.</span><span class="n">write_concern</span><span class="o">.</span><span class="n">WriteConcern</span><span class="p">(</span><span class="n">w</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
         <span class="n">m</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c"># Holds connection, database info, and collection info</span>
@@ -173,13 +193,12 @@
                 <span class="n">replica_set</span><span class="p">,</span> <span class="n">address</span> <span class="o">=</span> <span class="n">address</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">&#39;/&#39;</span><span class="p">)</span>
 
                 <span class="n">c</span> <span class="o">=</span> <span class="n">pymongo</span><span class="o">.</span><span class="n">MongoClient</span><span class="p">(</span><span class="n">address</span><span class="p">,</span>
-                                        <span class="n">replicaSet</span><span class="o">=</span><span class="n">replica_set</span><span class="p">,</span>
-                                        <span class="n">serverSelectionTimeoutMS</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+                                        <span class="n">replicaSet</span><span class="o">=</span><span class="n">replica_set</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
 
                 <span class="n">c</span> <span class="o">=</span> <span class="n">pymongo</span><span class="o">.</span><span class="n">MongoClient</span><span class="p">(</span><span class="n">address</span><span class="p">,</span>
-                                        <span class="n">port</span><span class="p">,</span>
-                                        <span class="n">serverSelectionTimeoutMS</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+                                        <span class="n">port</span><span class="p">)</span>
+            <span class="n">authenticate</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="n">database</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">connections</span><span class="p">[</span><span class="n">address</span><span class="p">]</span> <span class="o">=</span> <span class="n">c</span>
 
             <span class="k">try</span><span class="p">:</span>
@@ -202,26 +221,18 @@
 </div>
 <div class="viewcode-block" id="IOMongoDB.setup_input"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.IOMongoDB.setup_input">[docs]</a>    <span class="k">def</span> <span class="nf">setup_input</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;run_doc&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span><span class="p">[</span><span class="s">&#39;reader&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span><span class="p">[</span><span class="s">&#39;detectors&#39;</span><span class="p">][</span><span class="s">&#39;tpc&#39;</span><span class="p">])</span>
 
-        <span class="n">buff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span><span class="p">[</span><span class="s">&#39;reader&#39;</span><span class="p">][</span><span class="s">&#39;storage_buffer&#39;</span><span class="p">]</span>
-
-        <span class="c"># Delete after Dan&#39;s change in kodiaq issue #48</span>
-        <span class="n">buff2</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="n">buff2</span><span class="p">[</span><span class="s">&#39;address&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">buff</span><span class="p">[</span><span class="s">&#39;dbaddr&#39;</span><span class="p">]</span>
-        <span class="n">buff2</span><span class="p">[</span><span class="s">&#39;database&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">buff</span><span class="p">[</span><span class="s">&#39;dbname&#39;</span><span class="p">]</span>
-        <span class="n">buff2</span><span class="p">[</span><span class="s">&#39;collection&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">buff</span><span class="p">[</span><span class="s">&#39;dbcollection&#39;</span><span class="p">]</span>
-        <span class="n">buff</span> <span class="o">=</span> <span class="n">buff2</span>
+        <span class="n">buff</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span><span class="p">[</span><span class="s">&#39;detectors&#39;</span><span class="p">][</span><span class="s">&#39;tpc&#39;</span><span class="p">][</span><span class="s">&#39;mongo_buffer&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">compressed</span> <span class="o">=</span> <span class="n">buff</span><span class="p">[</span><span class="s">&#39;compressed&#39;</span><span class="p">]</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">setup_access</span><span class="p">(</span><span class="s">&#39;input&#39;</span><span class="p">,</span>
                           <span class="o">**</span><span class="n">buff</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mongo</span><span class="p">[</span><span class="s">&#39;input&#39;</span><span class="p">][</span><span class="s">&#39;collection&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">ensure_index</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sort_key</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">compressed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span><span class="p">[</span><span class="s">&#39;reader&#39;</span><span class="p">][</span><span class="s">&#39;compressed&#39;</span><span class="p">]</span>
 </div>
 <div class="viewcode-block" id="IOMongoDB.update_run_doc"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.IOMongoDB.update_run_doc">[docs]</a>    <span class="k">def</span> <span class="nf">update_run_doc</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mongo</span><span class="p">[</span><span class="s">&#39;run&#39;</span><span class="p">][</span><span class="s">&#39;collection&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">find_one</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">query</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">data_taking_ended</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span><span class="p">[</span><span class="s">&#39;reader&#39;</span><span class="p">][</span><span class="s">&#39;data_taking_ended&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data_taking_ended</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;endtimestamp&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_doc</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="IOMongoDB.number_events"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.IOMongoDB.number_events">[docs]</a>    <span class="k">def</span> <span class="nf">number_events</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">number_of_events</span>
@@ -331,7 +342,7 @@
         <span class="c"># Used to timeout if DAQ crashes and no data will come</span>
         <span class="n">time_out_counter</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
 
-        <span class="k">while</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_taking_ended</span><span class="p">:</span>
+        <span class="k">while</span> <span class="mi">1</span><span class="p">:</span>
             <span class="c"># Grab new run document in case run ended.  This much happen before</span>
             <span class="c"># processing data to avoid a race condition where the run ends</span>
             <span class="c"># between processing and checking that the run has ended</span>
@@ -356,6 +367,18 @@
 
             <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">n</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="c"># If run ended, begin cleanup</span>
+                <span class="c">#</span>
+                <span class="c"># This variable is updated at the start of while loop.</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_taking_ended</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">fatal</span><span class="p">(</span><span class="s">&quot;Data taking ended.&quot;</span><span class="p">)</span>
+                    <span class="n">update_query</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;$set&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;detectors.tpc.trigger.status&#39;</span><span class="p">:</span> <span class="s">&#39;processed&#39;</span><span class="p">,</span>
+                                    <span class="s">&#39;detectors.tpc.trigger.ended&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">}}</span>
+                    <span class="n">status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mongo</span><span class="p">[</span><span class="s">&#39;run&#39;</span><span class="p">][</span><span class="s">&#39;collection&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">update_one</span><span class="p">({</span><span class="s">&#39;_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_doc_id</span><span class="p">},</span>
+                                                                        <span class="n">update_query</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">status</span><span class="p">)</span>
+                    <span class="k">break</span>
+
                 <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">fatal</span><span class="p">(</span><span class="s">&quot;Nothing found, continue&quot;</span><span class="p">)</span>
                 <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c"># todo: configure</span>
                 <span class="k">if</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">time_out_counter</span> <span class="o">&gt;</span> <span class="mi">60</span><span class="p">:</span>  <span class="c"># seconds</span>
@@ -408,16 +431,6 @@
                             <span class="n">sample_duration</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">sample_duration</span><span class="p">,</span>
                             <span class="n">stop_time</span><span class="o">=</span><span class="n">t1</span><span class="p">,</span>
                             <span class="n">event_number</span><span class="o">=</span><span class="n">i</span><span class="p">)</span>
-
-            <span class="c"># If run ended, begin cleanup</span>
-            <span class="c">#</span>
-            <span class="c"># This variable is updated at the start of while loop.</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">data_taking_ended</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">fatal</span><span class="p">(</span><span class="s">&quot;Data taking ended.&quot;</span><span class="p">)</span>
-                <span class="n">status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mongo</span><span class="p">[</span><span class="s">&#39;run&#39;</span><span class="p">][</span><span class="s">&#39;collection&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">update_one</span><span class="p">({</span><span class="s">&#39;_id&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">run_doc_id</span><span class="p">},</span>
-                                                                    <span class="p">{</span><span class="s">&#39;$set&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;trigger.status&#39;</span><span class="p">:</span> <span class="s">&#39;processed&#39;</span><span class="p">,</span>
-                                                                              <span class="s">&#39;trigger.ended&#39;</span><span class="p">:</span> <span class="bp">True</span><span class="p">}})</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="n">status</span><span class="p">)</span>
 
 </div></div>
 <div class="viewcode-block" id="MongoDBReadUntriggeredFiller"><a class="viewcode-back" href="../../../../pax.plugins.io.html#pax.plugins.io.MongoDB.MongoDBReadUntriggeredFiller">[docs]</a><span class="k">class</span> <span class="nc">MongoDBReadUntriggeredFiller</span><span class="p">(</span><span class="n">plugin</span><span class="o">.</span><span class="n">TransformPlugin</span><span class="p">,</span> <span class="n">IOMongoDB</span><span class="p">):</span>

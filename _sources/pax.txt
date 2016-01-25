@@ -35,6 +35,14 @@ pax.PatternFitter module
     :undoc-members:
     :show-inheritance:
 
+pax.configuration module
+------------------------
+
+.. automodule:: pax.configuration
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pax.core module
 ---------------
 

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.simulation &mdash; Processor for Analyzing XENON1T 4.1.2 documentation</title>
+    <title>pax.simulation &mdash; Processor for Analyzing XENON1T 4.2.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '4.1.2',
+        VERSION:     '4.2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.1.2 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.2.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
@@ -164,13 +164,13 @@
 <span class="sd">        As usual, all units in the same system used by pax (if you specify raw values: ns, cm)</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
-        <span class="k">if</span> <span class="n">z</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Unphysical depth: </span><span class="si">%s</span><span class="s"> cm below gate. Not generating S2.&quot;</span> <span class="o">%</span> <span class="n">z</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;tpc_length&#39;</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">z</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Unphysical depth: </span><span class="si">%s</span><span class="s"> cm below gate. Not generating S2.&quot;</span> <span class="o">%</span> <span class="o">-</span> <span class="n">z</span><span class="p">)</span>
             <span class="k">return</span> <span class="p">[]</span>
         <span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Creating an s2 from </span><span class="si">%s</span><span class="s"> electrons...&quot;</span> <span class="o">%</span> <span class="n">electrons_generated</span><span class="p">)</span>
 
         <span class="c"># Average drift time, taking faster drift velocity after gate into account</span>
-        <span class="n">drift_time_mean</span> <span class="o">=</span> <span class="n">z</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;drift_velocity_liquid&#39;</span><span class="p">]</span> <span class="o">+</span> \
+        <span class="n">drift_time_mean</span> <span class="o">=</span> <span class="o">-</span> <span class="n">z</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;drift_velocity_liquid&#39;</span><span class="p">]</span> <span class="o">+</span> \
             <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;gate_to_anode_distance&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;elr_gas_gap_length&#39;</span><span class="p">])</span> \
             <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;drift_velocity_liquid_above_gate&#39;</span><span class="p">]</span>
 

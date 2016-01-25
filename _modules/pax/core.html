@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.core &mdash; Processor for Analyzing XENON1T 4.1.2 documentation</title>
+    <title>pax.core &mdash; Processor for Analyzing XENON1T 4.2.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '4.1.2',
+        VERSION:     '4.2.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.1.2 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.2.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
@@ -45,28 +45,41 @@
 <span class="kn">import</span> <span class="nn">six</span>
 <span class="kn">import</span> <span class="nn">itertools</span>
 <span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">sys</span>
 <span class="kn">import</span> <span class="nn">time</span>
-<span class="kn">from</span> <span class="nn">configparser</span> <span class="kn">import</span> <span class="n">ConfigParser</span><span class="p">,</span> <span class="n">ExtendedInterpolation</span>
+<span class="kn">import</span> <span class="nn">multiprocessing</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">queue</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">Queue</span> <span class="kn">as</span> <span class="nn">queue</span>   <span class="c"># flake8: noqa</span>
+
+<span class="kn">from</span> <span class="nn">prettytable</span> <span class="kn">import</span> <span class="n">PrettyTable</span>     <span class="c"># Timing report</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>                   <span class="c"># Progress bar</span>
+
+<span class="kn">import</span> <span class="nn">pax</span>      <span class="c"># Needed for pax.__version__</span>
+<span class="kn">from</span> <span class="nn">pax.configuration</span> <span class="kn">import</span> <span class="n">load_configuration</span>
+<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">simulation</span><span class="p">,</span> <span class="n">utils</span>
 <span class="k">if</span> <span class="n">six</span><span class="o">.</span><span class="n">PY2</span><span class="p">:</span>
     <span class="kn">import</span> <span class="nn">imp</span>
 <span class="k">else</span><span class="p">:</span>
     <span class="kn">import</span> <span class="nn">importlib</span>
-
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-
-<span class="kn">from</span> <span class="nn">prettytable</span> <span class="kn">import</span> <span class="n">PrettyTable</span>     <span class="c"># Timing report</span>
-<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>                   <span class="c"># Progress bar</span>
-<span class="kn">import</span> <span class="nn">pax</span>      <span class="c"># Needed for pax.__version__</span>
-<span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">units</span><span class="p">,</span> <span class="n">simulation</span><span class="p">,</span> <span class="n">utils</span>
+<span class="kn">import</span> <span class="nn">heapq</span>
 
 <span class="c"># For diagnosing suspected memory leaks, uncomment this code</span>
 <span class="c"># and similar code in process_event</span>
 <span class="c"># import gc</span>
 <span class="c"># import objgraph</span>
 
+<span class="c"># Multiprocess status codes</span>
+<span class="n">MP_STATUS</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">normal</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                 <span class="n">shutdown</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                 <span class="n">crashing</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+                 <span class="n">input_in_progress</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                 <span class="n">input_done</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+                 <span class="n">processing_done</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+
 
 <div class="viewcode-block" id="Processor"><a class="viewcode-back" href="../../pax.html#pax.core.Processor">[docs]</a><span class="k">class</span> <span class="nc">Processor</span><span class="p">:</span>
-    <span class="n">fallback_configuration</span> <span class="o">=</span> <span class="s">&#39;XENON100&#39;</span>    <span class="c"># Configuration to use when none is specified</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_names</span><span class="o">=</span><span class="p">(),</span> <span class="n">config_paths</span><span class="o">=</span><span class="p">(),</span> <span class="n">config_string</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">config_dict</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">just_testing</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Setup pax using configuration data from three sources:</span>
@@ -91,16 +104,71 @@
 <span class="sd">          setting that will not be modified once set. New instances of the Processor class will have</span>
 <span class="sd">          the same log level as the first, regardless of their configuration.  See #78.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">load_configuration</span><span class="p">(</span><span class="n">config_names</span><span class="p">,</span> <span class="n">config_paths</span><span class="p">,</span> <span class="n">config_string</span><span class="p">,</span> <span class="n">config_dict</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;DEFAULT&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;DEFAULT&#39;</span><span class="p">,</span> <span class="p">{})</span>    <span class="c"># Enable empty [DEFAULT] for tests</span>
-        <span class="k">if</span> <span class="s">&#39;Why_doesnt_configparser_let_me_disable_DEFAULT&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">:</span>
-            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;Why_doesnt_configparser_let_me_disable_DEFAULT&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">load_configuration</span><span class="p">(</span><span class="n">config_names</span><span class="p">,</span> <span class="n">config_paths</span><span class="p">,</span> <span class="n">config_string</span><span class="p">,</span> <span class="n">config_dict</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setup_logging</span><span class="p">()</span>
         <span class="n">pc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pax&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">worker_id</span> <span class="o">=</span> <span class="n">pc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;_worker_id&#39;</span><span class="p">,</span> <span class="s">&#39;master&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">setup_logging</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;This is PAX version </span><span class="si">%s</span><span class="s">, running with configuration for </span><span class="si">%s</span><span class="s">.&quot;</span> <span class="o">%</span> <span class="p">(</span>
-            <span class="n">pax</span><span class="o">.</span><span class="n">__version__</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;DEFAULT&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;tpc_name&#39;</span><span class="p">,</span> <span class="s">&#39;UNSPECIFIED TPC NAME&#39;</span><span class="p">)))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker_id</span> <span class="o">!=</span> <span class="s">&#39;master&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;I&#39;m worker </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker_id</span><span class="p">)</span>
+            <span class="c"># I&#39;m a child processor</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">multiprocessing</span> <span class="o">=</span> <span class="bp">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="n">pc</span><span class="p">[</span><span class="s">&#39;status&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">input_queue</span> <span class="o">=</span> <span class="n">pc</span><span class="p">[</span><span class="s">&#39;input_queue&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output_queue</span> <span class="o">=</span> <span class="n">pc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;output_queue&#39;</span><span class="p">,</span> <span class="bp">None</span><span class="p">)</span>
+            <span class="c"># Remove multiprocessing objects from config datastructure,</span>
+            <span class="c"># so it can be serialized later</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="s">&#39;input_queue&#39;</span><span class="p">,</span> <span class="s">&#39;output_queue&#39;</span><span class="p">,</span> <span class="s">&#39;status&#39;</span><span class="p">]:</span>
+                <span class="n">pc</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># I&#39;m the main processor</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;This is PAX version </span><span class="si">%s</span><span class="s">, running with configuration for </span><span class="si">%s</span><span class="s">.&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="n">pax</span><span class="o">.</span><span class="n">__version__</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;DEFAULT&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;tpc_name&#39;</span><span class="p">,</span> <span class="s">&#39;UNSPECIFIED TPC NAME&#39;</span><span class="p">)))</span>
+
+            <span class="n">n_cpus</span> <span class="o">=</span> <span class="n">pc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;n_cpus&#39;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">n_cpus</span> <span class="o">==</span> <span class="s">&#39;all&#39;</span><span class="p">:</span>
+                <span class="n">n_cpus</span> <span class="o">=</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()</span>
+            <span class="n">n_cpus</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_cpus</span><span class="p">)</span>   <span class="c"># On the command line it gets passed as a string, since &#39;all&#39; is possible</span>
+            <span class="k">if</span> <span class="n">n_cpus</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">multiprocessing</span> <span class="o">=</span> <span class="bp">False</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c"># Setup multiprocessing</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">multiprocessing</span> <span class="o">=</span> <span class="bp">True</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">manager</span> <span class="o">=</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">Manager</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">Value</span><span class="p">(</span><span class="s">&#39;i&#39;</span><span class="p">,</span> <span class="n">MP_STATUS</span><span class="p">[</span><span class="s">&#39;normal&#39;</span><span class="p">])</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">input_queue</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">Queue</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">output_queue</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">manager</span><span class="o">.</span><span class="n">Queue</span><span class="p">()</span>
+
+                <span class="c"># Start worker processes</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">processing_workers</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+                <span class="k">for</span> <span class="n">worker_number</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_cpus</span><span class="p">):</span>
+                    <span class="n">c</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+                    <span class="n">c</span><span class="p">[</span><span class="s">&#39;pax&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">plugin_group_names</span><span class="o">=</span><span class="p">[</span><span class="n">q</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">pc</span><span class="p">[</span><span class="s">&#39;plugin_group_names&#39;</span><span class="p">]</span>
+                                                             <span class="k">if</span> <span class="n">q</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&#39;input&#39;</span><span class="p">,</span> <span class="s">&#39;output&#39;</span><span class="p">)],</span>
+                                         <span class="n">input_queue</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">input_queue</span><span class="p">,</span>
+                                         <span class="n">output_queue</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">output_queue</span><span class="p">,</span>
+                                         <span class="n">status</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="p">,</span>
+                                         <span class="n">_worker_id</span><span class="o">=</span><span class="s">&#39;processing_</span><span class="si">%d</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">worker_number</span><span class="p">))</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">processing_workers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">multiprocessing</span><span class="o">.</span><span class="n">Process</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">Processor</span><span class="p">,</span>
+                                                                           <span class="n">kwargs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">config_dict</span><span class="o">=</span><span class="n">c</span><span class="p">)))</span>
+
+                <span class="n">c</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+                <span class="n">c</span><span class="p">[</span><span class="s">&#39;pax&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">plugin_group_names</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;output&#39;</span><span class="p">],</span>
+                                     <span class="n">_worker_id</span><span class="o">=</span><span class="s">&#39;output&#39;</span><span class="p">,</span>
+                                     <span class="n">status</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="p">,</span>
+                                     <span class="n">input_queue</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">output_queue</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">output_worker</span> <span class="o">=</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">Process</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">Processor</span><span class="p">,</span>
+                                                             <span class="n">kwargs</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">config_dict</span><span class="o">=</span><span class="n">c</span><span class="p">))</span>
+
+                <span class="c"># Start my child processes</span>
+                <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">processing_workers</span> <span class="o">+</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">output_worker</span><span class="p">]:</span>
+                    <span class="n">w</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+
+                <span class="c"># I will just focus on input</span>
+                <span class="n">pc</span><span class="p">[</span><span class="s">&#39;plugin_group_names&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="s">&#39;input&#39;</span><span class="p">]</span>
 
         <span class="c"># Start up the simulator</span>
         <span class="c"># Must be done explicitly here, as plugins can rely on its presence in startup</span>
@@ -114,13 +182,30 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&#39;You did not specify any configuration for the waveform simulator!</span><span class="se">\n</span><span class="s">&#39;</span> <span class="o">+</span>
                                  <span class="s">&#39;If you attempt to load the waveform simulator, pax will crash!&#39;</span><span class="p">)</span>
 
-        <span class="c"># Get the list of plugins from the configuration file</span>
+        <span class="c"># Get the list of plugins from the configuration</span>
         <span class="c"># plugin_names[group] is a list of all plugins we have to initialize in the group &#39;group&#39;</span>
         <span class="n">plugin_names</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">if</span> <span class="s">&#39;plugin_group_names&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">pc</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">just_testing</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&#39;You did not specify any plugin groups to load: are you testing me?&#39;</span><span class="p">)</span>
             <span class="n">pc</span><span class="p">[</span><span class="s">&#39;plugin_group_names&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">multiprocessing</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&#39;master&#39;</span><span class="p">,</span> <span class="s">&#39;output&#39;</span><span class="p">):</span>
+            <span class="c"># Standalone or child processor (not output)</span>
+            <span class="c"># Make plugin group names for the encoder and decoder plugins</span>
+            <span class="c"># By having this code here, we ensure they are always just after/before input/output,</span>
+            <span class="c"># no matter what plugin group names the user is using</span>
+            <span class="k">if</span> <span class="n">pc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;decoder_plugin&#39;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">decoder_pos</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pc</span><span class="p">[</span><span class="s">&#39;plugin_group_names&#39;</span><span class="p">])</span> <span class="ow">and</span> <span class="n">pc</span><span class="p">[</span><span class="s">&#39;plugin_group_names&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;input&#39;</span><span class="p">:</span>
+                    <span class="n">decoder_pos</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">pc</span><span class="p">[</span><span class="s">&#39;plugin_group_names&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">decoder_pos</span><span class="p">,</span> <span class="s">&#39;decoder_plugin&#39;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">pc</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;encoder_plugin&#39;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="n">encoder_pos</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pc</span><span class="p">[</span><span class="s">&#39;plugin_group_names&#39;</span><span class="p">])</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pc</span><span class="p">[</span><span class="s">&#39;plugin_group_names&#39;</span><span class="p">])</span> <span class="ow">and</span> <span class="n">pc</span><span class="p">[</span><span class="s">&#39;plugin_group_names&#39;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s">&#39;output&#39;</span><span class="p">:</span>
+                    <span class="n">encoder_pos</span> <span class="o">-=</span> <span class="mi">1</span>
+                <span class="n">pc</span><span class="p">[</span><span class="s">&#39;plugin_group_names&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">encoder_pos</span><span class="p">,</span> <span class="s">&#39;encoder_plugin&#39;</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">plugin_group_name</span> <span class="ow">in</span> <span class="n">pc</span><span class="p">[</span><span class="s">&#39;plugin_group_names&#39;</span><span class="p">]:</span>
             <span class="k">if</span> <span class="n">plugin_group_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">pc</span><span class="p">:</span>
@@ -189,12 +274,9 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">number_of_events</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">number_of_events</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop_after</span><span class="p">)</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="c"># During tests there is often no input plugin</span>
-            <span class="c"># events are added manually</span>
+            <span class="c"># During multiprocessing or testing there is often no input plugin events are added manually</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">input_plugin</span> <span class="o">=</span> <span class="bp">None</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">just_testing</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;No input plugin specified: how are you &quot;</span>
-                                 <span class="s">&quot;planning to get any events?&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;No input plugin specified: how are you planning to get any events?&quot;</span><span class="p">)</span>
 
         <span class="c"># Load the action plugins</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">action_plugin_names</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
@@ -203,137 +285,15 @@
         <span class="c"># During tests of input plugins there is often no action plugin</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">action_plugins</span> <span class="o">=</span> <span class="p">[]</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">just_testing</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;No action plugins specified: this will be a &quot;</span>
-                                 <span class="s">&quot;pretty boring processing run...&quot;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;No action plugins specified: this will be a pretty boring processing run...&quot;</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">timer</span> <span class="o">=</span> <span class="n">utils</span><span class="o">.</span><span class="n">Timer</span><span class="p">()</span>
 
-<div class="viewcode-block" id="Processor.load_configuration"><a class="viewcode-back" href="../../pax.html#pax.core.Processor.load_configuration">[docs]</a>    <span class="k">def</span> <span class="nf">load_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_names</span><span class="p">,</span> <span class="n">config_paths</span><span class="p">,</span> <span class="n">config_string</span><span class="p">,</span> <span class="n">config_dict</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Load a configuration -- see init&#39;s docstring</span>
-<span class="sd">        :return: nested dictionary of evaluated configuration values, use as: config[section][key].</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="n">config_dict</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="n">config_dict</span> <span class="o">=</span> <span class="p">{}</span>
-
-        <span class="c"># Support for string arguments</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config_names</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="n">config_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">config_names</span><span class="p">]</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config_paths</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="n">config_paths</span> <span class="o">=</span> <span class="p">[</span><span class="n">config_paths</span><span class="p">]</span>
-
-        <span class="c"># Temporary attributes, will be deleted when function ends.</span>
-        <span class="c"># We want this function to recurse on another method, which always needs access to these</span>
-        <span class="c"># TODO: Is there a more pythonic way to do this?</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">config_files_read</span> <span class="o">=</span> <span class="p">[]</span>      <span class="c"># Need to clean this here so tests can re-load the config</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">configp</span> <span class="o">=</span> <span class="n">ConfigParser</span><span class="p">(</span><span class="n">inline_comment_prefixes</span><span class="o">=</span><span class="s">&#39;#&#39;</span><span class="p">,</span>
-                                    <span class="n">interpolation</span><span class="o">=</span><span class="n">ExtendedInterpolation</span><span class="p">(),</span>
-                                    <span class="n">strict</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
-                                    <span class="n">default_section</span><span class="o">=</span><span class="s">&#39;Why_doesnt_configparser_let_me_disable_DEFAULT&#39;</span><span class="p">)</span>
-
-        <span class="c"># Allow for case-sensitive configuration keys</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">configp</span><span class="o">.</span><span class="n">optionxform</span> <span class="o">=</span> <span class="nb">str</span>
-
-        <span class="c"># Make a list of all config paths / file objects to load</span>
-        <span class="n">config_files</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">config_name</span> <span class="ow">in</span> <span class="n">config_names</span><span class="p">:</span>
-            <span class="n">config_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">PAX_DIR</span><span class="p">,</span> <span class="s">&#39;config&#39;</span><span class="p">,</span> <span class="n">config_name</span> <span class="o">+</span> <span class="s">&#39;.ini&#39;</span><span class="p">))</span>
-        <span class="k">for</span> <span class="n">config_path</span> <span class="ow">in</span> <span class="n">config_paths</span><span class="p">:</span>
-            <span class="n">config_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">config_path</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">config_string</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="n">config_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">StringIO</span><span class="p">(</span><span class="n">config_string</span><span class="p">))</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">config_files</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">config_dict</span> <span class="o">==</span> <span class="p">{}:</span>
-            <span class="c"># Load the fallback configuration</span>
-            <span class="c"># Have to use print, logging is not yet setup...</span>
-            <span class="k">print</span><span class="p">(</span><span class="s">&quot;WARNING: no configuration specified: loading </span><span class="si">%s</span><span class="s"> config!&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">fallback_configuration</span><span class="p">)</span>
-            <span class="n">config_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">PAX_DIR</span><span class="p">,</span> <span class="s">&#39;config&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fallback_configuration</span> <span class="o">+</span> <span class="s">&#39;.ini&#39;</span><span class="p">))</span>
-
-        <span class="c"># Loads the files into configparser, also takes care of inheritance.</span>
-        <span class="k">for</span> <span class="n">config_file_thing</span> <span class="ow">in</span> <span class="n">config_files</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_load_file_into_configparser</span><span class="p">(</span><span class="n">config_file_thing</span><span class="p">)</span>
-
-        <span class="c"># Get a dict with all names visible by the eval:</span>
-        <span class="c">#  - all variables from the units submodule</span>
-        <span class="c">#  - np</span>
-        <span class="n">visible_variables</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">units</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">units</span><span class="p">)}</span>
-        <span class="n">visible_variables</span><span class="p">[</span><span class="s">&#39;np&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span>
-
-        <span class="c"># Evaluate the values in the ini file</span>
-        <span class="n">evaled_config</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">for</span> <span class="n">section_name</span><span class="p">,</span> <span class="n">section_dict</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">configp</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">evaled_config</span><span class="p">[</span><span class="n">section_name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">section_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="c"># Eval value in a context where all units are defined</span>
-                <span class="n">evaled_config</span><span class="p">[</span><span class="n">section_name</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">visible_variables</span><span class="p">)</span>
-
-        <span class="c"># Apply the config_dict</span>
-        <span class="k">for</span> <span class="n">section_name</span> <span class="ow">in</span> <span class="n">config_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="k">if</span> <span class="n">section_name</span> <span class="ow">in</span> <span class="n">evaled_config</span><span class="p">:</span>
-                <span class="n">evaled_config</span><span class="p">[</span><span class="n">section_name</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">config_dict</span><span class="p">[</span><span class="n">section_name</span><span class="p">])</span>
-            <span class="k">else</span><span class="p">:</span>
-                <span class="n">evaled_config</span><span class="p">[</span><span class="n">section_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">config_dict</span><span class="p">[</span><span class="n">section_name</span><span class="p">]</span>
-
-        <span class="c"># Delete temporary attributes</span>
-        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">configp</span>
-        <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">config_files_read</span>
-
-        <span class="k">return</span> <span class="n">evaled_config</span>
-</div>
-    <span class="k">def</span> <span class="nf">_load_file_into_configparser</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_file</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Loads a configuration file into our config parser, with support for inheritance.</span>
-
-<span class="sd">        :param config_file: path or file object of configuration file to read</span>
-<span class="sd">        :return: None</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config_file</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">config_file</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Configuration file </span><span class="si">%s</span><span class="s"> does not exist!&quot;</span> <span class="o">%</span> <span class="n">config_file</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">config_file</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config_files_read</span><span class="p">:</span>
-                <span class="c"># This file has already been loaded: don&#39;t load it again</span>
-                <span class="c"># If we did, it would cause problems with inheritance diamonds</span>
-                <span class="k">return</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">configp</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">config_file</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">config_files_read</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">config_file</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">configp</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">config_file</span><span class="p">)</span>
-            <span class="c"># Apparently ConfigParser.read_file doesn&#39;t reset the read position?</span>
-            <span class="c"># Or maybe it has to do with using StringIO instead of real files?</span>
-            <span class="c"># Anyway, we want to read in the file again (for overriding parent instructions), so:</span>
-            <span class="n">config_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
-
-        <span class="c"># Determine the path(s) of the parent config file(s)</span>
-        <span class="n">parent_file_paths</span> <span class="o">=</span> <span class="p">[]</span>
-
-        <span class="k">if</span> <span class="s">&#39;parent_configuration&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">configp</span><span class="p">[</span><span class="s">&#39;pax&#39;</span><span class="p">]:</span>
-            <span class="c"># This file inherits from other config file(s) in the &#39;config&#39; directory</span>
-            <span class="n">parent_files</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">configp</span><span class="p">[</span><span class="s">&#39;pax&#39;</span><span class="p">][</span><span class="s">&#39;parent_configuration&#39;</span><span class="p">])</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parent_files</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-                <span class="n">parent_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">parent_files</span><span class="p">]</span>
-            <span class="n">parent_file_paths</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span>
-                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">PAX_DIR</span><span class="p">,</span> <span class="s">&#39;config&#39;</span><span class="p">,</span> <span class="n">pf</span> <span class="o">+</span> <span class="s">&#39;.ini&#39;</span><span class="p">)</span>
-                <span class="k">for</span> <span class="n">pf</span> <span class="ow">in</span> <span class="n">parent_files</span><span class="p">])</span>
-
-        <span class="k">if</span> <span class="s">&#39;parent_configuration_file&#39;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">configp</span><span class="p">[</span><span class="s">&#39;pax&#39;</span><span class="p">]:</span>
-            <span class="c"># This file inherits from user-defined config file(s)</span>
-            <span class="n">parent_files</span> <span class="o">=</span> <span class="nb">eval</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">configp</span><span class="p">[</span><span class="s">&#39;pax&#39;</span><span class="p">][</span><span class="s">&#39;parent_configuration_file&#39;</span><span class="p">])</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">parent_files</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
-                <span class="n">parent_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">parent_files</span><span class="p">]</span>
-            <span class="n">parent_file_paths</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">parent_files</span><span class="p">)</span>
-
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">parent_file_paths</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="c"># This file has no parents...</span>
-            <span class="k">return</span>
-
-        <span class="c"># Unfortunately, configparser can only override settings, not set missing ones.</span>
-        <span class="c"># We have no choice but to load the parent file(s), then reload the original one again.</span>
-        <span class="c"># By doing this in a recursing function, multi-level inheritance is supported.</span>
-        <span class="k">for</span> <span class="n">pfp</span> <span class="ow">in</span> <span class="n">parent_file_paths</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">_load_file_into_configparser</span><span class="p">(</span><span class="n">pfp</span><span class="p">)</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config_file</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">configp</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">config_file</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">configp</span><span class="o">.</span><span class="n">read_file</span><span class="p">(</span><span class="n">config_file</span><span class="p">)</span>
+        <span class="c"># For worker processed, we have to call run from init: nobody else wil...</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_queue_blocks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pax&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;max_queue_blocks&#39;</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">block_size</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pax&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;event_block_size&#39;</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker_id</span> <span class="o">!=</span> <span class="s">&#39;master&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
 
 <div class="viewcode-block" id="Processor.setup_logging"><a class="viewcode-back" href="../../pax.html#pax.core.Processor.setup_logging">[docs]</a>    <span class="k">def</span> <span class="nf">setup_logging</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Sets up logging. Must have loaded config first.&quot;&quot;&quot;</span>
@@ -454,90 +414,206 @@
 <span class="sd">            If you do, you get in trouble if you start a new Processor instance that tries to write to the same files.</span>
 
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;input_plugin&#39;</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Attempt to run a Processor without an input_plugin attribute... WTF??&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker_id</span> <span class="o">!=</span> <span class="s">&#39;master&#39;</span><span class="p">:</span>
+            <span class="c"># I&#39;m a child processor</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">check_crash</span><span class="p">()</span>
+            <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+                <span class="c"># Check if we can end before we fetch event blocks:</span>
+                <span class="c"># the last block may get added while we are fetching events</span>
+                <span class="n">can_end</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">MP_STATUS</span><span class="p">[</span><span class="s">&#39;processing_done&#39;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker_id</span> <span class="o">==</span> <span class="s">&#39;output&#39;</span>
+                                                         <span class="k">else</span> <span class="s">&#39;input_done&#39;</span><span class="p">]</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_plugin</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="c"># You&#39;re allowed to specify no input plugin, which is useful for testing. (You may want to feed events</span>
-            <span class="c"># in by hand). If you do this, you can&#39;t use the run method. In case somebody ever tries:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;You just tried to run a Processor without specifyin input plugin.&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker_id</span> <span class="o">==</span> <span class="s">&#39;output&#39;</span><span class="p">:</span>
+                    <span class="c"># The output worker has an additional complication: blocks must be written in proper order</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">check_crash</span><span class="p">()</span>
+                    <span class="n">block_heap</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="n">block_id</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_plugin</span><span class="o">.</span><span class="n">has_shut_down</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Attempt to run a Processor twice.&quot;</span><span class="p">)</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="c"># If we don&#39;t have the block we want yet, keep fetching event blocks from the queue .</span>
+                        <span class="c"># Note: if one block takes much longer than the others, this would slurp all blocks</span>
+                        <span class="c"># while waiting for the difficult one to come through, potentially exhausting your RAM...</span>
+                        <span class="k">while</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">block_heap</span><span class="p">)</span> <span class="ow">and</span> <span class="n">block_heap</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">block_id</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">check_crash</span><span class="p">()</span>
+                            <span class="n">heapq</span><span class="o">.</span><span class="n">heappush</span><span class="p">(</span><span class="n">block_heap</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_queue</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">block</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
 
-        <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c"># in case loop does not run</span>
-        <span class="c"># This is the actual event loop.  &#39;tqdm&#39; is a progress bar.</span>
+                    <span class="k">except</span> <span class="n">queue</span><span class="o">.</span><span class="n">Empty</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">can_end</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">block_heap</span><span class="p">):</span>
+                            <span class="c"># We&#39;re done!</span>
+                            <span class="k">break</span>
+                        <span class="c"># Queue is empty, but either we&#39;re not in the processing_done status, or we&#39;re waiting for a</span>
+                        <span class="c"># block which hasn&#39;t arrived on the queue yet. Wait, then try the queue again.</span>
+                        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                        <span class="k">continue</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">punch</span><span class="p">()</span>
-        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">event</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tqdm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_events</span><span class="p">(),</span>
-                                       <span class="n">desc</span><span class="o">=</span><span class="s">&#39;Event&#39;</span><span class="p">,</span>
-                                       <span class="n">total</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">number_of_events</span><span class="p">)):</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">input_plugin</span><span class="o">.</span><span class="n">total_time_taken</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">punch</span><span class="p">()</span>
+                    <span class="c"># Pop the next event block from the heap</span>
+                    <span class="n">block_id</span><span class="p">,</span> <span class="n">event_block</span> <span class="o">=</span> <span class="n">heapq</span><span class="o">.</span><span class="n">heappop</span><span class="p">(</span><span class="n">block_heap</span><span class="p">)</span>
 
-            <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop_after</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;User-defined limit of </span><span class="si">%d</span><span class="s"> events reached.&quot;</span> <span class="o">%</span> <span class="n">i</span><span class="p">)</span>
-                <span class="k">break</span>
-
-            <span class="bp">self</span><span class="o">.</span><span class="n">process_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
-
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Event </span><span class="si">%d</span><span class="s"> (</span><span class="si">%d</span><span class="s"> processed)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">event_number</span><span class="p">,</span> <span class="n">i</span><span class="p">))</span>
-
-        <span class="k">else</span><span class="p">:</span>   <span class="c"># If no break occurred:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;All events from input source have been processed.&quot;</span><span class="p">)</span>
-
-        <span class="n">events_actually_processed</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
-
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pax&#39;</span><span class="p">][</span><span class="s">&#39;print_timing_report&#39;</span><span class="p">]:</span>
-
-            <span class="n">all_plugins</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">input_plugin</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_plugins</span>
-            <span class="n">timing_report</span> <span class="o">=</span> <span class="n">PrettyTable</span><span class="p">([</span><span class="s">&#39;Plugin&#39;</span><span class="p">,</span>
-                                         <span class="s">&#39;%&#39;</span><span class="p">,</span>
-                                         <span class="s">&#39;/event (ms)&#39;</span><span class="p">,</span>
-                                         <span class="s">&#39;#/s&#39;</span><span class="p">,</span>
-                                         <span class="s">&#39;Total (s)&#39;</span><span class="p">])</span>
-            <span class="n">timing_report</span><span class="o">.</span><span class="n">align</span> <span class="o">=</span> <span class="s">&quot;r&quot;</span>
-            <span class="n">timing_report</span><span class="o">.</span><span class="n">align</span><span class="p">[</span><span class="s">&quot;Plugin&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;l&quot;</span>
-            <span class="n">total_time</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">plugin</span><span class="o">.</span><span class="n">total_time_taken</span> <span class="k">for</span> <span class="n">plugin</span> <span class="ow">in</span> <span class="n">all_plugins</span><span class="p">])</span>
-
-            <span class="k">for</span> <span class="n">plugin</span> <span class="ow">in</span> <span class="n">all_plugins</span><span class="p">:</span>
-                <span class="n">t</span> <span class="o">=</span> <span class="n">plugin</span><span class="o">.</span><span class="n">total_time_taken</span>
-
-                <span class="k">if</span> <span class="n">t</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                    <span class="n">time_per_event_ms</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">t</span> <span class="o">/</span> <span class="n">events_actually_processed</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-
-                    <span class="n">event_rate_hz</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="mi">1000</span> <span class="o">*</span> <span class="n">events_actually_processed</span> <span class="o">/</span> <span class="n">t</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-                    <span class="k">if</span> <span class="n">event_rate_hz</span> <span class="o">&gt;</span> <span class="mi">100</span><span class="p">:</span>
-                        <span class="n">event_rate_hz</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
-
-                    <span class="n">timing_report</span><span class="o">.</span><span class="n">add_row</span><span class="p">([</span><span class="n">plugin</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
-                                           <span class="nb">round</span><span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="n">t</span> <span class="o">/</span> <span class="n">total_time</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
-                                           <span class="n">time_per_event_ms</span><span class="p">,</span>
-                                           <span class="n">event_rate_hz</span><span class="p">,</span>
-                                           <span class="nb">round</span><span class="p">(</span><span class="n">t</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="n">timing_report</span><span class="o">.</span><span class="n">add_row</span><span class="p">([</span><span class="n">plugin</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
-                                           <span class="mi">0</span><span class="p">,</span>
-                                           <span class="mi">0</span><span class="p">,</span>
-                                           <span class="s">&#39;n/a&#39;</span><span class="p">,</span>
-                                           <span class="nb">round</span><span class="p">(</span><span class="n">t</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+                    <span class="c"># Ordinary worker</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">check_crash</span><span class="p">()</span>
+                    <span class="k">try</span><span class="p">:</span>
+                        <span class="n">block_id</span><span class="p">,</span> <span class="n">event_block</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_queue</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">block</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="k">except</span> <span class="n">queue</span><span class="o">.</span><span class="n">Empty</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">can_end</span><span class="p">:</span>
+                            <span class="c"># We&#39;re done!</span>
+                            <span class="k">break</span>
+                        <span class="c"># Queue is empty: wait for more data, then check can_end again</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> found empty input queue, can_end is </span><span class="si">%s</span><span class="s">, status is </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">worker_id</span><span class="p">,</span> <span class="n">can_end</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
+                        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                        <span class="k">continue</span>
 
-            <span class="k">if</span> <span class="n">total_time</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="n">timing_report</span><span class="o">.</span><span class="n">add_row</span><span class="p">([</span><span class="s">&#39;TOTAL&#39;</span><span class="p">,</span>
-                                       <span class="nb">round</span><span class="p">(</span><span class="mf">100.</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
-                                       <span class="nb">round</span><span class="p">(</span><span class="n">total_time</span> <span class="o">/</span> <span class="n">events_actually_processed</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
-                                       <span class="nb">round</span><span class="p">(</span><span class="mi">1000</span> <span class="o">*</span> <span class="n">events_actually_processed</span> <span class="o">/</span> <span class="n">total_time</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
-                                       <span class="nb">round</span><span class="p">(</span><span class="n">total_time</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+                <span class="k">try</span><span class="p">:</span>
+                    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">event</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">event_block</span><span class="p">):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">check_crash</span><span class="p">()</span>
+                        <span class="n">event_block</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">process_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+                <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+                    <span class="c"># Crash occurred during processing: notify everyone else, then die</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">MP_STATUS</span><span class="p">[</span><span class="s">&#39;crashing&#39;</span><span class="p">]</span>
+                    <span class="k">raise</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker_id</span> <span class="o">!=</span> <span class="s">&#39;output&#39;</span><span class="p">:</span>
+                    <span class="c"># Push the result to the output queue</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">output_queue</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="n">block_id</span><span class="p">,</span> <span class="n">event_block</span><span class="p">))</span>
+                    <span class="c"># If the output worker has trouble catching up, sleep for a bit</span>
+                    <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_queue</span><span class="o">.</span><span class="n">qsize</span><span class="p">()</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_queue_blocks</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">check_crash</span><span class="p">()</span>
+                        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># I&#39;m a master or standalone processor</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_plugin</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="c"># You&#39;re allowed to specify no input plugin, which is useful for testing. (You may want to feed events</span>
+                <span class="c"># in by hand). If you do this, you can&#39;t use the run method. In case somebody ever tries:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;You just tried to run a Processor without specifying input plugin.&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_plugin</span><span class="o">.</span><span class="n">has_shut_down</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Attempt to run a Processor twice!&quot;</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">multiprocessing</span><span class="p">:</span>
+                <span class="c"># I&#39;m a master processor</span>
+                <span class="n">block_id</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="n">event_block</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">event</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_events</span><span class="p">()):</span>
+                    <span class="n">event_block</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">master_heartbeat</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">event_block</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_size</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">input_queue</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="n">block_id</span><span class="p">,</span> <span class="n">event_block</span><span class="p">))</span>
+                        <span class="n">block_id</span> <span class="o">+=</span> <span class="mi">1</span>
+                        <span class="n">event_block</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="c"># If the processing workers have trouble catching up, sleep for a bit</span>
+                    <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_queue</span><span class="o">.</span><span class="n">qsize</span><span class="p">()</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_queue_blocks</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">master_heartbeat</span><span class="p">()</span>
+                        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop_after</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Read in user-defined limit of </span><span class="si">%d</span><span class="s"> events.&quot;</span> <span class="o">%</span> <span class="n">i</span><span class="p">)</span>
+                        <span class="k">break</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">input_queue</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="n">block_id</span><span class="p">,</span> <span class="n">event_block</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">master_heartbeat</span><span class="p">()</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">MP_STATUS</span><span class="p">[</span><span class="s">&#39;input_done&#39;</span><span class="p">]</span>
+
+                <span class="c"># Wait for child processes to die or crash</span>
+                <span class="c"># Note we never use join/wait -- so we never wait for something that may not happen</span>
+                <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">master_heartbeat</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="nb">all</span><span class="p">([</span><span class="ow">not</span> <span class="n">w</span><span class="o">.</span><span class="n">is_alive</span><span class="p">()</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">processing_workers</span><span class="p">]):</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">value</span> <span class="o">=</span> <span class="n">MP_STATUS</span><span class="p">[</span><span class="s">&#39;processing_done&#39;</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_worker</span><span class="o">.</span><span class="n">is_alive</span><span class="p">():</span>
+                        <span class="k">break</span>
+                    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Pax is done, goodbye!&quot;</span><span class="p">)</span>
+
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">timing_report</span><span class="o">.</span><span class="n">add_row</span><span class="p">([</span><span class="s">&#39;TOTAL&#39;</span><span class="p">,</span>
-                                       <span class="nb">round</span><span class="p">(</span><span class="mf">100.</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
-                                       <span class="mi">0</span><span class="p">,</span>
-                                       <span class="s">&#39;n/a&#39;</span><span class="p">,</span>
-                                       <span class="nb">round</span><span class="p">(</span><span class="n">total_time</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Timing report:</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">timing_report</span><span class="p">))</span>
+                <span class="c"># I&#39;m a standalone processor</span>
+                <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c"># in case loop does not run</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">punch</span><span class="p">()</span>
+                <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">event</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tqdm</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_events</span><span class="p">(),</span>
+                                               <span class="n">desc</span><span class="o">=</span><span class="s">&#39;Event&#39;</span><span class="p">,</span>
+                                               <span class="n">total</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">number_of_events</span><span class="p">)):</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">input_plugin</span><span class="o">.</span><span class="n">total_time_taken</span> <span class="o">+=</span> <span class="bp">self</span><span class="o">.</span><span class="n">timer</span><span class="o">.</span><span class="n">punch</span><span class="p">()</span>
+                    <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stop_after</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;User-defined limit of </span><span class="si">%d</span><span class="s"> events reached.&quot;</span> <span class="o">%</span> <span class="n">i</span><span class="p">)</span>
+                        <span class="k">break</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">process_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Event </span><span class="si">%d</span><span class="s"> (</span><span class="si">%d</span><span class="s"> processed)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">event</span><span class="o">.</span><span class="n">event_number</span><span class="p">,</span> <span class="n">i</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>   <span class="c"># If no break occurred:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;All events from input source have been processed.&quot;</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pax&#39;</span><span class="p">][</span><span class="s">&#39;print_timing_report&#39;</span><span class="p">]:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">make_timing_report</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
 
         <span class="c"># Shutdown all plugins now -- don&#39;t wait until this Processor instance gets deleted</span>
         <span class="k">if</span> <span class="n">clean_shutdown</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="Processor.master_heartbeat"><a class="viewcode-back" href="../../pax.html#pax.core.Processor.master_heartbeat">[docs]</a>    <span class="k">def</span> <span class="nf">master_heartbeat</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_crash</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">update_status</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="Processor.check_crash"><a class="viewcode-back" href="../../pax.html#pax.core.Processor.check_crash">[docs]</a>    <span class="k">def</span> <span class="nf">check_crash</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">value</span> <span class="o">==</span> <span class="n">MP_STATUS</span><span class="p">[</span><span class="s">&#39;crashing&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker_id</span> <span class="o">==</span> <span class="s">&#39;master&#39;</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">fatal</span><span class="p">(</span><span class="s">&quot;Crash detected, giving worker processes five seconds to die in peace&quot;</span><span class="p">)</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">fatal</span><span class="p">(</span><span class="s">&quot;That&#39;s it, farewell cruel world!&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Terminated pax multiprocessing due to crash in one of the workers.&quot;</span><span class="p">)</span>
+            <span class="nb">exit</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="Processor.update_status"><a class="viewcode-back" href="../../pax.html#pax.core.Processor.update_status">[docs]</a>    <span class="k">def</span> <span class="nf">update_status</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">&#39;</span><span class="se">\r</span><span class="s">Status: </span><span class="si">%s</span><span class="s">. Processing queue: </span><span class="si">%d</span><span class="s"> events. Output queue: </span><span class="si">%s</span><span class="s"> events.&#39;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">MP_STATUS</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span><span class="o">.</span><span class="n">value</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">input_queue</span><span class="o">.</span><span class="n">qsize</span><span class="p">()</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_size</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">output_queue</span><span class="o">.</span><span class="n">qsize</span><span class="p">()</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_size</span><span class="p">,</span>
+        <span class="p">))</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="Processor.make_timing_report"><a class="viewcode-back" href="../../pax.html#pax.core.Processor.make_timing_report">[docs]</a>    <span class="k">def</span> <span class="nf">make_timing_report</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">events_actually_processed</span><span class="p">):</span>
+        <span class="n">all_plugins</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">input_plugin</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">action_plugins</span>
+        <span class="n">timing_report</span> <span class="o">=</span> <span class="n">PrettyTable</span><span class="p">([</span><span class="s">&#39;Plugin&#39;</span><span class="p">,</span>
+                                     <span class="s">&#39;%&#39;</span><span class="p">,</span>
+                                     <span class="s">&#39;/event (ms)&#39;</span><span class="p">,</span>
+                                     <span class="s">&#39;#/s&#39;</span><span class="p">,</span>
+                                     <span class="s">&#39;Total (s)&#39;</span><span class="p">])</span>
+        <span class="n">timing_report</span><span class="o">.</span><span class="n">align</span> <span class="o">=</span> <span class="s">&quot;r&quot;</span>
+        <span class="n">timing_report</span><span class="o">.</span><span class="n">align</span><span class="p">[</span><span class="s">&quot;Plugin&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;l&quot;</span>
+        <span class="n">total_time</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">([</span><span class="n">plugin</span><span class="o">.</span><span class="n">total_time_taken</span> <span class="k">for</span> <span class="n">plugin</span> <span class="ow">in</span> <span class="n">all_plugins</span><span class="p">])</span>
+
+        <span class="k">for</span> <span class="n">plugin</span> <span class="ow">in</span> <span class="n">all_plugins</span><span class="p">:</span>
+            <span class="n">t</span> <span class="o">=</span> <span class="n">plugin</span><span class="o">.</span><span class="n">total_time_taken</span>
+
+            <span class="k">if</span> <span class="n">t</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">time_per_event_ms</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">t</span> <span class="o">/</span> <span class="n">events_actually_processed</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+                <span class="n">event_rate_hz</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="mi">1000</span> <span class="o">*</span> <span class="n">events_actually_processed</span> <span class="o">/</span> <span class="n">t</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">event_rate_hz</span> <span class="o">&gt;</span> <span class="mi">100</span><span class="p">:</span>
+                    <span class="n">event_rate_hz</span> <span class="o">=</span> <span class="s">&#39;&#39;</span>
+
+                <span class="n">timing_report</span><span class="o">.</span><span class="n">add_row</span><span class="p">([</span><span class="n">plugin</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                                       <span class="nb">round</span><span class="p">(</span><span class="mi">100</span> <span class="o">*</span> <span class="n">t</span> <span class="o">/</span> <span class="n">total_time</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                                       <span class="n">time_per_event_ms</span><span class="p">,</span>
+                                       <span class="n">event_rate_hz</span><span class="p">,</span>
+                                       <span class="nb">round</span><span class="p">(</span><span class="n">t</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">timing_report</span><span class="o">.</span><span class="n">add_row</span><span class="p">([</span><span class="n">plugin</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
+                                       <span class="mi">0</span><span class="p">,</span>
+                                       <span class="mi">0</span><span class="p">,</span>
+                                       <span class="s">&#39;n/a&#39;</span><span class="p">,</span>
+                                       <span class="nb">round</span><span class="p">(</span><span class="n">t</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+
+        <span class="k">if</span> <span class="n">total_time</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">timing_report</span><span class="o">.</span><span class="n">add_row</span><span class="p">([</span><span class="s">&#39;TOTAL&#39;</span><span class="p">,</span>
+                                   <span class="nb">round</span><span class="p">(</span><span class="mf">100.</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                                   <span class="nb">round</span><span class="p">(</span><span class="n">total_time</span> <span class="o">/</span> <span class="n">events_actually_processed</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                                   <span class="nb">round</span><span class="p">(</span><span class="mi">1000</span> <span class="o">*</span> <span class="n">events_actually_processed</span> <span class="o">/</span> <span class="n">total_time</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                                   <span class="nb">round</span><span class="p">(</span><span class="n">total_time</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">timing_report</span><span class="o">.</span><span class="n">add_row</span><span class="p">([</span><span class="s">&#39;TOTAL&#39;</span><span class="p">,</span>
+                                   <span class="nb">round</span><span class="p">(</span><span class="mf">100.</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+                                   <span class="mi">0</span><span class="p">,</span>
+                                   <span class="s">&#39;n/a&#39;</span><span class="p">,</span>
+                                   <span class="nb">round</span><span class="p">(</span><span class="n">total_time</span> <span class="o">/</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">1</span><span class="p">)])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Timing report:</span><span class="se">\n</span><span class="s">&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">timing_report</span><span class="p">))</span>
 </div>
 <div class="viewcode-block" id="Processor.shutdown"><a class="viewcode-back" href="../../pax.html#pax.core.Processor.shutdown">[docs]</a>    <span class="k">def</span> <span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Call shutdown on all plugins&quot;&quot;&quot;</span>
