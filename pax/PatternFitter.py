@@ -14,6 +14,7 @@ from scipy.ndimage.interpolation import zoom as image_zoom
 
 from pax import utils
 from pax.exceptions import CoordinateOutOfRangeException
+from pax.datastructure import ConfidenceTuple
 
 # Named tuple for coordinate data storage
 # Maybe works faster than dictionary... can always remove later
@@ -233,7 +234,7 @@ class PatternFitter(object):
         # Store contours for plotting only
         cl_segments = []
         # Store (dx, dy) for each CL for output
-        error_tuples = []
+        confidence_tuples = []
 
         if cls is not None and n_dim == 2:
             x, y = np.mgrid[:gofs.shape[0], :gofs.shape[1]]
@@ -241,11 +242,12 @@ class PatternFitter(object):
             c = _cntr.Cntr(x, y, gofs)
 
             for cl in cls:
+                ct = ConfidenceTuple()
                 # Trace at the required value
                 cl_trace = c.trace(gofs[min_index] + cl)
                 # Check for failure
                 if len(cl_trace) == 0:
-                    error_tuples.append((float('nan'), float('nan')))
+                    confidence_tuples.append(ct)
                     continue
 
                 # Get the actual contour, the first half of cl_trace is an array of (x, y) pairs
@@ -259,8 +261,9 @@ class PatternFitter(object):
                         cl_distances[str(dim)].append(abs(point[dim] - result[dim]))
 
                 # Calculate the error tuple for this CL
-                error_tuple = (np.mean(cl_distances['0']), np.mean(cl_distances['1']))
-                error_tuples.append(error_tuple)
+                ct.dx = np.mean(cl_distances['0'])
+                ct.dy = np.mean(cl_distances['1'])
+                confidence_tuples.append(ct)
 
                 # The contour points, only for plotting
                 cl_segments.append(cl_segment)
@@ -273,7 +276,7 @@ class PatternFitter(object):
                 plt.gca().add_artist(p)
             # plt.savefig("plot_%.2f_%.2f.png" % (result[0], result[1]), dpi=300)
 
-        return result, gofs[min_index], error_tuples
+        return result, gofs[min_index], confidence_tuples
 
     def minimize_gof_powell(self, start_coordinates, areas_observed,
                             pmt_selection=None, square_syst_errors=None, statistic='chi2gamma'):
