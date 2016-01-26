@@ -750,7 +750,7 @@ class PeakViewer(PlotBase):
         peak_text += 'Top spread: %0.1fcm, Bottom spread: %0.1fcm\n' % (peak.top_hitpattern_spread,
                                                                         peak.bottom_hitpattern_spread)
         pos3d = peak.get_reconstructed_position_from_algorithm('PosRecThreeDPatternFit')
-        if not np.isnan(pos3d.x):
+        if pos3d is not None and not np.isnan(pos3d.x):
             peak_text += '3d position: x=%0.1f, y=%0.1f, z=%0.1f (all cm)' % (pos3d.x, pos3d.y, pos3d.z)
 
         self.peak_text.set_text(self.wrap_multiline(peak_text, self.max_characters))

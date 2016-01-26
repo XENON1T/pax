@@ -25,9 +25,10 @@ import six
 import numpy as np
 
 from pax import units
-from pax.datastructure import Event, Pulse
+from pax.datastructure import Event, Pulse, EventProxy
 
 from pax.FolderIO import InputFromFolder, WriteToFolder
+from pax import plugin
 
 
 xed_file_header = np.dtype([
@@ -98,6 +99,8 @@ class ReadXED(InputFromFolder):
             self.event_positions = self.event_positions[:self.file_metadata['events_in_file']]
 
     def get_single_event_in_current_file(self, event_number):
+        dataset_name = str(self.file_metadata['dataset_name'].decode("utf-8"))
+
         # Determine event's index in the file. Assumes event numbers are continuous!!
         event_position = event_number - self.file_metadata['first_event_number']
 
@@ -127,39 +130,23 @@ class ReadXED(InputFromFolder):
                     % (name, xed_value, ini_value)
                 )
 
-        # Start building the event
-        event = Event(
-            n_channels=self.config['n_channels'],
-            start_time=int(
-                event_layer_metadata['utc_time'] * units.s +
-                event_layer_metadata['utc_time_usec'] * units.us
-            ),
-            sample_duration=int(self.config['sample_duration']),
-            length=event_layer_metadata['samples_in_event']
-        )
-        event.dataset_name = str(self.file_metadata['dataset_name'].decode("utf-8"))
-        event.event_number = int(event_layer_metadata['event_number'])
-
         if event_layer_metadata['type'] == b'raw0':
             # Grok 'raw' XEDs - these probably come from the LED calibration
 
             # 4 unused bytes at start (part of 'chunk header')
             self.current_xedfile.read(4)
-
             # Data is just a big bunch of samples from one channel, then next channel, etc
             # Each channel has an equal number of samples.
             data = np.fromfile(self.current_xedfile,
                                dtype='<i2',
                                count=event_layer_metadata['channels'] *
                                      event_layer_metadata['samples_in_event'])
-            data = np.reshape(data, (event_layer_metadata['channels'],
-                                     event_layer_metadata['samples_in_event']))
-            for ch_i, chdata in enumerate(data):
-                event.pulses.append(Pulse(
-                    channel=ch_i + 1,       # +1 as first channel is 1 in Xenon100
-                    left=0,
-                    raw_data=chdata
-                ))
+
+            result = EventProxy(event_number=int(event_layer_metadata['event_number']),
+                                data=dict(xed_type='raw',
+                                          data=data,
+                                          dataset_name=dataset_name,
+                                          metadata=event_layer_metadata))
 
         elif event_layer_metadata['type'] == b'zle0':
             # Read the channel bitmask to find out which channels are included in this event.
@@ -172,23 +159,73 @@ class ReadXED(InputFromFolder):
                                                   count=mask_bytes))
 
             # +1 as first pmt is 1 in Xenon100
-            channels_included = [i + 1 for i, bit in enumerate(reversed(mask_bits))
-                                 if bit == 1]
+            channels_included = np.where(mask_bits[::-1])[0] + 1
 
-            # Decompress the event data (actually, the data from a single 'chunk')
-            # into fake binary file (io.BytesIO)
+            # Read the event data (actually, the data from a single 'chunk')
             # 28 is the chunk header size.
-
             data_to_decompress = self.current_xedfile.read(event_layer_metadata['size'] - 28 - mask_bytes)
+
+            result = EventProxy(event_number=int(event_layer_metadata['event_number']),
+                                data=dict(xed_type='zle',
+                                          data=data_to_decompress,
+                                          dataset_name=dataset_name,
+                                          metadata=event_layer_metadata,
+                                          channels_included=channels_included))
+
+        else:
+            raise NotImplementedError("XED type %s not supported" % event_layer_metadata['type'])
+
+        # Check we have read all data for this event
+
+        if event_position != len(self.event_positions) - 1:
+            current_pos = self.current_xedfile.tell()
+            should_be_at_pos = self.event_positions[event_position + 1]
+            if current_pos != should_be_at_pos:
+                raise RuntimeError("Error during XED reading: after reading event %d from file "
+                                   "(event number %d) we should be at position %d, but we are at position %d!" % (
+                                       event_position,
+                                       int(event_layer_metadata['event_number']),
+                                       should_be_at_pos, current_pos))
+
+        return result
+
+
+class DecodeXED(plugin.TransformPlugin):
+    do_input_check = False
+
+    def transform_event(self, event_proxy):
+        event_number = event_proxy.event_number
+        metadata = event_proxy.data['metadata']
+        xed_type = event_proxy.data['xed_type']
+        data = event_proxy.data['data']
+
+        event = Event(n_channels=self.config['n_channels'],
+                      event_number=event_number,
+                      start_time=int(metadata['utc_time'] * units.s + metadata['utc_time_usec'] * units.us),
+                      sample_duration=int(self.config['sample_duration']),
+                      length=metadata['samples_in_event'])
+
+        if xed_type == 'raw':
+            data = np.reshape(data, (metadata['channels'], metadata['samples_in_event']))
+            if event_proxy.data['xed_type'] == b'raw0':
+                for ch_i, chdata in enumerate(data):
+                    event.pulses.append(Pulse(
+                        channel=ch_i + 1,       # +1 as first channel is 1 in Xenon100
+                        left=0,
+                        raw_data=chdata
+                    ))
+
+        elif xed_type == 'zle':
+            # Decompress event data into fake binary file (io.BytesIO)
             try:
-                chunk_fake_file = six.BytesIO(bz2.decompress(data_to_decompress))
+                chunk_fake_file = six.BytesIO(bz2.decompress(data))
             except (OSError, IOError):
                 # Maybe it wasn't compressed after all? We can at least try
                 # TODO: figure this out from flags
-                chunk_fake_file = six.BytesIO(data_to_decompress)
+                chunk_fake_file = six.BytesIO(data)
 
             # Loop over all channels in the event to get the pulses
-            for channel_id in channels_included:
+            for channel_id in event_proxy.data['channels_included']:
                 # Read channel size (in 4bit words), subtract header size, convert
                 # from 4-byte words to bytes
                 channel_data_size = int(4 * (np.fromstring(chunk_fake_file.read(4),
@@ -230,19 +267,6 @@ class ReadXED(InputFromFolder):
                         ))
 
                         sample_position += len(samples_pulse)
-
-        else:
-            raise NotImplementedError("XED type %s not supported" % event_layer_metadata['type'])
-
-        # Check we have read all data for this event
-
-        if event_position != len(self.event_positions) - 1:
-            current_pos = self.current_xedfile.tell()
-            should_be_at_pos = self.event_positions[event_position + 1]
-            if current_pos != should_be_at_pos:
-                raise RuntimeError("Error during XED reading: after reading event %d from file "
-                                   "(event number %d) we should be at position %d, but we are at position %d!" % (
-                                       event_position, event.event_number, should_be_at_pos, current_pos))
 
         return event
 

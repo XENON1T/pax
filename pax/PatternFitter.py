@@ -18,7 +18,7 @@ from pax.datastructure import ConfidenceTuple
 
 # Named tuple for coordinate data storage
 # Maybe works faster than dictionary... can always remove later
-CoordinateData = namedtuple('CoordinateData', ('minimum', 'maximum', 'n_bins', 'bin_spacing'))
+CoordinateData = namedtuple('CoordinateData', ('minimum', 'maximum', 'n_points', 'point_spacing'))
 
 
 class PatternFitter(object):
@@ -31,7 +31,7 @@ class PatternFitter(object):
             'name':                 'Nice file with maps',
             'description':          'Say what the maps are, who you are, your favorite food, etc',
             'timestamp':            unix epoch seconds timestamp
-        where n_x is the number of grid points along x = x-bins on the map (NOT the number of bin edges!)
+        where x_min is the lowest x coordinate of a point, x_max the highest, n_x the number of points
         zoom_factor is factor by which the spatial dimensions of the map will be upsampled.
 
         adjust_to_qe: array of same length as the number of pmts in the map;
@@ -63,22 +63,24 @@ class PatternFitter(object):
         if adjust_to_qe is not None:
             self.data *= adjust_to_qe[[np.newaxis] * self.dimensions]
 
-        # Store bin starts and distances for quick access, assuming uniform bin sizes
+        # Store index starts and distances for quick access, assuming uniform grid spacing
         self.coordinate_data = []
-        for name, (start, stop, n_bins) in json_data['coordinate_system']:
-            n_bins *= zoom_factor
+        for dim_i, (name, (start, stop, n_points)) in enumerate(json_data['coordinate_system']):
+            n_points *= zoom_factor
+            if not n_points == self.data.shape[dim_i]:
+                raise ValueError("Map interpretation error: %d points expected along %s, but map is %d points long" % (
+                    n_points, name, self.data.shape[dim_i]))
             self.coordinate_data.append(CoordinateData(minimum=start,
                                                        maximum=stop,
-                                                       n_bins=n_bins,
-                                                       bin_spacing=(stop - start)/n_bins))
-        self.log.debug('Coordinate ranges: %s' % ', '.join(['%s-%s (%d bins)' % (cd.minimum, cd.maximum, cd.n_bins)
+                                                       n_points=n_points,
+                                                       point_spacing=(stop - start)/(n_points - 1)))
+        self.log.debug('Coordinate ranges: %s' % ', '.join(['%s-%s (%d points)' % (cd.minimum, cd.maximum, cd.n_points)
                                                             for cd in self.coordinate_data]))
 
-        # TODO: Technically we should zero the bins outside the tpc bounds again:
+        # TODO: Technically we should zero the points outside the tpc bounds again:
         # some LCE may have leaked into this region due to upsampling... but doesn't matter:
         # if it causes a bias, it will push some events who are already far outside the fiducial volume
         # even further out.
-
         self.n_points = self.data.shape[-1]
         self.default_pmt_selection = np.ones(self.n_points, dtype=np.bool)
         if default_errors is None:
@@ -91,7 +93,7 @@ class PatternFitter(object):
         Keep in mind you'll have to re-normalize if there are any dead / saturated PMTs...
         """
         # Copy is to ensure the map is not modified accidentally... happened once, never again.
-        pattern = self.data[self.get_bin_indices(coordinates) + [slice(None)]].copy()
+        pattern = self.data[self.coordinates_to_indices(coordinates) + [slice(None)]].copy()
         sum_pattern = pattern.sum()
         if sum_pattern == 0:
             raise CoordinateOutOfRangeException("Expected light pattern at coordinates %s "
@@ -108,32 +110,28 @@ class PatternFitter(object):
         :param statistic: 'chi2' or 'chi2gamma': goodness of fit statistic to use
         :return: value of goodness of fit statistic, or float('inf') if coordinates outside of range
         """
-        return self._compute_gof_base(self.get_bin_indices(coordinates), areas_observed,
+        return self._compute_gof_base(self.coordinates_to_indices(coordinates), areas_observed,
                                       pmt_selection, square_syst_errors, statistic)
 
     def compute_gof_grid(self, center_coordinates, grid_size, areas_observed,
                          pmt_selection=None, square_syst_errors=None, statistic='chi2gamma', plot=False):
         """Compute goodness of fit on a grid of points of length grid_size in each coordinate,
         centered at center_coordinates. All other parameters like compute_gof.
-        Returns gof_grid, (bin number of lowest grid point in dimension 1, ...)
+        Returns gof_grid, (index of lowest grid point in dimension 1, ...)
         :return:
         """
-        bin_selection = []
-        lowest_bins = []
+        index_selection = []
+        lowest_indices = []
         for dimension_i, x in enumerate(center_coordinates):
             cd = self.coordinate_data[dimension_i]
-            if not cd.minimum <= x <= cd.maximum:
-                raise CoordinateOutOfRangeException("%s is not in allowed range %s-%s" % (x, cd.minimum, cd.maximum))
-            start = self._get_bin_index(max(x - grid_size / 2,
-                                            self.coordinate_data[dimension_i].minimum),
+            start = self._coordinate_to_index(max(x - grid_size / 2, cd.minimum),
                                         dimension_i)
-            lowest_bins.append(start)
-            stop = self._get_bin_index(min(x + grid_size / 2,
-                                           self.coordinate_data[dimension_i].maximum),
+            lowest_indices.append(start)
+            stop = self._coordinate_to_index(min(x + grid_size / 2, cd.maximum),
                                        dimension_i)
-            bin_selection.append(slice(start, stop + 1))        # Don't forget python's silly indexing here...
+            index_selection.append(slice(start, stop + 1))        # Don't forget python's silly indexing here...
 
-        gofs = self._compute_gof_base(bin_selection, areas_observed, pmt_selection, square_syst_errors, statistic)
+        gofs = self._compute_gof_base(index_selection, areas_observed, pmt_selection, square_syst_errors, statistic)
 
         if plot:
             plt.figure()
@@ -141,9 +139,11 @@ class PatternFitter(object):
             # Remember the grid indices are
             q = []
             for dimension_i, cd in enumerate(self.coordinate_data):
-                dimstart = self._get_bin_center(bin_selection[dimension_i].start, dimension_i) - 0.5 * cd.bin_spacing
+                dimstart = self._index_to_coordinate(index_selection[dimension_i].start, dimension_i)
+                dimstart -= 0.5 * cd.point_spacing
                 # stop -1 for python silly indexing again...
-                dimstop = self._get_bin_center(bin_selection[dimension_i].stop - 1, dimension_i) + 0.5 * cd.bin_spacing
+                dimstop = self._index_to_coordinate(index_selection[dimension_i].stop - 1, dimension_i)
+                dimstop += 0.5 * cd.point_spacing
                 q.append(np.linspace(dimstart, dimstop, gofs.shape[dimension_i] + 1))
 
                 if dimension_i == 0:
@@ -155,33 +155,30 @@ class PatternFitter(object):
             plt.pcolormesh(*q, vmin=1, vmax=4, alpha=0.9)
             plt.colorbar(label='Goodness of fit / minimum')
 
-        return gofs, lowest_bins
+        return gofs, lowest_indices
 
-    def get_bin_indices(self, coordinates):
-        return [self._get_bin_index(x, dimension_i) for dimension_i, x in enumerate(coordinates)]
+    def coordinates_to_indices(self, coordinates):
+        return [self._coordinate_to_index(x, dimension_i) for dimension_i, x in enumerate(coordinates)]
 
-    def _get_bin_index(self, value, dimension_i):
-        """Return bin index along dimension_i which contains value.
+    def _coordinate_to_index(self, value, dimension_i):
+        """Return array index along dimension_i which contains value.
         Raises CoordinateOutOfRangeException if value out of range.
-        TODO: check if this is faster than just using np.digitize on the bin list
+        TODO: check if this is faster than just using np.digitize on the index list
         """
         cd = self.coordinate_data[dimension_i]
-        if not cd.minimum <= value <= cd.maximum:
+        if not cd.minimum - cd.point_spacing / 2 <= value <= cd.maximum + cd.point_spacing / 2:
             raise CoordinateOutOfRangeException("%s is not in allowed range %s-%s" % (value, cd.minimum, cd.maximum))
-        return int((value - cd.minimum) / cd.bin_spacing)
+        value = max(cd.minimum, min(value, cd.maximum - 0.01 * cd.point_spacing))
+        return int((value - cd.minimum) / cd.point_spacing + 0.5)
 
-    def _get_bin(self, bin_i, dimension_i):
+    def _index_to_coordinate(self, index_i, dimension_i):
         cd = self.coordinate_data[dimension_i]
-        return cd.minimum + cd.bin_spacing * bin_i
+        return cd.minimum + cd.point_spacing * index_i
 
-    def _get_bin_center(self, bin_i, dimension_i):
-        cd = self.coordinate_data[dimension_i]
-        return cd.minimum + cd.bin_spacing * (bin_i + 0.5)
-
-    def _compute_gof_base(self, bin_selection, areas_observed, pmt_selection, square_syst_errors, statistic):
+    def _compute_gof_base(self, index_selection, areas_observed, pmt_selection, square_syst_errors, statistic):
         """Compute goodness of fit statistic: see compute_gof
-        bin_selection will be used to slice the spatial histogram.
-        :return: gof with shape determined by bin_selection.
+        index_selection will be used to slice the spatial histogram.
+        :return: gof with shape determined by index_selection.
         """
         if pmt_selection is None:
             pmt_selection = self.default_pmt_selection
@@ -190,7 +187,7 @@ class PatternFitter(object):
 
         # The following aliases are used in the numexprs below
         areas_observed = areas_observed.copy()[pmt_selection]
-        q = self.data[bin_selection + [pmt_selection]]
+        q = self.data[index_selection + [pmt_selection]]
         qsum = q.sum(axis=-1)[..., np.newaxis]          # noqa
         fractions_expected = ne.evaluate("q / qsum")    # noqa
         total_observed = areas_observed.sum()           # noqa
@@ -220,13 +217,13 @@ class PatternFitter(object):
         the mean of these distances is reported as (dx, dy).
         All other parameters like compute_gof
         """
-        gofs, lowest_bins = self.compute_gof_grid(center_coordinates, grid_size, areas_observed,
+        gofs, lowest_indices = self.compute_gof_grid(center_coordinates, grid_size, areas_observed,
                                                   pmt_selection, square_syst_errors, statistic, plot)
         min_index = np.unravel_index(np.nanargmin(gofs), gofs.shape)
-        # Convert bin index back to position
+        # Convert index back to position
         result = []
         for dimension_i, i_of_minimum in enumerate(min_index):
-            x = self._get_bin_center(lowest_bins[dimension_i] + i_of_minimum, dimension_i)
+            x = self._index_to_coordinate(lowest_indices[dimension_i] + i_of_minimum, dimension_i)
             result.append(x)
 
         # Compute confidence level contours (but only in 2D)
@@ -258,7 +255,7 @@ class PatternFitter(object):
                 cl_distances = {'0': [], '1': []}
                 for point in cl_segment:
                     for dim in range(n_dim):
-                        point[dim] = self._get_bin(lowest_bins[dim] + point[dim], dim)
+                        point[dim] = self._index_to_coordinate(lowest_bins[dim] + point[dim], dim)
                         cl_distances[str(dim)].append(abs(point[dim] - result[dim]))
 
                 # Calculate the error tuple for this CL

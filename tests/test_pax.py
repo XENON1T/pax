@@ -77,6 +77,7 @@ class TestPax(unittest.TestCase):
 
     def test_dummy_output_plugin(self):
         mypax = core.Processor(config_dict={'pax': {'plugin_group_names':   ['output'],
+                                                    'encoder_plugin': None,
                                                     'output':                'Dummy.DummyOutput'}},
                                just_testing=True)
         self.assertIsInstance(mypax, core.Processor)
@@ -165,6 +166,7 @@ class TestPax(unittest.TestCase):
         """ Process the first event from the XED file.
         """
         config = {'pax': {'events_to_process': [0],
+                          'encoder_plugin': None,
                           'output': 'Dummy.DummyOutput'}}
         mypax = core.Processor(config_names='XENON100', config_dict=config)
         mypax.run()
@@ -175,6 +177,7 @@ class TestPax(unittest.TestCase):
         mypax = core.Processor(config_names=['XENON100', 'XerawdpImitation'],
                                config_dict={'pax': {
                                    'events_to_process': [0],
+                                   'encoder_plugin': None,
                                    'output': 'Dummy.DummyOutput'}})
         mypax.run()
         pl = mypax.get_plugin_by_name('DummyOutput')
@@ -196,10 +199,37 @@ class TestPax(unittest.TestCase):
             outfile.write("0\n7\n")
         config = {'pax': {'event_numbers_file': 'temp_eventlist.txt',
                           'plugin_group_names': ['input', 'output'],
+                          'encoder_plugin': None,
                           'output': 'Dummy.DummyOutput'}}
         mypax = core.Processor(config_names='XENON100', config_dict=config)
         mypax.run()
         self.assertEqual(mypax.get_plugin_by_name('DummyOutput').last_event.event_number, 7)
+        os.remove('temp_eventlist.txt')
+
+    def test_process_event_list_multiprocessing(self):
+        """Take a list of event numbers from a file, and process them on two cores
+        """
+        with open('temp_eventlist.txt', mode='w') as outfile:
+            outfile.write("0\n7\n")
+        config = {'pax': {'event_numbers_file': 'temp_eventlist.txt',
+                          'plugin_group_names': ['input', 'output'],
+                          'n_cpus': 2,
+                          'output_name': 'test_output',
+                          'encoder_plugin': None,
+                          'output': 'Table.TableWriter'},
+                  'Table.TableWriter': {'output_format': 'csv'}}
+        mypax = core.Processor(config_names='XENON100', config_dict=config)
+        mypax.run()
+        del mypax
+
+        # Check we actually wrote two events (and a header row)
+        self.assertTrue(os.path.exists('test_output'))
+        self.assertTrue(os.path.exists('test_output/Event.csv'))
+        with open('test_output/Event.csv') as infile:
+            self.assertEqual(len(infile.readlines()), 3)
+
+        # Cleanup
+        shutil.rmtree('test_output')
         os.remove('temp_eventlist.txt')
 
     def test_simulator(self):
@@ -207,6 +237,7 @@ class TestPax(unittest.TestCase):
         """
         mypax = core.Processor(config_names=['XENON100', 'Simulation'],
                                config_dict={'pax': {
+                                   'encoder_plugin': None,
                                    'output': 'Dummy.DummyOutput'}})
         mypax.run()
         pl = mypax.get_plugin_by_name('DummyOutput')
@@ -222,6 +253,7 @@ class TestPax(unittest.TestCase):
         mypax = core.Processor(config_names='XENON100',
                                config_dict={'pax': {'output': 'Plotting.PlotEventSummary',
                                                     'pre_output': [],
+                                                    'encoder_plugin': None,
                                                     'events_to_process': [0],
                                                     'output_name': 'plots_test'}})
         mypax.run()
