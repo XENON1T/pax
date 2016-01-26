@@ -108,4 +108,4 @@ class PosRecTopPatternFit(plugin.PosRecPlugin):
                 'y': y,
                 'goodness_of_fit': gof,
                 'ndf': ndf,
-                'error_matrix': err}
+                'confidence_tuples': err}
