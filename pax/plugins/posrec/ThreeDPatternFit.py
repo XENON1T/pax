@@ -46,11 +46,13 @@ class PosRecThreeDPatternFit(plugin.PosRecPlugin):
                 # The central position was out of range of the map! Happens occasionally if you don't use seed=best.
                 return None
         else:
-            (x, y, z), gof = self.pf.minimize_gof_grid(center_coordinates=(0, 0, z_mid),
-                                                       grid_size=grid_size, **common_options)
+            (x, y, z), gof, err = self.pf.minimize_gof_grid(center_coordinates=(0, 0, z_mid),
+                                                            grid_size=grid_size, **common_options)
         if np.isnan(gof):
             return None
 
         return {'x': x, 'y': y, 'z': z,
                 'goodness_of_fit': gof,
-                'ndf': ndf}
+                'ndf': ndf,
+                'confidence_tuples': err}
+                
