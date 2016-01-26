@@ -82,16 +82,17 @@ def main():
             override_dict['pax']['output'].append(plugin_name)
 
     # Overrides for plotting
-    if args.plot_to_dir or args.plot:
+    if args.plot_to_dir or args.plot or args.plot_interactive:
         override_dict['pax']['output_name'] = 'SCREEN'
         override_dict['pax']['pre_output'] = []    # Avoid dumping the stuff we want to plot!
-        override_dict['pax']['output'] = 'Plotting.PlotEventSummary'
-    if args.plot_to_dir:
-        override_dict['pax']['output_name'] = args.plot_to_dir
-    if args.plot_interactive:
-        override_dict['pax']['output_name'] = 'SCREEN'
-        override_dict['pax']['output'] = 'Plotting.PeakViewer'
-        override_dict['pax']['pre_output'] = []
+        override_dict['pax']['encoder_plugin'] = None
+        if args.plot:
+            override_dict['pax']['output'] = 'Plotting.PeakViewer'
+        if args.plot_to_dir:
+            override_dict['pax']['output'] = 'Plotting.PeakViewer'
+            override_dict['pax']['output_name'] = args.plot_to_dir
+        if args.plot_interactive:
+            override_dict['pax']['output'] = 'Plotting.PeakViewer'
 
     pax_instance = core.Processor(config_names=args.config,
                                   config_paths=args.config_path,

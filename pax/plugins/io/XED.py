@@ -200,6 +200,7 @@ class DecodeXED(plugin.TransformPlugin):
         data = event_proxy.data['data']
 
         event = Event(n_channels=self.config['n_channels'],
+                      dataset_name=event_proxy.data['dataset_name'],
                       event_number=event_number,
                       start_time=int(metadata['utc_time'] * units.s + metadata['utc_time_usec'] * units.us),
                       sample_duration=int(self.config['sample_duration']),
