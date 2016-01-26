@@ -255,7 +255,7 @@ class PatternFitter(object):
                 cl_distances = {'0': [], '1': []}
                 for point in cl_segment:
                     for dim in range(n_dim):
-                        point[dim] = self._index_to_coordinate(lowest_bins[dim] + point[dim], dim)
+                        point[dim] = self._index_to_coordinate(lowest_indices[dim] + point[dim], dim)
                         cl_distances[str(dim)].append(abs(point[dim] - result[dim]))
 
                 # Calculate the error tuple for this CL
