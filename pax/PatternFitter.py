@@ -243,6 +243,7 @@ class PatternFitter(object):
 
             for cl in cls:
                 ct = ConfidenceTuple()
+                ct.level = cl
                 # Trace at the required value
                 cl_trace = c.trace(gofs[min_index] + cl)
                 # Check for failure
