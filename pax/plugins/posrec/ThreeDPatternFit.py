@@ -55,4 +55,3 @@ class PosRecThreeDPatternFit(plugin.PosRecPlugin):
                 'goodness_of_fit': gof,
                 'ndf': ndf,
                 'confidence_tuples': err}
-                
