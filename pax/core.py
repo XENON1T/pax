@@ -377,6 +377,10 @@ class Processor:
         if self.worker_id != 'master':
             # I'm a child processor
             self.check_crash()
+            if self.worker_id == 'output':
+                block_id = -1
+                block_heap = []
+
             while True:
                 # Check if we can end before we fetch event blocks:
                 # the last block may get added while we are fetching events
@@ -386,8 +390,7 @@ class Processor:
                 if self.worker_id == 'output':
                     # The output worker has an additional complication: blocks must be written in proper order
                     self.check_crash()
-                    block_heap = []
-                    block_id = -1
+
 
                     try:
                         # If we don't have the block we want yet, keep fetching event blocks from the queue .
@@ -396,6 +399,8 @@ class Processor:
                         while not (len(block_heap) and block_heap[0][0] == block_id + 1):
                             self.check_crash()
                             heapq.heappush(block_heap, self.input_queue.get(block=True, timeout=1))
+                            self.log.debug("Output just got a block, heap is now %d blocks long" % len(block_heap))
+                            self.log.debug("Earliest block: %d, looking for block %s" % (block_heap[0][0], block_id + 1))
 
                     except queue.Empty:
                         if can_end and not len(block_heap):
@@ -425,6 +430,7 @@ class Processor:
                         continue
 
                 try:
+                    self.log.debug("%s now processing block %d" % (self.worker_id, block_id))
                     for i, event in enumerate(event_block):
                         self.check_crash()
                         event_block[i] = self.process_event(event)
@@ -459,6 +465,7 @@ class Processor:
                     event_block.append(event)
                     self.master_heartbeat()
                     if len(event_block) >= self.block_size:
+                        self.log.debug("Created event block %d" % block_id)
                         self.input_queue.put((block_id, event_block))
                         block_id += 1
                         event_block = []
