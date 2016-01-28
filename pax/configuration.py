@@ -6,8 +6,6 @@ import six
 
 from pax import units, utils
 
-FALLBACK_CONFIGURATION = 'XENON100'    # Configuration to use when none is specified
-
 
 def load_configuration(config_names=(), config_paths=(), config_string=None, config_dict=None):
     """Load pax configuration using configuration data. See the docstring of Processor for more info.
@@ -39,10 +37,7 @@ def load_configuration(config_names=(), config_paths=(), config_string=None, con
     if config_string is not None:
         config_files.append(six.StringIO(config_string))
     if len(config_files) == 0 and config_dict == {}:
-        # Load the fallback configuration
-        # Have to use print, logging is not yet setup...
-        print("WARNING: no configuration specified: loading %s config!" % FALLBACK_CONFIGURATION)
-        config_files.append(os.path.join(utils.PAX_DIR, 'config', FALLBACK_CONFIGURATION + '.ini'))
+        raise RuntimeError("You did not specify any configuration :-(")
 
     # Define an interior function for loading config files: supports recursion
     config_files_read = []
