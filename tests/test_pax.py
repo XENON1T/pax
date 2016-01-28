@@ -109,17 +109,11 @@ class TestPax(unittest.TestCase):
         self.assertIsInstance(pl, plugin.InputPlugin)
         self.assertEqual(pl.__class__.__name__, 'DummyInput')
 
-    def test_evaluate_default_configuration(self):
-        """ Test loading the entire default configuration & all its plugins
-        Will trigger a warning: no configuration specified
+    def test_no_configuration(self):
+        """ Test RuntimeError when no configuration
         """
-        mypax = core.Processor()
-        self.assertIsInstance(mypax, core.Processor)
-        self.assertIsInstance(mypax.input_plugin,  plugin.InputPlugin)
-        self.assertTrue(len(mypax.action_plugins) > 0)
-        for p in mypax.action_plugins:
-            self.assertIsInstance(p, (plugin.TransformPlugin, plugin.OutputPlugin))
-            p.shutdown()    # To close output file we just wrote, normally happens after .run()
+        with self.assertRaises(RuntimeError):
+            core.Processor()
 
     def test_custom_plugin_location(self):
         """Tests loading a plugin from a custom location"""
