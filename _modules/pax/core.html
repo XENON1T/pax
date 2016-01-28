@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.core &mdash; Processor for Analyzing XENON1T 4.2.0 documentation</title>
+    <title>pax.core &mdash; Processor for Analyzing XENON1T 4.3.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '4.2.0',
+        VERSION:     '4.3.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.2.0 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.3.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
@@ -417,6 +417,10 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker_id</span> <span class="o">!=</span> <span class="s">&#39;master&#39;</span><span class="p">:</span>
             <span class="c"># I&#39;m a child processor</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">check_crash</span><span class="p">()</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker_id</span> <span class="o">==</span> <span class="s">&#39;output&#39;</span><span class="p">:</span>
+                <span class="n">block_id</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+                <span class="n">block_heap</span> <span class="o">=</span> <span class="p">[]</span>
+
             <span class="k">while</span> <span class="bp">True</span><span class="p">:</span>
                 <span class="c"># Check if we can end before we fetch event blocks:</span>
                 <span class="c"># the last block may get added while we are fetching events</span>
@@ -426,8 +430,7 @@
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">worker_id</span> <span class="o">==</span> <span class="s">&#39;output&#39;</span><span class="p">:</span>
                     <span class="c"># The output worker has an additional complication: blocks must be written in proper order</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">check_crash</span><span class="p">()</span>
-                    <span class="n">block_heap</span> <span class="o">=</span> <span class="p">[]</span>
-                    <span class="n">block_id</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+
 
                     <span class="k">try</span><span class="p">:</span>
                         <span class="c"># If we don&#39;t have the block we want yet, keep fetching event blocks from the queue .</span>
@@ -436,6 +439,8 @@
                         <span class="k">while</span> <span class="ow">not</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">block_heap</span><span class="p">)</span> <span class="ow">and</span> <span class="n">block_heap</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">block_id</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
                             <span class="bp">self</span><span class="o">.</span><span class="n">check_crash</span><span class="p">()</span>
                             <span class="n">heapq</span><span class="o">.</span><span class="n">heappush</span><span class="p">(</span><span class="n">block_heap</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_queue</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">block</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Output just got a block, heap is now </span><span class="si">%d</span><span class="s"> blocks long&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">block_heap</span><span class="p">))</span>
+                            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Earliest block: </span><span class="si">%d</span><span class="s">, looking for block </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">block_heap</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">block_id</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
 
                     <span class="k">except</span> <span class="n">queue</span><span class="o">.</span><span class="n">Empty</span><span class="p">:</span>
                         <span class="k">if</span> <span class="n">can_end</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">len</span><span class="p">(</span><span class="n">block_heap</span><span class="p">):</span>
@@ -465,6 +470,7 @@
                         <span class="k">continue</span>
 
                 <span class="k">try</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> now processing block </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">worker_id</span><span class="p">,</span> <span class="n">block_id</span><span class="p">))</span>
                     <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">event</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">event_block</span><span class="p">):</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">check_crash</span><span class="p">()</span>
                         <span class="n">event_block</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">process_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
@@ -499,6 +505,7 @@
                     <span class="n">event_block</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">master_heartbeat</span><span class="p">()</span>
                     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">event_block</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">block_size</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Created event block </span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">block_id</span><span class="p">)</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">input_queue</span><span class="o">.</span><span class="n">put</span><span class="p">((</span><span class="n">block_id</span><span class="p">,</span> <span class="n">event_block</span><span class="p">))</span>
                         <span class="n">block_id</span> <span class="o">+=</span> <span class="mi">1</span>
                         <span class="n">event_block</span> <span class="o">=</span> <span class="p">[]</span>
