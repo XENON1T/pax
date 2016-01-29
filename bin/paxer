@@ -1,21 +1,15 @@
 #!/usr/bin/env python
 """ Processor for Analyzing XENON - command line interface
 
-This is the main entry point for running standalone pax.  You can configure via
-the command line most operations for running with pax.  Typically, you'll
-specify a configuration via the --config command line argument.
+This is the main entry point for running pax.  It allow you to configure a few simple options operations
+for running with pax  can configure viathe command line.
+Typically, you'll specify a configuration via the --config command line argument.
+For more control, you want to make your own configuration file and load it with --config_path your_config.ini
 """
-
 import argparse
-import time
 import os
 import sys
-import copy
-try:
-    import queue
-except ImportError:
-    import Queue as queue   #noqa
-import multiprocessing
+from collections import OrderedDict
 
 # Hack to ensure correct matplotlib backend is chosen
 # Without this, pax's plotting does not work when using a system without a graphical display
@@ -24,223 +18,25 @@ import matplotlib
 if os.name != 'nt' and not os.environ.get('DISPLAY'):
     matplotlib.use('Agg')
 
-import pax    # For version
-from pax import core, utils, formats
-
-from collections import OrderedDict
-
-# Make the output plugin aliases
-# Don't know yet if we want to display these ordered lexically or conceptually in --help:
-# work with an ordereddict to store the conceptual order in case we change our minds
-output_plugin_aliases = OrderedDict([
-    ('none',  'Dummy.DummyOutput'),
-    ('plot',  'Plotting.PlotEventSummary'),
-    ('plot_interactive',  'Plotting.PeakViewer'),
-])
-# Add output aliases from TableWriter formats
-output_plugin_aliases.update([(fc, ('Table.TableWriter', {'output_format': fc}))
-                              for fc in formats.flat_data_formats.keys()])
-output_plugin_aliases.update([
-    ('root',         'ROOTClass.WriteROOTClass'),
-
-    # Zipped formats -- allow arbitrary event numbering
-    ('zpickle', 'Pickle.WriteZippedPickles'),
-    ('zbson', 'BSON.WriteZippedBSON'),
-
-    # Non-zipped formats
-    ('bson',  'BSON.WriteBSON'),
-    ('json',  'BSON.WriteJSON'),
-    ('xed',   'XED.WriteXED'),
-
-    # Formats that don't have a plugin to read data back
-    ('raw_dump',     'RawWaveformDump.DumpSumWaveformToBinary'),
-    ('mongo',        'Mongo.MongoDBWriteTriggered'),
-])
-
-input_plugin_aliases = OrderedDict([
-    ('none',  'Dummy.DummyInput'),
-    ('xed',      'XED.ReadXED'),
-
-    # Zipped formats
-    ('zbson',   'BSON.ReadZippedBSON'),
-    ('zpickle', 'Pickle.ReadZippedPickles'),
-
-    # Nonzipped formats
-    ('bson',    'BSON.ReadBSON'),
-    ('json',    'BSON.ReadJSON'),
-])
-input_plugin_aliases.update([(fc, ('Table.TableReader', {'format': fc}))
-                             for fc in formats.flat_data_formats.keys()])
-input_plugin_aliases.update([
-    # Simulator input formats shouldn't be here: if you load simulated events you want a different config as well,
-    # so you still want to use the Simulator ini file.
-
-    # ROOT
-    ('root',     'ROOTClass.ReadROOTClass'),
-
-    # Mongo
-    ('mongo_untriggered', 'MongoDBReadUntriggered'),
-    ('mongo_untriggered', 'MongoDBReadUntriggered'),
-])
-
-
-class BaseProcess(multiprocessing.Process):
-
-    """Base class for starting pax threads
-    """
-
-    def __init__(self, task_queue, result_queue,
-                 input_done, process_done, output_done, has_crashed,
-                 config_names, config_path, config_dict):
-        multiprocessing.Process.__init__(self)
-
-        # Queues for feeding events in and out
-        self.task_queue = task_queue
-        self.result_queue = result_queue
-
-        # Multiprocessing 'Events'. These are booleans that indicated whether
-        # each stage has finished.
-        self.input_done = input_done
-        self.process_done = process_done
-        self.output_done = output_done
-        self.has_crashed = has_crashed
-
-        # pax configuations
-        self.config_names = config_names
-        self.config_path = config_path
-        self.config_dict = config_dict
-
-    def run(self):
-        # Defined in subclass
-        raise NotImplementedError()
-
-
-class ProcessorEvents(BaseProcess):
-    """Thread for processing single events
-
-    This thread will be fed via the task queue and report its results via the
-    result queue.  It will initialize its own 'pax' Processor instance.  It
-    waits until it has received a 'poison pill', which tells it to shut down.
-    """
-
-    def run(self):
-        # Initialize pax instance
-        p = core.Processor(config_names=self.config_names,
-                           config_paths=self.config_path,
-                           config_dict=self.config_dict)
-
-        # Loop until a 'poison pill' found (next_events == None)
-        while True:
-            next_events = self.task_queue.get()
-            answer = []
-            if next_events is None or self.has_crashed.is_set():  # Poison pill of None means shutdown
-                p.log.info('Exiting processor worker')
-                p.shutdown()
-                self.task_queue.task_done()
-                break
-
-            # If not None, means these are events to process
-            try:
-                for event in next_events:
-                    answer.append(p.process_event(event))
-                                    
-            except Exception as e:
-                # Oh no, a crash!
-                self.has_crashed.set()
-                self.task_queue.task_done()
-                # Turn into a "vampire" which slurps the entire task queue
-                for _ in self.task_queue.get():
-                    self.task_queue.task_done()
-                raise e
-
-            # Notify queue that these events processed
-            self.task_queue.task_done()
-
-            # Put output to result queue to await being picked up by Output thread
-            self.result_queue.put(answer)
-
-            # If the output worker has trouble catching up, sleep for a bit
-            while self.result_queue.qsize() >= 100:
-                time.sleep(5)
-
-
-class OutputEvents(BaseProcess):
-
-    """Thread for writing events to disk
-
-    Typically, there should only be one Output instance since often output
-    operations are not parallelizable.
-    """
-
-    def run(self):
-        # Initialize pax instance
-        p = core.Processor(config_names=self.config_names,
-                           config_paths=self.config_path,
-                           config_dict=self.config_dict)
-
-        #  Wait until can_end == True
-        while True:
-            # Need to check if we can end before we fetch events because
-            # of the race condition where input and processing are done, but
-            # there are still events left in the results queue waiting to be
-            # processed
-            can_end = self.input_done.is_set() and self.process_done.is_set()
-
-            # In case of a crash, end immediately
-            if self.has_crashed.is_set():
-                break
-
-            # Useful statistics
-            sys.stdout.write('\rprocessing queue: %d, output queue: %s' % (self.task_queue.qsize(),
-                                                                           self.result_queue.qsize()))
-            sys.stdout.flush()
-
-            try:
-                # Get events, or raise queue.Empty if timed out
-                next_events = self.result_queue.get(block=True,
-                                                    timeout=1)  # second
-
-                # If events, write them to output
-                for event in next_events:
-                    p.process_event(event)
-
-                # Tell result queue that events processed
-                self.result_queue.task_done()
-
-            except queue.Empty:
-                # If queue is empty, and input and processing done, then exit
-                # the while loop.
-                if can_end:
-                    break
-            except Exception as e:
-                # Oh no, a crash! Try to get out to avoid a hang
-                self.has_crashed.set()
-                self.result_queue.task_done()
-                self.output_done.set()
-                raise e
-
-        self.output_done.set()
-        p.shutdown()
+# These imports must be after matplotlib.use, otherwise the backend is already chosen
+# (so which of them is actually importing matplotlib.pyplot??)
+import pax    # flake8: noqa
+from pax import core, utils, formats    # flake8: noqa
 
 
 def main():
-    args = get_args()
+    input_plugin_aliases, output_plugin_aliases = get_aliases()
+    args = get_args(input_plugin_aliases, output_plugin_aliases)
     if args.version:
         print(pax.__version__)
         exit()
-
-    # Compute numbers of CPUs that can be used
-    max_cpus = multiprocessing.cpu_count()
-    if args.cpus == 'all':
-        args.cpus = max_cpus
-    else:
-        args.cpus = int(args.cpus)
 
     override_dict = {'pax': {}}
 
     # Feed certain command line args into pax configuration format
     for argname, configname in (('input',       'input_name'),
                                 ('output',      'output_name'),
+                                ('cpus',        'n_cpus'),
                                 ('log',         'logging_level'),
                                 ('stop_after',  'stop_after'),
                                 ('event',       'events_to_process'),
@@ -254,133 +50,64 @@ def main():
         override_dict['pax']['input'] = []
         for pa in wraplist(args.input_type):
             bla = input_plugin_aliases[pa]
+            decoder = None
             if isinstance(bla, tuple):
-                # We have a plugin name, extra options tuple
-                plugin_name, override_dict[plugin_name] = bla
+                if isinstance(bla[1], dict):
+                    # We have a plugin name, extra options tuple
+                    plugin_name, override_dict[plugin_name] = bla
+                else:
+                    # We have two plugins, the second is the decoder
+                    plugin_name, decoder = bla
             else:
                 plugin_name = bla
             override_dict['pax']['input'].append(plugin_name)
+            override_dict['pax']['decoder_plugin'] = decoder
 
     # Process output type options. Code is almost the same... sorry!
     if args.output_type is not None:
         override_dict['pax']['output'] = []
         for pa in wraplist(args.output_type):
             bla = output_plugin_aliases[pa]
+            encoder = None
             if isinstance(bla, tuple):
-                # We have a plugin name, extra options tuple
-                plugin_name, override_dict[plugin_name] = bla
+                if isinstance(bla[1], dict):
+                    # We have a plugin name, extra options tuple
+                    plugin_name, override_dict[plugin_name] = bla
+                else:
+                    # We have two plugins, the first is the encoder
+                    encoder, plugin_name = bla
             else:
                 plugin_name = bla
+            override_dict['pax']['encoder_plugin'] = encoder
             override_dict['pax']['output'].append(plugin_name)
 
     # Overrides for plotting
-    if args.plot_to_dir or args.plot:
+    if args.plot_to_dir or args.plot or args.plot_interactive:
         override_dict['pax']['output_name'] = 'SCREEN'
         override_dict['pax']['pre_output'] = []    # Avoid dumping the stuff we want to plot!
-        override_dict['pax']['output'] = 'Plotting.PlotEventSummary'
-    if args.plot_to_dir:
-        override_dict['pax']['output_name'] = args.plot_to_dir
-    if args.plot_interactive:
-        override_dict['pax']['output_name'] = 'SCREEN'
-        override_dict['pax']['output'] = 'Plotting.PeakViewer'
-        override_dict['pax']['pre_output'] = []
+        override_dict['pax']['encoder_plugin'] = None
+        if args.plot:
+            override_dict['pax']['output'] = 'Plotting.PeakViewer'
+        if args.plot_to_dir:
+            override_dict['pax']['output'] = 'Plotting.PeakViewer'
+            override_dict['pax']['output_name'] = args.plot_to_dir
+        if args.plot_interactive:
+            override_dict['pax']['output'] = 'Plotting.PeakViewer'
 
-    ##
-    # Single-core processing
-    ##
-    if args.cpus == 1:
-        pax_instance = core.Processor(config_names=args.config,
-                                      config_paths=args.config_path,
-                                      config_dict=override_dict)
+    pax_instance = core.Processor(config_names=args.config,
+                                  config_paths=args.config_path,
+                                  config_dict=override_dict)
 
-        try:
-            pax_instance.run()
-        except (KeyboardInterrupt, SystemExit):
-            print("\nShutting down all plugins...")
-            pax_instance.shutdown()
-            print("Exiting")
-            sys.exit()
-
-    else:  # Parallel processing
-        override_dict['pax']['plugin_group_names'] = ['input']
-        input_pax = core.Processor(config_names=args.config,
-                           config_paths=args.config_path,
-                           config_dict=copy.deepcopy(override_dict))
-
-        override_dict['pax']['plugin_group_names'] = ['dsp', 'compute_properties', 'pre_analysis']
-
-        # Keep track of processing state that threads can see
-        input_done = multiprocessing.Event()
-        process_done = multiprocessing.Event()
-        output_done = multiprocessing.Event()
-        has_crashed = multiprocessing.Event()
-
-        # Establish communication queues
-        tasks = multiprocessing.JoinableQueue()
-        results = multiprocessing.JoinableQueue()
-
-        # Start consumers
-        num_consumers = args.cpus
-        input_pax.log.info('Creating %d consumers', num_consumers)
-        consumers = [ProcessorEvents(tasks, results,
-                                     input_done, process_done, output_done, has_crashed,
-                                     args.config,
-                                     args.config_path,
-                                     config_dict=copy.deepcopy(override_dict)) for _ in range(num_consumers)]
-
-        override_dict['pax']['plugin_group_names'] = ['output']
-        consumer_output = OutputEvents(tasks, results,
-                                       input_done, process_done, output_done, has_crashed,
-                                       args.config,
-                                       args.config_path,
-                                       config_dict=copy.deepcopy(override_dict))
-
-        # Start all consumer threads
-        for w in consumers + [consumer_output]:
-            w.start()
-
-        # Enqueue events to the consumers in blocks of 10
-        # TODO: Make the block size configurable, and figure out a reasonable block size
-        events = []
-        multiprocessing_block_size = 10
-        for event in input_pax.get_events():
-            if has_crashed.is_set():
-                print("One of the processor workers crashed: aborting further input!")
-                break
-            events.append(event)
-            if len(events) > multiprocessing_block_size:
-                tasks.put(events)
-                events = []
-            # If the processing workers have trouble catching up, sleep for a bit
-            while tasks.qsize() >= 100:
-                time.sleep(5)
-        if len(events):
-            tasks.put(events)
-        input_pax.shutdown()
-
-        # Finalize input
-        if has_crashed.is_set():
-            raise RuntimeError("Premature exit due to crash!")
-        # Put "poison pills" to the task queues: these tell the workers nothing more is coming and it is ok to quit
-        for i in range(num_consumers):
-            tasks.put(None)
-        input_done.set()
-
-        print("Input done: waiting for processing to finish")
-        tasks.join()  # blocks until processing done
-        process_done.set()  # processing done
-        if has_crashed.is_set():
-            raise RuntimeError("Premature exit due to crash!")
-
-        print("Processing done: waiting for output to finish")
-        output_done.wait()  # wait until output done
-
-        if has_crashed.is_set():
-            raise RuntimeError("Premature exit due to crash!")
-        print("All events processed.  Exiting...")
+    try:
+        pax_instance.run()
+    except (KeyboardInterrupt, SystemExit):
+        print("\nShutting down all plugins...")
+        pax_instance.shutdown()
+        print("Exiting")
+        sys.exit()
 
 
-def get_args():
+def get_args(input_plugin_aliases, output_plugin_aliases):
     """Process command line arguments"""
     parser = argparse.ArgumentParser(description="Processor for XENON data",
                                      epilog="""For more information, please see the pax documentation at
@@ -426,12 +153,12 @@ def get_args():
     # Pass in a name to use a pre-cooked config from config:
     config_options = utils.get_named_configuration_options()
     parser.add_argument('--config',
-                        default='XENON100',
                         choices=config_options,
+                        default=[],
                         nargs='+',
                         metavar='CONFIG',
-                        help="Name(s) of the pax configuration(s) to use: default is XENON100. "
-                             "Should be a space-separated list; allowed-values are: " + \
+                        help="Name(s) of the pax configuration(s) to use. "
+                             "Should be a space-separated list; allowed-values are: " +
                              ', '.join(config_options))
     # ... or a path to your own config file:
     parser.add_argument('--config_path',
@@ -471,7 +198,67 @@ def get_args():
     parser.add_argument('--version',  action='store_true',
                         help="Print current pax version, then exit")
 
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    if not args.config or args.config_path:
+        print("You did not specify any configuration!")
+        parser.print_usage()
+        exit()
+
+def get_aliases():
+    # Make the output plugin aliases
+    # Don't know yet if we want to display these ordered lexically or conceptually in --help:
+    # work with an ordereddict to store the conceptual order in case we change our minds
+    output_plugin_aliases = OrderedDict([
+        ('none',  'Dummy.DummyOutput'),
+        ('plot',  'Plotting.PlotEventSummary'),
+        ('plot_interactive',  'Plotting.PeakViewer'),
+    ])
+    # Add output aliases from TableWriter formats
+    output_plugin_aliases.update([(fc, ('Table.TableWriter', {'output_format': fc}))
+                                  for fc in formats.flat_data_formats.keys()])
+    output_plugin_aliases.update([
+        ('root',         ('ROOTClass.EncodeROOTClass', 'ROOTClass.WriteROOTClass')),
+
+        # Zipped formats -- allow arbitrary event numbering
+        ('zpickle', ('Pickle.EncodeZPickle', 'Zip.WriteZipped')),
+        ('zbson',   ('BSON.EncodeZBSON', 'Zip.WriteZipped')),
+
+        # Non-zipped formats
+        ('json',  'BSON.WriteJSON'),
+        ('xed',   'XED.WriteXED'),
+
+        # Formats that don't have a plugin to read data back
+        ('raw_dump',     'RawWaveformDump.DumpSumWaveformToBinary'),
+        ('mongo',        'Mongo.MongoDBWriteTriggered'),
+    ])
+
+    input_plugin_aliases = OrderedDict([
+        ('none',  'Dummy.DummyInput'),
+        ('xed',      'XED.ReadXED'),
+
+        # Zipped formats
+        ('zbson',   ('Zip.ReadZipped', 'BSON.DecodeZBSON')),
+        ('zpickle', ('Zip.ReadZipped', 'Pickle.DecodeZPickle')),
+
+        # Nonzipped formats
+        ('json',    'BSON.ReadJSON'),
+    ])
+    input_plugin_aliases.update([(fc, ('Table.TableReader', {'format': fc}))
+                                 for fc in formats.flat_data_formats.keys()])
+    input_plugin_aliases.update([
+        # Simulator input formats shouldn't be here: if you load simulated events you want a different config as well,
+        # so you still want to use the Simulator ini file.
+
+        # ROOT
+        ('root',     'ROOTClass.ReadROOTClass'),
+
+        # Mongo
+        ('mongo_untriggered', 'MongoDBReadUntriggered'),
+        ('mongo_untriggered', 'MongoDBReadUntriggered'),
+    ])
+
+    return input_plugin_aliases, output_plugin_aliases
 
 
 def wraplist(x):
@@ -483,7 +270,6 @@ def wraplist(x):
     except TypeError:
         return [x]
     return x
-
 
 if __name__ == "__main__":
     main()

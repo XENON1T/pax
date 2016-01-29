@@ -4,6 +4,21 @@ History
 -------
 
 ------------------
+4.3.1 (2016-01-28)
+------------------
+
+ * Nasty multiprocessing bug fix
+
+------------------
+4.3.0 (2016-01-25)
+------------------
+
+ * Parallelization refactor (#298)
+ * Store meta data in ROOT output (#303)
+ * z coordinate system now negative in liquid (#302)
+ * Neural net reconstruction (#296)
+
+------------------
 4.2.0 (2016-01-11)
 ------------------
 
