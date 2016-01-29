@@ -12,7 +12,7 @@ import numpy as np
 import numba
 import snappy
 
-from pax.datastructure import Event, Pulse
+from pax.datastructure import Event, Pulse, EventProxy
 from pax import plugin, units
 
 
@@ -94,6 +94,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
     """
     last_event_number = 0
     use_monary = True
+    do_output_check = False
 
     def startup(self):
         MongoDBReader.startup(self)
@@ -187,12 +188,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
 
             for i, (t0, t1) in enumerate(event_ranges):
                 self.last_event_number += 1
-                yield Event(n_channels=self.config['n_channels'],
-                            start_time=t0,
-                            sample_duration=self.sample_duration,
-                            stop_time=t1,
-                            dataset_name=self.run_doc['name'],
-                            event_number=self.last_event_number)
+                yield EventProxy(event_number=self.last_event_number, data=[t0, t1])
 
             # Update time of last DAQ reponse
             # Better to do this here than before building: if the building * processing takes a long time
@@ -224,11 +220,20 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoDBReader):
     """Read pulse data from untriggered MongoDB into event ranges provided by trigger MongoDBReadUntriggered
     This is a separate plugin, since reading the raw pulse data is the expensive operation we want to parallelize.
     """
+    do_input_check = False
+
     def startup(self):
         MongoDBReader.startup(self)
 
-    def transform_event(self, event):
-        t0, t1 = event.start_time, event.stop_time  # ns
+    def transform_event(self, event_proxy):
+        t0, t1 = event_proxy.data  # ns
+        event = Event(n_channels=self.config['n_channels'],
+                      start_time=t0,
+                      sample_duration=self.sample_duration,
+                      stop_time=t1,
+                      dataset_name=self.run_doc['name'],
+                      event_number=event_proxy.event_number)
+
         self.log.debug("Fetching pulse data for event in range [%s, %s]", sampletime_fmt(t0), sampletime_fmt(t1))
         self.log.debug("Total number of pulses in collection: %d" % self.input_collection.count())
 
