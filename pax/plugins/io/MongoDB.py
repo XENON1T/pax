@@ -31,7 +31,7 @@ class MongoDBReader:
 
         # Load the digitizer channel -> PMT index mapping
         self.detector = self.config['detector']
-        self.pmts = self.config['pmts' if self.detector == 'tpc' else 'pmts_muon_veto']
+        self.pmts = self.config['pmts']
         self.pmt_mappings = {(x['digitizer']['module'],
                               x['digitizer']['channel']): x['pmt_position'] for x in self.pmts}
 
@@ -60,12 +60,12 @@ class MongoDBReader:
                                                     uri=nfo['address']).get_collection(nfo['collection'])
             self.input_collection.ensure_index(self.sort_key)
 
-    def do_monary_query(self, query, fields, types):
+    def do_monary_query(self, query, fields, types, **kwargs):
         if not self.use_monary:
             raise RuntimeError("use_monary is false, monary query isn't going to happen")
         database = self.input_info['database']
         collection = self.input_info['collection']
-        return self.monary_client.query(database, collection, query, fields, types)
+        return self.monary_client.query(database, collection, query, fields, types, **kwargs)
 
     def update_run_doc(self):
         """Update the internal run doc within this class
@@ -139,6 +139,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                 # TODO: pass sort key
                 start_times, stop_times = self.do_monary_query(query=query,
                                                                fields=[self.start_key, self.stop_key],
+                                                               sort=self.start_key,
                                                                types=['int64', 'int64'])
                 x = np.round(0.5 * (start_times + stop_times) * self.sample_duration).astype(np.int64)
 
