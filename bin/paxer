@@ -201,7 +201,7 @@ def get_args(input_plugin_aliases, output_plugin_aliases):
         print(pax.__version__)
         exit()
 
-    if not args.config or args.config_path:
+    if not (args.config or args.config_path):
         print("You did not specify any configuration!")
         parser.print_usage()
         exit()
