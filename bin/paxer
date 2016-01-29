@@ -27,9 +27,6 @@ from pax import core, utils, formats    # flake8: noqa
 def main():
     input_plugin_aliases, output_plugin_aliases = get_aliases()
     args = get_args(input_plugin_aliases, output_plugin_aliases)
-    if args.version:
-        print(pax.__version__)
-        exit()
 
     override_dict = {'pax': {}}
 
@@ -199,6 +196,10 @@ def get_args(input_plugin_aliases, output_plugin_aliases):
                         help="Print current pax version, then exit")
 
     args = parser.parse_args()
+
+    if args.version:
+        print(pax.__version__)
+        exit()
 
     if not args.config or args.config_path:
         print("You did not specify any configuration!")
