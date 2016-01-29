@@ -47,7 +47,7 @@ class MongoDBReader:
         self.input_info = nfo = self.run_doc['detectors'][self.detector]['mongo_buffer']
         if self.use_monary:
             if not mm.monary_enabled:
-                self.log.warning("Use of monary was requested, but monary did not import. Reverting to pymongo.")
+                self.log.error("Use of monary was requested, but monary did not import. Reverting to pymongo.")
                 self.use_monary = False
 
         if self.use_monary:
@@ -55,17 +55,23 @@ class MongoDBReader:
                                                  uri=nfo['address'],
                                                  monary=True)
 
-            def do_monary_query(query, fields, types, database=nfo['database'], collection=nfo['collection']):
-                return self.monary_client.query(database, collection, query, fields, types)
-
-            self.do_monary_query = do_monary_query
-
         else:
             self.input_collection = mm.get_database(database_name=nfo['database'],
                                                     uri=nfo['address']).get_collection(nfo['collection'])
             self.input_collection.ensure_index(self.sort_key)
 
+    def do_monary_query(self, query, fields, types):
+        if not self.use_monary:
+            raise RuntimeError("use_monary is false, monary query isn't going to happen")
+        database = self.input_info['database']
+        collection = self.input_info['collection']
+        return self.monary_client.query(database, collection, query, fields, types)
+
     def update_run_doc(self):
+        """Update the internal run doc within this class
+
+        This is useful for example checking if a run has ended.
+        """
         self.run_doc = self.runs.find_one({'_id': self.config['run_doc_id']})
         self.data_taking_ended = 'endtimestamp' in self.run_doc
 
@@ -97,7 +103,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
         self.search_window = self.config.get('search_window', 60 * units.s)
 
         # Initialize the buffer to hold the pulse ranges
-        self.pulse_ranges_buffer = np.ones((self.config.get('pulse_ranges_buffer_size', int(1e4)), 2),
+        self.pulse_ranges_buffer = np.ones((self.config.get('pulse_ranges_buffer_size', int(1e7)), 2),
                                            dtype=np.int64) * -1
 
         self.log.info("Building events with:")
@@ -129,6 +135,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                                       '$lt': self._to_mt(search_after + self.search_window)}}
 
             if self.use_monary:
+                # TODO: pass sort key
                 start_times, stop_times = self.do_monary_query(query=query,
                                                                fields=[self.start_key, self.stop_key],
                                                                types=['int64', 'int64'])
@@ -223,8 +230,7 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoDBReader):
     def transform_event(self, event):
         t0, t1 = event.start_time, event.stop_time  # ns
         self.log.debug("Fetching pulse data for event in range [%s, %s]", sampletime_fmt(t0), sampletime_fmt(t1))
-        if not self.use_monary:
-            self.log.debug("Total number of pulses in collection: %d" % self.input_collection.count())
+        self.log.debug("Total number of pulses in collection: %d" % self.input_collection.count())
 
         self.mongo_iterator = self.input_collection.find({self.start_key: {"$gte": self._to_mt(t0),
                                                                            "$lte": self._to_mt(t1)}},

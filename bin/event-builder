@@ -53,13 +53,13 @@ def main():
     # Build the query used to search for runs
     status_name = 'detectors.%s.trigger.status' % args.detector
     if args.name:
-        query = {'name': args.name}
+        run_query = {'name': args.name}
     else:
-        query = {status_name: 'waiting_to_be_processed'}
-    log.info("Starting run search with query %s" % query)
+        run_query = {status_name: 'waiting_to_be_processed'}
+    log.info("Starting run search with query %s" % run_query)
 
     while 1:
-        run_doc = runs.find_one_and_update(query, {'$set': {status_name: 'staging'}})
+        run_doc = runs.find_one_and_update(run_query, {'$set': {status_name: 'staging'}})
 
         if run_doc is None:
             if args.impatient:
@@ -69,34 +69,47 @@ def main():
                 log.info("No runs to process... waiting %d seconds", args.wait)
                 time.sleep(args.wait)
         else:
-            log.info("Building events for %s", run_doc['name'])
+            # Set the mongo settings
+            #   First priority: command line args
+            #   Second priority: rundb settings (from run_doc['detectors'][args.detector]['trigger']
+            #   Third priority: defaults from event_builder.ini (pax will take care of this)
+            mongo_settings = run_doc['detectors'][args.detector]['trigger']
+            for argname, factor in (('window', units.us),
+                                    ('left', units.us),
+                                    ('right', units.us),
+                                    ('multiplicity', 1),
+                                    ('mega_event', 1),
+                                    ('detector', 1),
+                                    ('user', 1),
+                                    ('password', 1),
+                                    ('host', 1),
+                                    ('port', 1)):
+                argval = getattr(args, argname)
+                if argval is not None:
+                    mongo_settings[argname] = argval
 
-            pax_config = {'output_name': 'raw_%s' % run_doc['name']}
-            config_names = 'eventbuilder'
+            log.info("Building events for %s", run_doc['name'])
             config_dict = {'DEFAULT': {'run_doc_id': run_doc['_id']},
-                           'pax': pax_config,
-                           'MongoDB': {'window': args.window * units.us,
-                                       'left': args.left * units.us,
-                                       'right': args.right * units.us,
-                                       'multiplicity': args.multiplicity,
-                                       'mega_event': args.mega_event,
-                                       'detector': args.detector,
-                                       'user': args.user,
-                                       'password': args.password,
-                                       'host': args.host,
-                                       'port': args.port,
-                                       }
+                           'pax': {'plugin_group_names': ['input', 'pre_dsp', 'output'],
+                                   'output_name': 'raw_%s' % run_doc['name'],
+                                   'input': 'MongoDB.MongoDBReadUntriggered',
+                                   'pre_dsp': 'MongoDB.MongoDBReadUntriggeredFiller',
+                                   'output': 'BSON.WriteZippedBSON'},
+                           'BSON': {'fields_to_ignore': [],
+                                    'overwrite_output': True},
+                           'MongoDB': mongo_settings,
                            }
             try:
-                p = core.Processor(config_names=config_names,
+                p = core.Processor(config_names=['XENON1T' if args.detector == 'tpc' else 'XENON1T_MV',
+                                                 'event_builder'],
                                    config_dict=config_dict)
                 p.run()
 
-            # @tunnell what does this error mean? add comment?
+            # If a timeout occurred, set the status of this run to 'error'
+            # Add other exceptions as they come during commissioning
             except pymongo.errors.ServerSelectionTimeoutError as e:
                 log.exception(e)
-                runs.update(query, {'$set': {status_name: 'error'}})
-                raise
+                runs.update({'name': args.name}, {'$set': {status_name: 'error'}})
 
         # If we're trying to build a single run, don't try again to find it
         if args.name:
@@ -163,24 +176,21 @@ def get_command_line_arguments():
                                               description='Configure trigger')
     trigger_group.add_argument('--multiplicity',
                                type=int,
-                               help='Number pulses required for coincidence '
-                                    'trigger',
-                               default=10)
+                               help='Number of coincident pulses required for a trigger',)
     trigger_group.add_argument('--window',
                                type=int,
-                               help='Size of sliding window (us)',
-                               default=1)
+                               help='Size of sliding window (us)',)
     trigger_group.add_argument('--left',
-                               type=int, default=200,
+                               type=int,
                                help='Left extension to save (us)')
     trigger_group.add_argument('--right',
-                               type=int, default=200,
+                               type=int,
                                help='Right extension to save (us)')
 
     parser.add_argument('--wait',
                         default=1,
                         type=int,
-                        help="Wait time between searching if no data")
+                        help="Wait time before searching for new runs again if none were found (sec)")
 
     parser.add_argument('--log', default='INFO',
                         help="Set log level, e.g. DEBUG")
