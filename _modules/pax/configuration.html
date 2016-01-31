@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.configuration &mdash; Processor for Analyzing XENON1T 4.3.0 documentation</title>
+    <title>pax.configuration &mdash; Processor for Analyzing XENON1T 4.3.1 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '4.3.0',
+        VERSION:     '4.3.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.3.0 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.3.1 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
@@ -45,8 +45,6 @@
 <span class="kn">import</span> <span class="nn">six</span>
 
 <span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">units</span><span class="p">,</span> <span class="n">utils</span>
-
-<span class="n">FALLBACK_CONFIGURATION</span> <span class="o">=</span> <span class="s">&#39;XENON100&#39;</span>    <span class="c"># Configuration to use when none is specified</span>
 
 
 <div class="viewcode-block" id="load_configuration"><a class="viewcode-back" href="../../pax.html#pax.configuration.load_configuration">[docs]</a><span class="k">def</span> <span class="nf">load_configuration</span><span class="p">(</span><span class="n">config_names</span><span class="o">=</span><span class="p">(),</span> <span class="n">config_paths</span><span class="o">=</span><span class="p">(),</span> <span class="n">config_string</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">config_dict</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
@@ -79,10 +77,7 @@
     <span class="k">if</span> <span class="n">config_string</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
         <span class="n">config_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">StringIO</span><span class="p">(</span><span class="n">config_string</span><span class="p">))</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">config_files</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">config_dict</span> <span class="o">==</span> <span class="p">{}:</span>
-        <span class="c"># Load the fallback configuration</span>
-        <span class="c"># Have to use print, logging is not yet setup...</span>
-        <span class="k">print</span><span class="p">(</span><span class="s">&quot;WARNING: no configuration specified: loading </span><span class="si">%s</span><span class="s"> config!&quot;</span> <span class="o">%</span> <span class="n">FALLBACK_CONFIGURATION</span><span class="p">)</span>
-        <span class="n">config_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">utils</span><span class="o">.</span><span class="n">PAX_DIR</span><span class="p">,</span> <span class="s">&#39;config&#39;</span><span class="p">,</span> <span class="n">FALLBACK_CONFIGURATION</span> <span class="o">+</span> <span class="s">&#39;.ini&#39;</span><span class="p">))</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;You did not specify any configuration :-(&quot;</span><span class="p">)</span>
 
     <span class="c"># Define an interior function for loading config files: supports recursion</span>
     <span class="n">config_files_read</span> <span class="o">=</span> <span class="p">[]</span>
