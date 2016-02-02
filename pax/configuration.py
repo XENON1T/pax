@@ -1,7 +1,6 @@
 import os
 from configparser import ConfigParser, ExtendedInterpolation
 
-import numpy as np
 import six
 
 from pax import units, utils
@@ -103,9 +102,8 @@ def load_configuration(config_names=(), config_paths=(), config_string=None, con
 
     # Get a dict with all names visible by the eval:
     #  - all variables from the units submodule
-    #  - np
+    # NOT 'np', if you add a numpy array to the config, it will no longer be json serializable
     visible_variables = {name: getattr(units, name) for name in dir(units)}
-    visible_variables['np'] = np
 
     # Evaluate the values in the ini file
     evaled_config = {}

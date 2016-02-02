@@ -1,7 +1,202 @@
 #!/usr/bin/env python
-"""Processor for Analyzing XENON - command line interface """
+"""Event builder routines
 
-from pax.eventbuilder import run
+The event builder is responsible for finding events within the DAQ output
+stream and turning this into events that the end user can process.  The data is
+fetched untriggered, which means that there is no event structure.  Or rather,
+it is just a stream of PMT pulses that need to be assembled into events.  This
+is exactly what this code does.  There are two inputs requires:
+
+* Location of runs database
+* Trigger settings
+
+This code is meant to run in production, therefore a runs database must be
+ provided.  This code will use this database to locate what data needs to be
+ processed and handle it appropriately.
+
+This code is also responsible triggering (i.e., deciding which events to
+record).  At present there are two stages to the triggering: a pretrigger and
+a pax-event trigger.  The pretrigger is a simple sliding window coincidence
+trigger that runs over the data to identify possible signals.  The parameters
+of this are then, clearly, the size of the window and the coincidence
+requirement.  Another parameter is how much data to save around the discovered
+peak, which often is an S2.
+
+The second level trigger, which we often do not run, processed the event in pax
+and is used to make, e.g., radial cuts.  At present, the code just writes HDF5
+files.
+
+It is worth mentioning that is an 'expert modes' with a flag for mega events:
+an event of one second is made that can be used for computing the trigger
+efficiency.
+"""
+import argparse
+import logging
+import os
+import pymongo
+import time
+from pax import core, units
+from pax.MongoManager import MongoManager
+
+
+def main():
+    """Start running the event builder
+    Find a dataset to process, then process it with settings from command line.
+    """
+    args = get_command_line_arguments()
+    log = setup_logging(loglevel=args.log)
+
+    mongo_manager = MongoManager(config={k: eval('args.%s' % k, dict(args=args))
+                                         for k in ('user', 'password', 'host', 'port')})
+    runs = mongo_manager.get_database('run').get_collection('runs')
+
+    # Build the query used to search for runs
+    status_name = 'detectors.%s.trigger.status' % args.detector
+    if args.name:
+        run_query = {'name': args.name}
+    else:
+        run_query = {status_name: 'waiting_to_be_processed'}
+    log.info("Starting run search with query %s" % run_query)
+
+    while 1:
+        run_doc = runs.find_one_and_update(run_query, {'$set': {status_name: 'staging'}})
+
+        if run_doc is None:
+            if args.impatient:
+                log.info("Too impatient to wait for data, exiting...")
+                break
+            else:
+                log.info("No runs to process... waiting %d seconds", args.wait)
+                time.sleep(args.wait)
+        else:
+            # Set the mongo settings
+            #   First priority: command line args
+            #   Second priority: rundb settings (from run_doc['detectors'][args.detector]['trigger']
+            #   Third priority: defaults from event_builder.ini (pax will take care of this)
+            mongo_settings = run_doc['detectors'][args.detector]['trigger']
+            for argname, factor in (('window', units.us),
+                                    ('left', units.us),
+                                    ('right', units.us),
+                                    ('multiplicity', 1),
+                                    ('mega_event', 1),
+                                    ('detector', 1),
+                                    ('user', 1),
+                                    ('password', 1),
+                                    ('host', 1),
+                                    ('port', 1)):
+                argval = getattr(args, argname)
+                if argval is not None:
+                    mongo_settings[argname] = argval
+
+            log.info("Building events for %s", run_doc['name'])
+            config_dict = {'DEFAULT': {'run_doc_id': run_doc['_id']},
+                           'pax': {'output_name': 'raw_%s' % run_doc['name'],
+                                   'n_cpus': args.cpus},
+                           'BSON': {'fields_to_ignore': [],
+                                    'overwrite_output': True},
+                           'MongoDB': mongo_settings,
+                           }
+            try:
+                p = core.Processor(config_names=['XENON1T' if args.detector == 'tpc' else 'XENON1T_MV',
+                                                 'eventbuilder'],
+                                   config_dict=config_dict)
+                p.run()
+
+            # If a timeout occurred, set the status of this run to 'error'
+            # Add other exceptions as they come during commissioning
+            except pymongo.errors.ServerSelectionTimeoutError as e:
+                log.exception(e)
+                runs.update({'name': args.name}, {'$set': {status_name: 'error'}})
+
+        # If we're trying to build a single run, don't try again to find it
+        if args.name:
+            break
+
+
+def setup_logging(loglevel='DEBUG'):
+    # Set up logging to file
+    logging.basicConfig(level=loglevel,
+                        format='%(asctime)s %(name)s %(levelname)-8s %(message)s',
+                        datefmt='%m-%d %H:%M',
+                        filename='eventbuilder.log',
+                        filemode='w')
+    # define a Handler which writes INFO messages or higher to the sys.stderr
+    console = logging.StreamHandler()
+    console.setLevel(logging.DEBUG)
+    # set a format which is simpler for console use
+    formatter = logging.Formatter('%(asctime)s %(name)-12s: '
+                                  '%(levelname)-8s %(message)s')
+    # tell the handler to use this format
+    console.setFormatter(formatter)
+    # add the handler to the root logger
+    logging.getLogger('').addHandler(console)
+    return logging.getLogger('Eventbuilder')
+
+
+def get_command_line_arguments():
+    """Command line argument processing
+
+    This routine is also responsible for setting up logging.
+    """
+    parser = argparse.ArgumentParser(description="Build XENON1T events from the"
+                                                 " data aquisiton. This tools "
+                                                 "starts the distributed "
+                                                 "processing of events.")
+
+    connection_group = parser.add_argument_group(title='MongoDB connection settings')
+    connection_group.add_argument('--host', default='gw', type=str,
+                                  help='MongoDB hostname')
+    connection_group.add_argument('--port', default=27017, type=int,
+                                  help='Port on host where MongoDB runs')
+    connection_group.add_argument('--user', default='eb', type=str,
+                                  help='User to connect to MongoDB')
+    connection_group.add_argument('--password', type=str, default=os.environ.get('MONGO_PASSWORD'),
+                                  help='Password to connect to MongoDB. '
+                                       'If not provided, will try to use MONGO_PASSWORD from env')
+
+    parser.add_argument('--name',
+                        type=str,
+                        help="Instead of building all waiting_to_be_processed runs,"
+                             "look for this specific run and build it.")
+    parser.add_argument('--detector',
+                        type=str,
+                        default='tpc',
+                        help="Detector to build events for")
+    parser.add_argument('--impatient',
+                        action='store_true',
+                        help="Event builder will not wait for new data")
+    parser.add_argument('--mega_event',
+                        action='store_true',
+                        help="used for trigger efficiency")
+    parser.add_argument('--cpus', default=1,
+                        help="Number of CPUs to use. Default is 1; can be 'all'.",
+                        nargs='?')
+
+    trigger_group = parser.add_argument_group(title='Event builder settings',
+                                              description='Configure trigger')
+    trigger_group.add_argument('--multiplicity',
+                               type=int,
+                               help='Number of coincident pulses required for a trigger',)
+    trigger_group.add_argument('--window',
+                               type=int,
+                               help='Size of sliding window (us)',)
+    trigger_group.add_argument('--left',
+                               type=int,
+                               help='Left extension to save (us)')
+    trigger_group.add_argument('--right',
+                               type=int,
+                               help='Right extension to save (us)')
+
+    parser.add_argument('--wait',
+                        default=1,
+                        type=int,
+                        help="Wait time before searching for new runs again if none were found (sec)")
+
+    parser.add_argument('--log', default='INFO',
+                        help="Set log level, e.g. DEBUG")
+
+    args = parser.parse_args()
+    return args
 
 if __name__ == "__main__":
-    run()
+    main()
