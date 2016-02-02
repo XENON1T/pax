@@ -1,0 +1,140 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pax.MongoManager &mdash; Processor for Analyzing XENON1T 4.4.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '4.4.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Processor for Analyzing XENON1T 4.4.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pax.MongoManager</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">pymongo</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">monary</span> <span class="kn">import</span> <span class="n">Monary</span>
+    <span class="n">MONARY_ENABLED</span> <span class="o">=</span> <span class="bp">True</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">MONARY_ENABLED</span> <span class="o">=</span> <span class="bp">False</span>
+
+
+<div class="viewcode-block" id="MongoManager"><a class="viewcode-back" href="../../pax.html#pax.MongoManager.MongoManager">[docs]</a><span class="k">class</span> <span class="nc">MongoManager</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Create clients for several databases, and shut them down properly</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">clients</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;MongoManager&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">monary_enabled</span> <span class="o">=</span> <span class="n">MONARY_ENABLED</span>
+
+<div class="viewcode-block" id="MongoManager.get_database"><a class="viewcode-back" href="../../pax.html#pax.MongoManager.MongoManager.get_database">[docs]</a>    <span class="k">def</span> <span class="nf">get_database</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">database_name</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">uri</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">monary</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Get a connection to the database_name. Returns Mongo database access object.</span>
+<span class="sd">        If you provide a mongodb connection string uri, it will be used, otherwise one will be built</span>
+<span class="sd">        from the configuration settings.</span>
+<span class="sd">        If database_name=None, will connect to the default database of the uri.</span>
+<span class="sd">        If there is already a client connecting to this database, no new mongoclient will be created.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">uri</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">uri</span> <span class="o">=</span> <span class="s">&#39;mongodb://{user}:{password}@{host}:{port}/{database}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">database</span><span class="o">=</span><span class="n">database_name</span><span class="p">,</span>
+                                                                                <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">monary</span><span class="p">:</span>
+            <span class="c"># Monary clients are not cached</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Connecting to Mongo via monary using uri </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">uri</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">Monary</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
+
+        <span class="k">elif</span> <span class="n">database_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">clients</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Connecting to Mongo using uri </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">uri</span><span class="p">)</span>
+            <span class="n">client</span> <span class="o">=</span> <span class="n">pymongo</span><span class="o">.</span><span class="n">MongoClient</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">database_name</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Grabbing default database&quot;</span><span class="p">)</span>
+                <span class="n">database</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_default_database</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Grabbing database </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">database_name</span><span class="p">)</span>
+                <span class="n">database</span> <span class="o">=</span> <span class="n">client</span><span class="p">[</span><span class="n">database_name</span><span class="p">]</span>
+            <span class="n">client</span><span class="o">.</span><span class="n">admin</span><span class="o">.</span><span class="n">command</span><span class="p">(</span><span class="s">&#39;ping&#39;</span><span class="p">)</span>        <span class="c"># raises pymongo.errors.ConnectionFailure on failure</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">clients</span><span class="p">[</span><span class="n">database_name</span><span class="p">]</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">client</span><span class="o">=</span><span class="n">client</span><span class="p">,</span> <span class="n">db</span><span class="o">=</span><span class="n">database</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">clients</span><span class="p">[</span><span class="n">database_name</span><span class="p">][</span><span class="s">&#39;db&#39;</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="MongoManager.shutdown"><a class="viewcode-back" href="../../pax.html#pax.MongoManager.MongoManager.shutdown">[docs]</a>    <span class="k">def</span> <span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&#39;Shutting down all MongoDB clients&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">clients</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">v</span><span class="p">[</span><span class="s">&#39;client&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2014, Christopher Tunnell.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

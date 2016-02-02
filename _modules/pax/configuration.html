@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.configuration &mdash; Processor for Analyzing XENON1T 4.3.2 documentation</title>
+    <title>pax.configuration &mdash; Processor for Analyzing XENON1T 4.4.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '4.3.2',
+        VERSION:     '4.4.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.3.2 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.4.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
@@ -41,7 +41,6 @@
 <span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">from</span> <span class="nn">configparser</span> <span class="kn">import</span> <span class="n">ConfigParser</span><span class="p">,</span> <span class="n">ExtendedInterpolation</span>
 
-<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">six</span>
 
 <span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">units</span><span class="p">,</span> <span class="n">utils</span>
@@ -143,9 +142,8 @@
 
     <span class="c"># Get a dict with all names visible by the eval:</span>
     <span class="c">#  - all variables from the units submodule</span>
-    <span class="c">#  - np</span>
+    <span class="c"># NOT &#39;np&#39;, if you add a numpy array to the config, it will no longer be json serializable</span>
     <span class="n">visible_variables</span> <span class="o">=</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">units</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">units</span><span class="p">)}</span>
-    <span class="n">visible_variables</span><span class="p">[</span><span class="s">&#39;np&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span>
 
     <span class="c"># Evaluate the values in the ini file</span>
     <span class="n">evaled_config</span> <span class="o">=</span> <span class="p">{}</span>

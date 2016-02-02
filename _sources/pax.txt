@@ -27,6 +27,14 @@ pax.InterpolatingMap module
     :undoc-members:
     :show-inheritance:
 
+pax.MongoManager module
+-----------------------
+
+.. automodule:: pax.MongoManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 pax.PatternFitter module
 ------------------------
 
@@ -71,14 +79,6 @@ pax.dsputils module
 -------------------
 
 .. automodule:: pax.dsputils
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-pax.eventbuilder module
------------------------
-
-.. automodule:: pax.eventbuilder
     :members:
     :undoc-members:
     :show-inheritance:
