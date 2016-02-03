@@ -35,6 +35,8 @@ class PlotBase(plugin.OutputPlugin):
 
         self.size_multiplier = self.config.get('size_multiplier', 1)
         self.horizontal_size_multiplier = self.config.get('horizontal_size_multiplier', 1)
+        if 'block_view' in self.config:
+            self.block_view = self.config['block_view']
 
         self.skip_counter = 0
         # Convert times in samples to times in us: need to know how many samples / us
@@ -378,7 +380,7 @@ class PlotChannelWaveforms2D(PlotBase):
     Circle color indicates log(peak amplitude / noise amplitude), size indicates peak integral.
     """
 
-    def plot_event(self, source, ax=None, pad=0, event=None):
+    def plot_event(self, source, ax=None, pad=0, event=None, show_channel_group_labels=True):
         """Source can be Event or Peak, if peak, must also pass event"""
 
         dt = self.config['sample_duration']
@@ -455,12 +457,13 @@ class PlotChannelWaveforms2D(PlotBase):
             channel_ranges.append((det, min(chs), np.mean(chs)))
 
         # Annotate the channel groups and boundaries
-        for i in range(len(channel_ranges)):
-            ax.axhline(channel_ranges[i][1], color='black', alpha=0.2)
-            ax.text(
-                0.03 * xlims[1],
-                channel_ranges[i][2] + 0.5,  # add 0.5 for better alignment for small TPCs. Irrelevant for big ones
-                channel_ranges[i][0])
+        if show_channel_group_labels:
+            for i in range(len(channel_ranges)):
+                ax.axhline(channel_ranges[i][1], color='black', alpha=0.2)
+                ax.text(
+                    0.03 * xlims[1],
+                    channel_ranges[i][2] + 0.5,  # add 0.5 for better alignment for small TPCs. Irrelevant for big ones
+                    channel_ranges[i][0])
 
         self.color_peak_ranges(source, ax=ax)
         self.draw_trigger_mark(0, ax=ax)
@@ -641,7 +644,7 @@ class PeakViewer(PlotBase):
         self.peak_sumwv_ax.yaxis.set_label_position("right")
         self.peak_sumwv_ax.get_xaxis().set_visible(False)
         q = PlotChannelWaveforms2D(self.config, self.processor)
-        q.plot_event(event, ax=self.peak_chwvs_ax)
+        q.plot_event(event, ax=self.peak_chwvs_ax, show_channel_group_labels=False)
 
         ##
         # Buttons
