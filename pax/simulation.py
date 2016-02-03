@@ -117,9 +117,16 @@ class Simulator(object):
         self.clear_signals_queue()
 
     def clear_signals_queue(self):
+        """Prepares the waveform simulator for a new event.
+        """
         self.arrival_times_per_channel = {ch: [] for ch in range(self.config['n_channels'])}
 
     def queue_signal(self, photon_timings, x=0, y=0, z=0):
+        """Add a signal due to isotropic light emission to the waveform simulator
+            photon_timings: list of photon emission times (ns) since start of the event.
+                            All photons listed here will be detected!
+            x, y, z: position of emission (standard coordinate system, pax units = cm)
+        """
         if not len(photon_timings):
             return
 
@@ -150,7 +157,15 @@ class Simulator(object):
         """
         log.debug("Now performing hitpattern to waveform conversion")
         start_time = int(time.time() * units.s)
-        max_time = np.concatenate(list(self.arrival_times_per_channel.values())).max()
+
+        # Find out the duration of the event
+        all_times = np.concatenate(list(self.arrival_times_per_channel.values()))
+        if not len(all_times):
+            self.log.warning("No photons to simulate: making a noise-only event")
+            max_time = 0
+        else:
+            max_time = np.concatenate(list(self.arrival_times_per_channel.values())).max()
+
         event = datastructure.Event(n_channels=self.config['n_channels'],
                                     start_time=start_time,
                                     stop_time=start_time + int(max_time + 2 * self.config['event_padding']),
