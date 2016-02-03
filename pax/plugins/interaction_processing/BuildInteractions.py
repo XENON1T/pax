@@ -71,7 +71,7 @@ class BasicInteractionProperties(plugin.TransformPlugin):
             ia.s2_area_correction *= np.exp(ia.drift_time / self.config['electron_lifetime_liquid'])
 
             # Determine z position from drift time
-            ia.z = self.config['drift_velocity_liquid'] * ia.drift_time
+            ia.z = - self.config['drift_velocity_liquid'] * ia.drift_time
 
             # S1 and S2 area correction: divide by relative light yield at the position
             ia.s1_area_correction /= self.s1_light_yield_map.get_value_at(ia)
@@ -101,7 +101,7 @@ class BasicInteractionProperties(plugin.TransformPlugin):
 
                     # Compute the S1 pattern fit statistic
                     ia.s1_pattern_fit = self.s1_patterns.compute_gof(
-                        (ia.x, ia.y, ia.drift_time),
+                        (ia.x, ia.y, ia.z),
                         s1.area_per_channel[self.tpc_channels],
                         pmt_selection=np.setdiff1d(self.tpc_channels, confused_s1_channels),
                         statistic=self.config['s1_pattern_statistic'])

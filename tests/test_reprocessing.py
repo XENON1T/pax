@@ -11,12 +11,15 @@ plugins_to_test = [
         'name':         'Table',
         'read_plugin':  'Table.TableReader',
         'write_plugin': 'Table.TableWriter',
+        'encoder_plugin': None,
+        'decoder_plugin': None,
         'extension':    'hdf5',
     },
     {
         'name':         'ROOTClass',
         'read_plugin':  'ROOTClass.ReadROOTClass',
         'write_plugin': 'ROOTClass.WriteROOTClass',
+        'encoder_plugin': 'ROOTClass.EncodeROOTClass',
         'extension':    'root',
     },
 
@@ -36,6 +39,7 @@ class TestReprocessing(unittest.TestCase):
             mypax = core.Processor(config_names='XENON100', config_dict={'pax': {
                 'events_to_process': [0],
                 'output': plugin_info['write_plugin'],
+                'encoder_plugin': plugin_info['encoder_plugin'],
                 'output_name': 'output1'}})
             mypax.run()
             del mypax
@@ -46,6 +50,7 @@ class TestReprocessing(unittest.TestCase):
                 'input_name':  'output1.' + plugin_info['extension'],
                 'input': plugin_info['read_plugin'],
                 'output': 'Table.TableWriter',
+                'encoder_plugin': None,
                 'output_name': output2_filename}})
             mypax.run()
             del mypax

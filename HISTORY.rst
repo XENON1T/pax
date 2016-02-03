@@ -4,6 +4,34 @@ History
 -------
 
 ------------------
+4.4.2 (2016-02-02)
+------------------
+
+ * New event builder iteration (#297)
+ * Configuration bugs fixed
+
+------------------
+4.3.2 (2016-01-31)
+------------------
+
+ * Small argument fixes for default configuration.
+
+------------------
+4.3.1 (2016-01-28)
+------------------
+
+ * Nasty multiprocessing bug fix
+
+------------------
+4.3.0 (2016-01-25)
+------------------
+
+ * Parallelization refactor (#298)
+ * Store meta data in ROOT output (#303)
+ * z coordinate system now negative in liquid (#302)
+ * Neural net reconstruction (#296)
+
+------------------
 4.2.0 (2016-01-11)
 ------------------
 

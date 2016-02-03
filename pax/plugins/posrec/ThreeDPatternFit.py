@@ -32,7 +32,7 @@ class PosRecThreeDPatternFit(plugin.PosRecPlugin):
         areas_observed = peak.area_per_channel[self.pmts]
 
         # For now just take a TPC-wide grid... not very good for performance!!
-        z_mid = self.config['tpc_length'] / 2
+        z_mid = - self.config['tpc_length'] / 2
         grid_size = 4 * max(z_mid, self.config['tpc_radius'])
 
         common_options = dict(areas_observed=areas_observed,

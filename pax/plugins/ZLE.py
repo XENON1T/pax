@@ -1,13 +1,10 @@
 import numpy as np
 
-from pax import plugin, datastructure, utils
-import os
-import sys
+from pax import plugin, datastructure
 
 from pax.dsputils import find_intervals_above_threshold
 
 import matplotlib.pyplot as plt
-sys.path.append(os.path.join(utils.PAX_DIR, 'plugins', 'signal_processing'))
 
 
 class SoftwareZLE(plugin.TransformPlugin):

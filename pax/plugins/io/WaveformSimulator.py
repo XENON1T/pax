@@ -117,8 +117,8 @@ class WaveformSimulator(plugin.InputPlugin):
         self.truth_peaks = []
 
         for q in instructions:
-            self.log.debug("Simulating %s photons and %s electrons at %s cm depth, at t=%s ns" % (
-                q['s1_photons'], q['s2_electrons'], q['depth'], q['t']))
+            self.log.debug("Simulating %s photons and %s electrons at %s cm z, at t=%s ns" % (
+                q['s1_photons'], q['s2_electrons'], q['z'], q['t']))
 
             # Should we choose x and yrandomly?
             if q['x'] == 'random':
@@ -127,10 +127,10 @@ class WaveformSimulator(plugin.InputPlugin):
                 x = float(q['x'])
                 y = float(q['y'])
 
-            if q['depth'] == 'random':
-                z = np.random.uniform(0, self.config['tpc_length'])
+            if q['z'] == 'random':
+                z = - np.random.uniform(0, self.config['tpc_length'])
             else:
-                z = float(q['depth']) * units.cm
+                z = float(q['z']) * units.cm
 
             if int(q['s1_photons']):
                 self.s1(photons=int(q['s1_photons']),
@@ -190,6 +190,11 @@ class WaveformSimulatorFromCSV(WaveformSimulator):
         instruction_number = 0
         instruction = []
         for p in self.instruction_reader:
+            if p['depth'] == 'random':
+                p['z'] = 'random'
+            else:
+                p['z'] = -1 * float(p['depth'])
+            del p['depth']
             if int(p['instruction']) == instruction_number:
                 # Deposition is part of the previous instruction
                 instruction.append(p)
@@ -220,7 +225,7 @@ class WaveformSimulatorFromNEST(WaveformSimulator):
         # Fax name        #Root name    #Conversion factor (multiplicative)
         ('x',             'Nest_x',     0.1),
         ('y',             'Nest_y',     0.1),
-        ('depth',         'Nest_z',     -0.1),
+        ('z',             'Nest_z',     0.1),
         ('s1_photons',    'Nest_nph',   1),
         ('s2_electrons',  'Nest_nel',   1),
         ('t',             'Nest_t',     10 ** 9),
@@ -228,6 +233,7 @@ class WaveformSimulatorFromNEST(WaveformSimulator):
     )
 
     def startup(self):
+        self.config.setdefault('add_to_z', 0)
         self.log.warning('This plugin is completely untested and will probably crash!')
         filename = self.config['input_name']
         import ROOT
@@ -254,8 +260,8 @@ class WaveformSimulatorFromNEST(WaveformSimulator):
                     peaks[-1][variable_name] = values[variable_name][i] * conversion_factor
 
             for p in peaks:
-                # Subtract depth of gate mesh, see xenon:xenon100:mc:roottree, bottom of page
-                p['depth'] -= 2.15 + 0.25
+                # Correct the z-coordinate system
+                p['z'] += self.config['add_to_z']
                 # Fix ER / NR label
                 if p['recoil_type'] != 0:
                     p['recoil_type'] = 'NR'

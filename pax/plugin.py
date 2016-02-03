@@ -70,20 +70,27 @@ class InputPlugin(BasePlugin):
 
 class ProcessPlugin(BasePlugin):
     """Plugin that can process events"""
+    # Set these to False if you don't want to check the input/output are actually pax events
+    do_input_check = True
+    do_output_check = True
+
     def _pre_startup(self):
         # Give the logger another name, we need self.log for the adapter
         self._log = self.log
 
     def process_event(self, event=None):
-        if not isinstance(event, Event):
-            raise RuntimeError("%s received a %s instead of an Event" % (self.name, type(event)))
-        if self.has_shut_down:
-            raise RuntimeError("%s was asked to process an event, but it has already shut down!" % self.name)
+        if self.do_input_check:
+            if not isinstance(event, Event):
+                raise RuntimeError("%s received a %s instead of an Event" % (self.name, type(event)))
         # Setup the logging adapter which will prepend [Event: ...] to the logging messages
         self.log = EventLoggingAdapter(self._log, dict(event_number=event.event_number))
+        if self.has_shut_down:
+            raise RuntimeError("%s was asked to process an event, but it has already shut down!" % self.name)
+
         event = self._process_event(event)
-        if not isinstance(event, Event):
-            raise RuntimeError("%s returned a %s instead of an event." % (self.name, type(event)))
+        if self.do_output_check:
+            if not isinstance(event, Event):
+                raise RuntimeError("%s returned a %s instead of an event." % (self.name, type(event)))
         return event
 
     def _process_event(self, event):
@@ -148,11 +155,18 @@ class PosRecPlugin(TransformPlugin):
         else:
             self.pmts = np.array(self.config['channels_in_detector']['tpc'])
 
+        # Test if we have a XENON100 style configuration using 'pmt_locations' or a XENON1T style with 'pmts'.
+        # We need to resolve this inconsistency!!
+        if self.config['tpc_name'] == "XENON1T":
+            pmt_positions = [self.config['pmts'][i]['position'] for i in range(len(self.config['pmts']))]
+        else:
+            pmt_positions = self.config['pmt_locations']
+
         # (x,y) Locations of these PMTs, stored as np.array([(x,y), (x,y), ...])
         self.pmt_locations = np.zeros((len(self.pmts), 2))
         for ch in self.pmts:
             for dim in ('x', 'y'):
-                self.pmt_locations[ch-self.pmts[0]][{'x': 0, 'y': 1}[dim]] = self.config['pmt_locations'][ch][dim]
+                self.pmt_locations[ch-self.pmts[0]][{'x': 0, 'y': 1}[dim]] = pmt_positions[ch][dim]
 
         TransformPlugin._pre_startup(self)
 
