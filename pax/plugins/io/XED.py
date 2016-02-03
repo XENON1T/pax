@@ -208,13 +208,12 @@ class DecodeXED(plugin.TransformPlugin):
 
         if xed_type == 'raw':
             data = np.reshape(data, (metadata['channels'], metadata['samples_in_event']))
-            if event_proxy.data['xed_type'] == b'raw0':
-                for ch_i, chdata in enumerate(data):
-                    event.pulses.append(Pulse(
-                        channel=ch_i + 1,       # +1 as first channel is 1 in Xenon100
-                        left=0,
-                        raw_data=chdata
-                    ))
+            for ch_i, chdata in enumerate(data):
+                event.pulses.append(Pulse(
+                    channel=ch_i + 1,       # +1 as first channel is 1 in Xenon100
+                    left=0,
+                    raw_data=chdata
+                ))
 
         elif xed_type == 'zle':
             # Decompress event data into fake binary file (io.BytesIO)
