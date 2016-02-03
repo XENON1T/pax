@@ -161,7 +161,7 @@ class Simulator(object):
         # Find out the duration of the event
         all_times = np.concatenate(list(self.arrival_times_per_channel.values()))
         if not len(all_times):
-            self.log.warning("No photons to simulate: making a noise-only event")
+            log.warning("No photons to simulate: making a noise-only event")
             max_time = 0
         else:
             max_time = np.concatenate(list(self.arrival_times_per_channel.values())).max()
