@@ -113,7 +113,9 @@ class EncodeROOTClass(plugin.TransformPlugin):
         self.set_root_object_attrs(event, root_event)
         self.last_collection = {}
 
-        return EventProxy(event_number=event.event_number, data=pickle.dumps(root_event))
+        event_proxy = EventProxy(event_number=event.event_number, data=pickle.dumps(root_event))
+        root_event.IsA().Destructor(root_event)
+        return event_proxy
 
     def create_class_code(self, event):
         """Build the event class C++ definition corresponding to pax_event
@@ -314,8 +316,10 @@ class WriteROOTClass(plugin.OutputPlugin):
             self.tree_created = True
 
         # I haven't seen any documentation for the __assign__ thing... but it works :-)
-        self.root_event.__assign__(pickle.loads(event_proxy.data))
+        root_event = pickle.loads(event_proxy.data)
+        self.root_event.__assign__(root_event)
         self.event_tree.Fill()
+        root_event.IsA().Destructor(root_event)
 
     def shutdown(self):
         if self.tree_created:
