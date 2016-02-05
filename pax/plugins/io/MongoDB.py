@@ -119,6 +119,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
 
         # Used to timeout if DAQ crashes and no data will come
         time_of_last_daq_response = time.time()
+        time_of_run_start = self.run_doc['starttimestamp'].timestamp() * units.s
 
         if not self.use_monary:
             self.log.debug("Total number of pulses in collection: %d" % self.input_collection.count())
@@ -184,7 +185,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
 
             if self.config['mega_event']:
                 self.log.info("Building mega-event with all data in search range.")
-                event_ranges = [[x[0], x[-1]]]
+                event_ranges = np.array([[x[0], x[-1]]])
 
             else:
                 # Do the sliding window coindidence trigger
@@ -195,6 +196,8 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                                                    right=self.config['right_extension'])
                 self.log.info("Found %d event ranges", len(event_ranges))
                 self.log.debug(event_ranges)
+
+            event_ranges += time_of_run_start
 
             for i, (t0, t1) in enumerate(event_ranges):
                 self.last_event_number += 1

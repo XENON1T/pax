@@ -75,17 +75,19 @@ def main():
             #   Third priority: defaults from event_builder.ini (pax will take care of this)
             mongo_settings = run_doc['detectors'][args.detector]['trigger']
             for argname, factor in (('window', units.us),
-                                    ('left', units.us),
-                                    ('right', units.us),
-                                    ('multiplicity', 1),
-                                    ('mega_event', 1),
-                                    ('detector', 1),
-                                    ('user', 1),
-                                    ('password', 1),
-                                    ('host', 1),
-                                    ('port', 1)):
+                                    ('left_extension', units.us),
+                                    ('right_extension', units.us),
+                                    ('multiplicity', None),
+                                    ('mega_event', None),
+                                    ('detector', None),
+                                    ('user', None),
+                                    ('password', None),
+                                    ('host', None),
+                                    ('port', None)):
                 argval = getattr(args, argname)
                 if argval is not None:
+                    if factor is not None:
+                        argval *= factor
                     mongo_settings[argname] = argval
 
             log.info("Building events for %s", run_doc['name'])
@@ -180,10 +182,10 @@ def get_command_line_arguments():
     trigger_group.add_argument('--window',
                                type=int,
                                help='Size of sliding window (us)',)
-    trigger_group.add_argument('--left',
+    trigger_group.add_argument('--left_extension',
                                type=int,
                                help='Left extension to save (us)')
-    trigger_group.add_argument('--right',
+    trigger_group.add_argument('--right_extension',
                                type=int,
                                help='Right extension to save (us)')
 
