@@ -116,9 +116,6 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots</span> <span class="o">!=</span> <span class="s">&#39;never&#39;</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots_in</span><span class="p">):</span>
                 <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">make_diagnostic_plots_in</span><span class="p">)</span>
-
-        <span class="c"># Keep track of how many times the &quot;too many hits&quot; warning has been shown</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">too_many_hits_warnings_shown</span> <span class="o">=</span> <span class="mi">0</span>
 </div>
 <div class="viewcode-block" id="FindHits.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.signal_processing.html#pax.plugins.signal_processing.HitFinder.FindHits.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;sample_duration&#39;</span><span class="p">]</span>
@@ -186,20 +183,11 @@
             <span class="k">if</span> <span class="n">n_hits_found</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">event</span><span class="o">.</span><span class="n">noise_pulses_in</span><span class="p">[</span><span class="n">channel</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
                 <span class="c"># Don&#39;t &#39;continue&#39; to the next pulse! There&#39;s stuff left to do!</span>
-            <span class="c"># Show too-many-hits message if needed</span>
-            <span class="c"># This message really should be shown the first few times, as you should be aware how often this occurs</span>
             <span class="k">elif</span> <span class="n">n_hits_found</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_hits_per_pulse</span><span class="p">:</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">too_many_hits_warnings_shown</span> <span class="o">&gt;</span> <span class="mi">3</span><span class="p">:</span>
-                    <span class="n">show_to</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span>
-                <span class="k">else</span><span class="p">:</span>
-                    <span class="n">show_to</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span>
-                <span class="n">show_to</span><span class="p">(</span><span class="s">&quot;Pulse </span><span class="si">%s</span><span class="s">-</span><span class="si">%s</span><span class="s"> in channel </span><span class="si">%s</span><span class="s"> has more than </span><span class="si">%s</span><span class="s"> hits. &quot;</span>
-                        <span class="s">&quot;This usually indicates a zero-length encoding breakdown after a very large S2. &quot;</span>
-                        <span class="s">&quot;Further hits in this pulse have been ignored.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span>
-                                                                           <span class="bp">self</span><span class="o">.</span><span class="n">max_hits_per_pulse</span><span class="p">))</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">too_many_hits_warnings_shown</span> <span class="o">+=</span> <span class="mi">1</span>
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">too_many_hits_warnings_shown</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&#39;Further too-many hit messages will be suppressed!&#39;</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Pulse </span><span class="si">%s</span><span class="s">-</span><span class="si">%s</span><span class="s"> in channel </span><span class="si">%s</span><span class="s"> has more than </span><span class="si">%s</span><span class="s"> hits. &quot;</span>
+                               <span class="s">&quot;This usually indicates a zero-length encoding breakdown after a very large S2. &quot;</span>
+                               <span class="s">&quot;Further hits in this pulse have been ignored.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">channel</span><span class="p">,</span>
+                                                                                  <span class="bp">self</span><span class="o">.</span><span class="n">max_hits_per_pulse</span><span class="p">))</span>
 
             <span class="c"># Store the found hits in the datastructure</span>
             <span class="c"># Convert area, noise_sigma and height from adc counts -&gt; pe</span>

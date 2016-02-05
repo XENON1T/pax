@@ -120,6 +120,14 @@
             <span class="c"># Get the waveform (in pe/bin) and compute basic sum-waveform derived properties</span>
             <span class="n">w</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">get_sum_waveform</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">detector</span><span class="p">)</span><span class="o">.</span><span class="n">samples</span><span class="p">[</span><span class="n">peak</span><span class="o">.</span><span class="n">left</span><span class="p">:</span><span class="n">peak</span><span class="o">.</span><span class="n">right</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
 
+            <span class="k">if</span> <span class="n">w</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Sum waveform of peak </span><span class="si">%d</span><span class="s">-</span><span class="si">%d</span><span class="s"> (</span><span class="si">%0.2f</span><span class="s"> pe area) in detector </span><span class="si">%s</span><span class="s"> sums to zero! &quot;</span>
+                                 <span class="s">&quot;Cannot compute sum waveform properties for this peak. If you see this, &quot;</span>
+                                 <span class="s">&quot;there is either a bug in pax, or you are using a negative low_threshold for &quot;</span>
+                                 <span class="s">&quot;the hitfinder (so a peak can have &lt;=0 area) and you have very bad luck.&quot;</span> <span class="o">%</span>
+                                 <span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">left</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">right</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">area</span><span class="p">,</span> <span class="n">peak</span><span class="o">.</span><span class="n">detector</span><span class="p">))</span>
+                <span class="k">continue</span>
+
             <span class="c"># Center of gravity in the hits-only sum waveform. Identical to peak.hit_time_mean...</span>
             <span class="c"># We may remove one from the data structure, but it&#39;s a useful sanity check</span>
             <span class="c"># (particularly since some hits got removed in the noise rejection)</span>

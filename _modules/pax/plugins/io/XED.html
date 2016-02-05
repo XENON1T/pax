@@ -248,13 +248,12 @@
 
         <span class="k">if</span> <span class="n">xed_type</span> <span class="o">==</span> <span class="s">&#39;raw&#39;</span><span class="p">:</span>
             <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="n">metadata</span><span class="p">[</span><span class="s">&#39;channels&#39;</span><span class="p">],</span> <span class="n">metadata</span><span class="p">[</span><span class="s">&#39;samples_in_event&#39;</span><span class="p">]))</span>
-            <span class="k">if</span> <span class="n">event_proxy</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s">&#39;xed_type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">b</span><span class="s">&#39;raw0&#39;</span><span class="p">:</span>
-                <span class="k">for</span> <span class="n">ch_i</span><span class="p">,</span> <span class="n">chdata</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
-                    <span class="n">event</span><span class="o">.</span><span class="n">pulses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Pulse</span><span class="p">(</span>
-                        <span class="n">channel</span><span class="o">=</span><span class="n">ch_i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>       <span class="c"># +1 as first channel is 1 in Xenon100</span>
-                        <span class="n">left</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
-                        <span class="n">raw_data</span><span class="o">=</span><span class="n">chdata</span>
-                    <span class="p">))</span>
+            <span class="k">for</span> <span class="n">ch_i</span><span class="p">,</span> <span class="n">chdata</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+                <span class="n">event</span><span class="o">.</span><span class="n">pulses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Pulse</span><span class="p">(</span>
+                    <span class="n">channel</span><span class="o">=</span><span class="n">ch_i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>       <span class="c"># +1 as first channel is 1 in Xenon100</span>
+                    <span class="n">left</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                    <span class="n">raw_data</span><span class="o">=</span><span class="n">chdata</span>
+                <span class="p">))</span>
 
         <span class="k">elif</span> <span class="n">xed_type</span> <span class="o">==</span> <span class="s">&#39;zle&#39;</span><span class="p">:</span>
             <span class="c"># Decompress event data into fake binary file (io.BytesIO)</span>
