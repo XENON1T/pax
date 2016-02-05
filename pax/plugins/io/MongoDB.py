@@ -119,7 +119,6 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
 
         # Used to timeout if DAQ crashes and no data will come
         time_of_last_daq_response = time.time()
-        time_of_run_start = self.run_doc['starttimestamp'].timestamp() * units.s
 
         if not self.use_monary:
             self.log.debug("Total number of pulses in collection: %d" % self.input_collection.count())
@@ -197,8 +196,6 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                 self.log.info("Found %d event ranges", len(event_ranges))
                 self.log.debug(event_ranges)
 
-            event_ranges += time_of_run_start
-
             for i, (t0, t1) in enumerate(event_ranges):
                 self.last_event_number += 1
                 yield EventProxy(event_number=self.last_event_number, data=[t0, t1])
@@ -237,13 +234,14 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoDBReader):
 
     def startup(self):
         MongoDBReader.startup(self)
+        self.time_of_run_start = int(self.run_doc['starttimestamp'].timestamp() * units.s)
 
     def transform_event(self, event_proxy):
         t0, t1 = event_proxy.data  # ns
         event = Event(n_channels=self.config['n_channels'],
-                      start_time=t0,
+                      start_time=t0 + self.time_of_run_start,
                       sample_duration=self.sample_duration,
-                      stop_time=t1,
+                      stop_time=t1 + self.time_of_run_start,
                       dataset_name=self.run_doc['name'],
                       event_number=event_proxy.event_number)
 
