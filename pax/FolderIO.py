@@ -146,8 +146,8 @@ class InputFromFolder(plugin.InputPlugin):
             _, _, first_event, last_event, n_events = stuff
             return int(first_event), int(last_event), int(n_events)
         else:
-            raise ValueError("Invalid file name: %s. "
-                             "Should be tpcname-something-firstevent-lastevent-nevents.%s" % self.file_extension)
+            raise ValueError("Invalid file name: %s. Should be tpcname-something-firstevent-lastevent-nevents.%s" % (
+                filename, self.file_extension))
 
     ##
     # Child class should override these
