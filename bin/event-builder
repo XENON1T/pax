@@ -90,7 +90,7 @@ def main():
 
             log.info("Building events for %s", run_doc['name'])
             config_dict = {'DEFAULT': {'run_doc_id': run_doc['_id']},
-                           'pax': {'output_name': 'raw_%s' % run_doc['name'],
+                           'pax': {'output_name': run_doc['name'],
                                    'n_cpus': args.cpus},
                            'BSON': {'fields_to_ignore': [],
                                     'overwrite_output': True},

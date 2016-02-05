@@ -156,18 +156,27 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
             self.last_time_searched += self.search_window
 
             if not len(x):
-                # No more pulse data found. Did the run end?
+                self.log.info("No pulses found in search window.")
                 # self.data_taking_ended is updated in self.update_run_doc(), called right after we started the loop
                 if self.data_taking_ended:
-                    self.log.info("No pulses found, and data taking ended.")
-                    status = self.runs.update_one({'_id': self.config['run_doc_id']},
-                                                  {'$set': {'detectors.%s.trigger.status' % self.detector: 'processed',
-                                                            'detectors.%s.trigger.ended' % self.detector: True}})
-                    self.log.debug("Answer from updating rundb doc: %s" % status)
-                    break
+                    # No more pulse data found. Did we already search to/beyond the end of the run?
+                    # Compute time in seconds since epoch for end of run and end of search
+                    end_of_run_t = self.run_doc['endtimestamp'].timestamp()
+                    end_of_search_t = self.run_doc['starttimestamp'].timestamp() + self.last_time_searched / units.s
+                    if end_of_run_t >= end_of_search_t:
+                        self.log.info("Searched to end of run.")
+                        status = self.runs.update_one(
+                            {'_id': self.config['run_doc_id']},
+                            {'$set': {'detectors.%s.trigger.status' % self.detector: 'processed',
+                                      'detectors.%s.trigger.ended' % self.detector: True}})
+                        self.log.debug("Answer from updating rundb doc: %s" % status)
+                        break
+                    else:
+                        self.log.info("No data found, but did not search to end of run yet.")
+                else:
+                    self.log.info("No data found, but run did not end yet.")
                 if time.time() - time_of_last_daq_response > 60:  # seconds   # TODO: configure
                     raise RuntimeError('Timed out waiting for new data (DAQ crash?)')
-                self.log.info("No data found, but run is still ongoing. Waiting for new data.")
                 time.sleep(1)  # TODO: configure
                 continue
 
