@@ -108,11 +108,15 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                                            dtype=np.int64) * -1
 
         self.log.info("Building events with:")
-        self.log.info("\tSliding window: %0.2f us", self.config['window'] / units.us)
-        self.log.info("\tMultiplicity: %d coincident pulses", self.config['multiplicity'])
-        self.log.info("\tLeft extension: %0.2f us", self.config['left_extension'] / units.us)
-        self.log.info("\tRight extension: %0.2f us", self.config['right_extension'] / units.us)
         self.log.info("\tSearch window: %s s", self.search_window / units.s)
+        if self.config['mega_events']:
+            self.log.info("\t'Mega-event' mode: no trigger, just segment data in fixed chunks (size of search window)")
+        else:
+            self.log.info("\tCoincidence trigger mode")
+            self.log.info("\tMultiplicity: %d coincident pulses", self.config['multiplicity'])
+            self.log.info("\tSliding window: %0.2f us", self.config['window'] / units.us)
+            self.log.info("\tLeft extension: %0.2f us", self.config['left_extension'] / units.us)
+            self.log.info("\tRight extension: %0.2f us", self.config['right_extension'] / units.us)
 
     def get_events(self):
         self.last_time_searched = 0  # ns
@@ -190,7 +194,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                 # Compute time in seconds since epoch for end of run and end of search
                 end_of_run_t = self.run_doc['endtimestamp'].timestamp()
                 end_of_search_t = self.run_doc['starttimestamp'].timestamp() + self.last_time_searched / units.s
-                if end_of_run_t >= end_of_search_t:
+                if end_of_search_t >= end_of_run_t:
                     self.log.info("Searched to end of run: stopping event builder")
                     status = self.runs.update_one(
                         {'_id': self.config['run_doc_id']},
