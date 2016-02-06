@@ -77,6 +77,7 @@ def main():
             for argname, factor in (('window', units.us),
                                     ('left_extension', units.us),
                                     ('right_extension', units.us),
+                                    ('search_window', units.s),
                                     ('multiplicity', None),
                                     ('mega_event', None),
                                     ('detector', None),
@@ -167,9 +168,9 @@ def get_command_line_arguments():
     parser.add_argument('--impatient',
                         action='store_true',
                         help="Event builder will not wait for new data")
-    parser.add_argument('--mega_event',
+    parser.add_argument('--mega_events',
                         action='store_true',
-                        help="used for trigger efficiency")
+                        help="OVERRIDES ALL OTHER OPTIONS: build mega-events with same length as search window.")
     parser.add_argument('--cpus', default=1,
                         help="Number of CPUs to use. Default is 1; can be 'all'.",
                         nargs='?')
@@ -181,13 +182,18 @@ def get_command_line_arguments():
                                help='Number of coincident pulses required for a trigger',)
     trigger_group.add_argument('--window',
                                type=int,
-                               help='Size of sliding window (us)',)
+                               help='Size of coincidence trigger sliding window (us)',)
     trigger_group.add_argument('--left_extension',
                                type=int,
-                               help='Left extension to save (us)')
+                               help='Minimum time before trigger to save (us). Must be negative, so it is '
+                                    'actually the time after trigger to save, if you think about it, but '
+                                    "please don't, we just like to torture unsuspecting command line users, har har!")
     trigger_group.add_argument('--right_extension',
                                type=int,
-                               help='Right extension to save (us)')
+                               help='Minimum time after trigger to save (us)')
+    trigger_group.add_argument('--search_window',
+                               type=float,
+                               help='Size of initial pulse search window (in seconds!!!). Can be float.')
 
     parser.add_argument('--wait',
                         default=1,

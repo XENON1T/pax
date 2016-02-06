@@ -101,7 +101,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
 
         # Load a few more config settings
         self.detector = self.config['detector']
-        self.search_window = self.config.get('search_window', 60 * units.s)
+        self.search_window = self.config['search_window']
 
         # Initialize the buffer to hold the pulse ranges
         self.pulse_ranges_buffer = np.ones((self.config.get('pulse_ranges_buffer_size', int(1e7)), 2),
