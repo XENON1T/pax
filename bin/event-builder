@@ -88,7 +88,7 @@ def main():
                 argval = getattr(args, argname)
                 if argval is not None:
                     if factor is not None:
-                        argval *= factor
+                        argval = int(factor * argval)
                     mongo_settings[argname] = argval
 
             log.info("Building events for %s", run_doc['name'])
