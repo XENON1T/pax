@@ -131,62 +131,48 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
 
             # Query for pulse start & stop times within a large search window
             search_after = self.last_time_searched   # TODO: add configurable delay?
-            self.log.info("Searching for pulses after %s", sampletime_fmt(search_after))
-            query = {self.start_key: {'$gt': self._to_mt(search_after),
-                                      '$lt': self._to_mt(search_after + self.search_window)}}
 
-            if self.use_monary:
-                # TODO: pass sort key
-                start_times, stop_times = self.do_monary_query(query=query,
-                                                               fields=[self.start_key, self.stop_key],
-                                                               sort=self.start_key,
-                                                               types=['int64', 'int64'])
-                x = np.round(0.5 * (start_times + stop_times) * self.sample_duration).astype(np.int64)
+            if self.config['mega_events']:
+                # Segment the data in fixed-size chunks
+                event_ranges = np.array([[search_after, self.search_window]])
 
             else:
-                times = list(self.input_collection.find(query,
-                                                        projection=[self.start_key, self.stop_key],
-                                                        **self.mongo_find_options))
-                # Convert response from list of dictionaries of start & stop time in samples
-                # to numpy array of pulse midpoint times in pax time units (ns)
-                x = np.zeros(len(times), dtype=np.int64)
-                for i, doc in enumerate(times):
-                    x[i] = int(0.5 * (self._from_mt(doc[self.start_key]) + self._from_mt(doc[self.stop_key])))
+                # Run the coincidence trigger algorithm
+                self.log.info("Searching for pulses after %s", sampletime_fmt(search_after))
+                query = {self.start_key: {'$gt': self._to_mt(search_after),
+                                          '$lt': self._to_mt(search_after + self.search_window)}}
 
-            self.last_time_searched += self.search_window
+                if self.use_monary:
+                    # TODO: pass sort key
+                    start_times, stop_times = self.do_monary_query(query=query,
+                                                                   fields=[self.start_key, self.stop_key],
+                                                                   sort=self.start_key,
+                                                                   types=['int64', 'int64'])
+                    x = np.round(0.5 * (start_times + stop_times) * self.sample_duration).astype(np.int64)
 
-            if not len(x):
-                self.log.info("No pulses found in search window.")
-                # self.data_taking_ended is updated in self.update_run_doc(), called right after we started the loop
-                if self.data_taking_ended:
-                    # No more pulse data found. Did we already search to/beyond the end of the run?
-                    # Compute time in seconds since epoch for end of run and end of search
-                    end_of_run_t = self.run_doc['endtimestamp'].timestamp()
-                    end_of_search_t = self.run_doc['starttimestamp'].timestamp() + self.last_time_searched / units.s
-                    if end_of_run_t >= end_of_search_t:
-                        self.log.info("Searched to end of run.")
-                        status = self.runs.update_one(
-                            {'_id': self.config['run_doc_id']},
-                            {'$set': {'detectors.%s.trigger.status' % self.detector: 'processed',
-                                      'detectors.%s.trigger.ended' % self.detector: True}})
-                        self.log.debug("Answer from updating rundb doc: %s" % status)
-                        break
-                    else:
-                        self.log.info("No data found, but did not search to end of run yet.")
                 else:
-                    self.log.info("No data found, but run did not end yet.")
-                if time.time() - time_of_last_daq_response > 60:  # seconds   # TODO: configure
-                    raise RuntimeError('Timed out waiting for new data (DAQ crash?)')
-                time.sleep(1)  # TODO: configure
-                continue
+                    times = list(self.input_collection.find(query,
+                                                            projection=[self.start_key, self.stop_key],
+                                                            **self.mongo_find_options))
+                    # Convert response from list of dictionaries of start & stop time in samples
+                    # to numpy array of pulse midpoint times in pax time units (ns)
+                    x = np.zeros(len(times), dtype=np.int64)
+                    for i, doc in enumerate(times):
+                        x[i] = int(0.5 * (self._from_mt(doc[self.start_key]) + self._from_mt(doc[self.stop_key])))
 
-            self.log.info("Acquired pulse time data in range [%s, %s]", sampletime_fmt(x[0]), sampletime_fmt(x[-1]))
+                # Check if we may be running ahead of the DAQ
+                # TODO: this wait condition isalso triggered if there is a big hole in the data.
+                # In that case we won't continue until the run has ended...
+                if not len(x) and not self.data_taking_ended:
+                    self.log.info("No pulses in search window, but run is still ongoing: "
+                                  "sleeping a bit, not advancing search window.")
+                    if time.time() - time_of_last_daq_response > 60:  # seconds
+                        raise RuntimeError('Timed out waiting for new data (DAQ crash?)')
+                    time.sleep(1)  # TODO: configure
+                    continue
 
-            if self.config['mega_event']:
-                self.log.info("Building mega-event with all data in search range.")
-                event_ranges = np.array([[x[0], x[-1]]])
+                self.log.info("Acquired pulse time data in range [%s, %s]", sampletime_fmt(x[0]), sampletime_fmt(x[-1]))
 
-            else:
                 # Do the sliding window coindidence trigger
                 event_ranges = self.sliding_window(x,
                                                    window=self.config['window'],
@@ -196,13 +182,31 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                 self.log.info("Found %d event ranges", len(event_ranges))
                 self.log.debug(event_ranges)
 
+            self.last_time_searched += self.search_window
+
+            # self.data_taking_ended is updated in self.update_run_doc(), called right after we started the loop
+            if self.data_taking_ended:
+                # Did we already search to/beyond the end of the run?
+                # Compute time in seconds since epoch for end of run and end of search
+                end_of_run_t = self.run_doc['endtimestamp'].timestamp()
+                end_of_search_t = self.run_doc['starttimestamp'].timestamp() + self.last_time_searched / units.s
+                if end_of_run_t >= end_of_search_t:
+                    self.log.info("Searched to end of run: stopping event builder")
+                    status = self.runs.update_one(
+                        {'_id': self.config['run_doc_id']},
+                        {'$set': {'detectors.%s.trigger.status' % self.detector: 'processed',
+                                  'detectors.%s.trigger.ended' % self.detector: True}})
+                    self.log.debug("Answer from updating rundb doc: %s" % status)
+                    break
+
             for i, (t0, t1) in enumerate(event_ranges):
                 self.last_event_number += 1
                 yield EventProxy(event_number=self.last_event_number, data=[t0, t1])
 
             # Update time of last DAQ reponse
-            # Better to do this here than before building: if the building * processing takes a long time
-            # we don't want to think the DAQ has crashed
+            # This must be done here: building events and getting them all into the queue can take a long time
+            # especially since the queue must maintain a fixed size.
+            # We don't want to think the DAQ has crashed just because we're using too few CPUS.
             time_of_last_daq_response = time.time()
 
     def sliding_window(self, x, window=1000, multiplicity=3, left=-10, right=7):

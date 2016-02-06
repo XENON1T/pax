@@ -79,7 +79,7 @@ def main():
                                     ('right_extension', units.us),
                                     ('search_window', units.s),
                                     ('multiplicity', None),
-                                    ('mega_event', None),
+                                    ('mega_events', None),
                                     ('detector', None),
                                     ('user', None),
                                     ('password', None),
