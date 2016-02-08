@@ -198,10 +198,15 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                     for i, doc in enumerate(times):
                         x[i] = int(0.5 * (self._from_mt(doc[self.start_key]) + self._from_mt(doc[self.stop_key])))
 
-                # Check if we may be running ahead of the DAQ
-                # TODO: this wait condition isalso triggered if there is a big hole in the data.
-                # In that case we won't continue until the run has ended...
-                if not len(x) and not self.data_taking_ended:
+                if len(x):
+                    self.log.info("Acquired pulse time data in range [%s, %s]",
+                                  pax_to_human_time(x[0]),
+                                  pax_to_human_time(x[-1]))
+
+                elif not self.data_taking_ended:
+                    # We may be running ahead of the DAQ, then sleep a bit
+                    # TODO: this wait condition isalso triggered if there is a big hole in the data.
+                    # In that case we won't continue until the run has ended...
                     self.log.info("No pulses in search window, but run is still ongoing: "
                                   "sleeping a bit, not advancing search window.")
                     if time.time() - time_of_last_daq_response > 60:  # seconds
@@ -209,9 +214,8 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                     time.sleep(1)  # TODO: configure
                     continue
 
-                self.log.info("Acquired pulse time data in range [%s, %s]",
-                              pax_to_human_time(x[0]),
-                              pax_to_human_time(x[-1]))
+                else:
+                    self.log.info("No pulse data found")
 
                 # Do the sliding window coindidence trigger
                 event_ranges = self.sliding_window(x,
