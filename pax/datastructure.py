@@ -553,7 +553,7 @@ class Event(StrictModel):
                              "pass sample_duration and either stop_time or length")
 
         if self.duration() <= 0:
-            raise ValueError("Negative event duration")
+            raise ValueError("Nonpositive event duration %s!" % self.duration())
 
         # Initialize numpy arrays -- need to have n_channels and self.length
         self.noise_pulses_in = np.zeros(n_channels, dtype=np.int16)
