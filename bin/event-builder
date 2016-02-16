@@ -111,10 +111,10 @@ def main():
                 log.exception(e)
                 runs.update({'name': args.name}, {'$set': {status_name: 'error'}})
 
-        # Copy the log file to the output dir, then clear it for the next run
-        import shutil
-        shutil.copyfile('eventbuilder.log', run_doc['name'] + '/eventbuilder.log')
-        open('eventbuilder.log', mode='w').close()
+            # Copy the log file to the output dir, then clear it for the next run
+            import shutil
+            shutil.copyfile('eventbuilder.log', run_doc['name'] + '/eventbuilder.log')
+            open('eventbuilder.log', mode='w').close()
 
         # If we're trying to build a single run, don't try again to find it
         if args.name:
