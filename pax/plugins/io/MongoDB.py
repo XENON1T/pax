@@ -170,8 +170,14 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
             search_after = self.last_time_searched   # TODO: add configurable delay?
 
             if self.config['mega_events']:
+                if not self.data_taking_ended:
+                    raise ValueError("Mega event mode not available if run is still ongoing")
+
                 # Segment the data in fixed-size chunks
                 event_ranges = np.array([[search_after, search_after + self.search_window]])
+
+                # Advance an entire search window
+                self.last_time_searched += self.search_window
 
             else:
                 # Run the coincidence trigger algorithm
@@ -202,6 +208,11 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                     self.log.info("Acquired pulse time data in range [%s, %s]",
                                   pax_to_human_time(x[0]),
                                   pax_to_human_time(x[-1]))
+                    # Compute the last pulse start time, for search window advancement
+                    if self.use_monary:
+                        last_start_time = self._from_mt(start_times[-1])
+                    else:
+                        last_start_time = self._from_mt(times[-1][0][-1])
 
                 elif not self.data_taking_ended:
                     # We may be running ahead of the DAQ, then sleep a bit
@@ -226,7 +237,15 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                 self.log.info("Found %d event ranges", len(event_ranges))
                 self.log.debug(event_ranges)
 
-            self.last_time_searched += self.search_window
+                # Advance the search window
+                if self.data_taking_ended:
+                    self.last_time_searched += self.search_window
+                else:
+                    # We can't advance the entire search window, since the DAQ may not have filled it all the way.
+                    # The condition len(x) == 0 and not self.data_taking_ended has already been dealt with.
+                    # Notice we can't use x[-1], but need last_start_time, to avoid boundary problems
+                    # since the query is on the start_time, but x is the pulse midpoint time.
+                    self.last_time_searched += last_start_time
 
             if self.last_time_searched > last_time_to_search:
                 self.log.info("Searched beyond last pulse in run collection: stopping event builder")
