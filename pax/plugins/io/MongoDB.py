@@ -35,6 +35,7 @@ class MongoDBReader:
         self.pmts = self.config['pmts']
         self.pmt_mappings = {(x['digitizer']['module'],
                               x['digitizer']['channel']): x['pmt_position'] for x in self.pmts}
+        self.ignored_channels = []
 
         # Connect to the runs db
         mm = self.processor.mongo_manager
@@ -325,10 +326,11 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoDBReader):
                                           raw_data=np.fromstring(data,
                                                                  dtype="<i2"),
                                           channel=self.pmt_mappings[digitizer_id]))
-            else:
+            elif digitizer_id not in self.ignored_channels:
                 self.log.warning("Found data from digitizer module %d, channel %d,"
                                  "which doesn't exist according to PMT mapping! Ignoring...",
                                  pulse_doc['module'], pulse_doc['channel'])
+                self.ignored_channels.append(digitizer_id)
 
         self.log.debug("%d pulses in event %s" % (len(event.pulses), event.event_number))
         return event
