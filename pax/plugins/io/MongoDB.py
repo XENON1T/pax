@@ -246,7 +246,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                     # The condition len(x) == 0 and not self.data_taking_ended has already been dealt with.
                     # Notice we can't use x[-1], but need last_start_time, to avoid boundary problems
                     # since the query is on the start_time, but x is the pulse midpoint time.
-                    self.last_time_searched += last_start_time
+                    self.last_time_searched = last_start_time
 
             if self.last_time_searched > last_time_to_search:
                 self.log.info("Searched beyond last pulse in run collection: stopping event builder")
