@@ -48,18 +48,20 @@ def main():
 
     mongo_manager = MongoManager(config={k: eval('args.%s' % k, dict(args=args))
                                          for k in ('user', 'password', 'host', 'port')})
-    runs = mongo_manager.get_database('run').get_collection('runs')
+    runs = mongo_manager.get_database('run').get_collection('runs_new')
 
     # Build the query used to search for runs
-    status_name = 'detectors.%s.trigger.status' % args.detector
+    status_name = 'trigger.status'
     if args.name:
-        run_query = {'name': args.name}
+        run_query = {'name': args.name, 'detector' : args.detector}
     else:
-        run_query = {status_name: 'waiting_to_be_processed'}
+        run_query = {status_name: 'waiting_to_be_processed',
+                     'detector' : args.detector}
     log.info("Starting run search with query %s" % run_query)
 
     while 1:
-        run_doc = runs.find_one_and_update(run_query, {'$set': {status_name: 'staging'}})
+        run_doc = runs.find_one_and_update(run_query,
+                                           {'$set': {status_name: 'staging'}})
 
         if run_doc is None:
             if args.impatient:
@@ -71,9 +73,9 @@ def main():
         else:
             # Set the mongo settings
             #   First priority: command line args
-            #   Second priority: rundb settings (from run_doc['detectors'][args.detector]['trigger']
+            #   Second priority: rundb settings (from run_doc['trigger']
             #   Third priority: defaults from event_builder.ini (pax will take care of this)
-            mongo_settings = run_doc['detectors'][args.detector]['trigger']
+            mongo_settings = run_doc['trigger']
             for argname, factor in (('window', units.us),
                                     ('left_extension', units.us),
                                     ('right_extension', units.us),
@@ -109,7 +111,8 @@ def main():
             # Add other exceptions as they come during commissioning
             except pymongo.errors.ServerSelectionTimeoutError as e:
                 log.exception(e)
-                runs.update({'name': args.name}, {'$set': {status_name: 'error'}})
+                runs.update({'name': args.name, 'detector' : args.detector},
+                            {'$set': {status_name: 'error'}})
 
             # Copy the log file to the output dir, then clear it for the next run
             import shutil

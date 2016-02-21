@@ -39,7 +39,7 @@ class MongoDBReader:
 
         # Connect to the runs db
         mm = self.processor.mongo_manager
-        self.runs = mm.get_database('run').get_collection('runs')
+        self.runs = mm.get_database('run').get_collection('runs_new')
         self.update_run_doc()
 
         # Do we need to use monary?
@@ -57,18 +57,29 @@ class MongoDBReader:
         # Input database connection settings are specified in the run doc
         # TODO: can username, host, password, settings different from standard db access info?
         # Then we have to pass extra args to MongoManager
-        self.input_info = nfo = self.run_doc['detectors'][self.detector]['mongo_buffer']
+
+        self.input_info = None
+        for doc in self.run_doc['data']:
+            if doc['type'] == 'untriggered':
+                self.input_info = doc
+        
+        if self.input_info == None:
+            raise ValueError()
+
+        nfo = self.input_info # shorthand
+        self.input_info['database'] = nfo['location'].split('/')[-1]
 
         if self.use_monary:
             self.monary_client = mm.get_database(database_name=nfo['database'],
-                                                 uri=nfo['address'],
+                                                 uri=nfo['location'],
                                                  monary=True)
 
         self.log.debug("Grabbing collection %s" % nfo['collection'])
         self.input_collection = mm.get_database(database_name=nfo['database'],
-                                                uri=nfo['address']).get_collection(nfo['collection'])
-        self.log.debug("Ensuring index in input collection")
-        self.input_collection.ensure_index(self.sort_key)
+                                                uri=nfo['location']).get_collection(nfo['collection'])
+        self.log.debug("Creating index in input collection")
+        self.input_collection.create_index(self.sort_key,
+                                           background=True)
         self.log.debug("Succesfully grabbed collection %s" % nfo['collection'])
 
     def do_monary_query(self, query, fields, types, **kwargs):
@@ -85,7 +96,7 @@ class MongoDBReader:
         """
         self.log.debug("Updating run doc")
         self.run_doc = self.runs.find_one({'_id': self.config['run_doc_id']})
-        self.data_taking_ended = 'endtimestamp' in self.run_doc
+        self.data_taking_ended = 'end' in self.run_doc
 
     def _to_mt(self, x):
         # Takes time in ns and converts to samples
@@ -157,8 +168,8 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                 self.log.info("The DAQ has stopped, last pulse time is %s" % pax_to_human_time(last_time_to_search))
 
                 # Does this correspond roughly to the run end time? If not, warn, DAQ may have crashed.
-                end_of_run_t = (self.run_doc['endtimestamp'].timestamp() -
-                                self.run_doc['starttimestamp'].timestamp()) * units.s
+                end_of_run_t = (self.run_doc['end'].timestamp() -
+                                self.run_doc['start'].timestamp()) * units.s
                 if end_of_run_t > last_time_to_search + 60 * units.s:
                     self.log.warning("Run is %s long according to run db, but last pulse in collection starts at %s. "
                                      "Did the DAQ crash?" % (pax_to_human_time(end_of_run_t),
@@ -222,6 +233,11 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                     self.log.info("No pulses in search window, but run is still ongoing: "
                                   "sleeping a bit, not advancing search window.")
                     if time.time() - time_of_last_daq_response > 60:  # seconds
+                        status = self.runs.update_one(
+                            {'_id': self.config['run_doc_id']},
+                            {'$set': {'trigger.status' : 'timeout',
+                                      'trigger.ended' : True}})
+                        self.log.debug("Answer from updating rundb doc: %s" % status)
                         raise RuntimeError('Timed out waiting for new data (DAQ crash?)')
                     time.sleep(1)  # TODO: configure
                     continue
@@ -252,8 +268,8 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                 self.log.info("Searched beyond last pulse in run collection: stopping event builder")
                 status = self.runs.update_one(
                     {'_id': self.config['run_doc_id']},
-                    {'$set': {'detectors.%s.trigger.status' % self.detector: 'processed',
-                              'detectors.%s.trigger.ended' % self.detector: True}})
+                    {'$set': {'trigger.status' : 'processed',
+                              'trigger.ended' : True}})
                 self.log.debug("Answer from updating rundb doc: %s" % status)
                 break
 
@@ -296,7 +312,7 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoDBReader):
 
     def startup(self):
         MongoDBReader.startup(self)
-        self.time_of_run_start = int(self.run_doc['starttimestamp'].timestamp() * units.s)
+        self.time_of_run_start = int(self.run_doc['start'].timestamp() * units.s)
 
     def transform_event(self, event_proxy):
         t0, t1 = event_proxy.data  # ns
