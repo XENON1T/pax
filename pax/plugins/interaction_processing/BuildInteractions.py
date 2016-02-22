@@ -59,7 +59,7 @@ class BasicInteractionProperties(plugin.TransformPlugin):
         self.zombie_pmts_s1 = np.array(self.config.get('zombie_pmts_s1', []))
         self.zombie_pmts_s2 = np.array(self.config.get('zombie_pmts_s2', []))
         self.tpc_channels = self.config['channels_in_detector']['tpc']
-        self.do_saturation_correction = self.config.get('active_saturation_and_zombie_correction', False)
+        self.do_saturation_correction = self.config.get('active_saturation_and_zombie_correction', True)
 
     def transform_event(self, event):
 
@@ -68,20 +68,34 @@ class BasicInteractionProperties(plugin.TransformPlugin):
             s2 = event.peaks[ia.s2]
 
             # Electron lifetime correction to S2 area
-            ia.s2_area_correction *= np.exp(ia.drift_time / self.config['electron_lifetime_liquid'])
+            # ia.s2_area_correction *= np.exp(ia.drift_time / self.config['electron_lifetime_liquid'])
+
+            #@# Electron lifetime correction to S2 area
+            ia.s2_lifetime_correction *= np.exp(ia.drift_time / self.config['electron_lifetime_liquid'])
 
             # Determine z position from drift time
             ia.z = - self.config['drift_velocity_liquid'] * ia.drift_time
 
             # S1 and S2 area correction: divide by relative light yield at the position
-            ia.s1_area_correction /= self.s1_light_yield_map.get_value_at(ia)
-            ia.s2_area_correction /= self.s2_light_yield_map.get_value_at(ia)
+            # ia.s1_area_correction /= self.s1_light_yield_map.get_value_at(ia)
+            # ia.s2_area_correction /= self.s2_light_yield_map.get_value_at(ia)
+
+            #@# S1 and S2 area correction: divide by relative light yield at the position
+            ia.s1_spatial_correction /= self.s1_light_yield_map.get_value_at(ia)
+            ia.s2_spatial_correction /= self.s2_light_yield_map.get_value_at(ia)
+
 
             if self.s2_patterns is not None and self.do_saturation_correction:
                 # Correct for S2 saturation
                 # As we don't have an (x, y) dependent LCE map for the bottom PMTs for S2s,
                 # we can only compute the correction on the top area.
-                ia.s2_area_correction *= self.area_correction(
+                # ia.s2_area_correction *= self.area_correction(
+                #     peak=s2,
+                #     channels_in_pattern=self.config['channels_top'],
+                #     expected_pattern=self.s2_patterns.expected_pattern((ia.x, ia.y)),
+                #     confused_channels=np.union1d(s2.saturated_channels, self.zombie_pmts_s2))
+                #@
+                ia.s2_saturation_correction *= self.area_correction(
                     peak=s2,
                     channels_in_pattern=self.config['channels_top'],
                     expected_pattern=self.s2_patterns.expected_pattern((ia.x, ia.y)),
@@ -93,7 +107,13 @@ class BasicInteractionProperties(plugin.TransformPlugin):
                 # Correct for S1 saturation
                 try:
                     if self.do_saturation_correction:
-                        ia.s1_area_correction *= self.area_correction(
+                        # ia.s1_area_correction *= self.area_correction(
+                        #     peak=s1,
+                        #     channels_in_pattern=self.tpc_channels,
+                        #     expected_pattern=self.s1_patterns.expected_pattern((ia.x, ia.y, ia.drift_time)),
+                        #     confused_channels=confused_s1_channels)
+                        #@
+                        ia.s1_saturation_correction *= self.area_correction(
                             peak=s1,
                             channels_in_pattern=self.tpc_channels,
                             expected_pattern=self.s1_patterns.expected_pattern((ia.x, ia.y, ia.drift_time)),
@@ -111,6 +131,11 @@ class BasicInteractionProperties(plugin.TransformPlugin):
                     # Do not add any saturation correction, leave pattern fit statistic float('nan')
                     pass
 
+                #@ do the full area correction
+                ia.s1_area_correction *= ia.s1_spatial_correction * ia.s1_saturation_correction
+                ia.s2_area_correction *= (ia.s2_lifetime_correction *
+                                          ia.s2_spatial_correction *
+                                          ia.s2_saturation_correction)
         return event
 
     def area_correction(self, peak, channels_in_pattern, expected_pattern, confused_channels):

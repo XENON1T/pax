@@ -436,14 +436,30 @@ class Interaction(StrictModel):
     # Interaction properties
     ##
 
-    #: Multiplicative correction to s1 area based on position (due to LCE variations)
+    #: Multiplicative correction on S1 due to LCE variations
+    s1_spatial_correction = 1.0
+
+    #: Multiplicative correction on S1 due to saturation
+    s1_saturation_correction = 1.0
+
+    #: Multiplicative correction on S2 due to electron lifetime
+    s2_lifetime_correction = 1.0
+
+    #: Multiplicative correction on S2 due to LCE variations
+    s2_spatial_correction = 1.0
+
+    #: Multiplicative correction on S2 due to saturation
+    s2_saturation_correction = 1.0
+
+    #: Final multiplicative correction to s1 area based on position (due to LCE variations and saturation)
     s1_area_correction = 1.0
 
     @property
     def corrected_s1_area(self):
         return self.s1.area * self.s1_area_correction
 
-    #: Multiplicative correction to s2 area based on position (due to electron lifetime and LCE variations)
+    #: Final multiplicative correction to s2 area based on position
+    # (due to electron lifetime, LCE variations and saturation)
     s2_area_correction = 1.0
 
     @property
