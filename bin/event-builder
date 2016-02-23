@@ -75,7 +75,7 @@ def main():
             #   First priority: command line args
             #   Second priority: rundb settings (from run_doc['trigger']
             #   Third priority: defaults from event_builder.ini (pax will take care of this)
-            mongo_settings = run_doc['trigger']
+            mongo_settings = run_doc['trigger'].get('config', {})
             for argname, factor in (('window', units.us),
                                     ('left_extension', units.us),
                                     ('right_extension', units.us),
@@ -86,7 +86,8 @@ def main():
                                     ('user', None),
                                     ('password', None),
                                     ('host', None),
-                                    ('port', None)):
+                                    ('port', None),
+                                    ('secret_mode', None)):
                 argval = getattr(args, argname)
                 if argval is not None:
                     if factor is not None:
@@ -207,6 +208,9 @@ def get_command_line_arguments():
                         default=1,
                         type=int,
                         help="Wait time before searching for new runs again if none were found (sec)")
+    parser.add_argument('--secret_mode',
+                        action='store_true',
+                        help="Never write anything to the runs db. Use only for testing!")
 
     parser.add_argument('--log', default='INFO',
                         help="Set log level, e.g. DEBUG")

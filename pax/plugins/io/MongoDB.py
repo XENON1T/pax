@@ -22,6 +22,7 @@ class MongoDBReader:
 
     def startup(self):
         self.sample_duration = self.config['sample_duration']
+        self.secret_mode = self.config['secret_mode']
 
         # Setup keys and options for finding pulses
         self.start_key = self.config['start_key']
@@ -40,7 +41,7 @@ class MongoDBReader:
         # Connect to the runs db
         mm = self.processor.mongo_manager
         self.runs = mm.get_database('run').get_collection('runs_new')
-        self.update_run_doc()
+        self.refresh_run_doc()
 
         # Do we need to use monary?
         # Only relevant for readuntriggered... code stink
@@ -89,8 +90,9 @@ class MongoDBReader:
         collection = self.input_info['collection']
         return self.monary_client.query(database, collection, query, fields, types, **kwargs)
 
-    def update_run_doc(self):
+    def refresh_run_doc(self):
         """Update the internal run doc within this class
+        (does not change anything in the runs database)
 
         This is useful for example checking if a run has ended.
         """
@@ -142,23 +144,27 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
             self.log.info("\tRight extension: %0.2f us", self.config['right_extension'] / units.us)
 
     def get_events(self):
-        self.last_time_searched = 0  # ns
+        last_time_searched = 0  # ns
+        pulses_read = 0         # Number of pulses read by the event builder
+        pulses_in_events = 0    # Number of pulses placed inside events
+        pulses_in_collection = self.input_collection.count()
+        total_event_length = 0  # ns
+        total_pulse_length = 0  # ns
 
         # Used to timeout if DAQ crashes and no data will come
         time_of_last_daq_response = time.time()
         last_time_to_search = float('inf')
-        total_pulses = self.input_collection.count()
-        if total_pulses == 0:
+        if pulses_in_collection == 0:
             raise ValueError("This run does not even contain one pulse!")
 
-        self.log.info("Total number of pulses in collection: %d" % total_pulses)
+        self.log.info("Total number of pulses in collection: %d" % pulses_in_collection)
 
         while True:
             # If the run is still ongoing, update the run document, so we know if the run ended.
             # This must happen before querying for more data, to avoid a race condition where the run ends
             # while the query is in process.
             if not self.data_taking_ended:
-                self.update_run_doc()
+                self.refresh_run_doc()
 
             if self.data_taking_ended and last_time_to_search == float('inf'):
                 # If the run ended, find the "last" pulse
@@ -179,7 +185,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                 last_time_to_search += self.search_window
 
             # Query for pulse start & stop times within a large search window
-            search_after = self.last_time_searched   # TODO: add configurable delay?
+            search_after = last_time_searched   # TODO: add configurable delay?
 
             if self.config['mega_events']:
                 if not self.data_taking_ended:
@@ -189,7 +195,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                 event_ranges = np.array([[search_after, search_after + self.search_window]])
 
                 # Advance an entire search window
-                self.last_time_searched += self.search_window
+                last_time_searched += self.search_window
 
             else:
                 # Run the coincidence trigger algorithm
@@ -204,6 +210,8 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                                                                    fields=[self.start_key, self.stop_key],
                                                                    sort=self.start_key,
                                                                    types=['int64', 'int64'])
+                    # Note: no fence post +1, pulse right boundary should be inclusive of the last sample
+                    total_pulse_length += np.sum(stop_times - start_times) * self.sample_duration
                     x = np.round(0.5 * (start_times + stop_times) * self.sample_duration).astype(np.int64)
 
                 else:
@@ -214,7 +222,12 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                     # to numpy array of pulse midpoint times in pax time units (ns)
                     x = np.zeros(len(times), dtype=np.int64)
                     for i, doc in enumerate(times):
-                        x[i] = int(0.5 * (self._from_mt(doc[self.start_key]) + self._from_mt(doc[self.stop_key])))
+                        start = self._from_mt(doc[self.start_key])
+                        stop = self._from_mt(doc[self.stop_key])
+                        total_pulse_length += start - stop
+                        x[i] = int(0.5 * (start + stop))
+
+                pulses_read += len(x)
 
                 if len(x):
                     self.log.info("Acquired pulse time data in range [%s, %s]",
@@ -233,11 +246,12 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                     self.log.info("No pulses in search window, but run is still ongoing: "
                                   "sleeping a bit, not advancing search window.")
                     if time.time() - time_of_last_daq_response > 60:  # seconds
-                        status = self.runs.update_one(
-                            {'_id': self.config['run_doc_id']},
-                            {'$set': {'trigger.status': 'timeout',
-                                      'trigger.ended': True}})
-                        self.log.debug("Answer from updating rundb doc: %s" % status)
+                        if not self.secret_mode:
+                            status = self.runs.update_one(
+                                {'_id': self.config['run_doc_id']},
+                                {'$set': {'trigger.status': 'timeout',
+                                          'trigger.ended': True}})
+                            self.log.debug("Answer from updating rundb doc: %s" % status)
                         raise RuntimeError('Timed out waiting for new data (DAQ crash?)')
                     time.sleep(1)  # TODO: configure
                     continue
@@ -256,32 +270,46 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
 
                 # Advance the search window
                 if self.data_taking_ended:
-                    self.last_time_searched += self.search_window
+                    last_time_searched += self.search_window
                 else:
                     # We can't advance the entire search window, since the DAQ may not have filled it all the way.
                     # The condition len(x) == 0 and not self.data_taking_ended has already been dealt with.
                     # Notice we can't use x[-1], but need last_start_time, to avoid boundary problems
                     # since the query is on the start_time, but x is the pulse midpoint time.
-                    self.last_time_searched = last_start_time
+                    last_time_searched = last_start_time
 
-            if self.last_time_searched > last_time_to_search:
+            if last_time_searched > last_time_to_search:
                 self.log.info("Searched beyond last pulse in run collection: stopping event builder")
-                status = self.runs.update_one(
-                    {'_id': self.config['run_doc_id']},
-                    {'$set': {'trigger.status': 'processed',
-                              'trigger.ended': True}})
-                self.log.debug("Answer from updating rundb doc: %s" % status)
                 break
 
             for i, (t0, t1) in enumerate(event_ranges):
-                self.last_event_number += 1
+                total_event_length += t1 - t0   # Note: no fence post +1, t1 is stop time of last sample
                 yield EventProxy(event_number=self.last_event_number, data=[t0, t1])
+                self.last_event_number += 1
 
             # Update time of last DAQ reponse
             # This must be done here: building events and getting them all into the queue can take a long time
             # especially since the queue must maintain a fixed size.
             # We don't want to think the DAQ has crashed just because we're using too few CPUS.
             time_of_last_daq_response = time.time()
+
+        # All went well - print out status information
+        events_built = self.last_event_number + 1
+        end_of_run_info = {'trigger.events_built': events_built,
+                           'trigger.ended': True,
+                           'trigger.pulses_in_collection': pulses_in_collection,
+                           'trigger.pulses_read': pulses_read,
+                           'trigger.pulses_in_events': pulses_in_events,
+                           'trigger.mean_event_length': total_event_length / events_built,
+                           'trigger.mean_event_occupancy': total_pulse_length / total_event_length,
+                           'trigger.config': {k: self.config.get(k, '<<option not present>>')
+                                              for k in ['window', 'left_extension', 'right_extension', 'search_window',
+                                                        'multiplicity', 'mega_events', 'detector', 'user', 'password',
+                                                        'host', 'port']}}
+        if not self.secret_mode:
+            self.runs.update_one({'_id': self.config['run_doc_id']},
+                                 {'$set': end_of_run_info})
+        self.log.info("Event building complete. Information: %s" % end_of_run_info)
 
     def sliding_window(self, x, window=1000, multiplicity=3, left=-10, right=7):
         """Sliding window cluster finder (with range extension)
