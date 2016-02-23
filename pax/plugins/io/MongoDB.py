@@ -58,18 +58,16 @@ class MongoDBReader:
         # Input database connection settings are specified in the run doc
         # TODO: can username, host, password, settings different from standard db access info?
         # Then we have to pass extra args to MongoManager
-
         self.input_info = None
         for doc in self.run_doc['data']:
             if doc['type'] == 'untriggered':
                 self.input_info = doc
-
-        if self.input_info is None:
-            raise ValueError()
+                break
+        else:
+            raise ValueError("Invalid run document: none of the 'data' entries contain untriggered data!")
 
         nfo = self.input_info     # shorthand
         self.input_info['database'] = nfo['location'].split('/')[-1]
-
         if self.use_monary:
             self.monary_client = mm.get_database(database_name=nfo['database'],
                                                  uri=nfo['location'],
@@ -79,8 +77,7 @@ class MongoDBReader:
         self.input_collection = mm.get_database(database_name=nfo['database'],
                                                 uri=nfo['location']).get_collection(nfo['collection'])
         self.log.debug("Creating index in input collection")
-        self.input_collection.create_index(self.sort_key,
-                                           background=True)
+        self.input_collection.create_index(self.sort_key, background=True)
         self.log.debug("Succesfully grabbed collection %s" % nfo['collection'])
 
     def do_monary_query(self, query, fields, types, **kwargs):

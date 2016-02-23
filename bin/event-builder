@@ -53,15 +53,17 @@ def main():
     # Build the query used to search for runs
     status_name = 'trigger.status'
     if args.name:
-        run_query = {'name': args.name, 'detector' : args.detector}
+        run_query = {'name': args.name, 'detector': args.detector}
     else:
         run_query = {status_name: 'waiting_to_be_processed',
-                     'detector' : args.detector}
+                     'detector': args.detector}
     log.info("Starting run search with query %s" % run_query)
 
     while 1:
-        run_doc = runs.find_one_and_update(run_query,
-                                           {'$set': {status_name: 'staging'}})
+        if not args.secret_mode:
+            run_doc = runs.find_one_and_update(run_query, {'$set': {status_name: 'staging'}})
+        else:
+            run_doc = runs.find_one(run_query)
 
         if run_doc is None:
             if args.impatient:
