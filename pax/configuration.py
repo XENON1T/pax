@@ -57,6 +57,7 @@ def load_configuration(config_names=(), config_paths=(), config_string=None, con
             configp.read(config_file)
             config_files_read.append(config_file)
         else:
+            config_file.seek(0)
             configp.read_file(config_file)
             # Apparently ConfigParser.read_file doesn't reset the read position?
             # Or maybe it has to do with using StringIO instead of real files?
