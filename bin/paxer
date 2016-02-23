@@ -237,7 +237,7 @@ def get_aliases():
 
     input_plugin_aliases = OrderedDict([
         ('none',  'Dummy.DummyInput'),
-        ('xed',      'XED.ReadXED'),
+        ('xed',      ('XED.ReadXED', 'XED.DecodeXED')),
 
         # Zipped formats
         ('zbson',   ('Zip.ReadZipped', 'BSON.DecodeZBSON')),

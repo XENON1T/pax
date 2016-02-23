@@ -1,6 +1,7 @@
 import numpy as np
 
 from pax import plugin
+from pax.recarray_tools import fields_view
 
 
 class RejectNoiseHits(plugin.TransformPlugin):
@@ -78,8 +79,8 @@ class RejectNoiseHits(plugin.TransformPlugin):
         # First collect indices, then set, as advanced indexing would return a view
         if len(rejected_hits):
             rejected_hits = np.array(rejected_hits)
-            rejected_hit_indices = np.where(np.in1d(event.all_hits['found_in_pulse'], rejected_hits['found_in_pulse']) &
-                                            np.in1d(event.all_hits['left'], rejected_hits['left']))[0]
+            rejected_hit_indices = np.where(np.in1d(fields_view(event.all_hits, ('found_in_pulse', 'left')),
+                                                    fields_view(rejected_hits,  ('found_in_pulse', 'left'))))[0]
             for hit_i in rejected_hit_indices:
                 event.all_hits[hit_i]['is_rejected'] = True
 

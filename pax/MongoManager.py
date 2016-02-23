@@ -43,6 +43,7 @@ class MongoManager:
                 self.log.debug("Grabbing database %s" % database_name)
                 database = client[database_name]
             client.admin.command('ping')        # raises pymongo.errors.ConnectionFailure on failure
+            self.log.debug("Succesfully pinged database %s" % database_name)
 
             self.clients[database_name] = dict(client=client, db=database)
 

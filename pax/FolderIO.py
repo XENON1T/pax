@@ -120,7 +120,9 @@ class InputFromFolder(plugin.InputPlugin):
                     self.select_file(i)
                     break
             else:
-                raise ValueError("None of the loaded files contains event %d!" % event_number)
+                raise ValueError("None of the loaded files contains event %d! "
+                                 "Available event ranges: %s" % (event_number, [(q['first_event'], q['last_event'])
+                                                                                for q in self.raw_data_files]))
 
         if event_number not in self.event_numbers_in_current_file:
             raise ValueError("Event %d does not exist in the file containing events %d - %d!\n"
@@ -144,8 +146,8 @@ class InputFromFolder(plugin.InputPlugin):
             _, _, first_event, last_event, n_events = stuff
             return int(first_event), int(last_event), int(n_events)
         else:
-            raise ValueError("Invalid file name: %s. "
-                             "Should be tpcname-something-firstevent-lastevent-nevents.%s" % self.file_extension)
+            raise ValueError("Invalid file name: %s. Should be tpcname-something-firstevent-lastevent-nevents.%s" % (
+                filename, self.file_extension))
 
     ##
     # Child class should override these

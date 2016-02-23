@@ -4,7 +4,13 @@ History
 -------
 
 ------------------
-4.4.2 (2016-02-02)
+4.4.1 (2016-02-05)
+------------------
+
+ * Weird outlier bug fixes found in bulk processing
+
+------------------
+4.4.0 (2016-02-02)
 ------------------
 
  * New event builder iteration (#297)

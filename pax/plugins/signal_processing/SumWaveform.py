@@ -72,7 +72,11 @@ class SumWaveform(plugin.TransformPlugin):
                 continue
 
             w_hits_only = w.copy()
-            zero_waveform_outside_hits(w_hits_only, hits['left'], hits['right'], pulse.left)
+            # Obtain an array of same length as w, indicating whether the sample is in a hit or not
+            mask = np.zeros(len(w), dtype=np.bool)
+            set_if_in_ranges(mask, hits['left'] - pulse.left, hits['right'] - pulse.left)
+            w_hits_only[True ^ mask] = 0
+
             sum_w.samples[pulse.left:pulse.right+1] += w_hits_only
 
         # Sum the tpc top and bottom tpc waveforms
@@ -82,12 +86,8 @@ class SumWaveform(plugin.TransformPlugin):
         return event
 
 
-@numba.jit(numba.void(numba.float32[:], numba.int64[:], numba.int64[:], numba.int64), nopython=True)
-def zero_waveform_outside_hits(w, left, right, pulse_left):
-    """Assumes hits don't overlap, and are sorted from left to right"""
-    if len(left) == 0:
-        return
-    w[:left[0]-pulse_left] = 0
-    for i in range(1, len(left)):
-        w[right[i-1]+1-pulse_left:left[i]-pulse_left] = 0
-    w[right[-1]+1-pulse_left:] = 0
+@numba.jit(numba.void(numba.bool_[:], numba.int64[:], numba.int64[:]), nopython=True)
+def set_if_in_ranges(w, left, right):
+    """Set samples in w to True between ranges indicated by left and right (both inclusive)"""
+    for i in range(len(left)):
+        w[left[i]:right[i]+1] = True

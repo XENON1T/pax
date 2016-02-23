@@ -78,9 +78,6 @@ class FindHits(plugin.TransformPlugin):
             if not os.path.exists(self.make_diagnostic_plots_in):
                 os.makedirs(self.make_diagnostic_plots_in)
 
-        # Keep track of how many times the "too many hits" warning has been shown
-        self.too_many_hits_warnings_shown = 0
-
     def transform_event(self, event):
         dt = self.config['sample_duration']
         hits_per_pulse = []
@@ -147,20 +144,11 @@ class FindHits(plugin.TransformPlugin):
             if n_hits_found == 0:
                 event.noise_pulses_in[channel] += 1
                 # Don't 'continue' to the next pulse! There's stuff left to do!
-            # Show too-many-hits message if needed
-            # This message really should be shown the first few times, as you should be aware how often this occurs
             elif n_hits_found >= self.max_hits_per_pulse:
-                if self.too_many_hits_warnings_shown > 3:
-                    show_to = self.log.debug
-                else:
-                    show_to = self.log.info
-                show_to("Pulse %s-%s in channel %s has more than %s hits. "
-                        "This usually indicates a zero-length encoding breakdown after a very large S2. "
-                        "Further hits in this pulse have been ignored." % (start, stop, channel,
-                                                                           self.max_hits_per_pulse))
-                self.too_many_hits_warnings_shown += 1
-                if self.too_many_hits_warnings_shown == 3:
-                    self.log.info('Further too-many hit messages will be suppressed!')
+                self.log.debug("Pulse %s-%s in channel %s has more than %s hits. "
+                               "This usually indicates a zero-length encoding breakdown after a very large S2. "
+                               "Further hits in this pulse have been ignored." % (start, stop, channel,
+                                                                                  self.max_hits_per_pulse))
 
             # Store the found hits in the datastructure
             # Convert area, noise_sigma and height from adc counts -> pe

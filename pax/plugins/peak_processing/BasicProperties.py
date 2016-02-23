@@ -80,6 +80,14 @@ class SumWaveformProperties(plugin.TransformPlugin):
             # Get the waveform (in pe/bin) and compute basic sum-waveform derived properties
             w = event.get_sum_waveform(peak.detector).samples[peak.left:peak.right + 1]
 
+            if w.sum() == 0:
+                self.log.warning("Sum waveform of peak %d-%d (%0.2f pe area) in detector %s sums to zero! "
+                                 "Cannot compute sum waveform properties for this peak. If you see this, "
+                                 "there is either a bug in pax, or you are using a negative low_threshold for "
+                                 "the hitfinder (so a peak can have <=0 area) and you have very bad luck." %
+                                 (peak.left, peak.right, peak.area, peak.detector))
+                continue
+
             # Center of gravity in the hits-only sum waveform. Identical to peak.hit_time_mean...
             # We may remove one from the data structure, but it's a useful sanity check
             # (particularly since some hits got removed in the noise rejection)
