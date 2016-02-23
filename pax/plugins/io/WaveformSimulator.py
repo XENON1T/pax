@@ -40,8 +40,8 @@ def uniform_circle_rv(radius, n_samples=None):
 
 
 class WaveformSimulator(plugin.InputPlugin):
-
-    """ Common I/O for waveform simulator plugins
+    """Common input plugin for waveform simulator plugins. Do not use directly, won't work.
+    Takes care of truth file writing as well.
     """
 
     def startup(self):
@@ -171,6 +171,9 @@ class WaveformSimulator(plugin.InputPlugin):
 
 
 class WaveformSimulatorFromCSV(WaveformSimulator):
+    """Simulate waveforms from a csv file with instructions, see:
+        http://xenon1t.github.io/pax/simulator.html#instruction-file-format
+    """
 
     def startup(self):
         """
@@ -220,6 +223,8 @@ class WaveformSimulatorFromCSV(WaveformSimulator):
 
 
 class WaveformSimulatorFromNEST(WaveformSimulator):
+    """Simulate waveforms from GEANT4 ROOT file with NEST-generated S1, S2 information
+    """
 
     variables = (
         # Fax name        #Root name    #Conversion factor (multiplicative)
@@ -253,13 +258,13 @@ class WaveformSimulatorFromNEST(WaveformSimulator):
 
             # Convert to peaks dictionary
             npeaks = len(values[self.variables[0][0]])
-            peaks = []
+            interaction_instructions = []
             for i in range(npeaks):
-                peaks.append({'instruction': event_i})
+                interaction_instructions.append({'instruction': event_i})
                 for (variable_name, _, conversion_factor) in self.variables:
-                    peaks[-1][variable_name] = values[variable_name][i] * conversion_factor
+                    interaction_instructions[-1][variable_name] = values[variable_name][i] * conversion_factor
 
-            for p in peaks:
+            for p in interaction_instructions:
                 # Correct the z-coordinate system
                 p['z'] += self.config['add_to_z']
                 # Fix ER / NR label
@@ -268,6 +273,40 @@ class WaveformSimulatorFromNEST(WaveformSimulator):
                 else:
                     p['recoil_type'] = 'ER'
             # Sort by time
-            peaks.sort(key=lambda p: p['t'])
+            interaction_instructions.sort(key=lambda p: p['t'])
 
-            yield peaks
+            yield interaction_instructions
+
+
+class WaveformSimulatorFromOpticalGEANT(WaveformSimulator):
+    """Simulate waveforms from Fabio's GEANT4 optical simulation
+    See:
+        https://xecluster.lngs.infn.it/dokuwiki/doku.php?id=xenon:xenon1t:fvm:waveform_generator
+    Currently just pseudocode, awaiting full implementation.
+    The truth file produced by this input plugin will be empty (as WaveformSimulator.s1 and .s2 never get called)
+    """
+
+    def startup(self):
+        raise NotImplementedError("WaveformSimulatorFromGEANT is not yet implemented!")
+        import ROOT
+        self.f = ROOT.TFile(self.config['input_name'])
+        self.t = self.f.Get("your_tree")
+        WaveformSimulator.startup(self)
+        self.number_of_events = self.t.GetEntries() * self.config['event_repetitions']
+
+    def get_instructions_for_next_event(self):
+        for event_i in range(self.number_of_events):
+            instructions = {}
+            # fill instructions to look like this:
+            # {channel: [arrival times], next channel: [arrival times]}
+            # where arrival time is in ns since the start of the event
+            # (which can e.g. by your first photon time + a little bit)
+            yield instructions
+
+    def simulate_single_event(self, instructions):
+        self.simulator.clear_signals_queue()
+        for channel, arrival_times in instructions.items():
+            self.simulator.arrival_times_per_channel[channel] = arrival_times
+        event = self.simulator.make_pax_event()
+        event.event_number = self.current_event
+        return event
