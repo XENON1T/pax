@@ -62,11 +62,11 @@ class MongoDBReader:
         for doc in self.run_doc['data']:
             if doc['type'] == 'untriggered':
                 self.input_info = doc
-        
-        if self.input_info == None:
+
+        if self.input_info is None:
             raise ValueError()
 
-        nfo = self.input_info # shorthand
+        nfo = self.input_info     # shorthand
         self.input_info['database'] = nfo['location'].split('/')[-1]
 
         if self.use_monary:
@@ -235,8 +235,8 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                     if time.time() - time_of_last_daq_response > 60:  # seconds
                         status = self.runs.update_one(
                             {'_id': self.config['run_doc_id']},
-                            {'$set': {'trigger.status' : 'timeout',
-                                      'trigger.ended' : True}})
+                            {'$set': {'trigger.status': 'timeout',
+                                      'trigger.ended': True}})
                         self.log.debug("Answer from updating rundb doc: %s" % status)
                         raise RuntimeError('Timed out waiting for new data (DAQ crash?)')
                     time.sleep(1)  # TODO: configure
@@ -268,8 +268,8 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                 self.log.info("Searched beyond last pulse in run collection: stopping event builder")
                 status = self.runs.update_one(
                     {'_id': self.config['run_doc_id']},
-                    {'$set': {'trigger.status' : 'processed',
-                              'trigger.ended' : True}})
+                    {'$set': {'trigger.status': 'processed',
+                              'trigger.ended': True}})
                 self.log.debug("Answer from updating rundb doc: %s" % status)
                 break
 
