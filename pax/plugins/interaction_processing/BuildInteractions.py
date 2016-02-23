@@ -78,7 +78,6 @@ class BasicInteractionProperties(plugin.TransformPlugin):
             ia.s1_spatial_correction /= self.s1_light_yield_map.get_value_at(ia)
             # ia.s2_spatial_correction /= self.s2_light_yield_map.get_value_at(ia)
 
-
             # if self.s2_patterns is not None and self.do_saturation_correction:
             #     ia.s2_saturation_correction *= saturation_correction(
             #         peak=s2,
@@ -121,4 +120,3 @@ class BasicInteractionProperties(plugin.TransformPlugin):
                 #                           ia.s2_spatial_correction *
                 #                           ia.s2_saturation_correction)
         return event
-
