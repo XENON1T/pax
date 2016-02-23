@@ -211,9 +211,15 @@ class Simulator(object):
                     continue
 
                 # Find the time and gain of the afterpulses
+                dist_kwargs = ap_data['time_parameters']
+                dist_kwargs['size'] = n_afterpulses
                 ap_times.extend(np.random.choice(photon_detection_times, size=n_afterpulses, replace=False) +
-                                np.random.normal(ap_data['delay_mean'], ap_data['delay_rms'], size=n_afterpulses))
-                ap_gains.extend(np.random.normal(ap_data['gain_mean'], ap_data['gain_rms'], size=n_afterpulses))
+                                getattr(np.random, ap_data['time_distribution'])(**dist_kwargs))
+                ap_gains.extend(truncated_gauss_rvs(my_mean=ap_data['gain_mean'],
+                                                    my_std=ap_data['gain_rms'],
+                                                    left_boundary=0,
+                                                    right_boundary=float('inf'),
+                                                    n_rvs=n_afterpulses))
 
             gains = np.concatenate((gains, ap_gains))
             photon_detection_times = np.concatenate((photon_detection_times, ap_times))
