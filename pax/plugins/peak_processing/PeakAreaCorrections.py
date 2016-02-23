@@ -28,11 +28,14 @@ class S2SpatialCorrection(plugin.TransformPlugin):
             if not len(peak.reconstructed_positions):
                 continue
             else:
-                # Get x,y position from peak
-                xy = peak.get_position_from_preferred_algorithm(self.config['xy_posrec_preference'])
+                try:
+                    # Get x,y position from peak
+                    xy = peak.get_position_from_preferred_algorithm(self.config['xy_posrec_preference'])
 
-                # S2 area correction: divide by relative light yield at the position
-                peak.s2_spatial_correction /= self.s2_light_yield_map.get_value_at(xy)
+                    # S2 area correction: divide by relative light yield at the position
+                    peak.s2_spatial_correction /= self.s2_light_yield_map.get_value_at(xy)
+                except ValueError:
+                    self.log.debug("Could not find any position from the chosen algorithms")
         return event
 
 
@@ -52,11 +55,12 @@ class S2SaturationCorrection(plugin.TransformPlugin):
             # check that there is a position
             if not len(peak.reconstructed_positions):
                 continue
-            # Get x,y position from peak
-            xy = peak.get_position_from_preferred_algorithm(self.config['xy_posrec_preference'])
-            # print(xy.x,xy.y)
-            # if (xy.x != float('nan')):
-            #     print('Holy F, this is not a nan')
+            try:
+                # Get x,y position from peak
+                xy = peak.get_position_from_preferred_algorithm(self.config['xy_posrec_preference'])
+            except ValueError:
+                self.log.debug("Could not find any position from the chosen algorithms")
+                continue
             if self.s2_patterns is not None and self.do_saturation_correction:
                 # if self.s2_patterns.expected_pattern((xy.x, xy.y)):
                 try:
