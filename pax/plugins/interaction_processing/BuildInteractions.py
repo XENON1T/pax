@@ -60,7 +60,7 @@ class BasicInteractionProperties(plugin.TransformPlugin):
         self.zombie_pmts_s1 = np.array(self.config.get('zombie_pmts_s1', []))
         self.zombie_pmts_s2 = np.array(self.config.get('zombie_pmts_s2', []))
         self.tpc_channels = self.config['channels_in_detector']['tpc']
-        self.do_saturation_correction = self.config.get('active_saturation_and_zombie_correction', True)
+        self.do_saturation_correction = self.config.get('active_saturation_and_zombie_correction', False)
 
     def transform_event(self, event):
 
