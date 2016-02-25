@@ -10,10 +10,10 @@ import hashlib
 
 import numpy as np
 import ROOT
-from rootpy import compiled, stl
+from rootpy import stl
 
 import pax  # For version number
-from pax import plugin, datastructure
+from pax import plugin, datastructure, exceptions
 from pax.datastructure import EventProxy
 
 # Header for the automatically generated C++ code
@@ -42,62 +42,6 @@ public:
 #endif
 
 """
-
-def find_class_names(filename):
-    """Return names of C++ classes declared in filename"""
-    classnames = []
-    with open(filename, 'r') as classfile:
-        for line in classfile.readlines():
-            m = re.match(r'class (\w*) ', line)
-            if m:
-                classnames.append(m.group(1))
-    return classnames
-
-
-def load_event_class_code(class_code):
-    """Loads the pax event class contained in code.
-    Computes checksum, writes to temporary file, then calls load_event_class
-    """
-    checksum = hashlib.md5(class_code.encode()).hexdigest()
-
-    # Write the class code to a temporary directory
-    # The filename is something specific, so it can't just be the current directory
-    # (even though checksum is unique, don't want several threads trying to write the same file)
-    tempdir = tempfile.mkdtemp(prefix=os.getcwd())
-    class_filename = 'pax_event_class-%s.cpp' % checksum
-    with open(class_filename, mode='w') as outfile:
-        outfile.write(class_code)
-
-    # Compile the class (or decide we don't have to), then clean up the directory
-    load_event_class(os.path.abspath(class_filename))
-    shutil.rmtree(tempdir)
-
-
-def load_event_class(filename=None):
-    """Read a C++ root class definition from filename, generating dictionaries for vectors of classes
-    If a class with the same base filename has been loaded before (regardless of which directory it is in),
-    its libraries will be loaded from ~/.cache/rootpy.
-    """
-    # Before we compile the class, we must change to the current working directory of the class
-    # Otherwise, the #include '/path/to/somewhere/pax_event_class:CHECKSUM.cpp' will force recompilation
-    # if the same class is loaded from a different directory
-    # See #<<<add PR number>>>
-    # orig_dir = os.path.abspath(os.getcwd())
-
-    #class_dir, class_filename = os.path.split(os.path.abspath(filename))
-    #print("Loading class from dir %s, filename %s" % (class_dir, class_filename))
-    #os.chdir(class_dir)
-    #print("Changed directory to %s, current directory is %s" % (class_dir, os.getcwd()))
-    class_filename = filename
-    class_names = find_class_names(class_filename)
-    compiled.register_file(class_filename, class_names)
-
-    # Generate dictionaries for vectors of custom classes
-    # If you don't do this, the vectors will actually be useless sterile root objects
-    for name in class_names:
-        stl.generate("std::vector<%s>" % name, ['<vector>', "%s" % class_filename], True)
-
-    #os.chdir(orig_dir)
 
 
 class EncodeROOTClass(plugin.TransformPlugin):
@@ -130,7 +74,6 @@ class EncodeROOTClass(plugin.TransformPlugin):
                                                                             class_code=self.class_code))
         root_event.IsA().Destructor(root_event)
         return event_proxy
-
 
     def set_root_object_attrs(self, python_object, root_object):
         """Set attribute values of the root object based on data_model
@@ -321,9 +264,10 @@ class ReadROOTClass(plugin.InputPlugin):
         # Make sure to store the ROOT file as an attribute
         # Else it will go out of scope => we die after next garbage collect
         self.f = ROOT.TFile(self.config['input_name'])
-        # TODO: LOAD EVENT CLASS FROM ROOT FILE!!
 
-        load_event_class()
+        # Load the event class from the root file
+        # This will fail on old format root files (before March 2016)
+        load_pax_event_class_from_root(self.config['input_name'])
 
         self.t = self.f.Get(self.config['tree_name'])
         self.number_of_events = self.t.GetEntries()
@@ -396,3 +340,94 @@ class ReadROOTClass(plugin.InputPlugin):
                 result = root_value
 
             setattr(py_object, field_name, result)
+
+
+##
+# Helper functions
+# These are needed in several of the classes above and/or are exposed because they may be of use outside pax
+##
+def find_class_names(filename):
+    """Return names of C++ classes declared in filename"""
+    classnames = []
+    with open(filename, 'r') as classfile:
+        for line in classfile.readlines():
+            m = re.match(r'class (\w*) ', line)
+            if m:
+                classnames.append(m.group(1))
+    return classnames
+
+
+def load_event_class_code(class_code):
+    """Loads the pax event class contained in code.
+    Computes checksum, writes to temporary file, then calls load_event_class
+    """
+    checksum = hashlib.md5(class_code.encode()).hexdigest()
+
+    # Write the class code to a temporary directory
+    # The filename is something specific, so it can't just be the current directory
+    # (even though checksum is unique, don't want several threads trying to write the same file)
+    tempdir = tempfile.mkdtemp(prefix=os.getcwd())
+    class_filename = 'pax_event_class-%s.cpp' % checksum
+    with open(class_filename, mode='w') as outfile:
+        outfile.write(class_code)
+
+    # Compile the class (or decide we don't have to), then clean up the directory
+    load_event_class(os.path.abspath(class_filename))
+    shutil.rmtree(tempdir)
+
+
+def load_event_class(filename, force_recompile=False):
+    """Read a C++ root class definition from filename, generating dictionaries for vectors of classes
+    If a class with the same base filename has been loaded before (regardless of which directory it is in),
+    its libraries will be loaded from ~/.cache/rootpy.
+    """
+    # Load (and if necessary compile) the file in ROOT
+    # Unfortunately this must happen in the current directory.
+    # I tried rootpy.register_file, but it is very weird: compilation is triggered only when you make an object
+    # tried making a object right after, then get weird segfault later... don't we all just love C++...
+    libname = os.path.splitext(filename)[0] + "_cpp"
+    import sysconfig
+    if six.PY2:
+        libname = libname + sysconfig.get_config_var('SO')
+    else:
+        libname = libname + sysconfig.get_config_var('SHLIB_SUFFIX')
+
+    if os.path.exists(libname) and not force_recompile:
+        if ROOT.gSystem.Load(libname) not in (0, 1):
+            raise RuntimeError("failed to load the library '{0}'".format(libname))
+    else:
+        ROOT.gROOT.ProcessLine('.L %s+' % filename)
+
+    # Generate dictionaries for vectors of custom classes
+    # If you don't do this, the vectors will actually be useless sterile root objects
+    for name in find_class_names(filename):
+        stl.generate("std::vector<%s>" % name, ['<vector>', "%s" % filename], True)
+
+
+def load_pax_event_class_from_root(rootfilename):
+    """Load the pax event class from the pax root file rootfilename"""
+    # Open the ROOT file just to get the pax class code out
+    # We want to suppress the "help me I don't have the right dictionaries" warnings,
+    # since we want to load the class code to solve this very problem!
+    with ShutUpROOT():
+        f = ROOT.TFile(rootfilename)
+    if 'pax_event_class' not in [x.GetName() for x in list(f.GetListOfKeys())]:
+        raise exceptions.MaybeOldFormatException("Root file %s does not contain pax event class code.\n "
+                                                 "Maybe it was made before March 2016? See #<<<<PR>>>>.")
+    load_event_class_code(f.Get('pax_event_class').GetTitle())
+    f.Close()
+
+
+class ShutUpROOT:
+    """Context manager to temporarily suppress ROOT warnings
+    Stolen from https://root.cern.ch/phpBB3/viewtopic.php?f=14&t=18096
+    """
+    def __init__(self, level=ROOT.kFatal):
+        self.level = level
+
+    def __enter__(self):
+        self.oldlevel = ROOT.gErrorIgnoreLevel
+        ROOT.gErrorIgnoreLevel = self.level
+
+    def __exit__(self, type, value, traceback):
+        ROOT.gErrorIgnoreLevel = self.oldlevel
