@@ -54,11 +54,8 @@ class BasicInteractionProperties(plugin.TransformPlugin):
 
     def startup(self):
         self.s1_light_yield_map = self.processor.simulator.s1_light_yield_map
-        self.s2_light_yield_map = self.processor.simulator.s2_light_yield_map
         self.s1_patterns = self.processor.simulator.s1_patterns
-        self.s2_patterns = self.processor.simulator.s2_patterns
         self.zombie_pmts_s1 = np.array(self.config.get('zombie_pmts_s1', []))
-        self.zombie_pmts_s2 = np.array(self.config.get('zombie_pmts_s2', []))
         self.tpc_channels = self.config['channels_in_detector']['tpc']
         self.do_saturation_correction = self.config.get('active_saturation_and_zombie_correction', False)
 
@@ -76,15 +73,6 @@ class BasicInteractionProperties(plugin.TransformPlugin):
 
             # S1 and S2 area correction: divide by relative light yield at the position
             ia.s1_spatial_correction /= self.s1_light_yield_map.get_value_at(ia)
-            # ia.s2_spatial_correction /= self.s2_light_yield_map.get_value_at(ia)
-
-            # if self.s2_patterns is not None and self.do_saturation_correction:
-            #     ia.s2_saturation_correction *= saturation_correction(
-            #         peak=s2,
-            #         channels_in_pattern=self.config['channels_top'],
-            #         expected_pattern=self.s2_patterns.expected_pattern((ia.x, ia.y)),
-            #         confused_channels=np.union1d(s2.saturated_channels, self.zombie_pmts_s2),
-            #         log=self.log)
 
             if self.s1_patterns is not None:
                 confused_s1_channels = np.union1d(s1.saturated_channels, self.zombie_pmts_s1)
@@ -116,7 +104,4 @@ class BasicInteractionProperties(plugin.TransformPlugin):
                 ia.s2_area_correction *= (ia.s2_lifetime_correction *
                                           s2.s2_spatial_correction *
                                           s2.s2_saturation_correction)
-                # ia.s2_area_correction *= (ia.s2_lifetime_correction *
-                #                           ia.s2_spatial_correction *
-                #                           ia.s2_saturation_correction)
         return event

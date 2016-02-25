@@ -2,8 +2,7 @@ import numpy as np
 from pax import plugin, exceptions
 from pax.dsputils import saturation_correction
 
-# Must be run after 'ClassifyPeaks.AdHocClassification' and before 'BuildInteractions.BasicInteractionProperties'
-# it uses the S2 classyfier, x,y positions
+# Must be run before 'BuildInteractions.BasicInteractionProperties'
 
 
 class S2SpatialCorrection(plugin.TransformPlugin):
@@ -13,13 +12,7 @@ class S2SpatialCorrection(plugin.TransformPlugin):
     def startup(self):
         if 'xy_posrec_preference' not in self.config:
             raise ValueError('Configuration for %s must contain xy_posrec_preference' % self.name)
-
         self.s2_light_yield_map = self.processor.simulator.s2_light_yield_map
-
-        self.s2_patterns = self.processor.simulator.s2_patterns
-        self.zombie_pmts_s2 = np.array(self.config.get('zombie_pmts_s2', []))
-        self.tpc_channels = self.config['channels_in_detector']['tpc']
-        self.do_saturation_correction = self.config.get('active_saturation_and_zombie_correction', True)
 
     def transform_event(self, event):
 
@@ -46,7 +39,6 @@ class S2SaturationCorrection(plugin.TransformPlugin):
     def startup(self):
         self.s2_patterns = self.processor.simulator.s2_patterns
         self.zombie_pmts_s2 = np.array(self.config.get('zombie_pmts_s2', []))
-        self.tpc_channels = self.config['channels_in_detector']['tpc']
         self.do_saturation_correction = self.config.get('active_saturation_and_zombie_correction', True)
 
     def transform_event(self, event):
