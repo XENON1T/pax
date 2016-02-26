@@ -9,3 +9,7 @@ class OutputFileAlreadyExistsError(Exception):
 
 class CoordinateOutOfRangeException(Exception):
     pass
+
+
+class MaybeOldFormatException(Exception):
+    pass
