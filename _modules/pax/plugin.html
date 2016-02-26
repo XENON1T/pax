@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugin &mdash; Processor for Analyzing XENON1T 4.4.0 documentation</title>
+    <title>pax.plugin &mdash; Processor for Analyzing XENON1T 4.4.1 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '4.4.0',
+        VERSION:     '4.4.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,11 +23,11 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.4.0 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.4.1 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
   <body role="document">  
@@ -52,31 +52,31 @@
 <span class="kn">from</span> <span class="nn">time</span> <span class="kn">import</span> <span class="n">strftime</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-<span class="kn">import</span> <span class="nn">pax</span>    <span class="c"># for version</span>
+<span class="kn">import</span> <span class="nn">pax</span>    <span class="c1"># for version</span>
 <span class="kn">from</span> <span class="nn">pax.datastructure</span> <span class="kn">import</span> <span class="n">Event</span><span class="p">,</span> <span class="n">ReconstructedPosition</span>
 
 
 <div class="viewcode-block" id="BasePlugin"><a class="viewcode-back" href="../../pax.html#pax.plugin.BasePlugin">[docs]</a><span class="k">class</span> <span class="nc">BasePlugin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
-    <span class="c"># Processor.run() will ensure this gets set after it has shut down the plugin</span>
-    <span class="c"># If you ever shut down a plugin yourself, you need to set it too!!</span>
+    <span class="c1"># Processor.run() will ensure this gets set after it has shut down the plugin</span>
+    <span class="c1"># If you ever shut down a plugin yourself, you need to set it too!!</span>
     <span class="n">has_shut_down</span> <span class="o">=</span> <span class="bp">False</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config_values</span><span class="p">,</span> <span class="n">processor</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">processor</span> <span class="o">=</span> <span class="n">processor</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">total_time_taken</span> <span class="o">=</span> <span class="mi">0</span>   <span class="c"># Total time in msec spent in this plugin</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">total_time_taken</span> <span class="o">=</span> <span class="mi">0</span>   <span class="c1"># Total time in msec spent in this plugin</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config_values</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_pre_startup</span><span class="p">()</span>
         <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">startup</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">y</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&#39;Startup of </span><span class="si">%s</span><span class="s"> returned a </span><span class="si">%s</span><span class="s"> instead of None.&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">y</span><span class="p">)))</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Startup of </span><span class="si">%s</span><span class="s1"> returned a </span><span class="si">%s</span><span class="s1"> instead of None.&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">y</span><span class="p">)))</span>
 
     <span class="k">def</span> <span class="nf">_pre_startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">pass</span>
 
 <div class="viewcode-block" id="BasePlugin.startup"><a class="viewcode-back" href="../../pax.html#pax.plugin.BasePlugin.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> does not define a startup&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> does not define a startup&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">)</span>
         <span class="k">pass</span>
 </div>
 <div class="viewcode-block" id="BasePlugin.shutdown"><a class="viewcode-back" href="../../pax.html#pax.plugin.BasePlugin.shutdown">[docs]</a>    <span class="k">def</span> <span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -88,20 +88,20 @@
 
 <span class="sd">    This class cannot be parallelized since events are read in a specific order</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c"># The plugin should update this to the number of events which get_events</span>
-    <span class="c"># will eventually return</span>
+    <span class="c1"># The plugin should update this to the number of events which get_events</span>
+    <span class="c1"># will eventually return</span>
     <span class="n">number_of_events</span> <span class="o">=</span> <span class="mi">0</span>
 
-    <span class="c"># TODO: we never check if the input plugin has already shut down...</span>
+    <span class="c1"># TODO: we never check if the input plugin has already shut down...</span>
 
 <div class="viewcode-block" id="InputPlugin.get_single_event"><a class="viewcode-back" href="../../pax.html#pax.plugin.InputPlugin.get_single_event">[docs]</a>    <span class="k">def</span> <span class="nf">get_single_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;Single event support not implemented for this input plugin... &quot;</span> <span class="o">+</span>
-                         <span class="s">&quot;Iterating though events until we find event </span><span class="si">%s</span><span class="s">!&quot;</span> <span class="o">%</span> <span class="n">index</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Single event support not implemented for this input plugin... &quot;</span> <span class="o">+</span>
+                         <span class="s2">&quot;Iterating though events until we find event </span><span class="si">%s</span><span class="s2">!&quot;</span> <span class="o">%</span> <span class="n">index</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">event</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_events</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">event</span><span class="o">.</span><span class="n">event_number</span> <span class="o">==</span> <span class="n">index</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">event</span>
 
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Event </span><span class="si">%d</span><span class="s"> not found&quot;</span> <span class="o">%</span> <span class="n">index</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Event </span><span class="si">%d</span><span class="s2"> not found&quot;</span> <span class="o">%</span> <span class="n">index</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="InputPlugin.get_events"><a class="viewcode-back" href="../../pax.html#pax.plugin.InputPlugin.get_events">[docs]</a>    <span class="k">def</span> <span class="nf">get_events</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Iterate over all events in the data source&quot;&quot;&quot;</span>
@@ -110,27 +110,27 @@
 </div></div>
 <div class="viewcode-block" id="ProcessPlugin"><a class="viewcode-back" href="../../pax.html#pax.plugin.ProcessPlugin">[docs]</a><span class="k">class</span> <span class="nc">ProcessPlugin</span><span class="p">(</span><span class="n">BasePlugin</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Plugin that can process events&quot;&quot;&quot;</span>
-    <span class="c"># Set these to False if you don&#39;t want to check the input/output are actually pax events</span>
+    <span class="c1"># Set these to False if you don&#39;t want to check the input/output are actually pax events</span>
     <span class="n">do_input_check</span> <span class="o">=</span> <span class="bp">True</span>
     <span class="n">do_output_check</span> <span class="o">=</span> <span class="bp">True</span>
 
     <span class="k">def</span> <span class="nf">_pre_startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c"># Give the logger another name, we need self.log for the adapter</span>
+        <span class="c1"># Give the logger another name, we need self.log for the adapter</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_log</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log</span>
 
 <div class="viewcode-block" id="ProcessPlugin.process_event"><a class="viewcode-back" href="../../pax.html#pax.plugin.ProcessPlugin.process_event">[docs]</a>    <span class="k">def</span> <span class="nf">process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_input_check</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">Event</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> received a </span><span class="si">%s</span><span class="s"> instead of an Event&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">event</span><span class="p">)))</span>
-        <span class="c"># Setup the logging adapter which will prepend [Event: ...] to the logging messages</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> received a </span><span class="si">%s</span><span class="s2"> instead of an Event&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">event</span><span class="p">)))</span>
+        <span class="c1"># Setup the logging adapter which will prepend [Event: ...] to the logging messages</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">EventLoggingAdapter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_log</span><span class="p">,</span> <span class="nb">dict</span><span class="p">(</span><span class="n">event_number</span><span class="o">=</span><span class="n">event</span><span class="o">.</span><span class="n">event_number</span><span class="p">))</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">has_shut_down</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> was asked to process an event, but it has already shut down!&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> was asked to process an event, but it has already shut down!&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
 
         <span class="n">event</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">do_output_check</span><span class="p">:</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">Event</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> returned a </span><span class="si">%s</span><span class="s"> instead of an event.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">event</span><span class="p">)))</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> returned a </span><span class="si">%s</span><span class="s2"> instead of an event.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">event</span><span class="p">)))</span>
         <span class="k">return</span> <span class="n">event</span>
 </div>
     <span class="k">def</span> <span class="nf">_process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
@@ -150,19 +150,19 @@
 <div class="viewcode-block" id="OutputPlugin"><a class="viewcode-back" href="../../pax.html#pax.plugin.OutputPlugin">[docs]</a><span class="k">class</span> <span class="nc">OutputPlugin</span><span class="p">(</span><span class="n">ProcessPlugin</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="nf">_pre_startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c"># If no output name specified, create a default one.</span>
-        <span class="c"># We need to do this here, rather than in paxer, otherwise user couldn&#39;t specify output_name in config</span>
-        <span class="c"># (paxer would override it)</span>
-        <span class="k">if</span> <span class="s">&#39;output_name&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">:</span>
-            <span class="c"># Is there an input plugin? If so, try to use the input plugin&#39;s input name + _paxVERSION</span>
-            <span class="c"># We can&#39;t just change extensions: some inputs/outputs have no extension (e.g. directories, database names)</span>
+        <span class="c1"># If no output name specified, create a default one.</span>
+        <span class="c1"># We need to do this here, rather than in paxer, otherwise user couldn&#39;t specify output_name in config</span>
+        <span class="c1"># (paxer would override it)</span>
+        <span class="k">if</span> <span class="s1">&#39;output_name&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">:</span>
+            <span class="c1"># Is there an input plugin? If so, try to use the input plugin&#39;s input name + _paxVERSION</span>
+            <span class="c1"># We can&#39;t just change extensions: some inputs/outputs have no extension (e.g. directories, database names)</span>
             <span class="n">ip</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">processor</span><span class="o">.</span><span class="n">input_plugin</span>
-            <span class="k">if</span> <span class="n">ip</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="s">&#39;input_name&#39;</span> <span class="ow">in</span> <span class="n">ip</span><span class="o">.</span><span class="n">config</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;output_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">ip</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;input_name&#39;</span><span class="p">]))[</span><span class="mi">0</span><span class="p">]</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;output_name&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="s">&#39;_pax&#39;</span> <span class="o">+</span> <span class="n">pax</span><span class="o">.</span><span class="n">__version__</span>
+            <span class="k">if</span> <span class="n">ip</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="s1">&#39;input_name&#39;</span> <span class="ow">in</span> <span class="n">ip</span><span class="o">.</span><span class="n">config</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;output_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">ip</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;input_name&#39;</span><span class="p">]))[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;output_name&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="s1">&#39;_pax&#39;</span> <span class="o">+</span> <span class="n">pax</span><span class="o">.</span><span class="n">__version__</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="c"># Deep fallback: timestamp-based name.</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;output_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s">&#39;output_pax</span><span class="si">%s</span><span class="s">_</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pax</span><span class="o">.</span><span class="n">__version__</span><span class="p">,</span> <span class="n">strftime</span><span class="p">(</span><span class="s">&#39;%y%m</span><span class="si">%d</span><span class="s">_%H%M%S&#39;</span><span class="p">))</span>
+                <span class="c1"># Deep fallback: timestamp-based name.</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;output_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;output_pax</span><span class="si">%s</span><span class="s1">_</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">pax</span><span class="o">.</span><span class="n">__version__</span><span class="p">,</span> <span class="n">strftime</span><span class="p">(</span><span class="s1">&#39;%y%m</span><span class="si">%d</span><span class="s1">_%H%M%S&#39;</span><span class="p">))</span>
         <span class="n">ProcessPlugin</span><span class="o">.</span><span class="n">_pre_startup</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
 <div class="viewcode-block" id="OutputPlugin.write_event"><a class="viewcode-back" href="../../pax.html#pax.plugin.OutputPlugin.write_event">[docs]</a>    <span class="k">def</span> <span class="nf">write_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
@@ -173,7 +173,7 @@
     <span class="k">def</span> <span class="nf">_process_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">write_event</span><span class="p">(</span><span class="n">event</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">result</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> returned a </span><span class="si">%s</span><span class="s"> instead of None&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">event</span><span class="p">)))</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">%s</span><span class="s2"> returned a </span><span class="si">%s</span><span class="s2"> instead of None&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">event</span><span class="p">)))</span>
         <span class="k">return</span> <span class="n">event</span>
 
 </div>
@@ -189,49 +189,49 @@
     <span class="n">uses_only_top</span> <span class="o">=</span> <span class="bp">True</span>
 
     <span class="k">def</span> <span class="nf">_pre_startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c"># List of integers of which PMTs to use, this algorithm uses the top pmt array to reconstruct</span>
+        <span class="c1"># List of integers of which PMTs to use, this algorithm uses the top pmt array to reconstruct</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">uses_only_top</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">pmts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_top&#39;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pmts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;channels_top&#39;</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">pmts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;channels_in_detector&#39;</span><span class="p">][</span><span class="s">&#39;tpc&#39;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pmts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;channels_in_detector&#39;</span><span class="p">][</span><span class="s1">&#39;tpc&#39;</span><span class="p">])</span>
 
-        <span class="c"># Test if we have a XENON100 style configuration using &#39;pmt_locations&#39; or a XENON1T style with &#39;pmts&#39;.</span>
-        <span class="c"># We need to resolve this inconsistency!!</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;tpc_name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s">&quot;XENON1T&quot;</span><span class="p">:</span>
-            <span class="n">pmt_positions</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pmts&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s">&#39;position&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pmts&#39;</span><span class="p">]))]</span>
+        <span class="c1"># Test if we have a XENON100 style configuration using &#39;pmt_locations&#39; or a XENON1T style with &#39;pmts&#39;.</span>
+        <span class="c1"># We need to resolve this inconsistency!!</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;tpc_name&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;XENON1T&quot;</span><span class="p">:</span>
+            <span class="n">pmt_positions</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;pmts&#39;</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;position&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;pmts&#39;</span><span class="p">]))]</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">pmt_positions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;pmt_locations&#39;</span><span class="p">]</span>
+            <span class="n">pmt_positions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;pmt_locations&#39;</span><span class="p">]</span>
 
-        <span class="c"># (x,y) Locations of these PMTs, stored as np.array([(x,y), (x,y), ...])</span>
+        <span class="c1"># (x,y) Locations of these PMTs, stored as np.array([(x,y), (x,y), ...])</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">pmt_locations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pmts</span><span class="p">),</span> <span class="mi">2</span><span class="p">))</span>
         <span class="k">for</span> <span class="n">ch</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmts</span><span class="p">:</span>
-            <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="p">(</span><span class="s">&#39;x&#39;</span><span class="p">,</span> <span class="s">&#39;y&#39;</span><span class="p">):</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">pmt_locations</span><span class="p">[</span><span class="n">ch</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">pmts</span><span class="p">[</span><span class="mi">0</span><span class="p">]][{</span><span class="s">&#39;x&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&#39;y&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}[</span><span class="n">dim</span><span class="p">]]</span> <span class="o">=</span> <span class="n">pmt_positions</span><span class="p">[</span><span class="n">ch</span><span class="p">][</span><span class="n">dim</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">pmt_locations</span><span class="p">[</span><span class="n">ch</span><span class="o">-</span><span class="bp">self</span><span class="o">.</span><span class="n">pmts</span><span class="p">[</span><span class="mi">0</span><span class="p">]][{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}[</span><span class="n">dim</span><span class="p">]]</span> <span class="o">=</span> <span class="n">pmt_positions</span><span class="p">[</span><span class="n">ch</span><span class="p">][</span><span class="n">dim</span><span class="p">]</span>
 
         <span class="n">TransformPlugin</span><span class="o">.</span><span class="n">_pre_startup</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
 <div class="viewcode-block" id="PosRecPlugin.transform_event"><a class="viewcode-back" href="../../pax.html#pax.plugin.PosRecPlugin.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
-        <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">get_peaks_by_type</span><span class="p">(</span><span class="n">detector</span><span class="o">=</span><span class="s">&#39;tpc&#39;</span><span class="p">):</span>
-            <span class="c"># Do not act on lone hits</span>
-            <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s">&#39;lone_hit&#39;</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">peak</span> <span class="ow">in</span> <span class="n">event</span><span class="o">.</span><span class="n">get_peaks_by_type</span><span class="p">(</span><span class="n">detector</span><span class="o">=</span><span class="s1">&#39;tpc&#39;</span><span class="p">):</span>
+            <span class="c1"># Do not act on lone hits</span>
+            <span class="k">if</span> <span class="n">peak</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s1">&#39;lone_hit&#39;</span><span class="p">:</span>
                 <span class="k">continue</span>
 
-            <span class="c"># If there are no contributing top PMTs, don&#39;t even try:</span>
+            <span class="c1"># If there are no contributing top PMTs, don&#39;t even try:</span>
             <span class="n">area_top</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">peak</span><span class="o">.</span><span class="n">area_per_channel</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">pmts</span><span class="p">])</span>
             <span class="k">if</span> <span class="n">area_top</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">pos_dict</span> <span class="o">=</span> <span class="bp">None</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">pos_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reconstruct_position</span><span class="p">(</span><span class="n">peak</span><span class="p">)</span>
 
-            <span class="c"># Parse the plugin&#39;s result</span>
+            <span class="c1"># Parse the plugin&#39;s result</span>
             <span class="k">if</span> <span class="n">pos_dict</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
-                <span class="c"># The plugin gave up</span>
+                <span class="c1"># The plugin gave up</span>
                 <span class="n">pos_dict</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">pos_dict</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)):</span>
-                <span class="c"># The plugin returned (x, y)</span>
-                <span class="n">pos_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">((</span><span class="s">&#39;x&#39;</span><span class="p">,</span> <span class="s">&#39;y&#39;</span><span class="p">),</span> <span class="n">pos_dict</span><span class="p">))</span>
+                <span class="c1"># The plugin returned (x, y)</span>
+                <span class="n">pos_dict</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">((</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">),</span> <span class="n">pos_dict</span><span class="p">))</span>
 
-            <span class="c"># Add the algorithm field, then append the position to the peak</span>
+            <span class="c1"># Add the algorithm field, then append the position to the peak</span>
             <span class="n">pos_dict</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
             <span class="n">peak</span><span class="o">.</span><span class="n">reconstructed_positions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ReconstructedPosition</span><span class="p">(</span><span class="o">**</span><span class="n">pos_dict</span><span class="p">))</span>
 
@@ -247,7 +247,7 @@
 <span class="sd">    Adapted from https://docs.python.org/3.4/howto/logging-cookbook.html#context-info</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 <div class="viewcode-block" id="EventLoggingAdapter.process"><a class="viewcode-back" href="../../pax.html#pax.plugin.EventLoggingAdapter.process">[docs]</a>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s">&#39;[Event </span><span class="si">%s</span><span class="s">] </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">extra</span><span class="p">[</span><span class="s">&#39;event_number&#39;</span><span class="p">],</span> <span class="n">msg</span><span class="p">),</span> <span class="n">kwargs</span></div></div>
+        <span class="k">return</span> <span class="s1">&#39;[Event </span><span class="si">%s</span><span class="s1">] </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">extra</span><span class="p">[</span><span class="s1">&#39;event_number&#39;</span><span class="p">],</span> <span class="n">msg</span><span class="p">),</span> <span class="n">kwargs</span></div></div>
 </pre></div>
 
           </div>
@@ -285,7 +285,7 @@
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
       
     </div>
 

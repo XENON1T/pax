@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.data_model &mdash; Processor for Analyzing XENON1T 4.4.0 documentation</title>
+    <title>pax.data_model &mdash; Processor for Analyzing XENON1T 4.4.1 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '4.4.0',
+        VERSION:     '4.4.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,11 +23,11 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.4.0 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.4.1 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
   <body role="document">  
@@ -66,34 +66,34 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs_dict</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="c"># Initialize the collection fields to empty lists</span>
-        <span class="c"># object.__setattr__ is needed to bypass type checking in StrictModel</span>
+        <span class="c1"># Initialize the collection fields to empty lists</span>
+        <span class="c1"># object.__setattr__ is needed to bypass type checking in StrictModel</span>
         <span class="n">list_field_info</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_list_field_info</span><span class="p">()</span>
         <span class="k">for</span> <span class="n">field_name</span> <span class="ow">in</span> <span class="n">list_field_info</span><span class="p">:</span>
             <span class="nb">object</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="p">[])</span>
 
-        <span class="c"># Initialize all attributes from kwargs and kwargs_dict</span>
+        <span class="c1"># Initialize all attributes from kwargs and kwargs_dict</span>
         <span class="n">kwargs</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">kwargs_dict</span> <span class="ow">or</span> <span class="p">{})</span>
         <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">list_field_info</span><span class="p">:</span>
-                <span class="c"># User gave a value to initialize a list field. Hopefully an iterable!</span>
-                <span class="c"># Let&#39;s check if the types are correct</span>
+                <span class="c1"># User gave a value to initialize a list field. Hopefully an iterable!</span>
+                <span class="c1"># Let&#39;s check if the types are correct</span>
                 <span class="n">desired_type</span> <span class="o">=</span> <span class="n">list_field_info</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
                 <span class="n">temp_list</span> <span class="o">=</span> <span class="p">[]</span>
                 <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">v</span><span class="p">:</span>
                     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">el</span><span class="p">,</span> <span class="n">desired_type</span><span class="p">):</span>
-                        <span class="c"># Good, pass through unmolested</span>
+                        <span class="c1"># Good, pass through unmolested</span>
                         <span class="n">temp_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">el</span><span class="p">)</span>
                     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">el</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-                        <span class="c"># Dicts are fine too, we can use them to init the desired type</span>
+                        <span class="c1"># Dicts are fine too, we can use them to init the desired type</span>
                         <span class="n">temp_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">desired_type</span><span class="p">(</span><span class="o">**</span><span class="n">el</span><span class="p">))</span>
                     <span class="k">else</span><span class="p">:</span>
-                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Attempt to initialize list field </span><span class="si">%s</span><span class="s"> with type </span><span class="si">%s</span><span class="s">, &quot;</span>
-                                         <span class="s">&quot;but you promised type </span><span class="si">%s</span><span class="s"> in class declaration.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Attempt to initialize list field </span><span class="si">%s</span><span class="s2"> with type </span><span class="si">%s</span><span class="s2">, &quot;</span>
+                                         <span class="s2">&quot;but you promised type </span><span class="si">%s</span><span class="s2"> in class declaration.&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span>
                                                                                              <span class="nb">type</span><span class="p">(</span><span class="n">el</span><span class="p">),</span>
                                                                                              <span class="n">desired_type</span><span class="p">))</span>
-                <span class="c"># This has to be a list of dictionaries</span>
-                <span class="c"># suitable to be passed to __init__ of the list field&#39;s element type</span>
+                <span class="c1"># This has to be a list of dictionaries</span>
+                <span class="c1"># suitable to be passed to __init__ of the list field&#39;s element type</span>
                 <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">temp_list</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="n">default_value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
@@ -101,21 +101,21 @@
                     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
                         <span class="k">pass</span>
                     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
-                        <span class="c"># Numpy arrays can be also initialized from a &#39;string&#39; of bytes...</span>
+                        <span class="c1"># Numpy arrays can be also initialized from a &#39;string&#39; of bytes...</span>
                         <span class="n">v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fromstring</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">default_value</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
-                    <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="s">&#39;__iter__&#39;</span><span class="p">):</span>
-                        <span class="c"># ... or an iterable</span>
+                    <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="s1">&#39;__iter__&#39;</span><span class="p">):</span>
+                        <span class="c1"># ... or an iterable</span>
                         <span class="n">v</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">default_value</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
                     <span class="k">else</span><span class="p">:</span>
-                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Can&#39;t initialize field </span><span class="si">%s</span><span class="s">: &quot;</span>
-                                         <span class="s">&quot;don&#39;t know how to make a numpy array from a </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)))</span>
+                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Can&#39;t initialize field </span><span class="si">%s</span><span class="s2">: &quot;</span>
+                                         <span class="s2">&quot;don&#39;t know how to make a numpy array from a </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)))</span>
                 <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">default_value</span><span class="p">,</span> <span class="n">Model</span><span class="p">):</span>
                     <span class="n">v</span> <span class="o">=</span> <span class="n">default_value</span><span class="o">.</span><span class="n">__class__</span><span class="p">(</span><span class="o">**</span><span class="n">v</span><span class="p">)</span>
 
                 <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
 
-    <span class="nd">@classmethod</span>        <span class="c"># Use only in initialization (or if attributes are fixed, as for StrictModel)</span>
-    <span class="nd">@Memoize</span>            <span class="c"># Caching decorator, improves performance if a model is initialized often</span>
+    <span class="nd">@classmethod</span>        <span class="c1"># Use only in initialization (or if attributes are fixed, as for StrictModel)</span>
+    <span class="nd">@Memoize</span>            <span class="c1"># Caching decorator, improves performance if a model is initialized often</span>
     <span class="k">def</span> <span class="nf">get_list_field_info</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return dict with fielname =&gt; type of elements in collection fields in this class</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -132,27 +132,27 @@
         <span class="sd">&quot;&quot;&quot;Iterator over (key, value) tuples of all user-specified fields</span>
 <span class="sd">        Returns keys in lexical order</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c"># TODO: increase performance by pre-sorting keys?</span>
-        <span class="c"># self.__dict__.items() does not return default values set in class declaration</span>
-        <span class="c"># Hence we need something more complicated</span>
+        <span class="c1"># TODO: increase performance by pre-sorting keys?</span>
+        <span class="c1"># self.__dict__.items() does not return default values set in class declaration</span>
+        <span class="c1"># Hence we need something more complicated</span>
 
         <span class="n">class_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__dict__</span>
         <span class="n">self_dict</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__dict__</span>
 
         <span class="k">for</span> <span class="n">field_name</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">class_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
             <span class="k">if</span> <span class="n">field_name</span> <span class="ow">in</span> <span class="n">self_dict</span><span class="p">:</span>
-                <span class="c"># The instance has a value for this field: return it</span>
+                <span class="c1"># The instance has a value for this field: return it</span>
                 <span class="k">yield</span> <span class="p">(</span><span class="n">field_name</span><span class="p">,</span> <span class="n">self_dict</span><span class="p">[</span><span class="n">field_name</span><span class="p">])</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="c"># ... it doesnt. Should we return its value?</span>
-                <span class="k">if</span> <span class="n">field_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;_&#39;</span><span class="p">):</span>
-                    <span class="k">continue</span>    <span class="c"># No, is internal</span>
+                <span class="c1"># ... it doesnt. Should we return its value?</span>
+                <span class="k">if</span> <span class="n">field_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">):</span>
+                    <span class="k">continue</span>    <span class="c1"># No, is internal</span>
                 <span class="n">value_in_class</span> <span class="o">=</span> <span class="n">class_dict</span><span class="p">[</span><span class="n">field_name</span><span class="p">]</span>
                 <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">value_in_class</span><span class="p">):</span>
-                    <span class="k">continue</span>    <span class="c"># No, is a method</span>
+                    <span class="k">continue</span>    <span class="c1"># No, is a method</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value_in_class</span><span class="p">,</span> <span class="p">(</span><span class="nb">property</span><span class="p">,</span> <span class="nb">classmethod</span><span class="p">)):</span>
-                    <span class="k">continue</span>    <span class="c"># No, is a property or classmethod</span>
-                <span class="c"># Yes, yield the class-level value</span>
+                    <span class="k">continue</span>    <span class="c1"># No, is a property or classmethod</span>
+                <span class="c1"># Yes, yield the class-level value</span>
                 <span class="k">yield</span> <span class="p">(</span><span class="n">field_name</span><span class="p">,</span> <span class="n">value_in_class</span><span class="p">)</span>
 </div>
     <span class="nd">@classmethod</span>
@@ -160,12 +160,12 @@
         <span class="sd">&quot;&quot;&quot;Get a dtype for a numpy structured array equivalent to the class</span>
 <span class="sd">        Works only for flat classes (no list fields) containing int, float, and bool</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">type_mapping</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;int&#39;</span><span class="p">:</span>    <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span>
-                        <span class="s">&#39;float&#39;</span><span class="p">:</span>  <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
-                        <span class="s">&#39;long&#39;</span><span class="p">:</span>   <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span>
-                        <span class="s">&#39;bool&#39;</span><span class="p">:</span>   <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">}</span>
+        <span class="n">type_mapping</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;int&#39;</span><span class="p">:</span>    <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span>
+                        <span class="s1">&#39;float&#39;</span><span class="p">:</span>  <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
+                        <span class="s1">&#39;long&#39;</span><span class="p">:</span>   <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span>
+                        <span class="s1">&#39;bool&#39;</span><span class="p">:</span>   <span class="n">np</span><span class="o">.</span><span class="n">bool_</span><span class="p">}</span>
         <span class="n">dtype</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="c"># Get field types from a dummy instance of the class</span>
+        <span class="c1"># Get field types from a dummy instance of the class</span>
         <span class="k">for</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">default_value</span> <span class="ow">in</span> <span class="n">cls</span><span class="p">()</span><span class="o">.</span><span class="n">get_fields_data</span><span class="p">():</span>
             <span class="n">value_type</span> <span class="o">=</span> <span class="n">default_value</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
             <span class="k">if</span> <span class="n">value_type</span> <span class="ow">in</span> <span class="n">type_mapping</span><span class="p">:</span>
@@ -188,12 +188,12 @@
                                         <span class="n">fields_to_ignore</span><span class="o">=</span><span class="n">fields_to_ignore</span><span class="p">,</span>
                                         <span class="n">nan_to_none</span><span class="o">=</span><span class="n">nan_to_none</span><span class="p">)</span> <span class="k">for</span> <span class="n">el</span> <span class="ow">in</span> <span class="n">v</span><span class="p">]</span>
             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">and</span> <span class="n">convert_numpy_arrays_to</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
-                <span class="k">if</span> <span class="n">convert_numpy_arrays_to</span> <span class="o">==</span> <span class="s">&#39;list&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">convert_numpy_arrays_to</span> <span class="o">==</span> <span class="s1">&#39;list&#39;</span><span class="p">:</span>
                     <span class="n">result</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
-                <span class="k">elif</span> <span class="n">convert_numpy_arrays_to</span> <span class="o">==</span> <span class="s">&#39;bytes&#39;</span><span class="p">:</span>
+                <span class="k">elif</span> <span class="n">convert_numpy_arrays_to</span> <span class="o">==</span> <span class="s1">&#39;bytes&#39;</span><span class="p">:</span>
                     <span class="n">result</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">bson</span><span class="o">.</span><span class="n">Binary</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">tostring</span><span class="p">())</span>
                 <span class="k">else</span><span class="p">:</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&#39;convert_numpy_arrays_to must be &quot;list&quot; or &quot;bytes&quot;&#39;</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;convert_numpy_arrays_to must be &quot;list&quot; or &quot;bytes&quot;&#39;</span><span class="p">)</span>
             <span class="k">elif</span> <span class="n">nan_to_none</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
                 <span class="n">result</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="bp">None</span>
             <span class="k">else</span><span class="p">:</span>
@@ -201,12 +201,12 @@
         <span class="k">return</span> <span class="n">result</span>
 </div>
 <div class="viewcode-block" id="Model.to_json"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Model.to_json">[docs]</a>    <span class="k">def</span> <span class="nf">to_json</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields_to_ignore</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">nan_to_none</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">convert_numpy_arrays_to</span><span class="o">=</span><span class="s">&#39;list&#39;</span><span class="p">,</span>
+        <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">convert_numpy_arrays_to</span><span class="o">=</span><span class="s1">&#39;list&#39;</span><span class="p">,</span>
                                        <span class="n">fields_to_ignore</span><span class="o">=</span><span class="n">fields_to_ignore</span><span class="p">,</span>
                                        <span class="n">nan_to_none</span><span class="o">=</span><span class="n">nan_to_none</span><span class="p">))</span>
 </div>
 <div class="viewcode-block" id="Model.to_bson"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Model.to_bson">[docs]</a>    <span class="k">def</span> <span class="nf">to_bson</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fields_to_ignore</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">nan_to_none</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">bson</span><span class="o">.</span><span class="n">BSON</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">convert_numpy_arrays_to</span><span class="o">=</span><span class="s">&#39;bytes&#39;</span><span class="p">,</span>
+        <span class="k">return</span> <span class="n">bson</span><span class="o">.</span><span class="n">BSON</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(</span><span class="n">convert_numpy_arrays_to</span><span class="o">=</span><span class="s1">&#39;bytes&#39;</span><span class="p">,</span>
                                              <span class="n">fields_to_ignore</span><span class="o">=</span><span class="n">fields_to_ignore</span><span class="p">,</span>
                                              <span class="n">nan_to_none</span><span class="o">=</span><span class="n">nan_to_none</span><span class="p">))</span>
 </div>
@@ -217,7 +217,7 @@
     <span class="nd">@classmethod</span>
 <div class="viewcode-block" id="Model.from_bson"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Model.from_bson">[docs]</a>    <span class="k">def</span> <span class="nf">from_bson</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">six</span><span class="o">.</span><span class="n">PY2</span><span class="p">:</span>
-            <span class="c"># Hack for python 2: may work in py3 too, but it&#39;s definitely not the standard way!</span>
+            <span class="c1"># Hack for python 2: may work in py3 too, but it&#39;s definitely not the standard way!</span>
             <span class="n">reader</span> <span class="o">=</span> <span class="n">bson</span><span class="o">.</span><span class="n">decode_file_iter</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">BytesIO</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
             <span class="n">event_dict</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">reader</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -226,18 +226,18 @@
 
 </div></div>
 <span class="n">casting_allowed_for</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s">&#39;int&#39;</span><span class="p">:</span>    <span class="p">[</span><span class="s">&#39;int16&#39;</span><span class="p">,</span> <span class="s">&#39;int32&#39;</span><span class="p">,</span> <span class="s">&#39;int64&#39;</span><span class="p">,</span> <span class="s">&#39;Int64&#39;</span><span class="p">,</span> <span class="s">&#39;Int32&#39;</span><span class="p">,</span> <span class="s">&#39;long&#39;</span><span class="p">],</span>
-    <span class="s">&#39;float&#39;</span><span class="p">:</span>  <span class="p">[</span><span class="s">&#39;int&#39;</span><span class="p">,</span> <span class="s">&#39;int16&#39;</span><span class="p">,</span> <span class="s">&#39;int32&#39;</span><span class="p">,</span> <span class="s">&#39;int64&#39;</span><span class="p">,</span> <span class="s">&#39;Int64&#39;</span><span class="p">,</span> <span class="s">&#39;Int32&#39;</span><span class="p">,</span> <span class="s">&#39;float32&#39;</span><span class="p">,</span> <span class="s">&#39;float64&#39;</span><span class="p">,</span> <span class="s">&#39;long&#39;</span><span class="p">],</span>
-    <span class="s">&#39;bool&#39;</span><span class="p">:</span>   <span class="p">[</span><span class="s">&#39;int&#39;</span><span class="p">,</span> <span class="s">&#39;int16&#39;</span><span class="p">,</span> <span class="s">&#39;int32&#39;</span><span class="p">,</span> <span class="s">&#39;int64&#39;</span><span class="p">,</span> <span class="s">&#39;Int64&#39;</span><span class="p">,</span> <span class="s">&#39;Int32&#39;</span><span class="p">,</span> <span class="s">&#39;long&#39;</span><span class="p">,</span> <span class="s">&#39;bool_&#39;</span><span class="p">],</span>
-    <span class="s">&#39;long&#39;</span><span class="p">:</span>   <span class="p">[</span><span class="s">&#39;int&#39;</span><span class="p">,</span> <span class="s">&#39;int16&#39;</span><span class="p">,</span> <span class="s">&#39;int32&#39;</span><span class="p">,</span> <span class="s">&#39;int64&#39;</span><span class="p">,</span> <span class="s">&#39;Int64&#39;</span><span class="p">,</span> <span class="s">&#39;Int32&#39;</span><span class="p">],</span>
-    <span class="s">&#39;str&#39;</span><span class="p">:</span>    <span class="p">[</span><span class="s">&#39;unicode&#39;</span><span class="p">],</span>
+    <span class="s1">&#39;int&#39;</span><span class="p">:</span>    <span class="p">[</span><span class="s1">&#39;int16&#39;</span><span class="p">,</span> <span class="s1">&#39;int32&#39;</span><span class="p">,</span> <span class="s1">&#39;int64&#39;</span><span class="p">,</span> <span class="s1">&#39;Int64&#39;</span><span class="p">,</span> <span class="s1">&#39;Int32&#39;</span><span class="p">,</span> <span class="s1">&#39;long&#39;</span><span class="p">],</span>
+    <span class="s1">&#39;float&#39;</span><span class="p">:</span>  <span class="p">[</span><span class="s1">&#39;int&#39;</span><span class="p">,</span> <span class="s1">&#39;int16&#39;</span><span class="p">,</span> <span class="s1">&#39;int32&#39;</span><span class="p">,</span> <span class="s1">&#39;int64&#39;</span><span class="p">,</span> <span class="s1">&#39;Int64&#39;</span><span class="p">,</span> <span class="s1">&#39;Int32&#39;</span><span class="p">,</span> <span class="s1">&#39;float32&#39;</span><span class="p">,</span> <span class="s1">&#39;float64&#39;</span><span class="p">,</span> <span class="s1">&#39;long&#39;</span><span class="p">],</span>
+    <span class="s1">&#39;bool&#39;</span><span class="p">:</span>   <span class="p">[</span><span class="s1">&#39;int&#39;</span><span class="p">,</span> <span class="s1">&#39;int16&#39;</span><span class="p">,</span> <span class="s1">&#39;int32&#39;</span><span class="p">,</span> <span class="s1">&#39;int64&#39;</span><span class="p">,</span> <span class="s1">&#39;Int64&#39;</span><span class="p">,</span> <span class="s1">&#39;Int32&#39;</span><span class="p">,</span> <span class="s1">&#39;long&#39;</span><span class="p">,</span> <span class="s1">&#39;bool_&#39;</span><span class="p">],</span>
+    <span class="s1">&#39;long&#39;</span><span class="p">:</span>   <span class="p">[</span><span class="s1">&#39;int&#39;</span><span class="p">,</span> <span class="s1">&#39;int16&#39;</span><span class="p">,</span> <span class="s1">&#39;int32&#39;</span><span class="p">,</span> <span class="s1">&#39;int64&#39;</span><span class="p">,</span> <span class="s1">&#39;Int64&#39;</span><span class="p">,</span> <span class="s1">&#39;Int32&#39;</span><span class="p">],</span>
+    <span class="s1">&#39;str&#39;</span><span class="p">:</span>    <span class="p">[</span><span class="s1">&#39;unicode&#39;</span><span class="p">],</span>
 <span class="p">}</span>
 
 
 <div class="viewcode-block" id="ListField"><a class="viewcode-back" href="../../pax.html#pax.datastructure.ListField">[docs]</a><span class="k">class</span> <span class="nc">ListField</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element_type</span><span class="p">):</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">element_type</span><span class="p">,</span> <span class="n">Model</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Model collections must specify a type&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Model collections must specify a type&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">element_type</span> <span class="o">=</span> <span class="n">element_type</span>
 
 </div>
@@ -249,33 +249,33 @@
 
     <span class="k">def</span> <span class="nf">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
 
-        <span class="c"># Get the old attr.</span>
-        <span class="c"># Will raise AttributeError if doesn&#39;t exists, which is what we want</span>
+        <span class="c1"># Get the old attr.</span>
+        <span class="c1"># Will raise AttributeError if doesn&#39;t exists, which is what we want</span>
         <span class="n">old_val</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
         <span class="n">old_type</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">old_val</span><span class="p">)</span>
         <span class="n">new_type</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
-        <span class="c"># Check for attempted type change</span>
+        <span class="c1"># Check for attempted type change</span>
         <span class="k">if</span> <span class="n">old_type</span> <span class="o">!=</span> <span class="n">new_type</span><span class="p">:</span>
             <span class="n">old_class_name</span> <span class="o">=</span> <span class="n">old_val</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
             <span class="n">new_class_name</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
 
-            <span class="c"># Are we allowed to cast the type?</span>
+            <span class="c1"># Are we allowed to cast the type?</span>
             <span class="k">if</span> <span class="n">old_class_name</span> <span class="ow">in</span> <span class="n">casting_allowed_for</span> <span class="ow">and</span> <span class="n">new_class_name</span> <span class="ow">in</span> <span class="n">casting_allowed_for</span><span class="p">[</span><span class="n">old_class_name</span><span class="p">]:</span>
                 <span class="n">value</span> <span class="o">=</span> <span class="n">old_type</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;Attribute </span><span class="si">%s</span><span class="s"> of class </span><span class="si">%s</span><span class="s"> should be a </span><span class="si">%s</span><span class="s">, not a </span><span class="si">%s</span><span class="s">. Allowed other types: </span><span class="si">%s</span><span class="s">.&#39;</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Attribute </span><span class="si">%s</span><span class="s1"> of class </span><span class="si">%s</span><span class="s1"> should be a </span><span class="si">%s</span><span class="s1">, not a </span><span class="si">%s</span><span class="s1">. Allowed other types: </span><span class="si">%s</span><span class="s1">.&#39;</span>
                                 <span class="o">%</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span>
                                    <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span>
                                    <span class="n">old_class_name</span><span class="p">,</span>
                                    <span class="n">new_class_name</span><span class="p">,</span>
-                                   <span class="n">casting_allowed_for</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">old_class_name</span><span class="p">,</span> <span class="s">&#39;&#39;</span><span class="p">)))</span>
+                                   <span class="n">casting_allowed_for</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">old_class_name</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">)))</span>
 
-        <span class="c"># Check for attempted dtype change</span>
+        <span class="c1"># Check for attempted dtype change</span>
         <span class="k">if</span> <span class="n">old_type</span> <span class="o">==</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">old_val</span><span class="o">.</span><span class="n">dtype</span> <span class="o">!=</span> <span class="n">value</span><span class="o">.</span><span class="n">dtype</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s">&#39;Attribute </span><span class="si">%s</span><span class="s"> of class </span><span class="si">%s</span><span class="s"> should have numpy dtype </span><span class="si">%s</span><span class="s">, not </span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Attribute </span><span class="si">%s</span><span class="s1"> of class </span><span class="si">%s</span><span class="s1"> should have numpy dtype </span><span class="si">%s</span><span class="s1">, not </span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span>
                     <span class="n">key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span><span class="p">,</span> <span class="n">old_val</span><span class="o">.</span><span class="n">dtype</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">dtype</span><span class="p">))</span>
 
         <span class="n">Model</span><span class="o">.</span><span class="n">__setattr__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span></div>
@@ -316,7 +316,7 @@
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
       
     </div>
 

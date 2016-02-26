@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Waveform simulator docs &mdash; Processor for Analyzing XENON1T 4.4.0 documentation</title>
+    <title>Waveform simulator docs &mdash; Processor for Analyzing XENON1T 4.4.1 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '4.4.0',
+        VERSION:     '4.4.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,12 +23,12 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.4.0 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.4.1 documentation" href="index.html" />
     <link rel="next" title="Contributing" href="contributing.html" />
     <link rel="prev" title="Event builder" href="eventbuilder.html" />
    
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
   <body role="document">  
@@ -51,7 +51,7 @@
 <p><strong>Case 1: use all of the simulator to make waveforms.</strong> For this, use pax with <cite>–config XENON100 Simulation –input your_instructions.csv</cite> (replace XENON100 with your TPC settings file if you’re simulating for another TPC). See below for the format of this instructions file.You’ll also want to specify an output format that is convenient for whatever you actually want to do with the waveforms: formats like pickle, JSON and BSON are easy to use (if you use python), but we also offer Avro, HDF5, CSV, HTML, ROOT, and soon XED. If you need a specific format not in this list, let us know, we may be bribable. Of course, if you use pax for plotting and analyzing the simulated waveforms, you may not need to output raw waveforms at all.</p>
 <p><strong>Case 2: use just a small part of the simulator library</strong>, such as the S1 photon time distribution, or the S2 per-PMT light distribution. In this case it is faster to make your own script with:</p>
 <div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">pax</span> <span class="kn">import</span> <span class="n">core</span>
-<span class="n">mypax</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">Processor</span><span class="p">(</span><span class="n">config_dict</span><span class="o">=</span><span class="p">{</span><span class="s">&#39;pax&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s">&#39;plugin_group_names&#39;</span><span class="p">:[]}})</span>
+<span class="n">mypax</span> <span class="o">=</span> <span class="n">core</span><span class="o">.</span><span class="n">Processor</span><span class="p">(</span><span class="n">config_dict</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;pax&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;plugin_group_names&#39;</span><span class="p">:[]}})</span>
 <span class="n">sim</span> <span class="o">=</span> <span class="n">mypax</span><span class="o">.</span><span class="n">simulator</span>
 </pre></div>
 </div>
@@ -135,28 +135,25 @@ This process is repeated for each channel &#8211; even those that receive no pho
 <span class="target" id="module-pax.simulation"></span><p>Waveform simulator (&#8220;FaX&#8221;) - physics backend
 The only I/O stuff here is pax event creation, everything else is in the WaveformSimulator plugins</p>
 <dl class="class">
-<dt id="pax.simulation.SimulatedHitpattern">
-<em class="property">class </em><code class="descclassname">pax.simulation.</code><code class="descname">SimulatedHitpattern</code><span class="sig-paren">(</span><em>simulator</em>, <em>photon_timings=()</em>, <em>x=0</em>, <em>y=0</em>, <em>z=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#SimulatedHitpattern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.SimulatedHitpattern" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-</dd></dl>
-
-<dl class="class">
 <dt id="pax.simulation.Simulator">
 <em class="property">class </em><code class="descclassname">pax.simulation.</code><code class="descname">Simulator</code><span class="sig-paren">(</span><em>config_to_init</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <dl class="method">
+<dt id="pax.simulation.Simulator.clear_signals_queue">
+<code class="descname">clear_signals_queue</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.clear_signals_queue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.clear_signals_queue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prepares the waveform simulator for a new event.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.simulation.Simulator.distribute_photons">
+<code class="descname">distribute_photons</code><span class="sig-paren">(</span><em>n_photons</em>, <em>x</em>, <em>y</em>, <em>z</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.distribute_photons"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.distribute_photons" title="Permalink to this definition">¶</a></dt>
+<dd><p>Distribute n_photons over the TPC PMTs, with LCE appropriate to (x, y, z)
+:return: numpy array of length == sim.config[&#8216;n_channels&#8217;] with photon count per channel</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="pax.simulation.Simulator.distribute_photons_by_pattern">
 <code class="descname">distribute_photons_by_pattern</code><span class="sig-paren">(</span><em>n_photons</em>, <em>pattern_fitter</em>, <em>coordinate_tuple</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.distribute_photons_by_pattern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.distribute_photons_by_pattern" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.simulation.Simulator.distribute_s1_photons">
-<code class="descname">distribute_s1_photons</code><span class="sig-paren">(</span><em>n_photons</em>, <em>x</em>, <em>y</em>, <em>z</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.distribute_s1_photons"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.distribute_s1_photons" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.simulation.Simulator.distribute_s2_photons">
-<code class="descname">distribute_s2_photons</code><span class="sig-paren">(</span><em>n_photons</em>, <em>x</em>, <em>y</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.distribute_s2_photons"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.distribute_s2_photons" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -165,14 +162,27 @@ The only I/O stuff here is pax event creation, everything else is in the Wavefor
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="pax.simulation.Simulator.make_hitpattern">
-<code class="descname">make_hitpattern</code><span class="sig-paren">(</span><em>photon_times</em>, <em>x=0</em>, <em>y=0</em>, <em>z=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.make_hitpattern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.make_hitpattern" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dt id="pax.simulation.Simulator.make_pax_event">
+<code class="descname">make_pax_event</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.make_pax_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.make_pax_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simulate PMT response to the queued photon signals
+Returns None if no photons have been queued else returns start_time (in units, ie ns), pmt waveform matrix
+# TODO: Account for random initial digitizer state wrt interaction? Where?</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="pax.simulation.Simulator.pmt_pulse_current">
 <code class="descname">pmt_pulse_current</code><span class="sig-paren">(</span><em>gain</em>, <em>offset=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.pmt_pulse_current"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.pmt_pulse_current" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.simulation.Simulator.queue_signal">
+<code class="descname">queue_signal</code><span class="sig-paren">(</span><em>photon_timings</em>, <em>x=0</em>, <em>y=0</em>, <em>z=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.queue_signal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.queue_signal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a signal due to isotropic light emission to the waveform simulator
+photon_timings: list of photon emission times (ns) since start of the event.</p>
+<blockquote>
+<div>All photons listed here will be detected!</div></blockquote>
+<p>x, y, z: position of emission (standard coordinate system, pax units = cm)</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="pax.simulation.Simulator.randomize_photons_over_channels">
@@ -202,7 +212,7 @@ Does not have to be normalized to sum to 1.</li>
 <dl class="method">
 <dt id="pax.simulation.Simulator.s1_photons">
 <code class="descname">s1_photons</code><span class="sig-paren">(</span><em>n_photons</em>, <em>recoil_type</em>, <em>x=0.0</em>, <em>y=0.0</em>, <em>z=0</em>, <em>t=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.s1_photons"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.s1_photons" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a list of photon production times caused by an S1 process.</p>
+<dd><p>Returns a list of photon detection times at the PMT caused by an S1 emitting n_photons.</p>
 </dd></dl>
 
 <dl class="method">
@@ -236,14 +246,6 @@ singlet_ratio - fraction of excimers that become singlets</p>
 </dl>
 </dd></dl>
 
-<dl class="method">
-<dt id="pax.simulation.Simulator.to_pax_event">
-<code class="descname">to_pax_event</code><span class="sig-paren">(</span><em>hitpattern</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.to_pax_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.to_pax_event" title="Permalink to this definition">¶</a></dt>
-<dd><p>Simulate PMT response to a hitpattern of photons
-Returns None if you pass a hitlist without any hits
-returns start_time (in units, ie ns), pmt waveform matrix</p>
-</dd></dl>
-
 </dd></dl>
 
 <dl class="function">
@@ -264,7 +266,8 @@ There is no physics here, all that is in pax.simulation.</p>
 <dt id="pax.plugins.io.WaveformSimulator.WaveformSimulator">
 <em class="property">class </em><code class="descclassname">pax.plugins.io.WaveformSimulator.</code><code class="descname">WaveformSimulator</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="pax.html#pax.plugin.InputPlugin" title="pax.plugin.InputPlugin"><code class="xref py py-class docutils literal"><span class="pre">pax.plugin.InputPlugin</span></code></a></p>
-<p>Common I/O for waveform simulator plugins</p>
+<p>Common input plugin for waveform simulator plugins. Do not use directly, won&#8217;t work.
+Takes care of truth file writing as well.</p>
 <dl class="method">
 <dt id="pax.plugins.io.WaveformSimulator.WaveformSimulator.get_events">
 <code class="descname">get_events</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulator.get_events"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulator.get_events" title="Permalink to this definition">¶</a></dt>
@@ -329,6 +332,8 @@ Defaults to s1_default_recombination_time.</li>
 <dt id="pax.plugins.io.WaveformSimulator.WaveformSimulatorFromCSV">
 <em class="property">class </em><code class="descclassname">pax.plugins.io.WaveformSimulator.</code><code class="descname">WaveformSimulatorFromCSV</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulatorFromCSV"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromCSV" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.WaveformSimulator.WaveformSimulator" title="pax.plugins.io.WaveformSimulator.WaveformSimulator"><code class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.WaveformSimulator.WaveformSimulator</span></code></a></p>
+<p>Simulate waveforms from a csv file with instructions, see:
+<a class="reference external" href="http://xenon1t.github.io/pax/simulator.html#instruction-file-format">http://xenon1t.github.io/pax/simulator.html#instruction-file-format</a></p>
 <dl class="method">
 <dt id="pax.plugins.io.WaveformSimulator.WaveformSimulatorFromCSV.get_instructions_for_next_event">
 <code class="descname">get_instructions_for_next_event</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulatorFromCSV.get_instructions_for_next_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromCSV.get_instructions_for_next_event" title="Permalink to this definition">¶</a></dt>
@@ -351,6 +356,7 @@ Defaults to s1_default_recombination_time.</li>
 <dt id="pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST">
 <em class="property">class </em><code class="descclassname">pax.plugins.io.WaveformSimulator.</code><code class="descname">WaveformSimulatorFromNEST</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulatorFromNEST"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.WaveformSimulator.WaveformSimulator" title="pax.plugins.io.WaveformSimulator.WaveformSimulator"><code class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.WaveformSimulator.WaveformSimulator</span></code></a></p>
+<p>Simulate waveforms from GEANT4 ROOT file with NEST-generated S1, S2 information</p>
 <dl class="method">
 <dt id="pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST.get_instructions_for_next_event">
 <code class="descname">get_instructions_for_next_event</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulatorFromNEST.get_instructions_for_next_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromNEST.get_instructions_for_next_event" title="Permalink to this definition">¶</a></dt>
@@ -368,10 +374,37 @@ Defaults to s1_default_recombination_time.</li>
 
 </dd></dl>
 
+<dl class="class">
+<dt id="pax.plugins.io.WaveformSimulator.WaveformSimulatorFromOpticalGEANT">
+<em class="property">class </em><code class="descclassname">pax.plugins.io.WaveformSimulator.</code><code class="descname">WaveformSimulatorFromOpticalGEANT</code><span class="sig-paren">(</span><em>config_values</em>, <em>processor</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulatorFromOpticalGEANT"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromOpticalGEANT" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.plugins.io.WaveformSimulator.WaveformSimulator" title="pax.plugins.io.WaveformSimulator.WaveformSimulator"><code class="xref py py-class docutils literal"><span class="pre">pax.plugins.io.WaveformSimulator.WaveformSimulator</span></code></a></p>
+<p>Simulate waveforms from Fabio&#8217;s GEANT4 optical simulation
+See:</p>
+<blockquote>
+<div><a class="reference external" href="https://xecluster.lngs.infn.it/dokuwiki/doku.php?id=xenon:xenon1t:fvm:waveform_generator">https://xecluster.lngs.infn.it/dokuwiki/doku.php?id=xenon:xenon1t:fvm:waveform_generator</a></div></blockquote>
+<p>Currently just pseudocode, awaiting full implementation.
+The truth file produced by this input plugin will be empty (as WaveformSimulator.s1 and .s2 never get called)</p>
+<dl class="method">
+<dt id="pax.plugins.io.WaveformSimulator.WaveformSimulatorFromOpticalGEANT.get_instructions_for_next_event">
+<code class="descname">get_instructions_for_next_event</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulatorFromOpticalGEANT.get_instructions_for_next_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromOpticalGEANT.get_instructions_for_next_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.WaveformSimulator.WaveformSimulatorFromOpticalGEANT.simulate_single_event">
+<code class="descname">simulate_single_event</code><span class="sig-paren">(</span><em>instructions</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulatorFromOpticalGEANT.simulate_single_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromOpticalGEANT.simulate_single_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.plugins.io.WaveformSimulator.WaveformSimulatorFromOpticalGEANT.startup">
+<code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#WaveformSimulatorFromOpticalGEANT.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.WaveformSimulatorFromOpticalGEANT.startup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
 <dl class="function">
 <dt id="pax.plugins.io.WaveformSimulator.uniform_circle_rv">
 <code class="descclassname">pax.plugins.io.WaveformSimulator.</code><code class="descname">uniform_circle_rv</code><span class="sig-paren">(</span><em>radius</em>, <em>n_samples=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/plugins/io/WaveformSimulator.html#uniform_circle_rv"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.plugins.io.WaveformSimulator.uniform_circle_rv" title="Permalink to this definition">¶</a></dt>
-<dd><p>Sample x,y uniformly in acircle with radius</p>
+<dd><p>Sample n_samples from x,y uniformly in a circle with radius</p>
 </dd></dl>
 
 <table class="docutils footnote" frame="void" id="id4" rules="none">
@@ -456,7 +489,7 @@ Defaults to s1_default_recombination_time.</li>
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
       
       |
       <a href="_sources/simulator.txt"

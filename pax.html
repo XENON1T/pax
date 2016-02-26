@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax package &mdash; Processor for Analyzing XENON1T 4.4.0 documentation</title>
+    <title>pax package &mdash; Processor for Analyzing XENON1T 4.4.1 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '4.4.0',
+        VERSION:     '4.4.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,10 +23,10 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.4.0 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.4.1 documentation" href="index.html" />
    
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
   <body role="document">  
@@ -61,7 +61,7 @@
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#pax-plugins-io-avro-module">pax.plugins.io.Avro module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.BSON">pax.plugins.io.BSON module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#pax-plugins-io-bulkoutput-module">pax.plugins.io.BulkOutput module</a></li>
-<li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#pax-plugins-io-mongodb-module">pax.plugins.io.MongoDB module</a></li>
+<li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.MongoDB">pax.plugins.io.MongoDB module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.Pickle">pax.plugins.io.Pickle module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#pax-plugins-io-rawwaveformdump-module">pax.plugins.io.RawWaveformDump module</a></li>
 <li class="toctree-l4"><a class="reference internal" href="pax.plugins.io.html#module-pax.plugins.io.WaveformSimulator">pax.plugins.io.WaveformSimulator module</a></li>
@@ -1034,13 +1034,25 @@ Note: in Pulse the same number is stored in ADC-counts.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Interaction.s1_area_correction">
 <code class="descname">s1_area_correction</code><em class="property"> = 1.0</em><a class="headerlink" href="#pax.datastructure.Interaction.s1_area_correction" title="Permalink to this definition">¶</a></dt>
-<dd><p>Multiplicative correction to s1 area based on position (due to LCE variations)</p>
+<dd><p>Final multiplicative correction to s1 area based on position (due to LCE variations and saturation)</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Interaction.s1_pattern_fit">
 <code class="descname">s1_pattern_fit</code><em class="property"> = nan</em><a class="headerlink" href="#pax.datastructure.Interaction.s1_pattern_fit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Goodness of fit of S1 pattern to interaction&#8217;s (x, y, drift_time)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Interaction.s1_saturation_correction">
+<code class="descname">s1_saturation_correction</code><em class="property"> = 1.0</em><a class="headerlink" href="#pax.datastructure.Interaction.s1_saturation_correction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Multiplicative correction on S1 due to saturation</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Interaction.s1_spatial_correction">
+<code class="descname">s1_spatial_correction</code><em class="property"> = 1.0</em><a class="headerlink" href="#pax.datastructure.Interaction.s1_spatial_correction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Multiplicative correction on S1 due to LCE variations</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -1052,7 +1064,13 @@ Note: in Pulse the same number is stored in ADC-counts.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Interaction.s2_area_correction">
 <code class="descname">s2_area_correction</code><em class="property"> = 1.0</em><a class="headerlink" href="#pax.datastructure.Interaction.s2_area_correction" title="Permalink to this definition">¶</a></dt>
-<dd><p>Multiplicative correction to s2 area based on position (due to electron lifetime and LCE variations)</p>
+<dd><p>Final multiplicative correction to s2 area based on position</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Interaction.s2_lifetime_correction">
+<code class="descname">s2_lifetime_correction</code><em class="property"> = 1.0</em><a class="headerlink" href="#pax.datastructure.Interaction.s2_lifetime_correction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Multiplicative correction on S2 due to electron lifetime</p>
 </dd></dl>
 
 <dl class="method">
@@ -1348,6 +1366,18 @@ First element (0) is always zero, last element (10) is the full range of the pea
 </dd></dl>
 
 <dl class="attribute">
+<dt id="pax.datastructure.Peak.s2_saturation_correction">
+<code class="descname">s2_saturation_correction</code><em class="property"> = 1.0</em><a class="headerlink" href="#pax.datastructure.Peak.s2_saturation_correction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Multiplicative correction on S2 due to saturation</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.s2_spatial_correction">
+<code class="descname">s2_spatial_correction</code><em class="property"> = 1.0</em><a class="headerlink" href="#pax.datastructure.Peak.s2_spatial_correction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Multiplicative correction on S2 due to LCE variations</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="pax.datastructure.Peak.saturated_channels">
 <code class="descname">saturated_channels</code><a class="headerlink" href="#pax.datastructure.Peak.saturated_channels" title="Permalink to this definition">¶</a></dt>
 <dd><p>List of channels which contribute hits with saturated channels in this peak</p>
@@ -1585,6 +1615,18 @@ making cluster boundaries whenever values are &gt;= threshold apart.</p>
 <dd></dd></dl>
 
 <dl class="attribute">
+<dt id="pax.dsputils.find_intervals_above_threshold">
+<code class="descclassname">pax.dsputils.</code><code class="descname">find_intervals_above_threshold</code><a class="reference internal" href="_modules/pax/dsputils.html#find_intervals_above_threshold"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.find_intervals_above_threshold" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Fills result_buffer with l, r bounds of intervals in w &gt; low_threshold which exceed high_threshold somewhere</dt>
+<dd>result_buffer: numpy N*2 array of ints, will be filled by function.</dd>
+</dl>
+<p>Returns: number of intervals found
+Will stop search after N intervals are found, with N the length of result_buffer.
+Boundary indices are inclusive, i.e. the right index is the last index which was still above low_threshold</p>
+</dd></dl>
+
+<dl class="attribute">
 <dt id="pax.dsputils.gaps_between_hits">
 <code class="descclassname">pax.dsputils.</code><code class="descname">gaps_between_hits</code><a class="reference internal" href="_modules/pax/dsputils.html#gaps_between_hits"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.gaps_between_hits" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return array of gaps between hits: a hit&#8217;s &#8216;gap&#8217; is the # of samples before that hit free of other hits.
@@ -1598,12 +1640,27 @@ Hits should already be sorted by left boundary; we&#8217;ll check this and throw
 <dd><p>Return a channel -&gt; detector lookup dictionary from a configuration</p>
 </dd></dl>
 
+<dl class="function">
+<dt id="pax.dsputils.saturation_correction">
+<code class="descclassname">pax.dsputils.</code><code class="descname">saturation_correction</code><span class="sig-paren">(</span><em>peak</em>, <em>channels_in_pattern</em>, <em>expected_pattern</em>, <em>confused_channels</em>, <em>log</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/dsputils.html#saturation_correction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.dsputils.saturation_correction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Return multiplicative area correction obtained by replacing area in confused_channels by
+expected area based on expected_pattern in channels_in_pattern.
+expected_pattern does not have to be normalized: we&#8217;ll do that for you.
+We&#8217;ll also ensure any confused_channels not in channels_in_pattern are ignored.</p>
+</dd></dl>
+
 </div>
 <div class="section" id="module-pax.exceptions">
 <span id="pax-exceptions-module"></span><h2>pax.exceptions module<a class="headerlink" href="#module-pax.exceptions" title="Permalink to this headline">¶</a></h2>
 <dl class="exception">
 <dt id="pax.exceptions.CoordinateOutOfRangeException">
 <em class="property">exception </em><code class="descclassname">pax.exceptions.</code><code class="descname">CoordinateOutOfRangeException</code><a class="reference internal" href="_modules/pax/exceptions.html#CoordinateOutOfRangeException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.exceptions.CoordinateOutOfRangeException" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
+</dd></dl>
+
+<dl class="exception">
+<dt id="pax.exceptions.MaybeOldFormatException">
+<em class="property">exception </em><code class="descclassname">pax.exceptions.</code><code class="descname">MaybeOldFormatException</code><a class="reference internal" href="_modules/pax/exceptions.html#MaybeOldFormatException"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.exceptions.MaybeOldFormatException" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">Exception</span></code></p>
 </dd></dl>
 
@@ -1907,7 +1964,7 @@ This is</p>
 
 <dl class="attribute">
 <dt id="pax.formats.ROOTDump.numpy_type">
-<code class="descname">numpy_type</code><em class="property"> = {'D': &lt;class 'numpy.float64'&gt;, 'F': &lt;class 'numpy.float32'&gt;, 'O': &lt;class 'bool'&gt;, 'L': &lt;class 'numpy.int64'&gt;, 'C': dtype('O'), 'I': &lt;class 'numpy.int32'&gt;}</em><a class="headerlink" href="#pax.formats.ROOTDump.numpy_type" title="Permalink to this definition">¶</a></dt>
+<code class="descname">numpy_type</code><em class="property"> = {'F': &lt;class 'numpy.float32'&gt;, 'I': &lt;class 'numpy.int32'&gt;, 'D': &lt;class 'numpy.float64'&gt;, 'L': &lt;class 'numpy.int64'&gt;, 'C': dtype('O'), 'O': &lt;class 'bool'&gt;}</em><a class="headerlink" href="#pax.formats.ROOTDump.numpy_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -1922,7 +1979,7 @@ This is</p>
 
 <dl class="attribute">
 <dt id="pax.formats.ROOTDump.root_type">
-<code class="descname">root_type</code><em class="property"> = {'S': '/C', 'int64': '/L', 'float64': '/D', 'bool': '/O', 'float32': '/F', 'int32': '/I', 'int16': '/S'}</em><a class="headerlink" href="#pax.formats.ROOTDump.root_type" title="Permalink to this definition">¶</a></dt>
+<code class="descname">root_type</code><em class="property"> = {'float32': '/F', 'int64': '/L', 'bool': '/O', 'int32': '/I', 'float64': '/D', 'S': '/C', 'int16': '/S'}</em><a class="headerlink" href="#pax.formats.ROOTDump.root_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -2222,28 +2279,25 @@ Does NOT put in empty lists if indices skip a value! (e.g. events without peaks)
 <p>Waveform simulator (&#8220;FaX&#8221;) - physics backend
 The only I/O stuff here is pax event creation, everything else is in the WaveformSimulator plugins</p>
 <dl class="class">
-<dt id="pax.simulation.SimulatedHitpattern">
-<em class="property">class </em><code class="descclassname">pax.simulation.</code><code class="descname">SimulatedHitpattern</code><span class="sig-paren">(</span><em>simulator</em>, <em>photon_timings=()</em>, <em>x=0</em>, <em>y=0</em>, <em>z=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#SimulatedHitpattern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.SimulatedHitpattern" title="Permalink to this definition">¶</a></dt>
-<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
-</dd></dl>
-
-<dl class="class">
 <dt id="pax.simulation.Simulator">
 <em class="property">class </em><code class="descclassname">pax.simulation.</code><code class="descname">Simulator</code><span class="sig-paren">(</span><em>config_to_init</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator" title="Permalink to this definition">¶</a></dt>
 <dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
 <dl class="method">
+<dt id="pax.simulation.Simulator.clear_signals_queue">
+<code class="descname">clear_signals_queue</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.clear_signals_queue"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.clear_signals_queue" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prepares the waveform simulator for a new event.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.simulation.Simulator.distribute_photons">
+<code class="descname">distribute_photons</code><span class="sig-paren">(</span><em>n_photons</em>, <em>x</em>, <em>y</em>, <em>z</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.distribute_photons"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.distribute_photons" title="Permalink to this definition">¶</a></dt>
+<dd><p>Distribute n_photons over the TPC PMTs, with LCE appropriate to (x, y, z)
+:return: numpy array of length == sim.config[&#8216;n_channels&#8217;] with photon count per channel</p>
+</dd></dl>
+
+<dl class="method">
 <dt id="pax.simulation.Simulator.distribute_photons_by_pattern">
 <code class="descname">distribute_photons_by_pattern</code><span class="sig-paren">(</span><em>n_photons</em>, <em>pattern_fitter</em>, <em>coordinate_tuple</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.distribute_photons_by_pattern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.distribute_photons_by_pattern" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.simulation.Simulator.distribute_s1_photons">
-<code class="descname">distribute_s1_photons</code><span class="sig-paren">(</span><em>n_photons</em>, <em>x</em>, <em>y</em>, <em>z</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.distribute_s1_photons"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.distribute_s1_photons" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
-
-<dl class="method">
-<dt id="pax.simulation.Simulator.distribute_s2_photons">
-<code class="descname">distribute_s2_photons</code><span class="sig-paren">(</span><em>n_photons</em>, <em>x</em>, <em>y</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.distribute_s2_photons"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.distribute_s2_photons" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -2252,14 +2306,27 @@ The only I/O stuff here is pax event creation, everything else is in the Wavefor
 <dd></dd></dl>
 
 <dl class="method">
-<dt id="pax.simulation.Simulator.make_hitpattern">
-<code class="descname">make_hitpattern</code><span class="sig-paren">(</span><em>photon_times</em>, <em>x=0</em>, <em>y=0</em>, <em>z=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.make_hitpattern"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.make_hitpattern" title="Permalink to this definition">¶</a></dt>
-<dd></dd></dl>
+<dt id="pax.simulation.Simulator.make_pax_event">
+<code class="descname">make_pax_event</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.make_pax_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.make_pax_event" title="Permalink to this definition">¶</a></dt>
+<dd><p>Simulate PMT response to the queued photon signals
+Returns None if no photons have been queued else returns start_time (in units, ie ns), pmt waveform matrix
+# TODO: Account for random initial digitizer state wrt interaction? Where?</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="pax.simulation.Simulator.pmt_pulse_current">
 <code class="descname">pmt_pulse_current</code><span class="sig-paren">(</span><em>gain</em>, <em>offset=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.pmt_pulse_current"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.pmt_pulse_current" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.simulation.Simulator.queue_signal">
+<code class="descname">queue_signal</code><span class="sig-paren">(</span><em>photon_timings</em>, <em>x=0</em>, <em>y=0</em>, <em>z=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.queue_signal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.queue_signal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Add a signal due to isotropic light emission to the waveform simulator
+photon_timings: list of photon emission times (ns) since start of the event.</p>
+<blockquote>
+<div>All photons listed here will be detected!</div></blockquote>
+<p>x, y, z: position of emission (standard coordinate system, pax units = cm)</p>
+</dd></dl>
 
 <dl class="method">
 <dt id="pax.simulation.Simulator.randomize_photons_over_channels">
@@ -2289,7 +2356,7 @@ Does not have to be normalized to sum to 1.</li>
 <dl class="method">
 <dt id="pax.simulation.Simulator.s1_photons">
 <code class="descname">s1_photons</code><span class="sig-paren">(</span><em>n_photons</em>, <em>recoil_type</em>, <em>x=0.0</em>, <em>y=0.0</em>, <em>z=0</em>, <em>t=0.0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.s1_photons"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.s1_photons" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns a list of photon production times caused by an S1 process.</p>
+<dd><p>Returns a list of photon detection times at the PMT caused by an S1 emitting n_photons.</p>
 </dd></dl>
 
 <dl class="method">
@@ -2321,14 +2388,6 @@ singlet_ratio - fraction of excimers that become singlets</p>
 <div>(NOT the ratio of singlets/triplets!)</div></blockquote>
 </dd>
 </dl>
-</dd></dl>
-
-<dl class="method">
-<dt id="pax.simulation.Simulator.to_pax_event">
-<code class="descname">to_pax_event</code><span class="sig-paren">(</span><em>hitpattern</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/simulation.html#Simulator.to_pax_event"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.simulation.Simulator.to_pax_event" title="Permalink to this definition">¶</a></dt>
-<dd><p>Simulate PMT response to a hitpattern of photons
-Returns None if you pass a hitlist without any hits
-returns start_time (in units, ie ns), pmt waveform matrix</p>
 </dd></dl>
 
 </dd></dl>
@@ -2464,7 +2523,7 @@ punch() returns ms since timer creation or last punch</p>
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
       
       |
       <a href="_sources/pax.txt"

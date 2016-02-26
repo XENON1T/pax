@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Event format &mdash; Processor for Analyzing XENON1T 4.4.0 documentation</title>
+    <title>Event format &mdash; Processor for Analyzing XENON1T 4.4.1 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '4.4.0',
+        VERSION:     '4.4.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,12 +23,12 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.4.0 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.4.1 documentation" href="index.html" />
     <link rel="next" title="Plugins" href="plugin.html" />
     <link rel="prev" title="Installation and setup" href="faq.html" />
    
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
 
   </head>
   <body role="document">  
@@ -308,13 +308,25 @@ floats have rounding that result in loss of precision.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Interaction.s1_area_correction">
 <code class="descname">s1_area_correction</code><em class="property"> = 1.0</em><a class="headerlink" href="#pax.datastructure.Interaction.s1_area_correction" title="Permalink to this definition">¶</a></dt>
-<dd><p>Multiplicative correction to s1 area based on position (due to LCE variations)</p>
+<dd><p>Final multiplicative correction to s1 area based on position (due to LCE variations and saturation)</p>
 </dd></dl>
 
 <dl class="attribute">
 <dt id="pax.datastructure.Interaction.s1_pattern_fit">
 <code class="descname">s1_pattern_fit</code><em class="property"> = nan</em><a class="headerlink" href="#pax.datastructure.Interaction.s1_pattern_fit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Goodness of fit of S1 pattern to interaction&#8217;s (x, y, drift_time)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Interaction.s1_saturation_correction">
+<code class="descname">s1_saturation_correction</code><em class="property"> = 1.0</em><a class="headerlink" href="#pax.datastructure.Interaction.s1_saturation_correction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Multiplicative correction on S1 due to saturation</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Interaction.s1_spatial_correction">
+<code class="descname">s1_spatial_correction</code><em class="property"> = 1.0</em><a class="headerlink" href="#pax.datastructure.Interaction.s1_spatial_correction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Multiplicative correction on S1 due to LCE variations</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -326,7 +338,13 @@ floats have rounding that result in loss of precision.</p>
 <dl class="attribute">
 <dt id="pax.datastructure.Interaction.s2_area_correction">
 <code class="descname">s2_area_correction</code><em class="property"> = 1.0</em><a class="headerlink" href="#pax.datastructure.Interaction.s2_area_correction" title="Permalink to this definition">¶</a></dt>
-<dd><p>Multiplicative correction to s2 area based on position (due to electron lifetime and LCE variations)</p>
+<dd><p>Final multiplicative correction to s2 area based on position</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Interaction.s2_lifetime_correction">
+<code class="descname">s2_lifetime_correction</code><em class="property"> = 1.0</em><a class="headerlink" href="#pax.datastructure.Interaction.s2_lifetime_correction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Multiplicative correction on S2 due to electron lifetime</p>
 </dd></dl>
 
 <dl class="method">
@@ -621,6 +639,18 @@ First element (0) is always zero, last element (10) is the full range of the pea
 <dt id="pax.datastructure.Peak.right">
 <code class="descname">right</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.Peak.right" title="Permalink to this definition">¶</a></dt>
 <dd><p>Index/sample of right bound (INCLUSIVE) in event.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.s2_saturation_correction">
+<code class="descname">s2_saturation_correction</code><em class="property"> = 1.0</em><a class="headerlink" href="#pax.datastructure.Peak.s2_saturation_correction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Multiplicative correction on S2 due to saturation</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Peak.s2_spatial_correction">
+<code class="descname">s2_spatial_correction</code><em class="property"> = 1.0</em><a class="headerlink" href="#pax.datastructure.Peak.s2_spatial_correction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Multiplicative correction on S2 due to LCE variations</p>
 </dd></dl>
 
 <dl class="attribute">
@@ -989,7 +1019,7 @@ For example, 0 is the first sample that could exist in the event, 1 the second, 
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
       
       |
       <a href="_sources/format.txt"
