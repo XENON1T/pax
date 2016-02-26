@@ -13,6 +13,7 @@ import numba
 import snappy
 import pymongo
 
+import pax    # For version
 from pax.datastructure import Event, Pulse, EventProxy
 from pax import plugin, units
 
@@ -299,6 +300,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                            'trigger.pulses_in_collection': pulses_in_collection,
                            'trigger.ended': True,
                            'trigger.status': 'processed',
+                           'trigger.version': pax.__version__,
                            'trigger.config': {k: self.config.get(k)
                                               for k in ['window', 'left_extension', 'right_extension', 'search_window',
                                                         'multiplicity', 'mega_events', 'detector',
