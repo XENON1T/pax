@@ -4,6 +4,14 @@ History
 -------
 
 ------------------
+4.5.0 (2016-02-05)
+------------------
+
+ * Wavform simulator refactor
+ * Energy corrections
+ * Small event builder changes
+
+------------------
 4.4.1 (2016-02-05)
 ------------------
 
