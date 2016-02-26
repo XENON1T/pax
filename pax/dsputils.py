@@ -1,7 +1,7 @@
 import numba
 import numpy as np
 
-from pax import units
+from pax import units, exceptions
 from pax.datastructure import Hit
 
 
@@ -30,6 +30,34 @@ def gaps_between_hits(hits):
 
 def count_hits_per_channel(peak, config, weights=None):
     return np.bincount(peak.hits['channel'].astype(np.int16), minlength=config['n_channels'], weights=weights)
+
+
+def saturation_correction(peak, channels_in_pattern, expected_pattern, confused_channels, log):
+    """Return multiplicative area correction obtained by replacing area in confused_channels by
+    expected area based on expected_pattern in channels_in_pattern.
+    expected_pattern does not have to be normalized: we'll do that for you.
+    We'll also ensure any confused_channels not in channels_in_pattern are ignored.
+    """
+    try:
+        confused_channels = np.intersect1d(confused_channels, channels_in_pattern).astype(np.int)
+    except exceptions.CoordinateOutOfRangeException:
+        log.warning("Expected area fractions for peak %d-%d are zero -- "
+                    "cannot compute saturation & zombie correction!" % (peak.left, peak.right))
+        return 1
+    # PatternFitter should have normalized the pattern
+    assert abs(np.sum(expected_pattern) - 1) < 0.01
+
+    area_seen_in_pattern = peak.area_per_channel[channels_in_pattern].sum()
+    area_in_good_channels = area_seen_in_pattern - peak.area_per_channel[confused_channels].sum()
+    fraction_of_pattern_in_good_channels = 1 - expected_pattern[confused_channels].sum()
+
+    # Area in channels not in channels_in_pattern is left alone
+    new_area = peak.area - area_seen_in_pattern
+
+    # Estimate the area in channels_in_pattern by excluding the confused channels
+    new_area += area_in_good_channels / fraction_of_pattern_in_good_channels
+
+    return new_area / peak.area
 
 
 def adc_to_pe(config, channel, use_reference_gain=False, use_reference_gain_if_zero=False):

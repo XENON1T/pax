@@ -131,6 +131,12 @@ class Peak(StrictModel):
     #: Fraction of area in the top PMTs
     area_fraction_top = 0.0
 
+    #: Multiplicative correction on S2 due to LCE variations
+    s2_spatial_correction = 1.0
+
+    #: Multiplicative correction on S2 due to saturation
+    s2_saturation_correction = 1.0
+
     #: Number of hits in the peak, per channel (that is, it's an array with index = channel number)
     hits_per_channel = np.array([], dtype=np.int16)
 
@@ -232,7 +238,7 @@ class Peak(StrictModel):
         unless it doesn't exist or is a nan position, then moves on to further algorithms."""
         for algo in algorithm_list:
             rp = self.get_reconstructed_position_from_algorithm(algo)
-            if rp is not None and rp.x is not float('nan'):
+            if rp is not None and not np.isnan(rp.x):
                 return rp
         else:
             raise ValueError("Could not find any position from the chosen algorithms: %s" % algorithm_list)
@@ -436,14 +442,24 @@ class Interaction(StrictModel):
     # Interaction properties
     ##
 
-    #: Multiplicative correction to s1 area based on position (due to LCE variations)
+    #: Multiplicative correction on S1 due to LCE variations
+    s1_spatial_correction = 1.0
+
+    #: Multiplicative correction on S1 due to saturation
+    s1_saturation_correction = 1.0
+
+    #: Multiplicative correction on S2 due to electron lifetime
+    s2_lifetime_correction = 1.0
+
+    #: Final multiplicative correction to s1 area based on position (due to LCE variations and saturation)
     s1_area_correction = 1.0
 
     @property
     def corrected_s1_area(self):
         return self.s1.area * self.s1_area_correction
 
-    #: Multiplicative correction to s2 area based on position (due to electron lifetime and LCE variations)
+    #: Final multiplicative correction to s2 area based on position
+    # (due to electron lifetime, LCE variations and saturation)
     s2_area_correction = 1.0
 
     @property
