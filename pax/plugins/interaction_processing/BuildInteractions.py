@@ -39,8 +39,11 @@ class BuildInteractions(plugin.TransformPlugin):
                 ia.s1 = event.peaks.index(s1)
                 ia.s2 = event.peaks.index(s2)
                 ia.drift_time = dt
-                ia.set_position(s2.get_position_from_preferred_algorithm(self.config['xy_posrec_preference']))
-
+                try:
+                    # Get x,y position from peak
+                    ia.set_position(s2.get_position_from_preferred_algorithm(self.config['xy_posrec_preference']))
+                except ValueError:
+                    self.log.debug("Could not find any position from the chosen algorithms")
                 # Append to event
                 event.interactions.append(ia)
 
