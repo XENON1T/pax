@@ -143,10 +143,8 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
     def get_events(self):
         last_time_searched = 0  # ns
         pulses_read = 0         # Number of pulses read by the event builder
-        pulses_in_events = 0    # Number of pulses placed inside events
         pulses_in_collection = self.input_collection.count()
         total_event_length = 0  # ns
-        total_pulse_length = 0  # ns
 
         # Used to timeout if DAQ crashes and no data will come
         time_of_last_daq_response = time.time()
@@ -208,7 +206,6 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                                                                    sort=self.start_key,
                                                                    types=['int64', 'int64'])
                     # Note: no fence post +1, pulse right boundary should be inclusive of the last sample
-                    total_pulse_length += np.sum(stop_times - start_times) * self.sample_duration
                     x = np.round(0.5 * (start_times + stop_times) * self.sample_duration).astype(np.int64)
 
                 else:
@@ -221,7 +218,6 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                     for i, doc in enumerate(times):
                         start = self._from_mt(doc[self.start_key])
                         stop = self._from_mt(doc[self.stop_key])
-                        total_pulse_length += start - stop
                         x[i] = int(0.5 * (start + stop))
 
                 pulses_read += len(x)
@@ -291,18 +287,21 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
             time_of_last_daq_response = time.time()
 
         # All went well - print out status information
+        # Unfortunately this contains only very basic status information: we only know event ranges in this plugin,
+        # not e.g. which channels see what.
         events_built = self.last_event_number + 1
+        mean_event_length = total_event_length / events_built if events_built else 0
         end_of_run_info = {'trigger.events_built': events_built,
-                           'trigger.ended': True,
-                           'trigger.pulses_in_collection': pulses_in_collection,
+                           'trigger.mean_event_length': mean_event_length,
+                           'trigger.last_time_searched': last_time_searched,
+                           'trigger.timestamp': time.time(),
                            'trigger.pulses_read': pulses_read,
-                           'trigger.pulses_in_events': pulses_in_events,
-                           'trigger.mean_event_length': total_event_length / events_built,
-                           'trigger.mean_event_occupancy': total_pulse_length / total_event_length,
-                           'trigger.config': {k: self.config.get(k, '<<option not present>>')
+                           'trigger.pulses_in_collection': pulses_in_collection,
+                           'trigger.ended': True,
+                           'trigger.config': {k: self.config.get(k)
                                               for k in ['window', 'left_extension', 'right_extension', 'search_window',
                                                         'multiplicity', 'mega_events', 'detector',
-                                                        #'user', 'password',   # :-)
+                                                        # 'user', 'password',   # :-)
                                                         'host', 'port']}}
         if not self.secret_mode:
             self.runs.update_one({'_id': self.config['run_doc_id']},
