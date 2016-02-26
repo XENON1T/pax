@@ -4,56 +4,57 @@ History
 -------
 
 ------------------
-4.5.0 (2016-02-05)
+4.5.0 (2016-02-26)
 ------------------
 
- * Wavform simulator refactor
- * Energy corrections
- * Small event builder changes
+* .cpp classes now included within the ROOT output file (#323)
+* Area corrections stored separately in datastructure (#322)
+* Waveform simulator refactor, PMT afterpulses support (#321)
+* Small event builder changes (#316, several loose commits)
 
 ------------------
 4.4.1 (2016-02-05)
 ------------------
 
- * Weird outlier bug fixes found in bulk processing
+* Weird outlier bug fixes found in bulk processing
 
 ------------------
 4.4.0 (2016-02-02)
 ------------------
 
- * New event builder iteration (#297)
- * Configuration bugs fixed
+* New event builder iteration (#297)
+* Configuration bugs fixed
 
 ------------------
 4.3.2 (2016-01-31)
 ------------------
 
- * Small argument fixes for default configuration.
+* Small argument fixes for default configuration.
 
 ------------------
 4.3.1 (2016-01-28)
 ------------------
 
- * Nasty multiprocessing bug fix
+* Nasty multiprocessing bug fix
 
 ------------------
 4.3.0 (2016-01-25)
 ------------------
 
- * Parallelization refactor (#298)
- * Store meta data in ROOT output (#303)
- * z coordinate system now negative in liquid (#302)
- * Neural net reconstruction (#296)
+* Parallelization refactor (#298)
+* Store meta data in ROOT output (#303)
+* z coordinate system now negative in liquid (#302)
+* Neural net reconstruction (#296)
 
 ------------------
 4.2.0 (2016-01-11)
 ------------------
 
- * Fixes for ROOT output: memory leak (#282), LED output (#283), long int fields (#289)
- * Event builder changes (#278)
- * 3D position reconstruction for S1s (#277)
- * Hits and Pulses for S1s saved by default (#283)
- * Raw data filename format changed, progress bar fix (#289)
+* Fixes for ROOT output: memory leak (#282), LED output (#283), long int fields (#289)
+* Event builder changes (#278)
+* 3D position reconstruction for S1s (#277)
+* Hits and Pulses for S1s saved by default (#283)
+* Raw data filename format changed, progress bar fix (#289)
 
 ------------------
 4.1.2 (2015-11-30)
