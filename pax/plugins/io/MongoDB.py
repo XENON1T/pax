@@ -301,7 +301,8 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                            'trigger.mean_event_occupancy': total_pulse_length / total_event_length,
                            'trigger.config': {k: self.config.get(k, '<<option not present>>')
                                               for k in ['window', 'left_extension', 'right_extension', 'search_window',
-                                                        'multiplicity', 'mega_events', 'detector', 'user', 'password',
+                                                        'multiplicity', 'mega_events', 'detector',
+                                                        #'user', 'password',   # :-)
                                                         'host', 'port']}}
         if not self.secret_mode:
             self.runs.update_one({'_id': self.config['run_doc_id']},
