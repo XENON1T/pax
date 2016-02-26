@@ -366,7 +366,7 @@ def load_event_class_code(class_code):
     # Write the class code to a temporary directory
     # The filename is something specific, so it can't just be the current directory
     # (even though checksum is unique, don't want several threads trying to write the same file)
-    tempdir = tempfile.mkdtemp(prefix=os.getcwd())
+    tempdir = tempfile.mkdtemp()
     class_filename = 'pax_event_class-%s.cpp' % checksum
     with open(class_filename, mode='w') as outfile:
         outfile.write(class_code)
