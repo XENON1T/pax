@@ -298,6 +298,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                            'trigger.pulses_read': pulses_read,
                            'trigger.pulses_in_collection': pulses_in_collection,
                            'trigger.ended': True,
+                           'trigger.status': 'processed',
                            'trigger.config': {k: self.config.get(k)
                                               for k in ['window', 'left_extension', 'right_extension', 'search_window',
                                                         'multiplicity', 'mega_events', 'detector',
