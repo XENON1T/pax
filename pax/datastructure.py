@@ -20,6 +20,16 @@ if six.PY3:
 INT_NAN = -99999    # Do not change without talking to me. -Tunnell 12/3/2015 ... and me. -Jelle 05/08/2015
 
 
+class ConfidenceTuple(StrictModel):
+    """Confidence tuple
+
+    Stores the information of a confidence level of a reconstructed position
+    """
+    level = float('nan')
+    dx = float('nan')
+    dy = float('nan')
+
+
 class ReconstructedPosition(StrictModel):
     """Reconstructed position
 
@@ -42,6 +52,13 @@ class ReconstructedPosition(StrictModel):
     #: Name of algorithm which provided this position
     algorithm = 'none'
 
+    #: Confidence_levels
+    # error_matrix = np.array([], dtype=np.float64)
+    confidence_tuples = ListField(ConfidenceTuple)
+
+    # For convenience: cylindrical coordinates
+    # Must be properties so InterpolatingDetectorMap can transparently use
+    # cylindrical coordinates
     @property
     def r(self):
         """Radial position"""

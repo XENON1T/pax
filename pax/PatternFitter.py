@@ -8,11 +8,13 @@ import logging
 import numpy as np
 import numexpr as ne
 import matplotlib.pyplot as plt
+from matplotlib import _cntr
 from scipy.optimize import fmin_powell
 from scipy.ndimage.interpolation import zoom as image_zoom
 
 from pax import utils
 from pax.exceptions import CoordinateOutOfRangeException
+from pax.datastructure import ConfidenceTuple
 
 # Named tuple for coordinate data storage
 # Maybe works faster than dictionary... can always remove later
@@ -132,6 +134,7 @@ class PatternFitter(object):
         gofs = self._compute_gof_base(index_selection, areas_observed, pmt_selection, square_syst_errors, statistic)
 
         if plot:
+            plt.figure()
             # Make the linspaces of coordinates along each dimension
             # Remember the grid indices are
             q = []
@@ -142,6 +145,12 @@ class PatternFitter(object):
                 dimstop = self._index_to_coordinate(index_selection[dimension_i].stop - 1, dimension_i)
                 dimstop += 0.5 * cd.point_spacing
                 q.append(np.linspace(dimstart, dimstop, gofs.shape[dimension_i] + 1))
+
+                if dimension_i == 0:
+                    plt.xlim((dimstart, dimstop))
+                else:
+                    plt.ylim((dimstart, dimstop))
+
             q.append(gofs.T / np.nanmin(gofs))
             plt.pcolormesh(*q, vmin=1, vmax=4, alpha=0.9)
             plt.colorbar(label='Goodness of fit / minimum')
@@ -199,10 +208,13 @@ class PatternFitter(object):
         return np.sum(result, axis=-1)
 
     def minimize_gof_grid(self, center_coordinates, grid_size, areas_observed,
-                          pmt_selection=None, square_syst_errors=None, statistic='chi2gamma', plot=False):
-        """Return (spatial position which minimizes goodness of fit parameter, gof at that position)
-        minimum is found by minimizing over a grid centered at center_coordinates
-        and extending by grid_size in all dimensions
+                          pmt_selection=None, square_syst_errors=None, statistic='chi2gamma', plot=False, cls=None):
+        """Return (spatial position which minimizes goodness of fit parameter, gof at that position,
+        errors on that position) minimum is found by minimizing over a grid centered at
+        center_coordinates and extending by grid_size in all dimensions.
+        Errors are optionally calculated by tracing contours at given confidence levels, from the
+        resulting set of points the distances to the minimum are calculated for each dimension and
+        the mean of these distances is reported as (dx, dy).
         All other parameters like compute_gof
         """
         gofs, lowest_indices = self.compute_gof_grid(center_coordinates, grid_size, areas_observed,
@@ -214,10 +226,55 @@ class PatternFitter(object):
             x = self._index_to_coordinate(lowest_indices[dimension_i] + i_of_minimum, dimension_i)
             result.append(x)
 
+        # Compute confidence level contours (but only in 2D)
+        n_dim = len(min_index)
+        # Store contours for plotting only
+        cl_segments = []
+        # Store (dx, dy) for each CL for output
+        confidence_tuples = []
+
+        if cls is not None and n_dim == 2:
+            x, y = np.mgrid[:gofs.shape[0], :gofs.shape[1]]
+            # Use matplotlib _Cntr module to trace contours (without plotting)
+            c = _cntr.Cntr(x, y, gofs)
+
+            for cl in cls:
+                ct = ConfidenceTuple()
+                ct.level = cl
+                # Trace at the required value
+                cl_trace = c.trace(gofs[min_index] + cl)
+                # Check for failure
+                if len(cl_trace) == 0:
+                    confidence_tuples.append(ct)
+                    continue
+
+                # Get the actual contour, the first half of cl_trace is an array of (x, y) pairs
+                half_length = int(len(cl_trace)//2)
+                cl_segment = np.array(cl_trace[:half_length][0])
+
+                cl_distances = {'0': [], '1': []}
+                for point in cl_segment:
+                    for dim in range(n_dim):
+                        point[dim] = self._index_to_coordinate(lowest_indices[dim] + point[dim], dim)
+                        cl_distances[str(dim)].append(abs(point[dim] - result[dim]))
+
+                # Calculate the error tuple for this CL
+                ct.dx = np.mean(cl_distances['0'])
+                ct.dy = np.mean(cl_distances['1'])
+                confidence_tuples.append(ct)
+
+                # The contour points, only for plotting
+                cl_segments.append(cl_segment)
+
         if plot:
             plt.scatter(*[[r] for r in result], marker='*', s=20, color='orange', label='Grid minimum')
+            for i, contour in enumerate(cl_segments):
+                color = lambda x: 'w' if x % 2 == 0 else 'r'
+                p = plt.Polygon(contour, fill=False, color=color(i), label=str(cls[i]))
+                plt.gca().add_artist(p)
+            # plt.savefig("plot_%.2f_%.2f.png" % (result[0], result[1]), dpi=300)
 
-        return result, gofs[min_index]
+        return result, gofs[min_index], confidence_tuples
 
     def minimize_gof_powell(self, start_coordinates, areas_observed,
                             pmt_selection=None, square_syst_errors=None, statistic='chi2gamma'):
