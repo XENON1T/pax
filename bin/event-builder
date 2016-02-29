@@ -53,15 +53,17 @@ def main():
     # Build the query used to search for runs
     status_name = 'trigger.status'
     if args.name:
-        run_query = {'name': args.name, 'detector' : args.detector}
+        run_query = {'name': args.name, 'detector': args.detector}
     else:
         run_query = {status_name: 'waiting_to_be_processed',
-                     'detector' : args.detector}
+                     'detector': args.detector}
     log.info("Starting run search with query %s" % run_query)
 
     while 1:
-        run_doc = runs.find_one_and_update(run_query,
-                                           {'$set': {status_name: 'staging'}})
+        if not args.secret_mode:
+            run_doc = runs.find_one_and_update(run_query, {'$set': {status_name: 'staging'}})
+        else:
+            run_doc = runs.find_one(run_query)
 
         if run_doc is None:
             if args.impatient:
@@ -75,7 +77,7 @@ def main():
             #   First priority: command line args
             #   Second priority: rundb settings (from run_doc['trigger']
             #   Third priority: defaults from event_builder.ini (pax will take care of this)
-            mongo_settings = run_doc['trigger']
+            mongo_settings = run_doc['trigger'].get('config', {})
             for argname, factor in (('window', units.us),
                                     ('left_extension', units.us),
                                     ('right_extension', units.us),
@@ -86,7 +88,8 @@ def main():
                                     ('user', None),
                                     ('password', None),
                                     ('host', None),
-                                    ('port', None)):
+                                    ('port', None),
+                                    ('secret_mode', None)):
                 argval = getattr(args, argname)
                 if argval is not None:
                     if factor is not None:
@@ -207,6 +210,9 @@ def get_command_line_arguments():
                         default=1,
                         type=int,
                         help="Wait time before searching for new runs again if none were found (sec)")
+    parser.add_argument('--secret_mode',
+                        action='store_true',
+                        help="Never write anything to the runs db. Use only for testing!")
 
     parser.add_argument('--log', default='INFO',
                         help="Set log level, e.g. DEBUG")
