@@ -204,26 +204,25 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                     # TODO: pass sort key
                     start_times, stop_times = self.do_monary_query(query=query,
                                                                    fields=[self.start_key, self.stop_key],
-                                                                   sort=self.start_key,
+                                                       sort=self.start_key,
                                                                    types=['int64', 'int64'])
                     # Note: no fence post +1, pulse right boundary should be inclusive of the last sample
-                    x = np.round(0.5 * (start_times + stop_times) * self.sample_duration).astype(np.int64)
+                    x = start_times * self.sample_duration
 
                 else:
                     times = list(self.input_collection.find(query,
-                                                            projection=[self.start_key, self.stop_key],
+                                                            projection=[self.start_key],
                                                             **self.mongo_find_options))
                     # Convert response from list of dictionaries of start & stop time in samples
                     # to numpy array of pulse midpoint times in pax time units (ns)
                     x = np.zeros(len(times), dtype=np.int64)
                     for i, doc in enumerate(times):
-                        start = self._from_mt(doc[self.start_key])
-                        stop = self._from_mt(doc[self.stop_key])
-                        x[i] = int(0.5 * (start + stop))
+                        x[i] = self._from_mt(doc[self.start_key])
 
                 pulses_read += len(x)
 
                 if len(x):
+                    self.log.info(x.shape)
                     self.log.info("Acquired pulse time data in range [%s, %s]",
                                   pax_to_human_time(x[0]),
                                   pax_to_human_time(x[-1]))
@@ -344,7 +343,9 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoDBReader):
 
     def transform_event(self, event_proxy):
         t0, t1 = event_proxy.data  # ns
-        self.log.debug("Fetching data for event with range [%s, %s]", pax_to_human_time(t0), pax_to_human_time(t1))
+        self.log.debug("Fetching data for event with range [%s, %s]",
+                       pax_to_human_time(t0),
+                       pax_to_human_time(t1))
 
         event = Event(n_channels=self.config['n_channels'],
                       start_time=t0 + self.time_of_run_start,
