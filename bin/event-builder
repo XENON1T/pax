@@ -52,7 +52,9 @@ def main():
 
     # Build the query used to search for runs
     status_name = 'trigger.status'
-    if args.name:
+    if args.name == 'all':
+        run_query = {}
+    elif args.name:
         run_query = {'name': args.name, 'detector': args.detector}
     else:
         run_query = {status_name: 'waiting_to_be_processed',
