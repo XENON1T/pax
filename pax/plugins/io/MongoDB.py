@@ -204,7 +204,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                     # TODO: pass sort key
                     start_times, stop_times = self.do_monary_query(query=query,
                                                                    fields=[self.start_key, self.stop_key],
-                                                       sort=self.start_key,
+                                                                   sort=self.start_key,
                                                                    types=['int64', 'int64'])
                     # Note: no fence post +1, pulse right boundary should be inclusive of the last sample
                     x = start_times * self.sample_duration
@@ -222,7 +222,6 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                 pulses_read += len(x)
 
                 if len(x):
-                    self.log.info(x.shape)
                     self.log.info("Acquired pulse time data in range [%s, %s]",
                                   pax_to_human_time(x[0]),
                                   pax_to_human_time(x[-1]))
