@@ -159,7 +159,7 @@ Execute::
 
 or
 
-    paxer --input ~/pax/pax/data/xe100_120402_2000_000000.xed --stop_after 1 --plot
+    paxer --input ~/pax/pax/data/xe100_120402_2000_000000.xed --stop_after 1 --plot --config="XENON100"
 
 You should see a nice plot of a XENON100 event.
 
