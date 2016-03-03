@@ -407,7 +407,7 @@ def load_pax_event_class_from_root(rootfilename):
         f = ROOT.TFile(rootfilename)
     if 'pax_event_class' not in [x.GetName() for x in list(f.GetListOfKeys())]:
         raise exceptions.MaybeOldFormatException("Root file %s does not contain pax event class code.\n "
-                                                 "Maybe it was made before March 2016? See #<<<<PR>>>>.")
+                                                 "Maybe it was made before March 2016? See #323." % rootfilename)
     load_event_class_code(f.Get('pax_event_class').GetTitle())
     f.Close()
 
