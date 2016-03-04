@@ -325,27 +325,39 @@ class WaveformSimulatorFromOpticalGEANT(WaveformSimulator):
     The truth file produced by this input plugin will be empty (as WaveformSimulator.s1 and .s2 never get called)
     """
 
+    variables = (
+        # Fax name        #Root name    #Conversion factor (multiplicative)
+        ('photon_arriving_times',             'time',     1000000000.),
+        ('photon_hit_pmt_ids',             'pmthitID',     1),
+    )
+
     def startup(self):
-        raise NotImplementedError("WaveformSimulatorFromGEANT is not yet implemented!")
         import ROOT
         self.f = ROOT.TFile(self.config['input_name'])
-        self.t = self.f.Get("your_tree")
+        if not self.f.IsOpen():
+            print("ROOT file not open!")
+        self.t = self.f.Get("events/events")
         WaveformSimulator.startup(self)
         self.number_of_events = self.t.GetEntries() * self.config['event_repetitions']
 
     def get_instructions_for_next_event(self):
         for event_i in range(self.number_of_events):
+            self.t.GetEntry(event_i)
             instructions = {}
+            instructions['instruction']=event_i
             # fill instructions to look like this:
-            # {channel: [arrival times], next channel: [arrival times]}
-            # where arrival time is in ns since the start of the event
-            # (which can e.g. by your first photon time + a little bit)
+            # {[photon_hit_pmt_ids], [photon_arriving_times]}
+            for (variable_name, root_thing_name, conversion_factor) in self.variables:
+                # get stuff from root
+                # the two variables in this plugin are all vectors
+                instructions[variable_name]=[x*y for x,y in zip(np.reshape(getattr(self.t, root_thing_name), self.t.nsteps), [conversion_factor]*self.t.nsteps)]
             yield instructions
 
     def simulate_single_event(self, instructions):
         self.simulator.clear_signals_queue()
-        for channel, arrival_times in instructions.items():
-            self.simulator.arrival_times_per_channel[channel] = arrival_times
+        for (channel, arrival_time) in zip(instructions['photon_hit_pmt_ids'], instructions['photon_arriving_times']):
+            self.simulator.arrival_times_per_channel[channel].append(arrival_time)
+        self.s2_after_pulses()
         event = self.simulator.make_pax_event()
         event.event_number = self.current_event
         return event
