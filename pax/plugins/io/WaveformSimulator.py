@@ -369,11 +369,9 @@ class WaveformSimulatorFromOpticalGEANT(WaveformSimulator):
             for (variable_name, root_thing_name, conversion_factor) in self.variables:
                 # get stuff from root
                 # the two variables in this plugin are all vectors
-                instructions[variable_name] = [
-                    x*y for x, y in zip(np.reshape(getattr(self.t, root_thing_name), self.t.nsteps),
-                        [conversion_factor]*self.t.nsteps
-                        )
-                    ]
+                values = np.reshape(getattr(self.t, root_thing_name), self.t.nsteps)
+                conversion_factors = [conversion_factor]*self.t.nsteps
+                instructions[variable_name] = [x*y for x, y in zip(values, conversion_factors)]
             yield instructions
 
     def simulate_single_event(self, instructions):
