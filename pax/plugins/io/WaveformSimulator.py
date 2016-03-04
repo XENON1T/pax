@@ -113,7 +113,7 @@ class WaveformSimulator(plugin.InputPlugin):
     def s2_after_pulses(self):
         """
         :simulate the s2 after pulses
-        :the after pulses are assumed to be uniformly distributed in X-Y, 
+        :the after pulses are assumed to be uniformly distributed in X-Y,
         :so are not related to where the photon is generated
         :We simplify the generation, assuming S2-after pulses will not further generate secondary s2 after pulses
         """
@@ -124,10 +124,10 @@ class WaveformSimulator(plugin.InputPlugin):
         # generate the s2 after pulses for each type
         s2_ap_electron_times = []
         for s2_ap_data in self.config['s2_afterpulse_types'].values():
-            # calculate how many s2 after pulses 
+            # calculate how many s2 after pulses
             num_s2_afterpulses = np.random.binomial(
-                n = len(photon_detection_times), 
-                p = s2_ap_data['p']
+                n=len(photon_detection_times),
+                p=s2_ap_data['p']
                 )
             if num_s2_afterpulses == 0:
                 continue
@@ -135,15 +135,15 @@ class WaveformSimulator(plugin.InputPlugin):
             dist_kwargs = s2_ap_data['time_parameters']
             dist_kwargs['size'] = num_s2_afterpulses
             s2_ap_electron_times.extend(
-                np.random.choice(photon_detection_times, size = num_s2_afterpulses, replace = False) + 
+                np.random.choice(photon_detection_times, size=num_s2_afterpulses, replace=False) +
                 getattr(np.random, s2_ap_data['time_distribution'])(**dist_kwargs)
                 )
         # generate the s2 photons of each s2 pulses one by one
         # the X-Y of after pulse is randomized, Z is set to 0
         # randomize an array of X-Y
         rsquare = np.random.uniform(
-            0, 
-            np.power(self.config['tpc_radius'], 2.), 
+            0,
+            np.power(self.config['tpc_radius'], 2.),
             len(s2_ap_electron_times)
             )
         theta = np.random.uniform(0, 3.141592653, len(s2_ap_electron_times))
@@ -151,15 +151,15 @@ class WaveformSimulator(plugin.InputPlugin):
         Y = np.sqrt(rsquare)*np.sin(theta)
         for electron_id, s2_ap_electron_time in enumerate(s2_ap_electron_times):
             s2_ap_photon_times = self.simulator.s2_scintillation(
-                [s2_ap_electron_time], 
-                X[electron_id], 
+                [s2_ap_electron_time],
+                X[electron_id],
                 Y[electron_id]
                 )
             # queue the photons caused by the s2 after pulses
             self.simulator.queue_signal(
-                s2_ap_photon_times, 
-                X[electron_id], 
-                Y[electron_id], 
+                s2_ap_photon_times,
+                X[electron_id],
+                Y[electron_id],
                 -self.config['gate_to_anode_distance']
                 )
 
@@ -370,8 +370,9 @@ class WaveformSimulatorFromOpticalGEANT(WaveformSimulator):
                 # get stuff from root
                 # the two variables in this plugin are all vectors
                 instructions[variable_name] = [
-                    x*y for x, y in zip(np.reshape(getattr(self.t, root_thing_name), self.t.nsteps), 
-                    [conversion_factor]*self.t.nsteps)
+                    x*y for x, y in zip(np.reshape(getattr(self.t, root_thing_name), self.t.nsteps),
+                        [conversion_factor]*self.t.nsteps
+                        )
                     ]
             yield instructions
 
