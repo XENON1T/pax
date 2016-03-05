@@ -19,7 +19,7 @@ class MongoManager:
         self.monary_enabled = MONARY_ENABLED
 
     def get_database(self, database_name=None, uri=None, monary=False):
-        """Get a connection to the database_name. Returns Mongo database access object.
+        """Get a connection to the database_name. Returns Mongo database object.
         If you provide a mongodb connection string uri, we will insert user & password into it,
         otherwise one will be built from the configuration settings.
         If database_name=None, will connect to the default database of the uri.

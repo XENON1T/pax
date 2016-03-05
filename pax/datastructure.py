@@ -119,6 +119,30 @@ class Hit(StrictModel):
     n_saturated = 0
 
 
+class TriggerSignal(StrictModel):
+    """A simplified peak class which is produced by the trigger
+    Like Hit, this class not actually used. So default here are meaningless (except for type spec),
+    np.zeros just sets all to zero.
+    """
+
+    type = 0
+    trigger = False
+
+    #: Time since start of run at which the signal starts
+    left_time = 0
+
+    #: Time since start of run at which the signal ends
+    right_time = 0
+
+    n_pulses = 0
+    n_contributing_channels = 0
+    time_mean = 0.0
+    time_rms = float('nan')
+    area = float('nan')
+    x = float('nan')
+    y = float('nan')
+
+
 class Peak(StrictModel):
     """A group of nearby hits across one or more channels.
     Peaks will be classified as e.g. s1, s2, lone_hit, unknown, coincidence
@@ -535,6 +559,9 @@ class Event(StrictModel):
     #: A list of :class:`pax.datastructure.Peak` objects.
     peaks = ListField(Peak)
 
+    #: Array of trigger signals contained in the event
+    trigger_signals = np.array([], dtype=TriggerSignal.get_dtype())
+
     #: Array of all hits found in event
     #: These will get grouped into peaks during clustering
     #: This is usually emptied before output (but not in LED mode)
@@ -707,7 +734,7 @@ class Event(StrictModel):
         return peaks
 
 
-# An event proxy object which can hold raw data bytes
+# An event proxy object which can hold arbitrary data
 # but still has an event_number attribute
 # The decoders for and WriteZipped & Readzipped knows what to do with this,
 # other code will be fooled into treating it as a normal event
