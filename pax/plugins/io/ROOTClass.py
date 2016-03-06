@@ -86,27 +86,28 @@ class EncodeROOTClass(plugin.TransformPlugin):
             if field_name in fields_to_ignore:
                 continue
 
-            elif isinstance(field_value, list) or field_name in ('hits', 'all_hits'):
+            elif isinstance(field_value, list) or field_name in self.config['structured_array_fields']:
                 # Collection field -- recursively initialize collection elements
-                if field_name in ('hits', 'all_hits'):
-                    # Special handling for hit fields:
-                    # Convert the hits from numpy array to ordinary pax data models
-                    hits_list = []
+                if field_name in self.config['structured_array_fields']:
+                    # Convert the entries from numpy structured array to ordinary pax data models
+                    element_model_name = self.config['structured_array_fields'][field_name]
+                    pax_class = getattr(pax.datastructure, element_model_name)
+                    pax_object_list = []
                     for h in field_value:
-                        hits_list.append(datastructure.Hit(**{k: h[k] for k in field_value.dtype.names}))
-                    field_value = hits_list
-                    element_name = 'Hit'
+                        pax_object_list.append(pax_class(**{k: h[k] for k in field_value.dtype.names}))
+                    field_value = pax_object_list
+
                 else:
-                    element_name = list_field_info[field_name].__name__
+                    element_model_name = list_field_info[field_name].__name__
 
                 root_vector = getattr(root_object, field_name)
 
                 root_vector.clear()
                 for element_python_object in field_value:
-                    element_root_object = getattr(ROOT, element_name)()
+                    element_root_object = getattr(ROOT, element_model_name)()
                     self.set_root_object_attrs(element_python_object, element_root_object)
                     root_vector.push_back(element_root_object)
-                self.last_collection[element_name] = field_value
+                self.last_collection[element_model_name] = field_value
 
             elif isinstance(field_value, np.ndarray):
                 # Unfortunately we can't store numpy arrays directly into ROOT's ROOT.PyXXXBuffer.
@@ -151,14 +152,14 @@ class EncodeROOTClass(plugin.TransformPlugin):
                 continue
 
             # Collections (e.g. event.peaks)
-            elif field_name in list_field_info or field_name in ('hits', 'all_hits'):
-                if field_name in ('hits', 'all_hits'):
-                    # Special handling for hit fields. These are stored as numpy structured arrays in the datastructure,
-                    # but will be converted to 'ordinary' pax data models for storage (see set_root_object_attrs).
-                    # field_value = [] makes sure the code below makes a new instance of Hit
+            elif field_name in list_field_info or field_name in self.config['structured_array_fields']:
+                if field_name in self.config['structured_array_fields']:
+                    # Special handling for structure array fields.
+                    # We need to convert these to 'ordinary' pax data models for storage (see set_root_object_attrs).
+                    # field_value = [] makes sure the code below makes a new instance of the pax model
                     # rather than taking the first element of the array (which is a np.void object)
-                    element_model_name = 'Hit'
-                    element_model = datastructure.Hit
+                    element_model_name = self.config['structured_array_fields'][field_name]
+                    element_model = getattr(pax.datastructure, element_model_name)
                     field_value = []
                 else:
                     element_model_name = list_field_info[field_name].__name__
@@ -299,13 +300,14 @@ class ReadROOTClass(plugin.InputPlugin):
                 self.log.debug("%s not in root object?" % field_name)
                 continue
 
-            if field_name in ('hits', 'all_hits'):
+            if field_name in self.config['structured_array_fields']:
                 # Special case for hit fields
                 # Convert from root objects to numpy array
-                hit_dtype = datastructure.Hit.get_dtype()
-                result = np.array([tuple([getattr(hit, fn)
-                                          for fn in hit_dtype.names])
-                                   for hit in root_value], dtype=hit_dtype)
+                pax_class = getattr(datastructure, self.config['structured_array_fields'][field_name])
+                dtype = pax_class.get_dtype()
+                result = np.array([tuple([getattr(x, fn)
+                                          for fn in dtype.names])
+                                   for x in root_value], dtype=dtype)
 
             elif isinstance(default_value, list):
                 child_class_name = py_object.get_list_field_info()[field_name].__name__
