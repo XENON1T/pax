@@ -12,7 +12,6 @@ import numpy as np
 import snappy
 import pymongo
 
-import pax    # For version
 from pax.datastructure import Event, Pulse, EventProxy
 from pax import plugin, trigger, units
 
@@ -130,17 +129,10 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
 
     def get_events(self):
         last_time_searched = 0  # ns
-        pulses_read = 0         # Number of pulses read by the event builder
-        pulses_in_collection = self.input_collection.count()
-        total_event_length = 0  # ns
 
         # Used to timeout if DAQ crashes and no data will come
         time_of_last_daq_response = time.time()
         last_time_to_search = float('inf')
-        if pulses_in_collection == 0:
-            raise ValueError("This run does not even contain one pulse!")
-
-        self.log.info("Total number of pulses in collection: %d" % pulses_in_collection)
 
         while self.trigger.more_data_is_coming:
             # If the run is still ongoing, update the run document, so we know if the run ended.
@@ -175,31 +167,29 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                                       '$lt': self._to_mt(search_after + self.search_window)}}
 
             if self.use_monary:
-                start_times, = self.do_monary_query(query=query,
-                                                    fields=[self.start_key],
-                                                    types=['int64'],
-                                                    **self.mongo_find_options)
-                x = start_times * self.sample_duration
+                times, = self.do_monary_query(query=query,
+                                              fields=[self.start_key],
+                                              types=['int64'],
+                                              **self.mongo_find_options)
+                times = times * self.sample_duration
 
             else:
-                times = list(self.input_collection.find(query,
-                                                        projection=[self.start_key],
-                                                        **self.mongo_find_options))
+                time_docs = list(self.input_collection.find(query,
+                                                            projection=[self.start_key],
+                                                            **self.mongo_find_options))
                 # Convert response from list of dictionaries of start & stop time in samples
                 # to numpy array of pulse midpoint times in pax time units (ns)
-                x = np.zeros(len(times), dtype=np.int64)
-                for i, doc in enumerate(times):
-                    x[i] = self._from_mt(doc[self.start_key])
+                times = np.zeros(len(time_docs), dtype=np.int64)
+                for i, doc in enumerate(time_docs):
+                    times[i] = self._from_mt(doc[self.start_key])
 
-            pulses_read += len(x)
-
-            if len(x):
+            if len(times):
                 self.log.info("Acquired pulse time data in range [%s, %s]",
-                              pax_to_human_time(x[0]),
-                              pax_to_human_time(x[-1]))
+                              pax_to_human_time(times[0]),
+                              pax_to_human_time(times[-1]))
                 # Compute the last pulse start time, for search window advancement
                 if self.use_monary:
-                    last_start_time = self._from_mt(start_times[-1])
+                    last_start_time = self._from_mt(times[-1])
                 else:
                     last_start_time = self._from_mt(times[-1][0][-1])
 
@@ -228,18 +218,17 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                 last_time_searched += self.search_window
             else:
                 # We can't advance the entire search window, since the DAQ may not have filled it all the way.
-                # The condition len(x) == 0 and not self.data_taking_ended has already been dealt with.
+                # The condition len(x) == 0 and not self.data_taking_ended has already been dealt with, so ignore
+                # your editor's warning that last_start_time may not have been set yet.
                 last_time_searched = last_start_time
 
             # Send the new data to the trigger
-            self.trigger.add_new_data(times=x, last_time_searched=last_time_searched)
+            self.trigger.add_new_data(times=times, last_time_searched=last_time_searched)
 
             if last_time_searched > last_time_to_search:
                 self.trigger.more_data_is_coming = False
 
             for (t0, t1), signals in self.trigger.get_trigger_ranges():
-                # Note: no fence post +1; t1 will be stop time of last sample
-                total_event_length += t1 - t0
                 self.log.debug("Sending off event %d in range %s-%s" % (self.next_event_number, t0, t1))
                 yield EventProxy(event_number=self.next_event_number, data=[(t0, t1), signals])
                 self.next_event_number += 1
@@ -254,28 +243,17 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
             time_of_last_daq_response = time.time()
 
         # All went well - print out status information
-        # Unfortunately this contains only very basic status information: we only know event ranges in this plugin,
-        # not e.g. which channels see what.
-        events_built = self.next_event_number + 1
-        mean_event_length = total_event_length / events_built if events_built else 0
-        end_of_run_info = {'trigger.events_built': events_built,
-                           'trigger.mean_event_length': mean_event_length,
-                           'trigger.last_time_searched': last_time_searched,
-                           'trigger.timestamp': time.time(),
-                           'trigger.pulses_read': pulses_read,
-                           'trigger.pulses_in_collection': pulses_in_collection,
-                           'trigger.ended': True,
-                           'trigger.status': 'processed',
-                           'trigger.version': pax.__version__,
-                           'trigger.config': {k: self.config.get(k)
-                                              for k in ['window', 'left_extension', 'right_extension', 'search_window',
-                                                        'multiplicity', 'detector',
-                                                        # 'user', 'password',   # :-)
-                                                        'host', 'port']}}
+        # Get the end of run info from the trigger, and add the 'trigger.' prefix
+        # Also add some MongoDB specific stuff
+        end_of_run_info = trigger.get_end_of_run_info()
+        end_of_run_info = {'trigger.%s' % k: v for k, v in end_of_run_info.items()}
+        end_of_run_info['trigger.ended'] = True
+        end_of_run_info['trigger.status'] = 'processed'
+
         if not self.secret_mode:
             self.runs.update_one({'_id': self.config['run_doc_id']},
                                  {'$set': end_of_run_info})
-        self.log.info("Event building complete. Information: %s" % end_of_run_info)
+        self.log.info("Event building complete. Trigger information: %s" % end_of_run_info)
 
 
 class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoDBReader):

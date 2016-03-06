@@ -1,10 +1,13 @@
-"""Input/Output code1 for *processed* data
+"""Input/output code for tabular processed data formats
+Most work has migrated to the pax ROOTClass output format by now -- this is retained for backwards compatibility
+and because csv is nice for debugging.
 
 Here are the definitions of how to serialize our data structure to and from various formats.
 Please be careful when editing this file:
  - Do not add any dependencies (e.g. imports at head of file without try-except), this file has to stay import-able
    even if not all the python modules for all the formats are installed.
  - Do not use python3-specific syntax, this file should be importable by python2 applications.
+   (but in a sense this applies to all of pax, we aim to support python 2 and 3)
 """
 import logging
 import os

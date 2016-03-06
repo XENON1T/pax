@@ -54,9 +54,10 @@ class TestTrigger(unittest.TestCase):
 
     def test_find_event_ranges(self):
         config = configuration.load_configuration('XENON1T')['Trigger']
-        config['event_split_threshold'] = 3
+        config['event_separation'] = 3
         config['left_extension'] = 0
         config['right_extension'] = 0
+        config['trigger_probabilities'] = {0: {}, 1: {2: 1}, 2: {}}
         trig = trigger.Trigger(config)
 
         a = np.array([0, 0, 1, 4, 5, 10])
@@ -76,12 +77,16 @@ class TestTrigger(unittest.TestCase):
         """Integration test for the trigger"""
         # Configure a trigger to always trigger on any signal,
         # and not have any left and right extension (for simplicity)
-        config = configuration.load_configuration('XENON1T')['Trigger']
-        config['trigger_probability'] = {0: {2: 1},
-                                         1: {2: 1},
-                                         2: {2: 1}}
-        config['left_extension'] = 0
-        config['right_extension'] = 0
+        config = dict(trigger_probability={0: {2: 1},
+                                           1: {2: 1},
+                                           2: {2: 1}},
+                      signal_separation=1 * units.us,
+                      max_event_length=10 * units.ms,
+                      event_separation=1 * units.ms,
+                      s1_max_rms=30 * units.ns,
+                      s2_min_pulses=7,
+                      left_extension=0,
+                      right_extension=0)
 
         offset_per_block = int(10 * units.ms)
 

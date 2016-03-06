@@ -1,11 +1,13 @@
 """XENON1T trigger
 """
+import time
 import logging
 import random
 
 import numba
 import numpy as np
 
+import pax          # For version number
 from pax import units
 from pax.datastructure import TriggerSignal
 
@@ -17,8 +19,10 @@ class Trigger(object):
     times = np.zeros(0, dtype=np.int64)
     last_time_searched = 0
 
-    # Trigger version. Increment this (at least) when options taken by trigger change?
-    __version__ = 0.1
+    # Statistics for dumping at end of run
+    events_built = 0
+    total_event_length = 0
+    pulses_read = 0
 
     def __init__(self, config):
         self.log = log = logging.getLogger('Trigger')
@@ -26,17 +30,18 @@ class Trigger(object):
         # Validate the configuration
         # If no left and right extension specified, set them to floor(half the split gap)
         if config.get('left_extension', None) is None:
-            log.warning("No left/right extensions specified: using half of event split threshold")
-            config['left_extension'] = config['right_extension'] = np.floor(config['event_split_threshold'] / 2) - 1
-        if config['event_split_threshold'] <= config['left_extension'] + config['right_extension']:
-            raise ValueError("event_split_threshold must be larger than left + right extension "
+            log.warning("No left/right extensions specified: using half of event separation")
+            config['left_extension'] = config['right_extension'] = np.floor(config['event_separation'] / 2) - 1
+        if config['event_separation'] <= config['left_extension'] + config['right_extension']:
+            raise ValueError("event_separation must be larger than left + right extension "
                              "to avoid data duplication.")
         config['left_extension'] = abs(config['left_extension'])            # Deal with Chris' shenanigans
 
         self.config = config
 
         log.info("Starting trigger")
-        log.info("\tEvent split gap: %0.2f us", config['event_split_threshold'] / units.us)
+        log.info("\tEvent separation threshold: %0.2f ms", config['event_separation'] / units.ms)
+        log.info("\tSignal separation threshold: %0.2f us", config['signal_separation'] / units.us)
         log.info("\tLeft extension: %0.2f us", config['left_extension'] / units.us)
         log.info("\tRight extension: %0.2f us", config['right_extension'] / units.us)
 
@@ -53,10 +58,8 @@ class Trigger(object):
         p_length = max([max(ps.keys()) for ps in config['trigger_probability'].values()]) + 1
         p_matrix = np.zeros((3, p_length), dtype=np.float)
         for sig_type, ps in config['trigger_probability'].items():
-            for i, n in enumerate(sorted(ps.keys(), reverse=True)):
-                if i == 0:
-                    p_matrix[sig_type] = ps[n]
-                p_matrix[sig_type][:n + 1] = ps[n]
+            for i, n in enumerate(sorted(ps.keys())):
+                p_matrix[sig_type][n:] = ps[n]
         self.p_matrix = p_matrix
 
     def add_new_data(self, times, last_time_searched):
@@ -64,6 +67,7 @@ class Trigger(object):
         self.log.debug("Received %d more times" % len(times))
         self.times = np.concatenate((self.times, times))
         self.last_time_searched = last_time_searched
+        self.pulses_read += len(times)
 
     def get_trigger_ranges(self):
         """Yield successive trigger ranges from the trigger's buffer.
@@ -91,7 +95,7 @@ class Trigger(object):
         self.log.debug("Found %d event ranges" % len(event_ranges))
 
         # What data can we clear from the times buffer?
-        clear_until = self.last_time_searched - config['event_split_threshold']
+        clear_until = self.last_time_searched - config['event_separation']
 
         if len(event_ranges) and self.more_data_is_coming and event_ranges[-1][-1] > clear_until:
             # The last event range can still be extended by future data, so we should not send it yet.
@@ -103,7 +107,7 @@ class Trigger(object):
         # Group the signals with the events,
         # It's ok to do a for loop in python over the events, that happens anyway for sending events out
         # signal_indices_buffer will hold, for each event, the start and stop (inclusive) index of signals in the event
-        signal_indices_buffer = np.zeros((len(event_ranges), 2))
+        signal_indices_buffer = np.zeros((len(event_ranges), 2), dtype=np.int)
         signal_is_in_event = np.zeros(len(signals), dtype=np.bool)
 
         if len(event_ranges):
@@ -113,6 +117,8 @@ class Trigger(object):
                 # Notice the + 1 for python's exclusive indexing below...
                 signal_is_in_event[signal_start_i:signal_end_i + 1] = True
                 yield event_ranges[event_i], signals[signal_start_i:signal_end_i + 1]
+                self.events_built += 1
+                self.total_event_length += event_ranges[event_i][1] - event_ranges[event_i][0]
 
         # Store the signals that were not in any events in an attribute, so people can get them out
         self.signals_beyond_events = signals[True ^ (signal_is_in_event)]
@@ -128,7 +134,7 @@ class Trigger(object):
         left_ext = self.config['left_extension']
         right_ext = self.config['right_extension']
         max_l = self.config['max_event_length']
-        for group_of_tr in split_on_gap(trigger_times, self.config['event_split_threshold']):
+        for group_of_tr in split_on_gap(trigger_times, self.config['event_separation']):
             start = group_of_tr[0] - left_ext
             stop = group_of_tr[-1] + right_ext
             if stop - start > max_l:
@@ -138,6 +144,18 @@ class Trigger(object):
                                                                           max_l / units.ms))
             event_ranges.append((start, stop))
         return np.array(event_ranges, dtype=np.int)
+
+    def get_end_of_run_info(self):
+        """Return a dictionary with end-of-run information, for printing or for the runs database"""
+        events_built = self.events_built
+        mean_event_length = self.total_event_length / events_built if events_built else 0
+        return {'events_built': events_built,
+                'mean_event_length': mean_event_length,
+                'last_time_searched': self.last_time_searched,
+                'timestamp': time.time(),
+                'pulses_read': self.pulses_read,
+                'pax_version': pax.__version__,
+                'config': self.config}
 
 
 @numba.jit(nopython=True)

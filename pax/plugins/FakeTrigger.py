@@ -49,3 +49,6 @@ class FakeTrigger(plugin.TransformPlugin):
             self.log.info("Trigger returned %d signals" % len(event.trigger_signals))
 
         return event
+
+    def shutdown(self):
+        self.log.info(self.trigger.get_end_of_run_info())
