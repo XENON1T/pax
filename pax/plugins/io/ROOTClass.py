@@ -1,7 +1,5 @@
 import os
 import re
-import tempfile
-import shutil
 import six
 import array
 import json
@@ -261,13 +259,13 @@ class ReadROOTClass(plugin.InputPlugin):
         if not os.path.exists(self.config['input_name']):
             raise ValueError("Input file %s does not exist" % self.config['input_name'])
 
-        # Make sure to store the ROOT file as an attribute
-        # Else it will go out of scope => we die after next garbage collect
-        self.f = ROOT.TFile(self.config['input_name'])
-
         # Load the event class from the root file
         # This will fail on old format root files (before March 2016)
         load_pax_event_class_from_root(self.config['input_name'])
+
+        # Make sure to store the ROOT file as an attribute
+        # Else it will go out of scope => we die after next garbage collect
+        self.f = ROOT.TFile(self.config['input_name'])
 
         self.t = self.f.Get(self.config['tree_name'])
         self.number_of_events = self.t.GetEntries()
@@ -363,23 +361,19 @@ def load_event_class_code(class_code):
     """
     checksum = hashlib.md5(class_code.encode()).hexdigest()
 
-    # Write the class code to a temporary directory
-    # The filename is something specific, so it can't just be the current directory
-    # (even though checksum is unique, don't want several threads trying to write the same file)
-    tempdir = tempfile.mkdtemp(prefix=os.getcwd())
+    # Write the pax event class
+    # TODO: Can this cause conflicts if several threads try to read & write at the same time?
+    # If so, resolve by using temporary directory.
     class_filename = 'pax_event_class-%s.cpp' % checksum
     with open(class_filename, mode='w') as outfile:
         outfile.write(class_code)
 
     # Compile the class (or decide we don't have to), then clean up the directory
     load_event_class(os.path.abspath(class_filename))
-    shutil.rmtree(tempdir)
 
 
 def load_event_class(filename, force_recompile=False):
     """Read a C++ root class definition from filename, generating dictionaries for vectors of classes
-    If a class with the same base filename has been loaded before (regardless of which directory it is in),
-    its libraries will be loaded from ~/.cache/rootpy.
     """
     # Load (and if necessary compile) the file in ROOT
     # Unfortunately this must happen in the current directory.
@@ -413,7 +407,7 @@ def load_pax_event_class_from_root(rootfilename):
         f = ROOT.TFile(rootfilename)
     if 'pax_event_class' not in [x.GetName() for x in list(f.GetListOfKeys())]:
         raise exceptions.MaybeOldFormatException("Root file %s does not contain pax event class code.\n "
-                                                 "Maybe it was made before March 2016? See #<<<<PR>>>>.")
+                                                 "Maybe it was made before March 2016? See #323." % rootfilename)
     load_event_class_code(f.Get('pax_event_class').GetTitle())
     f.Close()
 

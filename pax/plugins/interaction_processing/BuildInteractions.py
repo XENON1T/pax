@@ -39,8 +39,11 @@ class BuildInteractions(plugin.TransformPlugin):
                 ia.s1 = event.peaks.index(s1)
                 ia.s2 = event.peaks.index(s2)
                 ia.drift_time = dt
-                ia.set_position(s2.get_position_from_preferred_algorithm(self.config['xy_posrec_preference']))
-
+                try:
+                    # Get x,y position from peak
+                    ia.set_position(s2.get_position_from_preferred_algorithm(self.config['xy_posrec_preference']))
+                except ValueError:
+                    self.log.debug("Could not find any position from the chosen algorithms")
                 # Append to event
                 event.interactions.append(ia)
 
@@ -83,7 +86,7 @@ class BasicInteractionProperties(plugin.TransformPlugin):
                         ia.s1_saturation_correction *= saturation_correction(
                             peak=s1,
                             channels_in_pattern=self.tpc_channels,
-                            expected_pattern=self.s1_patterns.expected_pattern((ia.x, ia.y, ia.drift_time)),
+                            expected_pattern=self.s1_patterns.expected_pattern((ia.x, ia.y, ia.z)),
                             confused_channels=confused_s1_channels,
                             log=self.log)
 
