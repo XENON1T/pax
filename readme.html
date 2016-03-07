@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Installation prerequisites &mdash; Processor for Analyzing XENON1T 4.5.0 documentation</title>
+    <title>Installation prerequisites &mdash; Processor for Analyzing XENON1T 4.6.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '4.5.0',
+        VERSION:     '4.6.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.5.0 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.6.0 documentation" href="index.html" />
     <link rel="next" title="Installation and setup" href="faq.html" />
     <link rel="prev" title="Welcome to processor for Analyzing XENON1T’s documentation!" href="index.html" />
    
@@ -165,7 +165,7 @@ python setup.py develop
 </div>
 <p>or</p>
 <blockquote>
-<div>paxer &#8211;input ~/pax/pax/data/xe100_120402_2000_000000.xed &#8211;stop_after 1 &#8211;plot</div></blockquote>
+<div>paxer &#8211;input ~/pax/pax/data/xe100_120402_2000_000000.xed &#8211;stop_after 1 &#8211;plot &#8211;config=&#8221;XENON100&#8221;</div></blockquote>
 <p>You should see a nice plot of a XENON100 event.</p>
 </div>
 </div>
@@ -178,7 +178,7 @@ or via <a class="reference external" href="http://xenon1t.github.io/pax/faq.html
 </pre></div>
 </div>
 <p>from anywhere, which will give you a list of other command line options. If you have a graphical display, try <cite>paxer &#8211;plot</cite> and <cite>paxer &#8211;plot_interactive</cite>. You can select some data with the <cite>&#8211;input</cite> option:</p>
-<div class="highlight-python"><div class="highlight"><pre>paxer --input /archive/data/xenon100/run_14/xe100_150213_1411/xe100_150213_1411_000000.xed --event 0 --plot
+<div class="highlight-python"><div class="highlight"><pre>paxer --input /archive/data/xenon100/run_14/xe100_150213_1411/xe100_150213_1411_000000.xed --event 0 --plot --config=&quot;XENON100&quot;
 </pre></div>
 </div>
 <p>If you want to do something nonstandard, you can create your own configuration file

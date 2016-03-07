@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.datastructure &mdash; Processor for Analyzing XENON1T 4.5.0 documentation</title>
+    <title>pax.datastructure &mdash; Processor for Analyzing XENON1T 4.6.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '4.5.0',
+        VERSION:     '4.6.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.5.0 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.6.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
@@ -60,6 +60,16 @@
 <span class="n">INT_NAN</span> <span class="o">=</span> <span class="o">-</span><span class="mi">99999</span>    <span class="c1"># Do not change without talking to me. -Tunnell 12/3/2015 ... and me. -Jelle 05/08/2015</span>
 
 
+<div class="viewcode-block" id="ConfidenceTuple"><a class="viewcode-back" href="../../pax.html#pax.datastructure.ConfidenceTuple">[docs]</a><span class="k">class</span> <span class="nc">ConfidenceTuple</span><span class="p">(</span><span class="n">StrictModel</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Confidence tuple</span>
+
+<span class="sd">    Stores the information of a confidence level of a reconstructed position</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">level</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+    <span class="n">dx</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+    <span class="n">dy</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+
+</div>
 <div class="viewcode-block" id="ReconstructedPosition"><a class="viewcode-back" href="../../pax.html#pax.datastructure.ReconstructedPosition">[docs]</a><span class="k">class</span> <span class="nc">ReconstructedPosition</span><span class="p">(</span><span class="n">StrictModel</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Reconstructed position</span>
 
@@ -82,6 +92,13 @@
     <span class="c1">#: Name of algorithm which provided this position</span>
     <span class="n">algorithm</span> <span class="o">=</span> <span class="s1">&#39;none&#39;</span>
 
+    <span class="c1">#: Confidence_levels</span>
+    <span class="c1"># error_matrix = np.array([], dtype=np.float64)</span>
+    <span class="n">confidence_tuples</span> <span class="o">=</span> <span class="n">ListField</span><span class="p">(</span><span class="n">ConfidenceTuple</span><span class="p">)</span>
+
+    <span class="c1"># For convenience: cylindrical coordinates</span>
+    <span class="c1"># Must be properties so InterpolatingDetectorMap can transparently use</span>
+    <span class="c1"># cylindrical coordinates</span>
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">r</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Radial position&quot;&quot;&quot;</span>
