@@ -4,7 +4,16 @@ History
 -------
 
 ------------------
-4.5.0 (2016-02-05)
+4.6.0 (2016-03-07)
+------------------
+
+ * Confidence levels on position reconstruction
+ * Saturation correction bug
+ * Several bug fixes
+ * Minor event builder changes
+
+------------------
+4.5.0 (2016-02-15)
 ------------------
 
  * Wavform simulator refactor
