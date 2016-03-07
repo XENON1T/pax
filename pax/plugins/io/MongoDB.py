@@ -245,7 +245,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
         # All went well - print out status information
         # Get the end of run info from the trigger, and add the 'trigger.' prefix
         # Also add some MongoDB specific stuff
-        end_of_run_info = trigger.get_end_of_run_info()
+        end_of_run_info = trigger.shutdown()
         end_of_run_info = {'trigger.%s' % k: v for k, v in end_of_run_info.items()}
         end_of_run_info['trigger.ended'] = True
         end_of_run_info['trigger.status'] = 'processed'

@@ -9,7 +9,7 @@ class FakeTrigger(plugin.TransformPlugin):
     This does not change how many events are seen, but just adds trigger signal annotations to the events.
     Useful for diagnostic purposes -- DO NOT USE in actual data processing
     """
-    debug = False
+    debug = True
 
     def startup(self):
         if self.debug:
@@ -40,7 +40,7 @@ class FakeTrigger(plugin.TransformPlugin):
 
         # Accumulate all signals from the trigger (don't care about actual event ranges)
         sigs = [s for _, s in self.trigger.get_trigger_ranges()]
-        sigs.append(self.trigger.signals_beyond_events)
+        sigs.append(self.trigger.signals_outside_events)
 
         if not len(sigs):
             self.log.info("Trigger returned no signals!")
@@ -51,4 +51,4 @@ class FakeTrigger(plugin.TransformPlugin):
         return event
 
     def shutdown(self):
-        self.log.info(self.trigger.get_end_of_run_info())
+        self.log.info(self.trigger.shutdown())

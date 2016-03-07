@@ -3,9 +3,11 @@
 import time
 import logging
 import random
+import os
 
 import numba
 import numpy as np
+import h5py
 
 import pax          # For version number
 from pax import units
@@ -62,6 +64,15 @@ class Trigger(object):
                 p_matrix[sig_type][n:] = ps[n]
         self.p_matrix = p_matrix
 
+        # Create file for signals outside event
+        dir = os.path.dirname(self.config['trigger_data_filename'])
+        if dir and not os.path.exists(dir):
+            os.makedirs(dir)
+        self.f = h5py.File(self.config['trigger_data_filename'], mode='w')
+        self.outside_signals_dataset = self.f.create_dataset('signals_outside_events', (0,), maxshape=(None,),
+                                                             dtype=self.numba_signals_buffer.dtype,
+                                                             compression="gzip")
+
     def add_new_data(self, times, last_time_searched):
         """Adds more data to the trigger's buffer"""
         self.log.debug("Received %d more times" % len(times))
@@ -76,7 +87,7 @@ class Trigger(object):
         times = self.times
         config = self.config
 
-        # Find signals. This happens in numba, so it should be super-fast.d
+        # Find signals. This happens in numba, so it should be super-fast.
         n_signals_found = find_signals(times=times,
                                        signal_separation=self.config['signal_separation'],
                                        signal_buffer=self.numba_signals_buffer)
@@ -86,7 +97,7 @@ class Trigger(object):
         # Classify the signals; modifies signals in-place.
         classify_signals(signals, s1_max_rms=self.config['s1_max_rms'], s2_min_pulses=self.config['s2_min_pulses'])
 
-        # Determine which signals trigger an event; modifies signals in-place
+        # Determine which signals trigger an event; modifies signals in-place.
         decide_triggers(signals, p_matrix=self.p_matrix)
 
         # Group the triggers into event ranges
@@ -120,11 +131,23 @@ class Trigger(object):
                 self.events_built += 1
                 self.total_event_length += event_ranges[event_i][1] - event_ranges[event_i][0]
 
-        # Store the signals that were not in any events in an attribute, so people can get them out
-        self.signals_beyond_events = signals[True ^ (signal_is_in_event)]
+        # Which signals outside the events should we save?
+        signals_outside_events = signals[(True ^ signal_is_in_event)]
+        signals_outside_events = signals_outside_events[signals_outside_events['n_pulses'] >=
+                                                        self.config['outside_signals_save_threshold']]
+
+        # Store basic info about these signals in an hdf5.
+        # For now, make them available in attribute as well, so other code can grab it.
+        self.signals_outside_events = signals_outside_events
+        if len(signals_outside_events):
+            self.log.debug("Storing %d signals outside events" % len(signals_outside_events))
+            orig_size = self.outside_signals_dataset.size
+            self.outside_signals_dataset.resize(orig_size + len(signals_outside_events), axis=0)
+            self.outside_signals_dataset[orig_size:] = signals_outside_events
+            self.f.flush()
 
         # Clear times (safe range was determined above)
-        # if needed, this can be sped up a lot by a numba search routine
+        # TODO: if needed, this can probably be sped up a lot by a numba search routine
         self.log.debug("Clearing times after %d" % clear_until)
         self.times = times[times >= clear_until]
 
@@ -145,10 +168,14 @@ class Trigger(object):
             event_ranges.append((start, stop))
         return np.array(event_ranges, dtype=np.int)
 
-    def get_end_of_run_info(self):
-        """Return a dictionary with end-of-run information, for printing or for the runs database"""
+    def shutdown(self):
+        """Shuts down trigger, return a dictionary with end-of-run information, for printing or for the runs database
+        Will close outside_signals_file
+        """
         events_built = self.events_built
         mean_event_length = self.total_event_length / events_built if events_built else 0
+        self.f.close()
+
         return {'events_built': events_built,
                 'mean_event_length': mean_event_length,
                 'last_time_searched': self.last_time_searched,
