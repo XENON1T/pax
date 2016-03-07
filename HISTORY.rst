@@ -9,7 +9,7 @@ History
 
  * Confidence levels on position reconstruction
  * Saturation correction bug
- * Several bug fixes
+ * Several small bug fixes
  * Minor event builder changes
 
 ------------------
