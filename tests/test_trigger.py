@@ -7,6 +7,7 @@ from pax import units, trigger, configuration
 from pax.datastructure import TriggerSignal
 import tempfile
 
+
 class TestTrigger(unittest.TestCase):
 
     def test_find_signals(self):
