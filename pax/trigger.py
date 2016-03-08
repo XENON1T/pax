@@ -25,12 +25,14 @@ class Trigger(object):
     events_built = 0
     total_event_length = 0
     pulses_read = 0
+    signals_found = 0
+    triggers_found = 0
 
     def __init__(self, config):
         self.log = log = logging.getLogger('Trigger')
 
         # Validate the configuration
-        # If no left and right extension specified, set them to floor(half the split gap)
+        # If no left and right extension specified, set them to half the split gap (floored) minus 1
         if config.get('left_extension', None) is None:
             log.warning("No left/right extensions specified: using half of event separation")
             config['left_extension'] = config['right_extension'] = np.floor(config['event_separation'] / 2) - 1
@@ -50,9 +52,7 @@ class Trigger(object):
         # Initialize buffer for numba signal finding routine: we must initialize a large buffer here
         # since we can't create / extend arrays from numba. I don't want to implement some code which lets
         # the numba routine send some message code for buffer_full, in which case it is called again, etc.
-        # TriggerSignal array is about 100 bytes per signal, so 5M signals is 500 MB RAM.
-        # Could double it, not increase by factor ten.
-        self.numba_signals_buffer = np.zeros(config.get('numba_signal_buffer_size', int(5e6)),
+        self.numba_signals_buffer = np.zeros(config['numba_signal_buffer_size'],
                                              dtype=TriggerSignal.get_dtype())
 
         # Convert trigger_probability dictionary of dictionaries to 2d array, with intermediate values filled in
@@ -64,14 +64,16 @@ class Trigger(object):
                 p_matrix[sig_type][n:] = ps[n]
         self.p_matrix = p_matrix
 
-        # Create file for signals outside event
-        dir = os.path.dirname(self.config['trigger_data_filename'])
-        if dir and not os.path.exists(dir):
-            os.makedirs(dir)
-        self.f = h5py.File(self.config['trigger_data_filename'], mode='w')
-        self.outside_signals_dataset = self.f.create_dataset('signals_outside_events', (0,), maxshape=(None,),
-                                                             dtype=self.numba_signals_buffer.dtype,
-                                                             compression="gzip")
+        # Should we create a file with extra trigger data?
+        if self.config['save_signals_outside_events']:
+            # Create file for signals outside event
+            dir = os.path.dirname(self.config['trigger_data_filename'])
+            if dir and not os.path.exists(dir):
+                os.makedirs(dir)
+            self.f = h5py.File(self.config['trigger_data_filename'], mode='w')
+            self.outside_signals_dataset = self.f.create_dataset('signals_outside_events', (0,), maxshape=(None,),
+                                                                 dtype=self.numba_signals_buffer.dtype,
+                                                                 compression="gzip")
 
     def add_new_data(self, times, last_time_searched):
         """Adds more data to the trigger's buffer"""
@@ -93,6 +95,7 @@ class Trigger(object):
                                        signal_separation=self.config['signal_separation'],
                                        signal_buffer=self.numba_signals_buffer)
         signals = self.numba_signals_buffer[:n_signals_found]
+        self.signals_found += n_signals_found
         self.log.debug("Trigger found %d signals in data" % n_signals_found)
 
         # Classify the signals; modifies signals in-place.
@@ -103,6 +106,7 @@ class Trigger(object):
 
         # Group the triggers into event ranges
         trigger_times = signals[signals['trigger']]['left_time']
+        self.triggers_found += len(trigger_times)
         event_ranges = self.find_event_ranges(trigger_times)
         self.log.debug("Found %d event ranges" % len(event_ranges))
 
@@ -120,35 +124,42 @@ class Trigger(object):
         # It's ok to do a for loop in python over the events, that happens anyway for sending events out
         # signal_indices_buffer will hold, for each event, the start and stop (inclusive) index of signals in the event
         signal_indices_buffer = np.zeros((len(event_ranges), 2), dtype=np.int)
-        signal_is_in_event = np.zeros(len(signals), dtype=np.bool)
 
         if len(event_ranges):
             group_signals(signals, event_ranges, signal_indices_buffer)     # Modifies signal_indices_buffer in-place
             for event_i in range(len(event_ranges)):
                 signal_start_i, signal_end_i = signal_indices_buffer[event_i]
                 # Notice the + 1 for python's exclusive indexing below...
-                signal_is_in_event[signal_start_i:signal_end_i + 1] = True
                 yield event_ranges[event_i], signals[signal_start_i:signal_end_i + 1]
                 self.events_built += 1
                 self.total_event_length += event_ranges[event_i][1] - event_ranges[event_i][0]
 
-        # Which signals outside the events should we save?
-        # TODO: if needed, this can probably be sped up a lot by a numba search routine
-        outsigs = signals[(True ^ signal_is_in_event)]
-        outsigs = np.concatenate([outsigs[(outsigs['type'] == sigtype) &
-                                          (outsigs['n_pulses'] >=
-                                           self.config['outside_signals_save_thresholds'][sigtype])]
-                                  for sigtype in range(2 + 1)])
+        # Save signals outside event, if desired
+        # This can slow the trigger down a bit, so it is in a second loop
+        # TODO: if needed, this can probably be sped up a lot by using a numba routine
+        if self.config['save_signals_outside_events']:
+            signal_is_in_event = np.zeros(len(signals), dtype=np.bool)
+            for event_i in range(len(event_ranges)):
+                signal_start_i, signal_end_i = signal_indices_buffer[event_i]
+                signal_is_in_event[signal_start_i:signal_end_i + 1] = True
 
-        # Store basic info about these signals in an hdf5.
-        # For now, make them available in attribute as well, so other code can grab it.
-        self.signals_outside_events = outsigs
-        if len(outsigs):
-            self.log.debug("Storing %d signals outside events" % len(outsigs))
-            orig_size = self.outside_signals_dataset.size
-            self.outside_signals_dataset.resize(orig_size + len(outsigs), axis=0)
-            self.outside_signals_dataset[orig_size:] = outsigs
-            self.f.flush()
+            outsigs = signals[(True ^ signal_is_in_event)]
+            outsigs = np.concatenate([outsigs[(outsigs['type'] == sigtype) &
+                                              (outsigs['n_pulses'] >=
+                                               self.config['outside_signals_save_thresholds'][sigtype])]
+                                      for sigtype in range(2 + 1)])
+            # Don't record signals in overlap bit as outside
+            # TODO: Fix more nicely!
+            outsigs = outsigs[outsigs['left_time'] < clear_until]
+
+            # Store basic info about these signals in an hdf5.
+            # For now, make them available in attribute as well, so other code can grab it.
+            self.signals_outside_events = outsigs
+            if len(outsigs):
+                self.log.debug("Storing %d signals outside events" % len(outsigs))
+                orig_size = self.outside_signals_dataset.size
+                self.outside_signals_dataset.resize(orig_size + len(outsigs), axis=0)
+                self.outside_signals_dataset[orig_size:] = outsigs
 
         # Clear times (safe range was determined above)
         # TODO: if needed, this can probably be sped up a lot by a numba search routine
@@ -178,20 +189,24 @@ class Trigger(object):
         """
         events_built = self.events_built
         mean_event_length = self.total_event_length / events_built if events_built else 0
-        self.f.close()
+        if hasattr(self, 'f'):
+            self.f.close()
 
-        return {'events_built': events_built,
-                'mean_event_length': mean_event_length,
-                'last_time_searched': self.last_time_searched,
-                'timestamp': time.time(),
-                'pulses_read': self.pulses_read,
-                'pax_version': pax.__version__,
-                'config': self.config}
+        end_info = {'events_built': events_built,
+                    'mean_event_length': mean_event_length,
+                    'last_time_searched': self.last_time_searched,
+                    'timestamp': time.time(),
+                    'pax_version': pax.__version__}
+        for attrname in ('config', 'pulses_read', 'signals_found', 'triggers_found'):
+            end_info[attrname] = getattr(self, attrname)
+
+        return end_info
 
 
 @numba.jit(nopython=True)
 def find_signals(times, signal_separation, signal_buffer):
-    """Fill signal_buffer with signals in times. Returns number of signals found so you can slice the buffer.
+    """Fill signal_buffer with signals in times. Returns:
+       - number of signals found (so you can slice the buffer)
     signal_separation: group pulses into signals separated by signal_separation.
     Online RMS algorithm is Knuth/Welford: https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
     """
@@ -236,6 +251,8 @@ def find_signals(times, signal_separation, signal_buffer):
                 current_signal += 1
                 M2 = 0
                 in_signal = False
+                if current_signal > len(signal_buffer) - 1:
+                    raise OverflowError("More signals found than allowed by the signal buffer specification")
 
     return current_signal
 

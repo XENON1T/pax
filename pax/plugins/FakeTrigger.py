@@ -18,6 +18,7 @@ class FakeTrigger(plugin.TransformPlugin):
             self.log.setLevel(logging.DEBUG)
 
         trig_conf = self.processor.config['Trigger']
+        trig_conf['save_signals_outside_events'] = True
 
         # To ensure we get all signals from the event, trigger on all signals
         # TODO: once signals outside events can be retrieved, drop this hack
