@@ -75,7 +75,8 @@ class Trigger(object):
 
     def add_new_data(self, times, last_time_searched):
         """Adds more data to the trigger's buffer"""
-        self.log.debug("Received %d more times" % len(times))
+        self.log.info("Received %d more times" % len(times))
+        self.log.info("Already %d times in buffer" % len(self.times))
         self.times = np.concatenate((self.times, times))
         self.last_time_searched = last_time_searched
         self.pulses_read += len(times)
@@ -132,18 +133,21 @@ class Trigger(object):
                 self.total_event_length += event_ranges[event_i][1] - event_ranges[event_i][0]
 
         # Which signals outside the events should we save?
-        signals_outside_events = signals[(True ^ signal_is_in_event)]
-        signals_outside_events = signals_outside_events[signals_outside_events['n_pulses'] >=
-                                                        self.config['outside_signals_save_threshold']]
+        # TODO: if needed, this can probably be sped up a lot by a numba search routine
+        outsigs = signals[(True ^ signal_is_in_event)]
+        outsigs = np.concatenate([outsigs[(outsigs['type'] == sigtype) &
+                                          (outsigs['n_pulses'] >=
+                                           self.config['outside_signals_save_thresholds'][sigtype])]
+                                  for sigtype in range(2 + 1)])
 
         # Store basic info about these signals in an hdf5.
         # For now, make them available in attribute as well, so other code can grab it.
-        self.signals_outside_events = signals_outside_events
-        if len(signals_outside_events):
-            self.log.debug("Storing %d signals outside events" % len(signals_outside_events))
+        self.signals_outside_events = outsigs
+        if len(outsigs):
+            self.log.debug("Storing %d signals outside events" % len(outsigs))
             orig_size = self.outside_signals_dataset.size
-            self.outside_signals_dataset.resize(orig_size + len(signals_outside_events), axis=0)
-            self.outside_signals_dataset[orig_size:] = signals_outside_events
+            self.outside_signals_dataset.resize(orig_size + len(outsigs), axis=0)
+            self.outside_signals_dataset[orig_size:] = outsigs
             self.f.flush()
 
         # Clear times (safe range was determined above)

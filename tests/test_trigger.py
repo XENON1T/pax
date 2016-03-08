@@ -3,10 +3,9 @@ import unittest
 
 import numpy as np
 
-
 from pax import units, trigger, configuration
 from pax.datastructure import TriggerSignal
-
+import tempfile
 
 class TestTrigger(unittest.TestCase):
 
@@ -77,13 +76,16 @@ class TestTrigger(unittest.TestCase):
         """Integration test for the trigger"""
         # Configure a trigger to always trigger on any signal,
         # and not have any left and right extension (for simplicity)
+        tempf = tempfile.NamedTemporaryFile()
         config = dict(trigger_probability={0: {2: 1},
                                            1: {2: 1},
                                            2: {2: 1}},
                       signal_separation=1 * units.us,
                       max_event_length=10 * units.ms,
                       event_separation=1 * units.ms,
+                      trigger_data_filename=tempf.name,
                       s1_max_rms=30 * units.ns,
+                      outside_signals_save_thresholds=[0, 0, 0],
                       s2_min_pulses=7,
                       left_extension=0,
                       right_extension=0)
@@ -143,6 +145,7 @@ class TestTrigger(unittest.TestCase):
             self.assertEqual(should_get[i], event_ranges[i])
 
         self.assertEqual(event_ranges, should_get)
+        trig.shutdown()
 
 
 if __name__ == '__main__':
