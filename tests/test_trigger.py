@@ -87,6 +87,8 @@ class TestTrigger(unittest.TestCase):
                       trigger_data_filename=tempf.name,
                       s1_max_rms=30 * units.ns,
                       outside_signals_save_thresholds=[0, 0, 0],
+                      numba_signal_buffer_size=1e4,
+                      save_signals_outside_events=False,
                       s2_min_pulses=7,
                       left_extension=0,
                       right_extension=0)
