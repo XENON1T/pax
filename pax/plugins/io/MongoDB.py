@@ -125,7 +125,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                                            dtype=np.int64) * -1
         self.info("Starting event builder")
 
-        self.trigger = trigger.Trigger(self.processor.config['Trigger'])
+        self.trigger = trigger.Trigger(self.processor.config['Trigger'], pmt_data=self.config['pmts'])
 
     def get_events(self):
         last_time_searched = 0  # ns
@@ -167,21 +167,25 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                                       '$lt': self._to_mt(search_after + self.search_window)}}
 
             if self.use_monary:
-                times, = self.do_monary_query(query=query,
-                                              fields=[self.start_key],
-                                              types=['int64'],
-                                              **self.mongo_find_options)
+                times, modules, channels = self.do_monary_query(query=query,
+                                                                fields=[self.start_key, 'module', 'channel'],
+                                                                types=['int64'],
+                                                                **self.mongo_find_options)
                 times = times * self.sample_duration
 
             else:
                 time_docs = list(self.input_collection.find(query,
                                                             projection=[self.start_key],
                                                             **self.mongo_find_options))
-                # Convert response from list of dictionaries of start & stop time in samples
-                # to numpy array of pulse midpoint times in pax time units (ns)
+                # Convert response from list of dictionaries to numpy arrays
+                # Pulse times must be converted to pax time units (ns)
                 times = np.zeros(len(time_docs), dtype=np.int64)
+                channels = np.zeros(len(time_docs), dtype=np.int32)
+                modules = np.zeros(len(time_docs), dtype=np.int32)
                 for i, doc in enumerate(time_docs):
                     times[i] = self._from_mt(doc[self.start_key])
+                    channels[i] = doc['channel']
+                    modules[i] = doc['module']
 
             if len(times):
                 self.log.info("Acquired pulse time data in range [%s, %s]",
@@ -223,12 +227,15 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                 last_time_searched = last_start_time
 
             # Send the new data to the trigger
-            self.trigger.add_new_data(times=times, last_time_searched=last_time_searched)
+            self.trigger.add_new_data(times=times,
+                                      channels=channels,
+                                      modules=modules,
+                                      last_time_searched=last_time_searched)
 
             if last_time_searched > last_time_to_search:
                 self.trigger.more_data_is_coming = False
 
-            for (t0, t1), signals in self.trigger.get_trigger_ranges():
+            for (t0, t1), signals in self.trigger.run():
                 self.log.debug("Sending off event %d in range %s-%s" % (self.next_event_number, t0, t1))
                 yield EventProxy(event_number=self.next_event_number, data=[(t0, t1), signals])
                 self.next_event_number += 1

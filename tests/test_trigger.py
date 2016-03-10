@@ -53,12 +53,13 @@ class TestTrigger(unittest.TestCase):
         self.assertAlmostEqual(sigs[1]['time_rms'], np.std([100, 101, 102]))
 
     def test_find_event_ranges(self):
-        config = configuration.load_configuration('XENON1T')['Trigger']
+        config = configuration.load_configuration('XENON1T')
         config['event_separation'] = 3
         config['left_extension'] = 0
         config['right_extension'] = 0
         config['trigger_probabilities'] = {0: {}, 1: {2: 1}, 2: {}}
-        trig = trigger.Trigger(config)
+        trig = trigger.Trigger(config['Trigger'],
+                               pmt_data=config['DEFAULT']['pmts'])
 
         a = np.array([0, 0, 1, 4, 5, 10])
         np.testing.assert_array_equal(trig.find_event_ranges(a),
@@ -140,7 +141,7 @@ class TestTrigger(unittest.TestCase):
             except StopIteration:
                 trig.more_data_is_coming = False
 
-            for event_range, signals in trig.get_trigger_ranges():
+            for event_range, signals in trig.run():
                 # Trigger gave us a new event range: push it to the queue
                 event_ranges.append(event_range.tolist())
 

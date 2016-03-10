@@ -24,7 +24,7 @@ class FakeTrigger(plugin.TransformPlugin):
         # TODO: once signals outside events can be retrieved, drop this hack
         trig_conf['every_signal_triggers'] = True
 
-        self.trigger = trigger.Trigger(trig_conf)
+        self.trigger = trigger.Trigger(trig_conf, pmt_data=self.config['pmts'])
 
         # The trigger must always think no more data is coming,
         # so every time we get trigger ranges it will process its complete buffer
@@ -40,7 +40,7 @@ class FakeTrigger(plugin.TransformPlugin):
                                   last_time_searched=event.stop_time)
 
         # Accumulate all signals from the trigger (don't care about actual event ranges)
-        sigs = [s for _, s in self.trigger.get_trigger_ranges()]
+        sigs = [s for _, s in self.trigger.run()]
         sigs.append(self.trigger.signals_outside_events)
 
         if not len(sigs):
