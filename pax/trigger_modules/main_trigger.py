@@ -1,16 +1,20 @@
 """Main trigger for XENON1T
+
+We can (if desired) save TriggerSignals outside the events, or a subset of them, to the trigger_data hdf5 file.
+This is currently an experimental feature, use with caution as it can slow the trigger down a lot.
+Note the full raw data is not saved for these signals, just the TriggerSignal information (see pax.datastructure).
 """
 import random
 import numba
 import numpy as np
 
-from pax import units
-from pax.trigger import TriggerModule
+from pax import units, trigger
+from pax.trigger_modules.base import TriggerModule
 
 
 class MainTrigger(TriggerModule):
     numeric_id = 0
-
+    saved_signals = []
 
     def startup(self):
         config = self.config
@@ -39,6 +43,13 @@ class MainTrigger(TriggerModule):
                 p_matrix[sig_type][n:] = ps[n]
         self.p_matrix = p_matrix
 
+        if self.config['save_signals_outside_events']:
+            self.outside_signals_dataset = self.trigger.f.create_dataset('signals_outside_events',
+                                                                         shape=(0,),
+                                                                         maxshape=(None,),
+                                                                         dtype=self.trigger.numba_signals_buffer.dtype,
+                                                                         compression="gzip")
+
     def get_event_ranges(self, signals):
         # Classify the signals; modifies signals in-place.
         classify_signals(signals,
@@ -48,22 +59,62 @@ class MainTrigger(TriggerModule):
         # Determine which signals trigger an event; modifies signals in-place.
         decide_triggers(signals, p_matrix=self.p_matrix)
 
+        # Are there any signals we saved from last time? If so, prepend them now, before the final grouping into events.
+        # We can do this after classification and the trigger decision, since these are purely per-signal operations.
+        # The concatenate will copy signals to a new array, so if we did this earlier, future triggers
+        # would not be able to use the classification information we've provided here.
+        if len(self.saved_signals):
+            signals = np.concatenate(self.saved_signals, signals)
+
         # Group the triggers into event ranges
         trigger_times = signals[signals['trigger']]['left_time']
         event_ranges = self.find_event_ranges(trigger_times)
 
-        # Until what time is is save to clear the buffers?
-        self.lookback_time = self.trigger.last_time_searched - self.config['event_separation']
+        if self.trigger.more_data_coming:
+            # The interpretation of the final few signals signals could chance after new data comes in.
+            # Save all such signals for later, we'll look at them again once that data arrives.
+            # If any event is in this 'unsafe range', do not send it; it will be re-made the next time.
+            self.lookback_time = self.trigger.last_time_searched - self.config['event_separation']
 
-        if len(event_ranges) and event_ranges[-1][-1] > self.lookback_time:
-            # The last event range can still be extended by future data: we should not send it yet.
-            # (this will be taken care of by the trigger controller if we set the lookback time correctly:)
-            self.lookback_time = min(self.lookback_time, event_ranges[-1][0] - self.config['left_extension'])
+            if len(event_ranges) and event_ranges[-1][-1] > self.lookback_time:
+                # The last event range can still be extended by future data: we should not send it yet.
+                # Instead, save the signals that are part of it, and look at them again next time.
+                self.lookback_time = min(self.lookback_time, event_ranges[-1][0] - self.config['left_extension'])
+                event_ranges = event_ranges[:-1]
 
-        return event_ranges
+            # What is the last signal we should revisit later?
+            # TODO: Can be sped up by loop in numba. But probably doesn't matter much, will only run a few iterations.
+            i = 0
+            for i, t in enumerate(signals['left'][::-1]):
+                if t < self.lookback_time:
+                    break
+            last_index_before_lookback = len(signals) - 1 - i
+            self.saved_signals = signals[last_index_before_lookback:]
+
+        yield from self.make_events(event_ranges, signals)
+
+        # Save basic info about signals outside events to the trigger_data hdf5, if desired.
+        # TODO: if needed, this can probably be sped up a lot by using a numba routine
+        if self.config['save_signals_outside_events']:
+            signal_is_in_event = np.zeros(len(signals), dtype=np.bool)
+            for event_i in range(len(event_ranges)):
+                signal_start_i, signal_end_i = self.signal_indices_buffer[event_i]
+                signal_is_in_event[signal_start_i:signal_end_i + 1] = True
+
+            outsigs = signals[(True ^ signal_is_in_event)]
+            outsigs = np.concatenate([outsigs[(outsigs['type'] == sigtype) &
+                                              (outsigs['n_pulses'] >=
+                                               self.config['outside_signals_save_thresholds'][sigtype])]
+                                      for sigtype in range(2 + 1)])
+
+            if len(outsigs):
+                self.log.debug("Storing %d signals outside events" % len(outsigs))
+                trigger.h5py_append(self.outside_signals_dataset, outsigs)
+
 
     def find_event_ranges(self, trigger_times):
-        """Return event ranges corresponding to trigger_times"""
+        """Return event ranges corresponding to trigger_times,
+        grouping nearby triggers and applying left and right extension"""
         event_ranges = []
         left_ext = self.config['left_extension']
         right_ext = self.config['right_extension']
@@ -78,7 +129,6 @@ class MainTrigger(TriggerModule):
                                                                           max_l / units.ms))
             event_ranges.append((start, stop))
         return np.array(event_ranges, dtype=np.int)
-
 
 
 @numba.jit(nopython=True)

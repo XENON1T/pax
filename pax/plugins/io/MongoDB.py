@@ -125,7 +125,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                                            dtype=np.int64) * -1
         self.info("Starting event builder")
 
-        self.trigger = trigger.Trigger(self.processor.config['Trigger'], pmt_data=self.config['pmts'])
+        self.trigger = trigger.Trigger(pax_config=self.processor.config)
 
     def get_events(self):
         last_time_searched = 0  # ns
@@ -227,7 +227,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                 last_time_searched = last_start_time
 
             # Send the new data to the trigger
-            self.trigger.add_new_data(times=times,
+            self.trigger.add_new_data(start_times=times,
                                       channels=channels,
                                       modules=modules,
                                       last_time_searched=last_time_searched)
@@ -235,9 +235,9 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
             if last_time_searched > last_time_to_search:
                 self.trigger.more_data_is_coming = False
 
-            for (t0, t1), signals in self.trigger.run():
+            for data in self.trigger.run():
                 self.log.debug("Sending off event %d in range %s-%s" % (self.next_event_number, t0, t1))
-                yield EventProxy(event_number=self.next_event_number, data=[(t0, t1), signals])
+                yield EventProxy(event_number=self.next_event_number, data=data)
                 self.next_event_number += 1
 
             # Trigger stopped giving event ranges: if self.trigger.more_data_is_coming,
@@ -275,12 +275,13 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoDBReader):
         self.time_of_run_start = int(self.run_doc['start'].timestamp() * units.s)
 
     def transform_event(self, event_proxy):
-        (t0, t1), trigger_signals = event_proxy.data  # ns
+        (t0, t1), trigger_signals, trigger_id = event_proxy.data  # ns
         self.log.debug("Fetching data for event with range [%s, %s]",
                        pax_to_human_time(t0),
                        pax_to_human_time(t1))
 
         event = Event(n_channels=self.config['n_channels'],
+                      trigger_id=trigger_id,
                       start_time=t0 + self.time_of_run_start,
                       sample_duration=self.sample_duration,
                       stop_time=t1 + self.time_of_run_start,

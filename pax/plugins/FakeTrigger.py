@@ -36,7 +36,7 @@ class FakeTrigger(plugin.TransformPlugin):
         times.sort()
         times *= self.config['sample_duration']
 
-        self.trigger.add_new_data(times=times,
+        self.trigger.add_new_data(start_times=times,
                                   last_time_searched=event.stop_time)
 
         # Accumulate all signals from the trigger (don't care about actual event ranges)

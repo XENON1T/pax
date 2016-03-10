@@ -1,7 +1,7 @@
 """A very basic trigger: trigger at a fixed interval, regardless of the data"""
 import numpy as np
 
-from pax.trigger import TriggerModule
+from pax.trigger_modules.base import TriggerModule
 
 
 class TimedTrigger(TriggerModule):
@@ -15,4 +15,4 @@ class TimedTrigger(TriggerModule):
             events.append([self.next_time, self.next_time + self.config['event_length']])
             self.next_time += self.config['trigger_interval']
 
-        return np.array(events, dtype=np.int64)
+        yield from self.make_events(events, signals)

@@ -123,24 +123,40 @@ class TriggerSignal(StrictModel):
     """A simplified peak class which is produced by the trigger
     Like Hit, this class not actually used. So default here are meaningless (except for type spec),
     np.zeros just sets all to zero.
+
+    All times below are in ns since the start of the run while we are in the trigger,
+    but in ns since the start of the event as soon as the event is built. The conversion is done in
+    MongoDB.ReadUntriggeredFiller.
     """
 
+    #: "Type" of the signal. The main trigger sets this to 1 for S1, 2 for S2.
+    #: May not be meaninful for triggers other than main trigger.
     type = 0
+
+    #: Did this signal cause a trigger? May not be meaninful for triggers other than main trigger.
     trigger = False
 
-    #: Time since start of run at which the signal starts
+    #: Time at which the signal starts
     left_time = 0
 
-    #: Time since start of run at which the signal ends
+    #: Time at which the signal ends
     right_time = 0
 
+    #: Number of pulses contributing to this signal
     n_pulses = 0
+
+    #: Number of channels contributing at least 1 pulse to this signal
     n_contributing_channels = 0
+
+    #: Mean pulse time start time
     time_mean = 0.0
+
+    #: Root mean square deviation of pulse start times
     time_rms = float('nan')
-    area = float('nan')
-    x = float('nan')
-    y = float('nan')
+
+    # area = float('nan')
+    # x = float('nan')
+    # y = float('nan')
 
 
 class Peak(StrictModel):
@@ -526,6 +542,9 @@ class Event(StrictModel):
     """
     #: The name of the dataset this event belongs to
     dataset_name = 'Unknown'
+
+    #: The number of the high-level trigger module which generated this event. 0 means main trigger.
+    trigger_id = 0
 
     #: A nonnegative integer that uniquely identifies the event within the dataset.
     event_number = 0
