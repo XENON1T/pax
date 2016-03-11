@@ -154,7 +154,9 @@ class TriggerSignal(StrictModel):
     #: Root mean square deviation of pulse start times
     time_rms = float('nan')
 
-    # area = float('nan')
+    #: Total area in the signal (as determined by Kodiaq pulse integration)
+    area = float('nan')
+
     # x = float('nan')
     # y = float('nan')
 

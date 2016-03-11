@@ -34,6 +34,12 @@ class TriggerModule(object):
         """Yields events from event_ranges, grabbing the right signals which are in each event range along with it
         and updating the end of run statistics.
         """
+        if not len(event_ranges):
+            # Don't send out any events
+            # Code below won't work if events = [], since resulting numpy array is not yet two dimensional
+            raise StopIteration
+        self.log.debug("Sending %d events" % len(event_ranges))
+
         # Convert from list to numpy array if needed
         if isinstance(event_ranges, list):
             event_ranges = np.array(event_ranges, dtype=np.int64)
@@ -45,9 +51,9 @@ class TriggerModule(object):
         self.signal_indices_buffer = np.zeros((len(event_ranges), 2), dtype=np.int)
         group_signals(signals, event_ranges, self.signal_indices_buffer)
 
-        # Group the signals with the events,
+        # Group the signals with the events, then send out event range, signal info, trigger id foreach event
         # It's ok to do a for loop in python over the events, we're in a python loop anway for sending events out
-        for event_i, start, stop in enumerate(event_ranges):
+        for event_i, (start, stop) in enumerate(event_ranges):
             signal_start_i, signal_end_i = self.signal_indices_buffer[event_i]
             # Notice the + 1 for python's exclusive indexing below...
             yield event_ranges[event_i], signals[signal_start_i:signal_end_i + 1], self.numeric_id

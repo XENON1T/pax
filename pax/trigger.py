@@ -12,10 +12,11 @@ import pax          # For version number
 from pax.datastructure import TriggerSignal
 from pax.utils import PAX_DIR
 from pax.trigger_modules.base import TriggerModule
+from pax import units
 
 times_dtype = np.dtype([('time', np.int64),
                         ('pmt', np.int32),
-                        # ('area', np.float64)
+                        ('area', np.float64)
                         ])
 
 # Interrupts thrown by the signal finding code
@@ -43,7 +44,7 @@ class Trigger(object):
     Additionally, some information is written to the runs database at the end of processing a run, e.g. the number of
     signals found. High-level triggers can also add additional info to this, e.g. the number of events found.
     """
-    more_data_is_coming = True
+    more_data_coming = True
     dark_monitor_data_saves = 0     # How often did we save dark monitor data since the last full save?
 
     # Buffers for data taken so far. Will be extended as needed.
@@ -60,6 +61,9 @@ class Trigger(object):
                                     start_timestamp=time.time(),
                                     pax_version=pax.__version__,
                                     config=self.config)
+
+        self.log.info("Starting XENON1T low-level trigger")
+        self.log.info("\tSignal separation threshold: %0.2f us", self.config['signal_separation'] / units.us)
 
         # Initiaize the high-level triggers we should run
         # First build a dictionary mapping hlt names to hlt classes, then initialize the required classes
@@ -83,10 +87,11 @@ class Trigger(object):
 
         # Finally, we can initialize the high-level trigger modules specified in the configuration
         self.hlts = []
-        for _, hlt_name in self.config['high_level_trigger_modules']:
+        for hlt_name in self.config['high_level_trigger_modules']:
             if hlt_name not in hlt_classes:
                 raise ValueError("Don't know a high-level trigger called %s!" % hlt_name)
-            self.hlts.append(hlt_classes[hlt_name](config=pax_config.get('Trigger.%s' % hlt_name, {})))
+            self.hlts.append(hlt_classes[hlt_name](trigger=self,
+                                                   config=pax_config.get('Trigger.%s' % hlt_name, {})))
 
         # Initialize buffer for numba signal finding routine.
         # Although we're able to extend this buffer as needed, we must do so outside numba
@@ -130,23 +135,8 @@ class Trigger(object):
                                                               maxshape=(None, n_channels + 1, n_channels + 1),
                                                               dtype=np.int,
                                                               compression="gzip")
-        self.dark_rate_dataset.attrs['save_interval'] = self.config['dark_rate_save_interval'] * \
-                                                        self.config['dark_monitor_full_save_every']
-
-    def add_new_data(self, start_times, last_time_searched, channels=None, modules=None):
-        """Adds more data to the trigger's buffer"""
-        times = np.zeros(len(start_times), dtype=times_dtype)
-        times['time'] = start_times
-        # Convert the channel/module specs into pmt numbers.
-        # If not specified, pretend everything is from the 'ghost' pmt.
-        if channels is not None and modules is not None:
-            get_pmt_numbers(channels, modules, pmts_buffer=times['pmt'], pmt_lookup=self.pmt_lookup)
-        else:
-            times['pmt'] = len(self.coincidence_tally) - 1
-        self.log.debug("Received %d more times, %d times already in buffer" % (len(times), len(self.times)))
-        self.times = np.concatenate((self.times, times))
-        self.last_time_searched = last_time_searched
-        self.end_of_run_info['times_read'] += len(times)
+        self.dark_rate_dataset.attrs['save_interval'] = (self.config['dark_rate_save_interval'] *
+                                                         self.config['dark_monitor_full_save_every'])
 
     def save_dark_monitor_data(self, last_time=False):
         self.log.debug("Saving PMT dark date, total %d pulses" % np.trace(self.coincidence_tally))
@@ -161,40 +151,61 @@ class Trigger(object):
             self.dark_monitor_data_saves = 0
         self.coincidence_tally *= 0
 
+    def add_data(self, start_times, last_time_searched, channels=None, modules=None, areas=None):
+        """Add more data to the trigger's buffer.
+        This is be separate from run, as run() will be called a final time when the last data has arrived
+        to clear any remaining data from the buffer.
+        """
+        times = np.zeros(len(start_times), dtype=times_dtype)
+        times['time'] = start_times
+
+        if channels is not None and modules is not None:
+            # Convert the channel/module specs into pmt numbers.
+            get_pmt_numbers(channels, modules, pmts_buffer=times['pmt'], pmt_lookup=self.pmt_lookup)
+        else:
+            # If not specified, pretend everything is from the 'ghost' pmt.
+            times['pmt'] = len(self.coincidence_tally) - 1
+        if areas is not None:
+            times['area'] = areas
+        self.log.debug("Received %d more times, %d times already in buffer" % (len(times), len(self.times)))
+        self.times = np.concatenate((self.times, times))
+        self.last_time_searched = last_time_searched
+        self.end_of_run_info['times_read'] += len(times)
+
     def run(self):
-        """Run the XENON1T trigger on the previously added data.
+        """Run the XENON1T trigger on all data currently in its buffer.
+         - start_times: pulse start times
+         - channels: digitizer start
         Yields successively: (start, stop), signals_in_event
         raises StopIteration if insufficient data to continue.
         """
-        if self.more_data_is_coming:
+        if self.more_data_coming:
             # We may not be able to look at all the added times yet, since the next data batch could change
-            # their interpretation.
-            # Find the last index that is safe too look at.
-            last_i, _ = find_last_break(times=self.times['time'],
-                                        last_time=self.last_time_searched,
-                                        break_time=self.config['signal_separation'])
+            # their interpretation. Find the last index that is safe too look at.
+            last_i = find_last_break(times=self.times['time'],
+                                     last_time=self.last_time_searched,
+                                     break_time=self.config['signal_separation'])
             if last_i == -1:
-                # There are no breaks at all in the data! We need more data to continue.
+                self.log.info("There are no breaks at all in the data! We need more data to continue.")
                 return
+            if last_i == len(self.times) - 1:
+                self.log.debug("All times are safe to look at.")
+            else:
+                self.log.debug("Keeping %d times beyond index %d (time %d) in buffer until more data comes" % (
+                    len(self.times) - 1 - last_i, last_i, self.times[last_i]['time']))
         else:
             # We can look at all added time.
             last_i = len(self.times) - 1
 
-        # Select the times we can work with, save the rest for the next time we are called.
-        # Note the + 1 for python's exclusive right index convention,
-        # which still annoys me even after years of python programming.
+        # Select the times we can work with, save the rest in self.times for the next time we are called.
         times = self.times[:last_i + 1]
         self.times = self.times[last_i + 1:]
 
         # Start the signal finder
-        # does_channel_contribute is a buffer for internal use in signal_finder we can't allocate inside it
-        # due to numba limitations
-        does_channel_contribute = np.zeros(len(self.coincidence_tally), dtype=np.int)
         sigf = signal_finder(times=times,
                              signal_separation=self.config['signal_separation'],
                              signal_buffer=self.numba_signals_buffer,
                              coincidence_tally=self.coincidence_tally,
-                             does_channel_contribute=does_channel_contribute,
                              dark_rate_save_interval=self.config['dark_rate_save_interval'])
         saved_buffers = []
         while True:
@@ -202,9 +213,10 @@ class Trigger(object):
             if result >= 0:
                 # All times processed!
                 n_signals_found = result
+                self.log.debug("Low-level trigger found %d signals" % n_signals_found)
                 if len(saved_buffers):
-                    self.log.debug("Signal finder done on this range. Some previous signal buffers were saved, "
-                                   "concatenating and returning them.")
+                    self.log.debug("%d previous signal buffers were saved, concatenating and returning them." % (
+                        len(saved_buffers)))
                     saved_buffers.append(self.numba_signals_buffer[:n_signals_found])
                     signals = np.concatenate(saved_buffers)
                 else:
@@ -222,17 +234,19 @@ class Trigger(object):
                 raise ValueError("Unknown signal finder interrupt %d!" % result)
 
         self.end_of_run_info['signals_found'] += len(signals)
-        self.log.debug("Low-level trigger found %d signals in data." % len(signals))
+        self.log.debug("Low-level trigger finished on this data increment, found %d signals." % len(signals))
 
         # Hand over to each of the high level trigger modules in turn.
         # Notice we won't even try to sort the event ranges from different triggers by time: some triggers (like the
         # main trigger) can hold events back until next time we give them data, so this would be a thorny problem.
         for hlt in self.hlts:
+            self.log.debug("Passing signals to high-level trigger %s" % hlt.name)
             yield from hlt.get_event_ranges(signals)
 
     def shutdown(self):
         """Shuts down trigger, return a dictionary with end-of-run information, for printing or for the runs database
         """
+        self.log.debug("Shutting down the trigger")
         self.save_dark_monitor_data(last_time=True)
 
         # Shutdown the high-level triggers
@@ -247,7 +261,7 @@ class Trigger(object):
         # Add end-of-run info to the runs database
         self.end_of_run_info.update(dict(last_time_searched=self.last_time_searched,
                                          end_trigger_processing_timestamp=time.time()))
-        for htl in self.hlts:
+        for hlt in self.hlts:
             self.end_of_run_info[hlt.name] = hlt.end_of_run_info
 
         return self.end_of_run_info
@@ -263,28 +277,39 @@ def get_pmt_numbers(channels, modules, pmts_buffer, pmt_lookup):
         pmts_buffer[i] = pmt_lookup[modules[i], channels[i]]
 
 
-@numba.jit(nopython=True)
-def signal_finder(times, signal_separation, signal_buffer, coincidence_tally,
-                  does_channel_contribute,
-                  dark_rate_save_interval):
+def signal_finder(times, signal_separation, signal_buffer, coincidence_tally, dark_rate_save_interval):
     """Fill signal_buffer with signals in times. Other arguments:
      - signal_separation: group pulses into signals separated by signal_separation.
      - coincidence_tally: nxn matrix of zero where n is number of channels,used to store 2-pmt coincidences
        (with 1-pmt, i.e. dark rate, on diagonal)
      - dark_rate_save_interval: yield SAVE_DARK_MONITOR every dark_rate_save_interval
      - does channel contibute: zero array of len n_channels. Very annoying we can't allocate this inside!
+    Raises "interrupts" (yield numbers) to communicate with caller.
     Online RMS algorithm is Knuth/Welford: https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
     """
+    # Allocate memory for an internal buffer, which we can't do in numba (since number of channels not yet known),
+    # then hand over to numba layer.
+    does_channel_contribute = np.zeros(len(coincidence_tally), dtype=np.int)
+    yield from _signal_finder(times, signal_separation, signal_buffer, coincidence_tally,
+                              does_channel_contribute, dark_rate_save_interval)
+
+
+@numba.jit(nopython=True)
+def _signal_finder(times, signal_separation, signal_buffer, coincidence_tally,
+                   does_channel_contribute,
+                   dark_rate_save_interval):
     in_signal = False
     passes_test = False     # Does the current time pass the signal inclusion test?
     current_signal = 0      # Index of the current signal in the signal buffer
     M2 = 0.0                # Temporary variable for online RMS computation
-    if len(times):
-        next_save_time = times[0].time + dark_rate_save_interval
+    if not len(times):
+        yield 0             # no point looking for events. Communicate no events found, then exit.
+        return
+    next_save_time = times[0].time + dark_rate_save_interval
 
-    for time_index, time in enumerate(times):
-        t = time.time
-        pmt = time.pmt
+    for time_index, _time in enumerate(times):
+        t = _time.time
+        pmt = _time.pmt
 
         if t > next_save_time:
             yield SAVE_DARK_MONITOR_DATA
@@ -306,8 +331,6 @@ def signal_finder(times, signal_separation, signal_buffer, coincidence_tally,
             signal_buffer[current_signal].n_pulses = 0
             signal_buffer[current_signal].n_contributing_channels = 0
             signal_buffer[current_signal].area = 0
-            signal_buffer[current_signal].x = 0
-            signal_buffer[current_signal].y = 0
             does_channel_contribute *= 0
 
         if in_signal:                           # Notice if, not elif. Work on first time in signal too.
@@ -363,10 +386,13 @@ def find_last_break(times, last_time, break_time):
     that last index in times is returned.
     Returns -1 if no break exists anywhere in times.
     """
-    for i, t in reversed(enumerate(times)):
+    imax = len(times) - 1
+    # Start from the end of the list, iterate backwards
+    for _i in range(len(times)):
+        i = imax - _i
         t = times[i]
         if t < last_time - break_time:
-            return t
+            return i
         else:
             last_time = t
     return -1

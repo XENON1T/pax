@@ -1,7 +1,7 @@
 import logging
 import numpy as np
 
-from pax import plugin, trigger
+from pax import plugin, trigger, units
 
 
 class FakeTrigger(plugin.TransformPlugin):
@@ -15,20 +15,20 @@ class FakeTrigger(plugin.TransformPlugin):
         if self.debug:
             # Make sure the trigger logger is set to debug loglevel
             logging.getLogger('Trigger').setLevel(logging.DEBUG)
+            logging.getLogger('MainTrigger').setLevel(logging.DEBUG)
             self.log.setLevel(logging.DEBUG)
 
-        trig_conf = self.processor.config['Trigger']
-        trig_conf['save_signals_outside_events'] = True
+        # Add "pmts" to config since trigger requires it. See issue #300.
+        self.processor.config['DEFAULT']['pmts'] = [
+            dict(pmt_position=0,
+                 digitizer=dict(module=0, channel=0))
+        ]
 
-        # To ensure we get all signals from the event, trigger on all signals
-        # TODO: once signals outside events can be retrieved, drop this hack
-        trig_conf['every_signal_triggers'] = True
-
-        self.trigger = trigger.Trigger(trig_conf, pmt_data=self.config['pmts'])
+        self.trigger = trigger.Trigger(self.processor.config)
 
         # The trigger must always think no more data is coming,
-        # so every time we get trigger ranges it will process its complete buffer
-        self.trigger.more_data_is_coming = False
+        # so every time we get trigger ranges, it will process its complete buffer
+        self.trigger.more_data_coming = False
 
     def transform_event(self, event):
         # The pulses are kept in order of (channel, left) in pax, but the trigger expects time-sorted pulses
@@ -36,12 +36,12 @@ class FakeTrigger(plugin.TransformPlugin):
         times.sort()
         times *= self.config['sample_duration']
 
-        self.trigger.add_new_data(start_times=times,
-                                  last_time_searched=event.stop_time)
+        self.trigger.add_data(start_times=times,
+                              last_time_searched=1 * units.s)
 
-        # Accumulate all signals from the trigger (don't care about actual event ranges)
-        sigs = [s for _, s in self.trigger.run()]
-        sigs.append(self.trigger.signals_outside_events)
+        # Accumulate signals from the main trigger (don't care about actual event range for now)
+        # TODO: Get signals outside event out directly somehow. Or not. This is a test plugin anyway.
+        sigs = [s for _, s, trig_id in self.trigger.run() if trig_id == 0]
 
         if not len(sigs):
             self.log.info("Trigger returned no signals!")

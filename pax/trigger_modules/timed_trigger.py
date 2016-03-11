@@ -1,6 +1,4 @@
 """A very basic trigger: trigger at a fixed interval, regardless of the data"""
-import numpy as np
-
 from pax.trigger_modules.base import TriggerModule
 
 

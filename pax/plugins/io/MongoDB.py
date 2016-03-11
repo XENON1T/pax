@@ -134,7 +134,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
         time_of_last_daq_response = time.time()
         last_time_to_search = float('inf')
 
-        while self.trigger.more_data_is_coming:
+        while self.trigger.more_data_coming:
             # If the run is still ongoing, update the run document, so we know if the run ended.
             # This must happen before querying for more data, to avoid a race condition where the run ends
             # while the query is in process.
@@ -233,10 +233,10 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                                       last_time_searched=last_time_searched)
 
             if last_time_searched > last_time_to_search:
-                self.trigger.more_data_is_coming = False
+                self.trigger.more_data_coming = False
 
             for data in self.trigger.run():
-                self.log.debug("Sending off event %d in range %s-%s" % (self.next_event_number, t0, t1))
+                self.log.debug("Sending off event %d with data %s" % (self.next_event_number, data))
                 yield EventProxy(event_number=self.next_event_number, data=data)
                 self.next_event_number += 1
 
