@@ -18,12 +18,6 @@ class MainTrigger(TriggerModule):
 
     def startup(self):
         config = self.config
-
-        # Validate the configuration
-        # If no left and right extension specified, set them to half the split gap (floored) minus 1
-        if config.get('left_extension', None) is None:
-            self.log.warning("No left/right extensions specified: using half of event separation")
-            config['left_extension'] = config['right_extension'] = np.floor(config['event_separation'] / 2) - 1
         if config['event_separation'] <= config['left_extension'] + config['right_extension']:
             raise ValueError("event_separation must be larger than left + right extension!")
         config['left_extension'] = abs(config['left_extension'])            # Deal with Chris' shenanigans

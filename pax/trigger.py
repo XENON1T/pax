@@ -19,7 +19,7 @@ times_dtype = np.dtype([('time', np.int64),
                         ('area', np.float64)
                         ])
 
-# Interrupts thrown by the signal finding code
+# Interrupts thrown by the signal finder
 # Negative, since positive numbers indicate number of signals found during normal operation
 SIGNAL_BUFFER_FULL = -1
 SAVE_DARK_MONITOR_DATA = -2
@@ -173,12 +173,10 @@ class Trigger(object):
         self.end_of_run_info['times_read'] += len(times)
 
     def run(self):
-        """Run the XENON1T trigger on all data currently in its buffer.
-         - start_times: pulse start times
-         - channels: digitizer start
-        Yields successively: (start, stop), signals_in_event
-        raises StopIteration if insufficient data to continue.
+        """Yields successively: (start, stop), signals_in_event, trig_id
+        Stops iteration if no more event ranges left (without receiving more data first)
         """
+        last_i = len(self.times) - 1
         if self.more_data_coming:
             # We may not be able to look at all the added times yet, since the next data batch could change
             # their interpretation. Find the last index that is safe too look at.
@@ -187,33 +185,29 @@ class Trigger(object):
                                      break_time=self.config['signal_separation'])
             if last_i == -1:
                 self.log.info("There are no breaks at all in the data! We need more data to continue.")
-                return
-            if last_i == len(self.times) - 1:
-                self.log.debug("All times are safe to look at.")
-            else:
-                self.log.debug("Keeping %d times beyond index %d (time %d) in buffer until more data comes" % (
-                    len(self.times) - 1 - last_i, last_i, self.times[last_i]['time']))
+                raise StopIteration
+
+        if last_i == len(self.times) - 1:
+            self.log.debug("All times are safe to look at.")
         else:
-            # We can look at all added time.
-            last_i = len(self.times) - 1
+            self.log.debug("Keeping %d times beyond index %d (time %d) in buffer until more data comes" % (
+                len(self.times) - 1 - last_i, last_i, self.times[last_i]['time']))
 
         # Select the times we can work with, save the rest in self.times for the next time we are called.
         times = self.times[:last_i + 1]
         self.times = self.times[last_i + 1:]
 
-        # Start the signal finder
+        # Run the signal finder
         sigf = signal_finder(times=times,
                              signal_separation=self.config['signal_separation'],
                              signal_buffer=self.numba_signals_buffer,
                              coincidence_tally=self.coincidence_tally,
                              dark_rate_save_interval=self.config['dark_rate_save_interval'])
         saved_buffers = []
-        while True:
-            result = next(sigf)
+        for result in sigf:
+
             if result >= 0:
-                # All times processed!
                 n_signals_found = result
-                self.log.debug("Low-level trigger found %d signals" % n_signals_found)
                 if len(saved_buffers):
                     self.log.debug("%d previous signal buffers were saved, concatenating and returning them." % (
                         len(saved_buffers)))
@@ -222,14 +216,14 @@ class Trigger(object):
                 else:
                     signals = self.numba_signals_buffer[:n_signals_found]
                 break
+
             elif result == SIGNAL_BUFFER_FULL:
                 self.log.debug("Signal buffer is full, copying it out.")
-                # We can't do this in numba because it involves growing a list.
-                # (maybe we could use np.resize though... Never mind)
                 saved_buffers.append(self.numba_signals_buffer.copy())
+
             elif result == SAVE_DARK_MONITOR_DATA:
-                # Save and clear the coincididence & dark rate tally
                 self.save_dark_monitor_data()
+
             else:
                 raise ValueError("Unknown signal finder interrupt %d!" % result)
 
@@ -245,6 +239,7 @@ class Trigger(object):
 
     def shutdown(self):
         """Shuts down trigger, return a dictionary with end-of-run information, for printing or for the runs database
+        The dictionary is also stored in self.end_of_run_info.
         """
         self.log.debug("Shutting down the trigger")
         self.save_dark_monitor_data(last_time=True)
@@ -258,7 +253,7 @@ class Trigger(object):
         if hasattr(self, 'f'):
             self.f.close()
 
-        # Add end-of-run info to the runs database
+        # Add end-of-run info for the runs database
         self.end_of_run_info.update(dict(last_time_searched=self.last_time_searched,
                                          end_trigger_processing_timestamp=time.time()))
         for hlt in self.hlts:
@@ -269,7 +264,7 @@ class Trigger(object):
 
 @numba.jit(nopython=True)
 def get_pmt_numbers(channels, modules, pmts_buffer, pmt_lookup):
-    """Fills pmts_buffer with pmt numbers corresponding to channels, modules accordint to pmt_lookup.
+    """Fills pmts_buffer with pmt numbers corresponding to channels, modules according to pmt_lookup matrix:
      - pmt_lookup: lookup matrix for pmt numbers. First index is digitizer module, second is digitizer channel.
     Modifies pmts_buffer in-place.
     """
@@ -287,8 +282,7 @@ def signal_finder(times, signal_separation, signal_buffer, coincidence_tally, da
     Raises "interrupts" (yield numbers) to communicate with caller.
     Online RMS algorithm is Knuth/Welford: https://en.wikipedia.org/wiki/Algorithms_for_calculating_variance
     """
-    # Allocate memory for an internal buffer, which we can't do in numba (since number of channels not yet known),
-    # then hand over to numba layer.
+    # Allocate memory for an internal buffer, which we can't do in numba (since number of channels not yet known)
     does_channel_contribute = np.zeros(len(coincidence_tally), dtype=np.int)
     yield from _signal_finder(times, signal_separation, signal_buffer, coincidence_tally,
                               does_channel_contribute, dark_rate_save_interval)
@@ -298,10 +292,11 @@ def signal_finder(times, signal_separation, signal_buffer, coincidence_tally, da
 def _signal_finder(times, signal_separation, signal_buffer, coincidence_tally,
                    does_channel_contribute,
                    dark_rate_save_interval):
+    """Numba backend for signal_finder: please see its docstring instead."""
     in_signal = False
     passes_test = False     # Does the current time pass the signal inclusion test?
     current_signal = 0      # Index of the current signal in the signal buffer
-    M2 = 0.0                # Temporary variable for online RMS computation
+    m2 = 0.0                # Temporary variable for online RMS computation
     if not len(times):
         yield 0             # no point looking for events. Communicate no events found, then exit.
         return
@@ -311,64 +306,54 @@ def _signal_finder(times, signal_separation, signal_buffer, coincidence_tally,
         t = _time.time
         pmt = _time.pmt
 
-        if t > next_save_time:
+        if t >= next_save_time:
             yield SAVE_DARK_MONITOR_DATA
             next_save_time += dark_rate_save_interval
 
-        # Should this time be in a signal -- is the next time close enough?
+        # Should this time be in a signal? === Is the next time close enough?
         is_last_time = time_index == len(times) - 1
         if not is_last_time:
             passes_test = times[time_index+1].time - t < signal_separation
 
         if not in_signal and passes_test:
-            # Start a signal. Note we must set ALL attributes to clear potential mess from the buffer.
-            # I wish numpy arrays could grow automatically... but then they would probably not be fast...
+            # Start a signal. We must clear all attributes first to remove potential mess from the buffer.
             in_signal = True
-            signal_buffer[current_signal].left_time = t
-            signal_buffer[current_signal].right_time = 0
-            signal_buffer[current_signal].time_mean = 0
-            signal_buffer[current_signal].time_rms = 0
-            signal_buffer[current_signal].n_pulses = 0
-            signal_buffer[current_signal].n_contributing_channels = 0
-            signal_buffer[current_signal].area = 0
+            s = signal_buffer[current_signal]
+            s.left_time = t
+            s.right_time = 0
+            s.time_mean = 0
+            s.time_rms = 0
+            s.n_pulses = 0
+            s.n_contributing_channels = 0
+            s.area = 0
             does_channel_contribute *= 0
 
         if in_signal:                           # Notice if, not elif. Work on first time in signal too.
             # Update signal quantities
+            s = signal_buffer[current_signal]
             does_channel_contribute[pmt] = 1
-            signal_buffer[current_signal].n_pulses += 1
-            delta = t - signal_buffer[current_signal].time_mean
-            signal_buffer[current_signal].time_mean += delta / signal_buffer[current_signal].n_pulses
-            # Notice the below line does not have delta **2. The time_mean changed in the previous line!
-            M2 += delta * (t - signal_buffer[current_signal].time_mean)
+            s.n_pulses += 1
+            delta = t - s.time_mean
+            s.time_mean += delta / s.n_pulses
+            m2 += delta * (t - s.time_mean)     # Notice this isn't delta **2: time_mean changed in the previous line!
 
             if not passes_test or is_last_time:
-                # Signal has ended: store its quantities
-                signal_buffer[current_signal].right_time = t
-                signal_buffer[current_signal].time_rms = (M2 / signal_buffer[current_signal].n_pulses)**0.5
-                signal_buffer[current_signal].n_contributing_channels = does_channel_contribute.sum()
-                if signal_buffer[current_signal].n_contributing_channels == 2:
-                    # Update coincidence tally
-                    # Life is hard inside nopython=True...
-                    first_channel = -999
-                    second_channel = -999
-                    for i in range(len(does_channel_contribute)):
-                        if does_channel_contribute[i]:
-                            first_channel = i
-                            break
-                    for i in range(first_channel + 1, len(does_channel_contribute)):
-                        if does_channel_contribute[i]:
-                            second_channel = i
-                            break
-                    coincidence_tally[first_channel, second_channel] += 1
+                # Signal has ended: store its quantities and move on
+                s.right_time = t
+                s.time_rms = (m2 / s.n_pulses)**0.5
+                s.n_contributing_channels = does_channel_contribute.sum()
+                if s.n_contributing_channels == 2:
+                    # Update 2-pmt coincidence tally
+                    indices = np.nonzero(does_channel_contribute)[0]
+                    coincidence_tally[indices[0], indices[1]] += 1
 
                 current_signal += 1
-                M2 = 0
+                m2 = 0
                 in_signal = False
 
                 if current_signal == len(signal_buffer):
                     yield SIGNAL_BUFFER_FULL
-                    # Caller will now have copied & cleared signal buffer, can start from 0
+                    # Caller will have copied out the signal buffer, we can start from 0 again
                     current_signal = 0
 
         else:
@@ -400,7 +385,7 @@ def find_last_break(times, last_time, break_time):
 
 def h5py_append(dataset, records):
     """Append records to h5py dataset, resizing axis=0 as needed
-    This probably goes completely against the philosophy of hdf5 and is super convenient
+    This probably goes completely against the philosophy of hdf5, and is super convenient
     """
     if len(dataset.shape) != len(records.shape):
         # Hack for appending a single record

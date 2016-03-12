@@ -7,7 +7,7 @@ import numpy as np
 class TriggerModule(object):
     """Base class for high-level trigger modules"""
 
-    # Unique integer ID for each trigger. If your trigger module is commited to pax, this can never change again!
+    # Unique integer ID for each trigger. If your trigger module is committed to pax, this can never change again!
     numeric_id = -1
 
     def __init__(self, trigger, config):
@@ -55,7 +55,6 @@ class TriggerModule(object):
         # It's ok to do a for loop in python over the events, we're in a python loop anway for sending events out
         for event_i, (start, stop) in enumerate(event_ranges):
             signal_start_i, signal_end_i = self.signal_indices_buffer[event_i]
-            # Notice the + 1 for python's exclusive indexing below...
             yield event_ranges[event_i], signals[signal_start_i:signal_end_i + 1], self.numeric_id
             self.end_of_run_info['events_built'] += 1
             self.end_of_run_info['total_event_length'] += stop - start      # No +1 here, last sample is inclusive.
