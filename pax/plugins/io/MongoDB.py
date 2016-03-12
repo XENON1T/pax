@@ -109,7 +109,6 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
     This will perform a sliding window trigger on the pulse midpoint times.
     No PMT pulse data is read in this class to ensure speed.
     """
-    next_event_number = 0
     use_monary = True
     do_output_check = False
 
@@ -129,12 +128,14 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
 
     def get_events(self):
         last_time_searched = 0  # ns
+        next_event_number = 0
 
         # Used to timeout if DAQ crashes and no data will come
         time_of_last_daq_response = time.time()
         last_time_to_search = float('inf')
+        more_data_coming = True
 
-        while self.trigger.more_data_coming:
+        while more_data_coming:
             # If the run is still ongoing, update the run document, so we know if the run ended.
             # This must happen before querying for more data, to avoid a race condition where the run ends
             # while the query is in process.
@@ -226,19 +227,17 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                 # your editor's warning that last_start_time may not have been set yet.
                 last_time_searched = last_start_time
 
+            more_data_coming = last_time_searched > last_time_to_search
+
             # Send the new data to the trigger
-            self.trigger.add_new_data(start_times=times,
-                                      channels=channels,
-                                      modules=modules,
-                                      last_time_searched=last_time_searched)
-
-            if last_time_searched > last_time_to_search:
-                self.trigger.more_data_coming = False
-
-            for data in self.trigger.run():
-                self.log.debug("Sending off event %d with data %s" % (self.next_event_number, data))
-                yield EventProxy(event_number=self.next_event_number, data=data)
-                self.next_event_number += 1
+            for data in self.trigger.run(last_time_searched=last_time_searched,
+                                         start_times=times,
+                                         channels=channels,
+                                         modules=modules,
+                                         last_data=not more_data_coming):
+                self.log.debug("Sending off event %d with data %s" % (next_event_number, data))
+                yield EventProxy(event_number=next_event_number, data=data)
+                next_event_number += 1
 
             # Trigger stopped giving event ranges: if self.trigger.more_data_is_coming,
             # we'll stay in loop and get more data for the trigger.
@@ -281,7 +280,6 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoDBReader):
                        pax_to_human_time(t1))
 
         event = Event(n_channels=self.config['n_channels'],
-                      trigger_id=trigger_id,
                       start_time=t0 + self.time_of_run_start,
                       sample_duration=self.sample_duration,
                       stop_time=t1 + self.time_of_run_start,

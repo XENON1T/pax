@@ -545,9 +545,6 @@ class Event(StrictModel):
     #: The name of the dataset this event belongs to
     dataset_name = 'Unknown'
 
-    #: The number of the high-level trigger module which generated this event. 0 means main trigger.
-    trigger_id = 0
-
     #: A nonnegative integer that uniquely identifies the event within the dataset.
     event_number = 0
 
