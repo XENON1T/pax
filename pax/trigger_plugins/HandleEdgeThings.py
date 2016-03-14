@@ -45,13 +45,12 @@ class HandleEdgeSignals(TriggerPlugin):
             # could change their interpretation.
             lookback_time = data.last_time_searched - self.config['event_separation']
 
-            # Can some triggers be grouped with triggers in the next batch of data?
+            # Can some triggers be grouped with potential triggers in the next batch of data?
             trigger_times = data.signals[data.signals['trigger']]['left_time']
             last_trigger_i = find_last_break(times=trigger_times,
                                              last_time=data.last_time_searched,
                                              break_time=self.config['event_separation'])
-
-            if last_trigger_i != len(data.trigger_times) - 1:
+            if last_trigger_i != len(trigger_times) - 1:
                 lookback_time = trigger_times[last_trigger_i + 1] - self.config['left_extension']
 
             # What is the last signal we can work with?

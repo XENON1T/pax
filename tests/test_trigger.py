@@ -3,10 +3,10 @@ import unittest
 
 import numpy as np
 
-from pax import units, trigger      # , configuration
+from pax import units, trigger, configuration
 from pax.datastructure import TriggerSignal
 from pax.trigger_plugins.FindSignals import signal_finder
-# import tempfile
+import tempfile
 
 
 class TestSignalFinder(unittest.TestCase):
@@ -76,109 +76,105 @@ class TestSaveSignals(unittest.TestCase):
         self.assertEqual(is_in_event.tolist(), [False, False, True, True, True, False, False, False, True, True])
 
 
-# class TestGroupTriggers(unittest.TestCase):
-#
-#     def test_group_trigges(self):
-#         """Tests the main grouping of triggers into event ranges"""
-#         config = configuration.load_configuration('XENON1T')
-#         config['Trigger.MainTrigger']['event_separation'] = 3
-#         config['Trigger.MainTrigger']['left_extension'] = 0
-#         config['Trigger.MainTrigger']['right_extension'] = 0
-#         config['Trigger.MainTrigger']['trigger_probabilities'] = {0: {}, 1: {2: 1}, 2: {}}
-#         trig = trigger.Trigger(config)
-#         main_trig = trig.hlts[0]
-#         a = np.array([0, 0, 1, 4, 5, 10])
-#         np.testing.assert_array_equal(main_trig.find_event_ranges(a),
-#                                       np.array([[0, 1], [4, 5], [10, 10]], dtype=np.int))
-# #
-#
-# class TestTriggerIntegration(unittest.TestCase):
-#     """Integration test for the trigger"""
-#
-#     def test_trigger(self):
-#         # Configure a trigger to always trigger on any signal,
-#         # and not have any left and right extension (for simplicity)
-#         config = configuration.load_configuration('XENON1T')
-#         #tempf = tempfile.NamedTemporaryFile()
-#         config['Trigger.MainTrigger'] = dict(trigger_probability={0: {2: 1},
-#                                                                   1: {2: 1},
-#                                                                   2: {2: 1}},
-#                                              max_event_length=10 * units.ms,
-#                                              event_separation=1 * units.ms,
-#                                              s1_max_rms=30 * units.ns,
-#                                              outside_signals_save_thresholds=[0, 0, 0],
-#                                              save_signals_outside_events=False,
-#                                              s2_min_pulses=7,
-#                                              left_extension=0,
-#                                              right_extension=0)
-#         config['Trigger'] = dict(signal_separation=1 * units.us,
-#                                  trigger_data_filename='bla.hdf5',
-#                                  numba_signal_buffer_size=1,
-#                                  dark_rate_save_interval=int(10 * units.s),
-#                                  dark_monitor_full_save_every=100000,
-#                                  high_level_trigger_modules=['MainTrigger'])
-#
-#         offset_per_block = int(10 * units.ms)
-#
-#         # A fake data generator.
-#         # Each list in `data` below is passed in turn to the trigger as a numpy array,
-#         # with an offset of offset_per_block * block i
-#         def data_maker():
-#             data = [
-#                 # 0: No pulses (just to check no crash)
-#                 [],
-#                 # 1: No signal = no trigger
-#                 [0, 10 * units.us],
-#                 # 2: Trigger (S1) at 0 ns
-#                 [0, 1],
-#                 # 3: Trigger (S2) at 0 ns
-#                 np.arange(0, 1 * units.us, 0.1 * units.us),
-#                 # 4: Two events (S1, then S1 way later) at 0ns and 3000000 ns
-#                 [0, 1] + [3 * units.ms, 3 * units.ms + 1],
-#                 # 5: One event with two triggers, 0 - 300000 ns  (note one less zero after 3 than above)
-#                 [0, 1] + [0.3 * units.ms, 0.3 * units.ms + 1],
-#                 # 6: No trigger yet, wait for more data
-#                 [offset_per_block],
-#                 # 7: Trigger at 0 ns
-#                 [0],
-#             ]
-#             for i, d in enumerate(data):
-#                 d = np.array(d, dtype=np.int)
-#                 d += i * offset_per_block
-#                 yield d, d.max() if len(d) else 0
-#
-#         event_ranges = []
-#         should_get = [[20000000, 20000000],
-#                       [30000000, 30000000],
-#                       [40000000, 40000000],
-#                       [43000000, 43000000],
-#                       [50000000, 50300000],
-#                       [70000000, 70000000]]
-#
-#         data_gen = data_maker()
-#         trig = trigger.Trigger(config)
-#
-#         counter = 0
-#         while trig.more_data_coming:
-#             try:
-#                 start_times, last_time_searched = next(data_gen)
-#                 trig.log.debug("\n\n>>> %d <<<\n\n" % counter)
-#                 counter += 1
-#                 trig.add_data(start_times=start_times, last_time_searched=last_time_searched)
-#             except StopIteration:
-#                 trig.more_data_coming = False
-#
-#             for event_range, signals, trig_id in trig.run():
-#                 # Trigger gave us a new event range: push it to the queue
-#                 event_ranges.append(event_range.tolist())
-#
-#         print("Event ranges received: %s" % event_ranges)
-#
-#         for i in range(len(should_get)):
-#             self.assertEqual(should_get[i], event_ranges[i])
-#
-#         self.assertEqual(event_ranges, should_get)
-#         trig.shutdown()
+class TestGroupTriggers(unittest.TestCase):
+
+    def test_group_trigges(self):
+        """Tests the grouping of triggers into event ranges"""
+        trig_times = [0, 0, 1, 4, 5, 10]
+
+        from pax.trigger_plugins.GroupTriggers import GroupTriggers
+        trig = trigger.Trigger(configuration.load_configuration('XENON1T'))
+        tp = GroupTriggers(trig, dict(event_separation=3,
+                                      max_event_length=10000,
+                                      left_extension=0,
+                                      right_extension=0))
+        data = trigger.TriggerData()
+        data.signals = np.zeros(len(trig_times), dtype=TriggerSignal.get_dtype())
+        data.signals['trigger'] = True
+        data.signals['left_time'] = trig_times
+        tp.process(data)
+
+        np.testing.assert_array_equal(data.event_ranges,
+                                      np.array([[0, 1], [4, 5], [10, 10]], dtype=np.int))
+
+
+class TestTriggerIntegration(unittest.TestCase):
+    """Integration test for the trigger"""
+
+    def test_trigger(self):
+        # Configure a trigger to always trigger on any signal,
+        # and not have any left and right extension (for simplicity)
+        config = configuration.load_configuration('XENON1T')
+        tempf = tempfile.NamedTemporaryFile()
+        config['Trigger'].update(dict(signal_separation=1 * units.us,
+                                      event_separation=1 * units.ms,
+                                      left_extension=0,
+                                      right_extension=0,
+                                      trigger_data_filename=tempf.name))
+        config['Trigger.FindSignals']['numba_signal_buffer_size'] = 1    # So we test buffer exhausted logic too
+        config['Trigger.DecideTriggers'].update(dict(trigger_probability={0: {2: 1},
+                                                                          1: {2: 1},
+                                                                          2: {2: 1}}))
+        config['Trigger.ClassifySignals'].update(dict(s1_max_rms=30 * units.ns,
+                                                      s2_min_pulses=7))
+        config['Trigger.GroupTriggers']['max_event_length'] = 10 * units.ms
+        config['Trigger.SaveSignals']['save_signals_outside_events'] = False
+
+        offset_per_block = int(10 * units.ms)
+
+        # A fake data generator.
+        # Each list in `data` below is passed in turn to the trigger as a numpy array,
+        # with an offset of offset_per_block * block i
+        def data_maker():
+            data = [
+                # 0: No pulses (just to check no crash)
+                [],
+                # 1: No signal = no trigger
+                [0, 10 * units.us],
+                # 2: Trigger (S1) at 0 ns
+                [0, 1],
+                # 3: Trigger (S2) at 0 ns
+                np.arange(0, 1 * units.us, 0.1 * units.us),
+                # 4: Two events (S1, then S1 way later) at 0ns and 3000000 ns
+                [0, 1] + [3 * units.ms, 3 * units.ms + 1],
+                # 5: One event with two triggers, 0 - 300000 ns  (note one less zero after 3 than above)
+                [0, 1] + [0.3 * units.ms, 0.3 * units.ms + 1],
+                # 6: No trigger yet, wait for more data
+                [offset_per_block],
+                # 7: Trigger at 0 ns
+                [0],
+            ]
+            for i, d in enumerate(data):
+                print("\n\n>>> %d <<<\n\n" % i)
+                d = np.array(d, dtype=np.int)
+                d += i * offset_per_block
+                yield d, (d.max() if len(d) else 0), i == len(data) - 1
+
+        event_ranges = []
+        should_get = [(20000000, 20000000),
+                      (30000000, 30000000),
+                      (40000000, 40000000),
+                      (43000000, 43000000),
+                      (50000000, 50300000),
+                      (70000000, 70000000)]
+
+        trig = trigger.Trigger(config)
+
+        for start_times, last_time_searched, is_last in data_maker():
+            for event_range, signals in trig.run(last_time_searched=last_time_searched,
+                                                 start_times=start_times,
+                                                 last_data=is_last):
+                print("Received event range ", event_range)
+                event_ranges.append(event_range)
+
+        trig.shutdown()
+
+        print("Trigger finished. Event ranges received: %s" % event_ranges)
+
+        for i in range(len(should_get)):
+            self.assertEqual(should_get[i], event_ranges[i])
+
+        self.assertEqual(event_ranges, should_get)
 
 
 if __name__ == '__main__':
@@ -186,5 +182,8 @@ if __name__ == '__main__':
     import logging
     logging.basicConfig(stream=sys.stderr)
     logging.getLogger("Trigger").setLevel(logging.DEBUG)
-    logging.getLogger("MainTrigger").setLevel(logging.DEBUG)
+    # Make sure the trigger plugins' loggers are set to debug loglevel
+    config = configuration.load_configuration('XENON1T')
+    for pname in config['Trigger']['trigger_plugins']:
+        logging.getLogger(pname).setLevel(logging.DEBUG)
     unittest.main()

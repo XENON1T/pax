@@ -15,6 +15,9 @@ class SaveSignals(TriggerPlugin):
                                                             compression="gzip")
 
     def process(self, data):
+        if not len(data.signals):
+            return
+
         # sig_group_ind will hold, for each event,the start and stop (inclusive) index of signals
         sig_idx = np.zeros((len(data.event_ranges), 2), dtype=np.int)
         is_in_event = np.zeros(len(data.signals), dtype=np.bool)

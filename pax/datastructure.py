@@ -124,19 +124,18 @@ class TriggerSignal(StrictModel):
     Like Hit, this class not actually used. So default here are meaningless (except for type spec),
     np.zeros just sets all to zero.
 
-    All times below are in ns since the start of the run while we are in the trigger,
+    All times below are in ns since the start of the run only while we are in the trigger,
     but in ns since the start of the event as soon as the event is built. The conversion is done in
     MongoDB.ReadUntriggeredFiller.
     """
 
-    #: "Type" of the signal. The main trigger sets this to 1 for S1, 2 for S2.
-    #: May not be meaninful for triggers other than main trigger.
+    #: "Type" of the signal. 1 for S1 candidates, 2 for S2 candidates
     type = 0
 
-    #: Did this signal cause a trigger? May not be meaninful for triggers other than main trigger.
+    #: Did this signal cause a trigger?
     trigger = False
 
-    #: Time at which the signal starts
+    #: Time at which the signal starts.
     left_time = 0
 
     #: Time at which the signal ends
@@ -154,7 +153,7 @@ class TriggerSignal(StrictModel):
     #: Root mean square deviation of pulse start times
     time_rms = float('nan')
 
-    #: Total area in the signal (as determined by Kodiaq pulse integration)
+    #: Total area in the signal (gain-weighted sum of integrals found by Kodiaq pulse integration)
     area = float('nan')
 
     # x = float('nan')

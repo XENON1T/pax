@@ -106,8 +106,8 @@ def signal_finder(times, signal_separation, signal_buffer, coincidence_tally, da
     """
     # Allocate memory for an internal buffer, which we can't do in numba (since number of channels not yet known)
     does_channel_contribute = np.zeros(len(coincidence_tally), dtype=np.int)
-    yield from _signal_finder(times, signal_separation, signal_buffer, coincidence_tally,
-                              does_channel_contribute, dark_rate_save_interval)
+    return _signal_finder(times, signal_separation, signal_buffer, coincidence_tally,
+                          does_channel_contribute, dark_rate_save_interval)
 
 
 @numba.jit(nopython=True)

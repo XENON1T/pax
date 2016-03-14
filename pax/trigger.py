@@ -42,7 +42,6 @@ class TriggerData(object):
     times = np.array([], dtype=times_dtype)
     signals = np.array([], dtype=TriggerSignal.get_dtype())
     event_ranges = np.zeros((0, 2), dtype=np.int64)
-    trigger_times = np.array([], dtype=np.int64)
     signals_by_event = []
     last_data = False
     last_time_searched = 0
