@@ -61,19 +61,23 @@ class MongoDBReader:
         else:
             raise ValueError("Invalid run document: none of the 'data' entries contain untriggered data!")
 
-        nfo = self.input_info     # shorthand
-        self.input_info['database'] = nfo['location'].split('/')[-1]
+        self.input_info['database'] = self.input_info['location'].split('/')[-1]
+        if self.input_info['database'] == 'admin':
+            self.log.warning("According to the runs db, the data resides in the 'admin' database... "
+                             "Guessing 'untriggered' instead.")
+            self.input_info['database'] = 'untriggered'
         if self.use_monary:
-            self.monary_client = mm.get_database(database_name=nfo['database'],
-                                                 uri=nfo['location'],
+            self.monary_client = mm.get_database(database_name=self.input_info['database'],
+                                                 uri=self.input_info['location'],
                                                  monary=True)
 
-        self.log.debug("Grabbing collection %s" % nfo['collection'])
-        self.input_collection = mm.get_database(database_name=nfo['database'],
-                                                uri=nfo['location']).get_collection(nfo['collection'])
+        self.log.debug("Grabbing collection %s" % self.input_info['collection'])
+        self.input_collection = mm.get_database(
+            database_name=self.input_info['database'],
+            uri=self.input_info['location']).get_collection(self.input_info['collection'])
         self.log.debug("Creating index in input collection")
         self.input_collection.create_index(self.sort_key, background=True)
-        self.log.debug("Succesfully grabbed collection %s" % nfo['collection'])
+        self.log.debug("Succesfully grabbed collection %s" % self.input_info['collection'])
 
     def do_monary_query(self, query, fields, types, **kwargs):
         if not self.use_monary:
@@ -122,7 +126,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
         # Initialize the buffer to hold the pulse ranges
         self.pulse_ranges_buffer = np.ones((self.config.get('pulse_ranges_buffer_size', int(1e7)), 2),
                                            dtype=np.int64) * -1
-        self.info("Starting event builder")
+        self.log.info("Starting event builder")
 
         self.trigger = trigger.Trigger(pax_config=self.processor.config)
 
@@ -170,7 +174,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
             if self.use_monary:
                 times, modules, channels = self.do_monary_query(query=query,
                                                                 fields=[self.start_key, 'module', 'channel'],
-                                                                types=['int64'],
+                                                                types=['int64', 'int32', 'int32'],
                                                                 **self.mongo_find_options)
                 times = times * self.sample_duration
 
@@ -274,7 +278,7 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoDBReader):
         self.time_of_run_start = int(self.run_doc['start'].timestamp() * units.s)
 
     def transform_event(self, event_proxy):
-        (t0, t1), trigger_signals, trigger_id = event_proxy.data  # ns
+        (t0, t1), trigger_signals = event_proxy.data  # ns
         self.log.debug("Fetching data for event with range [%s, %s]",
                        pax_to_human_time(t0),
                        pax_to_human_time(t1))
@@ -288,9 +292,9 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoDBReader):
                       trigger_signals=trigger_signals)
 
         # The trigger was given time since run start; convert its signals to absolute times
-        event.trigger_signals.left_time += self.time_of_run_start
-        event.trigger_signals.right_time += self.time_of_run_start
-        event.trigger_signals.time_mean += self.time_of_run_start
+        event.trigger_signals['left_time'] += self.time_of_run_start
+        event.trigger_signals['right_time'] += self.time_of_run_start
+        event.trigger_signals['time_mean'] += self.time_of_run_start
 
         self.mongo_iterator = self.input_collection.find({self.start_key: {"$gte": self._to_mt(t0),
                                                                            "$lte": self._to_mt(t1)}},

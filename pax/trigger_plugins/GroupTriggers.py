@@ -23,6 +23,7 @@ class GroupTriggers(TriggerPlugin):
                                  "Consider changing trigger settings!" % (start, stop,
                                                                           (stop - start) / units.ms,
                                                                           max_l / units.ms))
+                stop = start + max_l
             event_ranges.append((start, stop))
 
         data.event_ranges = np.array(event_ranges, dtype=np.int64)

@@ -41,7 +41,7 @@ def main():
     status_name = 'trigger.status'
     if args.run_name:
         run_query = {'name': args.run_name}
-    elif args.run:
+    elif args.run is not None:
         run_query = {'number': args.run}
     else:
         run_query = {status_name: 'waiting_to_be_processed'}
@@ -60,6 +60,8 @@ def main():
                         {'$push': {'data': data_info_entry}})
         else:
             run_doc = runs.find_one(run_query)
+            if run_doc is None:
+                raise ValueError("Mongodb returned None instead of run document!")
             data_info_entry = dict(location=os.path.join('.', run_doc['name']))
             
         if run_doc is None:
@@ -121,7 +123,7 @@ def main():
             # Add other exceptions as they come during commissioning
             except pymongo.errors.ServerSelectionTimeoutError as e:
                 log.exception(e)
-                runs.update({'name': args.name, 'detector' : args.detector},
+                runs.update({'name': run_doc['name'], 'detector' : args.detector},
                             {'$set': {status_name: 'error'}})
 
             if not args.secret_mode:
@@ -135,7 +137,7 @@ def main():
             open('eventbuilder.log', mode='w').close()
 
         # If we're trying to build a single run, don't try again to find it
-        if args.name or args.run:
+        if args.run_name or args.run:
             break
 
 
