@@ -97,12 +97,6 @@ def main():
                         argval = int(factor * argval)
                     trigger_settings_override[argname] = argval
 
-            if args.force_multiplicity_trigger is not None:
-                level = args.force_multiplicity_trigger
-                trigger_settings_override['trigger_probability'] = {0: {level: 1},
-                                                                    1: {level: 1},
-                                                                    2: {level: 1}}
-
             trigger_settings_override['trigger_data_filename'] = os.path.join(run_doc['name'], 'trigger_data.hdf5')
 
             log.info("Building events for %s", run_doc['name'])
@@ -113,6 +107,15 @@ def main():
                                     'overwrite_output': True},
                            'MongoDB': mongo_settings_override,
                            'Trigger': trigger_settings_override}
+
+            if args.force_multiplicity_trigger is not None:
+                level = args.force_multiplicity_trigger
+                config_dict.setdefault('Trigger.DecideTriggers', {})
+                config_dict['Trigger.DecideTriggers']['trigger_probability'] = {
+                    '0': {str(level): 1},
+                    '1': {str(level): 1},
+                    '2': {str(level): 1}}
+
             try:
                 p = core.Processor(config_names=['XENON1T' if args.detector == 'tpc' else 'XENON1T_MV',
                                                  'eventbuilder'],

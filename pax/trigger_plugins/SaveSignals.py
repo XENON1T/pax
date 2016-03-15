@@ -15,19 +15,18 @@ class SaveSignals(TriggerPlugin):
                                                             compression="gzip")
 
     def process(self, data):
-        if not len(data.signals):
-            return
-
-        # sig_group_ind will hold, for each event,the start and stop (inclusive) index of signals
-        sig_idx = np.zeros((len(data.event_ranges), 2), dtype=np.int)
         is_in_event = np.zeros(len(data.signals), dtype=np.bool)
-        group_signals(data.signals, data.event_ranges, sig_idx, is_in_event)
+        if len(data.signals) and len(data.event_ranges):
+            # sig_group_ind will hold, for each event,the start and stop (inclusive) index of signals
+            sig_idx = np.zeros((len(data.event_ranges), 2), dtype=np.int)
+            group_signals(data.signals, data.event_ranges, sig_idx, is_in_event)
 
-        # It's ok to do a for loop in python over the events here, there's a python loop anyway for sending events out
-        signals_by_event = []
-        for event_i in range(len(data.event_ranges)):
-            signals_by_event.append(data.signals[sig_idx[event_i][0]:sig_idx[event_i][1] + 1])
-        data.signals_by_event = signals_by_event
+            # It's ok to do a for loop in python over the events here,
+            # there's a python loop anyway for sending events out
+            signals_by_event = []
+            for event_i in range(len(data.event_ranges)):
+                signals_by_event.append(data.signals[sig_idx[event_i][0]:sig_idx[event_i][1] + 1])
+            data.signals_by_event = signals_by_event
 
         if self.config['save_signals_outside_events']:
             outsigs = data.signals[True ^ is_in_event]

@@ -7,11 +7,17 @@ from pax.trigger import TriggerPlugin
 class DecideTriggers(TriggerPlugin):
 
     def startup(self):
+        # Convert trigger_probability dictionary keys to ints (due to json arcana they must be strings...)
+        trig_prob = dict()
+        for k, v in self.config['trigger_probability'].items():
+            trig_prob[int(k)] = dict()
+            for k2, v2 in v.items():
+                trig_prob[int(k)][int(k2)] = v2
         # Convert trigger_probability dictionary of dictionaries to 2d array, with intermediate values filled in
-        self.log.info("\tTrigger probabilities: %s" % str(self.config['trigger_probability']))
-        p_length = max([max(ps.keys()) for ps in self.config['trigger_probability'].values()]) + 1
+        self.log.info("\tTrigger probabilities: %s" % str(trig_prob))
+        p_length = max([max(ps.keys()) for ps in trig_prob.values()]) + 1
         p_matrix = np.zeros((3, p_length), dtype=np.float)
-        for sig_type, ps in self.config['trigger_probability'].items():
+        for sig_type, ps in trig_prob.items():
             for i, n in enumerate(sorted(ps.keys())):
                 p_matrix[sig_type][n:] = ps[n]
         self.p_matrix = p_matrix
