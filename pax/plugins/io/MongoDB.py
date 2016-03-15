@@ -291,10 +291,10 @@ class MongoDBReadUntriggeredFiller(plugin.TransformPlugin, MongoDBReader):
                       event_number=event_proxy.event_number,
                       trigger_signals=trigger_signals)
 
-        # The trigger was given time since run start; convert its signals to absolute times
-        event.trigger_signals['left_time'] += self.time_of_run_start
-        event.trigger_signals['right_time'] += self.time_of_run_start
-        event.trigger_signals['time_mean'] += self.time_of_run_start
+        # Convert trigger signal times to ns since start of event (now in ns since start of run)
+        event.trigger_signals['left_time'] -= t0
+        event.trigger_signals['right_time'] -= t0
+        event.trigger_signals['time_mean'] -= t0
 
         self.mongo_iterator = self.input_collection.find({self.start_key: {"$gte": self._to_mt(t0),
                                                                            "$lte": self._to_mt(t1)}},
