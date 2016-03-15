@@ -159,7 +159,7 @@ Execute::
 
 or
 
-    paxer --input ~/pax/pax/data/xe100_120402_2000_000000.xed --stop_after 1 --plot
+    paxer --input ~/pax/pax/data/xe100_120402_2000_000000.xed --stop_after 1 --plot --config="XENON100"
 
 You should see a nice plot of a XENON100 event.
 
@@ -175,7 +175,7 @@ Now you should be able to run the command::
     
 from anywhere, which will give you a list of other command line options. If you have a graphical display, try `paxer --plot` and `paxer --plot_interactive`. You can select some data with the `--input` option::
 
-  paxer --input /archive/data/xenon100/run_14/xe100_150213_1411/xe100_150213_1411_000000.xed --event 0 --plot
+  paxer --input /archive/data/xenon100/run_14/xe100_150213_1411/xe100_150213_1411_000000.xed --event 0 --plot --config="XENON100"
 
 If you want to do something nonstandard, you can create your own configuration file
 like `my_file.ini`::
