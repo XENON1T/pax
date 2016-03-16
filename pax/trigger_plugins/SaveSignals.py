@@ -1,6 +1,7 @@
 import numba
 import numpy as np
 from pax.trigger import TriggerPlugin, h5py_append
+from pax.datastructure import TriggerSignal
 
 
 class SaveSignals(TriggerPlugin):
@@ -11,11 +12,12 @@ class SaveSignals(TriggerPlugin):
             self.outside_signals_dataset = f.create_dataset('signals_outside_events',
                                                             shape=(0,),
                                                             maxshape=(None,),
-                                                            dtype=self.trigger.numba_signals_buffer.dtype,
+                                                            dtype=TriggerSignal.get_dtype(),
                                                             compression="gzip")
 
     def process(self, data):
         is_in_event = np.zeros(len(data.signals), dtype=np.bool)
+
         if len(data.signals) and len(data.event_ranges):
             # sig_group_ind will hold, for each event,the start and stop (inclusive) index of signals
             sig_idx = np.zeros((len(data.event_ranges), 2), dtype=np.int)

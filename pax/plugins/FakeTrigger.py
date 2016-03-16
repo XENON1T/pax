@@ -13,7 +13,7 @@ class FakeTrigger(plugin.TransformPlugin):
 
     def startup(self):
         if self.debug:
-            self.log.seLevel(logging.DEBUG)
+            self.log.setLevel(logging.DEBUG)
             # Make sure the trigger logger is set to debug loglevel
             logging.getLogger('Trigger').setLevel(logging.DEBUG)
             # Make sure the trigger plugins' loggers are set to debug loglevel
