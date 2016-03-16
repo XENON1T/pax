@@ -196,11 +196,6 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                 self.log.info("Acquired pulse time data in range [%s, %s]",
                               pax_to_human_time(times[0]),
                               pax_to_human_time(times[-1]))
-                # Compute the last pulse start time, for search window advancement
-                if self.use_monary:
-                    last_start_time = self._from_mt(times[-1])
-                else:
-                    last_start_time = self._from_mt(times[-1][0][-1])
 
             elif not self.data_taking_ended:
                 # We may be running ahead of the DAQ, then sleep a bit
@@ -229,9 +224,12 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                 # We can't advance the entire search window, since the DAQ may not have filled it all the way.
                 # The condition len(x) == 0 and not self.data_taking_ended has already been dealt with, so ignore
                 # your editor's warning that last_start_time may not have been set yet.
-                last_time_searched = last_start_time
+                last_time_searched = times[-1]
 
-            more_data_coming = last_time_searched > last_time_to_search
+            more_data_coming = not last_time_searched > last_time_to_search
+            if not more_data_coming:
+                self.log.info("Searched to %s, which is beyond %s. This is the last batch of data" % (
+                    pax_to_human_time(last_time_searched), pax_to_human_time(last_time_to_search)))
 
             # Send the new data to the trigger
             for data in self.trigger.run(last_time_searched=last_time_searched,
@@ -243,7 +241,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                 yield EventProxy(event_number=next_event_number, data=data)
                 next_event_number += 1
 
-            # Trigger stopped giving event ranges: if self.trigger.more_data_is_coming,
+            # Trigger stopped giving event ranges: if more data is coming,
             # we'll stay in loop and get more data for the trigger.
 
             # Update time of last DAQ reponse
