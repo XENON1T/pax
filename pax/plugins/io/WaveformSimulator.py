@@ -364,7 +364,9 @@ class WaveformSimulatorFromOpticalGEANT(WaveformSimulator):
         import ROOT
         self.f = ROOT.TFile(self.config['input_name'])
         if not self.f.IsOpen():
-            print("ROOT file not open!")
+            raise ValueError(
+                "Cannot open ROOT file %s" % self.config['input_name']
+                )
         self.t = self.f.Get("events/events")
         WaveformSimulator.startup(self)
         self.number_of_events = self.t.GetEntries() * self.config['event_repetitions']
