@@ -90,7 +90,7 @@ def main():
                                     ('left_extension', units.us),
                                     ('right_extension', units.us),
                                     ('signal_separation', units.us),
-                                    ('event_separation', units.ms)):
+                                    ('event_separation', units.us)):
                 argval = getattr(args, argname)
                 if argval is not None:
                     if factor is not None:
@@ -208,7 +208,7 @@ def get_command_line_arguments():
                                help='If no pulses start for this length of time (us),'
                                     'a signal ends / a new signal can start.')
     trigger_group.add_argument('--event_separation', type=float,
-                               help='If there are no triggers for this length of time (ms),'
+                               help='If there are no triggers for this length of time (us),'
                                     'a new event can start.')
     trigger_group.add_argument('--ignore_rundb_trigger_settings', action='store_true',
                                help='Instead of loading trigger settings from the run db, use the default settings from'
