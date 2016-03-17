@@ -86,7 +86,7 @@ class BasicInteractionProperties(plugin.TransformPlugin):
                         ia.s1_saturation_correction *= saturation_correction(
                             peak=s1,
                             channels_in_pattern=self.tpc_channels,
-                            expected_pattern=self.s1_patterns.expected_pattern((ia.x, ia.y, ia.drift_time)),
+                            expected_pattern=self.s1_patterns.expected_pattern((ia.x, ia.y, ia.z)),
                             confused_channels=confused_s1_channels,
                             log=self.log)
 

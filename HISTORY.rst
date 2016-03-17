@@ -4,6 +4,21 @@ History
 -------
 
 ------------------
+4.6.1 (2016-03-07)
+------------------
+
+ * Screwed up release, fixing...
+
+------------------
+4.6.0 (2016-03-07)
+------------------
+
+ * Confidence levels on position reconstruction
+ * Saturation correction bug
+ * Several small bug fixes
+ * Minor event builder changes
+
+------------------
 4.5.0 (2016-02-26)
 ------------------
 
