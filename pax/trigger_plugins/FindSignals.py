@@ -48,7 +48,9 @@ class FindSignals(TriggerPlugin):
 
     def process(self, data):
         if self.next_save_time is None:
-            self.next_save_time = data.times['time'][0] + self.config['dark_rate_save_interval']
+            self.next_save_time = self.config['dark_rate_save_interval']
+            if len(data.times):
+                self.next_save_time += data.times['time'][0]
 
         sigf = signal_finder(times=data.times,
                              signal_separation=self.config['signal_separation'],

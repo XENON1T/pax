@@ -19,6 +19,7 @@ class TestSignalFinder(unittest.TestCase):
             times['time'] = start_times
             sigf = signal_finder(times, separation, numba_signals_buffer,
                                  coincidence_tally=np.zeros((1, 1)),
+                                 next_save_time=int(10 * units.s),
                                  dark_rate_save_interval=int(10 * units.s))
             n_found = next(sigf)
             return numba_signals_buffer[:n_found]

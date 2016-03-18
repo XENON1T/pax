@@ -201,7 +201,7 @@ class WriteToFolder(plugin.OutputPlugin):
 
         self.output_dir = self.config['output_name']
         if os.path.exists(self.output_dir):
-            if not self.config['ignore_existing_dir']:
+            if not self.config.get('ignore_existing_dir', False):
                 if self.config.get('overwrite_output', False):
                     if self.config['overwrite_output'] == 'confirm':
                         print("\n\nOutput dir %s already exists. Overwrite? [y/n]:" % self.output_dir)
