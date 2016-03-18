@@ -42,11 +42,19 @@ class FindSignals(TriggerPlugin):
         self.dark_rate_dataset.attrs['save_interval'] = (self.config['dark_rate_save_interval'] *
                                                          self.config['dark_monitor_full_save_every'])
 
+        # We must keep track of the next time to save the dark rate between batches, since a batch usually does not
+        # end exactly at a save time.
+        self.next_save_time = None
+
     def process(self, data):
+        if self.next_save_time is None:
+            self.next_save_time = data.times['time'][0] + self.config['dark_rate_save_interval']
+
         sigf = signal_finder(times=data.times,
                              signal_separation=self.config['signal_separation'],
                              signal_buffer=self.numba_signals_buffer,
                              coincidence_tally=self.coincidence_tally,
+                             next_save_time=self.next_save_time,
                              dark_rate_save_interval=self.config['dark_rate_save_interval'])
         saved_buffers = []
         for result in sigf:
@@ -68,6 +76,7 @@ class FindSignals(TriggerPlugin):
 
             elif result == SAVE_DARK_MONITOR_DATA:
                 self.save_dark_monitor_data()
+                self.next_save_time += self.config['dark_rate_save_interval']
 
             else:
                 raise ValueError("Unknown signal finder interrupt %d!" % result)
@@ -94,11 +103,12 @@ class FindSignals(TriggerPlugin):
             self.coincidence_tally *= 0
 
 
-def signal_finder(times, signal_separation, signal_buffer, coincidence_tally, dark_rate_save_interval):
+def signal_finder(times, signal_separation, signal_buffer, coincidence_tally, next_save_time, dark_rate_save_interval):
     """Fill signal_buffer with signals in times. Other arguments:
      - signal_separation: group pulses into signals separated by signal_separation.
      - coincidence_tally: nxn matrix of zero where n is number of channels,used to store 2-pmt coincidences
        (with 1-pmt, i.e. dark rate, on diagonal)
+     - next_save_time: next time (in ns since start of run) the dark rate should be saved
      - dark_rate_save_interval: yield SAVE_DARK_MONITOR every dark_rate_save_interval
      - does channel contibute: zero array of len n_channels. Very annoying we can't allocate this inside!
     Raises "interrupts" (yield numbers) to communicate with caller.
@@ -107,12 +117,13 @@ def signal_finder(times, signal_separation, signal_buffer, coincidence_tally, da
     # Allocate memory for an internal buffer, which we can't do in numba (since number of channels not yet known)
     does_channel_contribute = np.zeros(len(coincidence_tally), dtype=np.int)
     return _signal_finder(times, signal_separation, signal_buffer, coincidence_tally,
-                          does_channel_contribute, dark_rate_save_interval)
+                          does_channel_contribute, next_save_time, dark_rate_save_interval)
 
 
 @numba.jit(nopython=True)
 def _signal_finder(times, signal_separation, signal_buffer, coincidence_tally,
                    does_channel_contribute,
+                   next_save_time,
                    dark_rate_save_interval):
     """Numba backend for signal_finder: please see its docstring instead."""
     in_signal = False
@@ -122,7 +133,6 @@ def _signal_finder(times, signal_separation, signal_buffer, coincidence_tally,
     if not len(times):
         yield 0             # no point looking for events. Communicate no events found, then exit.
         return
-    next_save_time = times[0].time + dark_rate_save_interval
 
     for time_index, _time in enumerate(times):
         t = _time.time
