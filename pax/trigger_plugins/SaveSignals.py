@@ -32,6 +32,7 @@ class SaveSignals(TriggerPlugin):
 
         if self.config['save_signals_outside_events']:
             outsigs = data.signals[True ^ is_in_event]
+            outsigs = outsigs[outsigs['n_pulses'] >= self.config['outside_signals_save_threshold']]
             if len(outsigs):
                 self.log.debug("Storing %d signals outside events" % len(outsigs))
                 h5py_append(self.outside_signals_dataset, outsigs)
