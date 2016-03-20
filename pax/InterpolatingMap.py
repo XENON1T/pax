@@ -69,7 +69,10 @@ class InterpolatingMap(object):
             with open(filename) as data_file:
                 self.data = json.load(data_file)
         self.coordinate_system = cs = self.data['coordinate_system']
-        self.dimensions = len(cs[0])
+        if not len(cs):
+            self.dimensions = 0
+        else:
+            self.dimensions = len(cs[0])
         self.interpolators = {}
         self.map_names = sorted([k for k in self.data.keys() if k not in self.data_field_names])
         self.log.debug('Map name: %s' % self.data['name'])
