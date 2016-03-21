@@ -172,10 +172,21 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                                       '$lt': self._to_mt(search_after + self.search_window)}}
 
             if self.use_monary:
-                times, modules, channels = self.do_monary_query(query=query,
-                                                                fields=[self.start_key, 'module', 'channel'],
-                                                                types=['int64', 'int32', 'int32'],
-                                                                **self.mongo_find_options)
+                if self.config['can_get_area']:
+                    times, modules, channels, areas = self.do_monary_query(
+                        query=query,
+                        fields=[self.start_key, 'module', 'channel', 'integral'],
+                        types=['int64', 'int32', 'int32', 'float64'],
+                        **self.mongo_find_options
+                    )
+                else:
+                    times, modules, channels = self.do_monary_query(
+                        query=query,
+                        fields=[self.start_key, 'module', 'channel'],
+                        types=['int64', 'int32', 'int32'],
+                        **self.mongo_find_options
+                    )
+                    areas = np.zeros(len(times), dtype=np.float64)
                 times = times * self.sample_duration
 
             else:
@@ -187,10 +198,14 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                 times = np.zeros(len(time_docs), dtype=np.int64)
                 channels = np.zeros(len(time_docs), dtype=np.int32)
                 modules = np.zeros(len(time_docs), dtype=np.int32)
+                areas = np.zeros(len(time_docs), dtype=np.int32)
+                can_get_area = self.config['can_get_area']
                 for i, doc in enumerate(time_docs):
                     times[i] = self._from_mt(doc[self.start_key])
                     channels[i] = doc['channel']
                     modules[i] = doc['module']
+                    if can_get_area:
+                        areas[i] = doc['area']
 
             if len(times):
                 self.log.info("Acquired pulse time data in range [%s, %s]",
@@ -198,12 +213,13 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                               pax_to_human_time(times[-1]))
 
                 if not self.data_taking_ended and last_time_searched - times[0] < 0.1 * self.search_window:
-                    self.log.info("Most of search window seems empty, probably we're running ahead of DAQ, sleep a sec")
+                    self.log.info("Most of search window seems empty, "
+                                  "probably we're running in pace with DAQ, sleep a sec")
                     time.sleep(1)
 
             elif not self.data_taking_ended:
                 # We may be running ahead of the DAQ, then sleep a bit
-                # TODO: this wait condition isalso triggered if there is a big hole in the data.
+                # TODO: this wait condition is also triggered if there is a big hole in the data.
                 # In that case we won't continue until the run has ended...
                 self.log.info("No pulses in search window, but run is still ongoing: "
                               "sleeping a bit, not advancing search window.")
@@ -240,6 +256,7 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                                          start_times=times,
                                          channels=channels,
                                          modules=modules,
+                                         areas=areas,
                                          last_data=not more_data_coming):
                 self.log.debug("Sending off event %d with data %s" % (next_event_number, data))
                 yield EventProxy(event_number=next_event_number, data=data)

@@ -13,6 +13,7 @@ class HandleEdgeTimes(TriggerPlugin):
         if len(self.saved_times):
             self.log.debug("Injecting %d saved times" % len(self.saved_times))
             data.times = np.concatenate((self.saved_times, data.times))
+            data.times.sort(order='time')       # Just to be safe, in live-mode batch edge may be ragged
             self.saved_times = self.saved_times[:0]
 
         if not data.last_data:
@@ -38,6 +39,7 @@ class HandleEdgeSignals(TriggerPlugin):
         if len(self.saved_signals):
             self.log.debug("Injecting %d saved signals" % len(self.saved_signals))
             data.signals = np.concatenate((self.saved_signals, data.signals))
+            data.signals.sort(order='left_time')        # Just to be safe, in live-mode batch edge may be ragged
             self.saved_signals = self.saved_signals[:0]
 
         if not data.last_data:
