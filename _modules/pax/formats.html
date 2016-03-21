@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.formats &mdash; Processor for Analyzing XENON1T 4.6.0 documentation</title>
+    <title>pax.formats &mdash; Processor for Analyzing XENON1T 4.6.1 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '4.6.0',
+        VERSION:     '4.6.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,11 +23,11 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.6.0 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.6.1 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
   <body role="document">  
@@ -52,17 +52,17 @@
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
 
-<span class="n">base_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s1">&#39;TableWriter&#39;</span><span class="p">)</span>
+<span class="n">base_logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;TableWriter&#39;</span><span class="p">)</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">import</span> <span class="nn">pandas</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
-    <span class="n">base_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;You don&#39;t have pandas -- if you use any of the pandas formats, pax will crash!&quot;</span><span class="p">)</span>
+    <span class="n">base_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;You don&#39;t have pandas -- if you use any of the pandas formats, pax will crash!&quot;</span><span class="p">)</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="kn">import</span> <span class="nn">h5py</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
-    <span class="n">base_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;You don&#39;t have h5py -- if you use the hdf5 format, pax will crash!&quot;</span><span class="p">)</span>
+    <span class="n">base_logger</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;You don&#39;t have h5py -- if you use the hdf5 format, pax will crash!&quot;</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="TableFormat"><a class="viewcode-back" href="../../pax.html#pax.formats.TableFormat">[docs]</a><span class="k">class</span> <span class="nc">TableFormat</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
@@ -73,7 +73,7 @@
     <span class="n">supports_array_fields</span> <span class="o">=</span> <span class="bp">False</span>
     <span class="n">supports_read_back</span> <span class="o">=</span> <span class="bp">False</span>
     <span class="n">prefers_python_strings</span> <span class="o">=</span> <span class="bp">False</span>
-    <span class="n">file_extension</span> <span class="o">=</span> <span class="s1">&#39;DIRECTORY&#39;</span>   <span class="c1"># Leave to None for database insertion or something</span>
+    <span class="n">file_extension</span> <span class="o">=</span> <span class="s">&#39;DIRECTORY&#39;</span>   <span class="c"># Leave to None for database insertion or something</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="n">base_logger</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Initialize the output format</span>
@@ -82,11 +82,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">log</span>
 
 <div class="viewcode-block" id="TableFormat.open"><a class="viewcode-back" href="../../pax.html#pax.formats.TableFormat.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">mode</span><span class="p">):</span>
-        <span class="c1"># Dir formats don&#39;t need to do anything here</span>
+        <span class="c"># Dir formats don&#39;t need to do anything here</span>
         <span class="k">pass</span>
 </div>
 <div class="viewcode-block" id="TableFormat.close"><a class="viewcode-back" href="../../pax.html#pax.formats.TableFormat.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c1"># Dir formats don&#39;t need to do anything here</span>
+        <span class="c"># Dir formats don&#39;t need to do anything here</span>
         <span class="k">pass</span>
 </div>
 <div class="viewcode-block" id="TableFormat.read_data"><a class="viewcode-back" href="../../pax.html#pax.formats.TableFormat.read_data">[docs]</a>    <span class="k">def</span> <span class="nf">read_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df_name</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">):</span>
@@ -101,14 +101,14 @@
 
 </div>
 <div class="viewcode-block" id="NumpyDump"><a class="viewcode-back" href="../../pax.html#pax.formats.NumpyDump">[docs]</a><span class="k">class</span> <span class="nc">NumpyDump</span><span class="p">(</span><span class="n">TableFormat</span><span class="p">):</span>
-    <span class="n">file_extension</span> <span class="o">=</span> <span class="s1">&#39;npz&#39;</span>
+    <span class="n">file_extension</span> <span class="o">=</span> <span class="s">&#39;npz&#39;</span>
     <span class="n">supports_array_fields</span> <span class="o">=</span> <span class="bp">True</span>
     <span class="n">supports_read_back</span> <span class="o">=</span> <span class="bp">True</span>
     <span class="n">f</span> <span class="o">=</span> <span class="bp">None</span>
 
 <div class="viewcode-block" id="NumpyDump.open"><a class="viewcode-back" href="../../pax.html#pax.formats.NumpyDump.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">mode</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">filename</span> <span class="o">=</span> <span class="n">name</span>
-        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;r&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s">&#39;r&#39;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="NumpyDump.close"><a class="viewcode-back" href="../../pax.html#pax.formats.NumpyDump.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
@@ -132,7 +132,7 @@
 
 </div></div>
 <div class="viewcode-block" id="HDF5Dump"><a class="viewcode-back" href="../../pax.html#pax.formats.HDF5Dump">[docs]</a><span class="k">class</span> <span class="nc">HDF5Dump</span><span class="p">(</span><span class="n">TableFormat</span><span class="p">):</span>
-    <span class="n">file_extension</span> <span class="o">=</span> <span class="s1">&#39;hdf5&#39;</span>
+    <span class="n">file_extension</span> <span class="o">=</span> <span class="s">&#39;hdf5&#39;</span>
     <span class="n">supports_array_fields</span> <span class="o">=</span> <span class="bp">True</span>
     <span class="n">supports_write_in_chunks</span> <span class="o">=</span> <span class="bp">True</span>
     <span class="n">supports_read_back</span> <span class="o">=</span> <span class="bp">True</span>
@@ -149,12 +149,12 @@
             <span class="k">if</span> <span class="n">dataset</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
                 <span class="k">try</span><span class="p">:</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">create_dataset</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">records</span><span class="p">,</span> <span class="n">maxshape</span><span class="o">=</span><span class="p">(</span><span class="bp">None</span><span class="p">,),</span>
-                                          <span class="n">compression</span><span class="o">=</span><span class="s2">&quot;gzip&quot;</span><span class="p">,</span>   <span class="c1"># hdfview doesn&#39;t like lzf?</span>
+                                          <span class="n">compression</span><span class="o">=</span><span class="s">&quot;gzip&quot;</span><span class="p">,</span>   <span class="c"># hdfview doesn&#39;t like lzf?</span>
                                           <span class="n">shuffle</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span>
                                           <span class="n">fletcher32</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
                 <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">fatal</span><span class="p">(</span><span class="s2">&quot;Fatal error in creating HDF5 table </span><span class="si">%s</span><span class="s2">!&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
-                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">fatal</span><span class="p">(</span><span class="s2">&quot;First record to write was was:&quot;</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">fatal</span><span class="p">(</span><span class="s">&quot;Fatal error in creating HDF5 table </span><span class="si">%s</span><span class="s">!&quot;</span> <span class="o">%</span> <span class="n">name</span><span class="p">)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">fatal</span><span class="p">(</span><span class="s">&quot;First record to write was was:&quot;</span><span class="p">)</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">fatal</span><span class="p">(</span><span class="n">records</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
                     <span class="k">raise</span>
             <span class="k">else</span><span class="p">:</span>
@@ -184,49 +184,49 @@
 <span class="sd">    determined, for each branch the proper datatype is determined</span>
 <span class="sd">    by converting the numpy types to their respective ROOT types.</span>
 <span class="sd">    This is &quot;&quot;&quot;</span>
-    <span class="n">file_extension</span> <span class="o">=</span> <span class="s1">&#39;root&#39;</span>
+    <span class="n">file_extension</span> <span class="o">=</span> <span class="s">&#39;root&#39;</span>
     <span class="n">supports_array_fields</span> <span class="o">=</span> <span class="bp">True</span>
     <span class="n">supports_write_in_chunks</span> <span class="o">=</span> <span class="bp">False</span>
     <span class="n">supports_read_back</span> <span class="o">=</span> <span class="bp">True</span>
 
-    <span class="c1"># Lookup dictionary for converting python numpy types to</span>
-    <span class="c1"># ROOT types, strings are handled seperately!</span>
-    <span class="n">root_type</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;float32&#39;</span><span class="p">:</span> <span class="s1">&#39;/F&#39;</span><span class="p">,</span>
-                 <span class="s1">&#39;float64&#39;</span><span class="p">:</span> <span class="s1">&#39;/D&#39;</span><span class="p">,</span>
-                 <span class="s1">&#39;int16&#39;</span><span class="p">:</span> <span class="s1">&#39;/S&#39;</span><span class="p">,</span>
-                 <span class="s1">&#39;int32&#39;</span><span class="p">:</span> <span class="s1">&#39;/I&#39;</span><span class="p">,</span>
-                 <span class="s1">&#39;int64&#39;</span><span class="p">:</span> <span class="s1">&#39;/L&#39;</span><span class="p">,</span>
-                 <span class="s1">&#39;bool&#39;</span><span class="p">:</span> <span class="s1">&#39;/O&#39;</span><span class="p">,</span>
-                 <span class="s1">&#39;S&#39;</span><span class="p">:</span> <span class="s1">&#39;/C&#39;</span><span class="p">}</span>
+    <span class="c"># Lookup dictionary for converting python numpy types to</span>
+    <span class="c"># ROOT types, strings are handled seperately!</span>
+    <span class="n">root_type</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;float32&#39;</span><span class="p">:</span> <span class="s">&#39;/F&#39;</span><span class="p">,</span>
+                 <span class="s">&#39;float64&#39;</span><span class="p">:</span> <span class="s">&#39;/D&#39;</span><span class="p">,</span>
+                 <span class="s">&#39;int16&#39;</span><span class="p">:</span> <span class="s">&#39;/S&#39;</span><span class="p">,</span>
+                 <span class="s">&#39;int32&#39;</span><span class="p">:</span> <span class="s">&#39;/I&#39;</span><span class="p">,</span>
+                 <span class="s">&#39;int64&#39;</span><span class="p">:</span> <span class="s">&#39;/L&#39;</span><span class="p">,</span>
+                 <span class="s">&#39;bool&#39;</span><span class="p">:</span> <span class="s">&#39;/O&#39;</span><span class="p">,</span>
+                 <span class="s">&#39;S&#39;</span><span class="p">:</span> <span class="s">&#39;/C&#39;</span><span class="p">}</span>
 
-    <span class="n">numpy_type</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;F&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
-                  <span class="s1">&#39;D&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
-                  <span class="s1">&#39;I&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span>
-                  <span class="s1">&#39;L&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span>
-                  <span class="s1">&#39;O&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">,</span>
-                  <span class="s1">&#39;C&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s1">&#39;object&#39;</span><span class="p">)}</span>
+    <span class="n">numpy_type</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;F&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
+                  <span class="s">&#39;D&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">,</span>
+                  <span class="s">&#39;I&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span>
+                  <span class="s">&#39;L&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">,</span>
+                  <span class="s">&#39;O&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">bool</span><span class="p">,</span>
+                  <span class="s">&#39;C&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s">&#39;object&#39;</span><span class="p">)}</span>
 
     <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="n">base_logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;The tabular ROOT output is old and may crash!&quot;</span><span class="p">)</span>
-        <span class="c1"># Avoid importing ROOT until it is needed</span>
-        <span class="kn">import</span> <span class="nn">ROOT</span>   <span class="c1"># noqa</span>
+        <span class="n">base_logger</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s">&quot;The tabular ROOT output is old and may crash!&quot;</span><span class="p">)</span>
+        <span class="c"># Avoid importing ROOT until it is needed</span>
+        <span class="kn">import</span> <span class="nn">ROOT</span>   <span class="c"># noqa</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ROOT</span> <span class="o">=</span> <span class="n">ROOT</span>
 
-        <span class="c1"># This line makes sure all TTree objects are NOT owned</span>
-        <span class="c1"># by python, avoiding segfaults when garbage collecting</span>
+        <span class="c"># This line makes sure all TTree objects are NOT owned</span>
+        <span class="c"># by python, avoiding segfaults when garbage collecting</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ROOT</span><span class="o">.</span><span class="n">TTree</span><span class="o">.</span><span class="n">__init__</span><span class="o">.</span><span class="n">_creates</span> <span class="o">=</span> <span class="bp">False</span>
-        <span class="c1"># DON&#39;T use the Python3 super trick here, we want this code to run in python2 as well!</span>
+        <span class="c"># DON&#39;T use the Python3 super trick here, we want this code to run in python2 as well!</span>
         <span class="n">TableFormat</span><span class="o">.</span><span class="n">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 <div class="viewcode-block" id="ROOTDump.open"><a class="viewcode-back" href="../../pax.html#pax.formats.ROOTDump.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">mode</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;w&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ROOT</span><span class="o">.</span><span class="n">TFile</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;RECREATE&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s">&#39;w&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ROOT</span><span class="o">.</span><span class="n">TFile</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s">&quot;RECREATE&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">trees</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">branch_buffers</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;r&#39;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">mode</span> <span class="o">==</span> <span class="s">&#39;r&#39;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ROOT</span><span class="o">.</span><span class="n">TFile</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid mode&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Invalid mode&quot;</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="ROOTDump.close"><a class="viewcode-back" href="../../pax.html#pax.formats.ROOTDump.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">Close</span><span class="p">()</span>
@@ -234,75 +234,75 @@
 <div class="viewcode-block" id="ROOTDump.write_data"><a class="viewcode-back" href="../../pax.html#pax.formats.ROOTDump.write_data">[docs]</a>    <span class="k">def</span> <span class="nf">write_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">treename</span><span class="p">,</span> <span class="n">records</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
 
-            <span class="c1"># Create tree first time write data is called</span>
+            <span class="c"># Create tree first time write data is called</span>
             <span class="k">if</span> <span class="n">treename</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">trees</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Creating tree: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="n">treename</span><span class="p">)</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Creating tree: </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">treename</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">trees</span><span class="p">[</span><span class="n">treename</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">ROOT</span><span class="o">.</span><span class="n">TTree</span><span class="p">(</span><span class="n">treename</span><span class="p">,</span> <span class="n">treename</span><span class="p">)</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">branch_buffers</span><span class="p">[</span><span class="n">treename</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
                 <span class="k">for</span> <span class="n">fieldname</span> <span class="ow">in</span> <span class="n">records</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
                     <span class="n">field_data</span> <span class="o">=</span> <span class="n">records</span><span class="p">[</span><span class="n">fieldname</span><span class="p">]</span>
                     <span class="n">dtype</span> <span class="o">=</span> <span class="n">field_data</span><span class="o">.</span><span class="n">dtype</span>
-                    <span class="c1"># Handle array types</span>
+                    <span class="c"># Handle array types</span>
                     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">field_data</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
                         <span class="n">array_len</span> <span class="o">=</span> <span class="n">field_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-                        <span class="c1"># Create buffer structure for arrays</span>
+                        <span class="c"># Create buffer structure for arrays</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">branch_buffers</span><span class="p">[</span><span class="n">treename</span><span class="p">][</span><span class="n">fieldname</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span>
-                                                                            <span class="n">dtype</span><span class="o">=</span><span class="p">[(</span><span class="s1">&#39;temp_name&#39;</span><span class="p">,</span> <span class="n">dtype</span><span class="p">,</span> <span class="p">(</span><span class="n">array_len</span><span class="p">,),)])</span>
-                        <span class="c1"># Set buffer to use this structure</span>
+                                                                            <span class="n">dtype</span><span class="o">=</span><span class="p">[(</span><span class="s">&#39;temp_name&#39;</span><span class="p">,</span> <span class="n">dtype</span><span class="p">,</span> <span class="p">(</span><span class="n">array_len</span><span class="p">,),)])</span>
+                        <span class="c"># Set buffer to use this structure</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">trees</span><span class="p">[</span><span class="n">treename</span><span class="p">]</span><span class="o">.</span><span class="n">Branch</span><span class="p">(</span><span class="n">fieldname</span><span class="p">,</span>
                                                     <span class="bp">self</span><span class="o">.</span><span class="n">branch_buffers</span><span class="p">[</span><span class="n">treename</span><span class="p">][</span><span class="n">fieldname</span><span class="p">],</span>
-                                                    <span class="s1">&#39;</span><span class="si">%s</span><span class="s1">[</span><span class="si">%d</span><span class="s1">]</span><span class="si">%s</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">fieldname</span><span class="p">,</span> <span class="n">array_len</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_type</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">dtype</span><span class="p">)]))</span>
+                                                    <span class="s">&#39;</span><span class="si">%s</span><span class="s">[</span><span class="si">%d</span><span class="s">]</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="p">(</span><span class="n">fieldname</span><span class="p">,</span> <span class="n">array_len</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_type</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">dtype</span><span class="p">)]))</span>
 
-                    <span class="c1"># Handle all other types (int, float, string, bool)</span>
+                    <span class="c"># Handle all other types (int, float, string, bool)</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">sdtype</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
-                        <span class="k">if</span> <span class="n">sdtype</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s1">&#39;|S&#39;</span><span class="p">):</span>
-                            <span class="n">sdtype</span> <span class="o">=</span> <span class="s1">&#39;S&#39;</span>
-                        <span class="c1"># Store a single element in a buffer of the correct type</span>
+                        <span class="k">if</span> <span class="n">sdtype</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;|S&#39;</span><span class="p">):</span>
+                            <span class="n">sdtype</span> <span class="o">=</span> <span class="s">&#39;S&#39;</span>
+                        <span class="c"># Store a single element in a buffer of the correct type</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">branch_buffers</span><span class="p">[</span><span class="n">treename</span><span class="p">][</span><span class="n">fieldname</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">records</span><span class="p">[</span><span class="n">fieldname</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
-                        <span class="c1"># Set the branch to use this buffer</span>
+                        <span class="c"># Set the branch to use this buffer</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">trees</span><span class="p">[</span><span class="n">treename</span><span class="p">]</span><span class="o">.</span><span class="n">Branch</span><span class="p">(</span><span class="n">fieldname</span><span class="p">,</span>
                                                     <span class="bp">self</span><span class="o">.</span><span class="n">branch_buffers</span><span class="p">[</span><span class="n">treename</span><span class="p">][</span><span class="n">fieldname</span><span class="p">],</span>
                                                     <span class="n">fieldname</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">root_type</span><span class="p">[</span><span class="n">sdtype</span><span class="p">])</span>
 
-            <span class="c1"># Fill branches</span>
+            <span class="c"># Fill branches</span>
             <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">records</span><span class="p">:</span>
                 <span class="k">for</span> <span class="n">fieldname</span> <span class="ow">in</span> <span class="n">record</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
-                    <span class="c1"># Store one record in branch buffer</span>
+                    <span class="c"># Store one record in branch buffer</span>
                     <span class="bp">self</span><span class="o">.</span><span class="n">branch_buffers</span><span class="p">[</span><span class="n">treename</span><span class="p">][</span><span class="n">fieldname</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">record</span><span class="p">[</span><span class="n">fieldname</span><span class="p">]</span>
-                <span class="c1"># Fill appends the actual data to the branches</span>
+                <span class="c"># Fill appends the actual data to the branches</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">trees</span><span class="p">[</span><span class="n">treename</span><span class="p">]</span><span class="o">.</span><span class="n">Fill</span><span class="p">()</span>
 
-        <span class="c1"># Write to file</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Writing out to TFile&quot;</span><span class="p">)</span>
+        <span class="c"># Write to file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Writing out to TFile&quot;</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">Write</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Done writing&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Done writing&quot;</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="ROOTDump.read_data"><a class="viewcode-back" href="../../pax.html#pax.formats.ROOTDump.read_data">[docs]</a>    <span class="k">def</span> <span class="nf">read_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df_name</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;ROOT read support is experimental!&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;ROOT read support is experimental!&quot;</span><span class="p">)</span>
         <span class="n">tree</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">Get</span><span class="p">(</span><span class="n">df_name</span><span class="p">)</span>
 
-        <span class="c1"># Read the branch names and types</span>
+        <span class="c"># Read the branch names and types</span>
         <span class="n">dt</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="n">tree</span><span class="o">.</span><span class="n">GetListOfBranches</span><span class="p">():</span>
-            <span class="n">bdata</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">r&#39;[\/\[\]]+&#39;</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">GetTitle</span><span class="p">())</span>
+            <span class="n">bdata</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s">r&#39;[\/\[\]]+&#39;</span><span class="p">,</span> <span class="n">b</span><span class="o">.</span><span class="n">GetTitle</span><span class="p">())</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bdata</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-                <span class="c1"># Normal field</span>
+                <span class="c"># Normal field</span>
                 <span class="n">bname</span><span class="p">,</span> <span class="n">btype</span> <span class="o">=</span> <span class="n">bdata</span>
-                <span class="c1"># TODO HACK ignore string fields for now...</span>
-                <span class="k">if</span> <span class="n">btype</span> <span class="o">==</span> <span class="s1">&#39;S&#39;</span><span class="p">:</span>
+                <span class="c"># TODO HACK ignore string fields for now...</span>
+                <span class="k">if</span> <span class="n">btype</span> <span class="o">==</span> <span class="s">&#39;S&#39;</span><span class="p">:</span>
                     <span class="k">continue</span>
                 <span class="n">dt</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">bname</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">numpy_type</span><span class="p">[</span><span class="n">btype</span><span class="p">]))</span>
             <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">bdata</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
-                <span class="c1"># Array field</span>
+                <span class="c"># Array field</span>
                 <span class="n">bname</span><span class="p">,</span> <span class="n">blen</span><span class="p">,</span> <span class="n">btype</span> <span class="o">=</span> <span class="n">bdata</span>
                 <span class="n">dt</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">bname</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">numpy_type</span><span class="p">[</span><span class="n">btype</span><span class="p">],</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">blen</span><span class="p">),)))</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Strange branch </span><span class="si">%s</span><span class="s2"> in tree </span><span class="si">%s</span><span class="s2">?&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">GetTitle</span><span class="p">(),</span> <span class="n">df_name</span><span class="p">))</span>
-            <span class="k">if</span> <span class="n">btype</span> <span class="o">==</span> <span class="s1">&#39;S&#39;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Strange branch </span><span class="si">%s</span><span class="s"> in tree </span><span class="si">%s</span><span class="s">?&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">b</span><span class="o">.</span><span class="n">GetTitle</span><span class="p">(),</span> <span class="n">df_name</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">btype</span> <span class="o">==</span> <span class="s">&#39;S&#39;</span><span class="p">:</span>
                 <span class="k">continue</span>
 
-        <span class="c1"># Read the data into a numpy record array</span>
+        <span class="c"># Read the data into a numpy record array</span>
         <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">n_in_data</span><span class="p">(</span><span class="n">df_name</span><span class="p">)</span>
         <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dt</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n_in_data</span><span class="p">(</span><span class="n">df_name</span><span class="p">)):</span>
@@ -310,8 +310,8 @@
             <span class="k">for</span> <span class="n">bdata</span> <span class="ow">in</span> <span class="n">dt</span><span class="p">:</span>
                 <span class="n">value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">tree</span><span class="p">,</span> <span class="n">bdata</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">bdata</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
-                    <span class="c1"># Array field: must force this into numpy array to read it</span>
-                    <span class="c1"># Try list(value) or value[:] if you want to have fun...</span>
+                    <span class="c"># Array field: must force this into numpy array to read it</span>
+                    <span class="c"># Try list(value) or value[:] if you want to have fun...</span>
                     <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">bdata</span><span class="p">[</span><span class="mi">0</span><span class="p">]][:</span><span class="n">bdata</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">value</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">bdata</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">=</span> <span class="n">value</span>
@@ -320,16 +320,16 @@
 </div>
     <span class="nd">@property</span>
     <span class="k">def</span> <span class="nf">data_types_present</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="c1"># After some trial and error...</span>
+        <span class="c"># After some trial and error...</span>
         <span class="k">return</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">GetTitle</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">GetListOfKeys</span><span class="p">()]</span>
 
 <div class="viewcode-block" id="ROOTDump.n_in_data"><a class="viewcode-back" href="../../pax.html#pax.formats.ROOTDump.n_in_data">[docs]</a>    <span class="k">def</span> <span class="nf">n_in_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df_name</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">Get</span><span class="p">(</span><span class="n">df_name</span><span class="p">)</span><span class="o">.</span><span class="n">GetEntries</span><span class="p">()</span>
 
 
-<span class="c1">##</span>
-<span class="c1"># Pandas data formats</span>
-<span class="c1">##</span>
+<span class="c">##</span>
+<span class="c"># Pandas data formats</span>
+<span class="c">##</span>
 </div></div>
 <div class="viewcode-block" id="PandasFormat"><a class="viewcode-back" href="../../pax.html#pax.formats.PandasFormat">[docs]</a><span class="k">class</span> <span class="nc">PandasFormat</span><span class="p">(</span><span class="n">TableFormat</span><span class="p">):</span>
     <span class="n">pandas_format_key</span> <span class="o">=</span> <span class="bp">None</span>
@@ -340,14 +340,14 @@
 </div>
 <div class="viewcode-block" id="PandasFormat.write_data"><a class="viewcode-back" href="../../pax.html#pax.formats.PandasFormat.write_data">[docs]</a>    <span class="k">def</span> <span class="nf">write_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">records</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="c1"># Write pandas dataframe to container</span>
+            <span class="c"># Write pandas dataframe to container</span>
             <span class="n">df_series_dict</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="k">for</span> <span class="n">column_name</span> <span class="ow">in</span> <span class="n">records</span><span class="o">.</span><span class="n">dtype</span><span class="o">.</span><span class="n">names</span><span class="p">:</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">records</span><span class="p">[</span><span class="n">column_name</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
-                    <span class="c1"># This is an array field. Pandas doesn&#39;t like this: we should convert it to a list of lists,</span>
-                    <span class="c1"># then store it as an object-dtype Series</span>
+                    <span class="c"># This is an array field. Pandas doesn&#39;t like this: we should convert it to a list of lists,</span>
+                    <span class="c"># then store it as an object-dtype Series</span>
                     <span class="n">df_series_dict</span><span class="p">[</span><span class="n">column_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">records</span><span class="p">[</span><span class="n">column_name</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
-                                                                <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s2">&quot;object&quot;</span><span class="p">))</span>
+                                                                <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="s">&quot;object&quot;</span><span class="p">))</span>
                 <span class="k">else</span><span class="p">:</span>
                     <span class="n">df_series_dict</span><span class="p">[</span><span class="n">column_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">records</span><span class="p">[</span><span class="n">column_name</span><span class="p">],</span>
                                                                 <span class="n">dtype</span><span class="o">=</span><span class="n">records</span><span class="p">[</span><span class="n">column_name</span><span class="p">]</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
@@ -355,21 +355,21 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">write_pandas_dataframe</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">df</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="PandasFormat.write_pandas_dataframe"><a class="viewcode-back" href="../../pax.html#pax.formats.PandasFormat.write_pandas_dataframe">[docs]</a>    <span class="k">def</span> <span class="nf">write_pandas_dataframe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df_name</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
-        <span class="c1"># Write each DataFrame to file</span>
-        <span class="nb">getattr</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="s1">&#39;to_&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">pandas_format_key</span><span class="p">)(</span>
-            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span> <span class="n">df_name</span> <span class="o">+</span> <span class="s1">&#39;.&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">pandas_format_key</span><span class="p">))</span>
+        <span class="c"># Write each DataFrame to file</span>
+        <span class="nb">getattr</span><span class="p">(</span><span class="n">df</span><span class="p">,</span> <span class="s">&#39;to_&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">pandas_format_key</span><span class="p">)(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">,</span> <span class="n">df_name</span> <span class="o">+</span> <span class="s">&#39;.&#39;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">pandas_format_key</span><span class="p">))</span>
 
 </div></div>
 <div class="viewcode-block" id="PandasCSV"><a class="viewcode-back" href="../../pax.html#pax.formats.PandasCSV">[docs]</a><span class="k">class</span> <span class="nc">PandasCSV</span><span class="p">(</span><span class="n">PandasFormat</span><span class="p">):</span>
-    <span class="n">pandas_format_key</span> <span class="o">=</span> <span class="s1">&#39;csv&#39;</span>
+    <span class="n">pandas_format_key</span> <span class="o">=</span> <span class="s">&#39;csv&#39;</span>
 
 </div>
 <div class="viewcode-block" id="PandasHTML"><a class="viewcode-back" href="../../pax.html#pax.formats.PandasHTML">[docs]</a><span class="k">class</span> <span class="nc">PandasHTML</span><span class="p">(</span><span class="n">PandasFormat</span><span class="p">):</span>
-    <span class="n">pandas_format_key</span> <span class="o">=</span> <span class="s1">&#39;html&#39;</span>
+    <span class="n">pandas_format_key</span> <span class="o">=</span> <span class="s">&#39;html&#39;</span>
 
 </div>
 <div class="viewcode-block" id="PandasJSON"><a class="viewcode-back" href="../../pax.html#pax.formats.PandasJSON">[docs]</a><span class="k">class</span> <span class="nc">PandasJSON</span><span class="p">(</span><span class="n">PandasFormat</span><span class="p">):</span>
-    <span class="n">pandas_format_key</span> <span class="o">=</span> <span class="s1">&#39;json&#39;</span>
+    <span class="n">pandas_format_key</span> <span class="o">=</span> <span class="s">&#39;json&#39;</span>
 
 </div>
 <div class="viewcode-block" id="PandasHDF5"><a class="viewcode-back" href="../../pax.html#pax.formats.PandasHDF5">[docs]</a><span class="k">class</span> <span class="nc">PandasHDF5</span><span class="p">(</span><span class="n">PandasFormat</span><span class="p">):</span>
@@ -377,27 +377,27 @@
     <span class="n">supports_write_in_chunks</span> <span class="o">=</span> <span class="bp">True</span>
     <span class="n">supports_read_back</span> <span class="o">=</span> <span class="bp">True</span>
     <span class="n">prefers_python_strings</span> <span class="o">=</span> <span class="bp">True</span>
-    <span class="n">string_data_length</span> <span class="o">=</span> <span class="mi">32</span>     <span class="c1"># HACK, should come from config...</span>
-    <span class="n">file_extension</span> <span class="o">=</span> <span class="s1">&#39;hdf5&#39;</span>
+    <span class="n">string_data_length</span> <span class="o">=</span> <span class="mi">32</span>     <span class="c"># HACK, should come from config...</span>
+    <span class="n">file_extension</span> <span class="o">=</span> <span class="s">&#39;hdf5&#39;</span>
 
 <div class="viewcode-block" id="PandasHDF5.open"><a class="viewcode-back" href="../../pax.html#pax.formats.PandasHDF5.open">[docs]</a>    <span class="k">def</span> <span class="nf">open</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">mode</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">store</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">HDFStore</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">complevel</span><span class="o">=</span><span class="mi">9</span><span class="p">,</span> <span class="n">complib</span><span class="o">=</span><span class="s1">&#39;blosc&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">store</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">HDFStore</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">complevel</span><span class="o">=</span><span class="mi">9</span><span class="p">,</span> <span class="n">complib</span><span class="o">=</span><span class="s">&#39;blosc&#39;</span><span class="p">)</span>
 </div>
 <div class="viewcode-block" id="PandasHDF5.close"><a class="viewcode-back" href="../../pax.html#pax.formats.PandasHDF5.close">[docs]</a>    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
 </div>
 <div class="viewcode-block" id="PandasHDF5.write_pandas_dataframe"><a class="viewcode-back" href="../../pax.html#pax.formats.PandasHDF5.write_pandas_dataframe">[docs]</a>    <span class="k">def</span> <span class="nf">write_pandas_dataframe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df_name</span><span class="p">,</span> <span class="n">df</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">df_name</span> <span class="o">==</span> <span class="s1">&#39;pax_info&#39;</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;HACK: didn&#39;t write metadata. Some JSON-&gt;string-&gt;pandas hdf5 issue. Sorry...&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">df_name</span> <span class="o">==</span> <span class="s">&#39;pax_info&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s">&quot;HACK: didn&#39;t write metadata. Some JSON-&gt;string-&gt;pandas hdf5 issue. Sorry...&quot;</span><span class="p">)</span>
             <span class="k">return</span>
-            <span class="c1"># Don&#39;t worry about pre-setting string field lengths</span>
-            <span class="c1"># self.store.append(df_name, df, format=&#39;table&#39;)</span>
+            <span class="c"># Don&#39;t worry about pre-setting string field lengths</span>
+            <span class="c"># self.store.append(df_name, df, format=&#39;table&#39;)</span>
 
         <span class="k">else</span><span class="p">:</span>
-            <span class="c1"># Look for string fields (dtype=object), we should pre-set a length for them</span>
-            <span class="n">string_fields</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;object&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span>
+            <span class="c"># Look for string fields (dtype=object), we should pre-set a length for them</span>
+            <span class="n">string_fields</span> <span class="o">=</span> <span class="n">df</span><span class="o">.</span><span class="n">select_dtypes</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">[</span><span class="s">&#39;object&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span>
 
-            <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df_name</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s1">&#39;table&#39;</span><span class="p">,</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">df_name</span><span class="p">,</span> <span class="n">df</span><span class="p">,</span> <span class="n">format</span><span class="o">=</span><span class="s">&#39;table&#39;</span><span class="p">,</span>
                               <span class="n">min_itemsize</span><span class="o">=</span><span class="p">{</span><span class="n">field_name</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">string_data_length</span>
                                             <span class="k">for</span> <span class="n">field_name</span> <span class="ow">in</span> <span class="n">string_fields</span><span class="p">})</span>
 </div>
@@ -415,20 +415,20 @@
 <div class="viewcode-block" id="PandasHDF5.n_in_data"><a class="viewcode-back" href="../../pax.html#pax.formats.PandasHDF5.n_in_data">[docs]</a>    <span class="k">def</span> <span class="nf">n_in_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">df_name</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">df_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">:</span>
             <span class="k">print</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;No </span><span class="si">%s</span><span class="s2"> present in HDF5 file... you sure this is good data?&quot;</span> <span class="o">%</span> <span class="n">df_name</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s">&quot;No </span><span class="si">%s</span><span class="s"> present in HDF5 file... you sure this is good data?&quot;</span> <span class="o">%</span> <span class="n">df_name</span><span class="p">)</span>
             <span class="k">return</span> <span class="mi">0</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">store</span><span class="p">[</span><span class="n">df_name</span><span class="p">])</span>
 
 
-<span class="c1"># List of data formats, pax / analysis code can import this</span></div></div>
+<span class="c"># List of data formats, pax / analysis code can import this</span></div></div>
 <span class="n">flat_data_formats</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;hdf5&#39;</span><span class="p">:</span>         <span class="n">HDF5Dump</span><span class="p">,</span>
-    <span class="s1">&#39;numpy&#39;</span><span class="p">:</span>        <span class="n">NumpyDump</span><span class="p">,</span>
-    <span class="s1">&#39;hdf5_pandas&#39;</span><span class="p">:</span>  <span class="n">PandasHDF5</span><span class="p">,</span>
-    <span class="s1">&#39;csv&#39;</span><span class="p">:</span>          <span class="n">PandasCSV</span><span class="p">,</span>
-    <span class="s1">&#39;html&#39;</span><span class="p">:</span>         <span class="n">PandasHTML</span><span class="p">,</span>
-    <span class="s1">&#39;json&#39;</span><span class="p">:</span>         <span class="n">PandasJSON</span><span class="p">,</span>
-    <span class="s1">&#39;root&#39;</span><span class="p">:</span>         <span class="n">ROOTDump</span><span class="p">,</span>
+    <span class="s">&#39;hdf5&#39;</span><span class="p">:</span>         <span class="n">HDF5Dump</span><span class="p">,</span>
+    <span class="s">&#39;numpy&#39;</span><span class="p">:</span>        <span class="n">NumpyDump</span><span class="p">,</span>
+    <span class="s">&#39;hdf5_pandas&#39;</span><span class="p">:</span>  <span class="n">PandasHDF5</span><span class="p">,</span>
+    <span class="s">&#39;csv&#39;</span><span class="p">:</span>          <span class="n">PandasCSV</span><span class="p">,</span>
+    <span class="s">&#39;html&#39;</span><span class="p">:</span>         <span class="n">PandasHTML</span><span class="p">,</span>
+    <span class="s">&#39;json&#39;</span><span class="p">:</span>         <span class="n">PandasJSON</span><span class="p">,</span>
+    <span class="s">&#39;root&#39;</span><span class="p">:</span>         <span class="n">ROOTDump</span><span class="p">,</span>
 <span class="p">}</span>
 </pre></div>
 
@@ -467,7 +467,7 @@
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>
 

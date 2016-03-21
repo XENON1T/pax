@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.plugins.peak_processing.NaturalBreaksClustering &mdash; Processor for Analyzing XENON1T 4.6.0 documentation</title>
+    <title>pax.plugins.peak_processing.NaturalBreaksClustering &mdash; Processor for Analyzing XENON1T 4.6.1 documentation</title>
     
     <link rel="stylesheet" href="../../../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../../../',
-        VERSION:     '4.6.0',
+        VERSION:     '4.6.1',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,11 +23,11 @@
     <script type="text/javascript" src="../../../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.6.0 documentation" href="../../../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.6.1 documentation" href="../../../../index.html" />
     <link rel="up" title="Module code" href="../../../index.html" />
    
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
 
   </head>
   <body role="document">  
@@ -60,8 +60,8 @@
 <span class="sd">    &quot;&quot;&quot;</span>
 
 <div class="viewcode-block" id="NaturalBreaksClustering.startup"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.NaturalBreaksClustering.NaturalBreaksClustering.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">min_split_goodness</span> <span class="o">=</span> <span class="n">InterpolatedUnivariateSpline</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;split_goodness_threshold&#39;</span><span class="p">],</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;sample_duration&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_split_goodness</span> <span class="o">=</span> <span class="n">InterpolatedUnivariateSpline</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;split_goodness_threshold&#39;</span><span class="p">],</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;sample_duration&#39;</span><span class="p">]</span>
 </div>
 <div class="viewcode-block" id="NaturalBreaksClustering.transform_event"><a class="viewcode-back" href="../../../../pax.plugins.peak_processing.html#pax.plugins.peak_processing.NaturalBreaksClustering.NaturalBreaksClustering.transform_event">[docs]</a>    <span class="k">def</span> <span class="nf">transform_event</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">event</span><span class="p">):</span>
         <span class="n">new_peaks</span> <span class="o">=</span> <span class="p">[]</span>
@@ -78,55 +78,55 @@
         <span class="n">hits</span> <span class="o">=</span> <span class="n">peak</span><span class="o">.</span><span class="n">hits</span>
         <span class="n">n_hits</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">hits</span><span class="p">)</span>
 
-        <span class="c1"># Handle trivial cases</span>
+        <span class="c"># Handle trivial cases</span>
         <span class="k">if</span> <span class="n">n_hits</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Empty list passed to decluster!&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s">&quot;Empty list passed to decluster!&quot;</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">n_hits</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="c1"># Lone hit: can&#39;t cluster any more!</span>
+            <span class="c"># Lone hit: can&#39;t cluster any more!</span>
             <span class="k">return</span> <span class="p">[</span><span class="n">peak</span><span class="p">]</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Clustering hits </span><span class="si">%d</span><span class="s2">-</span><span class="si">%d</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;center&#39;</span><span class="p">],</span> <span class="n">hits</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;center&#39;</span><span class="p">]))</span>
-        <span class="n">area_tot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;area&#39;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Clustering hits </span><span class="si">%d</span><span class="s">-</span><span class="si">%d</span><span class="s">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s">&#39;center&#39;</span><span class="p">],</span> <span class="n">hits</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="s">&#39;center&#39;</span><span class="p">]))</span>
+        <span class="n">area_tot</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s">&#39;area&#39;</span><span class="p">])</span>
 
-        <span class="c1"># Compute gaps between hits, select large enough gaps to test</span>
-        <span class="n">gaps</span> <span class="o">=</span> <span class="n">dsputils</span><span class="o">.</span><span class="n">gaps_between_hits</span><span class="p">(</span><span class="n">hits</span><span class="p">)[</span><span class="mi">1</span><span class="p">:]</span>            <span class="c1"># Remember first &quot;gap&quot; is zero: throw it away</span>
-        <span class="n">selection</span> <span class="o">=</span> <span class="n">gaps</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;min_gap_size_for_break&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span>
+        <span class="c"># Compute gaps between hits, select large enough gaps to test</span>
+        <span class="n">gaps</span> <span class="o">=</span> <span class="n">dsputils</span><span class="o">.</span><span class="n">gaps_between_hits</span><span class="p">(</span><span class="n">hits</span><span class="p">)[</span><span class="mi">1</span><span class="p">:]</span>            <span class="c"># Remember first &quot;gap&quot; is zero: throw it away</span>
+        <span class="n">selection</span> <span class="o">=</span> <span class="n">gaps</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;min_gap_size_for_break&#39;</span><span class="p">]</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">dt</span>
         <span class="n">split_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">gaps</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)[</span><span class="n">selection</span><span class="p">]</span>
         <span class="n">gaps</span> <span class="o">=</span> <span class="n">gaps</span><span class="p">[</span><span class="n">selection</span><span class="p">]</span>
 
-        <span class="c1"># Look for good split points</span>
+        <span class="c"># Look for good split points</span>
         <span class="n">gos_observed</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">gaps</span><span class="p">))</span>
         <span class="n">compute_every_split_goodness</span><span class="p">(</span><span class="n">gaps</span><span class="p">,</span> <span class="n">split_indices</span><span class="p">,</span>
-                                     <span class="n">hits</span><span class="p">[</span><span class="s1">&#39;center&#39;</span><span class="p">],</span> <span class="n">hits</span><span class="p">[</span><span class="s1">&#39;sum_absolute_deviation&#39;</span><span class="p">],</span> <span class="n">hits</span><span class="p">[</span><span class="s1">&#39;area&#39;</span><span class="p">],</span>
+                                     <span class="n">hits</span><span class="p">[</span><span class="s">&#39;center&#39;</span><span class="p">],</span> <span class="n">hits</span><span class="p">[</span><span class="s">&#39;sum_absolute_deviation&#39;</span><span class="p">],</span> <span class="n">hits</span><span class="p">[</span><span class="s">&#39;area&#39;</span><span class="p">],</span>
                                      <span class="n">gos_observed</span><span class="p">)</span>
 
-        <span class="c1"># Find the split point with the largest goodness of split</span>
+        <span class="c"># Find the split point with the largest goodness of split</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">gos_observed</span><span class="p">):</span>
             <span class="n">max_split_ii</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">gos_observed</span><span class="p">)</span>
             <span class="n">split_i</span> <span class="o">=</span> <span class="n">split_indices</span><span class="p">[</span><span class="n">max_split_ii</span><span class="p">]</span>
             <span class="n">split_goodness</span> <span class="o">=</span> <span class="n">gos_observed</span><span class="p">[</span><span class="n">max_split_ii</span><span class="p">]</span>
             <span class="n">split_threshold</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_split_goodness</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">area_tot</span><span class="p">))</span>
 
-            <span class="c1"># Should we split? If so, recurse.</span>
+            <span class="c"># Should we split? If so, recurse.</span>
             <span class="k">if</span> <span class="n">split_goodness</span> <span class="o">&gt;</span> <span class="n">split_threshold</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;SPLITTING at </span><span class="si">%d</span><span class="s2">  (</span><span class="si">%s</span><span class="s2"> &gt; </span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">split_i</span><span class="p">,</span> <span class="n">split_goodness</span><span class="p">,</span> <span class="n">split_threshold</span><span class="p">))</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;SPLITTING at </span><span class="si">%d</span><span class="s">  (</span><span class="si">%s</span><span class="s"> &gt; </span><span class="si">%s</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">split_i</span><span class="p">,</span> <span class="n">split_goodness</span><span class="p">,</span> <span class="n">split_threshold</span><span class="p">))</span>
                 <span class="n">peak_l</span> <span class="o">=</span> <span class="n">datastructure</span><span class="o">.</span><span class="n">Peak</span><span class="p">(</span><span class="n">hits</span><span class="o">=</span><span class="n">hits</span><span class="p">[:</span><span class="n">split_i</span><span class="p">],</span>
                                             <span class="n">detector</span><span class="o">=</span><span class="n">peak</span><span class="o">.</span><span class="n">detector</span><span class="p">,</span>
                                             <span class="n">birthing_split_goodness</span><span class="o">=</span><span class="n">split_goodness</span><span class="p">,</span>
-                                            <span class="n">birthing_split_fraction</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;area&#39;</span><span class="p">][:</span><span class="n">split_i</span><span class="p">])</span> <span class="o">/</span> <span class="n">area_tot</span><span class="p">)</span>
+                                            <span class="n">birthing_split_fraction</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s">&#39;area&#39;</span><span class="p">][:</span><span class="n">split_i</span><span class="p">])</span> <span class="o">/</span> <span class="n">area_tot</span><span class="p">)</span>
                 <span class="n">peak_r</span> <span class="o">=</span> <span class="n">datastructure</span><span class="o">.</span><span class="n">Peak</span><span class="p">(</span><span class="n">hits</span><span class="o">=</span><span class="n">hits</span><span class="p">[</span><span class="n">split_i</span><span class="p">:],</span>
                                             <span class="n">detector</span><span class="o">=</span><span class="n">peak</span><span class="o">.</span><span class="n">detector</span><span class="p">,</span>
                                             <span class="n">birthing_split_goodness</span><span class="o">=</span><span class="n">split_goodness</span><span class="p">,</span>
-                                            <span class="n">birthing_split_fraction</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;area&#39;</span><span class="p">][</span><span class="n">split_i</span><span class="p">:])</span> <span class="o">/</span> <span class="n">area_tot</span><span class="p">)</span>
+                                            <span class="n">birthing_split_fraction</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s">&#39;area&#39;</span><span class="p">][</span><span class="n">split_i</span><span class="p">:])</span> <span class="o">/</span> <span class="n">area_tot</span><span class="p">)</span>
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster</span><span class="p">(</span><span class="n">peak_l</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">cluster</span><span class="p">(</span><span class="n">peak_r</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s2">&quot;Proposed split at </span><span class="si">%d</span><span class="s2"> not good enough (</span><span class="si">%0.3f</span><span class="s2"> &lt; </span><span class="si">%0.3f</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Proposed split at </span><span class="si">%d</span><span class="s"> not good enough (</span><span class="si">%0.3f</span><span class="s"> &lt; </span><span class="si">%0.3f</span><span class="s">)&quot;</span> <span class="o">%</span> <span class="p">(</span>
                     <span class="n">split_i</span><span class="p">,</span> <span class="n">split_goodness</span><span class="p">,</span> <span class="n">split_threshold</span><span class="p">))</span>
 
-            <span class="c1"># If we get here, no clustering was needed</span>
+            <span class="c"># If we get here, no clustering was needed</span>
             <span class="n">peak</span><span class="o">.</span><span class="n">interior_split_goodness</span> <span class="o">=</span> <span class="n">split_goodness</span>
-            <span class="n">peak</span><span class="o">.</span><span class="n">interior_split_fraction</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;area&#39;</span><span class="p">][:</span><span class="n">max_split_ii</span><span class="p">]),</span>
-                                               <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s1">&#39;area&#39;</span><span class="p">][</span><span class="n">max_split_ii</span><span class="p">:]))</span> <span class="o">/</span> <span class="n">area_tot</span>
+            <span class="n">peak</span><span class="o">.</span><span class="n">interior_split_fraction</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s">&#39;area&#39;</span><span class="p">][:</span><span class="n">max_split_ii</span><span class="p">]),</span>
+                                               <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">hits</span><span class="p">[</span><span class="s">&#39;area&#39;</span><span class="p">][</span><span class="n">max_split_ii</span><span class="p">:]))</span> <span class="o">/</span> <span class="n">area_tot</span>
 
         <span class="k">return</span> <span class="p">[</span><span class="n">peak</span><span class="p">]</span>
 
@@ -134,8 +134,8 @@
 <span class="nd">@numba.jit</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">(</span><span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:],</span> <span class="n">numba</span><span class="o">.</span><span class="n">float64</span><span class="p">[:]),</span>
            <span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">_sad_fallback</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">areas</span><span class="p">,</span> <span class="n">fallback</span><span class="p">):</span>
-    <span class="c1"># While there is a one-pass algorithm for variance, I haven&#39;t found one for sad.. maybe it doesn&#39;t exists</span>
-    <span class="c1"># First calculate the weighted mean.</span>
+    <span class="c"># While there is a one-pass algorithm for variance, I haven&#39;t found one for sad.. maybe it doesn&#39;t exists</span>
+    <span class="c"># First calculate the weighted mean.</span>
     <span class="n">mean</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">sum_weights</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)):</span>
@@ -143,7 +143,7 @@
         <span class="n">sum_weights</span> <span class="o">+=</span> <span class="n">areas</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
     <span class="n">mean</span> <span class="o">/=</span> <span class="n">sum_weights</span>
 
-    <span class="c1"># Now calculate the sum abs dev, ensuring each x contributes at least fallback</span>
+    <span class="c"># Now calculate the sum abs dev, ensuring each x contributes at least fallback</span>
     <span class="n">sad</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)):</span>
         <span class="n">sad</span> <span class="o">+=</span> <span class="nb">max</span><span class="p">(</span><span class="n">fallback</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="nb">abs</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">mean</span><span class="p">))</span> <span class="o">*</span> <span class="n">areas</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
@@ -159,7 +159,7 @@
                                  <span class="n">results</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Computes the &quot;goodness of split&quot; for several split points: see compute_split_goodness&quot;&quot;&quot;</span>
     <span class="k">for</span> <span class="n">gap_i</span><span class="p">,</span> <span class="n">gap</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">gaps</span><span class="p">):</span>
-        <span class="c1"># Index of hit to split on = index first hit that will go to right cluster</span>
+        <span class="c"># Index of hit to split on = index first hit that will go to right cluster</span>
         <span class="n">split_i</span> <span class="o">=</span> <span class="n">split_indices</span><span class="p">[</span><span class="n">gap_i</span><span class="p">]</span>
         <span class="n">results</span><span class="p">[</span><span class="n">gap_i</span><span class="p">]</span> <span class="o">=</span> <span class="n">compute_split_goodness</span><span class="p">(</span><span class="n">split_i</span><span class="p">,</span> <span class="n">center</span><span class="p">,</span> <span class="n">deviation</span><span class="p">,</span> <span class="n">area</span><span class="p">)</span>
 
@@ -176,7 +176,7 @@
 <span class="sd">    https://xecluster.lngs.infn.it/dokuwiki/doku.php?id=xenon:xenon1t:processor:natural_breaks_clustering</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">split_index</span> <span class="o">&gt;</span> <span class="nb">len</span><span class="p">(</span><span class="n">center</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">split_index</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Ridiculous split index received!&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Ridiculous split index received!&quot;</span><span class="p">)</span>
     <span class="n">numerator</span> <span class="o">=</span> <span class="n">_sad_fallback</span><span class="p">(</span><span class="n">center</span><span class="p">[:</span><span class="n">split_index</span><span class="p">],</span> <span class="n">areas</span><span class="o">=</span><span class="n">area</span><span class="p">[:</span><span class="n">split_index</span><span class="p">],</span> <span class="n">fallback</span><span class="o">=</span><span class="n">deviation</span><span class="p">[:</span><span class="n">split_index</span><span class="p">])</span>
     <span class="n">numerator</span> <span class="o">+=</span> <span class="n">_sad_fallback</span><span class="p">(</span><span class="n">center</span><span class="p">[</span><span class="n">split_index</span><span class="p">:],</span> <span class="n">areas</span><span class="o">=</span><span class="n">area</span><span class="p">[</span><span class="n">split_index</span><span class="p">:],</span> <span class="n">fallback</span><span class="o">=</span><span class="n">deviation</span><span class="p">[</span><span class="n">split_index</span><span class="p">:])</span>
     <span class="n">denominator</span> <span class="o">=</span> <span class="n">_sad_fallback</span><span class="p">(</span><span class="n">center</span><span class="p">,</span> <span class="n">areas</span><span class="o">=</span><span class="n">area</span><span class="p">,</span> <span class="n">fallback</span><span class="o">=</span><span class="n">deviation</span><span class="p">)</span>
@@ -218,7 +218,7 @@
       
       |
       Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.7</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
       
     </div>
 
