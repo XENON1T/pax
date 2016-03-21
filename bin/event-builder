@@ -98,8 +98,7 @@ def main():
                         argval = int(factor * argval)
                     trigger_settings_override[argname] = argval
 
-            trigger_settings_override['trigger_data_filename'] = os.path.join(run_doc['name' if args.secret_mode
-                                                                                      else 'location'],
+            trigger_settings_override['trigger_data_filename'] = os.path.join(data_info_entry['location'],
                                                                               'trigger_data.hdf5')
 
             log.info("Building events for %s", run_doc['name'])
