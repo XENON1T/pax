@@ -78,6 +78,8 @@ def main():
                 argval = getattr(args, argname)
                 if argval is not None:
                     mongo_settings_override[argname] = argval
+            if args.search_window is not None:
+                mongo_settings_override['search_window'] = args.search_window * units.s
 
             # Override trigger settings
             #   First priority: command line args
@@ -86,8 +88,7 @@ def main():
             trigger_settings_override = {}
             if not args.ignore_rundb_trigger_settings:
                 trigger_settings_override.update(run_doc['trigger'].get('config', {}))
-            for argname, factor in (('search_window', units.s),
-                                    ('left_extension', units.us),
+            for argname, factor in (('left_extension', units.us),
                                     ('right_extension', units.us),
                                     ('signal_separation', units.us),
                                     ('event_separation', units.us)):
