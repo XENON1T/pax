@@ -197,6 +197,10 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                               pax_to_human_time(times[0]),
                               pax_to_human_time(times[-1]))
 
+                if not self.data_taking_ended and last_time_searched - times[0] < 0.1 * self.search_window:
+                    self.log.info("Most of search window seems empty, probably we're running ahead of DAQ, sleep a sec")
+                    time.sleep(1)
+
             elif not self.data_taking_ended:
                 # We may be running ahead of the DAQ, then sleep a bit
                 # TODO: this wait condition isalso triggered if there is a big hole in the data.

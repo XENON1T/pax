@@ -140,7 +140,8 @@ class Trigger(object):
         for plugin in self.plugins:
             self.log.debug("Passing data to plugin %s" % plugin.name)
             plugin.process(data)
-        self.log.info("Trigger found %d event ranges in this batch of data." % len(data.event_ranges))
+        self.log.info("Trigger found %d event ranges, %d signals in %d pulse times." % (
+            len(data.event_ranges), len(data.signals), len(data.times)))
 
         # Update the end of run info
         self.end_of_run_info['times_read'] += len(data.times)
