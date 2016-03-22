@@ -111,7 +111,7 @@ class CheckBounds(plugin.TransformPlugin):
 
                 if not self.truncate_pulses_partially_outside:
                     raise exceptions.PulseBeyondEventError(message)
-                #self.log.warning(message)
+                self.log.warning(message)
 
                 # Truncate the pulse. Remember start_index < 0!
                 if start_index < 0:

@@ -30,6 +30,7 @@ class AdHocClassification(plugin.TransformPlugin):
 
         return event
 
+
 class GasXenonZeroFieldClassification(plugin.TransformPlugin):
 
     def transform_event(self, event):
