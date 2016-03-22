@@ -167,15 +167,14 @@ def setup_logging(loglevel='DEBUG'):
 
 
 def get_command_line_arguments():
-    """Return the parserd arguments from the command line (from ArgumentParser.parse_args())
+    """Return the parsed arguments from the command line (from ArgumentParser.parse_args())
     """
-    parser = argparse.ArgumentParser(description="Build XENON1T events from the DAQ MongoDB.")
+    parser = argparse.ArgumentParser(description="Build XENON1T events from the DAQ.")
 
     parser.add_argument('--config',
-                        default=['event_builder'],
+                        default=['eventbuilder'],
                         nargs='+',
-                        help="Name(s) of the pax configuration(s) to use. "
-                             "Should be a space-separated list; default is only event_builder")
+                        help="Name(s) of the pax configuration(s) to use, default is eventbuilder. ")
     parser.add_argument('--config_path',
                         default=[],
                         nargs='+',

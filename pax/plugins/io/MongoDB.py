@@ -130,46 +130,61 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
 
         self.trigger = trigger.Trigger(pax_config=self.processor.config)
 
+    def get_last_pulse_time(self):
+        """Returns time (in pax units, i.e. ns) at which the pulse which starts last in the run stops
+        It would have been nicer to know the last stop time, but pulses are sorted by start time.
+        """
+        cu = self.input_collection.find().sort(self.start_key, direction=pymongo.DESCENDING).limit(1)
+        return self._from_mt(list(cu)[0][self.stop_key])
+
     def get_events(self):
+        self.refresh_run_doc()
+
         last_time_searched = 0  # ns
+        last_time_to_search = None
         next_event_number = 0
 
-        # Used to timeout if DAQ crashes and no data will come
-        time_of_last_daq_response = time.time()
-        last_time_to_search = float('inf')
         more_data_coming = True
 
+        if self.data_taking_ended:
+            last_pulse_time = self.get_last_pulse_time()
+            self.log.info("The DAQ has stopped, last pulse time is %s" % pax_to_human_time(last_pulse_time))
+            # Does this correspond roughly to the run end time? If not, warn, DAQ may have crashed.
+            end_of_run_t = (self.run_doc['end'].timestamp() -
+                            self.run_doc['start'].timestamp()) * units.s
+            if end_of_run_t > last_pulse_time + 60 * units.s:
+                self.log.warning("Run is %s long according to run db, but last pulse in collection starts at %s. "
+                                 "Did the DAQ crash?" % (pax_to_human_time(end_of_run_t),
+                                                         pax_to_human_time(last_pulse_time)))
+
+            # Add 1 search window margin (in case the pulse is long, or another pulse started sooner but ends later)
+            last_time_to_search = last_pulse_time + self.search_window
+
         while more_data_coming:
-            # If the run is still ongoing, update the run document, so we know if the run ended.
-            # This must happen before querying for more data, to avoid a race condition where the run ends
-            # while the query is in process.
+
             if not self.data_taking_ended:
+                # Update the run document, so we know if the run ended.
+                # This must happen before querying for more data, to avoid a race condition where the run ends
+                # while the query is in process.
                 self.refresh_run_doc()
-
-            if self.data_taking_ended and last_time_to_search == float('inf'):
-                # If the run ended, find the "last" pulse
-                # best would be to query for the last stop time, but don't want to trigger a re-sort!
-                cu = self.input_collection.find().sort(self.start_key, direction=pymongo.DESCENDING).limit(1)
-                last_time_to_search = self._from_mt(list(cu)[0][self.stop_key])
-                self.log.info("The DAQ has stopped, last pulse time is %s" % pax_to_human_time(last_time_to_search))
-
-                # Does this correspond roughly to the run end time? If not, warn, DAQ may have crashed.
-                end_of_run_t = (self.run_doc['end'].timestamp() -
-                                self.run_doc['start'].timestamp()) * units.s
-                if end_of_run_t > last_time_to_search + 60 * units.s:
-                    self.log.warning("Run is %s long according to run db, but last pulse in collection starts at %s. "
-                                     "Did the DAQ crash?" % (pax_to_human_time(end_of_run_t),
-                                                             pax_to_human_time(last_time_to_search)))
-
-                # Add 1 search window margin (in case the pulse is long, or another pulse started sooner but ends later)
-                last_time_to_search += self.search_window
+                last_pulse_time = self.get_last_pulse_time()
+                if self.data_taking_ended:
+                    # Data taking just ended, we can define the time we should stop searching.
+                    last_time_to_search = last_pulse_time + self.search_window
+                else:
+                    # Make sure we only query data that is at least one search window away from the last pulse time,
+                    # to avoid querying near the ragged edge (where readers are inserting asynchronously).
+                    # Also make sure we only query once a full search window of such safe data is available (to avoid
+                    # mini-queries). So if search_window = 60 sec, we'll wait for 2 mins of data before our first query.
+                    if last_pulse_time - 2 * self.search_window < last_time_searched:
+                        self.log.info("DAQ has not taken sufficient data to continue. Sleeping 5 sec...")
+                        time.sleep(5)
 
             # Query for pulse start & stop times within a large search window
-            search_after = last_time_searched
-            self.log.info("Searching for pulses after %s", pax_to_human_time(search_after))
+            self.log.info("Searching for pulses after %s", pax_to_human_time(last_time_searched))
 
-            query = {self.start_key: {'$gt': self._to_mt(search_after),
-                                      '$lt': self._to_mt(search_after + self.search_window)}}
+            query = {self.start_key: {'$gt': self._to_mt(last_time_searched),
+                                      '$lt': self._to_mt(last_time_searched + self.search_window)}}
 
             if self.use_monary:
                 if self.config['can_get_area']:
@@ -211,42 +226,14 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                 self.log.info("Acquired pulse time data in range [%s, %s]",
                               pax_to_human_time(times[0]),
                               pax_to_human_time(times[-1]))
-
-                if not self.data_taking_ended and last_time_searched - times[0] < 0.1 * self.search_window:
-                    self.log.info("Most of search window seems empty, "
-                                  "probably we're running in pace with DAQ, sleep a sec")
-                    time.sleep(1)
-
-            elif not self.data_taking_ended:
-                # We may be running ahead of the DAQ, then sleep a bit
-                # TODO: this wait condition is also triggered if there is a big hole in the data.
-                # In that case we won't continue until the run has ended...
-                self.log.info("No pulses in search window, but run is still ongoing: "
-                              "sleeping a bit, not advancing search window.")
-                if time.time() - time_of_last_daq_response > 60:  # seconds
-                    if not self.secret_mode:
-                        status = self.runs.update_one(
-                            {'_id': self.config['run_doc_id']},
-                            {'$set': {'trigger.status': 'timeout',
-                                      'trigger.ended': True}})
-                        self.log.debug("Answer from updating rundb doc: %s" % status)
-                    raise RuntimeError('Timed out waiting for new data (DAQ crash?)')
-                time.sleep(1)  # TODO: configure
-                continue
-
             else:
-                self.log.info("No pulse data found")
+                self.log.info("No pulse data found.")
 
             # Record advancement of the search window
-            if self.data_taking_ended:
-                last_time_searched += self.search_window
-            else:
-                # We can't advance the entire search window, since the DAQ may not have filled it all the way.
-                # The condition len(x) == 0 and not self.data_taking_ended has already been dealt with, so ignore
-                # your editor's warning that last_start_time may not have been set yet.
-                last_time_searched = times[-1]
+            # We've ensured above that a full search window is always queried, even in live mode.
+            last_time_searched += self.search_window
 
-            more_data_coming = not last_time_searched > last_time_to_search
+            more_data_coming = (not self.data_taking_ended) or (last_time_searched < last_time_to_search)
             if not more_data_coming:
                 self.log.info("Searched to %s, which is beyond %s. This is the last batch of data" % (
                     pax_to_human_time(last_time_searched), pax_to_human_time(last_time_to_search)))
@@ -262,14 +249,8 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
                 yield EventProxy(event_number=next_event_number, data=data)
                 next_event_number += 1
 
-            # Trigger stopped giving event ranges: if more data is coming,
+            # Trigger stopped giving event ranges; if more data is coming,
             # we'll stay in loop and get more data for the trigger.
-
-            # Update time of last DAQ reponse
-            # This must be done here: building events and getting them all into the queue can take a long time
-            # especially since the queue must maintain a fixed size.
-            # We don't want to think the DAQ has crashed just because we're using too few CPUS.
-            time_of_last_daq_response = time.time()
 
         # All went well - print out status information
         # Get the end of run info from the trigger, and add the 'trigger.' prefix
