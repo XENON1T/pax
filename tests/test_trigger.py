@@ -17,10 +17,20 @@ class TestSignalFinder(unittest.TestCase):
         def get_signals(start_times, separation):
             times = np.zeros(len(start_times), dtype=trigger.times_dtype)
             times['time'] = start_times
-            sigf = signal_finder(times, separation, numba_signals_buffer,
-                                 coincidence_tally=np.zeros((1, 1)),
+            times['area'] = 10
+
+            sigf = signal_finder(times=times,
+                                 signal_separation=separation,
+                                 signal_buffer=numba_signals_buffer,
+
                                  next_save_time=int(10 * units.s),
-                                 dark_rate_save_interval=int(10 * units.s))
+                                 dark_rate_save_interval=int(10 * units.s),
+
+                                 all_pulses_tally=np.zeros(1),
+                                 lone_pulses_tally=np.zeros(1),
+                                 coincidence_tally=np.zeros((1, 1)),
+
+                                 gain_conversion_factors=10 * np.ones(1, dtype=np.float64))
             n_found = next(sigf)
             return numba_signals_buffer[:n_found]
 
@@ -48,12 +58,14 @@ class TestSignalFinder(unittest.TestCase):
         self.assertEqual(sigs[0]['left_time'], 1)
         self.assertEqual(sigs[0]['right_time'], 2)
         self.assertEqual(sigs[0]['n_pulses'], 2)
+        self.assertEqual(sigs[0]['area'], 200)
         self.assertAlmostEqual(sigs[0]['time_mean'], np.mean([1, 2]))
         self.assertAlmostEqual(sigs[0]['time_rms'], np.std([1, 2]))
         self.assertEqual(sigs[0]['left_time'], 1)
         self.assertEqual(sigs[1]['left_time'], 100)
         self.assertEqual(sigs[1]['right_time'], 102)
         self.assertEqual(sigs[1]['n_pulses'], 3)
+        self.assertEqual(sigs[1]['area'], 300)
         self.assertAlmostEqual(sigs[1]['time_mean'], np.mean([100, 101, 102]))
         self.assertAlmostEqual(sigs[1]['time_rms'], np.std([100, 101, 102]))
 

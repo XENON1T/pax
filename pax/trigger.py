@@ -54,6 +54,7 @@ class Trigger(object):
 
     def __init__(self, pax_config):
         self.log = logging.getLogger('Trigger')
+        self.pax_config = pax_config
         self.config = pax_config['Trigger']
         self.pmt_data = pax_config['DEFAULT']['pmts']
 

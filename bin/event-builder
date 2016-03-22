@@ -119,8 +119,8 @@ def main():
                     '2': {str(level): 1}}
 
             try:
-                p = core.Processor(config_names=['XENON1T' if args.detector == 'tpc' else 'XENON1T_MV',
-                                                 'eventbuilder'],
+                p = core.Processor(config_names=['XENON1T' if args.detector == 'tpc' else 'XENON1T_MV'] + args.config,
+                                   config_paths=args.config_path,
                                    config_dict=config_dict)
                 p.run()
 
@@ -170,6 +170,16 @@ def get_command_line_arguments():
     """Return the parserd arguments from the command line (from ArgumentParser.parse_args())
     """
     parser = argparse.ArgumentParser(description="Build XENON1T events from the DAQ MongoDB.")
+
+    parser.add_argument('--config',
+                        default=['event_builder'],
+                        nargs='+',
+                        help="Name(s) of the pax configuration(s) to use. "
+                             "Should be a space-separated list; default is only event_builder")
+    parser.add_argument('--config_path',
+                        default=[],
+                        nargs='+',
+                        help="Path(s) of the configuration file(s) to use.")
 
     parser.add_argument('--cpus', default=1, nargs='?',
                         help="Number of CPUs to use. Default is 1; can be 'all'.")
