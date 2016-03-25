@@ -79,7 +79,7 @@ class Processor:
             self.input_queue = pc['input_queue']
             self.output_queue = pc.get('output_queue', None)
             # Remove multiprocessing objects from config datastructure,
-            # so it can be serialized later
+            # so the configuration can still be serialized to JSON later
             for k in ['input_queue', 'output_queue', 'status']:
                 pc[k] = None
 

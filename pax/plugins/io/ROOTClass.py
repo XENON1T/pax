@@ -5,6 +5,9 @@ import array
 import json
 import pickle
 import hashlib
+import sysconfig
+import time
+import logging
 
 import numpy as np
 import ROOT
@@ -13,6 +16,8 @@ from rootpy import stl
 import pax  # For version number
 from pax import plugin, datastructure, exceptions
 from pax.datastructure import EventProxy
+
+log = logging.getLogger('ROOTClass_helpers')
 
 # Header for the automatically generated C++ code
 # Must be separate from CLASS_TEMPLATE, since final file includes several classes
@@ -56,10 +61,11 @@ class EncodeROOTClass(plugin.TransformPlugin):
     def transform_event(self, event):
         if self.class_code is None:
             # Generate and load the pax event class code
-            # TODO: This creates problems if a new event class is run for the first time in multiprocessing
-            # Then several cores will be trying to update the rootpy cache.
+            # Only master (in standalone mode) and processing_0 (in multiprocessing mode) are allowed to compile the lib
+            # to avoid race conditions / clashes
             self.class_code = OVERALL_HEADER + self._build_model_class(event)
-            load_event_class_code(self.class_code)
+            load_event_class_code(self.class_code,
+                                  other_process_compiles=(self.processor.worker_id not in ['master', 'processing_0']))
 
             if self.config['exclude_compilation_from_timer']:
                 self.processor.timer.punch()
@@ -227,8 +233,8 @@ class WriteROOTClass(plugin.OutputPlugin):
     def write_event(self, event_proxy):
         if not self.tree_created:
             # Load the event class code, ships with event_proxy
-            # We won't have to compile the library again, EncodeROOTCLass should have already done it.
-            load_event_class_code(event_proxy.data['class_code'])
+            load_event_class_code(event_proxy.data['class_code'],
+                                  other_process_compiles=(self.processor.worker_id != 'master'))
 
             # Store the event class code in pax_event_class
             ROOT.TNamed('pax_event_class', event_proxy.data['class_code']).Write()
@@ -357,37 +363,38 @@ def find_class_names(filename):
     return classnames
 
 
-def load_event_class_code(class_code):
-    """Loads the pax event class contained in code.
+def load_event_class_code(class_code, other_process_compiles=False):
+    """Load the pax event class contained in class_code.
     Computes checksum, writes to temporary file, then calls load_event_class
+    If other_process_compiles = True,  will not compile the code, but waits for another process to do so.
     """
     checksum = hashlib.md5(class_code.encode()).hexdigest()
-
-    # Write the pax event class
-    # TODO: Can this cause conflicts if several threads try to read & write at the same time?
-    # If so, resolve by using temporary directory.
     class_filename = 'pax_event_class-%s.cpp' % checksum
-    with open(class_filename, mode='w') as outfile:
-        outfile.write(class_code)
+    libfile = get_libname(class_filename)
 
-    # Compile the class (or decide we don't have to), then clean up the directory
-    load_event_class(os.path.abspath(class_filename))
+    if other_process_compiles:
+        while not os.path.exists(libfile):
+            log.debug("Waiting for another process to compile the pax event class")
+            time.sleep(5)
+        log.info("Compiled pax event class has been found, "
+                 "sleeping 10 sec to ensure compilation and dictionary generation have finished")
+        time.sleep(10)
+    else:
+        with open(class_filename, mode='w') as outfile:
+            outfile.write(class_code)
+
+        # Compile the class (or decide we don't have to)
+        load_event_class(os.path.abspath(class_filename))
 
 
 def load_event_class(filename, force_recompile=False):
     """Read a C++ root class definition from filename, generating dictionaries for vectors of classes
     """
-    # Load (and if necessary compile) the file in ROOT
+    # Load , or if necessary compile, the file in ROOT
     # Unfortunately this must happen in the current directory.
     # I tried rootpy.register_file, but it is very weird: compilation is triggered only when you make an object
-    # tried making a object right after, then get weird segfault later... don't we all just love C++...
-    libname = os.path.splitext(filename)[0] + "_cpp"
-    import sysconfig
-    if six.PY2:
-        libname = libname + sysconfig.get_config_var('SO')
-    else:
-        libname = libname + sysconfig.get_config_var('SHLIB_SUFFIX')
-
+    # I then tried to make a object right after, but get a weird segfault later... don't we all just love C++...
+    libname = get_libname(filename)
     if os.path.exists(libname) and not force_recompile:
         if ROOT.gSystem.Load(libname) not in (0, 1):
             raise RuntimeError("failed to load the library '{0}'".format(libname))
@@ -398,6 +405,11 @@ def load_event_class(filename, force_recompile=False):
     # If you don't do this, the vectors will actually be useless sterile root objects
     for name in find_class_names(filename):
         stl.generate("std::vector<%s>" % name, ['<vector>', "%s" % filename], True)
+
+
+def get_libname(cppname):
+    """Returns name of cpp file that would be obtained after compiling"""
+    return os.path.splitext(cppname)[0] + "_cpp" + sysconfig.get_config_var('SO' if six.PY2 else 'SHLIB_SUFFIX')
 
 
 def load_pax_event_class_from_root(rootfilename):
