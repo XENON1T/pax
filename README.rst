@@ -80,8 +80,8 @@ some contain C++ code which must be compiled. With Anaconda you can get appropri
 for your platform using the `conda` tool as follows. Make sure to replace <environment_name> with the desired name of your environment (usually it is 'pax' for central installations) in the following command::
 
   conda update conda
-  conda create -n <environment_name> python=3.4 root=5 rootpy numpy scipy matplotlib pandas cython h5py numba pip python-snappy pytables scikit-learn psutil
-  
+  conda create -n <environment_name> python=3.4 root rootpy numpy scipy matplotlib pandas cython h5py numba pip python-snappy pytables scikit-learn psutil pymongo
+
 If you do not want ROOT support, or have ROOT-related issues, you can leave out root and rootpy in the above command. Everything in pax, except of course ROOT I/O, will continue to work. You can also try root=6 for the newer version of ROOT.
 
 If you want to use Ipython notebook within this environment (e.g. to import pax libraries), you should also add 'ipython ipython-notebook' to the list of libraries above.

@@ -29,3 +29,20 @@ class AdHocClassification(plugin.TransformPlugin):
                         peak.type = 's2'
 
         return event
+
+
+class GasXenonZeroFieldClassification(plugin.TransformPlugin):
+
+    def transform_event(self, event):
+
+        for peak in event.peaks:
+            # Don't work on noise and lone_hit
+            if peak.type in ('noise', 'lone_hit'):
+                continue
+
+            width = peak.hit_time_std
+
+            if width > 30 * units.ns and width < 250 * units.ns:
+                peak.type = 's1'
+
+        return event

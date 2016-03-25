@@ -110,6 +110,68 @@ class WaveformSimulator(plugin.InputPlugin):
         self.store_true_peak('s1', t, x, y, z, photon_times)
         return self.simulator.queue_signal(photon_times, x=x, y=y, z=z)
 
+    def s2_after_pulses(self):
+        """
+        :simulate the s2 after pulses
+        :the after pulses are assumed to be uniformly distributed in X-Y,
+        :so are not related to where the photon is generated
+        :We simplify the generation, assuming S2-after pulses
+        :will not further generate secondary s2 after pulses
+        """
+        photon_detection_times = []
+        # join all the photon detection times in channels
+        for channel_id, single_channel_photon_detection_times \
+                in self.simulator.arrival_times_per_channel.items():
+            photon_detection_times.extend(
+                np.array(single_channel_photon_detection_times)
+                )
+        # generate the s2 after pulses for each type
+        s2_ap_electron_times = []
+        for s2_ap_data in self.config['s2_afterpulse_types'].values():
+            # calculate how many s2 after pulses
+            num_s2_afterpulses = np.random.binomial(
+                n=len(photon_detection_times),
+                p=s2_ap_data['p']
+                )
+            if num_s2_afterpulses == 0:
+                continue
+            # Find the time delay of the after pulses
+            dist_kwargs = s2_ap_data['time_parameters']
+            dist_kwargs['size'] = num_s2_afterpulses
+            s2_ap_electron_times.extend(
+                np.random.choice(
+                    photon_detection_times, size=num_s2_afterpulses,
+                    replace=False) +
+                getattr(
+                    np.random,
+                    s2_ap_data['time_distribution'])(**dist_kwargs)
+                )
+        # generate the s2 photons of each s2 pulses one by one
+        # the X-Y of after pulse is randomized, Z is set to 0
+        # randomize an array of X-Y
+        rsquare = np.random.uniform(
+            0,
+            np.power(self.config['tpc_radius'], 2.),
+            len(s2_ap_electron_times)
+            )
+        theta = np.random.uniform(0, 3.141592653, len(s2_ap_electron_times))
+        X = np.sqrt(rsquare)*np.cos(theta)
+        Y = np.sqrt(rsquare)*np.sin(theta)
+        for electron_id, s2_ap_electron_time \
+                in enumerate(s2_ap_electron_times):
+            s2_ap_photon_times = self.simulator.s2_scintillation(
+                [s2_ap_electron_time],
+                X[electron_id],
+                Y[electron_id]
+                )
+            # queue the photons caused by the s2 after pulses
+            self.simulator.queue_signal(
+                s2_ap_photon_times,
+                X[electron_id],
+                Y[electron_id],
+                -self.config['gate_to_anode_distance']
+                )
+
     def get_instructions_for_next_event(self):
         raise NotImplementedError()
 
@@ -140,6 +202,12 @@ class WaveformSimulator(plugin.InputPlugin):
             if int(q['s2_electrons']):
                 self.s2(electrons=int(q['s2_electrons']),
                         t=float(q['t']), x=x, y=y, z=z)
+
+        # Based on the generated photon timing
+        # generate the after pulse
+        # currently make it simple, assuming s2 after pulses
+        # will not generate further s2 after pulses.
+        self.s2_after_pulses()
 
         event = self.simulator.make_pax_event()
         if hasattr(self, 'dataset_name'):
@@ -286,27 +354,54 @@ class WaveformSimulatorFromOpticalGEANT(WaveformSimulator):
     The truth file produced by this input plugin will be empty (as WaveformSimulator.s1 and .s2 never get called)
     """
 
+    variables = (
+        # Fax name        #Root name    #Conversion factor (multiplicative)
+        ('photon_arriving_times',             'time',     1000000000.),
+        ('photon_hit_pmt_ids',             'pmthitID',     1),
+    )
+
     def startup(self):
-        raise NotImplementedError("WaveformSimulatorFromGEANT is not yet implemented!")
         import ROOT
         self.f = ROOT.TFile(self.config['input_name'])
-        self.t = self.f.Get("your_tree")
+        if not self.f.IsOpen():
+            raise ValueError(
+                "Cannot open ROOT file %s" % self.config['input_name']
+                )
+        self.t = self.f.Get("events/events")
         WaveformSimulator.startup(self)
         self.number_of_events = self.t.GetEntries() * self.config['event_repetitions']
 
     def get_instructions_for_next_event(self):
         for event_i in range(self.number_of_events):
+            self.t.GetEntry(event_i)
             instructions = {}
+            instructions['instruction'] = event_i
             # fill instructions to look like this:
-            # {channel: [arrival times], next channel: [arrival times]}
-            # where arrival time is in ns since the start of the event
-            # (which can e.g. by your first photon time + a little bit)
+            # {[photon_hit_pmt_ids], [photon_arriving_times]}
+            for (
+                    variable_name, root_thing_name,
+                    conversion_factor
+                    ) in self.variables:
+                # get stuff from root
+                # the two variables in this plugin are all vectors
+                values = np.reshape(
+                    getattr(self.t, root_thing_name),
+                    self.t.nsteps
+                    )
+                conversion_factors = [conversion_factor]*self.t.nsteps
+                instructions[variable_name] = [
+                    x*y for x, y in zip(values, conversion_factors)
+                    ]
             yield instructions
 
     def simulate_single_event(self, instructions):
         self.simulator.clear_signals_queue()
-        for channel, arrival_times in instructions.items():
-            self.simulator.arrival_times_per_channel[channel] = arrival_times
+        for (channel, arr_time) in zip(
+                instructions['photon_hit_pmt_ids'],
+                instructions['photon_arriving_times']
+                ):
+            self.simulator.arrival_times_per_channel[channel].append(arr_time)
+        self.s2_after_pulses()
         event = self.simulator.make_pax_event()
         event.event_number = self.current_event
         return event
