@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax package &mdash; Processor for Analyzing XENON1T 4.6.1 documentation</title>
+    <title>pax package &mdash; Processor for Analyzing XENON1T 4.7.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '4.6.1',
+        VERSION:     '4.7.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.6.1 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.7.0 documentation" href="index.html" />
    
   
   <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
@@ -89,6 +89,17 @@
 </ul>
 </li>
 <li class="toctree-l2"><a class="reference internal" href="pax.plugins.html#module-pax.plugins">Module contents</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="pax.trigger_plugins.html">pax.trigger_plugins package</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="pax.trigger_plugins.html#submodules">Submodules</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pax.trigger_plugins.html#module-pax.trigger_plugins.ClassifySignals">pax.trigger_plugins.ClassifySignals module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pax.trigger_plugins.html#module-pax.trigger_plugins.DecideTriggers">pax.trigger_plugins.DecideTriggers module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pax.trigger_plugins.html#module-pax.trigger_plugins.FindSignals">pax.trigger_plugins.FindSignals module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pax.trigger_plugins.html#module-pax.trigger_plugins.GroupTriggers">pax.trigger_plugins.GroupTriggers module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pax.trigger_plugins.html#module-pax.trigger_plugins.HandleEdgeThings">pax.trigger_plugins.HandleEdgeThings module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pax.trigger_plugins.html#module-pax.trigger_plugins.SaveSignals">pax.trigger_plugins.SaveSignals module</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pax.trigger_plugins.html#module-pax.trigger_plugins">Module contents</a></li>
 </ul>
 </li>
 </ul>
@@ -360,10 +371,11 @@ position - pax.datastructure.ReconstructedPosition instance</p>
 <dl class="method">
 <dt id="pax.MongoManager.MongoManager.get_database">
 <code class="descname">get_database</code><span class="sig-paren">(</span><em>database_name=None</em>, <em>uri=None</em>, <em>monary=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/MongoManager.html#MongoManager.get_database"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.MongoManager.MongoManager.get_database" title="Permalink to this definition">¶</a></dt>
-<dd><p>Get a connection to the database_name. Returns Mongo database access object.
+<dd><p>Get a connection to the database_name. Returns Mongo database object.
 If you provide a mongodb connection string uri, we will insert user &amp; password into it,
 otherwise one will be built from the configuration settings.
-If database_name=None, will connect to the default database of the uri.
+If database_name=None, will connect to the default database of the uri. database=something
+overrides event the uri&#8217;s specification of a database.
 If there is already a client connecting to this database, no new mongoclient will be created.</p>
 </dd></dl>
 
@@ -902,6 +914,12 @@ floats have rounding that result in loss of precision.</p>
 <dt id="pax.datastructure.Event.sum_waveforms">
 <code class="descname">sum_waveforms</code><em class="property"> = &lt;pax.data_model.ListField object&gt;</em><a class="headerlink" href="#pax.datastructure.Event.sum_waveforms" title="Permalink to this definition">¶</a></dt>
 <dd><p>A list <a class="reference internal" href="#pax.datastructure.SumWaveform" title="pax.datastructure.SumWaveform"><code class="xref py py-class docutils literal"><span class="pre">pax.datastructure.SumWaveform</span></code></a> objects.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Event.trigger_signals">
+<code class="descname">trigger_signals</code><em class="property"> = array([],        dtype=[('area', '&lt;f8'), ('left_time', '&lt;i8'), ('n_contributing_channels', '&lt;i8'), ('n_pulses', '&lt;i8'), ('right_time', '&lt;i8'), ('time_mean', '&lt;f8'), ('time_rms', '&lt;f8'), ('trigger', '?'), ('type', '&lt;i8')])</em><a class="headerlink" href="#pax.datastructure.Event.trigger_signals" title="Permalink to this definition">¶</a></dt>
+<dd><p>Array of trigger signals contained in the event</p>
 </dd></dl>
 
 </dd></dl>
@@ -1616,6 +1634,72 @@ This is NOT related to drift time, which is an interaction-level quantity!</p>
 
 </dd></dl>
 
+<dl class="class">
+<dt id="pax.datastructure.TriggerSignal">
+<em class="property">class </em><code class="descclassname">pax.datastructure.</code><code class="descname">TriggerSignal</code><span class="sig-paren">(</span><em>kwargs_dict=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/datastructure.html#TriggerSignal"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.datastructure.TriggerSignal" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="#pax.data_model.StrictModel" title="pax.data_model.StrictModel"><code class="xref py py-class docutils literal"><span class="pre">pax.data_model.StrictModel</span></code></a></p>
+<p>A simplified peak class which is produced by the trigger
+Like Hit, this class not actually used. So default here are meaningless (except for type spec),
+np.zeros just sets all to zero.</p>
+<p>All times below are in ns since the start of the run only while we are in the trigger,
+but in ns since the start of the event as soon as the event is built. The conversion is done in
+MongoDB.ReadUntriggeredFiller.</p>
+<dl class="attribute">
+<dt id="pax.datastructure.TriggerSignal.area">
+<code class="descname">area</code><em class="property"> = nan</em><a class="headerlink" href="#pax.datastructure.TriggerSignal.area" title="Permalink to this definition">¶</a></dt>
+<dd><p>Total area in the signal (gain-weighted sum of integrals found by Kodiaq pulse integration)</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.TriggerSignal.left_time">
+<code class="descname">left_time</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.TriggerSignal.left_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Time at which the signal starts.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.TriggerSignal.n_contributing_channels">
+<code class="descname">n_contributing_channels</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.TriggerSignal.n_contributing_channels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of channels contributing at least 1 pulse to this signal</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.TriggerSignal.n_pulses">
+<code class="descname">n_pulses</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.TriggerSignal.n_pulses" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of pulses contributing to this signal</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.TriggerSignal.right_time">
+<code class="descname">right_time</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.TriggerSignal.right_time" title="Permalink to this definition">¶</a></dt>
+<dd><p>Time at which the signal ends</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.TriggerSignal.time_mean">
+<code class="descname">time_mean</code><em class="property"> = 0.0</em><a class="headerlink" href="#pax.datastructure.TriggerSignal.time_mean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Mean pulse time start time</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.TriggerSignal.time_rms">
+<code class="descname">time_rms</code><em class="property"> = nan</em><a class="headerlink" href="#pax.datastructure.TriggerSignal.time_rms" title="Permalink to this definition">¶</a></dt>
+<dd><p>Root mean square deviation of pulse start times</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.TriggerSignal.trigger">
+<code class="descname">trigger</code><em class="property"> = False</em><a class="headerlink" href="#pax.datastructure.TriggerSignal.trigger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Did this signal cause a trigger?</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.TriggerSignal.type">
+<code class="descname">type</code><em class="property"> = 0</em><a class="headerlink" href="#pax.datastructure.TriggerSignal.type" title="Permalink to this definition">¶</a></dt>
+<dd><p>&#8220;Type&#8221; of the signal. 1 for S1 candidates, 2 for S2 candidates</p>
+</dd></dl>
+
+</dd></dl>
+
 </div>
 <div class="section" id="module-pax.dsputils">
 <span id="pax-dsputils-module"></span><h2>pax.dsputils module<a class="headerlink" href="#module-pax.dsputils" title="Permalink to this headline">¶</a></h2>
@@ -1711,14 +1795,17 @@ We&#8217;ll also ensure any confused_channels not in channels_in_pattern are ign
 </div>
 <div class="section" id="module-pax.formats">
 <span id="pax-formats-module"></span><h2>pax.formats module<a class="headerlink" href="#module-pax.formats" title="Permalink to this headline">¶</a></h2>
-<p>Input/Output code1 for <em>processed</em> data</p>
+<p>Input/output code for tabular processed data formats
+Most work has migrated to the pax ROOTClass output format by now &#8211; this is retained for backwards compatibility
+and because csv is nice for debugging.</p>
 <p>Here are the definitions of how to serialize our data structure to and from various formats.
 Please be careful when editing this file:</p>
 <blockquote>
 <div><ul class="simple">
 <li>Do not add any dependencies (e.g. imports at head of file without try-except), this file has to stay import-able
 even if not all the python modules for all the formats are installed.</li>
-<li>Do not use python3-specific syntax, this file should be importable by python2 applications.</li>
+<li>Do not use python3-specific syntax, this file should be importable by python2 applications.
+(but in a sense this applies to all of pax, we aim to support python 2 and 3)</li>
 </ul>
 </div></blockquote>
 <dl class="class">
@@ -1996,7 +2083,7 @@ This is</p>
 
 <dl class="attribute">
 <dt id="pax.formats.ROOTDump.numpy_type">
-<code class="descname">numpy_type</code><em class="property"> = {'C': dtype('O'), 'I': &lt;class 'numpy.int32'&gt;, 'O': &lt;class 'bool'&gt;, 'L': &lt;class 'numpy.int64'&gt;, 'D': &lt;class 'numpy.float64'&gt;, 'F': &lt;class 'numpy.float32'&gt;}</em><a class="headerlink" href="#pax.formats.ROOTDump.numpy_type" title="Permalink to this definition">¶</a></dt>
+<code class="descname">numpy_type</code><em class="property"> = {'F': &lt;class 'numpy.float32'&gt;, 'O': &lt;class 'bool'&gt;, 'D': &lt;class 'numpy.float64'&gt;, 'C': dtype('O'), 'I': &lt;class 'numpy.int32'&gt;, 'L': &lt;class 'numpy.int64'&gt;}</em><a class="headerlink" href="#pax.formats.ROOTDump.numpy_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="method">
@@ -2011,7 +2098,7 @@ This is</p>
 
 <dl class="attribute">
 <dt id="pax.formats.ROOTDump.root_type">
-<code class="descname">root_type</code><em class="property"> = {'float32': '/F', 'float64': '/D', 'bool': '/O', 'S': '/C', 'int32': '/I', 'int16': '/S', 'int64': '/L'}</em><a class="headerlink" href="#pax.formats.ROOTDump.root_type" title="Permalink to this definition">¶</a></dt>
+<code class="descname">root_type</code><em class="property"> = {'int32': '/I', 'bool': '/O', 'float32': '/F', 'int16': '/S', 'S': '/C', 'float64': '/D', 'int64': '/L'}</em><a class="headerlink" href="#pax.formats.ROOTDump.root_type" title="Permalink to this definition">¶</a></dt>
 <dd></dd></dl>
 
 <dl class="attribute">
@@ -2432,6 +2519,101 @@ See <a class="reference external" href="http://docs.scipy.org/doc/scipy-0.14.0/r
 </dd></dl>
 
 </div>
+<div class="section" id="module-pax.trigger">
+<span id="pax-trigger-module"></span><h2>pax.trigger module<a class="headerlink" href="#module-pax.trigger" title="Permalink to this headline">¶</a></h2>
+<dl class="class">
+<dt id="pax.trigger.Trigger">
+<em class="property">class </em><code class="descclassname">pax.trigger.</code><code class="descname">Trigger</code><span class="sig-paren">(</span><em>pax_config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger.html#Trigger"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger.Trigger" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<p>XENON1T trigger main class
+This is responsible for running data by each of the trigger modules.</p>
+<dl class="method">
+<dt id="pax.trigger.Trigger.run">
+<code class="descname">run</code><span class="sig-paren">(</span><em>last_time_searched</em>, <em>start_times=()</em>, <em>channels=None</em>, <em>modules=None</em>, <em>areas=None</em>, <em>last_data=False</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger.html#Trigger.run"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger.Trigger.run" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run on the specified data, yields ((start time, stop time), signals in event, event type identifier)</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="pax.trigger.Trigger.shutdown">
+<code class="descname">shutdown</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger.html#Trigger.shutdown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger.Trigger.shutdown" title="Permalink to this definition">¶</a></dt>
+<dd><p>Shut down trigger, return dictionary with end-of-run information.</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.trigger.TriggerData">
+<em class="property">class </em><code class="descclassname">pax.trigger.</code><code class="descname">TriggerData</code><a class="reference internal" href="_modules/pax/trigger.html#TriggerData"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger.TriggerData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="attribute">
+<dt id="pax.trigger.TriggerData.event_ranges">
+<code class="descname">event_ranges</code><em class="property"> = array([], shape=(0, 2), dtype=int64)</em><a class="headerlink" href="#pax.trigger.TriggerData.event_ranges" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pax.trigger.TriggerData.last_data">
+<code class="descname">last_data</code><em class="property"> = False</em><a class="headerlink" href="#pax.trigger.TriggerData.last_data" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pax.trigger.TriggerData.last_time_searched">
+<code class="descname">last_time_searched</code><em class="property"> = 0</em><a class="headerlink" href="#pax.trigger.TriggerData.last_time_searched" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pax.trigger.TriggerData.signals">
+<code class="descname">signals</code><em class="property"> = array([],        dtype=[('area', '&lt;f8'), ('left_time', '&lt;i8'), ('n_contributing_channels', '&lt;i8'), ('n_pulses', '&lt;i8'), ('right_time', '&lt;i8'), ('time_mean', '&lt;f8'), ('time_rms', '&lt;f8'), ('trigger', '?'), ('type', '&lt;i8')])</em><a class="headerlink" href="#pax.trigger.TriggerData.signals" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pax.trigger.TriggerData.signals_by_event">
+<code class="descname">signals_by_event</code><em class="property"> = []</em><a class="headerlink" href="#pax.trigger.TriggerData.signals_by_event" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="attribute">
+<dt id="pax.trigger.TriggerData.times">
+<code class="descname">times</code><em class="property"> = array([],        dtype=[('time', '&lt;i8'), ('pmt', '&lt;i4'), ('area', '&lt;f8')])</em><a class="headerlink" href="#pax.trigger.TriggerData.times" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="pax.trigger.TriggerPlugin">
+<em class="property">class </em><code class="descclassname">pax.trigger.</code><code class="descname">TriggerPlugin</code><span class="sig-paren">(</span><em>trigger</em>, <em>config</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger.html#TriggerPlugin"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger.TriggerPlugin" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal"><span class="pre">object</span></code></p>
+<dl class="method">
+<dt id="pax.trigger.TriggerPlugin.shutdown">
+<code class="descname">shutdown</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger.html#TriggerPlugin.shutdown"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger.TriggerPlugin.shutdown" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="method">
+<dt id="pax.trigger.TriggerPlugin.startup">
+<code class="descname">startup</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger.html#TriggerPlugin.startup"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger.TriggerPlugin.startup" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.trigger.get_pmt_numbers">
+<code class="descclassname">pax.trigger.</code><code class="descname">get_pmt_numbers</code><a class="reference internal" href="_modules/pax/trigger.html#get_pmt_numbers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger.get_pmt_numbers" title="Permalink to this definition">¶</a></dt>
+<dd><dl class="docutils">
+<dt>Fills pmts_buffer with pmt numbers corresponding to channels, modules according to pmt_lookup matrix:</dt>
+<dd><ul class="first last simple">
+<li>pmt_lookup: lookup matrix for pmt numbers. First index is digitizer module, second is digitizer channel.</li>
+</ul>
+</dd>
+</dl>
+<p>Modifies pmts_buffer in-place.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="pax.trigger.h5py_append">
+<code class="descclassname">pax.trigger.</code><code class="descname">h5py_append</code><span class="sig-paren">(</span><em>dataset</em>, <em>records</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pax/trigger.html#h5py_append"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#pax.trigger.h5py_append" title="Permalink to this definition">¶</a></dt>
+<dd><p>Append records to h5py dataset, resizing axis=0 as needed
+This probably goes completely against the philosophy of hdf5, and is super convenient</p>
+</dd></dl>
+
+</div>
 <div class="section" id="module-pax.units">
 <span id="pax-units-module"></span><h2>pax.units module<a class="headerlink" href="#module-pax.units" title="Permalink to this headline">¶</a></h2>
 <p>Define unit system for pax (i.e., seconds, etc.)</p>
@@ -2513,6 +2695,7 @@ punch() returns ms since timer creation or last punch</p>
 <li><a class="reference internal" href="#module-pax.plugin">pax.plugin module</a></li>
 <li><a class="reference internal" href="#module-pax.recarray_tools">pax.recarray_tools module</a></li>
 <li><a class="reference internal" href="#module-pax.simulation">pax.simulation module</a></li>
+<li><a class="reference internal" href="#module-pax.trigger">pax.trigger module</a></li>
 <li><a class="reference internal" href="#module-pax.units">pax.units module</a></li>
 <li><a class="reference internal" href="#module-pax.utils">pax.utils module</a></li>
 <li><a class="reference internal" href="#module-pax">Module contents</a></li>

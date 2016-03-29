@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Event format &mdash; Processor for Analyzing XENON1T 4.6.1 documentation</title>
+    <title>Event format &mdash; Processor for Analyzing XENON1T 4.7.0 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '4.6.1',
+        VERSION:     '4.7.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="_static/jquery.js"></script>
     <script type="text/javascript" src="_static/underscore.js"></script>
     <script type="text/javascript" src="_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.6.1 documentation" href="index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.7.0 documentation" href="index.html" />
     <link rel="next" title="Plugins" href="plugin.html" />
     <link rel="prev" title="Installation and setup" href="faq.html" />
    
@@ -257,6 +257,12 @@ floats have rounding that result in loss of precision.</p>
 <dt id="pax.datastructure.Event.sum_waveforms">
 <code class="descname">sum_waveforms</code><em class="property"> = &lt;pax.data_model.ListField object&gt;</em><a class="headerlink" href="#pax.datastructure.Event.sum_waveforms" title="Permalink to this definition">¶</a></dt>
 <dd><p>A list <a class="reference internal" href="pax.html#pax.datastructure.SumWaveform" title="pax.datastructure.SumWaveform"><code class="xref py py-class docutils literal"><span class="pre">pax.datastructure.SumWaveform</span></code></a> objects.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="pax.datastructure.Event.trigger_signals">
+<code class="descname">trigger_signals</code><em class="property"> = array([],        dtype=[('area', '&lt;f8'), ('left_time', '&lt;i8'), ('n_contributing_channels', '&lt;i8'), ('n_pulses', '&lt;i8'), ('right_time', '&lt;i8'), ('time_mean', '&lt;f8'), ('time_rms', '&lt;f8'), ('trigger', '?'), ('type', '&lt;i8')])</em><a class="headerlink" href="#pax.datastructure.Event.trigger_signals" title="Permalink to this definition">¶</a></dt>
+<dd><p>Array of trigger signals contained in the event</p>
 </dd></dl>
 
 </dd></dl>

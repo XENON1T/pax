@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.datastructure &mdash; Processor for Analyzing XENON1T 4.6.1 documentation</title>
+    <title>pax.datastructure &mdash; Processor for Analyzing XENON1T 4.7.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '4.6.1',
+        VERSION:     '4.7.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.6.1 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.7.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
@@ -157,6 +157,47 @@
 
     <span class="c">#: Number of samples in this hit where the ADC saturates</span>
     <span class="n">n_saturated</span> <span class="o">=</span> <span class="mi">0</span>
+
+</div>
+<div class="viewcode-block" id="TriggerSignal"><a class="viewcode-back" href="../../pax.html#pax.datastructure.TriggerSignal">[docs]</a><span class="k">class</span> <span class="nc">TriggerSignal</span><span class="p">(</span><span class="n">StrictModel</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;A simplified peak class which is produced by the trigger</span>
+<span class="sd">    Like Hit, this class not actually used. So default here are meaningless (except for type spec),</span>
+<span class="sd">    np.zeros just sets all to zero.</span>
+
+<span class="sd">    All times below are in ns since the start of the run only while we are in the trigger,</span>
+<span class="sd">    but in ns since the start of the event as soon as the event is built. The conversion is done in</span>
+<span class="sd">    MongoDB.ReadUntriggeredFiller.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c">#: &quot;Type&quot; of the signal. 1 for S1 candidates, 2 for S2 candidates</span>
+    <span class="nb">type</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c">#: Did this signal cause a trigger?</span>
+    <span class="n">trigger</span> <span class="o">=</span> <span class="bp">False</span>
+
+    <span class="c">#: Time at which the signal starts.</span>
+    <span class="n">left_time</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c">#: Time at which the signal ends</span>
+    <span class="n">right_time</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c">#: Number of pulses contributing to this signal</span>
+    <span class="n">n_pulses</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c">#: Number of channels contributing at least 1 pulse to this signal</span>
+    <span class="n">n_contributing_channels</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="c">#: Mean pulse time start time</span>
+    <span class="n">time_mean</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="c">#: Root mean square deviation of pulse start times</span>
+    <span class="n">time_rms</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
+
+    <span class="c">#: Total area in the signal (gain-weighted sum of integrals found by Kodiaq pulse integration)</span>
+    <span class="n">area</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s">&#39;nan&#39;</span><span class="p">)</span>
+
+    <span class="c"># x = float(&#39;nan&#39;)</span>
+    <span class="c"># y = float(&#39;nan&#39;)</span>
 
 </div>
 <div class="viewcode-block" id="Peak"><a class="viewcode-back" href="../../pax.html#pax.datastructure.Peak">[docs]</a><span class="k">class</span> <span class="nc">Peak</span><span class="p">(</span><span class="n">StrictModel</span><span class="p">):</span>
@@ -575,6 +616,9 @@
     <span class="c">#: A list of :class:`pax.datastructure.Peak` objects.</span>
     <span class="n">peaks</span> <span class="o">=</span> <span class="n">ListField</span><span class="p">(</span><span class="n">Peak</span><span class="p">)</span>
 
+    <span class="c">#: Array of trigger signals contained in the event</span>
+    <span class="n">trigger_signals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">TriggerSignal</span><span class="o">.</span><span class="n">get_dtype</span><span class="p">())</span>
+
     <span class="c">#: Array of all hits found in event</span>
     <span class="c">#: These will get grouped into peaks during clustering</span>
     <span class="c">#: This is usually emptied before output (but not in LED mode)</span>
@@ -747,7 +791,7 @@
         <span class="k">return</span> <span class="n">peaks</span>
 
 
-<span class="c"># An event proxy object which can hold raw data bytes</span>
+<span class="c"># An event proxy object which can hold arbitrary data</span>
 <span class="c"># but still has an event_number attribute</span>
 <span class="c"># The decoders for and WriteZipped &amp; Readzipped knows what to do with this,</span>
 <span class="c"># other code will be fooled into treating it as a normal event</span>

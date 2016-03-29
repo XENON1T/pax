@@ -1,0 +1,62 @@
+pax.trigger_plugins package
+===========================
+
+Submodules
+----------
+
+pax.trigger_plugins.ClassifySignals module
+------------------------------------------
+
+.. automodule:: pax.trigger_plugins.ClassifySignals
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.trigger_plugins.DecideTriggers module
+-----------------------------------------
+
+.. automodule:: pax.trigger_plugins.DecideTriggers
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.trigger_plugins.FindSignals module
+--------------------------------------
+
+.. automodule:: pax.trigger_plugins.FindSignals
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.trigger_plugins.GroupTriggers module
+----------------------------------------
+
+.. automodule:: pax.trigger_plugins.GroupTriggers
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.trigger_plugins.HandleEdgeThings module
+-------------------------------------------
+
+.. automodule:: pax.trigger_plugins.HandleEdgeThings
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.trigger_plugins.SaveSignals module
+--------------------------------------
+
+.. automodule:: pax.trigger_plugins.SaveSignals
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Module contents
+---------------
+
+.. automodule:: pax.trigger_plugins
+    :members:
+    :undoc-members:
+    :show-inheritance:

@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.MongoManager &mdash; Processor for Analyzing XENON1T 4.6.1 documentation</title>
+    <title>pax.MongoManager &mdash; Processor for Analyzing XENON1T 4.7.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '4.6.1',
+        VERSION:     '4.7.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.6.1 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.7.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
@@ -59,10 +59,11 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">monary_enabled</span> <span class="o">=</span> <span class="n">MONARY_ENABLED</span>
 
 <div class="viewcode-block" id="MongoManager.get_database"><a class="viewcode-back" href="../../pax.html#pax.MongoManager.MongoManager.get_database">[docs]</a>    <span class="k">def</span> <span class="nf">get_database</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">database_name</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">uri</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">monary</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
-        <span class="sd">&quot;&quot;&quot;Get a connection to the database_name. Returns Mongo database access object.</span>
+        <span class="sd">&quot;&quot;&quot;Get a connection to the database_name. Returns Mongo database object.</span>
 <span class="sd">        If you provide a mongodb connection string uri, we will insert user &amp; password into it,</span>
 <span class="sd">        otherwise one will be built from the configuration settings.</span>
-<span class="sd">        If database_name=None, will connect to the default database of the uri.</span>
+<span class="sd">        If database_name=None, will connect to the default database of the uri. database=something</span>
+<span class="sd">        overrides event the uri&#39;s specification of a database.</span>
 <span class="sd">        If there is already a client connecting to this database, no new mongoclient will be created.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c"># Pattern of URI&#39;s we expect from database (without user &amp; pass)</span>
@@ -78,7 +79,9 @@
             <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">uri_pattern</span><span class="p">,</span> <span class="n">uri</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">m</span><span class="p">:</span>
                 <span class="c"># URI was provided, but without user &amp; pass.</span>
-                <span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">database_name</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">groups</span><span class="p">()</span>
+                <span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="p">,</span> <span class="n">_database_name</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">groups</span><span class="p">()</span>
+                <span class="k">if</span> <span class="n">database_name</span> <span class="ow">is</span> <span class="bp">None</span><span class="p">:</span>
+                    <span class="n">database_name</span> <span class="o">=</span> <span class="n">_database_name</span>
                 <span class="n">uri</span> <span class="o">=</span> <span class="n">full_uri_format</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">database</span><span class="o">=</span><span class="n">database_name</span><span class="p">,</span> <span class="n">host</span><span class="o">=</span><span class="n">host</span><span class="p">,</span> <span class="n">port</span><span class="o">=</span><span class="n">port</span><span class="p">,</span>
                                              <span class="n">user</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;user&#39;</span><span class="p">],</span> <span class="n">password</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;password&#39;</span><span class="p">])</span>
             <span class="k">else</span><span class="p">:</span>

@@ -7,6 +7,7 @@ Subpackages
 .. toctree::
 
     pax.plugins
+    pax.trigger_plugins
 
 Submodules
 ----------
@@ -119,6 +120,14 @@ pax.simulation module
 ---------------------
 
 .. automodule:: pax.simulation
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+pax.trigger module
+------------------
+
+.. automodule:: pax.trigger
     :members:
     :undoc-members:
     :show-inheritance:

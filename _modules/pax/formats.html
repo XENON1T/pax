@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>pax.formats &mdash; Processor for Analyzing XENON1T 4.6.1 documentation</title>
+    <title>pax.formats &mdash; Processor for Analyzing XENON1T 4.7.0 documentation</title>
     
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    '../../',
-        VERSION:     '4.6.1',
+        VERSION:     '4.7.0',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -23,7 +23,7 @@
     <script type="text/javascript" src="../../_static/jquery.js"></script>
     <script type="text/javascript" src="../../_static/underscore.js"></script>
     <script type="text/javascript" src="../../_static/doctools.js"></script>
-    <link rel="top" title="Processor for Analyzing XENON1T 4.6.1 documentation" href="../../index.html" />
+    <link rel="top" title="Processor for Analyzing XENON1T 4.7.0 documentation" href="../../index.html" />
     <link rel="up" title="Module code" href="../index.html" />
    
   
@@ -38,13 +38,16 @@
           <div class="body" role="main">
             
   <h1>Source code for pax.formats</h1><div class="highlight"><pre>
-<span class="sd">&quot;&quot;&quot;Input/Output code1 for *processed* data</span>
+<span class="sd">&quot;&quot;&quot;Input/output code for tabular processed data formats</span>
+<span class="sd">Most work has migrated to the pax ROOTClass output format by now -- this is retained for backwards compatibility</span>
+<span class="sd">and because csv is nice for debugging.</span>
 
 <span class="sd">Here are the definitions of how to serialize our data structure to and from various formats.</span>
 <span class="sd">Please be careful when editing this file:</span>
 <span class="sd"> - Do not add any dependencies (e.g. imports at head of file without try-except), this file has to stay import-able</span>
 <span class="sd">   even if not all the python modules for all the formats are installed.</span>
 <span class="sd"> - Do not use python3-specific syntax, this file should be importable by python2 applications.</span>
+<span class="sd">   (but in a sense this applies to all of pax, we aim to support python 2 and 3)</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="kn">import</span> <span class="nn">logging</span>
 <span class="kn">import</span> <span class="nn">os</span>

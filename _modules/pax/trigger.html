@@ -1,0 +1,281 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>pax.trigger &mdash; Processor for Analyzing XENON1T 4.7.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '4.7.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="Processor for Analyzing XENON1T 4.7.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9">
+
+  </head>
+  <body role="document">  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for pax.trigger</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">import</span> <span class="nn">logging</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">glob</span> <span class="kn">import</span> <span class="n">glob</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
+
+<span class="kn">import</span> <span class="nn">numba</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">h5py</span>
+
+<span class="kn">import</span> <span class="nn">pax</span>          <span class="c"># For version number</span>
+<span class="kn">from</span> <span class="nn">pax.utils</span> <span class="kn">import</span> <span class="n">PAX_DIR</span>
+<span class="kn">from</span> <span class="nn">pax.datastructure</span> <span class="kn">import</span> <span class="n">TriggerSignal</span>
+
+<span class="n">times_dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">([(</span><span class="s">&#39;time&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">),</span>
+                        <span class="p">(</span><span class="s">&#39;pmt&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">),</span>
+                        <span class="p">(</span><span class="s">&#39;area&#39;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+                        <span class="p">])</span>
+
+
+<div class="viewcode-block" id="TriggerPlugin"><a class="viewcode-back" href="../../pax.html#pax.trigger.TriggerPlugin">[docs]</a><span class="k">class</span> <span class="nc">TriggerPlugin</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">trigger</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trigger</span> <span class="o">=</span> <span class="n">trigger</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pmt_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger</span><span class="o">.</span><span class="n">pmt_data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">__class__</span><span class="o">.</span><span class="n">__name__</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Logging started for </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">end_of_run_info</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;config&#39;</span><span class="p">:</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">trigger</span><span class="o">.</span><span class="n">config</span><span class="p">}}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">startup</span><span class="p">()</span>
+
+<div class="viewcode-block" id="TriggerPlugin.startup"><a class="viewcode-back" href="../../pax.html#pax.trigger.TriggerPlugin.startup">[docs]</a>    <span class="k">def</span> <span class="nf">startup</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> does not define a startup.&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="TriggerPlugin.shutdown"><a class="viewcode-back" href="../../pax.html#pax.trigger.TriggerPlugin.shutdown">[docs]</a>    <span class="k">def</span> <span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;</span><span class="si">%s</span><span class="s"> does not define a shutdown.&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+
+</div></div>
+<div class="viewcode-block" id="TriggerData"><a class="viewcode-back" href="../../pax.html#pax.trigger.TriggerData">[docs]</a><span class="k">class</span> <span class="nc">TriggerData</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="n">times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">times_dtype</span><span class="p">)</span>
+    <span class="n">signals</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">TriggerSignal</span><span class="o">.</span><span class="n">get_dtype</span><span class="p">())</span>
+    <span class="n">event_ranges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+    <span class="n">signals_by_event</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">last_data</span> <span class="o">=</span> <span class="bp">False</span>
+    <span class="n">last_time_searched</span> <span class="o">=</span> <span class="mi">0</span>
+
+</div>
+<div class="viewcode-block" id="Trigger"><a class="viewcode-back" href="../../pax.html#pax.trigger.Trigger">[docs]</a><span class="k">class</span> <span class="nc">Trigger</span><span class="p">(</span><span class="nb">object</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;XENON1T trigger main class</span>
+<span class="sd">    This is responsible for running data by each of the trigger modules.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pax_config</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="s">&#39;Trigger&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pax_config</span> <span class="o">=</span> <span class="n">pax_config</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">pax_config</span><span class="p">[</span><span class="s">&#39;Trigger&#39;</span><span class="p">]</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pmt_data</span> <span class="o">=</span> <span class="n">pax_config</span><span class="p">[</span><span class="s">&#39;DEFAULT&#39;</span><span class="p">][</span><span class="s">&#39;pmts&#39;</span><span class="p">]</span>
+
+        <span class="c"># Build a (module, channel) -&gt;  lookup matrix</span>
+        <span class="c"># I whish numba had some kind of dictionary / hashtable support...</span>
+        <span class="c"># but this will work as long as the module serial numbers are small :-)</span>
+        <span class="c"># I will asssume always and everywhere the pmt position numbers start at 0 and increase by 1 continuously!</span>
+        <span class="c"># Initialize the matrix to n_channels, which is one above the last PMT</span>
+        <span class="c"># This will ensure we do not crash on data in &#39;ghost&#39; channels (not plugged in,</span>
+        <span class="c"># do report data in self-triggered mode)</span>
+        <span class="n">pmt_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pmt_data</span>
+        <span class="n">n_channels</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pmt_data</span><span class="p">)</span>
+        <span class="n">max_module</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">q</span><span class="p">[</span><span class="s">&#39;digitizer&#39;</span><span class="p">][</span><span class="s">&#39;module&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">pmt_data</span><span class="p">])</span>
+        <span class="n">max_channel</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">q</span><span class="p">[</span><span class="s">&#39;digitizer&#39;</span><span class="p">][</span><span class="s">&#39;channel&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">pmt_data</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pmt_lookup</span> <span class="o">=</span> <span class="n">n_channels</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="n">max_module</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">max_channel</span> <span class="o">+</span> <span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">pmt_data</span><span class="p">:</span>
+            <span class="n">module</span> <span class="o">=</span> <span class="n">q</span><span class="p">[</span><span class="s">&#39;digitizer&#39;</span><span class="p">][</span><span class="s">&#39;module&#39;</span><span class="p">]</span>
+            <span class="n">channel</span> <span class="o">=</span> <span class="n">q</span><span class="p">[</span><span class="s">&#39;digitizer&#39;</span><span class="p">][</span><span class="s">&#39;channel&#39;</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">pmt_lookup</span><span class="p">[</span><span class="n">module</span><span class="p">][</span><span class="n">channel</span><span class="p">]</span> <span class="o">=</span> <span class="n">q</span><span class="p">[</span><span class="s">&#39;pmt_position&#39;</span><span class="p">]</span>
+
+        <span class="c"># Create file &amp; datasets for extra trigger data</span>
+        <span class="nb">dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;trigger_data_filename&#39;</span><span class="p">])</span>
+        <span class="k">if</span> <span class="nb">dir</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="nb">dir</span><span class="p">):</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="nb">dir</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dark_monitor_data_file</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;trigger_data_filename&#39;</span><span class="p">],</span> <span class="n">mode</span><span class="o">=</span><span class="s">&#39;w&#39;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">end_of_run_info</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">times_read</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                    <span class="n">signals_found</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                    <span class="n">events_built</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                    <span class="n">start_timestamp</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">(),</span>
+                                    <span class="n">pax_version</span><span class="o">=</span><span class="n">pax</span><span class="o">.</span><span class="n">__version__</span><span class="p">,</span>
+                                    <span class="n">config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+
+        <span class="c"># Build a dictionary mapping trigger plugin names to classes</span>
+        <span class="n">tm_classes</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">module_filename</span> <span class="ow">in</span> <span class="n">glob</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">PAX_DIR</span> <span class="o">+</span> <span class="s">&#39;/trigger_plugins/*.py&#39;</span><span class="p">)):</span>
+            <span class="n">module_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">module_filename</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="k">if</span> <span class="n">module_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s">&#39;_&#39;</span><span class="p">):</span>
+                <span class="k">continue</span>
+
+            <span class="c"># Import the module, after which we can do pax.trigger_plugins.module_name</span>
+            <span class="nb">__import__</span><span class="p">(</span><span class="s">&#39;pax.trigger_plugins.</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">module_name</span><span class="p">,</span> <span class="nb">globals</span><span class="o">=</span><span class="nb">globals</span><span class="p">())</span>
+
+            <span class="c"># Now get all the trigger plugins defined in each module</span>
+            <span class="k">for</span> <span class="n">tp_name</span><span class="p">,</span> <span class="n">tp_class</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getmembers</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">pax</span><span class="o">.</span><span class="n">trigger_plugins</span><span class="p">,</span> <span class="n">module_name</span><span class="p">),</span>
+                                                        <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">==</span> <span class="nb">type</span> <span class="ow">and</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">TriggerPlugin</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="n">tp_name</span> <span class="o">==</span> <span class="s">&#39;TriggerPlugin&#39;</span><span class="p">:</span>
+                    <span class="k">continue</span>
+                <span class="k">if</span> <span class="n">tp_name</span> <span class="ow">in</span> <span class="n">tm_classes</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Two TriggerModule&#39;s named </span><span class="si">%s</span><span class="s">!&quot;</span> <span class="o">%</span> <span class="n">tp_name</span><span class="p">)</span>
+                <span class="n">tm_classes</span><span class="p">[</span><span class="n">tp_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">tp_class</span>
+
+        <span class="c"># Initialize the trigger plugins specified in the configuration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">plugins</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">tp_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s">&#39;trigger_plugins&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">tp_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tm_classes</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Don&#39;t know a trigger plugin called </span><span class="si">%s</span><span class="s">!&quot;</span> <span class="o">%</span> <span class="n">tp_name</span><span class="p">)</span>
+            <span class="n">conf</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">)</span>
+            <span class="n">conf</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">pax_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s">&#39;Trigger.</span><span class="si">%s</span><span class="s">&#39;</span> <span class="o">%</span> <span class="n">tp_name</span><span class="p">,</span> <span class="p">{}))</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">plugins</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tm_classes</span><span class="p">[</span><span class="n">tp_name</span><span class="p">](</span><span class="n">trigger</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">conf</span><span class="p">))</span>
+
+<div class="viewcode-block" id="Trigger.run"><a class="viewcode-back" href="../../pax.html#pax.trigger.Trigger.run">[docs]</a>    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">last_time_searched</span><span class="p">,</span> <span class="n">start_times</span><span class="o">=</span><span class="nb">tuple</span><span class="p">(),</span> <span class="n">channels</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">modules</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">areas</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">last_data</span><span class="o">=</span><span class="bp">False</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Run on the specified data, yields ((start time, stop time), signals in event, event type identifier)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">TriggerData</span><span class="p">()</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">last_time_searched</span> <span class="o">=</span> <span class="n">last_time_searched</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">last_data</span> <span class="o">=</span> <span class="n">last_data</span>
+
+        <span class="c"># Enter the times into data</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">start_times</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">times_dtype</span><span class="p">)</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">times</span><span class="p">[</span><span class="s">&#39;time&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">start_times</span>
+        <span class="k">if</span> <span class="n">channels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span> <span class="ow">and</span> <span class="n">modules</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="c"># Convert the channel/module specs into pmt numbers.</span>
+            <span class="n">get_pmt_numbers</span><span class="p">(</span><span class="n">channels</span><span class="p">,</span> <span class="n">modules</span><span class="p">,</span> <span class="n">pmts_buffer</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">times</span><span class="p">[</span><span class="s">&#39;pmt&#39;</span><span class="p">],</span> <span class="n">pmt_lookup</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">pmt_lookup</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c"># If PMT numbers not specified, pretend everything is from a &#39;ghost&#39; pmt at # = n_channels</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">times</span><span class="p">[</span><span class="s">&#39;pmt&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pmt_data</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">areas</span> <span class="ow">is</span> <span class="ow">not</span> <span class="bp">None</span><span class="p">:</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">times</span><span class="p">[</span><span class="s">&#39;area&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">areas</span>
+
+        <span class="c"># Hand over to each of the trigger plugins in turn.</span>
+        <span class="c"># Notice we won&#39;t even try to sort the event ranges from different triggers by time: some triggers (like the</span>
+        <span class="c"># main trigger) can hold events back until next time we give them data, so this would be a thorny problem.</span>
+        <span class="k">for</span> <span class="n">plugin</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">plugins</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Passing data to plugin </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">plugin</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+            <span class="n">plugin</span><span class="o">.</span><span class="n">process</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s">&quot;Trigger found </span><span class="si">%d</span><span class="s"> event ranges, </span><span class="si">%d</span><span class="s"> signals in </span><span class="si">%d</span><span class="s"> pulse times.&quot;</span> <span class="o">%</span> <span class="p">(</span>
+            <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">event_ranges</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">signals</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">times</span><span class="p">)))</span>
+
+        <span class="c"># Update the end of run info</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">end_of_run_info</span><span class="p">[</span><span class="s">&#39;times_read&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">times</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">end_of_run_info</span><span class="p">[</span><span class="s">&#39;signals_found&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">signals</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">end_of_run_info</span><span class="p">[</span><span class="s">&#39;events_built&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">event_ranges</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">event_i</span><span class="p">,</span> <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">event_ranges</span><span class="p">):</span>
+            <span class="k">yield</span> <span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">),</span> <span class="n">data</span><span class="o">.</span><span class="n">signals_by_event</span><span class="p">[</span><span class="n">event_i</span><span class="p">]</span>
+</div>
+<div class="viewcode-block" id="Trigger.shutdown"><a class="viewcode-back" href="../../pax.html#pax.trigger.Trigger.shutdown">[docs]</a>    <span class="k">def</span> <span class="nf">shutdown</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Shut down trigger, return dictionary with end-of-run information.&quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">.</span><span class="n">debug</span><span class="p">(</span><span class="s">&quot;Shutting down the trigger&quot;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">plugins</span><span class="p">:</span>
+            <span class="n">p</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
+
+        <span class="c"># Close the trigger data file.</span>
+        <span class="c"># Note this must be done after shutting down the plugins, they may add something on shutdown as well.</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s">&#39;f&#39;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">f</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="c"># Add end-of-run info for the runs database</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">end_of_run_info</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">end_trigger_processing_timestamp</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()))</span>
+        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">plugins</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">end_of_run_info</span><span class="p">[</span><span class="n">p</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">end_of_run_info</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">end_of_run_info</span>
+
+</div></div>
+<span class="nd">@numba.jit</span><span class="p">(</span><span class="n">nopython</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+<div class="viewcode-block" id="get_pmt_numbers"><a class="viewcode-back" href="../../pax.html#pax.trigger.get_pmt_numbers">[docs]</a><span class="k">def</span> <span class="nf">get_pmt_numbers</span><span class="p">(</span><span class="n">channels</span><span class="p">,</span> <span class="n">modules</span><span class="p">,</span> <span class="n">pmts_buffer</span><span class="p">,</span> <span class="n">pmt_lookup</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Fills pmts_buffer with pmt numbers corresponding to channels, modules according to pmt_lookup matrix:</span>
+<span class="sd">     - pmt_lookup: lookup matrix for pmt numbers. First index is digitizer module, second is digitizer channel.</span>
+<span class="sd">    Modifies pmts_buffer in-place.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">channels</span><span class="p">)):</span>
+        <span class="n">pmts_buffer</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">pmt_lookup</span><span class="p">[</span><span class="n">modules</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">channels</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+
+</div>
+<div class="viewcode-block" id="h5py_append"><a class="viewcode-back" href="../../pax.html#pax.trigger.h5py_append">[docs]</a><span class="k">def</span> <span class="nf">h5py_append</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">records</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Append records to h5py dataset, resizing axis=0 as needed</span>
+<span class="sd">    This probably goes completely against the philosophy of hdf5, and is super convenient</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">records</span><span class="o">.</span><span class="n">shape</span><span class="p">):</span>
+        <span class="c"># Hack for appending a single record</span>
+        <span class="n">want_shape</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">dataset</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="n">want_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span>
+        <span class="n">records</span> <span class="o">=</span> <span class="n">records</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">want_shape</span><span class="p">))</span>
+    <span class="n">orig_size</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">dataset</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">orig_size</span> <span class="o">+</span> <span class="n">records</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">dataset</span><span class="p">[</span><span class="n">orig_size</span><span class="p">:]</span> <span class="o">=</span> <span class="n">records</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2014, Christopher Tunnell.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.3.1</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.6</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
