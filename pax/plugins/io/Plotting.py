@@ -68,7 +68,7 @@ class PlotBase(plugin.OutputPlugin):
                            "Skip counter at %s" % (self.config['plot_every'], self.skip_counter))
             return
 
-        self.trigger_time_ns = (event.start_time + self.config.get('trigger_time_in_event', 0)) / units.ns
+        self.trigger_time_ns = event.start_time / units.ns
         self.plot_event(event)
         self.finalize_plot(event.event_number)
 
@@ -143,7 +143,7 @@ class PlotBase(plugin.OutputPlugin):
         if log_y_axis:
             ax.set_ylim((0.9, plt.ylim()[1]))
 
-        self.draw_trigger_mark(1 if log_y_axis else 0, ax=ax)
+        self.draw_trigger_signals(event, y=1 if log_y_axis else 0, ax=ax)
 
         if show_peaks and event.peaks:
             self.color_peak_ranges(event, ax=ax)
@@ -203,13 +203,28 @@ class PlotBase(plugin.OutputPlugin):
                        color=shade_color,
                        alpha=0.1)
 
-    def draw_trigger_mark(self, y=0, ax=None):
-        """Draw a marker (orange star) indicating the event's trigger time"""
+    def draw_trigger_signals(self, event, y=0, ax=None):
+        """Draw markers (stars) indicating the signals found by the trigger"""
         if ax is None:
             ax = plt.gca()
-        trigger_time = self.config.get('trigger_time_in_event', None)
-        if trigger_time is not None:
-            ax.plot([trigger_time / units.us], [y], '*', color='orange', markersize=10)
+
+        self.log.debug("Drawing %d trigger signals" % len(event.trigger_signals))
+
+        for s in event.trigger_signals:
+            x = s['left_time'] / units.us
+            level = s['n_pulses']       # TODO: change to contributing channels or area
+            signal_type = s['type']
+            size_factor = 0.5 + 0.5 * np.log10(level)
+
+            ax.annotate(str(level), (x, y), fontsize=12 * size_factor,
+                        # xytext=(0, 0), textcoords='offset points',
+                        alpha=0.5)
+
+            ax.plot([x], [y],
+                    marker='*' if s['trigger'] else 'o',
+                    color={1: 'blue', 2: 'green', 3: 'orange'}.get(signal_type, 'gray'),
+                    linewidth=0, alpha=0.5,
+                    markersize=10 * size_factor)
 
     def plot_hitpattern(self, peak, array='top', ax=None):
         if ax is None:
@@ -390,6 +405,7 @@ class PlotChannelWaveforms2D(PlotBase):
             hits = source.all_hits
             pulses = source.pulses
             xlims = (0, source.length() * time_scale)
+            event = source
         elif isinstance(source, datastructure.Peak):
             hits = source.hits
             pulses = [event.pulses[i] for i in np.unique([h.found_in_pulse for h in hits])]
@@ -466,7 +482,6 @@ class PlotChannelWaveforms2D(PlotBase):
                     channel_ranges[i][0])
 
         self.color_peak_ranges(source, ax=ax)
-        self.draw_trigger_mark(0, ax=ax)
 
         # Make sure we always see all channels
         ax.set_ylim((-0.5, self.config['n_channels'] + 0.5))
@@ -729,9 +744,7 @@ class PeakViewer(PlotBase):
                                     (peak.right + peak_padding) * self.chwvs_2s_time_scale)
 
         # Update peak text
-        pos = peak.get_position_from_preferred_algorithm(['PosRecTopPatternFit', 'PosRecNeuralNet',
-                                                          'PosRecRobustWeightedMean', 'PosRecWeightedSum',
-                                                          'PosRecMaxPMT'])
+
         peak_text = 'Selected peak: %s at %d-%d, mean hit time %0.2fus\n' % (
             peak.type,
             peak.left,
@@ -744,12 +757,19 @@ class PeakViewer(PlotBase):
                      ' 50%% area range = %dns, 90%% area range = %dns\n' % (peak.hit_time_std,
                                                                             peak.range_area_decile[5],
                                                                             peak.range_area_decile[9])
-        peak_text += 'Chi2Gamma: %0.1f, /area_top: %0.1f, /channels_top: %0.1f\n' % (
-            pos.goodness_of_fit,
-            pos.goodness_of_fit / (peak.area_fraction_top * peak.area
-                                   if peak.area_fraction_top != 0 else float('nan')),
-            pos.goodness_of_fit / (peak.n_contributing_channels_top
-                                   if peak.n_contributing_channels_top != 0 else float('nan')))
+        try:
+            pos = peak.get_position_from_preferred_algorithm(['PosRecTopPatternFit', 'PosRecNeuralNet',
+                                                              'PosRecRobustWeightedMean', 'PosRecWeightedSum',
+                                                              'PosRecMaxPMT'])
+        except ValueError:
+            peak_text += "Position reconstruction failed!"
+        else:
+            peak_text += 'Chi2Gamma: %0.1f, /area_top: %0.1f, /channels_top: %0.1f\n' % (
+                pos.goodness_of_fit,
+                pos.goodness_of_fit / (peak.area_fraction_top * peak.area
+                                       if peak.area_fraction_top != 0 else float('nan')),
+                pos.goodness_of_fit / (peak.n_contributing_channels_top
+                                       if peak.n_contributing_channels_top != 0 else float('nan')))
         peak_text += 'Top spread: %0.1fcm, Bottom spread: %0.1fcm\n' % (peak.top_hitpattern_spread,
                                                                         peak.bottom_hitpattern_spread)
         pos3d = peak.get_reconstructed_position_from_algorithm('PosRecThreeDPatternFit')

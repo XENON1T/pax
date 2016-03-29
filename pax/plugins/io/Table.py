@@ -245,7 +245,7 @@ class TableWriter(plugin.OutputPlugin):
                                                            new_index)])
 
             elif isinstance(field_value, np.ndarray) and field_value.dtype.names is not None:
-                # Hey this is already a structure array :-) Treat like a collection field (except don't recurse)
+                # Hey this is already a structured array :-) Treat like a collection field (except don't recurse)
                 if field_name not in self.data:
                     self.data[field_name] = {
                         'tuples':          [],
