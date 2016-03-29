@@ -373,18 +373,19 @@ def load_event_class_code(class_code, other_process_compiles=False):
     libfile = get_libname(class_filename)
 
     if other_process_compiles:
+        # TODO: use file locks instead, timers are unreliable
         while not os.path.exists(libfile):
             log.debug("Waiting for another process to compile the pax event class")
             time.sleep(5)
         log.info("Compiled pax event class has been found, "
-                 "sleeping 10 sec to ensure compilation and dictionary generation have finished")
-        time.sleep(10)
+                 "sleeping 20 sec to ensure compilation and dictionary generation have finished")
+        time.sleep(20)
     else:
         with open(class_filename, mode='w') as outfile:
             outfile.write(class_code)
 
-        # Compile the class (or decide we don't have to)
-        load_event_class(os.path.abspath(class_filename))
+    # Compile the class (or decide we don't have to)
+    load_event_class(os.path.abspath(class_filename))
 
 
 def load_event_class(filename, force_recompile=False):
