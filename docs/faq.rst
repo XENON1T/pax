@@ -8,21 +8,25 @@ Setup PyCharm
 
 See http://docs.continuum.io/anaconda/ide_integration#pycharm
 
-How do I set up `pax` at LNGS on xecluster?
+How do I use `pax` at LNGS/Chicago/Nikhef?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A central installation of pax on xecluster can be setup as follows::
+We use DeployHQ to automatically deploy pax to various sites.  You can use these environments by activate the 'pax_head' environment.
 
-  ssh xecluster06
-  PAXER
-  
-Details on the wiki: https://xecluster.lngs.infn.it/dokuwiki/doku.php?id=xenon:xenon1t:cmp:centralpax
+ * Gran Sasso xecluster	`export PATH="/archive_lngs/common/anaconda3/bin:$PATH"`
+ * Chicago Midway	`export PATH="/project/lgrandi/anaconda3/bin:$PATH"`
+ * Nikhef	`export PATH="/data/xenon/anaconda/bin:$PATH"`
+ 
+Then executing the following will activate the pax environment::
 
-To set up a developer installation of pax, first you can either follow the steps for installing anaconda and the required packages in the main readme (longer and more disk space), or use the central installation by setting::
+  source activate pax_head
 
-    export PATH="/archive_lngs/common/anaconda3/bin:$PATH"  # Taken from output of PAXER above
+More information can be found at https://xecluster.lngs.infn.it/dokuwiki/doku.php?id=xenon:xenon1t:analysis:beginnersguide&#the_tools
 
-then creating your own environment on xecluster01 with::
+How do I develop for `pax` at LNGS?
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+To set up a developer installation of pax, first you follow the steps for installing anaconda and the required packages in the main readme (longer and more disk space). For LNGS, Then creating your own environment on xecluster01 with::
 
     conda create -n <name_of_your_environment> <list_of_packages_from_main_readme_for_creating_pax_environment>
 
@@ -57,23 +61,6 @@ Whichever way you want to use pax, you check that it worked using the following 
   paxer --version
 
 which should result in Python3 being used to print the pax version.
-
-
-How do I run `pax` at Midway (UChicago)?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-https://xecluster.lngs.infn.it/dokuwiki/doku.php?id=xenon:xenon1t:cmp:computing:midway_cluster:instructions
-
-
-How do I run `pax` at Nikhef?
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Similar to above. If you want, you can use the pax Jelle set up by adding::
-
-  $ export PATH="/data/xenon/anaconda/bin:/data/xenon/pax:$PATH"
-
-This can be added to your `.bashrc` to be run automatically when you login.
-
 
 Can I set up pax on my windows machine?
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
