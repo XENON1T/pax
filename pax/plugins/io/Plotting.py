@@ -50,8 +50,8 @@ class PlotBase(plugin.OutputPlugin):
 
         # Grab PMT numbers and x, y locations
         self.pmts = {array: self.config['channels_%s' % array] for array in ('top', 'bottom')}
-        self.pmt_locations = np.array([[self.config['pmt_locations'][ch]['x'],
-                                        self.config['pmt_locations'][ch]['y']]
+        self.pmt_locations = np.array([[self.config['pmts'][ch]['position']['x'],
+                                        self.config['pmts'][ch]['position']['y']]
                                        for ch in range(self.config['n_channels'])])
 
         self.hitpattern_limits = (1e-1, 1e4)
