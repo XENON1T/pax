@@ -10,8 +10,6 @@ import ROOT
 class TestRootOutput(unittest.TestCase):
 
     def test_root_output(self):
-        self.assertFalse(hasattr(ROOT, 'Peak'))
-
         # Get an event
         mypax = core.Processor(config_names='XENON100', config_dict={'pax': {
             'events_to_process': [0],
