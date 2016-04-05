@@ -74,7 +74,7 @@ class BasicInteractionProperties(plugin.TransformPlugin):
             # Determine z position from drift time
             ia.z = - self.config['drift_velocity_liquid'] * ia.drift_time
 
-            # S1 and S2 area correction: divide by relative light yield at the position
+            # S1 area correction: divide by relative light yield at the position
             ia.s1_spatial_correction /= self.s1_light_yield_map.get_value_at(ia)
 
             if self.s1_patterns is not None:
