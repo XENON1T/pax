@@ -258,14 +258,23 @@ class PatternFitter(object):
                 y_values = np.array([self._index_to_coordinate(lowest_indices[1] + y, 1) for y in cl_segment[:,1]])
 
                 # Calculate the confidence tuple for this CL
-                ct.x0 = np.min(x_values)
-                ct.y0 = np.min(y_values)
-                ct.dx = abs(np.max(x_values) - np.min(x_values))
-                ct.dy = abs(np.max(y_values) - np.min(y_values))
+                ct.x0 = np.nanmin(x_values)
+                ct.y0 = np.nanmin(y_values)
+                ct.dx = abs(np.nanmax(x_values) - np.nanmin(x_values))
+                ct.dy = abs(np.nanmax(y_values) - np.nanmin(y_values))
+
+                # Does the contour touch the edge of the TPC
+                if np.isnan(x_values).any() or np.isnan(y_values).any():
+                    ct.at_edge = True
+
                 confidence_tuples.append(ct)
 
                 # The contour points, only for plotting
-                cl_segments.append(np.array([x_values, y_values]).T)
+                if plot:
+                    contour_points = np.array([x_values, y_values]).T
+                    # Take out point if x or y is nan
+                    contour_points = [p for p in contour_points if not np.isnan(p).any()]
+                    cl_segments.append(contour_points)
 
         if plot and n_dim == 2:
             plt.scatter(*[[r] for r in result], marker='*', s=20, color='orange', label='Grid minimum')

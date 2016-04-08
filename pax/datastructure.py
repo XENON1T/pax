@@ -31,6 +31,8 @@ class ConfidenceTuple(StrictModel):
     dx = float('nan')
     dy = float('nan')
 
+    at_edge = False
+
     @property
     def failed(self):
         return np.isnan(self.x0) or np.isnan(self.y0) or np.isnan(self.dx) or np.isnan(self.dy)
