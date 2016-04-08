@@ -152,7 +152,11 @@ class PatternFitter(object):
                 else:
                     plt.ylim((dimstart, dimstop))
 
-            q.append(gofs.T / np.nanmin(gofs))
+            if statistic == 'likelihood_poisson':
+                # because ln(a/b) = ln(a) - ln(b)
+                q.append(gofs.T - np.nanmin(gofs))
+            else:
+                q.append(gofs.T / np.nanmin(gofs))
             plt.pcolormesh(*q, vmin=1, vmax=4, alpha=0.9)
             plt.colorbar(label='Goodness of fit / minimum')
 
@@ -279,6 +283,8 @@ class PatternFitter(object):
         if plot and n_dim == 2:
             plt.scatter(*[[r] for r in result], marker='*', s=20, color='orange', label='Grid minimum')
             for i, contour in enumerate(cl_segments):
+                if len(contour) == 0:
+                    continue
                 color = lambda x: 'w' if x % 2 == 0 else 'r'
                 p = plt.Polygon(contour, fill=False, color=color(i), label=str(cls[i]))
                 plt.gca().add_artist(p)
