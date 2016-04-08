@@ -135,6 +135,7 @@ class PatternFitter(object):
 
         if plot:
             plt.figure()
+            plt.set_cmap('viridis')
             # Make the linspaces of coordinates along each dimension
             # Remember the grid indices are
             q = []
@@ -252,21 +253,19 @@ class PatternFitter(object):
                 half_length = int(len(cl_trace)//2)
                 cl_segment = np.array(cl_trace[:half_length][0])
 
-                cl_distances = {'0': [], '1': []}
-                for point in cl_segment:
-                    for dim in range(n_dim):
-                        point[dim] = self._index_to_coordinate(lowest_indices[dim] + point[dim], dim)
-                        cl_distances[str(dim)].append(abs(point[dim] - result[dim]))
+                # Extract the x values and y values seperately, also convert to the TPC coordinate system
+                x_values = np.array([self._index_to_coordinate(lowest_indices[0] + x, 0) for x in cl_segment[:,0]])
+                y_values = np.array([self._index_to_coordinate(lowest_indices[1] + y, 1) for y in cl_segment[:,1]])
 
-                # Calculate the error tuple for this CL
-                ct.dx = np.mean(cl_distances['0'])
-                ct.dy = np.mean(cl_distances['1'])
+                # Calculate the confidence tuple for this CL
+                ct.dx = abs(np.max(x_values) - np.min(x_values))
+                ct.dy = abs(np.max(y_values) - np.min(y_values))
                 confidence_tuples.append(ct)
 
                 # The contour points, only for plotting
-                cl_segments.append(cl_segment)
+                cl_segments.append(np.array([x_values, y_values]).T)
 
-        if plot:
+        if plot and n_dim == 2:
             plt.scatter(*[[r] for r in result], marker='*', s=20, color='orange', label='Grid minimum')
             for i, contour in enumerate(cl_segments):
                 color = lambda x: 'w' if x % 2 == 0 else 'r'
