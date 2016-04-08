@@ -31,6 +31,10 @@ class ConfidenceTuple(StrictModel):
     dx = float('nan')
     dy = float('nan')
 
+    @property
+    def failed(self):
+        return np.isnan(self.x0) or np.isnan(self.y0) or np.isnan(self.dx) or np.isnan(self.dy)
+
 
 class ReconstructedPosition(StrictModel):
     """Reconstructed position
