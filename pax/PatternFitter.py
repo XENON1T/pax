@@ -258,6 +258,8 @@ class PatternFitter(object):
                 y_values = np.array([self._index_to_coordinate(lowest_indices[1] + y, 1) for y in cl_segment[:,1]])
 
                 # Calculate the confidence tuple for this CL
+                ct.x0 = np.min(x_values)
+                ct.y0 = np.min(y_values)
                 ct.dx = abs(np.max(x_values) - np.min(x_values))
                 ct.dy = abs(np.max(y_values) - np.min(y_values))
                 confidence_tuples.append(ct)

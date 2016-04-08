@@ -26,6 +26,8 @@ class ConfidenceTuple(StrictModel):
     Stores the information of a confidence level of a reconstructed position
     """
     level = float('nan')
+    x0 = float('nan')
+    y0 = float('nan')
     dx = float('nan')
     dy = float('nan')
 
