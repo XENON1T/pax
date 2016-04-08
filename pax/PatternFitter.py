@@ -201,8 +201,8 @@ class PatternFitter(object):
             result = ne.evaluate("(ao + where(ao > 1, 1, ao) - {ae})**2 /"
                                  "({ae} + square_syst_errors + 1)".format(ae='fractions_expected * total_observed'))
         elif statistic == 'chi2':
-            result = ne.evaluate("(ao + {ae})**2 /"
-                                 "({ae} + square_syst_errors".format(ae='fractions_expected * total_observed'))
+            result = ne.evaluate("(ao - {ae})**2 /"
+                                 "({ae} + square_syst_errors)".format(ae='fractions_expected * total_observed'))
         else:
             raise ValueError('Pattern goodness of fit statistic %s not implemented!' % statistic)
 
