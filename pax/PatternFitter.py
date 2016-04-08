@@ -207,6 +207,12 @@ class PatternFitter(object):
         elif statistic == 'chi2':
             result = ne.evaluate("(ao - {ae})**2 /"
                                  "({ae} + square_syst_errors)".format(ae='fractions_expected * total_observed'))
+        elif statistic == 'likelihood_poisson':
+            # Simple Poisson likelihood
+            # Clip areas to range [0.0001, +inf), because of log(0)
+            areas_expected_clip = np.clip(fractions_expected * total_observed, 0.0001, float('inf'))
+            # Actually compute -2ln(L) so the same interval computation can be used later
+            result = ne.evaluate("-2*(ao * log({ae}) - {ae})".format(ae='areas_expected_clip'))
         else:
             raise ValueError('Pattern goodness of fit statistic %s not implemented!' % statistic)
 
