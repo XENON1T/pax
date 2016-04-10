@@ -133,6 +133,7 @@ class PatternFitter(object):
 
         gofs = self._compute_gof_base(index_selection, areas_observed, pmt_selection, square_syst_errors, statistic)
 
+        # The below code is for diagnostic plots only
         if plot:
             plt.figure()
             plt.set_cmap('viridis')
@@ -153,12 +154,16 @@ class PatternFitter(object):
                     plt.ylim((dimstart, dimstop))
 
             if statistic == 'likelihood_poisson':
-                # because ln(a/b) = ln(a) - ln(b)
+                # because ln(a/b) = ln(a) - ln(b), also different ranges
                 q.append(gofs.T - np.nanmin(gofs))
+                plt.pcolormesh(*q, vmin=1, vmax=100, alpha=0.9)
+                plt.colorbar(label=r'$L - L_0$')
             else:
                 q.append(gofs.T / np.nanmin(gofs))
-            plt.pcolormesh(*q, vmin=1, vmax=4, alpha=0.9)
-            plt.colorbar(label='Goodness of fit / minimum')
+                plt.pcolormesh(*q, vmin=1, vmax=4, alpha=0.9)
+                plt.colorbar(label='Goodness-of-fit / minimum')
+            plt.xlabel('x [cm]')
+            plt.ylabel('y [cm]')
 
         return gofs, lowest_indices
 
@@ -294,7 +299,7 @@ class PatternFitter(object):
                 color = lambda x: 'w' if x % 2 == 0 else 'r'
                 p = plt.Polygon(contour, fill=False, color=color(i), label=str(cls[i]))
                 plt.gca().add_artist(p)
-            # plt.savefig("plot_%.2f_%.2f.png" % (result[0], result[1]), dpi=300)
+            # plt.savefig("plot_%.2f_%.2f.pdf" % (result[0], result[1]), dpi=150)
 
         return result, gofs[min_index], confidence_tuples
 
