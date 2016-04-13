@@ -264,9 +264,9 @@ class Simulator(object):
                 elif left_index < 0:
                     self.log.debug("Invalid left index %s: can't be negative" % left_index)
                     continue
-                elif right_index >= len(current_wave):
+                elif righter_index >= len(current_wave):
                     self.log.debug("Invalid right index %s: can't be longer than length of wave (%s)!" % (
-                        right_index, len(current_wave)))
+                        righter_index, len(current_wave)))
                     continue
 
                 current_wave[left_index: righter_index] += generated_pulse
