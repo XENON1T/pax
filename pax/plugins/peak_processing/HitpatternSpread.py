@@ -16,7 +16,7 @@ class HitpatternSpread(plugin.TransformPlugin):
             self.locations[array] = np.zeros((len(self.pmts[array]), 2))
             for i, ch in enumerate(self.pmts[array]):
                 for dim in ('x', 'y'):
-                    self.locations[array][i][{'x': 0, 'y': 1}[dim]] = self.config['pmt_locations'][ch][dim]
+                    self.locations[array][i][{'x': 0, 'y': 1}[dim]] = self.config['pmts'][ch]['position'][dim]
 
     def transform_event(self, event):
 

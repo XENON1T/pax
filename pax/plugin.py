@@ -155,18 +155,10 @@ class PosRecPlugin(TransformPlugin):
         else:
             self.pmts = np.array(self.config['channels_in_detector']['tpc'])
 
-        # Test if we have a XENON100 style configuration using 'pmt_locations' or a XENON1T style with 'pmts'.
-        # We need to resolve this inconsistency!!
-        if self.config['tpc_name'] == "XENON1T":
-            pmt_positions = [self.config['pmts'][i]['position'] for i in range(len(self.config['pmts']))]
-        else:
-            pmt_positions = self.config['pmt_locations']
-
         # (x,y) Locations of these PMTs, stored as np.array([(x,y), (x,y), ...])
-        self.pmt_locations = np.zeros((len(self.pmts), 2))
-        for ch in self.pmts:
-            for dim in ('x', 'y'):
-                self.pmt_locations[ch-self.pmts[0]][{'x': 0, 'y': 1}[dim]] = pmt_positions[ch][dim]
+        self.pmt_locations = np.array([[self.config['pmts'][ch]['position']['x'],
+                                        self.config['pmts'][ch]['position']['y']]
+                                       for ch in self.pmts])
 
         TransformPlugin._pre_startup(self)
 
