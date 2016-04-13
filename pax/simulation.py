@@ -258,11 +258,14 @@ class Simulator(object):
 
                 # Abandon the pulse if it goes the left/right boundaries
                 if len(generated_pulse) != righter_index - left_index:
-                    continue
+                    raise RuntimeError(
+                        "Generated pulse is %s samples long, can't be inserted between %s and %s" % (
+                            len(generated_pulse), left_index, righter_index))
                 elif left_index < 0:
-                    continue
+                    self.log.debug("Invalid left index %s: can't be negative" % left_index)
                 elif righter_index >= len(current_wave):
-                    continue
+                    self.log.debug("Invalid right index %s: can't be longer than length of wave (%s)!" % (
+                        right_index, len(current_wave)))
 
                 current_wave[left_index: righter_index] += generated_pulse
 
