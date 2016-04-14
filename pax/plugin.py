@@ -119,7 +119,6 @@ class OutputPlugin(ProcessPlugin):
             ip = self.processor.input_plugin
             if ip is not None and 'input_name' in ip.config:
                 self.config['output_name'] = os.path.splitext(os.path.basename(ip.config['input_name']))[0]
-                self.config['output_name'] += '_pax' + pax.__version__
             else:
                 # Deep fallback: timestamp-based name.
                 self.config['output_name'] = 'output_pax%s_%s' % (pax.__version__, strftime('%y%m%d_%H%M%S'))
