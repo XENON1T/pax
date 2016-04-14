@@ -215,15 +215,15 @@ def get_command_line_arguments():
                                type=int,
                                help='Number of coincident pulses required for a trigger',)
     trigger_group.add_argument('--window',
-                               type=int,
+                               type=float,
                                help='Size of coincidence trigger sliding window (us)',)
     trigger_group.add_argument('--left_extension',
-                               type=int,
+                               type=float,
                                help='Minimum time before trigger to save (us). Must be negative, so it is '
                                     'actually the time after trigger to save, if you think about it, but '
                                     "please don't, we just like to torture unsuspecting command line users, har har!")
     trigger_group.add_argument('--right_extension',
-                               type=int,
+                               type=float,
                                help='Minimum time after trigger to save (us)')
     trigger_group.add_argument('--search_window',
                                type=float,
