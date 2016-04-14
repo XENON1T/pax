@@ -58,6 +58,7 @@ setup(
                 'pax.plugins.peak_processing',
                 'pax.plugins.posrec',
                 'pax.plugins.interaction_processing',
+                'pax.trigger_plugins',
                 ],
     package_dir={'pax': 'pax'},
     package_data={'pax': ['config/*.ini', 'data/*.*']},
