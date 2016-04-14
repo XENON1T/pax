@@ -135,7 +135,10 @@ class MongoDBReadUntriggered(plugin.InputPlugin, MongoDBReader):
         It would have been nicer to know the last stop time, but pulses are sorted by start time.
         """
         cu = self.input_collection.find().sort(self.start_key, direction=pymongo.DESCENDING).limit(1)
-        return self._from_mt(list(cu)[0][self.stop_key])
+        cu = list(cu)
+        if cu == []:
+            return 0
+        return self._from_mt(cu[0][self.stop_key])
 
     def get_events(self):
         self.refresh_run_doc()
