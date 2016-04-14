@@ -125,6 +125,7 @@ def main():
                                    config_paths=args.config_path,
                                    config_dict=config_dict)
                 p.run()
+                p.shutdown()
 
             # If a timeout occurred, set the status of this run to 'error'
             # Add other exceptions as they come during commissioning
