@@ -51,13 +51,15 @@ def main():
     while 1:
         if not args.secret_mode:
             run_doc = runs.find_one_and_update(run_query, {'$set': {status_name: 'staging'}})
-            data_info_entry = {'type': 'raw',
-                               'host': get_hostname(),
-                               'status': 'transferring',
-                               'location': os.path.join('/data/xenon1t_data', run_doc['name']),
-                               'checksum': None}
-            runs.update({'_id': run_doc['_id']},
-                        {'$push': {'data': data_info_entry}})
+
+            if run_doc is not None:
+                data_info_entry = {'type': 'raw',
+                                   'host': get_hostname(),
+                                   'status': 'transferring',
+                                   'location': os.path.join('/data/xenon1t_data', run_doc['name']),
+                                   'checksum': None}
+                runs.update({'_id': run_doc['_id']},
+                            {'$push': {'data': data_info_entry}})
         else:
             run_doc = runs.find_one(run_query)
             if run_doc is None:
